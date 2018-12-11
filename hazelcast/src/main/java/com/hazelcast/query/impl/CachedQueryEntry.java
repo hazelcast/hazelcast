@@ -21,6 +21,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
 
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
+
 /**
  * Entry of the Query.
  *
@@ -95,14 +97,14 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
         Object targetObject;
         if (key) {
             // keyData is never null
-            if (keyData.isPortable()) {
+            if (keyData.isPortable() || keyData.getType() == JAVASCRIPT_JSON_SERIALIZATION_TYPE) {
                 targetObject = keyData;
             } else {
                 targetObject = getKey();
             }
         } else {
             if (valueObject == null) {
-                if (valueData.isPortable()) {
+                if (valueData.isPortable() || valueData.getType() == JAVASCRIPT_JSON_SERIALIZATION_TYPE) {
                     targetObject = valueData;
                 } else {
                     targetObject = getValue();

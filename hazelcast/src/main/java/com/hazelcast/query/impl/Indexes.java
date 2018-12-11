@@ -53,7 +53,7 @@ public class Indexes {
 
     private volatile boolean hasIndex;
 
-    private Indexes(InternalSerializationService serializationService,
+    Indexes(InternalSerializationService serializationService,
                     IndexCopyBehavior indexCopyBehavior,
                     Extractors extractors,
                     IndexProvider indexProvider,

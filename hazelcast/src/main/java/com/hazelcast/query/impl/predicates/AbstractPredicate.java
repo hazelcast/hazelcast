@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
@@ -25,6 +27,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.getters.JsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
@@ -62,20 +65,29 @@ public abstract class AbstractPredicate<K, V>
             throw new IllegalArgumentException(String.format(
                     "Cannot use %s predicate with an array or a collection attribute", getClass().getSimpleName()));
         }
-        return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
+        return convertAndApplyForSingleAttributeValue(mapEntry, attributeValue);
     }
+
 
     private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
         List<Object> results = result.getResults();
         for (Object o : results) {
             Comparable entryValue = (Comparable) convertEnumValue(o);
             // it's enough if there's only one result in the MultiResult that satisfies the predicate
-            boolean satisfied = applyForSingleAttributeValue(mapEntry, entryValue);
+            boolean satisfied = convertAndApplyForSingleAttributeValue(mapEntry, entryValue);
             if (satisfied) {
                 return true;
             }
         }
         return false;
+    }
+
+    protected boolean convertAndApplyForSingleAttributeValue(Map.Entry mapEntry, Object attributeValue) {
+        if (attributeValue instanceof HazelcastJsonValue) {
+            Object value = JsonGetter.convertFromJsonValue(Json.parse(attributeValue.toString()));
+            return applyForSingleAttributeValue(mapEntry, (Comparable) value);
+        }
+        return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
     }
 
     protected abstract boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue);

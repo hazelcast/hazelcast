@@ -21,6 +21,9 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
+import com.hazelcast.internal.json.JsonObject.Member;
+import com.hazelcast.nio.serialization.SerializableByConvention;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Reader;
@@ -28,9 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import com.hazelcast.internal.json.JsonObject.Member;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 
 
 /**

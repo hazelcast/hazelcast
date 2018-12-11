@@ -21,11 +21,11 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import static com.hazelcast.internal.json.TestUtil.assertException;
-import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InOrder;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,18 +33,14 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.InOrder;
-
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonArray;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.json.JsonWriter;
-import com.hazelcast.internal.json.ParseException;
-import com.hazelcast.test.annotation.QuickTest;
+import static com.hazelcast.internal.json.TestUtil.assertException;
+import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 public class JsonArray_Test {

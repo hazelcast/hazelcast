@@ -16,13 +16,12 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.util.Clock;
 
 import static com.hazelcast.util.JsonUtil.getLong;
-
-import com.hazelcast.internal.json.JsonObject;
 
 public class LocalGCStatsImpl implements LocalGCStats {
 

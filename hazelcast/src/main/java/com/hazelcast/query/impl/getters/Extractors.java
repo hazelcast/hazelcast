@@ -18,7 +18,9 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueExtractor;
@@ -29,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
@@ -89,10 +92,9 @@ public final class Extractors {
                 return targetData;
             }
         }
-
         if (target instanceof Data) {
             targetData = (Data) target;
-            if (targetData.isPortable()) {
+            if (targetData.isPortable() || targetData.getType() == JAVASCRIPT_JSON_SERIALIZATION_TYPE) {
                 return targetData;
             } else {
                 // convert non-portable Data to object
@@ -122,11 +124,20 @@ public final class Extractors {
             return new ExtractorGetter(ss, valueExtractor, arguments);
         } else {
             if (targetObject instanceof Data) {
-                if (genericPortableGetter == null) {
-                    // will be initialised a couple of times in the worst case
-                    genericPortableGetter = new PortableGetter(ss);
+                if (((Data) targetObject).isPortable()) {
+                    //targetObject may be a Data whose object form is a json?
+                    if (genericPortableGetter == null) {
+                        // will be initialised a couple of times in the worst case
+                        genericPortableGetter = new PortableGetter(ss);
+                    }
+                    return genericPortableGetter;
+                } else if (((Data) targetObject).getType() == JAVASCRIPT_JSON_SERIALIZATION_TYPE) {
+                    return JsonDataGetter.INSTANCE;
+                } else {
+                    throw new HazelcastSerializationException("No Data getter found for type " + ((Data) targetObject).getType());
                 }
-                return genericPortableGetter;
+            } else if (targetObject instanceof HazelcastJsonValue) {
+                return JsonGetter.INSTANCE;
             } else {
                 return ReflectionHelper.createGetter(targetObject, attributeName);
             }
