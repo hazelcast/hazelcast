@@ -18,12 +18,14 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.nio.tcp.OperationPacketFilter;
 import com.hazelcast.nio.tcp.PacketFilter;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,6 +38,8 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -58,7 +62,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
 
     @Test
     public void testPartitionData() {
-        HazelcastInstance[] instances = factory.newInstances(getConfig(true, true), nodeCount);
+        final HazelcastInstance[] instances = factory.newInstances(getConfig(true, true), nodeCount);
         for (HazelcastInstance instance : instances) {
             setBackupPacketDropFilter(instance, BACKUP_BLOCK_RATIO);
         }
@@ -69,6 +73,17 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
         }
 
         assertSizeAndDataEventually();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (HazelcastInstance instance : instances) {
+                    InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
+                    int availablePermits = partitionService.getReplicaManager().availableReplicaSyncPermits();
+                    assertEquals(PARALLEL_REPLICATIONS, availablePermits);
+                }
+            }
+        }, 10);
     }
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
