@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,6 +53,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
         assertUtilityConstructor(ClassLoadingMetricSet.class);
     }
 
+    @Ignore
     @Test
     public void loadedClassesCount() {
         final LongGauge gauge = metricsRegistry.newLongGauge("classloading.loadedClassesCount");
@@ -64,6 +66,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
         });
     }
 
+    @Ignore
     @Test
     public void totalLoadedClassesCount() {
         final LongGauge gauge = metricsRegistry.newLongGauge("classloading.totalLoadedClassesCount");
@@ -76,6 +79,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
         });
     }
 
+    @Ignore
     @Test
     public void unloadedClassCount() {
         final LongGauge gauge = metricsRegistry.newLongGauge("classloading.unloadedClassCount");

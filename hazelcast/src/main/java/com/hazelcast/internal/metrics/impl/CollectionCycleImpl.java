@@ -63,7 +63,7 @@ final class CollectionCycleImpl implements CollectionCycle {
     }
 
     @Override
-    public void collect(final String prefix, Object source) {
+    public void collect(final String namespace, Object source) {
         SourceMetadata sourceMetadata = metricsRegistry.loadSourceMetadata(source.getClass());
         for (AbstractProbe probe : sourceMetadata.probes) {
             probe.collect(this, source);

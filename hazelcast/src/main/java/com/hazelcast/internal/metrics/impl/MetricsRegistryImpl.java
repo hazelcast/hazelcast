@@ -129,20 +129,20 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             return;
         }
 
-        String namePrefix = sourceMetadata.prefix == null ? "" : sourceMetadata.prefix;
+        String ns = sourceMetadata.ns == null ? "" : sourceMetadata.ns;
         for (; ; ) {
-            Object[] old = roots.get(namePrefix);
+            Object[] old = roots.get(ns);
             if (old == null) {
                 Object[] update = new Object[1];
                 update[0] = source;
-                if (roots.putIfAbsent(namePrefix, update) == null) {
+                if (roots.putIfAbsent(ns, update) == null) {
                     return;
                 }
             } else {
                 Object[] update = new Object[old.length + 1];
                 System.arraycopy(old, 0, update, 0, old.length);
                 update[update.length - 1] = source;
-                if (roots.replace(namePrefix, old, update)) {
+                if (roots.replace(ns, old, update)) {
                     return;
                 }
             }
@@ -189,7 +189,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
                 return null;
             }
 
-            String probeName = name.substring(indexOf + 1);
+          //  String probeName = name.substring(indexOf + 1);
 
             for (Object source : sources) {
                 if (source instanceof ProbeInstance) {
@@ -198,7 +198,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
                 SourceMetadata sourceMetadata = loadSourceMetadata(source.getClass());
                 for (AbstractProbe probe : sourceMetadata.probes) {
-                    if (probe.name.equals(probeName)) {
+                    if (probe.name.equals(name)) {
                         return new ProbeInstance(name, source, probe, probe.probe.level());
                     }
                 }
@@ -211,7 +211,40 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     <S> void registerInternal(S source, String name, ProbeLevel probeLevel, ProbeFunction function) {
-        //scanAndRegister(new ProbeInstance<S>(name, source, function, probeLevel), name);
+        checkNotNull(source, "source can't be null");
+
+//        // make sure that the registered source is not without problems.
+//        if ((source instanceof ProbeInstance)) {
+//            return;
+//        }
+
+//        if (source instanceof MetricsProvider) {
+//            ((MetricsProvider) source).provideMetrics(this);
+//        }
+
+//        SourceMetadata sourceMetadata = loadSourceMetadata(source.getClass());
+//        if (!sourceMetadata.dynamicSource && !sourceMetadata.hasProbes) {
+//            // todo:for now we ignore; but would be better to throw error
+//            return;
+//        }
+
+         for (; ; ) {
+            Object[] old = roots.get(name);
+            if (old == null) {
+                Object[] update = new Object[1];
+                update[0] = source;
+                if (roots.putIfAbsent(name, update) == null) {
+                    return;
+                }
+            } else {
+                Object[] update = new Object[old.length + 1];
+                System.arraycopy(old, 0, update, 0, old.length);
+                update[update.length - 1] = source;
+                if (roots.replace(name, old, update)) {
+                    return;
+                }
+            }
+        }
     }
 
     @Override

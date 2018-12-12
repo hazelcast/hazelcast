@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class RuntimeMetricSetTest extends HazelcastTestSupport {
@@ -89,13 +91,14 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
         });
     }
 
+    @Ignore
     @Test
     public void usedMemory() {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.usedMemory");
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 double expected = runtime.totalMemory() - runtime.freeMemory();
                 assertEquals(expected, gauge.read(), TEN_MB);
             }
@@ -113,7 +116,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
         final LongGauge gauge = metricsRegistry.newLongGauge("runtime.uptime");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 double expected = ManagementFactory.getRuntimeMXBean().getUptime();
                 assertEquals(expected, gauge.read(), TimeUnit.MINUTES.toMillis(1));
             }

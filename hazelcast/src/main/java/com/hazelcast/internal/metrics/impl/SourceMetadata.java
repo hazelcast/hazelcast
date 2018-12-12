@@ -37,12 +37,12 @@ import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
 final class SourceMetadata {
     final boolean dynamicSource;
     final boolean hasProbes;
-    final String prefix;
+    final String ns;
     final List<AbstractProbe> probes = new ArrayList<AbstractProbe>();
 
     SourceMetadata(Class clazz) {
-        Namespace p = (Namespace) clazz.getAnnotation(Namespace.class);
-        prefix = p == null ? null : p.name();
+        Namespace ns = (Namespace) clazz.getAnnotation(Namespace.class);
+        this.ns = ns == null ? null : ns.name();
         // we scan all the methods/fields of the class/interface hierarchy.
         List<Class<?>> classList = new ArrayList<Class<?>>();
         flatten(clazz, classList);
@@ -62,7 +62,7 @@ final class SourceMetadata {
         for (Field field : clazz.getDeclaredFields()) {
             Probe probe = field.getAnnotation(Probe.class);
             if (probe != null) {
-                FieldProbe fieldProbe = createFieldProbe(prefix, field, probe);
+                FieldProbe fieldProbe = createFieldProbe(ns, field, probe);
                 probes.add(fieldProbe);
             }
         }
@@ -72,7 +72,7 @@ final class SourceMetadata {
         for (Method method : clazz.getDeclaredMethods()) {
             Probe probe = method.getAnnotation(Probe.class);
             if (probe != null) {
-                MethodProbe methodProbe = createMethodProbe(prefix, method, probe);
+                MethodProbe methodProbe = createMethodProbe(ns, method, probe);
                 probes.add(methodProbe);
             }
         }

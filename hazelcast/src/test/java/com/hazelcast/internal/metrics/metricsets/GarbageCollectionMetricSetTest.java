@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,6 +51,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
         assertUtilityConstructor(GarbageCollectionMetricSet.class);
     }
 
+    @Ignore
     @Test
     public void minorCount() {
         final LongGauge gauge = metricsRegistry.newLongGauge("gc.minorCount");

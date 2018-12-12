@@ -20,7 +20,7 @@ public interface CollectionCycle {
 
     ProbeLevel probeLevel();
 
-    void collect(String prefix, Object source);
+    void collect(String namespace, Object source);
 
     void collect(Object source);
 
