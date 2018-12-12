@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOpe
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -103,6 +104,13 @@ final class InvokeOnPartitionsAsync {
     }
 
     private void invokeOnAllPartitions() {
+        if (memberPartitions.isEmpty()) {
+            future.setResult(Collections.EMPTY_MAP);
+            if (callback != null) {
+                callback.onResponse(Collections.EMPTY_MAP);
+            }
+            return;
+        }
         for (final Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
             final Address address = mp.getKey();
             List<Integer> partitions = mp.getValue();
