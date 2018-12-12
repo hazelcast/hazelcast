@@ -8,6 +8,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 2. Fixes
 
+- Fixed an issue where the `remove` operations in MultiMap was getting slower when the entries under a single key grows to large amounts. Note that this fix breaks the Rolling Upgrade compatibility.
 - Entry processors equipped with predicates try to utilize global indexes to
 narrow down the key set to operate on. [#13892] fixes the following issues for this utilization:
     - There were no migration stamp validations performed to prevent entry processors from operating on stale index data.
