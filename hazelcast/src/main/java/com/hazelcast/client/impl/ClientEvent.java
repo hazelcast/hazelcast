@@ -80,13 +80,13 @@ public class ClientEvent implements Client {
 
     @Override
     public String toString() {
-        return "ClientEvent{" +
-                "uuid='" + uuid + '\'' +
-                ", eventType=" + eventType +
-                ", address=" + address +
-                ", clientType=" + clientType +
-                ", name='" + name + '\'' +
-                ", attributes=" + attributes +
-                '}';
+        return "ClientEvent{"
+                + "uuid='" + uuid + '\''
+                + ", eventType=" + eventType
+                + ", address=" + address
+                + ", clientType=" + clientType
+                + ", name='" + name + '\''
+                + ", attributes=" + attributes
+                + '}';
     }
 }
