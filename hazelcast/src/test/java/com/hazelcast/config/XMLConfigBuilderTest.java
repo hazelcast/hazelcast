@@ -2915,6 +2915,60 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMemcacheProtocolEnabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<memcache-protocol enabled='true'/>\n"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        MemcacheProtocolConfig memcacheProtocolConfig = config.getMemcacheProtocolConfig();
+        assertNotNull(memcacheProtocolConfig);
+        assertTrue(memcacheProtocolConfig.isEnabled());
+    }
+
+    @Test
+    public void testRestApiDefaults() {
+        String xml = HAZELCAST_START_TAG
+                + "<rest-api enabled='false'/>\n"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        RestApiConfig restApiConfig = config.getRestApiConfig();
+        assertNotNull(restApiConfig);
+        assertFalse(restApiConfig.isEnabled());
+        for (RestEndpointGroup group : RestEndpointGroup.values()) {
+            assertEquals("Unexpected status of group " + group, group.isEnabledByDefault(),
+                    restApiConfig.isGroupEnabled(group));
+        }
+    }
+
+    @Test
+    public void testRestApiEndpointGroups() {
+        String xml = HAZELCAST_START_TAG
+                + "<rest-api enabled='true'>\n"
+                + "  <endpoint-group name='HEALTH_CHECK' enabled='true'/>\n"
+                + "  <endpoint-group name='DATA' enabled='true'/>\n"
+                + "  <endpoint-group name='CLUSTER_READ' enabled='false'/>\n"
+                + "</rest-api>\n"
+                + HAZELCAST_END_TAG;
+        Config config = buildConfig(xml);
+        RestApiConfig restApiConfig = config.getRestApiConfig();
+        assertTrue(restApiConfig.isEnabled());
+        assertTrue(restApiConfig.isGroupEnabled(RestEndpointGroup.HEALTH_CHECK));
+        assertFalse(restApiConfig.isGroupEnabled(RestEndpointGroup.CLUSTER_READ));
+        assertEquals(RestEndpointGroup.CLUSTER_WRITE.isEnabledByDefault(),
+                restApiConfig.isGroupEnabled(RestEndpointGroup.CLUSTER_WRITE));
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testUnknownRestApiEndpointGroup() {
+        String xml = HAZELCAST_START_TAG
+                + "<rest-api enabled='true'>\n"
+                + "  <endpoint-group name='TEST' enabled='true'/>\n"
+                + "</rest-api>\n"
+                + HAZELCAST_END_TAG;
+        buildConfig(xml);
+    }
+
+    @Test
     public void testXsdVersion() {
         String origVersionOverride = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
         assertXsdVersion("0.0", "0.0");

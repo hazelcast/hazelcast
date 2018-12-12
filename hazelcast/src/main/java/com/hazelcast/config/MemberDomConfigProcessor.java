@@ -64,6 +64,7 @@ import static com.hazelcast.config.ConfigSections.LITE_MEMBER;
 import static com.hazelcast.config.ConfigSections.LOCK;
 import static com.hazelcast.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.config.ConfigSections.MAP;
+import static com.hazelcast.config.ConfigSections.MEMCACHE_PROTOCOL;
 import static com.hazelcast.config.ConfigSections.MEMBER_ATTRIBUTES;
 import static com.hazelcast.config.ConfigSections.MERKLE_TREE;
 import static com.hazelcast.config.ConfigSections.MULTIMAP;
@@ -76,6 +77,7 @@ import static com.hazelcast.config.ConfigSections.QUEUE;
 import static com.hazelcast.config.ConfigSections.QUORUM;
 import static com.hazelcast.config.ConfigSections.RELIABLE_TOPIC;
 import static com.hazelcast.config.ConfigSections.REPLICATED_MAP;
+import static com.hazelcast.config.ConfigSections.REST_API;
 import static com.hazelcast.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.SECURITY;
@@ -221,6 +223,10 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCRDTReplication(node);
         } else if (PN_COUNTER.isEqual(nodeName)) {
             handlePNCounter(node);
+        } else if (REST_API.isEqual(nodeName)) {
+            handleRestApi(node);
+        } else if (MEMCACHE_PROTOCOL.isEqual(nodeName)) {
+            handleMemcacheProtocol(node);
         } else {
             return true;
         }
@@ -2383,4 +2389,41 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
+    private void handleMemcacheProtocol(Node node) {
+        MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
+        config.setMemcacheProtocolConfig(memcacheProtocolConfig);
+        boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+        memcacheProtocolConfig.setEnabled(enabled);
+    }
+
+    private void handleRestApi(Node node) {
+        RestApiConfig restApiConfig = new RestApiConfig();
+        config.setRestApiConfig(restApiConfig);
+        boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+        restApiConfig.setEnabled(enabled);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("endpoint-group".equals(nodeName)) {
+                handleEndpointGroup(child);
+            }
+        }
+    }
+
+    private void handleEndpointGroup(Node node) {
+        boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+        String name = getAttribute(node, "name");
+        RestEndpointGroup endpointGroup;
+        try {
+            endpointGroup = RestEndpointGroup.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException("Wrong name attribute value was provided in endpoint-group element: " + name
+                    + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values()));
+        }
+        RestApiConfig restApiConfig = config.getRestApiConfig();
+        if (enabled) {
+            restApiConfig.enableGroups(endpointGroup);
+        } else {
+            restApiConfig.disableGroups(endpointGroup);
+        }
+    }
 }

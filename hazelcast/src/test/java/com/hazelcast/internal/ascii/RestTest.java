@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,7 +27,6 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
@@ -77,10 +77,9 @@ public class RestTest {
 
     private Config setup() {
         Config config = new Config();
-        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
-
+        RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
+        config.setRestApiConfig(restApiConfig);
         instance = factory.newHazelcastInstance(config);
-
         communicator = new HTTPCommunicator(instance);
         return config;
     }
@@ -229,7 +228,7 @@ public class RestTest {
         permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
         UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
         String result = communicator.updatePermissions(config.getGroupConfig().getName(),
-                config.getGroupConfig().getPassword(), request.toJson().toString());
+                "", request.toJson().toString());
         assertEquals("{\"status\":\"forbidden\"}", result);
     }
 

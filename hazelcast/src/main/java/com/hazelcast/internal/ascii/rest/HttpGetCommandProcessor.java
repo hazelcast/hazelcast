@@ -59,6 +59,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 handleHealthcheck(command, uri);
             } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
                 handleGetClusterVersion(command);
+            } else if (uri.startsWith(URI_LICENSE_INFO)) {
+                handleLicense(command);
             } else {
                 command.send404();
             }
@@ -191,5 +193,12 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         } else {
             command.setResponse(CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
         }
+    }
+
+    /**
+     * License info is mplemented in the Enterprise GET command processor. The OS version returns simple "404 Not Found".
+     */
+    protected void handleLicense(HttpGetCommand command) {
+        command.send404();
     }
 }

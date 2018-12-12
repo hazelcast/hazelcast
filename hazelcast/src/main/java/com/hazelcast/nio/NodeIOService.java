@@ -17,7 +17,12 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.RestApiConfig;
+import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -29,6 +34,8 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
@@ -37,6 +44,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -49,12 +57,77 @@ import static com.hazelcast.util.ThreadUtil.createThreadName;
 @PrivateApi
 public class NodeIOService implements IOService {
 
+    private static final ILogger LOGGER = Logger.getLogger(NodeIOService.class);
+
     private final Node node;
     private final NodeEngineImpl nodeEngine;
+    private final RestApiConfig restApiConfig;
+    private final MemcacheProtocolConfig memcacheProtocolConfig;
 
     public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
+        restApiConfig = initRestApiConfig(node.getProperties(), node.getConfig());
+        memcacheProtocolConfig = initMemcacheProtocolConfig(node.getProperties(), node.getConfig());
+    }
+
+    /**
+     * Initializes {@link RestApiConfig} if not provided based on legacy group properties. Also checks (fails fast)
+     * if both the {@link RestApiConfig} and system properties are used.
+     */
+    @SuppressWarnings("deprecation")
+    private static RestApiConfig initRestApiConfig(HazelcastProperties properties, Config config) {
+        RestApiConfig restApiConfig = config.getRestApiConfig();
+        if (restApiConfig != null) {
+            // ensure the legacy Hazelcast group properties are not provided
+            ensurePropertyNotConfigured(properties, GroupProperty.REST_ENABLED);
+            ensurePropertyNotConfigured(properties, GroupProperty.HTTP_HEALTHCHECK_ENABLED);
+        } else {
+            restApiConfig = new RestApiConfig();
+            if (checkDeprecatedProperty(properties, GroupProperty.REST_ENABLED)) {
+                restApiConfig.setEnabled(true);
+                restApiConfig.enableAllGroups();
+            }
+            if (checkDeprecatedProperty(properties, GroupProperty.HTTP_HEALTHCHECK_ENABLED)) {
+                restApiConfig.setEnabled(true);
+                restApiConfig.enableGroups(RestEndpointGroup.HEALTH_CHECK);
+            }
+        }
+        return restApiConfig;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static MemcacheProtocolConfig initMemcacheProtocolConfig(HazelcastProperties properties, Config config) {
+        MemcacheProtocolConfig memcacheProtocolConfig = config.getMemcacheProtocolConfig();
+        if (memcacheProtocolConfig != null) {
+            // ensure the legacy Hazelcast group property is not provided
+            ensurePropertyNotConfigured(properties, GroupProperty.MEMCACHE_ENABLED);
+        } else {
+            memcacheProtocolConfig = new MemcacheProtocolConfig();
+            if (checkDeprecatedProperty(properties, GroupProperty.MEMCACHE_ENABLED)) {
+                memcacheProtocolConfig.setEnabled(true);
+            }
+        }
+        return memcacheProtocolConfig;
+    }
+
+    private static void ensurePropertyNotConfigured(HazelcastProperties properties, HazelcastProperty hazelcastProperty)
+            throws ConfigurationException {
+        if (properties.containsKey(hazelcastProperty)) {
+            throw new ConfigurationException("Service start failed. The legacy property " + hazelcastProperty.getName()
+                    + " is provided together with new Config object. "
+                    + "Remove the property from your configuration to fix this issue.");
+        }
+    }
+
+    private static boolean checkDeprecatedProperty(HazelcastProperties properties, HazelcastProperty hazelcastProperty)
+            throws ConfigurationException {
+        if (properties.containsKey(hazelcastProperty)) {
+            LOGGER.warning("Property " + hazelcastProperty.getName()
+                    + " is deprecated. Use configuration object/element instead.");
+            return properties.getBoolean(hazelcastProperty);
+        }
+        return false;
     }
 
     @Override
@@ -270,5 +343,14 @@ public class NodeIOService implements IOService {
             }
         }
     }
-}
 
+    @Override
+    public RestApiConfig getRestApiConfig() {
+        return restApiConfig;
+    }
+
+    @Override
+    public MemcacheProtocolConfig getMemcacheProtocolConfig() {
+        return memcacheProtocolConfig;
+    }
+}

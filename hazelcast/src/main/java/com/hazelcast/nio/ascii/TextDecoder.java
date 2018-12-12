@@ -16,60 +16,30 @@
 
 package com.hazelcast.nio.ascii;
 
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.ascii.memcache.DeleteCommandParser;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
-import com.hazelcast.internal.ascii.memcache.GetCommandParser;
-import com.hazelcast.internal.ascii.memcache.IncrementCommandParser;
-import com.hazelcast.internal.ascii.memcache.SetCommandParser;
-import com.hazelcast.internal.ascii.memcache.SimpleCommandParser;
-import com.hazelcast.internal.ascii.memcache.TouchCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
-import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
-import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
-import com.hazelcast.internal.ascii.rest.HttpHeadCommandParser;
-import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
-import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.StringUtil;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.SET;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
-import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
-import static com.hazelcast.nio.IOUtil.compactOrClear;
-import static com.hazelcast.spi.properties.GroupProperty.HTTP_HEALTHCHECK_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
-import static com.hazelcast.spi.properties.GroupProperty.REST_ENABLED;
-
 @PrivateApi
-public class TextDecoder extends InboundHandler<ByteBuffer, Void> {
-
-    private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
+public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
     @SuppressWarnings("checkstyle:magicnumber")
     private static final int INITIAL_CAPACITY = 1 << 8;
@@ -77,54 +47,26 @@ public class TextDecoder extends InboundHandler<ByteBuffer, Void> {
     @SuppressWarnings("checkstyle:magicnumber")
     private static final int MAX_CAPACITY = 1 << 16;
 
-    static {
-        MAP_COMMAND_PARSERS.put("get", new GetCommandParser());
-        MAP_COMMAND_PARSERS.put("gets", new GetCommandParser());
-        MAP_COMMAND_PARSERS.put("set", new SetCommandParser(SET));
-        MAP_COMMAND_PARSERS.put("add", new SetCommandParser(ADD));
-        MAP_COMMAND_PARSERS.put("replace", new SetCommandParser(REPLACE));
-        MAP_COMMAND_PARSERS.put("append", new SetCommandParser(APPEND));
-        MAP_COMMAND_PARSERS.put("prepend", new SetCommandParser(PREPEND));
-        MAP_COMMAND_PARSERS.put("touch", new TouchCommandParser(TOUCH));
-        MAP_COMMAND_PARSERS.put("incr", new IncrementCommandParser(INCREMENT));
-        MAP_COMMAND_PARSERS.put("decr", new IncrementCommandParser(DECREMENT));
-        MAP_COMMAND_PARSERS.put("delete", new DeleteCommandParser());
-        MAP_COMMAND_PARSERS.put("quit", new SimpleCommandParser(QUIT));
-        MAP_COMMAND_PARSERS.put("stats", new SimpleCommandParser(STATS));
-        MAP_COMMAND_PARSERS.put("version", new SimpleCommandParser(VERSION));
-        MAP_COMMAND_PARSERS.put("GET", new HttpGetCommandParser());
-        MAP_COMMAND_PARSERS.put("POST", new HttpPostCommandParser());
-        MAP_COMMAND_PARSERS.put("PUT", new HttpPostCommandParser());
-        MAP_COMMAND_PARSERS.put("DELETE", new HttpDeleteCommandParser());
-        MAP_COMMAND_PARSERS.put("HEAD", new HttpHeadCommandParser());
-    }
-
-
     private ByteBuffer commandLineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
     private boolean commandLineRead;
     private TextCommand command;
-    private final boolean sslEnabled;
     private final TextCommandService textCommandService;
     private final TextEncoder encoder;
     private final TcpIpConnection connection;
-    private final boolean restEnabled;
-    private final boolean memcacheEnabled;
-    private final boolean healthcheckEnabled;
     private boolean connectionTypeSet;
     private long requestIdGen;
+    private final TextProtocolFilter textProtocolFilter;
     private final ILogger logger;
+    private final TextParsers textParsers;
 
-    public TextDecoder(TcpIpConnection connection, TextEncoder encoder) {
+    public TextDecoder(TcpIpConnection connection, TextEncoder encoder, TextProtocolFilter textProtocolFilter,
+            TextParsers textParsers) {
         IOService ioService = connection.getConnectionManager().getIoService();
-        this.sslEnabled = ioService.getSSLConfig() == null ? false : ioService.getSSLConfig().isEnabled();
         this.textCommandService = ioService.getTextCommandService();
         this.encoder = encoder;
         this.connection = connection;
-        HazelcastProperties props = ioService.properties();
-
-        this.memcacheEnabled = props.getBoolean(MEMCACHE_ENABLED);
-        this.restEnabled = props.getBoolean(REST_ENABLED);
-        this.healthcheckEnabled = props.getBoolean(HTTP_HEALTHCHECK_ENABLED);
+        this.textProtocolFilter = textProtocolFilter;
+        this.textParsers = textParsers;
         this.logger = ioService.getLoggingService().getLogger(getClass());
     }
 
@@ -158,7 +100,14 @@ public class TextDecoder extends InboundHandler<ByteBuffer, Void> {
         }
         if (commandLineRead) {
             if (command == null) {
-                processCmd(toStringAndClear(commandLineBuffer));
+                String commandLine = toStringAndClear(commandLineBuffer);
+                // evaluate the command immediately - close connection if command is unknown or not enabled
+                textProtocolFilter.filterConnection(commandLine, connection);
+                if (!connection.isAlive()) {
+                    reset();
+                    return;
+                }
+                processCmd(commandLine);
             }
             if (command != null) {
                 boolean complete = command.readFrom(bb);
@@ -227,23 +176,8 @@ public class TextDecoder extends InboundHandler<ByteBuffer, Void> {
     private boolean isCommandTypeEnabled(TextCommand command) {
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
-                String uri = ((HttpCommand) command).getURI();
-                boolean isMancenterRequest = uri.startsWith(HttpCommandProcessor.URI_MANCENTER_CHANGE_URL);
-                boolean isClusterManagementRequest = uri.startsWith(HttpCommandProcessor.URI_CLUSTER_MANAGEMENT_BASE_URL);
-                boolean isHealthCheck = healthcheckEnabled && uri.startsWith(HttpCommandProcessor.URI_HEALTH_URL);
-                boolean forceRequestHandling = isClusterManagementRequest || isMancenterRequest || isHealthCheck;
-                if (!restEnabled && !forceRequestHandling) {
-                    String msg = sslEnabled ? "REST not enabled" : "REST or SSL not enabled";
-                    connection.close(msg, null);
-                    return false;
-                }
                 connection.setType(ConnectionType.REST_CLIENT);
             } else {
-                if (!memcacheEnabled) {
-                    String msg = sslEnabled ? "Memcached not enabled" : "Memcached or SSL not enabled";
-                    connection.close(msg, null);
-                    return false;
-                }
                 connection.setType(ConnectionType.MEMCACHE_CLIENT);
             }
             connectionTypeSet = true;
@@ -255,7 +189,7 @@ public class TextDecoder extends InboundHandler<ByteBuffer, Void> {
         try {
             int space = cmd.indexOf(' ');
             String operation = (space == -1) ? cmd : cmd.substring(0, space);
-            CommandParser commandParser = MAP_COMMAND_PARSERS.get(operation);
+            CommandParser commandParser = textParsers.getParser(operation);
             if (commandParser != null) {
                 command = commandParser.parser(this, cmd, space);
             } else {

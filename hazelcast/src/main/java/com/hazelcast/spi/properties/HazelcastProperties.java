@@ -137,6 +137,30 @@ public class HazelcastProperties {
     }
 
     /**
+     * Returns true if value for given key is provided (either as a HazelcastProperty or a System property). Default values are
+     * not taken into account.
+     *
+     * @param property the {@link HazelcastProperty} to check
+     * @return {@code true} if the value was explicitly provided
+     */
+    public boolean containsKey(HazelcastProperty property) {
+        if (property == null) {
+            return false;
+        }
+        return containsKey(property.getName())
+                || containsKey(property.getParent())
+                || containsKey(property.getDeprecatedName());
+    }
+
+    private boolean containsKey(String propertyName) {
+        if (propertyName == null) {
+            return false;
+        }
+        return properties.containsKey(propertyName)
+                || System.getProperty(propertyName) != null;
+    }
+
+    /**
      * Returns the configured boolean value of a {@link HazelcastProperty}.
      *
      * @param property the {@link HazelcastProperty} to get the value from

@@ -18,12 +18,12 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterStateEventually;
@@ -71,8 +72,8 @@ public class RestClusterTest {
 
     protected Config createConfigWithRestEnabled() {
         Config config = new Config();
-        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
-        config.setProperty(GroupProperty.HTTP_HEALTHCHECK_ENABLED.getName(), "true");
+        RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
+        config.setRestApiConfig(restApiConfig);
         return config;
     }
 
@@ -90,7 +91,7 @@ public class RestClusterTest {
         try {
             communicator.getClusterInfo();
             fail("Rest is disabled. Not expected to reach here!");
-        } catch (NoHttpResponseException ignored) {
+        } catch (SocketException ignored) {
         }
     }
 
@@ -297,7 +298,7 @@ public class RestClusterTest {
         assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, communicator.getClusterHealthResponseCode("/unknown-parameter"));
     }
 
-    @Test(expected = NoHttpResponseException.class)
+    @Test(expected = SocketException.class)
     public void fail_with_deactivatedHealthCheck() throws Exception {
         // Healthcheck REST URL is deactivated by default - no passed config on purpose
         HazelcastInstance instance = factory.newHazelcastInstance(null);

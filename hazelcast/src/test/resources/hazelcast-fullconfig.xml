@@ -262,6 +262,15 @@
             </icmp>
         </failure-detector>
     </network>
+    <rest-api enabled="true">
+        <endpoint-group name="CLUSTER_READ" enabled="true"/>
+        <endpoint-group name="CLUSTER_WRITE" enabled="true"/>
+        <endpoint-group name="HEALTH_CHECK" enabled="true"/>
+        <endpoint-group name="HOT_RESTART" enabled="true"/>
+        <endpoint-group name="WAN" enabled="true"/>
+        <endpoint-group name="DATA" enabled="true"/>
+    </rest-api>
+    <memcache-protocol enabled="true"/>
     <partition-group enabled="true" group-type="CUSTOM">
         <member-group>
             <interface>10.10.0.*</interface>
