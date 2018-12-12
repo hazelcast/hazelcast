@@ -94,7 +94,7 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
         if (record.getValue() == null) {
             return (V) CACHED_AS_NULL;
         }
-        return dataToValue(record.getValue());
+        return toValue(record.getValue());
     }
 
     @Override
