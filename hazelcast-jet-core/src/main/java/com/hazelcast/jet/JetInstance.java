@@ -157,7 +157,7 @@ public interface JetInstance {
         Object validationRecord = map.get(SnapshotValidationRecord.KEY);
         if (validationRecord instanceof SnapshotValidationRecord) {
             // update the cache - for robustness. For example after the map was copied
-            getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE).setAsync(name, validationRecord);
+            getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE).set(name, validationRecord);
             return new JobStateSnapshot(this, name, (SnapshotValidationRecord) validationRecord);
         } else {
             return null;

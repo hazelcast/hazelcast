@@ -20,11 +20,8 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetClientConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TestProcessors;
-import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -35,20 +32,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class JetInstanceTest extends JetTestSupport {
+public class MulticastDiscoveryTest extends JetTestSupport {
 
     private static final String UNABLE_TO_CONNECT_MESSAGE = "Unable to connect";
 
@@ -112,44 +100,5 @@ public class JetInstanceTest extends JetTestSupport {
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);
         HazelcastClient.newHazelcastClient();
-    }
-
-    @Test
-    public void smokeTest_exportedStateManagement_member() {
-        smokeTest_exportedStateManagement(false);
-    }
-
-    @Test
-    public void smokeTest_exportedStateManagement_client() {
-        smokeTest_exportedStateManagement(true);
-    }
-
-    private void smokeTest_exportedStateManagement(boolean fromClient) {
-        JetInstance instance = Jet.newJetInstance();
-        JetInstance client = fromClient ? Jet.newJetClient() : instance;
-        DAG dag = new DAG();
-        dag.newVertex("p", () -> new NoOutputSourceP());
-        Job job = client.newJob(dag);
-        assertJobStatusEventually(job, RUNNING);
-        JobStateSnapshot state1 = job.exportSnapshot("state1");
-        client.getHazelcastInstance().getDistributedObjects().forEach(System.out::println);
-        assertEquals(singleton("state1"), getExportedStateNames(client));
-        JobStateSnapshot state2 = job.exportSnapshot("state2");
-        assertEquals(new HashSet<>(asList("state1", "state2")), getExportedStateNames(client));
-        state1.destroy();
-        assertEquals(singleton("state2"), getExportedStateNames(client));
-        job.cancel();
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
-        assertEquals(singleton("state2"), getExportedStateNames(client));
-        state2.destroy();
-        assertEquals(emptySet(), getExportedStateNames(client));
-        assertNull("state1 snapshot returned", client.getJobStateSnapshot("state1"));
-        assertNull("state2 snapshot returned", client.getJobStateSnapshot("state2"));
-    }
-
-    private Set<String> getExportedStateNames(JetInstance instance) {
-        return instance.getJobStateSnapshots().stream()
-                       .map(JobStateSnapshot::name)
-                       .collect(toSet());
     }
 }

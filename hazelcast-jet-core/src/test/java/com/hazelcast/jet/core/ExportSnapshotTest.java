@@ -40,7 +40,9 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -51,6 +53,9 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.JobRepository.SNAPSHOT_DATA_MAP_PREFIX;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -74,6 +79,30 @@ public class ExportSnapshotTest extends JetTestSupport {
         BlockingMapStore.shouldBlock = true;
         BlockingMapStore.wasBlocked = false;
         TestProcessors.reset(2);
+    }
+
+    @Test
+    public void smokeTest() {
+        JetInstance[] instances = createJetMembers(2);
+        JetInstance client = fromClient ? createJetClient() : instances[0];
+        DAG dag = new DAG();
+        dag.newVertex("p", () -> new NoOutputSourceP());
+        Job job = client.newJob(dag);
+        assertJobStatusEventually(job, RUNNING);
+        JobStateSnapshot state1 = job.exportSnapshot("state1");
+        client.getHazelcastInstance().getDistributedObjects().forEach(System.out::println);
+        assertEquals(singleton("state1"), getExportedStateNames(client));
+        JobStateSnapshot state2 = job.exportSnapshot("state2");
+        assertEquals(new HashSet<>(asList("state1", "state2")), getExportedStateNames(client));
+        state1.destroy();
+        assertEquals(singleton("state2"), getExportedStateNames(client));
+        job.cancel();
+        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertEquals(singleton("state2"), getExportedStateNames(client));
+        state2.destroy();
+        assertEquals(emptySet(), getExportedStateNames(client));
+        assertNull("state1 snapshot returned", client.getJobStateSnapshot("state1"));
+        assertNull("state2 snapshot returned", client.getJobStateSnapshot("state2"));
     }
 
     @Test
@@ -277,6 +306,12 @@ public class ExportSnapshotTest extends JetTestSupport {
         Job job2 = client.newJob(dag, new JobConfig().setInitialSnapshotName("state"));
         assertJobStatusEventually(job2, RUNNING);
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job2.getStatus()), 1);
+    }
+
+    private static Set<String> getExportedStateNames(JetInstance instance) {
+        return instance.getJobStateSnapshots().stream()
+                .map(JobStateSnapshot::name)
+                .collect(toSet());
     }
 
     static IMapJet<Object, Object> getSnapshotMap(JetInstance instance, String snapshotName) {
