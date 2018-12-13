@@ -249,6 +249,9 @@ public abstract class MessageRunner<E> implements ExecutionCallback<ReadResultSe
             this.sequence = currentHeadSequence;
             return true;
         }
+
+        logger.warning("Terminating MessageListener:" + listener + " on topic: " + topicName + ". "
+                + "Reason: Underlying ring buffer data related to reliable topic is lost. ");
         return false;
     }
 
