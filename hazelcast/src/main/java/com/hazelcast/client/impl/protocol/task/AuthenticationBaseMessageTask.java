@@ -75,14 +75,12 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
 
     @Override
     public void processMessage() throws Throwable {
-        byte serializationServiceVersion = serializationService.getVersion();
-        AuthenticationStatus authenticationStatus;
-        if (clientSerializationVersion != serializationServiceVersion) {
+        if (clientSerializationVersion !=  serializationService.getVersion()) {
             sendClientMessage(prepareSerializationVersionMismatchClientMessage());
             return;
         }
 
-        authenticationStatus = authenticate();
+        AuthenticationStatus authenticationStatus = authenticate();
         if (authenticationStatus == AuthenticationStatus.CREDENTIALS_FAILED) {
             sendClientMessage(prepareUnauthenticatedClientMessage());
             return;
