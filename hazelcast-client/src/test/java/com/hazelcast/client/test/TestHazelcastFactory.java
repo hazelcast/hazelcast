@@ -40,15 +40,18 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final List<HazelcastClientInstanceImpl> clients = new ArrayList<HazelcastClientInstanceImpl>(10);
-    private final TestClientRegistry clientRegistry;
+    private final TestClientRegistry clientRegistry = new TestClientRegistry(getRegistry());
 
-    public TestHazelcastFactory() {
-        this(0);
+    public TestHazelcastFactory(int initialPort, String... addresses) {
+        super(initialPort, addresses);
     }
 
     public TestHazelcastFactory(int count) {
         super(count);
-        this.clientRegistry = new TestClientRegistry(getRegistry());
+    }
+
+    public TestHazelcastFactory() {
+        this(0);
     }
 
     public HazelcastInstance newHazelcastClient() {
