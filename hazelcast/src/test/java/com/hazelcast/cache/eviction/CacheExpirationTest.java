@@ -285,6 +285,46 @@ public class CacheExpirationTest extends CacheTestSupport {
     }
 
     @Test
+    public void test_backupOperationAppliesDefaultExpiryPolicy() {
+        SimpleExpiryListener listener = new SimpleExpiryListener();
+        HazelcastExpiryPolicy defaultExpiryPolicy = new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, FIVE_SECONDS);
+
+        CacheConfig cacheConfig = createCacheConfig(defaultExpiryPolicy, listener);
+        ICache cache = createCache(cacheConfig);
+
+        for (int i = 0; i < 100; i++) {
+            cache.put(i, i);
+        }
+
+        // Check if all backup entries have applied the default expiry policy
+        for (int i = 1; i < CLUSTER_SIZE; i++) {
+            BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
+            for (int j = 0; j < 100; j++) {
+                TestBackupUtils.assertExpirationTimeExistsEventually(j, backupAccessor);
+            }
+        }
+
+        // terminate 2 nodes to cause backup promotion at the 0th member
+        getNode(instances[1]).shutdown(true);
+        getNode(instances[2]).shutdown(true);
+
+        // expiration time is over.
+        sleepAtLeastSeconds(5);
+
+        // Check if there are unexpired entries after backup promotion
+        int unExpiredCount = 0;
+        for (int i = 0; i < 100; i++) {
+            if (cache.get(i) != null) {
+                unExpiredCount++;
+                break;
+            }
+        }
+
+        assertEquals(0, unExpiredCount);
+        assertEqualsEventually(100, listener.expirationCount);
+    }
+
+    @Test
     public void test_whenEntryIsRemovedBackupIsCleaned() {
         SimpleExpiryListener listener = new SimpleExpiryListener();
         int ttlSeconds = 10;

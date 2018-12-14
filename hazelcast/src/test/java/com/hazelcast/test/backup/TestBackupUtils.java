@@ -26,6 +26,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Convenience utility for accessing and asserting backup records.
@@ -139,6 +140,19 @@ public final class TestBackupUtils {
             public void run() {
                 CacheBackupAccessor<K, V> cacheBackupAccessor = (CacheBackupAccessor<K, V>) accessor;
                 assertEquals(expiryPolicy, cacheBackupAccessor.getExpiryPolicy(key));
+            }
+        });
+    }
+
+    public static <K, V> void assertExpirationTimeExistsEventually(final K key, final BackupAccessor<K, V> accessor) {
+        checkInstanceOf(CacheBackupAccessor.class, accessor, "Need to supply a CacheBackupAccessor");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                CacheBackupAccessor<K, V> cacheBackupAccessor = (CacheBackupAccessor<K, V>) accessor;
+                long expirationTime = cacheBackupAccessor.getExpirationTime(key);
+                // expirationTime is set to Duration.ETERNAL if no expiry policy is defined.
+                assertTrue(expirationTime != Long.MAX_VALUE && expirationTime > 0);
             }
         });
     }
