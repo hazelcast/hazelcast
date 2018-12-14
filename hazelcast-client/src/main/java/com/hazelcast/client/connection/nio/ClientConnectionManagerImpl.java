@@ -101,8 +101,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ClientExecutionService executionService;
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> activeConnections = new ConcurrentHashMap<Address, ClientConnection>();
-    private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
-            new ConcurrentHashMap<Address, AuthenticationFuture>();
+    private final ConcurrentMap<Address, ConnectFuture> connectionsInProgress =
+            new ConcurrentHashMap<Address, ConnectFuture>();
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<ConnectionListener>();
     private final boolean allowInvokeWhenDisconnected;
     private final ICredentialsFactory credentialsFactory;
@@ -353,28 +353,30 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 if (connection != null) {
                     return connection;
                 }
-                AuthenticationFuture future = triggerConnect(address, asOwner);
+                ConnectFuture future = triggerConnect(address, asOwner);
+                System.out.println("waiting for connection future");
                 connection = (ClientConnection) future.get();
+                System.out.println("Successfully found connection");
 
                 if (!asOwner) {
                     return connection;
                 }
-                if (connection.isAuthenticatedAsOwner()) {
+                //if (connection.isAuthenticatedAsOwner()) {
                     return connection;
-                }
+                //}
             }
         } catch (Throwable e) {
             throw rethrow(e);
         }
     }
 
-    private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
+    private ConnectFuture triggerConnect(Address target, boolean asOwner) {
         if (!asOwner) {
             connectionStrategy.beforeOpenConnection(target);
         }
 
-        AuthenticationFuture future = new AuthenticationFuture();
-        AuthenticationFuture oldFuture = connectionsInProgress.putIfAbsent(target, future);
+        ConnectFuture future = new ConnectFuture();
+        ConnectFuture oldFuture = connectionsInProgress.putIfAbsent(target, future);
         if (oldFuture == null) {
             executionService.execute(new InitConnectionTask(target, asOwner, future));
             return future;
@@ -450,7 +452,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    protected ClientConnection createSocketConnection(final Address remoteAddress) throws IOException {
+    protected ClientConnection connect(Address remoteAddress) throws IOException {
         SocketChannel socketChannel = null;
         try {
             socketChannel = SocketChannel.open();
@@ -461,15 +463,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             Channel channel = networking.register(socketChannel, true);
             channel.connect(remoteAddress.getInetSocketAddress(), connectionTimeoutMillis);
 
-            ClientConnection connection
-                    = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
+            ClientConnection connection = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
 
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
 
-            channel.start();
             return connection;
         } catch (Exception e) {
             closeResource(socketChannel);
@@ -561,9 +561,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private final Address target;
         private final boolean asOwner;
-        private final AuthenticationFuture future;
+        private final ConnectFuture future;
 
-        InitConnectionTask(Address target, boolean asOwner, AuthenticationFuture future) {
+        InitConnectionTask(Address target, boolean asOwner, ConnectFuture future) {
             this.target = target;
             this.asOwner = asOwner;
             this.future = future;
@@ -574,6 +574,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             ClientConnection connection;
             try {
                 connection = getConnection();
+
             } catch (Exception e) {
                 logger.finest(e);
                 future.onFailure(e);
@@ -583,11 +584,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             try {
                 authenticateAsync(connection);
+                //connection.start();
             } catch (Exception e) {
                 future.onFailure(e);
                 connection.close("Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
             }
+
+            future.onSuccess(connection);
+            //System.out.println("foo");
         }
 
         private void authenticateAsync(ClientConnection connection) {
@@ -638,7 +643,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 throw new NullPointerException("Address Translator " + addressTranslator.getClass()
                         + " could not translate address " + target);
             }
-            return createSocketConnection(address);
+            return connect(address);
         }
     }
 
@@ -646,11 +651,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private final ClientConnection connection;
         private final boolean asOwner;
         private final Address target;
-        private final AuthenticationFuture future;
+        private final ConnectFuture future;
         private final ScheduledFuture timeoutTaskFuture;
 
         AuthCallback(ClientConnection connection, boolean asOwner, Address target,
-                     AuthenticationFuture future, ScheduledFuture timeoutTaskFuture) {
+                     ConnectFuture future, ScheduledFuture timeoutTaskFuture) {
             this.connection = connection;
             this.asOwner = asOwner;
             this.target = target;

@@ -241,13 +241,30 @@ public interface Channel extends Closeable {
     boolean isClientMode();
 
     /**
-     * Queues the {@link OutboundFrame} to be written at some point in the future.
+     * Queues the msg to be written at some point in the future and
+     * flushes the pipeline.
+     *
      * No guarantee is made that the frame actually is going to be written or received.
      *
      * This method is thread-safe.
      *
-     * @param frame the frame to write.
+     * @param msg the frame to write.
      * @return true if the frame was queued; false if rejected.
      */
-    boolean write(OutboundFrame frame);
+    boolean writeAndFlush(boolean urgent, Object msg);
+
+    /**
+     * Queues the msg be written at some point in the future. This
+     * call will not trigger the pipeline to get flushed, so it could be that it gets
+     * written, but if there are not other writes in progress, this call will just be
+     * stored and written when the pipeline is flushed.
+     *
+     * No guarantee is made that the msg actually is going to be written or received.
+     *
+     * This method is thread-safe.
+     *
+     * @param msg the msg to write.
+     * @return true if the msg was queued; false if rejected.
+     */
+    boolean write(boolean urgent, Object msg);
 }

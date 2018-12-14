@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.Date;
 
 /**
  * A {@link com.hazelcast.internal.networking.Channel} implementation tailored
@@ -71,11 +72,20 @@ public final class NioChannel extends AbstractChannel {
     }
 
     @Override
-    public boolean write(OutboundFrame frame) {
+    public boolean writeAndFlush(boolean urgent, Object msg) {
         if (isClosed()) {
             return false;
         }
-        outboundPipeline.write(frame);
+        outboundPipeline.writeAndFlush(urgent, msg);
+        return true;
+    }
+
+    @Override
+    public boolean write(boolean urgent, Object msg) {
+        if (isClosed()) {
+            return false;
+        }
+        outboundPipeline.write(urgent, msg);
         return true;
     }
 
@@ -149,27 +159,27 @@ public final class NioChannel extends AbstractChannel {
             notifyCloseListeners();
         }
     }
-
-    @Override
-    public String toString() {
-        return "NioChannel{" + localSocketAddress() + "->" + remoteSocketAddress() + '}';
-    }
-
-      //  this toString implementation is very useful for debugging. Please don't remove it.
+//
 //    @Override
 //    public String toString() {
-//        String local = getPort(localSocketAddress());it
-//        String remote = getPort(remoteSocketAddress());
-//        String s = local + (isClientMode() ? "=>" : "->") + remote;
-//
-//        // this is added for debugging so that 'client' and 'server' have a different indentation and are easy to recognize.
-//        if (!isClientMode()) {
-//            s = "                                                                                " + s;
-//        }
-//
-//        Date date = new Date();
-//        return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + " " + s;
+//        return "NioChannel{" + localSocketAddress() + "->" + remoteSocketAddress() + '}';
 //    }
+
+   //     this toString implementation is very useful for debugging. Please don't remove it.
+    @Override
+    public String toString() {
+        String local = getPort(localSocketAddress());
+        String remote = getPort(remoteSocketAddress());
+        String s = local + (isClientMode() ? "=>" : "->") + remote;
+
+        // this is added for debugging so that 'client' and 'server' have a different indentation and are easy to recognize.
+        if (!isClientMode()) {
+            s = "                                                                                " + s;
+        }
+
+        Date date = new Date();
+        return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + " " + s;
+    }
 
     private String getPort(SocketAddress socketAddress) {
         return socketAddress == null ? "*missing*" : Integer.toString(((InetSocketAddress) socketAddress).getPort());

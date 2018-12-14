@@ -90,7 +90,7 @@ public class ClientConnection implements Connection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
+        if (channel.writeAndFlush(frame.isUrgent(), frame)) {
             return true;
         }
 
@@ -98,6 +98,10 @@ public class ClientConnection implements Connection {
             logger.finest("Connection is closed, dropping frame -> " + frame);
         }
         return false;
+    }
+
+    public void start(){
+        channel.start();
     }
 
     @Override

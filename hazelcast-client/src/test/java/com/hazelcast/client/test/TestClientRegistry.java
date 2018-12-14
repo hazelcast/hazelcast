@@ -118,7 +118,7 @@ class TestClientRegistry {
         }
 
         @Override
-        protected ClientConnection createSocketConnection(Address address) throws IOException {
+        protected ClientConnection connect(Address address) throws IOException {
             if (!alive) {
                 throw new HazelcastException("ConnectionManager is not active!!!");
             }

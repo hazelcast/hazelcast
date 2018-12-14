@@ -140,8 +140,8 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
         invocation.setEventHandler(this);
-        invocation.invokeUrgent().get();
-        waitInitialMemberListFetched();
+        invocation.invokeUrgent();//.get();
+        //waitInitialMemberListFetched();
     }
 
     private void waitInitialMemberListFetched() throws InterruptedException {

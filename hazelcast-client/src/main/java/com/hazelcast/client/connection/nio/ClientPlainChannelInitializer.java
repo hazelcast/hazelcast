@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.util.function.Consumer;
 
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
@@ -73,9 +74,12 @@ public class ClientPlainChannelInitializer implements ChannelInitializer {
         });
         channel.inboundPipeline().addLast(decoder);
 
-        channel.outboundPipeline().addLast(new ClientMessageEncoder());
-        // before a client sends any data, it first needs to send the protocol.
-        // so the protocol encoder is actually the last handler in the outbound pipeline.
+        // the first thing that needs to be written is the client protocol
+        // once the client protocol encoder has been fully written, it will remove itself
+        // from the pipeline.
         channel.outboundPipeline().addLast(new ClientProtocolEncoder());
+
+        // and then the regular client messages will be processed
+        channel.outboundPipeline().addLast(new ClientMessageEncoder());
     }
 }

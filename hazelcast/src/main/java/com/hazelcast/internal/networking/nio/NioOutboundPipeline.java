@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
+import com.hazelcast.internal.networking.ChannelOption;
+import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.HandlerStatus;
@@ -26,6 +29,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.util.function.Supplier;
 
 import java.io.IOException;
@@ -36,9 +40,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
+import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.IOUtil.newByteBuffer;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.collection.ArrayUtils.append;
 import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
@@ -49,19 +56,19 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public final class NioOutboundPipeline
         extends NioPipeline
-        implements Supplier<OutboundFrame>, OutboundPipeline {
+        implements Supplier<Object>, OutboundPipeline {
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
-    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public final Queue<Object> writeQueue = new ConcurrentLinkedQueue<Object>();
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
-    public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public final Queue<Object> priorityWriteQueue = new ConcurrentLinkedQueue<Object>();
 
     private OutboundHandler[] handlers = new OutboundHandler[0];
     private ByteBuffer sendBuffer;
 
-    private final AtomicBoolean scheduled = new AtomicBoolean(false);
+    private final AtomicBoolean scheduled = new AtomicBoolean(true);
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
     @Probe(name = "normalFramesWritten")
@@ -98,6 +105,12 @@ public final class NioOutboundPipeline
         }
     }
 
+    @Override
+    void start() {
+        scheduled.set(false);
+        super.start();
+    }
+
     public int totalFramesPending() {
         return writeQueue.size() + priorityWriteQueue.size();
     }
@@ -116,10 +129,14 @@ public final class NioOutboundPipeline
         return bytesPending(priorityWriteQueue);
     }
 
-    private long bytesPending(Queue<OutboundFrame> writeQueue) {
+    private long bytesPending(Queue<Object> writeQueue) {
         long bytesPending = 0;
-        for (OutboundFrame frame : writeQueue) {
-            bytesPending += frame.getFrameLength();
+        for (Object frame : writeQueue) {
+            if(frame instanceof ClientMessage){
+                bytesPending+=((ClientMessage)frame).getFrameLength();
+            }else if(frame instanceof Packet){
+                bytesPending+=((Packet)frame).getFrameLength();
+            }
         }
         return bytesPending;
     }
@@ -134,18 +151,22 @@ public final class NioOutboundPipeline
         return scheduled.get() ? 1 : 0;
     }
 
-    public void write(OutboundFrame frame) {
-        if (frame.isUrgent()) {
+    public void writeAndFlush(boolean urgent, Object frame) {
+        write(urgent,frame);
+        flush();
+    }
+
+    public void write(boolean urgent,Object frame) {
+        if (urgent) {
             priorityWriteQueue.offer(frame);
         } else {
             writeQueue.offer(frame);
         }
-        schedule();
     }
 
     @Override
-    public OutboundFrame get() {
-        OutboundFrame frame = priorityWriteQueue.poll();
+    public Object get() {
+        Object frame = priorityWriteQueue.poll();
         if (frame == null) {
             frame = writeQueue.poll();
             if (frame == null) {
@@ -167,9 +188,9 @@ public final class NioOutboundPipeline
      * <p/>
      * If the OutboundHandler already is scheduled, the call is ignored.
      */
-    private void schedule() {
+    private void flush() {
         if (scheduled.get()) {
-            // So this pipeline is still scheduled, we don't need to schedule it again
+            // So this pipeline is still scheduled, we don't need to flush it again
             return;
         }
 
@@ -256,7 +277,7 @@ public final class NioOutboundPipeline
         // So there are frames, but we just unscheduled ourselves. If we don't try to reschedule, then these
         // Frames are at risk not to be send.
         if (!scheduled.compareAndSet(false, true)) {
-            //someone else managed to schedule this OutboundHandler, so we are done.
+            //someone else managed to flush this OutboundHandler, so we are done.
             return;
         }
 
@@ -272,7 +293,7 @@ public final class NioOutboundPipeline
         lastWriteTime = currentTimeMillis();
         int written = socketChannel.write(sendBuffer);
         bytesWritten.inc(written);
-        //System.out.println(channel+" bytes written:"+written);
+        System.out.println(channel+" bytes written:"+written);
     }
 
     @Override
@@ -280,7 +301,7 @@ public final class NioOutboundPipeline
         writeQueue.clear();
         priorityWriteQueue.clear();
         super.requestClose();
-   }
+    }
 
     @Override
     protected void publishMetrics() {
@@ -344,10 +365,16 @@ public final class NioOutboundPipeline
 
     private void updatePipeline(OutboundHandler[] newHandlers) {
         this.handlers = newHandlers;
-        this.sendBuffer = newHandlers.length == 0 ? null : (ByteBuffer) newHandlers[newHandlers.length - 1].dst();
+
+        if(sendBuffer == null) {
+            ChannelOptions config = channel.options();
+            sendBuffer = newByteBuffer(config.getOption(SO_RCVBUF), config.getOption(DIRECT_BUF));
+            sendBuffer.flip();
+        }
 
         OutboundHandler prev = null;
         for (OutboundHandler handler : handlers) {
+            handler.dst(sendBuffer);
             if (prev == null) {
                 handler.src(this);
             } else {
@@ -379,4 +406,6 @@ public final class NioOutboundPipeline
         addTaskAndWakeup(this);
         return this;
     }
+
+
 }

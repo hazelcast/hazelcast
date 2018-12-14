@@ -111,6 +111,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         }
 
     void start() {
+        System.out.println(getChannel().toString()+" "+getClass().getSimpleName());
         addTaskAndWakeup(new NioPipelineTask(this) {
             @Override
             protected void run0() {

@@ -71,6 +71,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
@@ -92,6 +93,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
+import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
@@ -234,6 +236,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
 
     @Override
     public void accept(ClientMessage clientMessage) {
+        if (clientMessage.isFlagSet(ClientMessage.PARTITION_ID_IS_HASH)) {
+            int hash = clientMessage.getPartitionId();
+            // todo: we should also unset the flag
+            clientMessage.setPartitionId(hashToIndex(hash, getPartitionService().getPartitionCount()));
+            System.out.println("hash:" + hash + " partitionId:" + clientMessage.getPartitionId());
+        }
+
         int partitionId = clientMessage.getPartitionId();
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);

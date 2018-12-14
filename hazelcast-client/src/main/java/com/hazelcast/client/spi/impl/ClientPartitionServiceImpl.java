@@ -62,7 +62,7 @@ public final class ClientPartitionServiceImpl
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
 
-    private volatile int partitionCount;
+    private volatile int partitionCount=-1;
     private volatile int lastPartitionStateVersion = -1;
     private final Object lock = new Object();
 
@@ -85,7 +85,8 @@ public final class ClientPartitionServiceImpl
             ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
             ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
             invocation.setEventHandler(this);
-            invocation.invokeUrgent().get();
+            //invocation.invokeUrgent().get();
+            invocation.invokeUrgent();
         }
     }
 
@@ -151,7 +152,7 @@ public final class ClientPartitionServiceImpl
                         this.partitions.put(partition, address);
                     }
                 }
-                partitionCount = this.partitions.size();
+                //partitionCount = this.partitions.size();
                 lastPartitionStateVersion = partitionStateVersion;
                 if (logger.isFinestEnabled()) {
                     logger.finest("Processed partition response. partitionStateVersion : "
@@ -176,7 +177,7 @@ public final class ClientPartitionServiceImpl
 
     @Override
     public int getPartitionId(Data key) {
-        final int pc = getPartitionCount();
+        final int pc = getPartitionCount();//todo: this is causing synchronization
         if (pc <= 0) {
             return 0;
         }
@@ -185,9 +186,20 @@ public final class ClientPartitionServiceImpl
     }
 
     @Override
+    public boolean isPartitionCountKnown() {
+        return partitionCount>-1;
+    }
+
+    @Override
     public int getPartitionId(Object key) {
         final Data data = client.getSerializationService().toData(key);
         return getPartitionId(data);
+    }
+
+    @Override
+    public int getPartitionHash(Object key) {
+        final Data data = client.getSerializationService().toData(key);
+        return data.getPartitionHash();
     }
 
     @Override

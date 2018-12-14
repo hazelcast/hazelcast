@@ -18,13 +18,13 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
-import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
-import static com.hazelcast.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
@@ -39,17 +39,17 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 public class ClientProtocolEncoder extends OutboundHandler<ByteBuffer, ByteBuffer> {
 
     @Override
-    public void handlerAdded() {
-        initDstBuffer(PROTOCOL_LENGTH, stringToBytes(CLIENT_BINARY_NEW));
-    }
-
-    @Override
     public HandlerStatus onWrite() {
-        if (dst.remaining() == 0) {
+        //System.out.println(channel+" ClientProtocolEncoder.onWrite "+ IOUtil.toDebugString("dst",dst));
+
+        compactOrClear(dst);
+        try {
+            dst.put(stringToBytes(CLIENT_BINARY_NEW));
+            System.out.println(channel+" ClientProtocolEncoder protocol written");
             channel.outboundPipeline().remove(this);
             return CLEAN;
-        } else {
-            return DIRTY;
+        } finally {
+            dst.flip();
         }
     }
 }

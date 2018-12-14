@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.util;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteBuffer;
@@ -35,12 +36,10 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
     private ClientMessage message;
 
     @Override
-    public void handlerAdded() {
-        initDstBuffer();
-    }
-
-    @Override
     public HandlerStatus onWrite() {
+        int batchedItemsWritten = 0;
+        System.out.println(src);
+
         compactOrClear(dst);
         try {
             for (; ; ) {
@@ -55,6 +54,7 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
 
                 if (message.writeTo(dst)) {
                     // message got written, lets see if another message can be written
+                    batchedItemsWritten++;
                     message = null;
                 } else {
                     // the message didn't get written completely, so we are done.
@@ -63,6 +63,7 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
             }
         } finally {
             dst.flip();
+            System.out.println(channel+" ClientMessageEncoder, batched items written:"+batchedItemsWritten);
         }
     }
 }

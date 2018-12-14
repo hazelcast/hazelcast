@@ -21,7 +21,7 @@ import com.hazelcast.nio.Connection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
-class AuthenticationFuture {
+class ConnectFuture {
 
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private ClientConnection connection;

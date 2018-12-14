@@ -609,6 +609,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExtension.afterStart(this);
     }
 
+    // more connection logic!
+    // todo: this is important code we want to get into the connection before starting the connection
     public void onClusterConnect(Connection ownerConnection) throws Exception {
         partitionService.listenPartitionTable(ownerConnection);
         clusterService.listenMembershipEvents(ownerConnection);

@@ -87,6 +87,8 @@ public class ClientMessage
      */
     public static final short LISTENER_EVENT_FLAG = 0x01;
 
+    public static final short PARTITION_ID_IS_HASH = 0x16;
+
     /**
      * ClientMessage Fixed Header size in bytes
      */

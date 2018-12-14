@@ -33,7 +33,11 @@ public interface ClientPartitionService {
 
     int getPartitionId(Object key);
 
+    int getPartitionHash(Object key);
+
     int getPartitionCount();
+
+    boolean isPartitionCountKnown();
 
     Partition getPartition(int partitionId);
 }

@@ -151,13 +151,13 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     }
 
     private Queue<OutboundFrame> getOutboundQueue(TcpIpConnection connection, boolean priority) {
-        if (connection.getChannel() instanceof NioChannel) {
-            NioChannel nioChannel = (NioChannel) connection.getChannel();
-            NioOutboundPipeline outboundPipeline = nioChannel.outboundPipeline();
-            return priority ? outboundPipeline.priorityWriteQueue : outboundPipeline.writeQueue;
-        } else {
+//        if (connection.getChannel() instanceof NioChannel) {
+//            NioChannel nioChannel = (NioChannel) connection.getChannel();
+//            NioOutboundPipeline outboundPipeline = nioChannel.outboundPipeline();
+//            return priority ? outboundPipeline.priorityWriteQueue : outboundPipeline.writeQueue;
+//        } else {
             return EMPTY_QUEUE;
-        }
+       // }
     }
 
     private void render(DiagnosticsLogWriter writer, TcpIpConnection connection, boolean priority, int sampleCount) {

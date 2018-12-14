@@ -215,8 +215,18 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected <T> T invoke(ClientMessage clientMessage, Object key) {
-        final int partitionId = getContext().getPartitionService().getPartitionId(key);
-        return invokeOnPartition(clientMessage, partitionId);
+        ClientPartitionService partitionService = getContext().getPartitionService();
+
+        if (partitionService.isPartitionCountKnown()) {
+            int partitionId = partitionService.getPartitionId(key);
+            return invokeOnPartition(clientMessage, partitionId);
+        } else {
+            System.out.println("ClientPartitionCount not known");
+            clientMessage.addFlag(ClientMessage.PARTITION_ID_IS_HASH);
+            int partitionHash = partitionService.getPartitionHash(key);
+            clientMessage.setPartitionId(partitionHash);
+            return invoke(clientMessage);
+        }
     }
 
     protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId) {

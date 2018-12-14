@@ -115,7 +115,12 @@ public class AbstractChannelTest {
         }
 
         @Override
-        public boolean write(OutboundFrame frame) {
+        public boolean writeAndFlush(boolean urgent, Object msg) {
+            return false;
+        }
+
+        @Override
+        public boolean write(boolean urgent, Object msg) {
             return false;
         }
     }

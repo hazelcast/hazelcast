@@ -216,7 +216,7 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
                     normalPackets++;
                 }
 
-                c.getChannel().write(packet);
+                c.getChannel().writeAndFlush(packet.isUrgent(), packet);
 
                 long now = System.currentTimeMillis();
                 if (now > prev + 2000) {

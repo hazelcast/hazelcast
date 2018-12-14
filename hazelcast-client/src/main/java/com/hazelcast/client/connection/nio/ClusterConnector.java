@@ -113,7 +113,8 @@ class ClusterConnector {
 
     void connectToCluster() {
         try {
-            connectToClusterAsync().get();
+            Future<Void> connectFuture = connectToClusterAsync();
+            connectFuture.get();
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -132,6 +133,8 @@ class ClusterConnector {
         Connection connection = null;
         try {
             logger.info("Trying to connect to " + address + " as owner member");
+            //todo: ideally we would get an unstarted connection so we can move the registration
+            // if the listeners
             connection = connectionManager.getOrConnect(address, true);
             client.onClusterConnect(connection);
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
