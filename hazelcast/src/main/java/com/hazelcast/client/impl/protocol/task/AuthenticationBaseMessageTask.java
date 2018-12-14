@@ -92,6 +92,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
                     }
                     super.processMessage();
                 } else {
+                    authenticated();
                     sendClientMessage(prepareAuthenticatedClientMessage());
                 }
                 break;
@@ -163,6 +164,13 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
+        Address thisAddress = clientEngine.getThisAddress();
+        byte status = AUTHENTICATED.getId();
+        return encodeAuth(status, thisAddress, principal.getUuid(), principal.getOwnerUuid(),
+                serializationService.getVersion(), Collections.<Member>emptyList());
+    }
+
+    private void authenticated() {
         Connection connection = endpoint.getConnection();
 
         endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion, clientMessage.getCorrelationId());
@@ -172,11 +180,6 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         if (endpointManager.registerEndpoint(endpoint)) {
             clientEngine.bind(endpoint);
         }
-
-        final Address thisAddress = clientEngine.getThisAddress();
-        byte status = AUTHENTICATED.getId();
-        return encodeAuth(status, thisAddress, principal.getUuid(), principal.getOwnerUuid(),
-                serializationService.getVersion(), Collections.<Member>emptyList());
     }
 
     private void setConnectionType() {
