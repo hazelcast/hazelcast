@@ -90,7 +90,12 @@ public abstract class WatermarkCoalescer {
     /**
      * Returns the last emitted watermark.
      */
-    public abstract long lastEmittedWm();
+    public abstract long coalescedWm();
+
+    /**
+     * Returns the highest received watermark from any input.
+     */
+    public abstract long topObservedWm();
 
     /**
      * Returns {@code System.nanoTime()} or a dummy value, if it is not needed,
@@ -140,7 +145,12 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long lastEmittedWm() {
+        public long coalescedWm() {
+            return Long.MIN_VALUE;
+        }
+
+        @Override
+        public long topObservedWm() {
             return Long.MIN_VALUE;
         }
 
@@ -159,7 +169,7 @@ public abstract class WatermarkCoalescer {
         private final long[] queueWms;
         private final boolean[] isIdle;
         private AtomicLong lastEmittedWm = new AtomicLong(Long.MIN_VALUE);
-        private long topObservedWm = Long.MIN_VALUE;
+        private AtomicLong topObservedWm = new AtomicLong(Long.MIN_VALUE);
         private boolean allInputsAreIdle;
         private boolean idleMessagePending;
 
@@ -202,10 +212,10 @@ public abstract class WatermarkCoalescer {
                 isIdle[queueIndex] = false;
                 allInputsAreIdle = false;
                 queueWms[queueIndex] = wmValue;
-                if (wmValue > topObservedWm) {
-                    topObservedWm = wmValue;
+                if (wmValue > topObservedWm.get()) {
+                    topObservedWm.lazySet(wmValue);
                     if (watermarkHistory != null) {
-                        watermarkHistory.sample(systemTime, topObservedWm);
+                        watermarkHistory.sample(systemTime, wmValue);
                     }
                 }
                 return checkObservedWms();
@@ -241,10 +251,11 @@ public abstract class WatermarkCoalescer {
                 //      Then message from Q1 is received. Without this condition WM would stay at wm(1). With it,
                 //      wm(2) is forwarded.
                 allInputsAreIdle = true;
-                if (topObservedWm > lastEmittedWm.get()) {
+                final long topObservedWmLocal = topObservedWm.get();
+                if (topObservedWmLocal > lastEmittedWm.get()) {
                     idleMessagePending = notDoneInputCount != 0;
-                    lastEmittedWm.lazySet(topObservedWm);
-                    return topObservedWm;
+                    lastEmittedWm.lazySet(topObservedWmLocal);
+                    return topObservedWmLocal;
                 }
                 return notDoneInputCount != 0
                         ? IDLE_MESSAGE.timestamp()
@@ -269,7 +280,7 @@ public abstract class WatermarkCoalescer {
             if (watermarkHistory == null) {
                 return NO_NEW_WM;
             }
-            long historicWm = watermarkHistory.sample(systemTime, topObservedWm);
+            long historicWm = watermarkHistory.sample(systemTime, topObservedWm.get());
             if (historicWm > lastEmittedWm.get()) {
                 lastEmittedWm.lazySet(historicWm);
                 return historicWm;
@@ -278,8 +289,13 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long lastEmittedWm() {
+        public long coalescedWm() {
             return lastEmittedWm.get();
+        }
+
+        @Override
+        public long topObservedWm() {
+            return topObservedWm.get();
         }
 
         @Override

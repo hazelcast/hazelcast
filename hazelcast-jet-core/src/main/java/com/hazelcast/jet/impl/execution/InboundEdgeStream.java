@@ -26,8 +26,14 @@ import com.hazelcast.util.function.Predicate;
  */
 public interface InboundEdgeStream {
 
+    /**
+     * Returns the represented edge's ordinal.
+     */
     int ordinal();
 
+    /**
+     * Returns the represented edge's priority
+     */
     int priority();
 
     /**
@@ -35,9 +41,28 @@ public interface InboundEdgeStream {
      */
     ProgressState drainTo(Predicate<Object> dest);
 
+    /**
+     * Returns true after all the input queues are done.
+     */
     boolean isDone();
 
+    /**
+     * Returns the total capacity of input queues.
+     */
     int capacities();
 
+    /**
+     * Returns the total number of items in input queues.
+     */
     int sizes();
+
+    /**
+     * Returns the top WM observed on any of the input queues.
+     */
+    long topObservedWm();
+
+    /**
+     * Returns the last coalesced WM that was forwarded from the edge.
+     */
+    long coalescedWm();
 }

@@ -37,6 +37,18 @@ public class WatermarkCoalescerTest {
     }
 
     @Test
+    public void when_bothInputsHaveWm_then_forwarded() {
+        assertEquals(Long.MIN_VALUE, wc.observeWm(0, 0, 1));
+        assertEquals(1, wc.topObservedWm());
+        assertEquals(Long.MIN_VALUE, wc.coalescedWm());
+        assertEquals(1, wc.observeWm(0, 1, 2));
+        assertEquals(2, wc.observeWm(0, 0, 3));
+        assertEquals(3, wc.observeWm(0, 1, 4));
+        assertEquals(4, wc.topObservedWm());
+        assertEquals(3, wc.coalescedWm());
+    }
+
+    @Test
     public void when_i1RecoversFromIdleByEvent_then_wmFromI1Coalesced() {
         when_i1RecoversFromIdle_then_wmFromI1Coalesced("event");
     }

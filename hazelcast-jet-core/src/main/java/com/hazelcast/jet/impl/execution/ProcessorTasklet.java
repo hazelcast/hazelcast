@@ -38,11 +38,11 @@ import com.hazelcast.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
@@ -112,26 +112,25 @@ public class ProcessorTasklet implements Tasklet {
     private final AtomicLong queuesCapacity = new AtomicLong();
     private final Predicate<Object> addToInboxFunction = inbox.queue()::add;
 
-    public ProcessorTasklet(@Nonnull Processor.Context context,
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
+    public ProcessorTasklet(@Nonnull Context context,
                             @Nonnull SerializationService serializationService,
                             @Nonnull Processor processor,
                             @Nonnull List<? extends InboundEdgeStream> instreams,
                             @Nonnull List<? extends OutboundEdgeStream> outstreams,
                             @Nonnull SnapshotContext ssContext,
                             @Nonnull OutboundCollector ssCollector,
-                            int maxWatermarkRetainMillis) {
+                            int maxWatermarkRetainMillis,
+                            @Nullable ProbeBuilder probeBuilder) {
         Preconditions.checkNotNull(processor, "processor");
         this.context = context;
         this.serializationService = serializationService;
         this.processor = processor;
         this.numActiveOrdinals = instreams.size();
-        this.instreamGroupQueue = instreams
-                .stream()
+        this.instreamGroupQueue = new ArrayDeque<>(instreams.stream()
                 .collect(groupingBy(InboundEdgeStream::priority, TreeMap::new,
                         toCollection(ArrayList<InboundEdgeStream>::new)))
-                .entrySet().stream()
-                .map(Entry::getValue)
-                .collect(toCollection(ArrayDeque::new));
+                .values());
         this.outstreams = outstreams.stream()
                                     .sorted(comparing(OutboundEdgeStream::ordinal))
                                     .toArray(OutboundEdgeStream[]::new);
@@ -149,6 +148,9 @@ public class ProcessorTasklet implements Tasklet {
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
         watermarkCoalescer = WatermarkCoalescer.create(maxWatermarkRetainMillis, instreams.size());
+        if (probeBuilder != null) {
+            registerMetrics(instreams, probeBuilder);
+        }
     }
 
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
@@ -159,16 +161,21 @@ public class ProcessorTasklet implements Tasklet {
                 : Logger.getLogger(getClass());
     }
 
-    public void registerMetrics(final ProbeBuilder probeBuilder) {
-        for (int i = 0; i < receivedCounts.length(); i++) {
+    private void registerMetrics(List<? extends InboundEdgeStream> instreams, final ProbeBuilder probeBuilder) {
+        for (int i = 0; i < instreams.size(); i++) {
             int finalI = i;
             ProbeBuilder builderWithOrdinal = probeBuilder
                     .withTag("ordinal", String.valueOf(i));
             builderWithOrdinal.register(this, "receivedCount", ProbeLevel.INFO, ProbeUnit.COUNT,
                             (LongProbeFunction<ProcessorTasklet>) t -> t.receivedCounts.get(finalI));
-
             builderWithOrdinal.register(this, "receivedBatches", ProbeLevel.INFO, ProbeUnit.COUNT,
                             (LongProbeFunction<ProcessorTasklet>) t -> t.receivedBatches.get(finalI));
+
+            InboundEdgeStream instream = instreams.get(finalI);
+            builderWithOrdinal.register(this, "topObservedWm", ProbeLevel.INFO, ProbeUnit.COUNT,
+                    (LongProbeFunction<ProcessorTasklet>) t -> instream.topObservedWm());
+            builderWithOrdinal.register(this, "coalescedWm", ProbeLevel.INFO, ProbeUnit.COUNT,
+                    (LongProbeFunction<ProcessorTasklet>) t -> instream.coalescedWm());
         }
 
         for (int i = 0; i < emittedCounts.length() - (context.snapshottingEnabled() ? 0 : 1); i++) {
@@ -179,8 +186,10 @@ public class ProcessorTasklet implements Tasklet {
                             (LongProbeFunction<ProcessorTasklet>) t -> t.emittedCounts.get(finalI));
         }
 
-        probeBuilder.register(this, "lastReceivedWm", ProbeLevel.INFO, ProbeUnit.MS,
-                (LongProbeFunction<ProcessorTasklet>) t -> t.watermarkCoalescer.lastEmittedWm());
+        probeBuilder.register(this, "topObservedWm", ProbeLevel.INFO, ProbeUnit.MS,
+                (LongProbeFunction<ProcessorTasklet>) t -> t.watermarkCoalescer.topObservedWm());
+        probeBuilder.register(this, "coalescedWm", ProbeLevel.INFO, ProbeUnit.MS,
+                (LongProbeFunction<ProcessorTasklet>) t -> t.watermarkCoalescer.coalescedWm());
         probeBuilder.register(this, "queuesSize", ProbeLevel.INFO, ProbeUnit.COUNT,
                 (LongProbeFunction<ProcessorTasklet>) t -> t.queuesSize.get());
         probeBuilder.register(this, "queuesCapacity", ProbeLevel.INFO, ProbeUnit.COUNT,

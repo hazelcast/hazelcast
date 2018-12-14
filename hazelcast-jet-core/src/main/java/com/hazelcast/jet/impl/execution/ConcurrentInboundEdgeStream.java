@@ -256,4 +256,14 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         }
         return sum;
     }
+
+    @Override
+    public long topObservedWm() {
+        return watermarkCoalescer.topObservedWm();
+    }
+
+    @Override
+    public long coalescedWm() {
+        return watermarkCoalescer.coalescedWm();
+    }
 }

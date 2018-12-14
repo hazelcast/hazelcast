@@ -251,7 +251,7 @@ public class ProcessorTaskletTest {
         }
 
         final ProcessorTasklet t = new ProcessorTasklet(context, new DefaultSerializationServiceBuilder().build(),
-                processor, instreams, outstreams, mock(SnapshotContext.class), new MockOutboundCollector(10), -1);
+                processor, instreams, outstreams, mock(SnapshotContext.class), new MockOutboundCollector(10), -1, null);
         t.init();
         return t;
     }
