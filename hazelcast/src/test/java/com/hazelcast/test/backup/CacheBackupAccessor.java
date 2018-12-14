@@ -100,6 +100,22 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
     }
 
     ExpiryPolicy getExpiryPolicy(K key) {
+        CacheRecord cacheRecord = getCacheRecord(key);
+        InternalPartition partition = getPartitionForKey(key);
+        HazelcastInstance hz = getHazelcastInstance(partition);
+        Node node = getNode(hz);
+        SerializationService serializationService = node.getSerializationService();
+
+        return cacheRecord == null ? null : (ExpiryPolicy) serializationService.toObject(cacheRecord.getExpiryPolicy());
+    }
+
+    long getExpirationTime(K key) {
+        CacheRecord cacheRecord = getCacheRecord(key);
+        return cacheRecord != null ? cacheRecord.getExpirationTime() : -1L;
+    }
+
+    private CacheRecord getCacheRecord(K key) {
+
         InternalPartition partition = getPartitionForKey(key);
         HazelcastInstance hz = getHazelcastInstance(partition);
 
@@ -109,7 +125,7 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
         String cacheNameWithPrefix = getCacheNameWithPrefix(hz, cacheName);
         int partitionId = partition.getPartitionId();
 
-        return runOnPartitionThread(hz, new GetExpiryPolicyCallable(serializationService, cacheService, cacheNameWithPrefix,
+        return runOnPartitionThread(hz, new GetCacheRecordCallable(serializationService, cacheService, cacheNameWithPrefix,
                 partitionId, key), partitionId);
     }
 
@@ -176,7 +192,7 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
         }
     }
 
-    private class GetExpiryPolicyCallable extends AbstractClassLoaderAwareCallable<ExpiryPolicy> {
+    private class GetCacheRecordCallable extends AbstractClassLoaderAwareCallable<CacheRecord> {
 
         private final SerializationService serializationService;
         private final CacheService cacheService;
@@ -184,8 +200,8 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
         private final int partitionId;
         private final K key;
 
-        GetExpiryPolicyCallable(SerializationService serializationService, CacheService cacheService, String cacheNameWithPrefix,
-                                int partitionId, K key) {
+        GetCacheRecordCallable(SerializationService serializationService, CacheService cacheService, String cacheNameWithPrefix,
+                       int partitionId, K key) {
             this.serializationService = serializationService;
             this.cacheService = cacheService;
             this.cacheNameWithPrefix = cacheNameWithPrefix;
@@ -194,18 +210,13 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
         }
 
         @Override
-        public ExpiryPolicy callInternal() {
+        CacheRecord callInternal() throws Exception {
             ICacheRecordStore recordStore = cacheService.getRecordStore(cacheNameWithPrefix, partitionId);
             if (recordStore == null) {
                 return null;
             }
             Data keyData = serializationService.toData(key);
-            CacheRecord cacheRecord = recordStore.getReadOnlyRecords().get(keyData);
-            if (cacheRecord == null) {
-                return null;
-            }
-            Object expiryPolicy = cacheRecord.getExpiryPolicy();
-            return serializationService.toObject(expiryPolicy);
+            return recordStore.getReadOnlyRecords().get(keyData);
         }
     }
 }
