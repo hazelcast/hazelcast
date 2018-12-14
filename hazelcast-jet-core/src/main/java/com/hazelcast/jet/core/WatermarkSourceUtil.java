@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.ObjLongBiFunction;
+import com.hazelcast.jet.pipeline.Sources;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,7 +42,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * very recent event and <em>partition2</em> has an old one. If we poll
  * <em>partition1</em> first and emit its recent event, it will advance the
  * watermark. When we poll <em>partition2</em> later on, its event will be
- * behind the watermork, to be dropped as late. This utility tracks the
+ * behind the watermark and can be dropped as late. This utility tracks the
  * event timestamps for each partition individually and allows the
  * processor to emit the watermark that is correct with respect to all the
  * partitions.
@@ -108,10 +110,18 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class WatermarkSourceUtil<T> {
 
+    /**
+     * Value to use as the {@code nativeEventTime} argument when calling
+     * {@link #handleEvent(Object, int, long)} whene there's no native event
+     * time to supply.
+     */
+    public static final long NO_NATIVE_TIME = Long.MIN_VALUE;
+
     private static final WatermarkPolicy[] EMPTY_WATERMARK_POLICIES = {};
     private static final long[] EMPTY_LONGS = {};
 
     private final long idleTimeoutNanos;
+    @Nullable
     private final ToLongFunction<? super T> timestampFn;
     private final Supplier<? extends WatermarkPolicy> newWmPolicyFn;
     private final ObjLongBiFunction<? super T, ?> wrapFn;
@@ -126,17 +136,18 @@ public class WatermarkSourceUtil<T> {
     private boolean allAreIdle;
 
     /**
-     * A constructor.
-     * <p>
-     * The partition count is initially set to 0, call {@link
-     * #increasePartitionCount} to set it.
+     * The partition count is initially set to 0, call
+     * {@link #increasePartitionCount} to set it.
+     *
+     * @param eventTimePolicy event time policy as passed in {@link
+     *                        Sources#streamFromProcessorWithWatermarks}
      **/
-    public WatermarkSourceUtil(EventTimePolicy<? super T> params) {
-        this.idleTimeoutNanos = MILLISECONDS.toNanos(params.idleTimeoutMillis());
-        this.timestampFn = params.timestampFn();
-        this.wrapFn = params.wrapFn();
-        this.newWmPolicyFn = params.newWmPolicyFn();
-        this.wmEmitPolicy = params.wmEmitPolicy();
+    public WatermarkSourceUtil(EventTimePolicy<? super T> eventTimePolicy) {
+        this.idleTimeoutNanos = MILLISECONDS.toNanos(eventTimePolicy.idleTimeoutMillis());
+        this.timestampFn = eventTimePolicy.timestampFn();
+        this.wrapFn = eventTimePolicy.wrapFn();
+        this.newWmPolicyFn = eventTimePolicy.newWmPolicyFn();
+        this.wmEmitPolicy = eventTimePolicy.wmEmitPolicy();
     }
 
     /**
@@ -144,12 +155,18 @@ public class WatermarkSourceUtil<T> {
      * watermark. Designed to use when emitting from traverser:
      * <pre>{@code
      *     Traverser t = traverserIterable(...)
-     *         .flatMap(event -> watermarkSourceUtil.flatMap(event, event.getPartition()));
+     *         .flatMap(event -> watermarkSourceUtil.handleEvent(
+     *                 event, event.getPartition(), nativeEventTime));
      * }</pre>
+     *
+     * @param event           the event
+     * @param partitionIndex  the source partition index the event came from
+     * @param nativeEventTime native event time in case no {@code timestampFn} was supplied or
+     *                        {@link #NO_NATIVE_TIME} if the event has no native timestamp
      */
     @Nonnull
-    public Traverser<Object> handleEvent(T event, int partitionIndex) {
-        return handleEvent(System.nanoTime(), event, partitionIndex);
+    public Traverser<Object> handleEvent(T event, int partitionIndex, long nativeEventTime) {
+        return handleEvent(System.nanoTime(), event, partitionIndex, nativeEventTime);
     }
 
     /**
@@ -159,15 +176,18 @@ public class WatermarkSourceUtil<T> {
      */
     @Nonnull
     public Traverser<Object> handleNoEvent() {
-        return handleEvent(System.nanoTime(), null, -1);
+        return handleEvent(System.nanoTime(), null, -1, NO_NATIVE_TIME);
     }
 
     // package-visible for tests
-    Traverser<Object> handleEvent(long now, @Nullable T event, int partitionIndex) {
+    Traverser<Object> handleEvent(long now, @Nullable T event, int partitionIndex, long nativeEventTime) {
         assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all " +
                 "items from the traverser before you call this method again.";
         if (event != null) {
-            long eventTime = timestampFn.applyAsLong(event);
+            if (timestampFn == null && nativeEventTime == NO_NATIVE_TIME) {
+                throw new JetException("Neither timestampFn nor nativeEventTime specified");
+            }
+            long eventTime = timestampFn == null ? nativeEventTime : timestampFn.applyAsLong(event);
             handleEventInt(now, partitionIndex, eventTime);
             traverser.append(wrapFn.apply(event, eventTime));
         } else {

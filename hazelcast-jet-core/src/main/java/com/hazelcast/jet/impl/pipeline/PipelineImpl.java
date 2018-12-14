@@ -28,7 +28,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.jet.pipeline.StreamSourceStage;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -43,7 +43,6 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
-import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DO_NOT_ADAPT;
 import static com.hazelcast.jet.impl.pipeline.Planner.uniqueName;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static java.util.stream.Collectors.toList;
@@ -61,9 +60,9 @@ public class PipelineImpl implements Pipeline {
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public <T> StreamStage<T> drawFrom(@Nonnull StreamSource<? extends T> source) {
+    public <T> StreamSourceStage<T> drawFrom(@Nonnull StreamSource<? extends T> source) {
         StreamSourceTransform<T> xform = (StreamSourceTransform<T>) source;
-        return new StreamStageImpl<>(xform, xform.emitsJetEvents() ? ADAPT_TO_JET_EVENT : DO_NOT_ADAPT, this);
+        return new StreamSourceStageImpl<>(xform, this);
     }
 
     @Override

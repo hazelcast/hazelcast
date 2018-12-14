@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 
 import javax.annotation.Nonnull;
 import javax.jms.Connection;
@@ -30,6 +29,10 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
+import java.util.function.Function;
+
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamJmsQueueP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamJmsTopicP;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -192,11 +195,10 @@ public final class JmsSourceBuilder {
         DistributedSupplier<? extends Connection> connectionSupplier =
                 () -> connectionFnLocal.apply(factorySupplierLocal.get());
 
-        ProcessorMetaSupplier metaSupplier = isTopic ?
-                SourceProcessors.streamJmsTopicP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn)
-                : SourceProcessors.streamJmsQueueP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn);
-
-        return new StreamSourceTransform<>(sourceName(), w -> metaSupplier, false);
+        Function<EventTimePolicy<? super T>, ProcessorMetaSupplier> metaSupplierFactory = policy ->
+                isTopic ? streamJmsTopicP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, policy)
+                        : streamJmsQueueP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, policy);
+        return Sources.streamFromProcessorWithWatermarks(sourceName(), metaSupplierFactory, true);
     }
 
     /**

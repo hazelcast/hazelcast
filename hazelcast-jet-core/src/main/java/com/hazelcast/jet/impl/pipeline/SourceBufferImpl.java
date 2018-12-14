@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.impl.JetEvent;
+import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
@@ -25,8 +25,6 @@ import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Queue;
-
-import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 
 public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
     private final Queue<T> buffer = new ArrayDeque<>();
@@ -71,10 +69,10 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
         }
     }
 
-    public static class Timestamped<T> extends SourceBufferImpl<JetEvent<T>> implements TimestampedSourceBuffer<T> {
+    public static class Timestamped<T> extends SourceBufferImpl<TimestampedItem<T>> implements TimestampedSourceBuffer<T> {
         @Override
         public void add(@Nonnull T item, long timestamp) {
-            addInternal(jetEvent(item, timestamp));
+            addInternal(new TimestampedItem(timestamp, item));
         }
     }
 }

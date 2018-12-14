@@ -21,17 +21,14 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
-import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.NULL_EMIT_POLICY;
-import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
+import java.util.function.Function;
+
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientTimestampedSourceP;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -239,18 +236,18 @@ public final class SourceBuilder<S> {
 
     /**
      * Returns a fluent-API builder with which you can create an {@linkplain
-     * StreamSource unbounded stream source} for a Jet pipeline. The source
-     * emits items that already have timestamps attached so you don't have to
-     * call {@link StreamStage#addTimestamps} when constructing your pipeline.
-     * It will use {@linkplain Processor#isCooperative() non-cooperative}
-     * processors.
+     * StreamSource unbounded stream source} for a Jet pipeline. The source can
+     * emit items with native timestamps, which you can enable by calling
+     * {@linkplain StreamSourceStage#withNativeTimestamps
+     * withNativeTimestamps()}. It will use {@linkplain
+     * Processor#isCooperative() non-cooperative} processors.
      * <p>
      * Each parallel processor that drives your source has its private instance
-     * of a state object it gets from your {@code createFn}. To get the data
-     * items to emit to the pipeline, the processor repeatedly calls your {@code
-     * fillBufferFn} with the state object and a buffer object. The buffer's
-     * {@link SourceBuilder.TimestampedSourceBuffer#add add()} method takes two
-     * arguments: the item and the timestamp in milliseconds.
+     * of a state object it gets from the given {@code createFn}. To get the
+     * data items to emit to the pipeline, the processor repeatedly calls your
+     * {@code fillBufferFn} with the state object and a buffer object. The
+     * buffer's {@link SourceBuilder.TimestampedSourceBuffer#add add()} method
+     * takes two arguments: the item and the timestamp in milliseconds.
      * <p>
      * Your function should add some items to the buffer, ideally those it has
      * ready without having to block. A hundred items at a time is enough to
@@ -272,7 +269,7 @@ public final class SourceBuilder<S> {
      * total source data.
      * <p>
      * Here's an example that builds a simple, non-distributed source that
-     * polls an URL and emits all the lines it gets in the response,
+     * polls a URL and emits all the lines it gets in the response,
      * interpreting the first 9 characters as the timestamp.
      * <pre>{@code
      * StreamSource<String> socketSource = SourceBuilder
@@ -290,18 +287,25 @@ public final class SourceBuilder<S> {
      *     .destroyFn(Closeable::close)
      *     .build();
      * Pipeline p = Pipeline.create();
-     * StreamStage<String> srcStage = p.drawFrom(socketSource);
+     * StreamStage<String> srcStage = p.drawFrom(socketSource)
+     *         .withNativeTimestamps(SECONDS.toMillis(5));
      * }</pre>
      * <p>
      * <strong>NOTE 1:</strong> the source you build with this builder is not
      * fault-tolerant. You shouldn't use it in jobs that require a processing
-     * guarantee.
+     * guarantee. Use {@linkplain
+     * Sources#streamFromProcessorWithWatermarks(String, Function) custom
+     * processor} if you need fault tolerance.
      * <p>
      * <strong>NOTE 2:</strong> if the data source you're adapting to Jet is
-     * partitioned, you may run into issues with event skew between partitions.
-     * The timestamp you get from one partition may be significantly behind the
-     * timestamp you already got from another partition. If the lag is more
-     * than you configured with
+     * partitioned, you may run into issues with event skew between partitions
+     * assigned to single parallel processor. The timestamp you get from one
+     * partition may be significantly behind the timestamp you already got from
+     * another partition. If the skew is more than the allowed lag you
+     * {@linkplain StreamSourceStage#withNativeTimestamps(long) configured},
+     * you risk that the events will be dropped. Use {@linkplain
+     * Sources#streamFromProcessorWithWatermarks(String, Function) custom
+     * processor} if you need to coalesce watermarks from multiple partitions.
      *
      * @param name a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the state object
@@ -309,7 +313,8 @@ public final class SourceBuilder<S> {
      */
     @Nonnull
     public static <S> SourceBuilder<S>.TimestampedStream<Void> timestampedStream(
-            @Nonnull String name, @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn
+            @Nonnull String name,
+            @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn
     ) {
         return new SourceBuilder<S>(name, createFn).new TimestampedStream<Void>();
     }
@@ -462,8 +467,8 @@ public final class SourceBuilder<S> {
             Preconditions.checkNotNull(fillBufferFn, "fillBufferFn must be non-null");
             return new StreamSourceTransform<>(
                     mName,
-                    wmParams -> convenientSourceP(mCreateFn, fillBufferFn, mDestroyFn, mPreferredLocalParallelism),
-                    false);
+                    eventTimePolicy -> convenientSourceP(mCreateFn, fillBufferFn, mDestroyFn, mPreferredLocalParallelism),
+                    false, false);
         }
     }
 
@@ -475,7 +480,6 @@ public final class SourceBuilder<S> {
      */
     public final class TimestampedStream<T> extends Base<T> {
         private DistributedBiConsumer<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn;
-        private long maxLag;
 
         private TimestampedStream() {
         }
@@ -519,41 +523,17 @@ public final class SourceBuilder<S> {
         }
 
         /**
-         * Sets the limit on the amount of disorder (skew) present in the
-         * timestamps of the events this source will emit. Any given event's
-         * timestamp must be at most this many milliseconds behind the highest
-         * timestamp emitted so far, otherwise it will be considered late and
-         * dropped.
-         *
-         * @param allowedLateness limit on how much the timestamp of an event being emitted can lag behind
-         *                        the highest emitted timestamp so far
-         */
-        @Nonnull
-        public TimestampedStream<T> allowedLateness(long allowedLateness) {
-            this.maxLag = allowedLateness;
-            return this;
-        }
-
-        /**
          * Builds and returns the timestamped stream source.
          */
         @Nonnull
         @SuppressWarnings("unchecked")
         public StreamSource<T> build() {
             Preconditions.checkNotNull(fillBufferFn, "fillBufferFn must be set");
-            StreamSourceTransform<JetEvent<T>> source = new StreamSourceTransform<>(
+            return new StreamSourceTransform<>(
                     mName,
-                    eventTimePolicy(
-                            JetEvent::timestamp,
-                            (e, timestamp) -> e,
-                            limitingLag(maxLag),
-                            NULL_EMIT_POLICY,
-                            DEFAULT_IDLE_TIMEOUT
-                    ),
-                    wmParams -> convenientTimestampedSourceP(
-                            mCreateFn, fillBufferFn, wmParams, mDestroyFn, mPreferredLocalParallelism),
-                    true);
-            return (StreamSource<T>) source;
+                    eventTimePolicy -> convenientTimestampedSourceP(
+                            mCreateFn, fillBufferFn, eventTimePolicy, mDestroyFn, mPreferredLocalParallelism),
+                    true, true);
         }
     }
 }

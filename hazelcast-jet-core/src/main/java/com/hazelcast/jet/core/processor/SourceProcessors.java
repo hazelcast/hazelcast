@@ -18,11 +18,11 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedConsumer;
@@ -30,7 +30,6 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.ToResultSetFunction;
-import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
@@ -44,6 +43,7 @@ import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
+import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.Sources;
@@ -203,8 +203,8 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link
-     * com.hazelcast.jet.pipeline.Sources#remoteMapJournal(String, ClientConfig,
-     * DistributedPredicate, DistributedFunction, JournalInitialPosition)}.
+     * Sources#remoteMapJournal(String, ClientConfig, DistributedPredicate,
+     * DistributedFunction, JournalInitialPosition)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamRemoteMapP(
@@ -377,10 +377,10 @@ public final class SourceProcessors {
             @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn,
             @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
             @Nonnull DistributedConsumer<? super Session> flushFn,
-            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn
-    ) {
+            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         return ProcessorMetaSupplier.of(
-                StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn),
+                StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy),
                 StreamJmsP.PREFERRED_LOCAL_PARALLELISM);
     }
 
@@ -393,10 +393,10 @@ public final class SourceProcessors {
             @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn,
             @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
             @Nonnull DistributedConsumer<? super Session> flushFn,
-            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn
-    ) {
+            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         return ProcessorMetaSupplier.forceTotalParallelismOne(
-                StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn));
+                StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy));
     }
 
     /**
@@ -437,8 +437,8 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for a source that the user can create
-     * using the {@link com.hazelcast.jet.pipeline.SourceBuilder}. This variant
-     * creates a source that emits items without timestamps.
+     * using the {@link SourceBuilder}. This variant creates a source that
+     * emits items without timestamps.
      *
      * @param createFn function that creates the source's state object
      * @param fillBufferFn function that fills Jet's buffer with items to emit
@@ -465,7 +465,7 @@ public final class SourceProcessors {
         ProcessorSupplier procSup = ProcessorSupplier.of(
                 () -> new ConvenientSourceP<S, T>(
                         createFn,
-                        (BiConsumer<? super S, ? super SourceBufferConsumerSide<? extends T>>) fillBufferFn,
+                        (BiConsumer<? super S, ? super SourceBufferConsumerSide<?>>) fillBufferFn,
                         destroyFn,
                         new SourceBufferImpl.Plain<>(),
                         null));
@@ -476,11 +476,12 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for a source that the user can create
-     * using the {@link com.hazelcast.jet.pipeline.SourceBuilder}. This variant
-     * creates a source that emits timestamped events.
+     * using the {@link SourceBuilder}. This variant creates a source that
+     * emits timestamped events.
      *
      * @param createFn function that creates the source's state object
      * @param fillBufferFn function that fills Jet's buffer with items to emit
+     * @param eventTimePolicy parameters for watermark generation
      * @param destroyFn function that cleans up the resources held by the state object
      * @param preferredLocalParallelism preferred local parallelism of the source vertex. Special values:
      *                                  {@value Vertex#LOCAL_PARALLELISM_USE_DEFAULT} ->
@@ -494,7 +495,7 @@ public final class SourceProcessors {
     public static <S, T> ProcessorMetaSupplier convenientTimestampedSourceP(
             @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn,
             @Nonnull DistributedBiConsumer<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn,
-            @Nonnull EventTimePolicy<? super JetEvent<T>> eventTimePolicy,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull DistributedConsumer<? super S> destroyFn,
             int preferredLocalParallelism
     ) {
@@ -505,7 +506,7 @@ public final class SourceProcessors {
         ProcessorSupplier procSup = ProcessorSupplier.of(
                 () -> new ConvenientSourceP<>(
                         createFn,
-                        (BiConsumer<? super S, ? super SourceBufferConsumerSide<? extends JetEvent<T>>>) fillBufferFn,
+                        (BiConsumer<? super S, ? super SourceBufferConsumerSide<?>>) fillBufferFn,
                         destroyFn,
                         new SourceBufferImpl.Timestamped<>(),
                         eventTimePolicy

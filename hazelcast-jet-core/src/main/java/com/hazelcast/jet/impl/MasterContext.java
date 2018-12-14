@@ -1162,7 +1162,8 @@ public class MasterContext {
 
         JobStatus localStatus = jobStatus;
         if (localStatus == RUNNING && requestTermination(TerminationMode.RESTART_GRACEFUL).f1() == null) {
-            logger.info("Requested restart of " + jobIdString() + " to make use of added member(s)");
+            logger.info("Requested restart of " + jobIdString() + " to make use of added member(s). Job was running on " +
+                    executionPlanMap.size() + " members, cluster now has " + currentDataMembers.size() + " data members");
             return true;
         }
 

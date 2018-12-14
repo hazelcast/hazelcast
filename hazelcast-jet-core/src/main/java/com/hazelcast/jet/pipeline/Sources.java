@@ -105,24 +105,27 @@ public final class Sources {
     /**
      * Returns an unbounded (event stream) source that will use the supplied
      * function to create processor meta-suppliers as required by the Core API.
-     * Jet will call the function you supply with the watermark generation
-     * parameters and it must return a meta-supplier of processors that will
-     * act according to these parameters and emit the watermark items as they
-     * specify.
+     * Jet will call the function you supply with an {@link EventTimePolicy}
+     * and it must return a meta-supplier of processors that will act according
+     * to the parameters in the policy and must emit the watermark items as the
+     * policy specifies.
      * <p>
      * If you are implementing a custom source processor, be sure to check out
      * the {@link WatermarkSourceUtil} class that will help you correctly
-     * implement watermark item emission.
+     * implement watermark emission.
      *
      * @param sourceName user-friendly source name
      * @param metaSupplierFn factory of processor meta-suppliers
+     * @param supportsNativeTimestamps true, if the processor is able to work
+     *                                 without timestampFn in EventTimePolicy
      */
     @Nonnull
     public static <T> StreamSource<T> streamFromProcessorWithWatermarks(
             @Nonnull String sourceName,
-            @Nonnull Function<EventTimePolicy<? super T>, ProcessorMetaSupplier> metaSupplierFn
+            @Nonnull Function<EventTimePolicy<? super T>, ProcessorMetaSupplier> metaSupplierFn,
+            boolean supportsNativeTimestamps
     ) {
-        return new StreamSourceTransform<>(sourceName, metaSupplierFn, true);
+        return new StreamSourceTransform<>(sourceName, metaSupplierFn, true, supportsNativeTimestamps);
     }
 
     /**
@@ -137,7 +140,7 @@ public final class Sources {
             @Nonnull String sourceName,
             @Nonnull ProcessorMetaSupplier metaSupplier
     ) {
-        return new StreamSourceTransform<>(sourceName, w -> metaSupplier, false);
+        return new StreamSourceTransform<>(sourceName, w -> metaSupplier, false, false);
     }
 
     /**
@@ -415,7 +418,7 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("mapJournalSource(" + mapName + ')',
-                w -> streamMapP(mapName, predicateFn, projectionFn, initialPos, w));
+                w -> streamMapP(mapName, predicateFn, projectionFn, initialPos, w), false);
     }
 
     /**
@@ -679,7 +682,7 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
-                w -> streamRemoteMapP(mapName, clientConfig, predicateFn, projectionFn, initialPos, w));
+                w -> streamRemoteMapP(mapName, clientConfig, predicateFn, projectionFn, initialPos, w), false);
     }
 
     /**
@@ -779,8 +782,7 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("cacheJournalSource(" + cacheName + ')',
-                w -> streamCacheP(cacheName, predicateFn, projectionFn, initialPos, w)
-        );
+                w -> streamCacheP(cacheName, predicateFn, projectionFn, initialPos, w), false);
     }
 
     /**
@@ -882,7 +884,7 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("remoteCacheJournalSource(" + cacheName + ')',
-                w -> streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, initialPos, w));
+                w -> streamRemoteCacheP(cacheName, clientConfig, predicateFn, projectionFn, initialPos, w), false);
     }
 
     /**
@@ -1061,6 +1063,10 @@ public final class Sources {
      * version creates a connection without any authentication parameters and
      * uses non-transacted sessions with {@code Session.AUTO_ACKNOWLEDGE} mode.
      * JMS {@link Message} objects are emitted to downstream.
+     * <p>
+     * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
+     * that case you can use {@linkplain #jmsQueueBuilder(DistributedSupplier)
+     * the builder} and add a projection.
      *
      * @param factorySupplier supplier to obtain JMS connection factory
      * @param name            the name of the queue
@@ -1079,6 +1085,10 @@ public final class Sources {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom JMS {@link StreamSource} for the Pipeline API. See javadoc on
      * {@link JmsSourceBuilder} methods for more details.
+     * <p>
+     * This source uses the {@link Message#getJMSTimestamp() JMS' message
+     * timestamp} as the native timestamp, if {@linkplain
+     * StreamSourceStage#withNativeTimestamps(long) enabled}.
      * <p>
      * The source does not save any state to snapshot. The source starts
      * emitting items where it left from.
@@ -1101,6 +1111,10 @@ public final class Sources {
      * version creates a connection without any authentication parameters and
      * uses non-transacted sessions with {@code Session.AUTO_ACKNOWLEDGE} mode.
      * JMS {@link Message} objects are emitted to downstream.
+     * <p>
+     * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
+     * that case you can use {@linkplain #jmsTopicBuilder(DistributedSupplier)
+     * the builder} and add a projection.
      *
      * @param factorySupplier supplier to obtain JMS connection factory
      * @param name            the name of the topic
@@ -1125,6 +1139,10 @@ public final class Sources {
      * operates on a single member and with local parallelism of 1. Setting
      * local parallelism to a value other than 1 causes an {@code
      * IllegalArgumentException}.
+     * <p>
+     * This source uses the {@link Message#getJMSTimestamp() JMS' message
+     * timestamp} as the native timestamp, if {@linkplain
+     * StreamSourceStage#withNativeTimestamps(long) enabled}.
      * <p>
      * The source does not save any state to snapshot. Behavior of job restart
      * changes according to the consumer. If it is a durable consumer and a

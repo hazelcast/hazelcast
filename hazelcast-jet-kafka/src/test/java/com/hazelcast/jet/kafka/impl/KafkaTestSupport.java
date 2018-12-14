@@ -149,8 +149,8 @@ public class KafkaTestSupport extends JetTestSupport {
         return getProducer().send(new ProducerRecord<>(topic, key, value));
     }
 
-    Future<RecordMetadata> produce(String topic, int partition, Integer key, String value) {
-        return getProducer().send(new ProducerRecord<>(topic, partition, key, value));
+    Future<RecordMetadata> produce(String topic, int partition, Long timestamp, Integer key, String value) {
+        return getProducer().send(new ProducerRecord<>(topic, partition, timestamp, key, value));
     }
 
     void resetProducer() {

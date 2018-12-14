@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.pipeline.StreamSourceStage;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
@@ -61,7 +62,9 @@ public final class KafkaSources {
      * instance using the supplied {@code properties}. It assigns a subset of
      * Kafka partitions to each of them using manual partition assignment (it
      * ignores the {@code group.id} property). Default local parallelism for
-     * this processor is 2 (or less if less CPUs are available).
+     * this processor is 2 (or less if less CPUs are available). The Kafka's
+     * message timestamp will be used as a {@linkplain
+     * StreamSourceStage#withNativeTimestamps(long) native timestamp}.
      * <p>
      * If snapshotting is enabled, partition offsets are saved to the snapshot.
      * After a restart, the source emits the events from the same offsets.
@@ -118,6 +121,6 @@ public final class KafkaSources {
     ) {
         checkPositive(topics.length, "At least one topic required");
         return streamFromProcessorWithWatermarks("streamKafka",
-                w -> streamKafkaP(properties, projectionFn, w, topics));
+                w -> streamKafkaP(properties, projectionFn, w, topics), true);
     }
 }

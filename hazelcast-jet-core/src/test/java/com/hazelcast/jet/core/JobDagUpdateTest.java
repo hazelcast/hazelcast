@@ -115,9 +115,11 @@ public class JobDagUpdateTest {
     public void test_addFilter() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .filter(val -> val % 2 == 0)
                 .drainTo(Sinks.list("sink"));
 
@@ -128,10 +130,12 @@ public class JobDagUpdateTest {
     public void test_removeFilter() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .filter(val -> val % 2 == 0)
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .drainTo(Sinks.list("sink"));
 
         runPipelines(asList(0, 2, 4, 6, 8), asList(0, 2, 4, 6, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19));
@@ -141,10 +145,12 @@ public class JobDagUpdateTest {
     public void test_changeMapping() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .map(val -> val - 10)
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .map(val -> val + 10)
                 .drainTo(Sinks.list("sink"));
 
@@ -156,9 +162,11 @@ public class JobDagUpdateTest {
     public void test_changeSource() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source1", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .drainTo(Sinks.list("sink"));
 
         runPipelines(asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
@@ -169,9 +177,11 @@ public class JobDagUpdateTest {
     public void test_changeSink() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withoutTimestamps()
                 .drainTo(Sinks.list("sink1"));
 
         runPipelines(asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
@@ -183,14 +193,14 @@ public class JobDagUpdateTest {
     public void test_extendSlidingWindowSize_keepSlideBy() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.sliding(2, 1))
                 .aggregate(counting())
                 .peek()
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.sliding(3, 1))
                 .aggregate(counting())
                 .peek()
@@ -235,14 +245,14 @@ public class JobDagUpdateTest {
     public void test_shrinkSlidingWindowSize_keepSlideBy() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.sliding(3, 1))
                 .aggregate(counting())
                 .peek()
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.sliding(2, 1))
                 .aggregate(counting())
                 .peek()
@@ -287,14 +297,14 @@ public class JobDagUpdateTest {
     public void test_changeSlidingWindowAggregation_compatible() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.tumbling(3))
                 .aggregate(counting())
                 .peek()
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.tumbling(3))
                 .aggregate(summingLong(i -> i))
                 .peek()
@@ -320,13 +330,13 @@ public class JobDagUpdateTest {
     public void test_changeAggregation_incompatible_then_fail() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.tumbling(3))
                 .aggregate(counting())
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.tumbling(2))
                 .aggregate(averagingLong(i -> i))
                 .drainTo(Sinks.list("sink"));
@@ -354,14 +364,14 @@ public class JobDagUpdateTest {
                                   .andExportFinish(LongAccumulator::get);
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.tumbling(3))
                 .aggregate(counting())
                 .peek()
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .window(WindowDefinition.tumbling(3))
                 .aggregate(countingWithoutCombineFn)
                 .peek()
@@ -387,15 +397,15 @@ public class JobDagUpdateTest {
     public void test_changeSessionWindowTimeout() {
         pipeline1
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withTimestamps(i -> i, 0)
                 .filter(i -> i % 4 < 2) // will pass 0, 1, 4, 5, 8, 9, 12, 13, 16, 17
-                .addTimestamps(i -> i, 0)
                 .window(WindowDefinition.session(2))
                 .aggregate(summingLong(i -> i))
                 .drainTo(Sinks.list("sink"));
         pipeline2
                 .drawFrom(Sources.<Integer>streamFromProcessor("source", ProcessorMetaSupplier.of(ProducerP::new)))
+                .withTimestamps(i -> i, 0)
                 .filter(i -> i % 4 < 2)
-                .addTimestamps(i -> i, 0)
                 .window(WindowDefinition.session(3))
                 .aggregate(summingLong(i -> i))
                 .drainTo(Sinks.list("sink"));

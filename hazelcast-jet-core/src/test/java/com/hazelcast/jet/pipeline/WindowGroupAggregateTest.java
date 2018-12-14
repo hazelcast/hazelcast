@@ -69,7 +69,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
     public void windowDefinition() {
         SlidingWindowDef tumbling = tumbling(2);
         StageWithKeyAndWindow<Integer, Integer> stage =
-                srcStage.groupingKey(wholeItem()).window(tumbling);
+                srcStage.withoutTimestamps().groupingKey(wholeItem()).window(tumbling);
         assertEquals(tumbling, stage.windowDefinition());
     }
 
@@ -96,8 +96,8 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
             return addKeys(drawEventJournalValues(srcName2));
         }
 
-        private StreamStage<Entry<String, Integer>> addKeys(StreamStage<Integer> stage) {
-            return stage.addTimestamps(i -> i, maxLag)
+        private StreamStage<Entry<String, Integer>> addKeys(StreamSourceStage<Integer> stage) {
+            return stage.withTimestamps(i -> i, maxLag)
                         .flatMap(i -> traverseItems(entry("a", i), entry("b", i)));
         }
     }
@@ -199,7 +199,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         addToSrcMapJournal(closingItems);
         // When
         srcStage
-                .addTimestamps(i -> i, 0)
+                .withTimestamps(i -> i, 0)
                 .flatMap(i -> traverseItems(entry("a", "a" + i), entry("b", "b" + i)))
                 .groupingKey(Entry::getKey)
                 .window(sliding(2, 1))
@@ -542,8 +542,8 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
             addToMapJournal(srcMap1, closingItems);
         }
 
-        private StreamStage<Entry<String, Integer>> addKeys(StreamStage<Integer> stage) {
-            return stage.addTimestamps(i -> i, maxLag)
+        private StreamStage<Entry<String, Integer>> addKeys(StreamSourceStage<Integer> stage) {
+            return stage.withTimestamps(i -> i, maxLag)
                         .flatMap(i -> traverseItems(entry("a", i), entry("b", i)));
         }
     }

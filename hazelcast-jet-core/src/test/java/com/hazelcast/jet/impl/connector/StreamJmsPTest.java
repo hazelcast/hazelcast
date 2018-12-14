@@ -42,6 +42,10 @@ import javax.jms.TextMessage;
 import java.util.Enumeration;
 import java.util.Queue;
 
+import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
+import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noWatermarks;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -113,7 +117,8 @@ public class StreamJmsPTest extends JetTestSupport {
                 s.createConsumer(isQueue ? s.createQueue(destinationName) : s.createTopic(destinationName));
         DistributedFunction<Message, String> textMessageFn = m -> ((TextMessage) m).getText();
         processor = new StreamJmsP<>(
-                processorConnection, sessionFn, consumerFn, DistributedConsumer.noop(), textMessageFn);
+                processorConnection, sessionFn, consumerFn, DistributedConsumer.noop(), textMessageFn,
+                eventTimePolicy(null, limitingLag(0), noWatermarks(), DEFAULT_IDLE_TIMEOUT));
         outbox = new TestOutbox(1);
         Context ctx = new TestProcessorContext().setLogger(Logger.getLogger(StreamJmsP.class));
         processor.init(outbox, ctx);

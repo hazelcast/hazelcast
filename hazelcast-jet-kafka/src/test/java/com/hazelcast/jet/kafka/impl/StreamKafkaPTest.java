@@ -107,6 +107,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
         Pipeline p = Pipeline.create();
         p.drawFrom(KafkaSources.<Integer, String, String>kafka(properties, rec -> rec.value() + "-x", topic1Name))
+         .withoutTimestamps()
          .drainTo(Sinks.list("sink"));
 
         instances[0].newJob(p);
@@ -122,7 +123,6 @@ public class StreamKafkaPTest extends KafkaTestSupport {
                 assertTrue("missing entry: " + value, list.contains(value));
             }
         }, 5);
-
     }
 
     @Test
@@ -142,6 +142,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
         Pipeline p = Pipeline.create();
         p.drawFrom(KafkaSources.kafka(properties, topic1Name, topic2Name))
+         .withoutTimestamps()
          .drainTo(Sinks.list("sink"));
 
         JobConfig config = new JobConfig();
@@ -214,7 +215,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         for (int i = 0; i < INITIAL_PARTITION_COUNT; i++) {
             Entry<Integer, String> event = entry(i + 100, Integer.toString(i));
             System.out.println("produced event " + event);
-            produce(topic1Name, i, event.getKey(), event.getValue());
+            produce(topic1Name, i, null, event.getKey(), event.getValue());
             if (i == INITIAL_PARTITION_COUNT - 1) {
                 assertEquals(new Watermark(100 - LAG), consumeEventually(processor, outbox));
             }

@@ -34,4 +34,10 @@ public interface StreamSource<T> {
      */
     @Nonnull
     String name();
+
+    /**
+     * Returns true if this source supports {@linkplain
+     * StreamSourceStage#withNativeTimestamps(long) native timestamps}.
+     */
+    boolean supportsNativeTimestamps();
 }

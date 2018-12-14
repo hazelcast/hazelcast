@@ -18,8 +18,10 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -28,12 +30,14 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.stream.IntStream.range;
 
@@ -53,22 +57,27 @@ public class StreamJmsP<T> extends AbstractProcessor {
     private final DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn;
     private final DistributedConsumer<? super Session> flushFn;
     private final DistributedFunction<? super Message, ? extends T> projectionFn;
+    private final WatermarkSourceUtil<? super T> wsu;
 
     private Session session;
     private MessageConsumer consumer;
-    private Traverser<? extends T> traverser;
+    private Traverser<Object> traverser;
 
     StreamJmsP(Connection connection,
                DistributedFunction<? super Connection, ? extends Session> sessionFn,
                DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
                DistributedConsumer<? super Session> flushFn,
-               DistributedFunction<? super Message, ? extends T> projectionFn
+               DistributedFunction<? super Message, ? extends T> projectionFn,
+               EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.connection = connection;
         this.sessionFn = sessionFn;
         this.consumerFn = consumerFn;
         this.flushFn = flushFn;
         this.projectionFn = projectionFn;
+
+        wsu = new WatermarkSourceUtil<>(eventTimePolicy);
+        wsu.increasePartitionCount(1);
     }
 
     /**
@@ -81,9 +90,9 @@ public class StreamJmsP<T> extends AbstractProcessor {
             @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn,
             @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
             @Nonnull DistributedConsumer<? super Session> flushFn,
-            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn
-    ) {
-        return new Supplier<>(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn);
+            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
+        return new Supplier<>(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy);
     }
 
     @Override
@@ -91,8 +100,17 @@ public class StreamJmsP<T> extends AbstractProcessor {
         session = sessionFn.apply(connection);
         consumer = consumerFn.apply(session);
         traverser = ((Traverser<Message>) () -> uncheckCall(() -> consumer.receiveNoWait()))
-                .map(projectionFn)
+                .flatMap(t -> wsu.handleEvent(projectionFn.apply(t), 0, handleJmsTimestamp(t)))
                 .peek(item -> flushFn.accept(session));
+    }
+
+    private long handleJmsTimestamp(Message msg) {
+        try {
+            // as per `getJMSTimestamp` javadoc, it can return 0 if the timestamp was optimized away
+            return msg.getJMSTimestamp() == 0 ? WatermarkSourceUtil.NO_NATIVE_TIME : msg.getJMSTimestamp();
+        } catch (JMSException e) {
+            throw sneakyThrow(e);
+        }
     }
 
     @Override
@@ -116,6 +134,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
         private final DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn;
         private final DistributedConsumer<? super Session> flushFn;
         private final DistributedFunction<? super Message, ? extends T> projectionFn;
+        private final EventTimePolicy<? super T> eventTimePolicy;
 
         private transient Connection connection;
 
@@ -123,12 +142,15 @@ public class StreamJmsP<T> extends AbstractProcessor {
                          DistributedFunction<? super Connection, ? extends Session> sessionFn,
                          DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
                          DistributedConsumer<? super Session> flushFn,
-                         DistributedFunction<? super Message, ? extends T> projectionFn) {
+                         DistributedFunction<? super Message, ? extends T> projectionFn,
+                         EventTimePolicy<? super T> eventTimePolicy
+        ) {
             this.connectionSupplier = connectionSupplier;
             this.sessionFn = sessionFn;
             this.consumerFn = consumerFn;
             this.flushFn = flushFn;
             this.projectionFn = projectionFn;
+            this.eventTimePolicy = eventTimePolicy;
         }
 
         @Override
@@ -148,7 +170,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
         @Override
         public Collection<? extends Processor> get(int count) {
             return range(0, count)
-                    .mapToObj(i -> new StreamJmsP<>(connection, sessionFn, consumerFn, flushFn, projectionFn))
+                    .mapToObj(i ->
+                            new StreamJmsP<>(connection, sessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy))
                     .collect(Collectors.toList());
         }
     }

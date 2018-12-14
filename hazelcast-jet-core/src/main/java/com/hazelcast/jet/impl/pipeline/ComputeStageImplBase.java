@@ -51,6 +51,7 @@ import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
@@ -89,29 +90,31 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
-    public StreamStage<T> addTimestamps() {
-        return addTimestamps(o -> System.currentTimeMillis(), 0);
-    }
-
-    @Nonnull
-    @SuppressWarnings("unchecked")
     public StreamStage<T> addTimestamps(
             @Nonnull DistributedToLongFunction<? super T> timestampFn, long allowedLateness
     ) {
+        return addTimestampsInt(timestampFn, allowedLateness, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    StreamStage<T> addTimestampsInt(
+            @Nullable DistributedToLongFunction<? super T> timestampFn,
+            long allowedLateness,
+            boolean tryAddToSource) {
         checkSerializable(timestampFn, "timestampFn");
-        checkFalse(hasJetEvents(), "This stage already has timestamps assigned to it.");
+        checkFalse(hasJetEvents(), "This stage already has timestamps assigned to it");
 
         DistributedSupplier<WatermarkPolicy> wmPolicy = limitingLag(allowedLateness);
-        EventTimePolicy<T> wmParams = eventTimePolicy(
+        EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, JetEvent::jetEvent, wmPolicy, NULL_EMIT_POLICY, DEFAULT_IDLE_TIMEOUT
         );
 
-        if (transform instanceof StreamSourceTransform) {
-            ((StreamSourceTransform<T>) transform).setEventTimePolicy(wmParams);
+        if (tryAddToSource && transform instanceof StreamSourceTransform) {
+            ((StreamSourceTransform<T>) transform).setEventTimePolicy(eventTimePolicy);
             this.fnAdapter = ADAPT_TO_JET_EVENT;
             return (StreamStage<T>) this;
         }
-        TimestampTransform<T> tsTransform = new TimestampTransform<>(transform, wmParams);
+        TimestampTransform<T> tsTransform = new TimestampTransform<>(transform, eventTimePolicy);
         pipelineImpl.connect(transform, tsTransform);
         return new StreamStageImpl<>(tsTransform, ADAPT_TO_JET_EVENT, pipelineImpl);
     }

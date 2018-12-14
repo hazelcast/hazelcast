@@ -59,10 +59,11 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         String stageName = randomName();
 
         //When
-        srcStage.setName(stageName);
+        StreamStage<Integer> stage = srcStage.withoutTimestamps();
+        stage.setName(stageName);
 
         //Then
-        assertEquals(stageName, srcStage.name());
+        assertEquals(stageName, stage.name());
     }
 
     @Test
@@ -71,10 +72,11 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         int localParallelism = 10;
 
         //When
-        srcStage.setLocalParallelism(localParallelism);
+        StreamStage<Integer> stage = srcStage.withoutTimestamps();
+        stage.setLocalParallelism(localParallelism);
 
         //Then
-        assertEquals(localParallelism, transformOf(srcStage).localParallelism());
+        assertEquals(localParallelism, transformOf(stage).localParallelism());
     }
 
     @Test
@@ -85,7 +87,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         DistributedFunction<Integer, String> mapFn = item -> item + "-x";
 
         // When
-        StreamStage<String> mapped = srcStage.map(mapFn);
+        StreamStage<String> mapped = srcStage.withoutTimestamps().map(mapFn);
 
         // Then
         mapped.drainTo(sink);
@@ -102,7 +104,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         DistributedPredicate<Integer> filterFn = i -> i % 2 == 1;
 
         // When
-        StreamStage<Integer> filtered = srcStage.filter(filterFn);
+        StreamStage<Integer> filtered = srcStage.withoutTimestamps().filter(filterFn);
 
         // Then
         filtered.drainTo(sink);
@@ -119,7 +121,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         DistributedFunction<Integer, Stream<String>> flatMapFn = o -> Stream.of(o + "A", o + "B");
 
         // When
-        StreamStage<String> flatMapped = srcStage.flatMap(o -> traverseStream(flatMapFn.apply(o)));
+        StreamStage<String> flatMapped = srcStage.withoutTimestamps().flatMap(o -> traverseStream(flatMapFn.apply(o)));
 
         // Then
         flatMapped.drainTo(sink);
@@ -136,7 +138,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<String> mapped = srcStage
-                .addTimestamps()
+                .withIngestionTimestamps()
                 .mapUsingContext(ContextFactory.withCreateFn(i -> "-context"), (suffix, r) -> r + suffix);
 
         // Then
@@ -155,7 +157,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<String> mapped = srcStage
-                .addTimestamps()
+                .withIngestionTimestamps()
                 .groupingKey(i -> i)
                 .mapUsingContext(ContextFactory.withCreateFn(i -> "-keyed-context"), (suffix, k, r) -> r + suffix);
 
@@ -176,7 +178,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Integer> mapped = srcStage
-                .addTimestamps()
+                .withIngestionTimestamps()
                 .filterUsingContext(ContextFactory.withCreateFn(i -> 1), (ctx, r) -> r % 2 == ctx);
 
         // Then
@@ -197,7 +199,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Integer> mapped = srcStage
-                .addTimestamps()
+                .withIngestionTimestamps()
                 .groupingKey(i -> i)
                 .filterUsingContext(ContextFactory.withCreateFn(i -> 1), (ctx, k, r) -> r % 2 == ctx);
 
@@ -219,7 +221,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<String> flatMapped = srcStage
-                .addTimestamps()
+                .withIngestionTimestamps()
                 .flatMapUsingContext(
                         ContextFactory.withCreateFn(procCtx -> flatMapFn),
                         (ctx, o) -> traverseStream(ctx.apply(o))
@@ -242,7 +244,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<String> flatMapped = srcStage
-                .addTimestamps()
+                .withIngestionTimestamps()
                 .groupingKey(i -> i)
                 .flatMapUsingContext(
                         ContextFactory.withCreateFn(procCtx -> flatMapFn),
@@ -267,7 +269,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
             map.put(i, String.valueOf(i));
         }
 
-        srcStage.addTimestamps()
+        srcStage.withIngestionTimestamps()
                 .mapUsingReplicatedMap(map, (m, r) -> entry(r, m.get(r)))
                 .drainTo(sink);
 
@@ -290,7 +292,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         }
 
 
-        srcStage.addTimestamps()
+        srcStage.withIngestionTimestamps()
                 .mapUsingIMap(map, (m, r) -> entry(r, m.get(r)))
                 .drainTo(sink);
 
@@ -312,7 +314,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
             map.put(integer, String.valueOf(integer));
         }
 
-        srcStage.addTimestamps()
+        srcStage.withIngestionTimestamps()
                 .groupingKey(r -> r)
                 .mapUsingIMap(map, (k, v) -> Util.entry(k, v))
                 .drainTo(sink);
@@ -334,6 +336,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Entry<Integer, Long>> mapped = srcStage
+                .withoutTimestamps()
                 .groupingKey(i -> i % 2)
                 .rollingAggregate(counting());
 
@@ -357,6 +360,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Long> mapped = srcStage
+                .withoutTimestamps()
                 .rollingAggregate(counting());
 
         // Then
@@ -379,7 +383,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                 .andExportFinish(MutableReference::get);
 
         // When
-        StreamStage<Integer> rolling = srcStage.addTimestamps(i -> i, 100)
+        StreamStage<Integer> rolling = srcStage.withTimestamps(i -> i, 100)
                                                .rollingAggregate(identity);
 
         // Then
@@ -398,13 +402,13 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void merge() {
         // Given
         String src2Name = journaledMapName();
-        StreamStage<Integer> srcStage2 = drawEventJournalValues(src2Name);
+        StreamStage<Integer> srcStage2 = drawEventJournalValues(src2Name).withoutTimestamps();
         List<Integer> input = sequence(itemCount);
         addToSrcMapJournal(input);
         putToMap(jet().getMap(src2Name), input);
 
         // When
-        StreamStage<Integer> merged = srcStage.merge(srcStage2);
+        StreamStage<Integer> merged = srcStage.withoutTimestamps().merge(srcStage2);
 
         // Then
         merged.drainTo(sink);
@@ -427,7 +431,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         BatchStage<Entry<Integer, String>> enrichingStage = p.drawFrom(Sources.map(enrichingName));
 
         // When
-        StreamStage<Tuple2<Integer, String>> hashJoined = srcStage.hashJoin(
+        StreamStage<Tuple2<Integer, String>> hashJoined = srcStage.withoutTimestamps().hashJoin(
                 enrichingStage,
                 joinMapEntries(wholeItem()),
                 Tuple2::tuple2
@@ -458,7 +462,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         input.forEach(i -> enriching2.put(i, i + "B"));
 
         // When
-        StreamStage<Tuple3<Integer, String, String>> hashJoined = srcStage.hashJoin2(
+        StreamStage<Tuple3<Integer, String, String>> hashJoined = srcStage.withoutTimestamps().hashJoin2(
                 enrichingStage1, joinMapEntries(wholeItem()),
                 enrichingStage2, joinMapEntries(wholeItem()),
                 Tuple3::tuple3
@@ -491,7 +495,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         });
 
         // When
-        StreamHashJoinBuilder<Integer> b = srcStage.hashJoinBuilder();
+        StreamHashJoinBuilder<Integer> b = srcStage.withoutTimestamps().hashJoinBuilder();
         Tag<String> tagA = b.add(enrichingStage1, joinMapEntries(wholeItem()));
         Tag<String> tagB = b.add(enrichingStage2, joinMapEntries(wholeItem()));
         GeneralStage<Tuple2<Integer, ItemsByTag>> joined = b.build((t1, t2) -> tuple2(t1, t2));
@@ -512,10 +516,10 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // Given
         List<Integer> input = sequence(itemCount);
         addToSrcMapJournal(input);
-        DistributedFunction<Integer, String> mapFn = o -> Integer.toString(o) + "-x";
+        DistributedFunction<Integer, String> mapFn = o -> o + "-x";
 
         // When
-        StreamStage<String> custom = srcStage.customTransform("map", Processors.mapP(mapFn));
+        StreamStage<String> custom = srcStage.withoutTimestamps().customTransform("map", Processors.mapP(mapFn));
 
         // Then
         custom.drainTo(sink);
@@ -533,7 +537,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         addToSrcMapJournal(input);
 
         // When
-        StreamStage<Integer> peeked = srcStage.addTimestamps().peek();
+        StreamStage<Integer> peeked = srcStage.withIngestionTimestamps().peek();
 
         // Then
         peeked.drainTo(sink);
@@ -550,6 +554,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         srcStage
+         .withoutTimestamps()
          .filter(filterFn)
          .peek(Object::toString)
          .drainTo(sink);

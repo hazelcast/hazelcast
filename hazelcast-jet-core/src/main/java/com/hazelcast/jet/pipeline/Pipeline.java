@@ -62,7 +62,7 @@ public interface Pipeline {
      * @param <T> the type of source data items
      */
     @Nonnull
-    <T> StreamStage<T> drawFrom(@Nonnull StreamSource<? extends T> source);
+    <T> StreamSourceStage<T> drawFrom(@Nonnull StreamSource<? extends T> source);
 
     /**
      * Attaches the supplied sink to two pipeline stages. Returns the

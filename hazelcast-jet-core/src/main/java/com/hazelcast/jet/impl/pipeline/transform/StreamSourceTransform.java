@@ -39,26 +39,18 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
 
     @Nullable
     private EventTimePolicy<? super T> eventTimePolicy;
+    private final boolean supportsNativeTimestamps;
 
     public StreamSourceTransform(
             @Nonnull String name,
-            @Nullable EventTimePolicy<? super T> initialEventTimePolicy,
             @Nonnull Function<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn,
-            boolean emitsWatermarks
+            boolean emitsWatermarks,
+            boolean supportsNativeTimestamps
     ) {
         super(name, emptyList());
-        this.eventTimePolicy = initialEventTimePolicy;
         this.metaSupplierFn = metaSupplierFn;
         this.emitsWatermarks = emitsWatermarks;
-    }
-
-    public StreamSourceTransform(
-            @Nonnull String name,
-            @Nonnull Function<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier>
-                    metaSupplierFn,
-            boolean emitsWatermarks
-    ) {
-        this(name, null, metaSupplierFn, emitsWatermarks);
+        this.supportsNativeTimestamps = supportsNativeTimestamps;
     }
 
     @Override
@@ -78,13 +70,13 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
             //                    isolated
             //                       v
             //                  -------------
-            //                 |  insertWMP  |
+            //                 |  insertWmP  |
             //                  -------------
             String v1name = p.uniqueVertexName(name());
             Vertex v1 = p.dag.newVertex(v1name, metaSupplierFn.apply(eventTimePolicy))
                              .localParallelism(localParallelism());
             PlannerVertex pv2 = p.addVertex(
-                    this, v1name + "-insertWM", localParallelism(), insertWatermarksP(eventTimePolicy)
+                    this, v1name + "-add-timestamps", localParallelism(), insertWatermarksP(eventTimePolicy)
             );
             p.dag.edge(between(v1, pv2.v).isolated());
         }
@@ -95,11 +87,16 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
         return eventTimePolicy;
     }
 
-    public void setEventTimePolicy(@Nonnull EventTimePolicy<? super T> wmParams) {
-        this.eventTimePolicy = wmParams;
+    public void setEventTimePolicy(@Nonnull EventTimePolicy<? super T> eventTimePolicy) {
+        this.eventTimePolicy = eventTimePolicy;
     }
 
     public boolean emitsJetEvents() {
         return eventTimePolicy != null;
+    }
+
+    @Override
+    public boolean supportsNativeTimestamps() {
+        return supportsNativeTimestamps;
     }
 }

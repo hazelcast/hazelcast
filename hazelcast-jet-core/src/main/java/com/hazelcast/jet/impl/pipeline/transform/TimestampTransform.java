@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class TimestampTransform<T> extends AbstractTransform {
     @Nonnull
@@ -32,8 +33,10 @@ public class TimestampTransform<T> extends AbstractTransform {
             @Nonnull Transform upstream,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        super("timestamp", upstream);
+        super("add-timestamps", upstream);
         this.eventTimePolicy = eventTimePolicy;
+        checkNotNull(eventTimePolicy.timestampFn(),
+                "timestampFn must not be null if timestamps aren't added in the source");
     }
 
     @Override

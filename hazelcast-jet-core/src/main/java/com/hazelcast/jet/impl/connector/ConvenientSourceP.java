@@ -20,6 +20,8 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
+import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.datamodel.TimestampedItem;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,8 +32,8 @@ import java.util.function.Function;
 /**
  * Implements a data source the user created using the Source Builder API.
  *
- * @see com.hazelcast.jet.core.processor.SourceProcessors#convenientSourceP
- * @see com.hazelcast.jet.core.processor.SourceProcessors#convenientTimestampedSourceP
+ * @see SourceProcessors#convenientSourceP
+ * @see SourceProcessors#convenientTimestampedSourceP
  */
 public class ConvenientSourceP<S, T> extends AbstractProcessor {
 
@@ -50,9 +52,9 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
     }
 
     private final Function<? super Context, ? extends S> createFn;
-    private final BiConsumer<? super S, ? super SourceBufferConsumerSide<? extends T>> fillBufferFn;
+    private final BiConsumer<? super S, ? super SourceBufferConsumerSide<?>> fillBufferFn;
     private final Consumer<? super S> destroyFn;
-    private final SourceBufferConsumerSide<? extends T> buffer;
+    private final SourceBufferConsumerSide<?> buffer;
     private final WatermarkSourceUtil<T> wsu;
 
     private boolean initialized;
@@ -61,9 +63,9 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
 
     public ConvenientSourceP(
             @Nonnull Function<? super Context, ? extends S> createFn,
-            @Nonnull BiConsumer<? super S, ? super SourceBufferConsumerSide<? extends T>> fillBufferFn,
+            @Nonnull BiConsumer<? super S, ? super SourceBufferConsumerSide<?>> fillBufferFn,
             @Nonnull Consumer<? super S> destroyFn,
-            @Nonnull SourceBufferConsumerSide<? extends T> buffer,
+            @Nonnull SourceBufferConsumerSide<?> buffer,
             @Nullable EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.createFn = createFn;
@@ -97,7 +99,11 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
             traverser =
                     wsu == null ? buffer.traverse()
                     : buffer.isEmpty() ? wsu.handleNoEvent()
-                    : buffer.traverse().flatMap(t -> wsu.handleEvent(t, 0));
+                    : buffer.traverse().flatMap(t -> {
+                        // if wsu is not null, we know that T is TimestampedItem<?>
+                        TimestampedItem<T> t1 = (TimestampedItem<T>) t;
+                        return wsu.handleEvent(t1.item(), 0, t1.timestamp());
+                    });
         }
         boolean bufferEmpty = emitFromTraverser(traverser);
         if (bufferEmpty) {

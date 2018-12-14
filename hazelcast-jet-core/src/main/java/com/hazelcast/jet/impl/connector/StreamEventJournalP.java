@@ -146,6 +146,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         // up, there might be dropped late events due to several events being read
         // from one partition before the rest and the partition advancing ahead of
         // others. This might be changed in the future and/or made optional.
+        assert partitionIds.length > 0 : "no partitions assigned";
         watermarkSourceUtil.increasePartitionCount(1);
     }
 
@@ -186,7 +187,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             if (event != null) {
                 // Always use partition index of 0, treating all the partitions the
                 // same for coalescing purposes.
-                traverser = watermarkSourceUtil.handleEvent(event, 0);
+                traverser = watermarkSourceUtil.handleEvent(event, 0, WatermarkSourceUtil.NO_NATIVE_TIME);
                 if (!emitFromTraverser(traverser)) {
                     return;
                 }

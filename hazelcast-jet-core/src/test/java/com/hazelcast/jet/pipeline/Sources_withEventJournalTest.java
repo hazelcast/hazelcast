@@ -113,6 +113,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.drawFrom(source)
+         .withoutTimestamps()
          .map(entryValue())
          .drainTo(sink);
         jet().newJob(p);
@@ -176,7 +177,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         range(0, itemCount).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         // When
-        p.drawFrom(source).drainTo(sink);
+        p.drawFrom(source).withoutTimestamps().drainTo(sink);
         jet().newJob(p);
 
         // Then
@@ -206,7 +207,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         StreamSource<Entry<Integer, Integer>> source = Sources.mapJournal(mapName, START_FROM_OLDEST);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.drawFrom(source).withoutTimestamps().drainTo(sink);
         jet().newJob(p);
         IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
         assertTrueEventually(() -> {
@@ -237,7 +238,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         StreamSource<Entry<Integer, Integer>> source = Sources.cacheJournal(cacheName, START_FROM_OLDEST);
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.drawFrom(source).withoutTimestamps().drainTo(sink);
         jet().newJob(p);
         IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
         assertTrueEventually(() -> {
@@ -291,7 +292,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         input.forEach(i -> srcMap.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
         // When we start the job...
-        p.drawFrom(source).drainTo(sink);
+        p.drawFrom(source).withoutTimestamps().drainTo(sink);
         jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
@@ -350,6 +351,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.drawFrom(source)
+         .withoutTimestamps()
          .map(entryValue())
          .drainTo(sink);
         jet().newJob(p);
@@ -418,6 +420,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.drawFrom(source)
+         .withoutTimestamps()
          .drainTo(sink);
         jet().newJob(p);
 

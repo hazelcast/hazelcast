@@ -353,23 +353,6 @@ public interface GeneralStage<T> extends Stage {
     <K> GeneralStageWithKey<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
     /**
-     * Adds a timestamp to each item in the stream using the current system
-     * time. <strong>NOTE:</strong> when snapshotting is enabled to achieve
-     * fault tolerance, after a restart Jet replays all the events that were
-     * already processed since the last snapshot. These events will now get
-     * different timestamps. If you want your job to be fault-tolerant, the
-     * events in the stream must carry their own timestamp and you must use
-     * {@link #addTimestamps(DistributedToLongFunction, long)
-     * addTimestamps(timestampFn, allowedLag} to extract them.
-     *
-     * @throws IllegalArgumentException if this stage already has timestamps
-     */
-    @Nonnull
-    default StreamStage<T> addTimestamps() {
-        return addTimestamps(t -> System.currentTimeMillis(), 0);
-    }
-
-    /**
      * Adds a timestamp to each item in the stream using the supplied function
      * and specifies the allowed amount of disorder between them. As the stream
      * moves on, the timestamps must increase, but you can tell Jet to accept
@@ -390,13 +373,19 @@ public interface GeneralStage<T> extends Stage {
      * don't allow enough lag, you face the risk of failing to account for the
      * data that came in after the results were already emitted.
      * <p>
-     * You should strongly prefer adding this stage right after the source. In
-     * that case Jet can compute the watermark inside the source connector,
-     * taking into account its partitioning. It can maintain a separate
-     * watermark value for each partition and coalesce them into the overall
-     * watermark without causing dropped events. If you add the timestamps
-     * later on, events from different partitions may be mixed, increasing
-     * the perceived event lag and causing more dropped events.
+     * <b>Note:</b> This method adds the timestamps after the source emitted
+     * them. When timestamps are added at this moment, source partitions won't
+     * be coalesced properly and will be treated as a single stream. The
+     * allowed lag will need to cover for the additional disorder introduced by
+     * merging the streams. The streams are merged in an unpredictable order
+     * and it can happen, for example, that after the job was suspended for a
+     * long time, there can be a very recent event in partition1 and a very old
+     * event partition2. If partition1 happens to be merged first, the recent
+     * event could render the old one late, if the allowed lag is not large
+     * enough.<br>
+     * To add timestamps in source, use {@link
+     * StreamSourceStage#withTimestamps(DistributedToLongFunction, long)
+     * withTimestamps()}.
      * <p>
      * <b>Warning:</b> make sure the property you access in {@code timestampFn}
      * isn't null, it would fail the job. Also that there are no nonsensical

@@ -840,9 +840,9 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that swallows all its input (if any) and
-     * does nothing with it and produces no output. It swallows the restored
-     * state as well.
+     * Returns a supplier of processor that swallows all its input (if any),
+     * does nothing with it, produces no output and completes immediately. It
+     * also swallows any restored snapshot data.
      */
     @Nonnull
     public static DistributedSupplier<Processor> noopP() {

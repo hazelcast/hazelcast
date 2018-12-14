@@ -159,6 +159,7 @@ public class JobSummaryTest extends JetTestSupport {
     public void when_job_failed() {
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.mapJournal("invalid", JournalInitialPosition.START_FROM_OLDEST))
+                .withoutTimestamps()
                 .drainTo(Sinks.noop());
         Job job = instance.newJob(p, new JobConfig().setName("jobA"));
         String msg = "";
@@ -178,6 +179,7 @@ public class JobSummaryTest extends JetTestSupport {
     public Pipeline newStreamPipeline() {
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.mapJournal(SOURCE_NAME, JournalInitialPosition.START_FROM_OLDEST))
+                .withoutTimestamps()
                 .drainTo(Sinks.noop());
         return p;
     }

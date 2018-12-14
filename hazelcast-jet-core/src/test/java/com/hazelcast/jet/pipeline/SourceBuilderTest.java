@@ -138,7 +138,8 @@ public class SourceBuilderTest extends PipelineTestSupport {
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
-                    .drainTo(sinkList());
+             .withoutTimestamps()
+             .drainTo(sinkList());
             jet().newJob(p).join();
             List<String> expected = IntStream.range(0, itemCount).mapToObj(i -> "line" + i).collect(toList());
             assertEquals(expected, new ArrayList<>(sinkList));
@@ -170,7 +171,8 @@ public class SourceBuilderTest extends PipelineTestSupport {
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
-                    .drainTo(sinkList());
+             .withoutTimestamps()
+             .drainTo(sinkList());
             jet().newJob(p).join();
 
             Map<String, Integer> expected = IntStream.range(0, itemCount)
@@ -207,6 +209,7 @@ public class SourceBuilderTest extends PipelineTestSupport {
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
+                    .withNativeTimestamps(0)
                     .window(tumbling(1))
                     .aggregate(AggregateOperations.counting())
                     .drainTo(sinkList());
@@ -240,13 +243,13 @@ public class SourceBuilderTest extends PipelineTestSupport {
                             buf.add(line, timestampFn.apply(line));
                         }
                     })
-                    .allowedLateness(lateness)
                     .destroyFn(BufferedReader::close)
                     .build();
 
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
+                    .withNativeTimestamps(lateness)
                     .window(tumbling(1))
                     .aggregate(AggregateOperations.counting())
                     .drainTo(sinkList());
@@ -288,6 +291,7 @@ public class SourceBuilderTest extends PipelineTestSupport {
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
+                    .withNativeTimestamps(0)
                     .window(tumbling(1))
                     .aggregate(AggregateOperations.counting())
                     .drainTo(sinkList());

@@ -21,12 +21,13 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 
 /**
- * A holder of functions and parameters Jet needs handle event time and the
+ * A holder of functions and parameters Jet needs to handle event time and the
  * associated watermarks. These are the components:
  * <ul><li>
  *     {@code timestampFn}: extracts the timestamp from an event in the stream
@@ -76,7 +77,6 @@ public final class EventTimePolicy<T> implements Serializable {
         }
     };
 
-
     private final DistributedToLongFunction<? super T> timestampFn;
     private final DistributedObjLongBiFunction<? super T, ?> wrapFn;
     private final DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn;
@@ -84,7 +84,7 @@ public final class EventTimePolicy<T> implements Serializable {
     private final long idleTimeoutMillis;
 
     private EventTimePolicy(
-            @Nonnull DistributedToLongFunction<? super T> timestampFn,
+            @Nullable DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
             @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
@@ -101,7 +101,8 @@ public final class EventTimePolicy<T> implements Serializable {
      * Creates and returns a new event time policy. To get a policy that
      * results in no timestamping, call {@link #noEventTime()}.
      *
-     * @param timestampFn       function that extracts the timestamp from the event
+     * @param timestampFn       function that extracts the timestamp from the event; if null, Jet will
+     *                          use the source's native timestamp
      * @param wrapFn            function that transforms the received item and its timestamp into the
      *                          emitted item
      * @param newWmPolicyFn     factory of the watermark policy objects
@@ -110,7 +111,7 @@ public final class EventTimePolicy<T> implements Serializable {
      *                          If <= 0, partitions will never be marked as idle.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
-            @Nonnull DistributedToLongFunction<? super T> timestampFn,
+            @Nullable DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
             @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
@@ -124,19 +125,20 @@ public final class EventTimePolicy<T> implements Serializable {
      * results in no watermarks being emitted, call {@link
      * #noEventTime()}.
      *
-     * @param timestampFn       function that extracts the timestamp from the event
-     * @param wmPolicy          factory of the watermark policy objects
+     * @param timestampFn       function that extracts the timestamp from the event; if null, Jet will
+     *                          use the source's native timestamp
+     * @param newWmPolicyFn     factory of the watermark policy objects
      * @param wmEmitPolicy      watermark emission policy (decides how to suppress redundant watermarks)
      * @param idleTimeoutMillis the timeout after which a partition will be marked as <em>idle</em>.
      *                          If <= 0, partitions will never be marked as idle.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
-            @Nonnull DistributedToLongFunction<? super T> timestampFn,
-            @Nonnull DistributedSupplier<? extends WatermarkPolicy> wmPolicy,
+            @Nullable DistributedToLongFunction<? super T> timestampFn,
+            @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
             long idleTimeoutMillis
     ) {
-        return eventTimePolicy(timestampFn, noWrapping(), wmPolicy, wmEmitPolicy, idleTimeoutMillis);
+        return eventTimePolicy(timestampFn, noWrapping(), newWmPolicyFn, wmEmitPolicy, idleTimeoutMillis);
     }
 
     /**
@@ -157,7 +159,7 @@ public final class EventTimePolicy<T> implements Serializable {
     /**
      * Returns the function that extracts the timestamp from the event.
      */
-    @Nonnull
+    @Nullable
     public DistributedToLongFunction<? super T> timestampFn() {
         return timestampFn;
     }

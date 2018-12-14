@@ -373,7 +373,7 @@ public class SourcesTest extends PipelineTestSupport {
             StreamSource<String> source = Sources.socket("localhost", 8176, UTF_8);
 
             // Then
-            p.drawFrom(source).drainTo(sink);
+            p.drawFrom(source).withoutTimestamps().drainTo(sink);
             execute();
             assertEquals(6, sinkList.size());
         }
@@ -412,7 +412,7 @@ public class SourcesTest extends PipelineTestSupport {
         StreamSource<String> source = Sources.fileWatcher(directory.getPath());
 
         // Then
-        p.drawFrom(source).drainTo(sink);
+        p.drawFrom(source).withoutTimestamps().drainTo(sink);
         Job job = jet().newJob(p);
         // wait for the processor to initialize
         assertJobStatusEventually(job, JobStatus.RUNNING);

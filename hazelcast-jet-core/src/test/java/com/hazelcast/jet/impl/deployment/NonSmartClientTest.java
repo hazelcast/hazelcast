@@ -169,8 +169,8 @@ public class NonSmartClientTest extends JetTestSupport {
     private Pipeline streamingPipeline() {
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.mapJournal("journal" + randomMapName(), JournalInitialPosition.START_FROM_OLDEST))
+         .withoutTimestamps()
          .drainTo(Sinks.map(randomMapName()));
         return p;
     }
-
 }

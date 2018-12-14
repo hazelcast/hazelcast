@@ -79,7 +79,7 @@ public class KafkaSinkTest extends KafkaTestSupport {
     }
 
     @Test
-    public void testWriteToTopic() throws Exception {
+    public void testWriteToTopic() {
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.map(SOURCE_IMAP_NAME))
          .drainTo(KafkaSinks.kafka(properties, topic));
@@ -89,7 +89,7 @@ public class KafkaSinkTest extends KafkaTestSupport {
     }
 
     @Test
-    public void testWriteToSpecificPartitions() throws Exception {
+    public void testWriteToSpecificPartitions() {
         String localTopic = topic;
 
         Pipeline p = Pipeline.create();
@@ -103,7 +103,7 @@ public class KafkaSinkTest extends KafkaTestSupport {
     }
 
     @Test
-    public void when_recordLingerEnabled_then_sentOnCompletion() throws Exception {
+    public void when_recordLingerEnabled_then_sentOnCompletion() {
         // When
         properties.setProperty("linger.ms", "3600000"); // 1 hour
 
@@ -128,7 +128,7 @@ public class KafkaSinkTest extends KafkaTestSupport {
     }
 
     @Test
-    public void when_recordLingerEnabled_then_sentOnSnapshot() throws Exception {
+    public void when_recordLingerEnabled_then_sentOnSnapshot() {
         // When
         properties.setProperty("linger.ms", "3600000"); // 1 hour
 

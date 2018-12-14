@@ -98,8 +98,8 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
 
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.mapJournal(sourceMap, JournalInitialPosition.START_FROM_OLDEST))
+                .withTimestamps(Map.Entry::getValue, 0)
                 .setLocalParallelism(PARTITION_COUNT)
-                .addTimestamps(Map.Entry::getValue, 0)
                 .groupingKey(Map.Entry::getKey)
                 .window(WindowDefinition.sliding(1, 1))
                 .aggregate(AggregateOperations.counting()).setLocalParallelism(PARTITION_COUNT)

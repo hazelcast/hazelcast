@@ -25,6 +25,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -49,8 +50,8 @@ public interface Job {
 
     /**
      * Returns the name of this job or {@code null} if no name was supplied.
-     * <p>
-     * Jobs can be named through {@link JobConfig#setName(String)} prior to submission.
+     * You can set the name of the job using {@link JobConfig#setName(String)}
+     * before submitting it.
      */
     @Nullable
     default String getName() {
@@ -58,11 +59,9 @@ public interface Job {
     }
 
     /**
-     * Returns the time when the job was submitted to the cluster.
-     * <p>
-     * The time is assigned by reading {@code System.currentTimeMillis()} of
-     * the master member that executes the job for the first time. It doesn't
-     * change on restart.
+     * Returns the time when you submitted the job. Jet assigns the time by
+     * reading {@code System.currentTimeMillis()} on the master member that
+     * executes the job for the first time.
      */
     long getSubmissionTime();
 
@@ -85,7 +84,8 @@ public interface Job {
     /**
      * Waits for the job to complete and throws an exception if the job
      * completes with an error. Does not return if the job gets suspended.
-     * Never returns for streaming (unbounded) jobs unless they fail.
+     * Never returns for streaming (unbounded) jobs unless they fail or are
+     * cancelled.
      * <p>
      * Shorthand for <code>job.getFuture().get()</code>.
      */
@@ -153,9 +153,9 @@ public interface Job {
      * cancelled. Call {@link #getStatus()} to find out and possibly try to
      * cancel again.
      * <p>
-     * Job status will be {@link JobStatus#COMPLETED} after cancellation, even
-     * though the job didn't really complete. {@link Job#join()} will also
-     * return without an exception.
+     * The job status will be {@link JobStatus#COMPLETED} after cancellation,
+     * even though the job didn't really complete. {@link Job#join()} will
+     * throw a {@link CancellationException}.
      * <p>
      * See {@link #cancelAndExportSnapshot(String)} to cancel with a terminal
      * snapshot.
@@ -191,8 +191,8 @@ public interface Job {
      * #exportSnapshot(String)}.
      * <p>
      * The job status will be {@link JobStatus#COMPLETED} after cancellation,
-     * even though the job didn't really complete. {@link Job#join()} won't
-     * throw an exception.
+     * even though the job didn't really complete. {@link Job#join()} will
+     * throw a {@link CancellationException}.
      *
      * @param name name of the snapshot. If name is already used, it will be
      *            overwritten

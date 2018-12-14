@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
@@ -39,15 +40,22 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.Collections.synchronizedList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.AUTO_ACKNOWLEDGE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JmsIntegrationTest extends PipelineTestSupport {
 
@@ -63,6 +71,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     @Test
     public void sourceQueue() {
         p.drawFrom(Sources.jmsQueue(() -> broker.createConnectionFactory(), destinationName))
+         .withoutTimestamps()
          .map(TEXT_MESSAGE_FN)
          .drainTo(sink);
 
@@ -78,6 +87,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     @Test
     public void sourceTopic() {
         p.drawFrom(Sources.jmsTopic(() -> broker.createConnectionFactory(), destinationName))
+         .withoutTimestamps()
          .map(TEXT_MESSAGE_FN)
          .drainTo(sink);
 
@@ -129,6 +139,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                                               .build();
 
         p.drawFrom(source)
+         .withoutTimestamps()
          .map(TEXT_MESSAGE_FN)
          .drainTo(sink);
 
@@ -151,7 +162,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                 .flushFn(DistributedConsumer.noop())
                 .build(TEXT_MESSAGE_FN);
 
-        p.drawFrom(source).drainTo(sink);
+        p.drawFrom(source).withoutTimestamps().drainTo(sink);
 
         startJob(true);
 
@@ -163,12 +174,46 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     }
 
     @Test
+    public void sourceTopic_withNativeTimestamps() throws Exception {
+        p.drawFrom(Sources.jmsTopic(() -> broker.createConnectionFactory(), destinationName))
+         .withNativeTimestamps(0)
+         .map(Message::getJMSTimestamp)
+         .window(tumbling(1))
+         .aggregate(counting())
+         .drainTo(sink);
+
+        startJob(true);
+        sendMessages(false);
+        // sleep some time and emit a flushing message, that won't make it to the output, because
+        // the messages with the highest timestamp are not emitted
+        sleepMillis(500);
+        sendMessage(destinationName, false);
+
+        assertTrueEventually(() -> {
+            long countSum = sinkList.stream().mapToLong(o -> ((TimestampedItem<Long>) o).item()).sum();
+            assertEquals(MESSAGE_COUNT, countSum);
+
+            // There's no way to see the JetEvent's timestamp by the user code. In order to check
+            // the native timestamp, we aggregate the events into tumbling(1) windows and check
+            // the timestamps of the windows: we assert that it is around the current time.
+            long avgTime = (long) sinkList.stream().mapToLong(o -> ((TimestampedItem<Long>) o).timestamp())
+                                          .average().orElse(0);
+            long tenMinutes = MINUTES.toMillis(1);
+            long now = System.currentTimeMillis();
+            assertTrue("Time too much off: " + Instant.ofEpochMilli(avgTime).atZone(ZoneId.systemDefault()),
+                    avgTime > now - tenMinutes && avgTime < now + tenMinutes);
+        }, 10);
+
+        cancelJob();
+    }
+
+    @Test
     public void sourceTopic_whenBuilder() {
         StreamSource<String> source = Sources.<String>jmsTopicBuilder(() -> broker.createConnectionFactory())
                 .destinationName(destinationName)
                 .build(TEXT_MESSAGE_FN);
 
-        p.drawFrom(source).drainTo(sink);
+        p.drawFrom(source).withoutTimestamps().drainTo(sink);
 
         startJob(true);
         sleepSeconds(1);
@@ -188,7 +233,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                 .destinationName(destinationName)
                 .build(TEXT_MESSAGE_FN);
 
-        p.drawFrom(source).drainTo(sink);
+        p.drawFrom(source).withoutTimestamps().drainTo(sink);
 
         startJob(true);
         sleepSeconds(1);

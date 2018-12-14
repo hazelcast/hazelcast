@@ -186,7 +186,8 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
                             return Traversers.empty();
                         }
                         TopicPartition topicPartition = new TopicPartition(record.topic(), record.partition());
-                        return watermarkSourceUtil.handleEvent(projectedRecord, currentAssignment.get(topicPartition));
+                        return watermarkSourceUtil.handleEvent(projectedRecord, currentAssignment.get(topicPartition),
+                                record.timestamp());
                     });
 
             emitFromTraverser(traverser);
