@@ -41,6 +41,7 @@ class NodeExtensionCommon {
 
     private final Node node;
     private JetService jetService;
+    private ILogger logger;
 
     NodeExtensionCommon(Node node) {
         this.node = node;
@@ -49,13 +50,14 @@ class NodeExtensionCommon {
     void afterStart() {
         jetService = node.nodeEngine.getService(JetService.SERVICE_NAME);
         jetService.getJobCoordinationService().startScanningForJobs();
+        logger = node.getLogger(getClass().getName());
     }
 
     void beforeClusterStateChange(ClusterState requestedState) {
         if (requestedState != PASSIVE) {
             return;
         }
-        jetService.getJobCoordinationService().shutdown();
+        logger.info("Jet is preparing to enter the PASSIVE cluster state");
         NodeEngineImpl ne = node.nodeEngine;
         try {
             ne.getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,

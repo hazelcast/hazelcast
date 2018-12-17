@@ -249,7 +249,7 @@ public class ExportSnapshotTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("p", DummyStatefulP::new).localParallelism(1);
         dag.newVertex("failing", () -> new NoOutputSourceP());
-        JetInstance[] instances = createJetMembers(new JetConfig(), 2);
+        JetInstance[] instances = createJetMembers(2);
         JetInstance client = fromClient ? createJetClient() : instances[0];
         Job job = client.newJob(dag,
                 new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(10));

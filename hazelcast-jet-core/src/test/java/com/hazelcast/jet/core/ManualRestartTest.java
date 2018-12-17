@@ -20,7 +20,6 @@ import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGeneratorP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
@@ -72,7 +71,7 @@ public class ManualRestartTest extends JetTestSupport {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
         dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
-        instances = createJetMembers(new JetConfig(), NODE_COUNT);
+        instances = createJetMembers(NODE_COUNT);
     }
 
     @Test

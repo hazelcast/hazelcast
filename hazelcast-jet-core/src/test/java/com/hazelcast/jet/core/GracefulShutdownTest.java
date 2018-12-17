@@ -70,7 +70,7 @@ public class GracefulShutdownTest extends JetTestSupport {
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        instances = createJetMembers(new JetConfig(), NODE_COUNT);
+        instances = createJetMembers(NODE_COUNT);
         client = createJetClient();
         EmitIntegersP.savedCounters.clear();
     }

@@ -16,10 +16,8 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Rule;
@@ -139,10 +137,7 @@ public class UtilTest extends JetTestSupport {
 
     @Test
     public void test_copyMap() throws Exception {
-        JetConfig config = new JetConfig();
-        MapConfig mapConfig = new MapConfig("*");
-        config.getHazelcastConfig().addMapConfig(mapConfig);
-        JetInstance[] instances = createJetMembers(config, 2);
+        JetInstance[] instances = createJetMembers(2);
 
         logger.info("Populating source map...");
         IMapJet<Object, Object> srcMap = instances[0].getMap("src");
