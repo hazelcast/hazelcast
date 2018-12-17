@@ -152,7 +152,6 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -209,7 +208,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final MetricsRegistryImpl metricsRegistry;
     private final Statistics statistics;
     private final Diagnostics diagnostics;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private final ClientExceptionFactory clientExceptionFactory;
@@ -889,7 +888,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 
@@ -965,7 +964,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
         metricsRegistry.shutdown();
         diagnostics.shutdown();
-        ((InternalSerializationService) serializationService).dispose();
+        serializationService.dispose();
     }
 
     public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {

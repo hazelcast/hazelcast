@@ -82,7 +82,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
 
     private final StripedExecutor executor;
     private final ClientListenerService listenerService;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ILogger logger = Logger.getLogger(getClass());
     private final ConcurrentMap<String, QueryCacheToListenerMapper> registrations;
 
@@ -155,8 +155,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         if (localEntryEventData.getEventType() != EventLostEvent.EVENT_TYPE) {
             Object value = getValueOrOldValue(localEntryEventData);
             Data keyData = localEntryEventData.getKeyData();
-            QueryEntry entry = new QueryEntry((InternalSerializationService) serializationService,
-                    keyData, value, extractors);
+            QueryEntry entry = new QueryEntry(serializationService, keyData, value, extractors);
             return filter.eval(entry);
         }
 

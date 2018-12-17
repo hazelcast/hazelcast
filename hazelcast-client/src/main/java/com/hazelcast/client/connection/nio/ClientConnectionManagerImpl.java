@@ -56,7 +56,6 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.EOFException;
@@ -115,16 +114,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ClientConnectionStrategy connectionStrategy;
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
+    private final InternalSerializationService serializationService;
     private final int outboundPortCount;
     private volatile Credentials lastCredentials;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        AddressProvider addressProvider) {
-        allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
+        this.allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
         this.client = client;
 
         this.addressTranslator = addressTranslator;
-
+        this.serializationService = client.getSerializationService();
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
 
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
@@ -519,7 +519,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private void authenticate(final Address target, final ClientConnection connection, final boolean asOwner,
                               final AuthenticationFuture future) {
         final ClientPrincipal principal = getPrincipal();
-        ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
+        ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
         ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
 
@@ -528,28 +528,27 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future, timeoutTaskFuture));
     }
 
-    private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, ClientPrincipal principal) {
-        byte serializationVersion = ((InternalSerializationService) ss).getVersion();
+    private ClientMessage encodeAuthenticationRequest(boolean asOwner, ClientPrincipal principal) {
+        byte serializationVersion = serializationService.getVersion();
         String uuid = null;
         String ownerUuid = null;
         if (principal != null) {
             uuid = principal.getUuid();
             ownerUuid = principal.getOwnerUuid();
         }
-        ClientMessage clientMessage;
+
         Credentials credentials = credentialsFactory.newCredentials();
         lastCredentials = credentials;
         if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-            clientMessage = ClientAuthenticationCodec
+            return ClientAuthenticationCodec
                     .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
                             serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
         } else {
-            Data data = ss.toData(credentials);
-            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
+            Data data = serializationService.toData(credentials);
+            return ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
                     asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
         }
-        return clientMessage;
     }
 
     private void onAuthenticated(Address target, ClientConnection connection) {
@@ -697,7 +696,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public Future<Void> connectToClusterAsync() {
         return clusterConnector.connectToClusterAsync();
     }
-
 
     private class AuthCallback implements ExecutionCallback<ClientMessage> {
         private final ClientConnection connection;

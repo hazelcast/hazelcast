@@ -1264,8 +1264,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
 
         InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        InternalSerializationService serializationService = ((InternalSerializationService) getContext()
-                .getSerializationService());
+        InternalSerializationService serializationService = getContext().getSerializationService();
         for (Entry<Data, Data> row : resultParameters.response) {
             LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
@@ -1322,8 +1321,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
 
         InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        InternalSerializationService serializationService = ((InternalSerializationService) getContext()
-                .getSerializationService());
+        InternalSerializationService serializationService = getContext().getSerializationService();
         for (Entry<Data, Data> row : resultParameters.response) {
             LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);

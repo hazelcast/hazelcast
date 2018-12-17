@@ -29,12 +29,12 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +49,7 @@ import static java.lang.String.format;
 public final class ClientContext {
 
     private String localUuid;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ClientClusterService clusterService;
     private final ClientPartitionService partitionService;
     private final ClientInvocationService invocationService;
@@ -160,7 +160,7 @@ public final class ClientContext {
         return proxyManager.getHazelcastInstance();
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 

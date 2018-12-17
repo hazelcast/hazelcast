@@ -81,7 +81,7 @@ public class ClientQueryCacheContext implements QueryCacheContext {
 
     @Override
     public InternalSerializationService getSerializationService() {
-        return (InternalSerializationService) clientContext.getSerializationService();
+        return clientContext.getSerializationService();
     }
 
     @Override
