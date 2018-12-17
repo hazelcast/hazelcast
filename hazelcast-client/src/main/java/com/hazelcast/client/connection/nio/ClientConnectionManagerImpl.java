@@ -114,17 +114,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ClientConnectionStrategy connectionStrategy;
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
-    private final InternalSerializationService serializationService;
     private final int outboundPortCount;
     private volatile Credentials lastCredentials;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        AddressProvider addressProvider) {
-        this.allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
+        allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
         this.client = client;
 
         this.addressTranslator = addressTranslator;
-        this.serializationService = client.getSerializationService();
+
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
 
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
@@ -417,7 +416,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionStrategy.onDisconnect(connection);
     }
 
-
     private boolean useAnyOutboundPort() {
         return outboundPortCount == 0;
     }
@@ -516,75 +514,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionListeners.add(connectionListener);
     }
 
-    private void authenticate(final Address target, final ClientConnection connection, final boolean asOwner,
-                              final AuthenticationFuture future) {
-        final ClientPrincipal principal = getPrincipal();
-        ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, principal);
-        ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
-        ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
-
-        ScheduledFuture timeoutTaskFuture = executionService.schedule(
-                new TimeoutAuthenticationTask(invocationFuture), authenticationTimeout, MILLISECONDS);
-        invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future, timeoutTaskFuture));
-    }
-
-    private ClientMessage encodeAuthenticationRequest(boolean asOwner, ClientPrincipal principal) {
-        byte serializationVersion = serializationService.getVersion();
-        String uuid = null;
-        String ownerUuid = null;
-        if (principal != null) {
-            uuid = principal.getUuid();
-            ownerUuid = principal.getOwnerUuid();
-        }
-
-        Credentials credentials = credentialsFactory.newCredentials();
-        lastCredentials = credentials;
-        if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
-            UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-            return ClientAuthenticationCodec
-                    .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
-                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
-        } else {
-            Data data = serializationService.toData(credentials);
-            return ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
-                    asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
-        }
-    }
-
-    private void onAuthenticated(Address target, ClientConnection connection) {
-        ClientConnection oldConnection = activeConnections.put(connection.getEndPoint(), connection);
-        if (oldConnection == null) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Authentication succeeded for " + connection
-                        + " and there was no old connection to this end-point");
-            }
-            fireConnectionAddedEvent(connection);
-        } else {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Re-authentication succeeded for " + connection);
-            }
-            assert connection.equals(oldConnection);
-        }
-
-        connectionsInProgress.remove(target);
-        logger.info("Authenticated with server " + connection.getEndPoint() + ", server version:" + connection
-                .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());
-
-        /* check if connection is closed by remote before authentication complete, if that is the case
-        we need to remove it back from active connections.
-        Race description from https://github.com/hazelcast/hazelcast/pull/8832.(A little bit changed)
-        - open a connection client -> member
-        - send auth message
-        - receive auth reply -> reply processing is offloaded to an executor. Did not start to run yet.
-        - member closes the connection -> the connection is trying to removed from map
-                                                             but it was not there to begin with
-        - the executor start processing the auth reply -> it put the connection to the connection map.
-        - we end up with a closed connection in activeConnections map */
-        if (!connection.isAlive()) {
-            removeFromActiveConnections(connection);
-        }
-    }
-
     private void onAuthenticationFailed(Address target, ClientConnection connection, Throwable cause) {
         if (logger.isFinestEnabled()) {
             logger.finest("Authentication of " + connection + " failed.", cause);
@@ -599,6 +528,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     Collection<Address> getPossibleMemberAddresses() {
         return clusterConnector.getPossibleMemberAddresses();
+    }
+
+    @Override
+    public void connectToCluster() {
+        clusterConnector.connectToCluster();
+    }
+
+    @Override
+    public Future<Void> connectToClusterAsync() {
+        return clusterConnector.connectToClusterAsync();
     }
 
     private class TimeoutAuthenticationTask implements Runnable {
@@ -617,7 +556,26 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             future.complete(new TimeoutException("Authentication response did not come back in "
                     + authenticationTimeout + " millis"));
         }
+    }
 
+    private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {
+        @Override
+        public void onError(Channel channel, Throwable cause) {
+            if (channel == null) {
+                logger.severe(cause);
+            } else {
+                if (cause instanceof OutOfMemoryError) {
+                    logger.severe(cause);
+                }
+
+                Connection connection = (Connection) channel.attributeMap().get(ClientConnection.class);
+                if (cause instanceof EOFException) {
+                    connection.close("Connection closed by the other side", cause);
+                } else {
+                    connection.close("Exception in " + connection + ", thread=" + Thread.currentThread().getName(), cause);
+                }
+            }
+        }
     }
 
     private class InitConnectionTask implements Runnable {
@@ -636,7 +594,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         public void run() {
             ClientConnection connection;
             try {
-                connection = getConnection(target);
+                connection = getConnection();
             } catch (Exception e) {
                 logger.finest(e);
                 future.onFailure(e);
@@ -645,7 +603,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
 
             try {
-                authenticate(target, connection, asOwner, future);
+                authenticateAsync(connection);
             } catch (Exception e) {
                 future.onFailure(e);
                 connection.close("Failed to authenticate connection", e);
@@ -653,7 +611,42 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
         }
 
-        private ClientConnection getConnection(Address target) throws IOException {
+        private void authenticateAsync(ClientConnection connection) {
+            ClientMessage clientMessage = encodeAuthenticationRequest();
+            ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
+            ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
+
+            ScheduledFuture timeoutTaskFuture = executionService.schedule(
+                    new TimeoutAuthenticationTask(invocationFuture), authenticationTimeout, MILLISECONDS);
+            invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future, timeoutTaskFuture));
+        }
+
+        private ClientMessage encodeAuthenticationRequest() {
+            InternalSerializationService ss = client.getSerializationService();
+            byte serializationVersion = ss.getVersion();
+            String uuid = null;
+            String ownerUuid = null;
+            ClientPrincipal principal = getPrincipal();
+            if (principal != null) {
+                uuid = principal.getUuid();
+                ownerUuid = principal.getOwnerUuid();
+            }
+
+            Credentials credentials = credentialsFactory.newCredentials();
+            lastCredentials = credentials;
+            if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
+                UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
+                return ClientAuthenticationCodec
+                        .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
+                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
+            } else {
+                Data data = ss.toData(credentials);
+                return ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
+                        asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
+            }
+        }
+
+        private ClientConnection getConnection() throws IOException {
             ClientConnection connection = activeConnections.get(target);
             if (connection != null) {
                 return connection;
@@ -665,36 +658,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             return createSocketConnection(address);
         }
-    }
-
-    private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {
-        @Override
-        public void onError(Channel channel, Throwable cause) {
-            if (channel == null) {
-                logger.severe(cause);
-            } else {
-                if (cause instanceof OutOfMemoryError) {
-                    logger.severe(cause);
-                }
-
-                ClientConnection connection = (ClientConnection) channel.attributeMap().get(ClientConnection.class);
-                if (cause instanceof EOFException) {
-                    connection.close("Connection closed by the other side", cause);
-                } else {
-                    connection.close("Exception in " + connection + ", thread=" + Thread.currentThread().getName(), cause);
-                }
-            }
-        }
-    }
-
-    @Override
-    public void connectToCluster() {
-        clusterConnector.connectToCluster();
-    }
-
-    @Override
-    public Future<Void> connectToClusterAsync() {
-        return clusterConnector.connectToClusterAsync();
     }
 
     private class AuthCallback implements ExecutionCallback<ClientMessage> {
@@ -723,6 +686,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 onFailure(e);
                 return;
             }
+
             AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
             switch (authenticationStatus) {
                 case AUTHENTICATED:
@@ -738,7 +702,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         logger.info("Setting " + connection + " as owner with principal " + principal);
 
                     }
-                    onAuthenticated(target, connection);
+                    onAuthenticated();
                     future.onSuccess(connection);
                     break;
                 case CREDENTIALS_FAILED:
@@ -747,6 +711,40 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 default:
                     onFailure(new AuthenticationException("Authentication status code not supported. status: "
                             + authenticationStatus));
+            }
+        }
+
+        private void onAuthenticated() {
+            ClientConnection oldConnection = activeConnections.put(connection.getEndPoint(), connection);
+            if (oldConnection == null) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Authentication succeeded for " + connection
+                            + " and there was no old connection to this end-point");
+                }
+                fireConnectionAddedEvent(connection);
+            } else {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Re-authentication succeeded for " + connection);
+                }
+                assert connection.equals(oldConnection);
+            }
+
+            connectionsInProgress.remove(target);
+            logger.info("Authenticated with server " + connection.getEndPoint() + ", server version:" + connection
+                    .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());
+
+            // Check if connection is closed by remote before authentication complete, if that is the case
+            // we need to remove it back from active connections.
+            // Race description from https://github.com/hazelcast/hazelcast/pull/8832.(A little bit changed)
+            // - open a connection client -> member
+            // - send auth message
+            // - receive auth reply -> reply processing is offloaded to an executor. Did not start to run yet.
+            // - member closes the connection -> the connection is trying to removed from map
+            //                                                     but it was not there to begin with
+            // - the executor start processing the auth reply -> it put the connection to the connection map.
+            // - we end up with a closed connection in activeConnections map
+            if (!connection.isAlive()) {
+                removeFromActiveConnections(connection);
             }
         }
 
