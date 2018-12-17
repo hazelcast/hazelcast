@@ -97,7 +97,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final int connectionTimeoutMillis;
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
-
     private final ClientExecutionService executionService;
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> activeConnections = new ConcurrentHashMap<Address, ClientConnection>();
@@ -110,13 +109,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HeartbeatManager heartbeat;
     private final ClusterConnector clusterConnector;
     private final long authenticationTimeout;
-    private volatile ClientPrincipal principal;
     private final ClientConnectionStrategy connectionStrategy;
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
     private final InternalSerializationService serializationService;
     private final int outboundPortCount;
     private volatile Credentials lastCredentials;
+    private volatile ClientPrincipal principal;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        AddressProvider addressProvider) {
