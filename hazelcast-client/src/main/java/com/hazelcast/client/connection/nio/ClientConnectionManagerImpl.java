@@ -33,7 +33,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.SSLConfig;
@@ -99,7 +99,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
 
-    private final ClientExecutionServiceImpl executionService;
+    private final ClientExecutionService executionService;
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> activeConnections = new ConcurrentHashMap<Address, ClientConnection>();
     private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
@@ -132,7 +132,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final int connTimeout = networkConfig.getConnectionTimeout();
         this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
-        this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        this.executionService = client.getClientExecutionService();
 
         this.networking = initNetworking(client);
 
