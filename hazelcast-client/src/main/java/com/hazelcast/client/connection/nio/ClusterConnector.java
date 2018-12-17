@@ -84,7 +84,7 @@ class ClusterConnector {
     }
 
     private WaitStrategy initializeWaitStrategy(ClientConfig clientConfig) {
-        ClientConnectionStrategyConfig connectionStrategyConfig = client.getClientConfig().getConnectionStrategyConfig();
+        ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig expoRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
         if (expoRetryConfig.isEnabled()) {
             return new ExponentialWaitStrategy(expoRetryConfig.getInitialBackoffMillis(),
@@ -108,7 +108,6 @@ class ClusterConnector {
         }
 
         return new DefaultWaitStrategy(connectionAttemptPeriod, connectionAttemptLimit);
-
     }
 
     void connectToCluster() {
@@ -118,7 +117,6 @@ class ClusterConnector {
             throw rethrow(e);
         }
     }
-
 
     Address getOwnerConnectionAddress() {
         return ownerConnectionAddress;
@@ -176,7 +174,6 @@ class ClusterConnector {
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         SingleExecutorThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, client.getName() + ".cluster-");
-
         return Executors.newSingleThreadExecutor(threadFactory);
     }
 
@@ -231,7 +228,6 @@ class ClusterConnector {
                 return null;
             }
         });
-
     }
 
     Collection<Address> getPossibleMemberAddresses() {
@@ -329,7 +325,6 @@ class ClusterConnector {
 
     }
 
-
     class ExponentialWaitStrategy implements WaitStrategy {
 
         private final int initialBackoffMillis;
@@ -338,7 +333,6 @@ class ClusterConnector {
         private final boolean failOnMaxBackoff;
         private final double jitter;
         private final Random random = new Random();
-
         private int attempt;
         private int currentBackoffMillis;
 
