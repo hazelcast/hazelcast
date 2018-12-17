@@ -203,11 +203,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public String getAttribute(String attributeKey) {
-        return attributes.get(attributeKey);
-    }
-
-    @Override
     public Map<String, String> getAttributes() {
         return attributes;
     }

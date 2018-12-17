@@ -72,9 +72,9 @@ public class ClientAttributeTest {
         Collection<Client> connectedClients = instance.getClientService().getConnectedClients();
         Client client = connectedClients.iterator().next();
 
-        assertEquals(value, client.getAttribute(key));
         assertEquals(1, client.getAttributes().size());
-        assertNull(client.getAttribute(nonExistingKey));
+        assertEquals(value, client.getAttributes().get(key));
+        assertNull(value, client.getAttributes().get(nonExistingKey));
     }
 
     @Test
@@ -103,9 +103,9 @@ public class ClientAttributeTest {
         assertOpenEventually(clientConnected);
         Client client = clientRef.get();
 
-        assertEquals(value, client.getAttribute(key));
         assertEquals(1, client.getAttributes().size());
-        assertNull(client.getAttribute(nonExistingKey));
+        assertEquals(value, client.getAttributes().get(key));
+        assertNull(value, client.getAttributes().get(nonExistingKey));
     }
 
     @Test
@@ -135,9 +135,9 @@ public class ClientAttributeTest {
         assertOpenEventually(clientDisconnected);
         Client client = clientRef.get();
 
-        assertEquals(value, client.getAttribute(key));
         assertEquals(1, client.getAttributes().size());
-        assertNull(client.getAttribute(nonExistingKey));
+        assertEquals(value, client.getAttributes().get(key));
+        assertNull(value, client.getAttributes().get(nonExistingKey));
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -60,11 +60,6 @@ public class ClientImpl implements Client {
     }
 
     @Override
-    public String getAttribute(String attributeKey) {
-        return attributes.get(attributeKey);
-    }
-
-    @Override
     public Map<String, String> getAttributes() {
         return attributes;
     }

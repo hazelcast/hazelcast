@@ -60,13 +60,6 @@ public interface Client extends Endpoint {
     String getName();
 
     /**
-     * @param attributeKey key of the attribute
-     * @return attribute value if found, null otherwise
-     * @since 3.12
-     */
-    String getAttribute(String attributeKey);
-
-    /**
      * @return read only map of all attributes of this client.
      * @since 3.12
      */

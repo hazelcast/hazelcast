@@ -65,7 +65,9 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -112,6 +114,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ClientConnectionStrategy connectionStrategy;
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
+    private final Map<String, String> attributes;
     private final int outboundPortCount;
     private volatile Credentials lastCredentials;
     private volatile ClientPrincipal principal;
@@ -120,7 +123,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                                        AddressProvider addressProvider) {
         allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
         this.client = client;
-
+        this.attributes = Collections.unmodifiableMap(client.getClientConfig().getAttributes());
         this.addressTranslator = addressTranslator;
 
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
@@ -638,13 +641,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return ClientAuthenticationCodec
                         .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
                                 serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                                client.getClientConfig().getAttributes().entrySet());
+                                attributes.entrySet());
             } else {
                 Data data = ss.toData(credentials);
                 return ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
                         asOwner, ClientTypes.JAVA, serializationVersion,
                         BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                        client.getClientConfig().getAttributes().entrySet());
+                        attributes.entrySet());
             }
         }
 
