@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.RejectedExecutionException;
@@ -34,15 +35,23 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     private volatile boolean disconnectedFromCluster;
     private boolean clientStartAsync;
     private ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
+    private ClusterConnector connector;
+
+    @Override
+    public void init(ClientContext clientContext) {
+        super.init(clientContext);
+        ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) clientContext.getConnectionManager();
+        this.connector = connectionManager.getClusterConnector();
+        this.clientStartAsync = clientConnectionStrategyConfig.isAsyncStart();
+        this.reconnectMode = clientConnectionStrategyConfig.getReconnectMode();
+    }
 
     @Override
     public void start() {
-        clientStartAsync = clientConnectionStrategyConfig.isAsyncStart();
-        reconnectMode = clientConnectionStrategyConfig.getReconnectMode();
         if (clientStartAsync) {
-            clientContext.getConnectionManager().connectToClusterAsync();
+            connector.connectToClusterAsync();
         } else {
-            clientContext.getConnectionManager().connectToCluster();
+            connector.connectToCluster();
         }
     }
 
@@ -71,7 +80,6 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void beforeConnectToCluster(Address target) {
-
     }
 
     @Override
@@ -87,7 +95,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
         }
         if (clientContext.getLifecycleService().isRunning()) {
             try {
-                clientContext.getConnectionManager().connectToClusterAsync();
+                connector.connectToClusterAsync();
             } catch (RejectedExecutionException r) {
                 shutdownWithExternalThread();
             }

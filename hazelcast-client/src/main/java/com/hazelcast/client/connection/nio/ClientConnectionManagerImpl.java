@@ -71,7 +71,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -121,32 +120,24 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        AddressProvider addressProvider) {
-        allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
+        this.allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
         this.client = client;
         this.attributes = Collections.unmodifiableMap(client.getClientConfig().getAttributes());
         this.addressTranslator = addressTranslator;
-
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
-
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
 
         final int connTimeout = networkConfig.getConnectionTimeout();
         this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
-
         this.executionService = client.getClientExecutionService();
-
         this.networking = initNetworking(client);
-
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
-
         this.credentialsFactory = client.getCredentialsFactory();
         this.connectionStrategy = initializeStrategy(client);
-
         this.outboundPorts.addAll(getOutboundPorts(networkConfig));
         this.outboundPortCount = outboundPorts.size();
         this.heartbeat = new HeartbeatManager(this, client);
         this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
-
         this.clusterConnector = new ClusterConnector(client, this, connectionStrategy, addressProvider);
     }
 
@@ -532,14 +523,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return clusterConnector.getPossibleMemberAddresses();
     }
 
-    @Override
-    public void connectToCluster() {
-        clusterConnector.connectToCluster();
-    }
-
-    @Override
-    public Future<Void> connectToClusterAsync() {
-        return clusterConnector.connectToClusterAsync();
+    public ClusterConnector getClusterConnector() {
+        return clusterConnector;
     }
 
     private class TimeoutAuthenticationTask implements Runnable {
