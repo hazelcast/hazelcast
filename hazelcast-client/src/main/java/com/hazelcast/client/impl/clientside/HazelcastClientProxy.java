@@ -47,13 +47,13 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.TerminatedLifecycleService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -298,7 +298,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     }
 
     @Override
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return getClient().getSerializationService();
     }
 
