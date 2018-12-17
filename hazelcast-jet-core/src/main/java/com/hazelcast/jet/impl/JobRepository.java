@@ -303,7 +303,8 @@ public class JobRepository {
 
         JobConfig config = jobRecord.getConfig();
         long creationTime = jobRecord.getCreationTime();
-        JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, completionTime, error);
+        JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, completionTime,
+                error != null ? error.toString() : null);
 
         JobResult prev = jobResults.putIfAbsent(jobId, jobResult);
         if (prev != null) {

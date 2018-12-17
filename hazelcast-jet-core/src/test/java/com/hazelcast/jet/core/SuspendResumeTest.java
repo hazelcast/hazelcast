@@ -35,7 +35,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.SUSPEND;
@@ -227,14 +227,14 @@ public class SuspendResumeTest extends JetTestSupport {
             job.join();
             fail("job.join() should have failed");
         } catch (CancellationException ignored) { }
-        assertJobStatusEventually(job, COMPLETED);
+        assertJobStatusEventually(job, FAILED);
 
         // check that job resources are deleted
         JobRepository jobRepository = new JobRepository(instances[0]);
         assertTrueEventually(() -> {
             assertNull("JobRecord", jobRepository.getJobRecord(job.getId()));
             JobResult jobResult = jobRepository.getJobResult(job.getId());
-            assertInstanceOf(CancellationException.class, jobResult.getFailure());
+            assertEquals(CancellationException.class.getName(), jobResult.getFailureText());
             assertFalse("Job result successful", jobResult.isSuccessful());
         });
     }

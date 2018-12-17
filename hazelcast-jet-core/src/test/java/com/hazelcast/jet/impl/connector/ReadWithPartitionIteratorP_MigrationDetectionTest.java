@@ -39,8 +39,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -129,7 +129,7 @@ public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSu
         // release the latch, map reader should detect the migration and job should fail
         latch.countDown();
 
-        exception.expect(ExecutionException.class);
+        exception.expect(CompletionException.class);
         exception.expectMessage("migration detected");
         job.join();
     }

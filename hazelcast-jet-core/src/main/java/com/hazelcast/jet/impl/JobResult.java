@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -43,23 +44,23 @@ public class JobResult implements IdentifiedDataSerializable {
     private JobConfig jobConfig;
     private long creationTime;
     private long completionTime;
-    private Throwable failure;
+    private String failureText;
 
     public JobResult() {
     }
 
-    public JobResult(long jobId,
-                     @Nonnull JobConfig jobConfig,
-                     @Nonnull String coordinatorUUID,
-                     long creationTime, long completionTime,
-                     @Nullable Throwable failure
+    JobResult(long jobId,
+              @Nonnull JobConfig jobConfig,
+              @Nonnull String coordinatorUUID,
+              long creationTime, long completionTime,
+              @Nullable String failureText
     ) {
         this.jobId = jobId;
         this.jobConfig = jobConfig;
         this.coordinatorUUID = coordinatorUUID;
         this.creationTime = creationTime;
         this.completionTime = completionTime;
-        this.failure = failure;
+        this.failureText = failureText;
     }
 
     public long getJobId() {
@@ -85,31 +86,43 @@ public class JobResult implements IdentifiedDataSerializable {
     }
 
     public boolean isSuccessful() {
-        return failure == null;
-    }
-
-    public boolean isSuccessfulOrCancelled() {
-        return failure == null || failure instanceof CancellationException;
+        return failureText == null;
     }
 
     @Nullable
-    public Throwable getFailure() {
-        return failure;
+    public String getFailureText() {
+        return failureText;
     }
 
+    /**
+     * Returns a mock throwable created for the failureText. It's either {@link
+     * CancellationException} or {@link JetException} with the failureText
+     * text.
+     */
     @Nullable
-    public String getFailureReason() {
-        return failure == null ? null : failure.toString();
+    public Throwable getFailureAsThrowable() {
+        if (failureText == null) {
+            return null;
+        }
+        Throwable throwable;
+        if (failureText.startsWith(CancellationException.class.getName())) {
+            int prefixLength = (CancellationException.class.getName() + ": ").length();
+            String message = failureText.length() >= prefixLength ? failureText.substring(prefixLength) : null;
+            throwable = new CancellationException(message);
+        } else {
+            throwable = new JetException(failureText);
+        }
+        return throwable;
     }
 
     @Nonnull
     public JobStatus getJobStatus() {
-        return isSuccessfulOrCancelled() ? COMPLETED : FAILED;
+        return isSuccessful() ? COMPLETED : FAILED;
     }
 
     @Nonnull
-    public CompletableFuture<Void> asCompletableFuture() {
-        return failure == null ? completedFuture(null) : exceptionallyCompletedFuture(failure);
+    CompletableFuture<Void> asCompletableFuture() {
+        return failureText == null ? completedFuture(null) : exceptionallyCompletedFuture(getFailureAsThrowable());
     }
 
     @Nonnull
@@ -125,7 +138,7 @@ public class JobResult implements IdentifiedDataSerializable {
                 ", name=" + jobConfig.getName() +
                 ", creationTime=" + toLocalDateTime(creationTime) +
                 ", completionTime=" + toLocalDateTime(completionTime) +
-                ", failure=" + failure +
+                ", failureText=" + failureText +
                 '}';
     }
 
@@ -146,7 +159,7 @@ public class JobResult implements IdentifiedDataSerializable {
         out.writeUTF(coordinatorUUID);
         out.writeLong(creationTime);
         out.writeLong(completionTime);
-        out.writeObject(failure);
+        out.writeObject(failureText);
     }
 
     @Override
@@ -156,6 +169,6 @@ public class JobResult implements IdentifiedDataSerializable {
         coordinatorUUID = in.readUTF();
         creationTime = in.readLong();
         completionTime = in.readLong();
-        failure = in.readObject();
+        failureText = in.readObject();
     }
 }

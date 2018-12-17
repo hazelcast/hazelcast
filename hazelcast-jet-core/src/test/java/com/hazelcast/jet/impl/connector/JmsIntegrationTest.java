@@ -372,7 +372,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
 
     private void cancelJob() {
         job.cancel();
-        assertJobStatusEventually(job, JobStatus.COMPLETED, 10);
+        assertJobStatusEventually(job, JobStatus.FAILED, 10);
     }
 
     private String sendMessage(String destinationName, boolean isQueue) throws Exception {

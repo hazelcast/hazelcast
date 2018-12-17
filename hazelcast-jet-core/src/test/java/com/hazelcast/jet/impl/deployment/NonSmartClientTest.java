@@ -142,7 +142,7 @@ public class NonSmartClientTest extends JetTestSupport {
         job.cancel();
 
         //Then
-        assertJobStatusEventually(client.getJob(job.getName()), JobStatus.COMPLETED);
+        assertJobStatusEventually(client.getJob(job.getName()), JobStatus.FAILED);
     }
 
     @Test

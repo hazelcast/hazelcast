@@ -115,7 +115,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertJobStatusEventually(job, JobStatus.COMPLETED, 3);
+        assertJobStatusEventually(job, JobStatus.FAILED, 3);
     }
 
     @Test
@@ -157,7 +157,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertJobStatusEventually(job, JobStatus.COMPLETED, 3);
+        assertJobStatusEventually(job, JobStatus.FAILED, 3);
     }
 
     @Test
@@ -204,7 +204,7 @@ public class CancellationTest extends JetTestSupport {
 
         resetPacketFiltersFrom(instance1.getHazelcastInstance());
 
-        assertJobStatusEventually(job, JobStatus.COMPLETED, 3);
+        assertJobStatusEventually(job, JobStatus.FAILED, 3);
     }
 
     @Test

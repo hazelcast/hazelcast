@@ -558,15 +558,14 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
     private void assertJobSucceeded(Job job) {
         JobResult jobResult = getJobResult(job);
         assertTrue(jobResult.isSuccessful());
-        assertNull(jobResult.getFailure());
+        assertNull(jobResult.getFailureText());
     }
 
     private void assertJobFailed(Job job, Throwable e) {
         JobResult jobResult = getJobResult(job);
         assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());
-        assertExceptionInCauses(e, jobResult.getFailure());
-        JobStatus expectedStatus = e instanceof CancellationException ? JobStatus.COMPLETED : JobStatus.FAILED;
-        assertEquals("jobStatus", expectedStatus, job.getStatus());
+        assertContains(jobResult.getFailureText(), e.toString());
+        assertEquals("jobStatus", JobStatus.FAILED, job.getStatus());
     }
 
     private JobResult getJobResult(Job job) {

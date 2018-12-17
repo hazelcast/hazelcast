@@ -37,7 +37,7 @@ public class JobSummary implements IdentifiedDataSerializable {
     private JobStatus status;
     private long submissionTime;
     private long completionTime;
-    private String failureReason;
+    private String failureText;
 
     public JobSummary() {
     }
@@ -68,14 +68,14 @@ public class JobSummary implements IdentifiedDataSerializable {
             @Nonnull JobStatus status,
             long submissionTime,
             long completionTime,
-            @Nullable String failureReason
+            @Nullable String failureText
     ) {
         this.jobId = jobId;
         this.name = name;
         this.status = status;
         this.submissionTime = submissionTime;
         this.completionTime = completionTime;
-        this.failureReason = failureReason;
+        this.failureText = failureText;
     }
 
     public long getJobId() {
@@ -114,8 +114,8 @@ public class JobSummary implements IdentifiedDataSerializable {
      * Returns null if job is not yet completed.
      */
     @Nullable
-    public String getFailureReason() {
-        return failureReason;
+    public String getFailureText() {
+        return failureText;
     }
 
     @Override
@@ -136,7 +136,7 @@ public class JobSummary implements IdentifiedDataSerializable {
         out.writeObject(status);
         out.writeLong(submissionTime);
         out.writeLong(completionTime);
-        out.writeUTF(failureReason);
+        out.writeUTF(failureText);
     }
 
     @Override
@@ -147,7 +147,7 @@ public class JobSummary implements IdentifiedDataSerializable {
         status = in.readObject();
         submissionTime = in.readLong();
         completionTime = in.readLong();
-        failureReason = in.readUTF();
+        failureText = in.readUTF();
     }
 
     @Override
@@ -159,7 +159,7 @@ public class JobSummary implements IdentifiedDataSerializable {
                 ", status=" + status +
                 ", submissionTime=" + toLocalTime(submissionTime) +
                 ", completionTime=" + toLocalTime(completionTime) +
-                ", failureReason=" + failureReason +
+                ", failureText=" + failureText +
                 '}';
     }
 }

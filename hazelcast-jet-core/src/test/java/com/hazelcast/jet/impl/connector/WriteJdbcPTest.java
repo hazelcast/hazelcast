@@ -35,7 +35,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.sql.Statement;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -92,7 +92,7 @@ public class WriteJdbcPTest extends PipelineTestSupport {
         assertEquals(PERSON_COUNT, rowCount());
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test(expected = CompletionException.class)
     public void testFailJob_withNonTransientException() {
         addToSrcList(sequence(PERSON_COUNT));
         p.drawFrom(source)

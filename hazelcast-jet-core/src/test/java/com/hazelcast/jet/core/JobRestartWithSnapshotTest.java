@@ -396,7 +396,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             logger.info("Cancelling the job with snapshot...");
             tuple.f2().cancelAndExportSnapshot("state");
             logger.info("cancel() returned");
-            assertJobStatusEventually(tuple.f2(), JobStatus.COMPLETED, 15);
+            assertJobStatusEventually(tuple.f2(), JobStatus.FAILED, 15);
             logger.info("Resubmitting the job...");
             Job newJob = tuple.f0().newJob(tuple.f1(),
                     new JobConfig()

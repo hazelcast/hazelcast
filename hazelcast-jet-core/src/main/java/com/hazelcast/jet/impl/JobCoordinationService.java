@@ -380,7 +380,7 @@ public class JobCoordinationService {
         jobRepository.getJobResults().stream()
                      .map(r -> new JobSummary(
                              r.getJobId(), r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                             r.getCompletionTime(), r.getFailureReason())
+                             r.getCompletionTime(), r.getFailureText())
                      ).forEach(s -> jobs.put(s.getJobId(), s));
 
         return jobs.values().stream().sorted(comparing(JobSummary::getSubmissionTime).reversed()).collect(toList());
@@ -648,7 +648,7 @@ public class JobCoordinationService {
         if (jobResult != null) {
             logger.fine("Completing master context for " + masterContext.jobIdString()
                     + " since already completed with result: " + jobResult);
-            masterContext.setFinalResult(jobResult.getFailure());
+            masterContext.setFinalResult(jobResult.getFailureAsThrowable());
             return masterContexts.remove(jobId, masterContext);
         }
 

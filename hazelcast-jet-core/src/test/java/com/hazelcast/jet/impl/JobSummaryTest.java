@@ -72,7 +72,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals("jobA", jobSummary.getName());
         assertEquals(job.getId(), jobSummary.getJobId());
         assertEquals(JobStatus.COMPLETED, jobSummary.getStatus());
-        assertNull(jobSummary.getFailureReason());
+        assertNull(jobSummary.getFailureText());
     }
 
     @Test
@@ -108,7 +108,7 @@ public class JobSummaryTest extends JetTestSupport {
 
         assertTrueEventually(() -> {
             JobSummary summary = client.getJobSummaryList().get(0);
-            assertEquals(JobStatus.COMPLETED, summary.getStatus());
+            assertEquals(JobStatus.FAILED, summary.getStatus());
             assertEquals(0, summary.getExecutionId());
         }, 20);
     }
@@ -149,7 +149,7 @@ public class JobSummaryTest extends JetTestSupport {
             for (int i = 0; i < numJobs; i++) {
                 JobSummary summary = list.get(i);
                 assertEquals("job " + i, summary.getName());
-                assertEquals(JobStatus.COMPLETED, summary.getStatus());
+                assertEquals(JobStatus.FAILED, summary.getStatus());
                 assertNotEquals(0, summary.getCompletionTime());
             }
         }, 20);
@@ -172,7 +172,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
-        assertEquals(msg, jobSummary.getFailureReason());
+        assertEquals(msg, jobSummary.getFailureText());
         assertNotEquals(0, jobSummary.getCompletionTime());
     }
 

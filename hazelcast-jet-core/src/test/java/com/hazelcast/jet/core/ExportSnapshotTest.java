@@ -47,7 +47,6 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
-import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
@@ -97,7 +96,7 @@ public class ExportSnapshotTest extends JetTestSupport {
         state1.destroy();
         assertEquals(singleton("state2"), getExportedStateNames(client));
         job.cancel();
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
+        assertJobStatusEventually(job, FAILED);
         assertEquals(singleton("state2"), getExportedStateNames(client));
         state2.destroy();
         assertEquals(emptySet(), getExportedStateNames(client));
@@ -171,7 +170,7 @@ public class ExportSnapshotTest extends JetTestSupport {
         // Then2
         assertFalse("cancelAndExportState is empty",
                 getSnapshotMap(client, "cancelAndExportState").isEmpty());
-        assertJobStatusEventually(job, COMPLETED);
+        assertJobStatusEventually(job, FAILED);
 
         DummyStatefulP.wasRestored = false;
         Job job2 = client.newJob(dag,
@@ -236,7 +235,7 @@ public class ExportSnapshotTest extends JetTestSupport {
         assertFalse("state map is empty", getSnapshotMap(client, "state").isEmpty());
         assertNotNull("cache record", getCacheRecord(client, "state"));
         if (cancel) {
-            assertJobStatusEventually(job, COMPLETED);
+            assertJobStatusEventually(job, FAILED);
         } else {
             assertTrueAllTheTime(() -> assertEquals(SUSPENDED, job.getStatus()), 1);
             job.resume();

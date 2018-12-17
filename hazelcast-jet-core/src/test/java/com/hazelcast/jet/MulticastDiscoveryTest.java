@@ -101,4 +101,4 @@ public class MulticastDiscoveryTest extends JetTestSupport {
         expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);
         HazelcastClient.newHazelcastClient();
     }
-}
+    }

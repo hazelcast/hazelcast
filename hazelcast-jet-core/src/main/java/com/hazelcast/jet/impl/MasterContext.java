@@ -285,7 +285,7 @@ public class MasterContext {
             requestedTerminationMode = mode;
             // handle cancellation of a suspended job
             if (localStatus == SUSPENDED) {
-                this.jobStatus = COMPLETED;
+                this.jobStatus = FAILED;
                 setFinalResult(new CancellationException());
             }
             if (mode.isWithTerminalSnapshot()) {
@@ -951,7 +951,7 @@ public class MasterContext {
                 jobExecutionRecord.setSuspended(true);
                 nonSynchronizedAction = () -> writeJobExecutionRecord(false);
             } else {
-                jobStatus = (isSuccess ? COMPLETED : FAILED);
+                jobStatus = isSuccess ? COMPLETED : FAILED;
 
                 if (failure instanceof LocalMemberResetException) {
                     logger.fine("Cancelling job " + jobIdString() + " locally: member (local or remote) reset. " +
@@ -984,7 +984,7 @@ public class MasterContext {
         if (failure instanceof CancellationException || failure instanceof JobTerminateRequestedException) {
             logger.info(String.format("Execution of %s completed in %,d ms, reason=%s",
                     jobIdString(), elapsed, failure));
-            return true;
+            return false;
         }
         logger.warning(String.format("Execution of %s failed after %,d ms", jobIdString(), elapsed), failure);
         return false;
