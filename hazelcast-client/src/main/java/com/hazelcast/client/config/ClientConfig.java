@@ -124,7 +124,7 @@ public class ClientConfig {
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap =
             new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
 
-    private final Map<String, String> attributes = new ConcurrentHashMap<String, String>();
+    private Map<String, String> attributes = new ConcurrentHashMap<String, String>();
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
     /**
@@ -977,6 +977,18 @@ public class ClientConfig {
      */
     public Map<String, String> getAttributes() {
         return attributes;
+    }
+
+    /**
+     * Sets attributes to client to be used on the server side.
+     * Attributes can be accessed from {@link com.hazelcast.core.Client}
+     *
+     * @param attributes
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     */
+    public ClientConfig setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+        return this;
     }
 
     public ClientConfig setUserContext(ConcurrentMap<String, Object> userContext) {
