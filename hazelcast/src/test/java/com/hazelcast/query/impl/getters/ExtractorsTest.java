@@ -18,10 +18,12 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,7 +33,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -60,16 +61,22 @@ public class ExtractorsTest {
 
     private Bond bond = new Bond();
 
-    private InternalSerializationService UNUSED;
+    private InternalSerializationService ss;
+
+    @Before
+    public void setUp() throws Exception {
+        DefaultSerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
+        ss = builder.setVersion(InternalSerializationService.VERSION_1).build();
+    }
 
     @Test
     public void getGetter_reflection_cachingWorks() {
         // GIVEN
-        Extractors extractors = extractors();
+        Extractors extractors = createExtractors(null);
 
         // WHEN
-        Getter getterFirstInvocation = extractors.getGetter(UNUSED, bond, "car.power");
-        Getter getterSecondInvocation = extractors.getGetter(UNUSED, bond, "car.power");
+        Getter getterFirstInvocation = extractors.getGetter(bond, "car.power");
+        Getter getterSecondInvocation = extractors.getGetter(bond, "car.power");
 
         // THEN
         assertThat(getterFirstInvocation, sameInstance(getterSecondInvocation));
@@ -79,7 +86,7 @@ public class ExtractorsTest {
     @Test
     public void extract_reflection_correctValue() {
         // WHEN
-        Object power = extractors().extract(UNUSED, bond, "car.power");
+        Object power = createExtractors(null).extract(bond, "car.power");
 
         // THEN
         assertThat((Integer) power, equalTo(550));
@@ -90,15 +97,26 @@ public class ExtractorsTest {
         // GIVEN
         MapAttributeConfig config
                 = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
-        Extractors extractors = new Extractors(singletonList(config), useClassloader ? this.getClass().getClassLoader() : null);
+        Extractors extractors = createExtractors(config);
 
         // WHEN
-        Getter getterFirstInvocation = extractors.getGetter(UNUSED, bond, "gimmePower");
-        Getter getterSecondInvocation = extractors.getGetter(UNUSED, bond, "gimmePower");
+        Getter getterFirstInvocation = extractors.getGetter(bond, "gimmePower");
+        Getter getterSecondInvocation = extractors.getGetter(bond, "gimmePower");
 
         // THEN
         assertThat(getterFirstInvocation, sameInstance(getterSecondInvocation));
         assertThat(getterFirstInvocation, instanceOf(ExtractorGetter.class));
+    }
+
+    protected Extractors createExtractors(MapAttributeConfig config) {
+        Extractors.Builder builder = Extractors.newBuilder(ss);
+        if (config != null) {
+            builder.setMapAttributeConfigs(singletonList(config));
+        }
+        if (useClassloader) {
+            builder.setClassLoader(this.getClass().getClassLoader());
+        }
+        return builder.build();
     }
 
     @Test
@@ -106,10 +124,10 @@ public class ExtractorsTest {
         // GIVEN
         MapAttributeConfig config
                 = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
-        Extractors extractors = new Extractors(singletonList(config), useClassloader ? this.getClass().getClassLoader() : null);
+        Extractors extractors = createExtractors(config);
 
         // WHEN
-        Object power = extractors.extract(UNUSED, bond, "gimmePower");
+        Object power = extractors.extract(bond, "gimmePower");
 
         // THEN
         assertThat((Integer) power, equalTo(550));
@@ -118,7 +136,7 @@ public class ExtractorsTest {
     @Test
     public void extract_nullTarget() {
         // WHEN
-        Object power = extractors().extract(UNUSED, null, "gimmePower");
+        Object power = createExtractors(null).extract(null, "gimmePower");
 
         // THEN
         assertNull(power);
@@ -127,7 +145,7 @@ public class ExtractorsTest {
     @Test
     public void extract_nullAll() {
         // WHEN
-        Object power = extractors().extract(UNUSED, null, null);
+        Object power = createExtractors(null).extract(null, null);
 
         // THEN
         assertNull(power);
@@ -135,7 +153,7 @@ public class ExtractorsTest {
 
     @Test(expected = NullPointerException.class)
     public void extract_nullAttribute() {
-        extractors().extract(UNUSED, bond, null);
+        createExtractors(null).extract(bond, null);
     }
 
     private static class Bond {
@@ -151,9 +169,5 @@ public class ExtractorsTest {
         public void extract(Bond target, Object arguments, ValueCollector collector) {
             collector.addObject(target.car.power);
         }
-    }
-
-    private static Extractors extractors() {
-        return new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
     }
 }

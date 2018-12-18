@@ -58,7 +58,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final QueryCacheRecordStore recordStore;
     protected final PartitioningStrategy partitioningStrategy;
     protected final InternalSerializationService serializationService;
-    protected final Extractors extractors = Extractors.empty();
+    protected final Extractors extractors;
     /**
      * ID of registered listener on publisher side.
      */
@@ -79,6 +79,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.indexes = Indexes.newBuilder(serializationService, COPY_ON_READ).build();
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
+        this.extractors = Extractors.newBuilder(serializationService).build();
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,
                 queryCacheConfig, getEvictionListener(), extractors);
 

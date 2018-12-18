@@ -107,7 +107,7 @@ public class IndexTest {
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
-        is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null, Index.OperationSource.USER);
+        is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         assertNotNull(is.getIndex("favoriteCity"));
         Record record = recordFactory.newRecord(value);
         ((AbstractRecord) record).setKey(key);
@@ -121,13 +121,17 @@ public class IndexTest {
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
-        is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null, Index.OperationSource.USER);
+        is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
 
         Data newValue = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.KRAKOW));
-        is.saveEntryIndex(new QueryEntry(ss, key, newValue, Extractors.empty()), value, Index.OperationSource.USER);
+        is.saveEntryIndex(new QueryEntry(ss, key, newValue, newExtractor()), value, Index.OperationSource.USER);
 
         assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
         assertEquals(1, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.KRAKOW).size());
+    }
+
+    protected Extractors newExtractor() {
+        return Extractors.newBuilder(ss).build();
     }
 
     @Test
@@ -139,7 +143,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null, Index.OperationSource.USER);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
         assertEquals(1000, dIndex.getRecords(-10.34d).size());
         assertEquals(1, strIndex.getRecords("joe23").size());
@@ -150,7 +154,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 11.34d, "joe"));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null, Index.OperationSource.USER);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
 
         assertEquals(0, dIndex.getRecords(-10.34d).size());
@@ -164,7 +168,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, -1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null, Index.OperationSource.USER);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
         assertEquals(0, dIndex.getSubRecordsBetween(1d, 1001d).size());
         assertEquals(1000, dIndex.getSubRecordsBetween(-1d, -1001d).size());
@@ -173,7 +177,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null, Index.OperationSource.USER);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
         assertEquals(1000, dIndex.getSubRecordsBetween(1d, 1001d).size());
         assertEquals(0, dIndex.getSubRecordsBetween(-1d, -1001d).size());
@@ -199,17 +203,17 @@ public class IndexTest {
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
-        is.saveEntryIndex(new QueryEntry(ss, key1, value, Extractors.empty()), null, Index.OperationSource.USER);
+        is.saveEntryIndex(new QueryEntry(ss, key1, value, newExtractor()), null, Index.OperationSource.USER);
 
         value = ss.toData(new MainPortable(false, 2, null));
         Data key2 = ss.toData(1);
-        is.saveEntryIndex(new QueryEntry(ss, key2, value, Extractors.empty()), null, Index.OperationSource.USER);
+        is.saveEntryIndex(new QueryEntry(ss, key2, value, newExtractor()), null, Index.OperationSource.USER);
 
 
         for (int i = 2; i < 1000; i++) {
             Data key = ss.toData(i);
             value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null, Index.OperationSource.USER);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
 
         assertEquals(2, strIndex.getRecords((Comparable) null).size());
@@ -466,7 +470,7 @@ public class IndexTest {
     }
 
     private void testIt(boolean ordered) {
-        IndexImpl index = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, Extractors.empty(),
+        IndexImpl index = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, newExtractor(),
                 copyBehavior, PerIndexStats.EMPTY);
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getSubRecordsBetween(0L, 1000L).size());

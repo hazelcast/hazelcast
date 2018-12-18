@@ -29,6 +29,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.getters.Extractors;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -206,6 +207,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
             entry.setKey(key);
             entry.setValue(value);
             entry.setSerializationService(((DefaultContext) context).getSerializationService());
+            entry.setExtractors(Extractors.newBuilder(((DefaultContext) context).getSerializationService()).build());
             DistinctType valueOut = supplier.apply(entry);
             if (valueOut != null) {
                 context.emit(mappingKey, valueOut);

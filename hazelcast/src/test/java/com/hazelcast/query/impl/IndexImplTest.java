@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
@@ -28,8 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Collections;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -47,7 +44,7 @@ public class IndexImplTest {
     @Before
     public void setUp() {
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
-        Extractors mockExtractors = new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
+        Extractors mockExtractors = Extractors.newBuilder(mockSerializationService).build();
         index = new IndexImpl(ATTRIBUTE_NAME, false, mockSerializationService, mockExtractors, IndexCopyBehavior.COPY_ON_READ,
                 PerIndexStats.EMPTY);
     }

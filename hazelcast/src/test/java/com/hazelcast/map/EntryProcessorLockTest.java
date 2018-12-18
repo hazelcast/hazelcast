@@ -178,7 +178,8 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
     @Test
     public void test_Serialization_LockAwareLazyMapEntry_deserializesAs_LazyMapEntry() throws ExecutionException, InterruptedException {
         InternalSerializationService ss = getSerializationService(createHazelcastInstance(getConfig()));
-        LockAwareLazyMapEntry entry = new LockAwareLazyMapEntry(ss.toData("key"), "value", ss, Extractors.empty(), false);
+        LockAwareLazyMapEntry entry = new LockAwareLazyMapEntry(ss.toData("key"), "value", ss,
+                Extractors.newBuilder(ss).build(), false);
 
         LockAwareLazyMapEntry deserializedEntry = ss.toObject(ss.toData(entry));
 

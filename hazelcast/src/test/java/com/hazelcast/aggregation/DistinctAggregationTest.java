@@ -16,6 +16,8 @@
 
 package com.hazelcast.aggregation;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,6 +42,8 @@ import static org.junit.Assert.assertThat;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DistinctAggregationTest {
+
+    private final InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator() {
@@ -87,7 +91,7 @@ public class DistinctAggregationTest {
 
         Aggregator<Map.Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
@@ -106,7 +110,7 @@ public class DistinctAggregationTest {
 
         Aggregator<Map.Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
-            aggregation.accumulate(createExtractableEntryWithValue(value));
+            aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
         Aggregator<Map.Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");

@@ -662,7 +662,11 @@ public class SqlPredicateTest {
     }
 
     private Map.Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(serializationService, toData(key), value, Extractors.empty());
+        return new QueryEntry(serializationService, toData(key), value, newExtractor());
+    }
+
+    private Extractors newExtractor() {
+        return Extractors.newBuilder(serializationService).build();
     }
 
     private void assertSqlMatching(String s, Object value) {

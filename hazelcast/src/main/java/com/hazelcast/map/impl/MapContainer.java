@@ -95,7 +95,7 @@ public class MapContainer {
     protected final QueryEntryFactory queryEntryFactory;
     protected final EventJournalConfig eventJournalConfig;
     protected final PartitioningStrategy partitioningStrategy;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
@@ -126,14 +126,17 @@ public class MapContainer {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();
         this.quorumName = mapConfig.getQuorumName();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.objectNamespace = MapService.getObjectNamespace(name);
         initWanReplication(nodeEngine);
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
-        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), classloader);
+        this.extractors = Extractors.newBuilder(serializationService)
+                .setMapAttributeConfigs(mapConfig.getMapAttributeConfigs())
+                .setClassLoader(classloader)
+                .build();
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues(),
-                (InternalSerializationService) serializationService, extractors);
+                serializationService, extractors);
         if (shouldUseGlobalIndex(mapConfig)) {
             this.globalIndexes = createIndexes(true);
         } else {

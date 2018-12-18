@@ -66,7 +66,7 @@ public class Indexes {
         this.serializationService = serializationService;
         this.usesCachedQueryableEntries = usesCachedQueryableEntries;
         this.stats = createStats(global, statisticsEnabled);
-        this.extractors = extractors == null ? Extractors.empty() : extractors;
+        this.extractors = extractors == null ? Extractors.newBuilder(serializationService).build() : extractors;
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
     }
