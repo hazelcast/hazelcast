@@ -389,8 +389,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                                                                               ExecutionCallback<Map<Integer, T>> callback) {
 
         Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
-        InvokeOnPartitionsAsync invokeOnPartitions =
-                new InvokeOnPartitionsAsync(this, serviceName, operationFactory, memberPartitions);
+        InvokeOnPartitions invokeOnPartitions =
+                new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invokeAsync(callback);
     }
 
@@ -424,8 +424,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
             ExecutionCallback<Map<Integer, T>> callback) {
 
         Map<Address, List<Integer>> memberPartitions = getMemberPartitions(partitions);
-        InvokeOnPartitionsAsync invokeOnPartitions =
-                new InvokeOnPartitionsAsync(this, serviceName, operationFactory, memberPartitions);
+        InvokeOnPartitions invokeOnPartitions =
+                new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invokeAsync(callback);
     }
 
