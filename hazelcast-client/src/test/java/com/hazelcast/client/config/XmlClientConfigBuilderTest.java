@@ -179,6 +179,19 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testAttributes() {
+        Map<String, String> attributes = fullClientConfig.getAttributes();
+        assertEquals(2, attributes.size());
+        assertEquals("bar", attributes.get("foo"));
+        assertEquals("admin", attributes.get("role"));
+    }
+
+    @Test
+    public void testInstanceName() {
+        assertEquals("CLIENT_NAME", fullClientConfig.getInstanceName());
+    }
+
+    @Test
     public void testNetworkConfig() {
         final ClientNetworkConfig networkConfig = fullClientConfig.getNetworkConfig();
         assertEquals(2, networkConfig.getConnectionAttemptLimit());

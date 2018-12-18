@@ -99,6 +99,8 @@ public final class ClientConfigXmlGenerator {
         group(gen, clientConfig.getGroupConfig());
         //InstanceName
         gen.node("instance-name", clientConfig.getInstanceName());
+        //attributes
+        gen.appendAttributes(clientConfig.getAttributes());
         //Properties
         gen.appendProperties(clientConfig.getProperties());
         //Network

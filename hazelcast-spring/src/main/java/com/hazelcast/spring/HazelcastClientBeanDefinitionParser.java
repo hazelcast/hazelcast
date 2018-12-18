@@ -155,6 +155,10 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleReliableTopic(node);
                 } else if ("security".equals(nodeName)) {
                     handleSecurity(node);
+                } else if ("instance-name".equals(nodeName)) {
+                    configBuilder.addPropertyValue("instanceName", getTextContent(node));
+                } else if ("attributes".equals(nodeName)) {
+                    handleAttributes(node);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
@@ -477,6 +481,21 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             networkConfigBuilder.addPropertyValue("outboundPortDefinitions", outboundPorts);
+        }
+
+
+        private void handleAttributes(Node node) {
+            ManagedMap<String, Object> attributes = new ManagedMap<String, Object>();
+            for (Node n : childElements(node)) {
+                String name = cleanNodeName(n);
+                if (!"attribute".equals(name)) {
+                    continue;
+                }
+                String attributeName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
+                String value = getTextContent(n);
+                attributes.put(attributeName, value);
+            }
+            configBuilder.addPropertyValue("attributes", attributes);
         }
     }
 

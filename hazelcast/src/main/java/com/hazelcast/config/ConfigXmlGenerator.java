@@ -1492,6 +1492,17 @@ public class ConfigXmlGenerator {
             return this;
         }
 
+        public XmlGenerator appendAttributes(Map<String, String> attributes) {
+            if (!attributes.isEmpty()) {
+                open("client-attributes");
+                for (Entry<String, String> entry : attributes.entrySet()) {
+                    node("attribute", entry.getValue(), "name", entry.getKey());
+                }
+                close();
+            }
+            return this;
+        }
+
         public XmlGenerator appendProperties(Properties props) {
             if (!props.isEmpty()) {
                 open("properties");

@@ -86,6 +86,23 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void instanceName() {
+        String instanceName = randomString();
+        clientConfig.setInstanceName(instanceName);
+        ClientConfig actual = newConfigViaGenerator();
+        assertEquals(instanceName, actual.getInstanceName());
+    }
+
+    @Test
+    public void attributes() {
+        clientConfig.setAttribute("foo", "bar");
+        ClientConfig actual = newConfigViaGenerator();
+        Map<String, String> attributes = actual.getAttributes();
+        assertEquals(1, attributes.size());
+        assertEquals("bar", attributes.get("foo"));
+    }
+
+    @Test
     public void group() {
         String name = randomString();
         String pass = randomString();
