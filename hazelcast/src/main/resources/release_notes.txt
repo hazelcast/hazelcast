@@ -2,7 +2,11 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ==== 3.11.1 ====
 
-1. Fixes
+1. Enhancements
+
+* Toggle Scripting Support: Introduced the `scripting-enabled` configuration attribute so that you can allow or prevent sending commands to the members from the Hazelcast Management Center. See the Toggle Scripting Support section for information on how to configure it.
+
+2. Fixes
 
 * Fixed an issue where the client's Near Cache on Replicated Map with `Binary` storage was causing an exception on the member. [#14210]
 * Fixed an issue where the performance of `DefaultQueryCache` was degraded because of the flow in case of the index-aware queries. [#14177]
