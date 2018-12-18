@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
@@ -26,7 +27,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +49,8 @@ import static com.hazelcast.core.EntryEventType.REMOVED;
  */
 public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrategy {
 
-    public DefaultEntryEventFilteringStrategy(SerializationService serializationService, MapServiceContext mapServiceContext) {
+    public DefaultEntryEventFilteringStrategy(InternalSerializationService serializationService,
+                                              MapServiceContext mapServiceContext) {
         super(serializationService, mapServiceContext);
     }
 

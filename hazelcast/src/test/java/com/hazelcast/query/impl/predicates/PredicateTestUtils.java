@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
@@ -97,11 +98,18 @@ public final class PredicateTestUtils {
     }
 
     public static Map.Entry entry(Object value) {
-        return new QueryEntry(new DefaultSerializationServiceBuilder().build(), toData(UuidUtil.newUnsecureUUID()),
-                value, Extractors.empty());
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        return new QueryEntry(serializationService, toData(UuidUtil.newUnsecureUUID()),
+                value, newExtractor(serializationService));
+    }
+
+    protected static Extractors newExtractor(InternalSerializationService serializationService) {
+        return Extractors.newBuilder(serializationService).build();
     }
 
     public static Map.Entry entry(Object key, Object value) {
-        return new QueryEntry(new DefaultSerializationServiceBuilder().build(), toData(key), value, Extractors.empty());
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        return new QueryEntry(serializationService, toData(key), value,
+                newExtractor(serializationService));
     }
 }

@@ -69,7 +69,8 @@ public class PortablePredicatesTest {
     }
 
     private QueryEntry toQueryEntry(Object key, Object value) {
-        return new QueryEntry(serializationService, serializationService.toData(key), value, Extractors.empty());
+        return new QueryEntry(serializationService, serializationService.toData(key), value,
+                Extractors.newBuilder(serializationService).build());
     }
 
     class TestPortableFactory implements PortableFactory {

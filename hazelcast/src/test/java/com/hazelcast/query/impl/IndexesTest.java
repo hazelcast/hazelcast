@@ -70,7 +70,8 @@ public class IndexesTest {
         indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee, Extractors.empty()), null,
+            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee,
+                            newExtractor()), null,
                     Index.OperationSource.USER);
         }
         int count = 10;
@@ -93,7 +94,8 @@ public class IndexesTest {
         indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee, Extractors.empty()), null,
+            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee,
+                            newExtractor()), null,
                     Index.OperationSource.USER);
         }
 
@@ -108,25 +110,29 @@ public class IndexesTest {
     public void testIndex2() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("name", false);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(1), new Value("abc"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(2), new Value("xyz"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(2), new Value("xyz"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(3), new Value("aaa"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(3), new Value("aaa"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(4), new Value("zzz"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(4), new Value("zzz"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(5), new Value("klm"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(5), new Value("klm"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(6), new Value("prs"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(6), new Value("prs"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(7), new Value("prs"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(7), new Value("prs"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(8), new Value("def"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(8), new Value("def"), newExtractor()), null,
                 Index.OperationSource.USER);
-        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(9), new Value("qwx"), Extractors.empty()), null,
+        indexes.saveEntryIndex(new QueryEntry(serializationService, toData(9), new Value("qwx"), newExtractor()), null,
                 Index.OperationSource.USER);
         assertEquals(8, new HashSet<QueryableEntry>(indexes.query(new SqlPredicate("name > 'aac'"))).size());
+    }
+
+    protected Extractors newExtractor() {
+        return Extractors.newBuilder(serializationService).build();
     }
 
     /**
@@ -152,7 +158,7 @@ public class IndexesTest {
     private void shouldReturnNull_whenQueryingOnKeys(Indexes indexes) {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, Extractors.empty()), null,
+            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, newExtractor()), null,
                     Index.OperationSource.USER);
         }
 
@@ -168,7 +174,7 @@ public class IndexesTest {
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry
-            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, Extractors.empty()), null,
+            indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), null, newExtractor()), null,
                     Index.OperationSource.USER);
         }
 

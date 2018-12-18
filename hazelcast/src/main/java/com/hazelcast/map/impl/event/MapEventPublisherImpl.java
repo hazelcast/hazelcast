@@ -36,7 +36,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationPublisher;
 
@@ -55,29 +54,33 @@ import static java.util.Collections.singleton;
 public class MapEventPublisherImpl implements MapEventPublisher {
 
     /**
-     * When {@code true}, enables processing of entry events for listeners with predicates to fit with "query cache" concept:
-     * for example when the original event indicates an update from an old value that does not match the predicate to a new value
-     * that does match, then the entry listener will be notified with an ADDED event.
-     * This affects only map listeners with predicates and the way entry updates are handled. Put/remove operations are not
-     * affected, neither are listeners without predicates.
-     * Default value is {@code false}, to maintain compatible behavior with previous Hazelcast versions.
+     * When {@code true}, enables processing of entry events for
+     * listeners with predicates to fit with "query cache" concept: for
+     * example when the original event indicates an update from an old
+     * value that does not match the predicate to a new value that does
+     * match, then the entry listener will be notified with an ADDED
+     * event. This affects only map listeners with predicates and the
+     * way entry updates are handled. Put/remove operations are not
+     * affected, neither are listeners without predicates. Default value
+     * is {@code false}, to maintain compatible behavior with previous
+     * Hazelcast versions.
      */
-    public static final HazelcastProperty LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES = new HazelcastProperty(
-            "hazelcast.map.entry.filtering.natural.event.types", false);
+    public static final HazelcastProperty LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES
+            = new HazelcastProperty("hazelcast.map.entry.filtering.natural.event.types", false);
 
     protected final NodeEngine nodeEngine;
     protected final EventService eventService;
     protected final IPartitionService partitionService;
     protected final MapServiceContext mapServiceContext;
     protected final FilteringStrategy filteringStrategy;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final QueryCacheEventPublisher queryCacheEventPublisher;
 
     public MapEventPublisherImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.partitionService = nodeEngine.getPartitionService();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.eventService = nodeEngine.getEventService();
         if (this.nodeEngine.getProperties().
                 getBoolean(LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES)) {
@@ -86,8 +89,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             this.filteringStrategy = new DefaultEntryEventFilteringStrategy(serializationService, mapServiceContext);
         }
         this.queryCacheEventPublisher = new QueryCacheEventPublisher(filteringStrategy,
-                mapServiceContext.getQueryCacheContext(),
-                (InternalSerializationService) serializationService);
+                mapServiceContext.getQueryCacheContext(), serializationService);
     }
 
     @Override
@@ -165,7 +167,8 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         String source = getThisNodesAddress();
-        MapEventData mapEventData = new MapEventData(source, mapName, caller, eventType.getType(), numberOfEntriesAffected);
+        MapEventData mapEventData = new MapEventData(source, mapName, caller,
+                eventType.getType(), numberOfEntriesAffected);
         publishEventInternal(registrations, mapEventData, mapName.hashCode());
     }
 

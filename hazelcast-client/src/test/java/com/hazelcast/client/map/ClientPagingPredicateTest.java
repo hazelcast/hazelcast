@@ -346,8 +346,9 @@ public class ClientPagingPredicateTest extends HazelcastTestSupport {
             set = map.entrySet(pagingPredicate);
             for (Map.Entry<Integer, Employee> entry : set) {
                 Employee e = entry.getValue();
-                QueryEntry qe = new QueryEntry((InternalSerializationService) serializationService,
-                        serializationService.toData(e.getId()), e, Extractors.empty());
+                InternalSerializationService ss = (InternalSerializationService) serializationService;
+                QueryEntry qe = new QueryEntry(ss,
+                        ss.toData(e.getId()), e, Extractors.newBuilder(ss).build());
                 assertTrue(predicate.apply(qe));
                 results.add(e);
             }
