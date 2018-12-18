@@ -176,7 +176,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void emitByFrame_when_eventsIncrease_then_wmIncreases() throws Exception {
-        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
+        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2), Long.MAX_VALUE);
         doTest(
                 asList(
                         item(10),
@@ -198,7 +198,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void emitByFrame_when_eventsIncreaseAndStartAtVergeOfFrame_then_wmIncreases() throws Exception {
-        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
+        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2), Long.MAX_VALUE);
         doTest(
                 asList(
                         item(11),
@@ -219,7 +219,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void emitByFrame_when_eventsNotAtTheVergeOfFrame_then_wmEmittedCorrectly() throws Exception {
-        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(10));
+        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(10), Long.MAX_VALUE);
         doTest(
                 asList(
                         item(14),
@@ -238,7 +238,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void emitByFrame_when_gapBetweenEvents_then_gapInWms() throws Exception {
-        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
+        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2), Long.MAX_VALUE);
         doTest(
                 asList(
                         item(11),

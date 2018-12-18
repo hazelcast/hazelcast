@@ -48,12 +48,13 @@ public class UtilTest extends JetTestSupport {
     public ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void when_addClamped_then_doesntOverflow() {
+    public void when_addClamped_then_doesNotOverflow() {
         // no overflow
         assertEquals(0, addClamped(0, 0));
         assertEquals(1, addClamped(1, 0));
         assertEquals(-1, addClamped(-1, 0));
         assertEquals(-1, addClamped(Long.MAX_VALUE, Long.MIN_VALUE));
+        assertEquals(-1, addClamped(Long.MIN_VALUE, Long.MAX_VALUE));
 
         // overflow over MAX_VALUE
         assertEquals(Long.MAX_VALUE, addClamped(Long.MAX_VALUE, 1));
@@ -65,12 +66,13 @@ public class UtilTest extends JetTestSupport {
     }
 
     @Test
-    public void when_subtractClamped_then_doesntOverflow() {
+    public void when_subtractClamped_then_doesNotOverflow() {
         // no overflow
         assertEquals(0, subtractClamped(0, 0));
         assertEquals(1, subtractClamped(1, 0));
         assertEquals(-1, subtractClamped(-1, 0));
         assertEquals(0, subtractClamped(Long.MAX_VALUE, Long.MAX_VALUE));
+        assertEquals(0, subtractClamped(Long.MIN_VALUE, Long.MIN_VALUE));
 
         // overflow over MAX_VALUE
         assertEquals(Long.MAX_VALUE, subtractClamped(Long.MAX_VALUE, -1));

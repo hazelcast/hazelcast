@@ -21,7 +21,9 @@ import com.hazelcast.jet.core.processor.Processors;
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
+import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static java.lang.Math.floorMod;
 
 /**
  * A policy object that decides when the watermark has advanced enough to
@@ -41,8 +43,9 @@ public interface WatermarkEmissionPolicy extends Serializable {
 
     /**
      * Decides which watermark to emit based on the supplied {@code currentWm}
-     * value and {@code lastEmittedWm}. We expect the {@code currentWm >
-     * lastEmittedWm}.
+     * value and {@code lastEmittedWm}. It asserts that {@code currentWm >
+     * lastEmittedWm}. If it returns a value smaller than or equal to {@code
+     * lastEmittedWm}, it means no new watermark will be emitted.
      */
     long throttleWm(long currentWm, long lastEmittedWm);
 
@@ -65,7 +68,7 @@ public interface WatermarkEmissionPolicy extends Serializable {
      */
     @Nonnull
     static WatermarkEmissionPolicy noWatermarks() {
-        return (currentWm, lastEmittedWm) -> lastEmittedWm;
+        return (currentWm, lastEmittedWm) -> Long.MIN_VALUE;
     }
 
     /**
@@ -75,21 +78,41 @@ public interface WatermarkEmissionPolicy extends Serializable {
      */
     @Nonnull
     static WatermarkEmissionPolicy emitByMinStep(long minStep) {
-        checkPositive(minStep, "minStep should be > 0");
+        checkPositive(minStep, "minStep must be >= 1");
         return (currentWm, lastEmittedWm) -> lastEmittedWm + minStep <= currentWm ? currentWm : lastEmittedWm;
     }
 
     /**
-     * Returns a watermark emission policy that ensures that the value of
-     * the emitted watermark belongs to a frame higher than the previous
-     * watermark's frame, as per the supplied {@code WindowDefinition}. This
-     * emission policy should be employed to drive a downstream processor that
-     * computes a sliding/tumbling window
-     * ({@link Processors#accumulateByFrameP} or
-     * {@link Processors#aggregateToSlidingWindowP}).
+     * Returns a watermark emission policy that will restrict the watermarks to
+     * be at the frame boundary defined by {@code wDef}. Additionally ensures
+     * that two watermarks are at most {@code maxStep} apart, even if the frame
+     * size is larger.
+     * <p>
+     * This emission policy should be employed to drive a downstream processor
+     * that computes a sliding/tumbling window ({@link
+     * Processors#accumulateByFrameP} or {@link
+     * Processors#aggregateToSlidingWindowP}).
+     *
+     * @param wDef policy to define frames
+     * @param maxStep the maximum distance between two watermarks
      */
     @Nonnull
-    static WatermarkEmissionPolicy emitByFrame(SlidingWindowPolicy wDef) {
-        return (currentWm, lastEmittedWm) -> Math.max(wDef.floorFrameTs(currentWm), lastEmittedWm);
+    static WatermarkEmissionPolicy emitByFrame(SlidingWindowPolicy wDef, long maxStep) {
+        checkPositive(maxStep, "maxStep must be >= 1");
+        if (maxStep == 1) {
+            return noThrottling();
+        }
+        if (maxStep == Long.MAX_VALUE) {
+            return (currentWm, lastEmittedWm) -> wDef.floorFrameTs(currentWm);
+        }
+        return (currentWm, lastEmittedWm) -> {
+            assert currentWm > lastEmittedWm : "currentWm (" + currentWm + ") <= lastEmittedWm(" + lastEmittedWm + ')';
+            long currentWmAlignedToFrame = wDef.floorFrameTs(currentWm);
+            // Implement the step not as a distance from last watermark, but rather as the closest integer
+            // product of step smaller than currentWm. This is to ensure that all processors emit aligned
+            // WMs, if they use the same emission policy.
+            long currentWmAlignedToStep = subtractClamped(currentWm, floorMod(currentWm, maxStep));
+            return Math.max(currentWmAlignedToFrame, currentWmAlignedToStep);
+        };
     }
 }
