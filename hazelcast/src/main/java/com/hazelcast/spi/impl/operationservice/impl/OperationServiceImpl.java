@@ -385,13 +385,12 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public <T> ICompletableFuture<Map<Integer, T>> invokeOnAllPartitionsAsync(String serviceName,
-                                                                              OperationFactory operationFactory,
-                                                                              ExecutionCallback<Map<Integer, T>> callback) {
+                                                                              OperationFactory operationFactory) {
 
         Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         InvokeOnPartitions invokeOnPartitions =
                 new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
-        return invokeOnPartitions.invokeAsync(callback);
+        return invokeOnPartitions.invokeAsync();
     }
 
     @Override
@@ -420,13 +419,12 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
-            String serviceName, OperationFactory operationFactory, Collection<Integer> partitions,
-            ExecutionCallback<Map<Integer, T>> callback) {
+            String serviceName, OperationFactory operationFactory, Collection<Integer> partitions) {
 
         Map<Address, List<Integer>> memberPartitions = getMemberPartitions(partitions);
         InvokeOnPartitions invokeOnPartitions =
                 new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
-        return invokeOnPartitions.invokeAsync(callback);
+        return invokeOnPartitions.invokeAsync();
     }
 
     @Override

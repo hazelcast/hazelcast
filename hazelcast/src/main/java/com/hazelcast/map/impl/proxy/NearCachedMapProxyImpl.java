@@ -536,12 +536,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     public ICompletableFuture<Map<K, Object>> executeOnKeysInternalAsync(Set<K> keys, Set<Data> dataKeys,
-                EntryProcessor entryProcessor, ExecutionCallback<Map<K, Object>> callback) {
+                EntryProcessor entryProcessor) {
         if (serializeKeys) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
         try {
-            return super.executeOnKeysInternalAsync(keys, dataKeys, entryProcessor, callback);
+            return super.executeOnKeysInternalAsync(keys, dataKeys, entryProcessor);
         } finally {
             Set<?> ncKeys = serializeKeys ? dataKeys : keys;
             for (Object key : ncKeys) {

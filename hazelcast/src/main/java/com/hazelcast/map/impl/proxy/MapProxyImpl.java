@@ -781,7 +781,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(entryProcessor);
 
         Set<Data> dataKeys = createHashSet(keys.size());
-        return executeOnKeysInternalAsync(keys, dataKeys, entryProcessor, null);
+        return executeOnKeysInternalAsync(keys, dataKeys, entryProcessor);
     }
 
     @Override

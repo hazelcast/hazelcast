@@ -60,7 +60,6 @@ final class InvokeOnPartitions {
     private final ILogger logger;
     private final AtomicReferenceArray<Object> partitionResults;
     private final AtomicInteger latch;
-    private volatile ExecutionCallback<Map<Integer, Object>> callback;
     private final SimpleCompletableFuture future;
     private boolean invoked;
 
@@ -86,17 +85,16 @@ final class InvokeOnPartitions {
      * Executes all the operations on the partitions.
      */
     <T> Map<Integer, T> invoke() throws Exception {
-        return this.<T>invokeAsync(null).get();
+        return this.<T>invokeAsync().get();
     }
 
     /**
      * Executes all the operations on the partitions.
      */
     @SuppressWarnings("unchecked")
-    <T> ICompletableFuture<Map<Integer, T>> invokeAsync(ExecutionCallback<Map<Integer, T>> callback) {
+    <T> ICompletableFuture<Map<Integer, T>> invokeAsync() {
         assert !invoked : "already invoked";
         invoked = true;
-        this.callback = (ExecutionCallback<Map<Integer, Object>>) ((ExecutionCallback) callback);
         ensureNotCallingFromPartitionOperationThread();
         invokeOnAllPartitions();
         return future;
@@ -112,9 +110,6 @@ final class InvokeOnPartitions {
     private void invokeOnAllPartitions() {
         if (memberPartitions.isEmpty()) {
             future.setResult(Collections.EMPTY_MAP);
-            if (callback != null) {
-                callback.onResponse(Collections.EMPTY_MAP);
-            }
             return;
         }
         for (final Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
@@ -166,9 +161,6 @@ final class InvokeOnPartitions {
             Object partitionResult = partitionResults.get(partitionId);
             if (partitionResult instanceof Throwable) {
                 future.setResult(partitionResult);
-                if (callback != null) {
-                    callback.onFailure((Throwable) partitionResult);
-                }
                 return;
             }
 
@@ -179,9 +171,6 @@ final class InvokeOnPartitions {
             }
         }
         future.setResult(result);
-        if (callback != null) {
-            callback.onResponse(result);
-        }
     }
 
     private class FirstAttemptExecutionCallback implements ExecutionCallback<Object> {

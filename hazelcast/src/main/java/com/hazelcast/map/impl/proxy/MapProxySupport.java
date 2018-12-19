@@ -1144,7 +1144,7 @@ abstract class MapProxySupport<K, V>
      * Async version of {@link #executeOnKeysInternal}.
      */
     public ICompletableFuture<Map<K, Object>> executeOnKeysInternalAsync(Set<K> keys, Set<Data> dataKeys,
-                EntryProcessor entryProcessor, final ExecutionCallback<Map<K, Object>> callback) {
+                EntryProcessor entryProcessor) {
         if (dataKeys.isEmpty()) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
@@ -1165,26 +1165,17 @@ abstract class MapProxySupport<K, V>
                     }
                 } catch (Throwable e) {
                     resultFuture.setResult(e);
-                    if (callback != null) {
-                        callback.onFailure(e);
-                    }
                 }
                 resultFuture.setResult(result);
-                if (callback != null) {
-                    callback.onResponse(result);
-                }
             }
 
             @Override
             public void onFailure(Throwable t) {
                 resultFuture.setResult(t);
-                if (callback != null) {
-                    callback.onFailure(t);
-                }
             }
         };
 
-        operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys, partialCallback);
+        operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys).andThen(partialCallback);
         return resultFuture;
     }
 
