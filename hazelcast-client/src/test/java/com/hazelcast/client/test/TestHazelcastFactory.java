@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressProvider;
+import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.spi.properties.ClientProperty;
@@ -33,7 +34,6 @@ import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
@@ -100,10 +100,10 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
         return new AddressProvider() {
             @Override
-            public Collection<Address> loadAddresses() {
-                Collection<Address> possibleAddresses = new ArrayList<Address>();
+            public Addresses loadAddresses() {
+                Addresses possibleAddresses = new Addresses();
                 for (Address address : getKnownAddresses()) {
-                    Collection<Address> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
+                    Addresses addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
                             address.getHost(), 1);
                     possibleAddresses.addAll(addresses);
                 }

@@ -23,6 +23,7 @@ import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
+import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -242,20 +243,26 @@ class ClusterConnector {
             addresses = (LinkedHashSet<Address>) shuffle(addresses);
         }
 
-        LinkedHashSet<Address> providerAddresses = new LinkedHashSet<Address>();
+        LinkedHashSet<Address> providedAddresses = new LinkedHashSet<Address>();
         try {
-            providerAddresses.addAll(addressProvider.loadAddresses());
+            Addresses result = addressProvider.loadAddresses();
+            if (shuffleMemberList) {
+                // The relative order between primary and secondary addresses should not be changed.
+                // so we shuffle the lists separately and then add them to the final list so that
+                // secondary addresses are not tried before all primary addresses have been tried.
+                // Otherwise we can get startup delays.
+                Collections.shuffle(result.primary());
+                Collections.shuffle(result.secondary());
+            }
+            providedAddresses.addAll(result.primary());
+            providedAddresses.addAll(result.secondary());
         } catch (NullPointerException e) {
             throw e;
         } catch (Exception e) {
             logger.warning("Exception from AddressProvider: " + addressProvider, e);
         }
 
-        if (shuffleMemberList) {
-            providerAddresses = (LinkedHashSet<Address>) shuffle(providerAddresses);
-        }
-
-        addresses.addAll(providerAddresses);
+        addresses.addAll(providedAddresses);
 
         if (previousOwnerConnectionAddress != null) {
             /*
@@ -266,6 +273,7 @@ class ClusterConnector {
             addresses.remove(previousOwnerConnectionAddress);
             addresses.add(previousOwnerConnectionAddress);
         }
+
         return addresses;
     }
 
