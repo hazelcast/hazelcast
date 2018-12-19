@@ -523,7 +523,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return clusterConnector.getPossibleMemberAddresses();
     }
 
-    public ClusterConnector getClusterConnector() {
+    ClusterConnector getClusterConnector() {
         return clusterConnector;
     }
 
