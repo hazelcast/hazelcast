@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
@@ -56,10 +57,12 @@ final class InvokeOnPartitions {
     private final String serviceName;
     private final OperationFactory operationFactory;
     private final Map<Address, List<Integer>> memberPartitions;
+    private final ILogger logger;
     private final AtomicReferenceArray<Object> partitionResults;
     private final AtomicInteger latch;
     private volatile ExecutionCallback<Map<Integer, Object>> callback;
     private final SimpleCompletableFuture future;
+    private boolean invoked;
 
     InvokeOnPartitions(OperationServiceImpl operationService, String serviceName, OperationFactory operationFactory,
                        Map<Address, List<Integer>> memberPartitions) {
@@ -67,6 +70,7 @@ final class InvokeOnPartitions {
         this.serviceName = serviceName;
         this.operationFactory = operationFactory;
         this.memberPartitions = memberPartitions;
+        this.logger = operationService.node.loggingService.getLogger(getClass());
         int partitionCount = operationService.nodeEngine.getPartitionService().getPartitionCount();
         // this is the total number of partitions for which we actually have operation
         int actualPartitionCount = 0;
@@ -90,6 +94,8 @@ final class InvokeOnPartitions {
      */
     @SuppressWarnings("unchecked")
     <T> ICompletableFuture<Map<Integer, T>> invokeAsync(ExecutionCallback<Map<Integer, T>> callback) {
+        assert !invoked : "already invoked";
+        invoked = true;
         this.callback = (ExecutionCallback<Map<Integer, Object>>) ((ExecutionCallback) callback);
         ensureNotCallingFromPartitionOperationThread();
         invokeOnAllPartitions();
@@ -119,7 +125,7 @@ final class InvokeOnPartitions {
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke()
-                    .andThen(new FirstAttemptExecutionCallback(mp.getValue()));
+                    .andThen(new FirstAttemptExecutionCallback(partitions));
         }
     }
 
@@ -179,29 +185,37 @@ final class InvokeOnPartitions {
     }
 
     private class FirstAttemptExecutionCallback implements ExecutionCallback<Object> {
-        private final List<Integer> allPartitions;
+        private final List<Integer> requestedPartitions;
 
         FirstAttemptExecutionCallback(List<Integer> partitions) {
-            this.allPartitions = partitions;
+            this.requestedPartitions = partitions;
         }
 
         @Override
         public void onResponse(Object response) {
             PartitionResponse result = operationService.nodeEngine.toObject(response);
             Object[] results = result.getResults();
-            int[] partitions = result.getPartitions();
-            assert results.length <= allPartitions.size() : "results.length=" + results.length
-                    + ", but was sent to just " + allPartitions.size() + " partitions";
+            int[] responsePartitions = result.getPartitions();
+            assert results.length == responsePartitions.length
+                    : "results.length=" + results.length + ", responsePartitions.length=" + responsePartitions.length;
+            assert results.length <= requestedPartitions.size() : "results.length=" + results.length
+                    + ", but was sent to just " + requestedPartitions.size() + " partitions";
+            if (results.length != requestedPartitions.size()) {
+                logger.fine("Responses received for " + responsePartitions.length + " partitions, but "
+                        + requestedPartitions.size() + " partitions were requested");
+            }
             int failedPartitionsCnt = 0;
-            for (int i = 0; i < partitions.length; i++) {
+            for (int i = 0; i < responsePartitions.length; i++) {
+                assert requestedPartitions.contains(responsePartitions[i]) : "Response received for partition "
+                        + responsePartitions[i] + ", but that partition wasn't requested";
                 if (results[i] instanceof Throwable) {
-                    retryPartition(partitions[i]);
+                    retryPartition(responsePartitions[i]);
                     failedPartitionsCnt++;
                 } else {
-                    setPartitionResult(partitions[i], results[i]);
+                    setPartitionResult(responsePartitions[i], results[i]);
                 }
             }
-            decrementLatchAndHandle(allPartitions.size() - failedPartitionsCnt);
+            decrementLatchAndHandle(requestedPartitions.size() - failedPartitionsCnt);
         }
 
         @Override
@@ -211,7 +225,7 @@ final class InvokeOnPartitions {
             } else {
                 operationService.logger.warning(t.getMessage());
             }
-            for (Integer partition : allPartitions) {
+            for (Integer partition : requestedPartitions) {
                 retryPartition(partition);
             }
         }
