@@ -27,6 +27,7 @@ import javax.naming.Context;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
@@ -85,16 +86,18 @@ final class DnsEndpointResolver
 
     private List<DiscoveryNode> lookup()
             throws NamingException, UnknownHostException {
-        Attributes attributes = dirContext.getAttributes(serviceDns, new String[]{"SRV"});
-        NamingEnumeration<?> servers = attributes.get("srv").getAll();
-
         Set<String> addresses = new HashSet<String>();
-        while (servers.hasMore()) {
-            String server = (String) servers.next();
-            String serverHost = extractHost(server);
-            InetAddress address = InetAddress.getByName(serverHost);
-            if (addresses.add(address.getHostAddress()) && logger.isFinestEnabled()) {
-                logger.finest("Found node service with address: " + address);
+        Attributes attributes = dirContext.getAttributes(serviceDns, new String[]{"SRV"});
+        Attribute srvAttribute = attributes.get("srv");
+        if (srvAttribute != null) {
+            NamingEnumeration<?> servers = srvAttribute.getAll();
+            while (servers.hasMore()) {
+                String server = (String) servers.next();
+                String serverHost = extractHost(server);
+                InetAddress address = InetAddress.getByName(serverHost);
+                if (addresses.add(address.getHostAddress()) && logger.isFinestEnabled()) {
+                    logger.finest("Found node service with address: " + address);
+                }
             }
         }
 
