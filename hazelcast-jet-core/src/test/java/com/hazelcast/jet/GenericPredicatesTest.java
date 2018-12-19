@@ -172,7 +172,7 @@ public class GenericPredicatesTest extends HazelcastTestSupport {
     private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
-            super(ss, toData("1"), attribute, Extractors.empty());
+            super(ss, toData("1"), attribute, Extractors.newBuilder(ss).build());
         }
 
         @Override
