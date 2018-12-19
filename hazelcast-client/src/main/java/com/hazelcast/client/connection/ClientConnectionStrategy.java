@@ -39,17 +39,14 @@ public abstract class ClientConnectionStrategy {
      * Initialize this strategy with client context and config
      * @param clientContext hazelcast client context to access internal services
      */
-    public final void init(ClientContext clientContext) {
+    public void init(ClientContext clientContext) {
         this.clientContext = clientContext;
         this.clientConnectionStrategyConfig = clientContext.getClientConfig().getConnectionStrategyConfig();
         this.logger = clientContext.getLoggingService().getLogger(ClientConnectionStrategy.class);
     }
 
     /**
-     * Called after {@link ClientConnectionManager} started.
-     * Connecting to cluster can be triggered from this method using one of
-     * {@link ClientConnectionManager#connectToCluster} or
-     * {@link ClientConnectionManager#connectToClusterAsync}
+     * Starts the ClientConnectionStrategy; this will trigger connecting to the cluster.
      */
     public abstract void start();
 

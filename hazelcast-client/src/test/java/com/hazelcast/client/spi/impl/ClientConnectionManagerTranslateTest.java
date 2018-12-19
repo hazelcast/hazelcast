@@ -39,6 +39,8 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static junit.framework.TestCase.assertNotNull;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -57,8 +59,9 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
         TestAddressTranslator translator = new TestAddressTranslator();
         clientConnectionManager =
                 new ClientConnectionManagerImpl(getHazelcastClientInstanceImpl(client), translator, testAddressProvider);
-        clientConnectionManager.start(new ClientContext(getHazelcastClientInstanceImpl(client)));
-        clientConnectionManager.connectToCluster();
+        ClientContext clientContext = spy(new ClientContext(getHazelcastClientInstanceImpl(client)));
+        when(clientContext.getConnectionManager()).thenReturn(clientConnectionManager);
+        clientConnectionManager.start(clientContext);
 
         translator.shouldTranslate = true;
 
