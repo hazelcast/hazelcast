@@ -103,7 +103,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
 
         Vertex source = dag.newVertex("source", () -> new EmitListP(sourceEvents, isBatchLocal)).localParallelism(1);
         Vertex insertPP = dag.newVertex("insertWmP", insertWatermarksP(eventTimePolicy(
-                timestampFn, limitingLagAndLull(500, 1000), emitByFrame(wDef, Long.MAX_VALUE), -1
+                timestampFn, limitingLagAndLull(500, 1000), emitByFrame(wDef), -1
         ))).localParallelism(1);
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
 

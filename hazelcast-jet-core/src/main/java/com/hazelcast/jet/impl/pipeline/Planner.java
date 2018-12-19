@@ -28,7 +28,10 @@ import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
+import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -49,6 +52,8 @@ import static java.util.stream.Collectors.toList;
 
 @SuppressWarnings("unchecked")
 public class Planner {
+
+    private static final ILogger LOGGER = Logger.getLogger(Planner.class);
 
     /**
      * Maximum gap between two consecutive watermarks. This is not technically
@@ -78,10 +83,14 @@ public class Planner {
                                                  .filter(frameSize -> frameSize > 0)
                                                  .mapToLong(i -> i)
                                                  .toArray());
+        if (frameSizeGcd > MAXIMUM_WATERMARK_GAP) {
+            frameSizeGcd = Util.gcd(frameSizeGcd, MAXIMUM_WATERMARK_GAP);
+        }
+        LoggingUtil.logFine(LOGGER, "Watermarks in the pipeline will be throttled to %d", frameSizeGcd);
         // Update watermark emission policy on all wm gen params
         // with the GCD frame length
         WatermarkEmissionPolicy emitPolicy = frameSizeGcd > 0
-                ? emitByFrame(tumblingWinPolicy(frameSizeGcd), MAXIMUM_WATERMARK_GAP)
+                ? emitByFrame(tumblingWinPolicy(frameSizeGcd))
                 : noWatermarks();
         for (Transform transform : adjacencyMap.keySet()) {
             if (transform instanceof StreamSourceTransform) {

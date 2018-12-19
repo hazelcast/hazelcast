@@ -33,7 +33,7 @@ public class WatermarkEmissionPolicyTest {
     private long lastEmittedWm = Long.MIN_VALUE;
 
     @Test
-    public void test_throttleByMinStep() {
+    public void when_wmIncreasing_then_throttleByMinStep() {
         p = emitByMinStep(MIN_STEP);
         assertWm(2, 2);
         assertWm(3, 2);
@@ -45,8 +45,9 @@ public class WatermarkEmissionPolicyTest {
     }
 
     @Test
-    public void test_throttleByFrame_noMaxStep() {
-        p = emitByFrame(tumblingWinPolicy(3), Long.MAX_VALUE);
+    public void when_wmIncreasing_then_throttleByFrame() {
+        p = emitByFrame(tumblingWinPolicy(3));
+        assertWm(Long.MIN_VALUE, Long.MIN_VALUE);
         assertWm(2, 0);
         assertWm(3, 3);
         assertWm(4, 3);
@@ -54,40 +55,11 @@ public class WatermarkEmissionPolicyTest {
         assertWm(6, 6);
         assertWm(13, 12);
         assertWm(14, 12);
-        assertWm(15, 15);
-    }
-
-    @Test
-    public void test_throttleByFrame_maxStepCloseToMax() {
-        // this tests the possible overflow when calculating with maxStep
-        p = emitByFrame(tumblingWinPolicy(3), Long.MAX_VALUE);
-        assertWm(2, 0);
-        assertWm(3, 3);
-        assertWm(4, 3);
-        assertWm(5, 3);
-        assertWm(6, 6);
-        assertWm(13, 12);
-        assertWm(14, 12);
-        assertWm(15, 15);
-    }
-
-    @Test
-    public void test_throttleByFrame_withMaxStep() {
-        // this tests the possible overflow when calculating with maxStep
-        p = emitByFrame(tumblingWinPolicy(5), 2);
-        assertWm(2, 2);
-        assertWm(3, 2);
-        assertWm(4, 4);
-        assertWm(5, 5);
-        assertWm(6, 6);
-        assertWm(13, 12);
-        assertWm(14, 14);
         assertWm(15, 15);
     }
 
     private void assertWm(long currentWm, long expectedToEmit) {
-        long newWm = p.throttleWm(currentWm, lastEmittedWm);
-        lastEmittedWm = Math.max(lastEmittedWm, newWm);
+        lastEmittedWm = p.throttleWm(currentWm, lastEmittedWm);
         assertEquals(expectedToEmit, lastEmittedWm);
     }
 }

@@ -21,9 +21,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static com.hazelcast.util.Preconditions.checkPositive;
-import static java.lang.Math.floorMod;
 
 /**
  * A policy object that decides when the watermark has advanced enough to
@@ -83,36 +81,16 @@ public interface WatermarkEmissionPolicy extends Serializable {
     }
 
     /**
-     * Returns a watermark emission policy that will restrict the watermarks to
-     * be at the frame boundary defined by {@code wDef}. Additionally ensures
-     * that two watermarks are at most {@code maxStep} apart, even if the frame
-     * size is larger.
-     * <p>
-     * This emission policy should be employed to drive a downstream processor
-     * that computes a sliding/tumbling window ({@link
+     * Returns a watermark emission policy that ensures that the value of the
+     * emitted watermark belongs to a frame higher than the previous
+     * watermark's frame, as per the supplied {@code WindowDefinition}. This
+     * emission policy should be employed to drive a downstream processor that
+     * computes a sliding/tumbling window ({@link
      * Processors#accumulateByFrameP} or {@link
      * Processors#aggregateToSlidingWindowP}).
-     *
-     * @param wDef policy to define frames
-     * @param maxStep the maximum distance between two watermarks
      */
     @Nonnull
-    static WatermarkEmissionPolicy emitByFrame(SlidingWindowPolicy wDef, long maxStep) {
-        checkPositive(maxStep, "maxStep must be >= 1");
-        if (maxStep == 1) {
-            return noThrottling();
-        }
-        if (maxStep == Long.MAX_VALUE) {
-            return (currentWm, lastEmittedWm) -> wDef.floorFrameTs(currentWm);
-        }
-        return (currentWm, lastEmittedWm) -> {
-            assert currentWm > lastEmittedWm : "currentWm (" + currentWm + ") <= lastEmittedWm(" + lastEmittedWm + ')';
-            long currentWmAlignedToFrame = wDef.floorFrameTs(currentWm);
-            // Implement the step not as a distance from last watermark, but rather as the closest integer
-            // product of step smaller than currentWm. This is to ensure that all processors emit aligned
-            // WMs, if they use the same emission policy.
-            long currentWmAlignedToStep = subtractClamped(currentWm, floorMod(currentWm, maxStep));
-            return Math.max(currentWmAlignedToFrame, currentWmAlignedToStep);
-        };
+    static WatermarkEmissionPolicy emitByFrame(SlidingWindowPolicy wDef) {
+        return (currentWm, lastEmittedWm) -> wDef.floorFrameTs(currentWm);
     }
 }
