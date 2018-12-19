@@ -319,13 +319,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private HazelcastCloudAddressProvider initCloudAddressProvider(ClientCloudConfig cloudConfig) {
         if (cloudConfig.isEnabled()) {
             String discoveryToken = cloudConfig.getDiscoveryToken();
-            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), discoveryToken);
+            String cloudUrlBase = getProperties().getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             return new HazelcastCloudAddressProvider(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
 
         String cloudToken = properties.getString(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN);
         if (cloudToken != null) {
-            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), cloudToken);
+            String cloudUrlBase = getProperties().getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, cloudToken);
             return new HazelcastCloudAddressProvider(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
         return null;
@@ -363,7 +365,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             } else {
                 discoveryToken = cloudDiscoveryToken;
             }
-            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), discoveryToken);
+            String cloudUrlBase = getProperties().getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             return new HazelcastCloudAddressTranslator(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
 
