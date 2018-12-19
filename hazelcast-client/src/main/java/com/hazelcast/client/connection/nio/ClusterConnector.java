@@ -134,7 +134,7 @@ class ClusterConnector {
             connection = connectionManager.getOrConnect(address, true);
             client.onClusterConnect(connection);
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-            connectionStrategy.onConnectToCluster();
+            connectionStrategy.onClusterConnect();
         } catch (Exception e) {
             logger.warning("Exception during initial connection to " + address + ", exception " + e);
             if (null != connection) {
