@@ -149,6 +149,16 @@
         <hazelcast-cloud enabled="false">
             <discovery-token>EXAMPLE_TOKEN</discovery-token>
         </hazelcast-cloud>
+        <discovery-strategies>
+            <node-filter class="DummyFilterClass" />
+            <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
+                <properties>
+                    <property name="key-string">foo</property>
+                    <property name="key-int">123</property>
+                    <property name="key-boolean">true</property>
+                </properties>
+            </discovery-strategy>
+        </discovery-strategies>
     </network>
 
     <executor-pool-size>40</executor-pool-size>

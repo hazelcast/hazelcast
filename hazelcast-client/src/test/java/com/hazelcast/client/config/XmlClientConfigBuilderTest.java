@@ -18,6 +18,8 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -601,6 +603,21 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         ClientCloudConfig cloudConfig = defaultClientConfig.getNetworkConfig().getCloudConfig();
         assertEquals(false, cloudConfig.isEnabled());
         assertEquals(null, cloudConfig.getDiscoveryToken());
+    }
+
+    @Test
+    public void testDiscoveryStrategyConfig() {
+        DiscoveryConfig discoveryConfig = fullClientConfig.getNetworkConfig().getDiscoveryConfig();
+        assertEquals("DummyFilterClass", discoveryConfig.getNodeFilterClass());
+        Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
+        assertEquals(1, discoveryStrategyConfigs.size());
+        DiscoveryStrategyConfig discoveryStrategyConfig = discoveryStrategyConfigs.iterator().next();
+        assertEquals("DummyDiscoveryStrategy1", discoveryStrategyConfig.getClassName());
+        Map<String, Comparable> properties = discoveryStrategyConfig.getProperties();
+        assertEquals(3, properties.size());
+        assertEquals("foo", properties.get("key-string"));
+        assertEquals("123", properties.get("key-int"));
+        assertEquals("true", properties.get("key-boolean"));
     }
 
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, ClientConfig clientConfig) {
