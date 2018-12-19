@@ -84,7 +84,6 @@
             <keep-alive>true</keep-alive>
             <reuse-address>true</reuse-address>
             <linger-seconds>3</linger-seconds>
-            <timeout>-1</timeout>
             <buffer-size>128</buffer-size>
         </socket-options>
         <socket-interceptor enabled="true">
