@@ -507,14 +507,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionListeners.add(connectionListener);
     }
 
-    private void onAuthenticationFailed(Address target, ClientConnection connection, Throwable cause) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Authentication of " + connection + " failed.", cause);
-        }
-        connection.close(null, cause);
-        connectionsInProgress.remove(target);
-    }
-
     public Credentials getLastCredentials() {
         return lastCredentials;
     }
@@ -739,10 +731,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         @Override
-        public void onFailure(Throwable t) {
+        public void onFailure(Throwable cause) {
             timeoutTaskFuture.cancel(true);
-            onAuthenticationFailed(target, connection, t);
-            future.onFailure(t);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Authentication of " + connection + " failed.", cause);
+            }
+            connection.close(null, cause);
+            connectionsInProgress.remove(target);
+            future.onFailure(cause);
         }
     }
 }
