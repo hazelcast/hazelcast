@@ -55,6 +55,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
     @Override
     public HandlerStatus onRead() {
         src.flip();
+        int messagesReadInBatch = 0;
         try {
             int messagesCreated = 0;
             while (src.hasRemaining()) {
@@ -70,6 +71,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                     handleMessage(message);
                     message = ClientMessage.create();
                     messagesCreated++;
+                    messagesReadInBatch++;
                     continue;
                 }
 
@@ -103,6 +105,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
             return CLEAN;
         } finally {
             compactOrClear(src);
+            System.out.println(channel+" ClientMessageDecoder messages read in batch:"+messagesReadInBatch);
         }
     }
 

@@ -424,6 +424,9 @@ public final class ProxyManager {
     }
 
     private void initialize(ClientProxy clientProxy) throws Exception {
+        if(true){
+            return;
+        }
         Address initializationTarget = findNextAddressToSendCreateRequest();
         if (initializationTarget == null) {
             throw new IOException("Not able to find a member to create proxy on!");

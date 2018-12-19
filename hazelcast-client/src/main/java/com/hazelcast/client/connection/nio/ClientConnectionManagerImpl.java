@@ -590,9 +590,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 connection.close("Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
             }
+            activeConnections.putIfAbsent(target, connection);
+            clusterConnector.setOwnerConnectionAddress(target);
 
             future.onSuccess(connection);
-            //System.out.println("foo");
+             //System.out.println("foo");
         }
 
         private void authenticateAsync(ClientConnection connection) {

@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A {@link com.hazelcast.internal.networking.Channel} implementation tailored
@@ -42,7 +43,7 @@ public final class NioChannel extends AbstractChannel {
     private final MetricsRegistry metricsRegistry;
     private final ChannelInitializer channelInitializer;
     private final NioChannelOptions config;
-
+    private final AtomicBoolean started = new AtomicBoolean();
     public NioChannel(SocketChannel socketChannel,
                       boolean clientMode,
                       ChannelInitializer channelInitializer,
@@ -108,6 +109,10 @@ public final class NioChannel extends AbstractChannel {
 
     @Override
     public void start() {
+        if(!started.compareAndSet(false,true)){
+            return;
+        }
+
         try {
             // before starting the channel, the socketChannel need to be put in
             // non blocking mode since that is mandatory for the NioChannel.
