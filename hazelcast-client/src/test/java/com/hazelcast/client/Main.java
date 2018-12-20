@@ -7,9 +7,11 @@ import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MultiMap;
 
+import java.util.Map;
+
 public class Main {
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
@@ -20,9 +22,10 @@ public class Main {
 
 
 //
-        MultiMap<Object, Object> map = client.getMultiMap("foo");
+        Map<Object, Object> map = client.getMap("foo");
+        System.out.println("===============================================");
         System.out.println(map.get("bar"));
-
-System.exit(0);
+        System.out.println("===============================================");
+        System.exit(0);
     }
 }

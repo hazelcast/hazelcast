@@ -88,15 +88,15 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
                 sendClientMessage(prepareUnauthenticatedClientMessage());
                 break;
             case AUTHENTICATED:
-                if (isOwnerConnection()) {
+               // if (isOwnerConnection()) {
                     principal = new ClientPrincipal(getUuid(), clientEngine.getThisUuid());
-                    if (logger.isFineEnabled()) {
-                        logger.fine("Processing owner authentication with principal " + principal);
-                    }
-                    super.processMessage();
-                } else {
+                //    if (logger.isFineEnabled()) {
+                //        logger.fine("Processing owner authentication with principal " + principal);
+                //    }
+                //    super.processMessage();
+                //} else {
                     sendClientMessage(prepareAuthenticatedClientMessage());
-                }
+               // }
                 break;
             default:
                 throw new IllegalStateException("Unhandled authentication result");

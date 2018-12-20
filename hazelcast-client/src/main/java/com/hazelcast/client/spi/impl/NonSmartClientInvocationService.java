@@ -56,7 +56,6 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
         if (ownerConnection == null) {
             throw new IOException("NonSmartClientInvocationService: Owner connection is not available.");
         }
-        ownerConnection.start();
         return ownerConnection;
     }
 }

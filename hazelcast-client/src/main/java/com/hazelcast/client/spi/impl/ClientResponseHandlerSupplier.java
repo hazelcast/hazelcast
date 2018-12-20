@@ -128,8 +128,15 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
         }
 
         if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
-            future.notifyException(client.getClientExceptionFactory().createException(clientMessage));
+            Throwable exception = client.getClientExceptionFactory().createException(clientMessage);
+            try{
+                throw new Exception(exception);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            future.notifyException(exception);
         } else {
+            System.out.println("Notify success");
             future.notify(clientMessage);
         }
     }

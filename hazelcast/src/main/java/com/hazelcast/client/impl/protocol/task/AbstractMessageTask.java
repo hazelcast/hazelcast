@@ -102,7 +102,10 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             doRun();
         } catch (Throwable e) {
             handleProcessingFailure(e);
+            e.printStackTrace();
         }
+        System.out.println(getClass().getSimpleName()+".run() complete");
+
     }
 
     protected void doRun() throws Throwable {

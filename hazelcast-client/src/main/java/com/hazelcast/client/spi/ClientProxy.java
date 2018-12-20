@@ -225,6 +225,8 @@ public abstract class ClientProxy implements DistributedObject {
             clientMessage.addFlag(ClientMessage.PARTITION_ID_IS_HASH);
             int partitionHash = partitionService.getPartitionHash(key);
             clientMessage.setPartitionId(partitionHash);
+            ClientConnection clientConnection = getClient().getConnectionManager().getOwnerConnection();
+            clientConnection.start();
             return invoke(clientMessage);
         }
     }
