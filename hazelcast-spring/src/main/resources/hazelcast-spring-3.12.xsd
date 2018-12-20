@@ -2951,7 +2951,7 @@
             </xs:element>
             <xs:element name="client-permissions" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
-                    <xs:sequence>
+                    <xs:choice minOccurs="1" maxOccurs="unbounded">
                         <xs:element name="all-permissions" type="base-permission" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="map-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
@@ -2975,6 +2975,8 @@
                                     maxOccurs="unbounded"/>
                         <xs:element name="id-generator-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
+                        <xs:element name="flake-id-generator-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
                         <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="durable-executor-service-permission" type="instance-permission" minOccurs="0"
@@ -2988,8 +2990,10 @@
                         <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="cache-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
+                        <xs:element name="user-code-deployment-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
                         <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
-                    </xs:sequence>
+                    </xs:choice>
                 </xs:complexType>
             </xs:element>
             <xs:element name="security-interceptors" type="interceptors" minOccurs="0" maxOccurs="1"/>

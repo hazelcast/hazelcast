@@ -2507,7 +2507,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 type = PermissionType.PN_COUNTER;
             } else if ("cache-permission".equals(nodeName)) {
                 type = PermissionType.CACHE;
-            } else if ("user-code-deployment".equals(nodeName)) {
+            } else if ("user-code-deployment-permission".equals(nodeName)) {
                 type = PermissionType.USER_CODE_DEPLOYMENT;
             } else if (PermissionType.CONFIG.getNodeName().equals(nodeName)) {
                 type = PermissionType.CONFIG;
