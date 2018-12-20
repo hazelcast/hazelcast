@@ -85,7 +85,7 @@ public abstract class ClientConnectionStrategy {
      * If a cluster connection is established, this method will be called.
      * if an exception is thrown, the already established connection will be closed.
      */
-    public abstract void onConnectToCluster();
+    public abstract void onClusterConnect();
 
     /**
      * If the cluster connection is lost for any reason, this method will be called.

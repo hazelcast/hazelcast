@@ -83,7 +83,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     }
 
     @Override
-    public void onConnectToCluster() {
+    public void onClusterConnect() {
     }
 
     @Override
