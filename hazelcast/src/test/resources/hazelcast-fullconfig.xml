@@ -758,14 +758,8 @@
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>
             </all-permissions>
-            <map-permission name="default" principal="dev">
-                <actions>
-                    <action>create</action>
-                    <action>destroy</action>
-                    <action>put</action>
-                    <action>read</action>
-                </actions>
-            </map-permission>
+            <config-permission principal="deployer"/>
+            <transaction-permission principal="deployer"/>
             <map-permission name="custom" principal="dev">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
@@ -777,34 +771,96 @@
                     <action>read</action>
                 </actions>
             </map-permission>
-            <queue-permission name="default" principal="dev">
-                <endpoints>
-                    <endpoint>127.0.0.1</endpoint>
-                </endpoints>
+            <queue-permission name="*">
                 <actions>
-                    <action>create</action>
-                    <action>destroy</action>
-                    <action>add</action>
-                    <action>remove</action>
+                    <action>all</action>
                 </actions>
             </queue-permission>
-            <transaction-permission/>
-            <cache-permission name="/hz/cachemanager1/cache1" principal="dev">
-                <endpoints>
-                    <endpoint>127.0.0.1</endpoint>
-                </endpoints>
+            <topic-permission name="*">
                 <actions>
-                    <action>create</action>
-                    <action>destroy</action>
-                    <action>add</action>
-                    <action>remove</action>
+                    <action>all</action>
+                </actions>
+            </topic-permission>
+            <multimap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </multimap-permission>
+            <list-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </list-permission>
+            <set-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </set-permission>
+            <id-generator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </id-generator-permission>
+            <flake-id-generator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </flake-id-generator-permission>
+            <lock-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </lock-permission>
+            <atomic-long-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </atomic-long-permission>
+            <countdown-latch-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </countdown-latch-permission>
+            <semaphore-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </semaphore-permission>
+            <executor-service-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </executor-service-permission>
+            <durable-executor-service-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </durable-executor-service-permission>
+            <cardinality-estimator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </cardinality-estimator-permission>
+            <scheduled-executor-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </scheduled-executor-permission>
+            <cache-permission name="*">
+                <actions>
+                    <action>all</action>
                 </actions>
             </cache-permission>
-            <config-permission principal="dev">
-                <endpoints>
-                    <endpoint>127.0.0.1</endpoint>
-                </endpoints>
-            </config-permission>
+            <user-code-deployment-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </user-code-deployment-permission>
+            <pn-counter-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </pn-counter-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>

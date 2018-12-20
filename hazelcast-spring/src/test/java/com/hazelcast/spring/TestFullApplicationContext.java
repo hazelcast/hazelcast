@@ -138,6 +138,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanReplicationEndpoint;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -151,9 +152,11 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -568,12 +571,16 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         final Set<PermissionConfig> clientPermissionConfigs = config.getSecurityConfig().getClientPermissionConfigs();
         assertFalse(config.getSecurityConfig().getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
-        assertEquals(1, clientPermissionConfigs.size());
+        assertEquals(22, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")
                 .addAction("create")
                 .setEndpoints(Collections.<String>emptySet());
-
         assertContains(clientPermissionConfigs, pnCounterPermission);
+        Set<PermissionType> permTypes = new HashSet<PermissionType>(Arrays.asList(PermissionType.values()));
+        for (PermissionConfig pc : clientPermissionConfigs) {
+            permTypes.remove(pc.getType());
+        }
+        assertTrue("All permission types should be listed in fullConfig. Not found ones: " + permTypes, permTypes.isEmpty());
     }
 
     @Test
