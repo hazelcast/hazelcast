@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -545,9 +544,13 @@ public class JobCoordinationService {
         }
 
         boolean allSucceeded = true;
-        Collection<Member> dataMembers = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+        int dataMembersCount = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR).size();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        // If the number of partitions is lower than the data member count, some members won't have
+        // any partitions assigned. Jet doesn't use such members.
+        int dataMembersWithPartitionsCount = Math.min(dataMembersCount, partitionCount);
         for (MasterContext mc : masterContexts.values()) {
-            allSucceeded &= mc.maybeScaleUp(dataMembers);
+            allSucceeded &= mc.maybeScaleUp(dataMembersWithPartitionsCount);
         }
         if (!allSucceeded) {
             scheduleScaleUp(RETRY_DELAY_IN_MILLIS);

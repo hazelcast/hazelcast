@@ -85,14 +85,14 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
     }
 
     protected void test(
-            StreamSource<? extends Integer> source, Function<StreamSourceStage<Integer>,
-            StreamStage<Integer>> addTimestampsFunction,
+            StreamSource<? extends Integer> source,
+            Function<StreamSourceStage<Integer>, StreamStage<Integer>> addTimestampsFunction,
             List<Long> expectedWms,
             String expectedTimestampFailure
     ) {
         Pipeline p = Pipeline.create();
         StreamSourceStage<Integer> sourceStage = p.drawFrom(source);
-        StreamStage<Integer> stageWithTimestamps = null;
+        StreamStage<Integer> stageWithTimestamps;
         try {
             stageWithTimestamps = addTimestampsFunction.apply(sourceStage);
         } catch (Exception e) {
@@ -103,6 +103,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
             return;
         }
         stageWithTimestamps
+                .peek()
                 .window(WindowDefinition.tumbling(1))
                 .aggregate(counting())
                 .peek()

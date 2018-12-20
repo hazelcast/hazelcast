@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LocalMemberResetException;
-import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
@@ -32,8 +31,8 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
@@ -1146,7 +1145,7 @@ public class MasterContext {
      * auto-scaling disabled, is already running on all members or if
      * we've managed to request a restart.
      */
-    boolean maybeScaleUp(Collection<Member> currentDataMembers) {
+    boolean maybeScaleUp(int dataMembersWithPartitionsCount) {
         if (!jobConfig().isAutoScaling()) {
             return true;
         }
@@ -1154,7 +1153,7 @@ public class MasterContext {
         // We only compare the number of our participating members and current members.
         // If there is any member in our participants that is not among current data members,
         // this job will be restarted anyway. If it's the other way, then the sizes won't match.
-        if (executionPlanMap == null || executionPlanMap.size() == currentDataMembers.size()) {
+        if (executionPlanMap == null || executionPlanMap.size() == dataMembersWithPartitionsCount) {
             LoggingUtil.logFine(logger, "Not scaling %s up: not running or already running on all members",
                     jobIdString());
             return true;
@@ -1163,7 +1162,8 @@ public class MasterContext {
         JobStatus localStatus = jobStatus;
         if (localStatus == RUNNING && requestTermination(TerminationMode.RESTART_GRACEFUL).f1() == null) {
             logger.info("Requested restart of " + jobIdString() + " to make use of added member(s). Job was running on " +
-                    executionPlanMap.size() + " members, cluster now has " + currentDataMembers.size() + " data members");
+                    executionPlanMap.size() + " members, cluster now has " + dataMembersWithPartitionsCount
+                    + " data members with assigned partitions");
             return true;
         }
 
