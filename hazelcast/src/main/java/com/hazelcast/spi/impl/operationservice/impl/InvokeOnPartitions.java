@@ -85,6 +85,7 @@ final class InvokeOnPartitions {
      * Executes all the operations on the partitions.
      */
     <T> Map<Integer, T> invoke() throws Exception {
+        ensureNotCallingFromPartitionOperationThread();
         return this.<T>invokeAsync().get();
     }
 
@@ -95,7 +96,6 @@ final class InvokeOnPartitions {
     <T> ICompletableFuture<Map<Integer, T>> invokeAsync() {
         assert !invoked : "already invoked";
         invoked = true;
-        ensureNotCallingFromPartitionOperationThread();
         invokeOnAllPartitions();
         return future;
     }
