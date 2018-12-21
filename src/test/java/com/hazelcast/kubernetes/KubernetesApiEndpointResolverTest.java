@@ -20,9 +20,7 @@ import com.hazelcast.kubernetes.KubernetesClient.Endpoints;
 import com.hazelcast.kubernetes.KubernetesClient.EntrypointAddress;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.discovery.DiscoveryNode;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,12 +29,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,8 +46,6 @@ public class KubernetesApiEndpointResolverTest {
     private static final String SERVICE_LABEL_VALUE = "serviceLabelValue";
     private static final Boolean RESOLVE_NOT_READY_ADDRESSES = true;
     private static final String NAMESPACE = "theNamespace";
-    private static final String KUBERNETES_MASTER_URL = "http://bla";
-    private static final String API_TOKEN = "token";
 
     @Mock
     private RetryKubernetesClient client;
@@ -74,7 +64,7 @@ public class KubernetesApiEndpointResolverTest {
         given(client.endpoints(NAMESPACE)).willReturn(endpoints);
 
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, null, null, NAMESPACE, null,
-                KUBERNETES_MASTER_URL, API_TOKEN);
+                client);
 
         // when
         List<DiscoveryNode> nodes = sut.resolve();
@@ -99,8 +89,7 @@ public class KubernetesApiEndpointResolverTest {
         given(client.endpointsByName(NAMESPACE, SERVICE_NAME)).willReturn(endpoints);
 
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, port, null, null, NAMESPACE,
-                null,
-                KUBERNETES_MASTER_URL, API_TOKEN);
+                null, client);
 
         // when
         List<DiscoveryNode> nodes = sut.resolve();
@@ -117,8 +106,7 @@ public class KubernetesApiEndpointResolverTest {
         given(client.endpointsByLabel(NAMESPACE, SERVICE_LABEL, SERVICE_LABEL_VALUE)).willReturn(endpoints);
 
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, null, 0, SERVICE_LABEL, SERVICE_LABEL_VALUE,
-                NAMESPACE,
-                null, KUBERNETES_MASTER_URL, API_TOKEN);
+                NAMESPACE, null, client);
 
         // when
         List<DiscoveryNode> nodes = sut.resolve();
@@ -135,7 +123,7 @@ public class KubernetesApiEndpointResolverTest {
         given(client.endpointsByName(NAMESPACE, SERVICE_NAME)).willReturn(endpoints);
 
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null, NAMESPACE,
-                RESOLVE_NOT_READY_ADDRESSES, KUBERNETES_MASTER_URL, API_TOKEN);
+                RESOLVE_NOT_READY_ADDRESSES, client);
 
         // when
         List<DiscoveryNode> nodes = sut.resolve();
@@ -152,36 +140,13 @@ public class KubernetesApiEndpointResolverTest {
 
         KubernetesApiEndpointResolver sut = new KubernetesApiEndpointResolver(LOGGER, SERVICE_NAME, 0, null, null, NAMESPACE,
                 null,
-                KUBERNETES_MASTER_URL, API_TOKEN);
+                client);
 
         // when
         List<DiscoveryNode> nodes = sut.resolve();
 
         // then
         assertEquals(0, nodes.size());
-    }
-
-    @Test
-    public void testReadFileContents()
-            throws IOException {
-        String expectedContents = "Hello, world!\nThis is a test with Unicode ✓.";
-        String testFile = createTestFile(expectedContents);
-        String actualContents = KubernetesApiEndpointResolver.readFileContents(testFile);
-        Assert.assertEquals(expectedContents, actualContents);
-    }
-
-    private static String createTestFile(String expectedContents)
-            throws IOException {
-        File temp = File.createTempFile("test", ".tmp");
-        temp.deleteOnExit();
-        BufferedWriter bufferedWriter = null;
-        try {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(temp), Charset.forName("UTF-8")));
-            bufferedWriter.write(expectedContents);
-        } finally {
-            IOUtil.closeResource(bufferedWriter);
-        }
-        return temp.getAbsolutePath();
     }
 
     private static Endpoints createEndpoints(int customPort) {

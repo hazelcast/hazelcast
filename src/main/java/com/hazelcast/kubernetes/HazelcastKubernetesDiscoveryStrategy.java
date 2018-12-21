@@ -18,12 +18,20 @@ package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.util.StringUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +53,12 @@ final class HazelcastKubernetesDiscoveryStrategy
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
 
+    private final String namespace;
+
+    private final KubernetesClient client;
     private final EndpointResolver endpointResolver;
+
+    private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
 
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         super(logger, properties);
@@ -57,10 +70,13 @@ final class HazelcastKubernetesDiscoveryStrategy
         int port = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PORT, 0);
         String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
-        String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
+        namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
         Boolean resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, false);
         String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
         String apiToken = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN, null);
+        if (apiToken == null) {
+            apiToken = getAccountToken();
+        }
 
         logger.info("Kubernetes Discovery properties: { "
                 + "service-dns: " + serviceDns + ", "
@@ -73,12 +89,13 @@ final class HazelcastKubernetesDiscoveryStrategy
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
                 + "kubernetes-master: " + kubernetesMaster + "}");
 
+        client = buildKubernetesClient(apiToken, kubernetesMaster);
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns, port, serviceDnsTimeout);
         } else {
             endpointResolver = new KubernetesApiEndpointResolver(logger, serviceName, port, serviceLabel, serviceLabelValue,
-                    namespace, resolveNotReadyAddresses, kubernetesMaster, apiToken);
+                    namespace, resolveNotReadyAddresses, client);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
         this.endpointResolver = endpointResolver;
@@ -99,6 +116,25 @@ final class HazelcastKubernetesDiscoveryStrategy
         endpointResolver.start();
     }
 
+    @Override
+    public Map<String, Object> discoverLocalMetadata() {
+        if (memberMetadata.isEmpty()) {
+            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, discoverZone());
+        }
+        return memberMetadata;
+    }
+
+    private String discoverZone() {
+        try {
+            String hostname = InetAddress.getLocalHost().getHostName();
+            return client.zone(namespace, hostname);
+        } catch (Exception e) {
+            getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature disabled");
+        }
+        return "unknown";
+    }
+
+    @Override
     public Iterable<DiscoveryNode> discoverNodes() {
         return endpointResolver.resolve();
     }
@@ -186,6 +222,33 @@ final class HazelcastKubernetesDiscoveryStrategy
                 logger.warning("Address '" + address + "' could not be resolved");
             }
             return null;
+        }
+    }
+
+    private KubernetesClient buildKubernetesClient(String token, String kubernetesMaster) {
+        if (StringUtil.isNullOrEmpty(token)) {
+            token = getAccountToken();
+        }
+        return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, token));
+    }
+
+    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
+    private String getAccountToken() {
+        return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    }
+
+    protected static String readFileContents(String tokenFile) {
+        InputStream is = null;
+        try {
+            File file = new File(tokenFile);
+            byte[] data = new byte[(int) file.length()];
+            is = new FileInputStream(file);
+            is.read(data);
+            return new String(data, "UTF-8");
+        } catch (IOException e) {
+            throw new RuntimeException("Could not get token file", e);
+        } finally {
+            IOUtil.closeResource(is);
         }
     }
 }
