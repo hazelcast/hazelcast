@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ILock;
@@ -24,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -62,6 +64,29 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void testShutDownNodeWhenOtherWaitingOnLockRemoteKey() throws InterruptedException {
         testShutDownNodeWhenOtherWaitingOnLock(false);
+    }
+
+    @Test
+    public void testCleanupOperationIgnoresQuorum() {
+        Config config = getConfig();
+        QuorumConfig quorum = new QuorumConfig("quorum", true, 2).setType(QuorumType.WRITE);
+        config.getQuorumConfigs().put("quorum", quorum);
+        config.getLockConfig("default").setQuorumName("quorum");
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = nodeFactory.newInstances(config);
+
+        String lockName = "lock";
+        HazelcastInstance i1 = instances[0];
+        HazelcastInstance i2 = instances[1];
+        ILock l1 = i1.getLock(lockName);
+        ILock l2 = i2.getLock(lockName);
+        l2.lock();
+        assertTrue(l1.isLocked());
+        assertTrue(l2.isLocked());
+
+        i2.shutdown();
+        assertFalse(l1.isLocked());
     }
 
     private void testShutDownNodeWhenOtherWaitingOnLock(boolean localKey) throws InterruptedException {
@@ -504,6 +529,11 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         }, 30);
     }
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
     private static class SlowLockOperation extends Operation {
 
         Data key;
@@ -546,5 +576,4 @@ public class LockAdvancedTest extends HazelcastTestSupport {
             ns = new InternalLockNamespace(in.readUTF());
         }
     }
-
 }

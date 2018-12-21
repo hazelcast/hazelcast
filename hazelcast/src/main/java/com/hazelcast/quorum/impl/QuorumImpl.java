@@ -34,6 +34,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.QuorumCheckAwareOperation;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 
 import java.util.Collection;
@@ -43,7 +44,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * {@link QuorumImpl} can be used to notify quorum service for a particular quorum result that originated externally.
- *
+ * <p>
  * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
  * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
  * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
@@ -188,14 +189,20 @@ public class QuorumImpl implements Quorum {
     }
 
     /**
-     * Returns if quorum is needed for this operation. This is determined by the {@link QuorumConfig#type} and by the type
-     * of the operation - {@link ReadonlyOperation} or {@link MutatingOperation}.
+     * Returns if quorum is needed for this operation.
+     * The quorum is determined by the {@link QuorumConfig#type} and by the type of the operation -
+     * {@link ReadonlyOperation} or {@link MutatingOperation}.
      *
      * @param op the operation which is to be executed
      * @return if this quorum should be consulted for this operation
      * @throws IllegalArgumentException if the quorum configuration type is not handled
      */
     private boolean isQuorumNeeded(Operation op) {
+        if (op instanceof QuorumCheckAwareOperation
+                && !((QuorumCheckAwareOperation) op).shouldCheckQuorum()) {
+            return false;
+        }
+
         QuorumType type = config.getType();
         switch (type) {
             case WRITE:
