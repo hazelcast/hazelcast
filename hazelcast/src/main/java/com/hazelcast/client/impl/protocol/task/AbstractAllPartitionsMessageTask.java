@@ -37,7 +37,7 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
     protected void processMessage() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         InternalOperationService operationService = nodeEngine.getOperationService();
-        operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory, this);
+        operationService.invokeOnAllPartitionsAsync(getServiceName(), operationFactory).andThen(this);
     }
 
     protected abstract OperationFactory createOperationFactory();

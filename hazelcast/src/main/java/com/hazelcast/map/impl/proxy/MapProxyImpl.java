@@ -90,6 +90,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
@@ -760,14 +761,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(entryProcessor);
-
-        if (keys.isEmpty()) {
-            return emptyMap();
+        try {
+            return submitToKeys(keys, entryProcessor).get();
+        } catch (Exception e) {
+            throw rethrow(e);
         }
-        Set<Data> dataKeys = createHashSet(keys.size());
-        return executeOnKeysInternal(keys, dataKeys, entryProcessor);
     }
 
     /**
@@ -781,7 +779,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         handleHazelcastInstanceAwareParams(entryProcessor);
 
         Set<Data> dataKeys = createHashSet(keys.size());
-        return executeOnKeysInternalAsync(keys, dataKeys, entryProcessor, null);
+        return submitToKeysInternal(keys, dataKeys, entryProcessor);
     }
 
     @Override

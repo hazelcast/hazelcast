@@ -101,7 +101,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
-        Future<Map<Integer, Object>> future = opService.invokeOnAllPartitionsAsync(null, new OperationFactoryImpl(), null);
+        Future<Map<Integer, Object>> future = opService.invokeOnAllPartitionsAsync(null, new OperationFactoryImpl());
 
         Map<Integer, Object> result = future.get();
         assertEquals(100, result.size());
@@ -119,7 +119,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
 
         Collection<Integer> partitions = new LinkedList<Integer>();
         Collections.addAll(partitions, 1, 2, 3);
-        Future<Map<Integer, Object>> future = opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), partitions, null);
+        Future<Map<Integer, Object>> future = opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), partitions);
 
         Map<Integer, Object> result = future.get();
         assertEquals(3, result.size());
@@ -135,7 +135,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl opService = getOperationServiceImpl(hz);
 
-        Future<Map<Integer, Object>> future = opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), Collections.EMPTY_LIST, null);
+        Future<Map<Integer, Object>> future = opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), Collections.EMPTY_LIST);
 
         Map<Integer, Object> result = future.get();
         assertEquals(0, result.size());
@@ -161,7 +161,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
 
             }
         };
-        opService.invokeOnAllPartitionsAsync(null, new OperationFactoryImpl(), executionCallback);
+        opService.invokeOnAllPartitionsAsync(null, new OperationFactoryImpl()).andThen(executionCallback);
 
         assertOpenEventually(responseLatch);
         Map<Integer, Object> result = resultReference.get();
@@ -195,7 +195,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
 
             }
         };
-        opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), partitions, executionCallback);
+        opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), partitions).andThen(executionCallback);
 
         assertOpenEventually(responseLatch);
         Map<Integer, Object> result = resultReference.get();
@@ -226,7 +226,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
 
             }
         };
-        opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), Collections.EMPTY_LIST, executionCallback);
+        opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), Collections.EMPTY_LIST).andThen(executionCallback);
 
         assertOpenEventually(responseLatch);
         Map<Integer, Object> result = resultReference.get();

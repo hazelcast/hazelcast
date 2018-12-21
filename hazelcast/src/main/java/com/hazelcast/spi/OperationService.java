@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
 
@@ -85,13 +84,11 @@ public interface OperationService {
      *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
-     * @param callback         optional callback
      * @param <T>              type of result of operations returned by {@code operationFactory}
      * @return a future returning a Map with partitionId as a key and the
      * outcome of the operation as a value.
      */
-    <T> ICompletableFuture<Map<Integer, T>> invokeOnAllPartitionsAsync(
-            String serviceName, OperationFactory operationFactory, ExecutionCallback<Map<Integer, T>> callback);
+    <T> ICompletableFuture<Map<Integer, T>> invokeOnAllPartitionsAsync(String serviceName, OperationFactory operationFactory);
 
     /**
      * Invokes a set of operations on selected set of partitions.
@@ -116,14 +113,12 @@ public interface OperationService {
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
      * @param partitions       the partitions the operation should be executed on.
-     * @param callback         optional callback
      * @param <T>              type of result of operations returned by {@code operationFactory}
      * @return a future returning a Map with partitionId as a key and the
      * outcome of the operation as a value.
      */
     <T> ICompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
-            String serviceName, OperationFactory operationFactory, Collection<Integer> partitions,
-            ExecutionCallback<Map<Integer, T>> callback);
+            String serviceName, OperationFactory operationFactory, Collection<Integer> partitions);
 
     /**
      * Invokes a set of operations on selected set of partitions.
