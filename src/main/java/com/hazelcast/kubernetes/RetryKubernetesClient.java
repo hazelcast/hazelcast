@@ -69,4 +69,15 @@ class RetryKubernetesClient
             }
         }, retries);
     }
+
+    @Override
+    public String zone(final String namespace, final String podName) {
+        return RetryUtils.retry(new Callable<String>() {
+            @Override
+            public String call()
+                    throws Exception {
+                return kubernetesClient.zone(namespace, podName);
+            }
+        }, retries);
+    }
 }
