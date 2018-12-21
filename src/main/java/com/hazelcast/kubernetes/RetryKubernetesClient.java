@@ -16,6 +16,8 @@
 
 package com.hazelcast.kubernetes;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -24,6 +26,7 @@ import java.util.concurrent.Callable;
 class RetryKubernetesClient
         implements KubernetesClient {
     private static final int DEFAULT_RETRIES = 10;
+    private static final List<String> NON_RETRYABLE_KEYWORDS = Arrays.asList("\"reason\":\"Forbidden\"");
 
     private final KubernetesClient kubernetesClient;
     private final int retries;
@@ -45,7 +48,7 @@ class RetryKubernetesClient
                     throws Exception {
                 return kubernetesClient.endpoints(namespace);
             }
-        }, retries);
+        }, retries, NON_RETRYABLE_KEYWORDS);
     }
 
     @Override
@@ -56,7 +59,7 @@ class RetryKubernetesClient
                     throws Exception {
                 return kubernetesClient.endpointsByLabel(namespace, serviceLabel, serviceLabelValue);
             }
-        }, retries);
+        }, retries, NON_RETRYABLE_KEYWORDS);
     }
 
     @Override
@@ -67,7 +70,7 @@ class RetryKubernetesClient
                     throws Exception {
                 return kubernetesClient.endpointsByName(namespace, endpointName);
             }
-        }, retries);
+        }, retries, NON_RETRYABLE_KEYWORDS);
     }
 
     @Override
@@ -78,6 +81,6 @@ class RetryKubernetesClient
                     throws Exception {
                 return kubernetesClient.zone(namespace, podName);
             }
-        }, retries);
+        }, retries, NON_RETRYABLE_KEYWORDS);
     }
 }

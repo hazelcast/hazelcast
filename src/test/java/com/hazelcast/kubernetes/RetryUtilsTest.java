@@ -19,6 +19,7 @@ package com.hazelcast.kubernetes;
 import com.hazelcast.core.HazelcastException;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.concurrent.Callable;
 
 import static com.hazelcast.kubernetes.RetryUtils.BACKOFF_MULTIPLIER;
@@ -43,7 +44,7 @@ public class RetryUtilsTest {
         given(callable.call()).willReturn(RESULT);
 
         // when
-        String result = RetryUtils.retry(callable, RETRIES);
+        String result = RetryUtils.retry(callable, RETRIES, Collections.<String>emptyList());
 
         // then
         assertEquals(RESULT, result);
@@ -57,7 +58,7 @@ public class RetryUtilsTest {
         given(callable.call()).willThrow(new RuntimeException()).willReturn(RESULT);
 
         // when
-        String result = RetryUtils.retry(callable, RETRIES);
+        String result = RetryUtils.retry(callable, RETRIES, Collections.<String>emptyList());
 
         // then
         assertEquals(RESULT, result);
@@ -71,7 +72,7 @@ public class RetryUtilsTest {
         given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException()).willReturn(RESULT);
 
         // when
-        RetryUtils.retry(callable, RETRIES);
+        RetryUtils.retry(callable, RETRIES, Collections.<String>emptyList());
 
         // then
         // throws exception
@@ -84,7 +85,7 @@ public class RetryUtilsTest {
         given(callable.call()).willThrow(new Exception()).willThrow(new Exception()).willReturn(RESULT);
 
         // when
-        RetryUtils.retry(callable, RETRIES);
+        RetryUtils.retry(callable, RETRIES, Collections.<String>emptyList());
 
         // then
         // throws exception
@@ -99,7 +100,7 @@ public class RetryUtilsTest {
 
         // when
         long startTimeMs = System.currentTimeMillis();
-        RetryUtils.retry(callable, 5);
+        RetryUtils.retry(callable, 5, Collections.<String>emptyList());
         long endTimeMs = System.currentTimeMillis();
 
         // then

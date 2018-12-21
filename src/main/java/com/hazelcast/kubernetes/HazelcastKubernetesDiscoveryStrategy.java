@@ -130,6 +130,7 @@ final class HazelcastKubernetesDiscoveryStrategy
             return client.zone(namespace, hostname);
         } catch (Exception e) {
             getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature disabled");
+            getLogger().fine(e);
         }
         return "unknown";
     }
