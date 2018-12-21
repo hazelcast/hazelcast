@@ -279,17 +279,13 @@ public class ClusterJoinManager {
             return true;
         }
 
-        if (checkClusterStateBeforeJoin(target, targetUuid)) {
-            return true;
-        }
-
         if (joinRequest.getExcludedMemberUuids().contains(clusterService.getThisUuid())) {
             logger.warning("cannot join " + target + " since this node is excluded in its list...");
             hotRestartService.handleExcludedMemberUuids(target, joinRequest.getExcludedMemberUuids());
             return true;
         }
 
-        return false;
+        return checkClusterStateBeforeJoin(target, targetUuid);
     }
 
     private boolean checkClusterStateBeforeJoin(Address target, String uuid) {
