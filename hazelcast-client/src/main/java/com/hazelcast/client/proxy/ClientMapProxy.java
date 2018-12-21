@@ -1647,16 +1647,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
-        if (keys.isEmpty()) {
-            return emptyMap();
+        try {
+            return submitToKeys(keys, entryProcessor).get();
+        } catch (Exception e) {
+            throw rethrow(e);
         }
-        Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
-
-        ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataCollection);
-        ClientMessage response = invoke(request);
-        MapExecuteOnKeysCodec.ResponseParameters resultParameters = MapExecuteOnKeysCodec.decodeResponse(response);
-        return prepareResult(resultParameters.response);
     }
 
     /**
