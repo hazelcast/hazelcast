@@ -20,6 +20,7 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.client.IncompatibleClusterException;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
@@ -690,8 +691,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 case CREDENTIALS_FAILED:
                     onFailure(new AuthenticationException("Invalid credentials! Principal: " + principal));
                     break;
+                case SERIALIZATION_VERSION_MISMATCH:
+                    onFailure(new IncompatibleClusterException("Cluster serialization version ("
+                            + result.serverHazelcastVersion + ") "
+                            + "and client serialization version (" + client.getSerializationService() + ")  does not match "));
+                    break;
+                case OWNER_NOT_MEMBER:
+                    //likely to happen in split brain scenarios, authentication can be retried on members in the same cluster
+                    //hence we are not using IncompatibleClusterException here
+                    onFailure(new HazelcastException("Owner is not part of the cluster."));
+                    break;
                 default:
-                    onFailure(new AuthenticationException("Authentication status code not supported. status: "
+                    onFailure(new IncompatibleClusterException("Authentication status code not supported. status: "
                             + authenticationStatus));
             }
         }

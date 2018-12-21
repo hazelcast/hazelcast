@@ -365,7 +365,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         try {
             HazelcastClient.newHazelcastClient(config);
             fail("Client cannot start, discovery nodes is null!");
-        } catch (NullPointerException expected) {
+        } catch (IllegalStateException expected) {
             // discovered nodes is null
         }
         verify(discoveryService).discoverNodes();

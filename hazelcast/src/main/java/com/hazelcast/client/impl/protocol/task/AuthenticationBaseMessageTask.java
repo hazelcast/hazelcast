@@ -43,6 +43,7 @@ import java.util.Map;
 
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.AUTHENTICATED;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.CREDENTIALS_FAILED;
+import static com.hazelcast.client.impl.protocol.AuthenticationStatus.OWNER_NOT_MEMBER;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.SERIALIZATION_VERSION_MISMATCH;
 
 /**
@@ -85,7 +86,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
                 sendClientMessage(prepareSerializationVersionMismatchClientMessage());
                 break;
             case CREDENTIALS_FAILED:
-                sendClientMessage(prepareUnauthenticatedClientMessage());
+                sendClientMessage(prepareUnauthenticatedClientMessage(CREDENTIALS_FAILED));
+                break;
+            case OWNER_NOT_MEMBER:
+                sendClientMessage(prepareUnauthenticatedClientMessage(OWNER_NOT_MEMBER));
                 break;
             case AUTHENTICATED:
                 if (isOwnerConnection()) {
@@ -111,7 +115,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         if (!isOwnerConnection() && !isMember(principal)) {
             logger.warning("Member having UUID " + principal.getOwnerUuid()
                     + " is not part of the cluster. Client Authentication rejected.");
-            return CREDENTIALS_FAILED;
+            return OWNER_NOT_MEMBER;
         } else if (credentials == null) {
             logger.severe("Could not retrieve Credentials object!");
             return CREDENTIALS_FAILED;
@@ -153,11 +157,11 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         return usernameMatch ? AUTHENTICATED : CREDENTIALS_FAILED;
     }
 
-    private ClientMessage prepareUnauthenticatedClientMessage() {
+    private ClientMessage prepareUnauthenticatedClientMessage(AuthenticationStatus status) {
         Connection connection = endpoint.getConnection();
-        logger.warning("Received auth from " + connection + " with principal " + principal + ", authentication failed");
-        byte status = CREDENTIALS_FAILED.getId();
-        return encodeAuth(status, null, null, null, serializationService.getVersion(), null);
+        logger.warning("Received auth from " + connection + " with principal " + principal
+                + ", authentication failed with status " + status);
+        return encodeAuth(status.getId(), null, null, null, serializationService.getVersion(), null);
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {

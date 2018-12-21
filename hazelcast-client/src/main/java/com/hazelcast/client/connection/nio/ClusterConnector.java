@@ -16,14 +16,15 @@
 
 package com.hazelcast.client.connection.nio;
 
+import com.hazelcast.client.IncompatibleClusterException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.connection.AddressProvider;
+import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
-import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -129,18 +130,24 @@ class ClusterConnector {
     }
 
     private Connection connectAsOwner(Address address) {
-        Connection connection = null;
+        Connection connection;
         try {
             logger.info("Trying to connect to " + address + " as owner member");
             connection = connectionManager.getOrConnect(address, true);
+        } catch (IncompatibleClusterException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.warning("Exception during authentication to " + address + ", exception " + e);
+            return null;
+        }
+
+        try {
             client.onClusterConnect(connection);
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onClusterConnect();
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + address + ", exception " + e);
-            if (null != connection) {
-                connection.close("Could not connect to " + address + " as owner", e);
-            }
+            logger.warning("Exception during initializing the client on " + address + ", exception " + e);
+            connection.close("Could not connect to " + address + " as owner", e);
             return null;
         }
         return connection;
@@ -182,25 +189,30 @@ class ClusterConnector {
         Set<Address> triedAddresses = new HashSet<Address>();
 
         waitStrategy.reset();
-        do {
-            Collection<Address> addresses = getPossibleMemberAddresses();
-            for (Address address : addresses) {
+        try {
+            do {
+                Collection<Address> addresses = getPossibleMemberAddresses();
+                for (Address address : addresses) {
+                    if (!client.getLifecycleService().isRunning()) {
+                        throw new IllegalStateException("Giving up on retrying to connect to cluster since client is shutdown.");
+                    }
+                    triedAddresses.add(address);
+                    if (connectAsOwner(address) != null) {
+                        return;
+                    }
+                }
+
+                // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
+                // and the lifecycle check is missing, hence we need to repeat the same check at this point.
                 if (!client.getLifecycleService().isRunning()) {
-                    throw new IllegalStateException("Giving up on retrying to connect to cluster since client is shutdown.");
+                    throw new IllegalStateException("Client is being shutdown.");
                 }
-                triedAddresses.add(address);
-                if (connectAsOwner(address) != null) {
-                    return;
-                }
-            }
 
-            // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
-            // and the lifecycle check is missing, hence we need to repeat the same check at this point.
-            if (!client.getLifecycleService().isRunning()) {
-                throw new IllegalStateException("Client is being shutdown.");
-            }
-
-        } while (waitStrategy.sleep());
+            } while (waitStrategy.sleep());
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Unable to connect to any address! The following addresses were tried: " + triedAddresses, e);
+        }
         throw new IllegalStateException(
                 "Unable to connect to any address! The following addresses were tried: " + triedAddresses);
     }

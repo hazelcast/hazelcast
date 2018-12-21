@@ -20,8 +20,8 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Addresses;
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -55,7 +55,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -67,7 +66,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         Hazelcast.shutdownAll();
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void testClientPortConnection() {
         final Config config1 = new Config();
         config1.getGroupConfig().setName("foo");
@@ -81,12 +80,9 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         Hazelcast.newHazelcastInstance(config2);
 
         final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         clientConfig.getGroupConfig().setName("bar");
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        final IMap<Object, Object> map = client.getMap("map");
-        assertNull(map.put("key", "value"));
-        assertEquals(1, map.size());
+        HazelcastClient.newHazelcastClient(clientConfig);
     }
 
     @Test

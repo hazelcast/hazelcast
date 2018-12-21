@@ -17,12 +17,10 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.HazelcastCachingProvider;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.jsr.JsrClientTestUtil;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -160,66 +158,5 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
             Cache<Object, Object> cache = cacheManager.getCache(simpleConfig.getName());
             assertNotNull("Cache cannot be retrieved on client: " + i, cache);
         }
-    }
-
-    @Test
-    public void createCacheConfigOnAllNodes() {
-        final String CACHE_NAME = "myCache";
-
-        HazelcastInstance client = null;
-        HazelcastInstance server1 = null;
-        HazelcastInstance server2 = null;
-
-        try {
-            Config config = new Config();
-            CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
-                    .setName(CACHE_NAME)
-                    .setBackupCount(1); // Be sure that cache put operation is mirrored to backup node
-            config.addCacheConfig(cacheSimpleConfig);
-
-            // Create servers with configured caches
-            server1 = Hazelcast.newHazelcastInstance(config);
-            server2 = Hazelcast.newHazelcastInstance(config);
-
-            ICacheService cacheService1 = getCacheService(server1);
-            ICacheService cacheService2 = getCacheService(server2);
-
-            // Create the hazelcast client instance
-            client = HazelcastClient.newHazelcastClient();
-
-            // Create the client cache manager
-            CachingProvider cachingProvider =
-                    HazelcastClientCachingProvider.createCachingProvider(client);
-            CacheManager cacheManager = cachingProvider.getCacheManager();
-
-            Cache<String, String> cache = cacheManager.getCache(CACHE_NAME);
-
-            assertNotNull(cache);
-
-            CacheConfig cacheConfig = cache.getConfiguration(CacheConfig.class);
-
-            assertNotNull(cacheService1.getCacheConfig(cacheConfig.getNameWithPrefix()));
-            assertNotNull(cacheService2.getCacheConfig(cacheConfig.getNameWithPrefix()));
-
-            // First attempt to use the cache will trigger to create its record store.
-            // So, we are testing also this case. There should not be any exception.
-            // In here, we are testing both of nodes since there is a backup,
-            // put is also applied to other (backup node).
-            cache.put("key", "value");
-        } finally {
-            if (client != null) {
-                client.shutdown();
-            }
-            if (server1 != null) {
-                server1.shutdown();
-            }
-            if (server2 != null) {
-                server2.shutdown();
-            }
-        }
-    }
-
-    private static ICacheService getCacheService(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 }

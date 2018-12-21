@@ -19,23 +19,12 @@ package com.hazelcast.client;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * A {@link HazelcastException} that is thrown when there is an Authentication failure: e.g. credentials from client is not valid.
+ * Thrown from client authentication when the client can not join the cluster because of an incompatible
+ * config/version etc...
  */
-public class AuthenticationException extends IncompatibleClusterException {
+public class IncompatibleClusterException extends HazelcastException {
 
-    /**
-     * Creates a AuthenticationException with a default message.
-     */
-    public AuthenticationException() {
-        super("Wrong group name or password.");
-    }
-
-    /**
-     * Creates a AuthenticationException with the given message.
-     *
-     * @param message the message.
-     */
-    public AuthenticationException(String message) {
+    public IncompatibleClusterException(String message) {
         super(message);
     }
 }

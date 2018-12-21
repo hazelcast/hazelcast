@@ -23,7 +23,8 @@ public enum AuthenticationStatus {
 
     AUTHENTICATED(0),
     CREDENTIALS_FAILED(1),
-    SERIALIZATION_VERSION_MISMATCH(2);
+    SERIALIZATION_VERSION_MISMATCH(2),
+    OWNER_NOT_MEMBER(3);
 
     private final byte id;
 
