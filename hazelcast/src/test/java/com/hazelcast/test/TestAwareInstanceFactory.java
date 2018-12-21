@@ -20,8 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.DefaultNodeContext;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.NodeContext;
 import com.hazelcast.internal.jmx.ManagementService;
 
 import java.util.ArrayList;
@@ -81,10 +83,19 @@ public class TestAwareInstanceFactory {
     protected final Map<String, List<HazelcastInstance>> perMethodMembers = new ConcurrentHashMap<String, List<HazelcastInstance>>();
 
     /**
-     * Creates new member instance with TCP join configured. The value
-     * {@link com.hazelcast.test.AbstractHazelcastClassRunner#getTestMethodName()} is used as a cluster group name.
+     * Calls {@link #newHazelcastInstance(Config, NodeContext)} using the
+     * {@link DefaultNodeContext}.
      */
     public HazelcastInstance newHazelcastInstance(Config config) {
+        return newHazelcastInstance(config, new DefaultNodeContext());
+    }
+
+    /**
+     * Creates new member instance with TCP join configured. Uses
+     * {@link com.hazelcast.test.AbstractHazelcastClassRunner#getTestMethodName()}
+     * as the cluster group name.
+     */
+    public HazelcastInstance newHazelcastInstance(Config config, NodeContext nodeCtx) {
         if (config == null) {
             config = new Config();
         }
@@ -98,7 +109,8 @@ public class TestAwareInstanceFactory {
         for (HazelcastInstance member : members) {
             tcpIpConfig.addMember("127.0.0.1:" + getPort(member));
         }
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz = HazelcastInstanceFactory.newHazelcastInstance(
+                config, config.getInstanceName(), nodeCtx);
         members.add(hz);
         int nextPort = getPort(hz) + 1;
         int current;
