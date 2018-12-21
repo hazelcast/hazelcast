@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.internal.partition.service.TestPutOperation;
 import com.hazelcast.nio.Address;
@@ -80,15 +81,15 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        Address[] replicaAddresses = partition.getReplicaAddresses();
+        PartitionReplica[] members = partition.getReplicas();
 
-        partition.setReplicaAddresses(new Address[replicaAddresses.length]);
+        partition.setReplicas(new PartitionReplica[members.length]);
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
         assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(members);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
     }
 
@@ -101,23 +102,24 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        Address[] replicaAddresses = partition.getReplicaAddresses();
+        PartitionReplica[] members = partition.getReplicas();
 
-        Address[] illegalReplicaAddresses = Arrays.copyOf(replicaAddresses, replicaAddresses.length);
-        Address address = new Address(replicaAddresses[0]);
-        illegalReplicaAddresses[0] = new Address(address.getInetAddress(), address.getPort() + 1000);
-        partition.setReplicaAddresses(illegalReplicaAddresses);
+        PartitionReplica[] illegalMembers = Arrays.copyOf(members, members.length);
+        Address address = members[0].address();
+        illegalMembers[0] = new PartitionReplica(
+                new Address(address.getInetAddress(), address.getPort() + 1000), members[0].uuid());
+        partition.setReplicas(illegalMembers);
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
         assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(members);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
     }
 
     @Test
-    public void shouldBeSafe_whenKnownReplicaOwnerPresent_whileNotActive() throws UnknownHostException {
+    public void shouldBeSafe_whenKnownReplicaOwnerPresent_whileNotActive() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -150,18 +152,18 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(0);
-        Address[] replicaAddresses = partition.getReplicaAddresses();
+        PartitionReplica[] members = partition.getReplicas();
 
-        Address[] illegalReplicaAddresses = Arrays.copyOf(replicaAddresses, replicaAddresses.length);
-        Address address = new Address(replicaAddresses[0]);
-        illegalReplicaAddresses[0] = new Address(address.getInetAddress(), address.getPort() + 1000);
-        partition.setReplicaAddresses(illegalReplicaAddresses);
+        PartitionReplica[] illegalMembers = Arrays.copyOf(members, members.length);
+        Address address = members[0].address();
+        illegalMembers[0] = new PartitionReplica(new Address(address.getInetAddress(), address.getPort() + 1000), members[0].uuid());
+        partition.setReplicas(illegalMembers);
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
         assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(members);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
     }
 

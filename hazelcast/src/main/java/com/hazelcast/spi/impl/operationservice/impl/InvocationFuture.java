@@ -146,7 +146,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             appendHeartbeat(sb, lastHeartbeatMillis);
 
             long lastHeartbeatFromMemberMillis = invocation.context.invocationMonitor
-                    .getLastMemberHeartbeatMillis(invocation.invTarget);
+                    .getLastMemberHeartbeatMillis(invocation.getTargetAddress());
             sb.append("Last operation heartbeat from member: ");
             appendHeartbeat(sb, lastHeartbeatFromMemberMillis);
         } else {

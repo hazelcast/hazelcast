@@ -461,7 +461,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
                 InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
                 boolean found = false;
                 for (MigrationInfo migrationInfo : partitionService.getMigrationManager().getCompletedMigrationsCopy()) {
-                    if (migrationInfo.getStatus() == SUCCESS && migrationInfo.getDestination().equals(getAddress(hz3))) {
+                    if (migrationInfo.getStatus() == SUCCESS && migrationInfo.getDestinationAddress().equals(getAddress(hz3))) {
                         found = true;
                     }
                 }

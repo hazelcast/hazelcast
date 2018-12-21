@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -53,7 +53,7 @@ final class CheckPartitionReplicaVersionTask extends AbstractPartitionPrimaryRep
         }
 
         Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
-        Address target = partition.getReplicaAddress(replicaIndex);
+        PartitionReplica target = partition.getReplica(replicaIndex);
         if (target == null) {
             callback.onResponse(false);
             return;

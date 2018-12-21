@@ -16,12 +16,11 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
@@ -42,7 +41,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -87,22 +85,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
     @Override
     public CallStatus call() throws Exception {
-        verifyMasterOnMigrationSource();
-
-        Address source = migrationInfo.getSource();
-        Address destination = migrationInfo.getDestination();
-        NodeEngine nodeEngine = getNodeEngine();
-        verifyExistingTarget(nodeEngine, destination);
-
-        if (destination.equals(source)) {
-            getLogger().warning("Source and destination addresses are the same! => " + toString());
-            completeMigration(false);
-            return CallStatus.DONE_VOID;
-        }
-
-        InternalPartition partition = getPartition();
-        verifySource(nodeEngine.getThisAddress(), partition);
-
         setActiveMigration();
 
         if (!migrationInfo.startProcessing()) {
@@ -122,15 +104,13 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         @Override
         public void start() {
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            Address destination = migrationInfo.getDestination();
-
             try {
                 executeBeforeMigrations();
                 namespacesContext = new ServiceNamespacesContext(nodeEngine, getPartitionReplicationEvent());
                 ReplicaFragmentMigrationState migrationState = fragmentedMigrationEnabled
                         ? createNextReplicaFragmentMigrationState()
                         : createAllReplicaFragmentsMigrationState();
-                invokeMigrationOperation(destination, migrationState, true);
+                invokeMigrationOperation(migrationState, true);
             } catch (Throwable e) {
                 logThrowable(e);
                 completeMigration(false);
@@ -143,7 +123,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     @Override
     void executeBeforeMigrations() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
-        boolean ownerMigration = nodeEngine.getThisAddress().equals(migrationInfo.getSource());
+        PartitionReplica source = migrationInfo.getSource();
+        boolean ownerMigration = source != null && source.isIdentical(nodeEngine.getLocalMember());
         if (!ownerMigration) {
             return;
         }
@@ -151,47 +132,10 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         super.executeBeforeMigrations();
     }
 
-    /** Verifies that the local master is equal to the migration master. */
-    private void verifyMasterOnMigrationSource() {
-        NodeEngine nodeEngine = getNodeEngine();
-        Address masterAddress = nodeEngine.getMasterAddress();
-
-        if (!migrationInfo.getMaster().equals(masterAddress)) {
-            throw new IllegalStateException("Migration initiator is not master node! => " + toString());
-        }
-
-        if (!masterAddress.equals(getCallerAddress())) {
-            throw new IllegalStateException("Caller is not master node! => " + toString());
-        }
-    }
-
-    /** Verifies that this node is the owner of the partition. */
-    private void verifySource(Address thisAddress, InternalPartition partition) {
-        Address owner = partition.getOwnerOrNull();
-        if (owner == null) {
-            throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
-                    + migrationInfo);
-        }
-
-        if (!thisAddress.equals(owner)) {
-            throw new RetryableHazelcastException("Owner of partition is not this node! => " + toString());
-        }
-    }
-
-    /** Verifies that the destination is a cluster member. */
-    private void verifyExistingTarget(NodeEngine nodeEngine, Address destination) {
-        Member target = nodeEngine.getClusterService().getMember(destination);
-        if (target == null) {
-            throw new TargetNotMemberException("Destination of migration could not be found! => " + toString());
-        }
-    }
-
     /**
      * Invokes the {@link MigrationOperation} on the migration destination.
      */
-    private void invokeMigrationOperation(Address destination, ReplicaFragmentMigrationState migrationState,
-                                          boolean firstFragment) {
-
+    private void invokeMigrationOperation(ReplicaFragmentMigrationState migrationState, boolean firstFragment) {
         boolean lastFragment = !fragmentedMigrationEnabled || !namespacesContext.hasNext();
         Operation operation = new MigrationOperation(migrationInfo, partitionStateVersion, migrationState,
                 firstFragment, lastFragment);
@@ -207,8 +151,9 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionServiceImpl partitionService = getService();
 
+        Address target = migrationInfo.getDestinationAddress();
         nodeEngine.getOperationService()
-                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
+                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, target)
                 .setExecutionCallback(new MigrationCallback())
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
@@ -220,11 +165,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     private void trySendNewFragment() {
         try {
             assert fragmentedMigrationEnabled : "Fragmented migration should be enabled!";
-            verifyMasterOnMigrationSource();
-            NodeEngine nodeEngine = getNodeEngine();
-
-            Address destination = migrationInfo.getDestination();
-            verifyExistingTarget(nodeEngine, destination);
+            verifyMaster();
+            verifyExistingDestination();
 
             InternalPartitionServiceImpl partitionService = getService();
             MigrationManager migrationManager = partitionService.getMigrationManager();
@@ -236,7 +178,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
             ReplicaFragmentMigrationState migrationState = createNextReplicaFragmentMigrationState();
             if (migrationState != null) {
-                invokeMigrationOperation(destination, migrationState, false);
+                invokeMigrationOperation(migrationState, false);
             } else {
                 getLogger().finest("All migration fragments done for " + migrationInfo);
                 completeMigration(true);

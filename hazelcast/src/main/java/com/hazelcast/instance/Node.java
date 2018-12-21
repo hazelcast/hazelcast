@@ -231,8 +231,8 @@ public class Node {
             List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                     AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(joinConfig);
             discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, localMember);
-            partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this, localMember);
+            partitionService = new InternalPartitionServiceImpl(this);
             textCommandService = nodeExtension.createTextCommandService();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             joiner = nodeContext.createJoiner(this);

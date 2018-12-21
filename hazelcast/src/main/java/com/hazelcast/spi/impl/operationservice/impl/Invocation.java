@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IndeterminateOperationStateException;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterClock;
@@ -92,9 +92,10 @@ import static java.util.logging.Level.WARNING;
  * Evaluates the invocation of an {@link Operation}.
  * <p/>
  * Using the {@link InvocationFuture}, one can wait for the completion of an invocation.
+ * @param <T> Target type of the Invocation
  */
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class Invocation implements OperationResponseHandler {
+public abstract class Invocation<T> implements OperationResponseHandler {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
@@ -151,29 +152,61 @@ public abstract class Invocation implements OperationResponseHandler {
      * The value 0 indicates that no heartbeat was received at all.
      */
     volatile long lastHeartbeatMillis;
-    volatile int invokeCount;
 
-    boolean remote;
-    Address invTarget;
-    MemberImpl targetMember;
+    final Context context;
+    final InvocationFuture future;
+    final long callTimeoutMillis;
+
     /**
-     * The connection endpoint which operation is sent through to the {@link #invTarget}.
+     * Shows number of times this Invocation is invoked.
+     * On each call of {@link #doInvoke(boolean)} method, {@code invokeCount} is incremented by one.
+     * <p>
+     * An invocation can be invoked at most {@link #tryCount} times.
+     * <p>
+     * When invocation is notified with {@link CallTimeoutResponse}, {@code invokeCount} is decremented back.
+     */
+    private volatile int invokeCount;
+
+    /**
+     * Shows whether this Invocation is targeting a remote member or not.
+     */
+    private boolean remote;
+    /**
+     * Shows the address of current target.
+     * <p>
+     * Target address can belong to an existing member or to a non-member in some cases (join, wan-replication etc.).
+     * If it belongs to an existing member, then {@link #targetMember} field will be set too.
+     */
+    private Address targetAddress;
+    /**
+     * Shows the current target member.
+     * <p>
+     * If this Invocation is targeting an existing member, then this field will be set.
+     * Otherwise it can be null in some cases (join, wan-replication etc.).
+     */
+    private Member targetMember;
+    /**
+     * The connection endpoint which operation is sent through to the {@link #targetAddress}.
      * It can be null if invocation is local or there's no established connection to the target yet.
      * <p>
      * Used mainly for logging/diagnosing the invocation.
      */
-    Connection connection;
+    private Connection connection;
     /**
      * Member list version read before operation is invoked on target. This version is used while notifying
      * invocation during a member left event.
      */
-    int memberListVersion;
+    private int memberListVersion;
 
-    final Context context;
-    final InvocationFuture future;
-    final int tryCount;
-    final long tryPauseMillis;
-    final long callTimeoutMillis;
+    /**
+     * Shows maximum number of retry counts for this Invocation.
+     * @see #invokeCount
+     */
+    private final int tryCount;
+    /**
+     * Pause time, in milliseconds, between each retry of this Invocation.
+     */
+    private final long tryPauseMillis;
 
     /**
      * Refer to {@link com.hazelcast.spi.InvocationBuilder#setDoneCallback(Runnable)} for an explanation
@@ -230,8 +263,6 @@ public abstract class Invocation implements OperationResponseHandler {
         return false;
     }
 
-    protected abstract Address getTarget();
-
     abstract ExceptionAction onException(Throwable t);
 
     boolean isActive() {
@@ -247,16 +278,20 @@ public abstract class Invocation implements OperationResponseHandler {
      *
      * @throws Exception if the initialization was a failure
      */
-    private void initInvocationTarget() throws Exception {
-        invTarget = getTarget();
-
-        if (invTarget == null) {
+    final void initInvocationTarget() throws Exception {
+        Member previousTargetMember = targetMember;
+        T target = getInvocationTarget();
+        if (target == null) {
             remote = false;
             throw newTargetNullException();
         }
 
-        MemberImpl previousTargetMember = targetMember;
-        targetMember = context.clusterService.getMember(invTarget);
+        targetMember = toTargetMember(target);
+        if (targetMember != null) {
+            targetAddress = targetMember.getAddress();
+        } else {
+            targetAddress = toTargetAddress(target);
+        }
         memberListVersion = context.clusterService.getMemberListVersion();
 
         if (targetMember == null) {
@@ -266,16 +301,46 @@ public abstract class Invocation implements OperationResponseHandler {
                 throw new MemberLeftException(previousTargetMember);
             }
             if (!(isJoinOperation(op) || isWanReplicationOperation(op))) {
-                throw new TargetNotMemberException(
-                        invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
+                throw new TargetNotMemberException(target, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
             }
         }
 
         if (op instanceof TargetAware) {
-            ((TargetAware) op).setTarget(invTarget);
+            ((TargetAware) op).setTarget(targetAddress);
         }
 
-        remote = !context.thisAddress.equals(invTarget);
+        remote = !context.thisAddress.equals(targetAddress);
+    }
+
+    /**
+     * Returns the target of the Invocation.
+     * This can be an {@code Address}, {@code Member} or any other type Invocation itself knows.
+     */
+    abstract T getInvocationTarget();
+
+    /**
+     * Convert invocation's target object, obtained using {@link #getInvocationTarget()} method, to an {@link Address}.
+     */
+    abstract Address toTargetAddress(T target);
+
+    /**
+     * Convert invocation's target object, obtained using {@link #getInvocationTarget()} method, to a {@link Member}.
+     */
+    abstract Member toTargetMember(T target);
+
+    private Exception newTargetNullException() {
+        ClusterState clusterState = context.clusterService.getClusterState();
+        if (!clusterState.isMigrationAllowed()) {
+            return new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
+                    + "but partitions can't be assigned in cluster-state: " + clusterState);
+        }
+        if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+            return new NoDataMemberInClusterException(
+                    "Target of invocation cannot be found! Partition owner is null "
+                            + "but partitions can't be assigned since all nodes in the cluster are lite members.");
+        }
+        return new WrongTargetException(context.clusterService.getLocalMember(), null, op.getPartitionId(),
+                op.getReplicaIndex(), op.getClass().getName(), op.getServiceName());
     }
 
     void notifyError(Object error) {
@@ -478,7 +543,7 @@ public abstract class Invocation implements OperationResponseHandler {
             return true;
         }
 
-        boolean targetDead = context.clusterService.getMember(invTarget) == null;
+        boolean targetDead = context.clusterService.getMember(targetAddress) == null;
         if (targetDead) {
             // the target doesn't exist, so we are going to re-invoke this invocation;
             // the reason for the re-invocation is that otherwise it's possible to lose data,
@@ -588,10 +653,10 @@ public abstract class Invocation implements OperationResponseHandler {
     }
 
     private void doInvokeRemote() {
-        Connection connection = context.connectionManager.getOrConnect(invTarget);
+        Connection connection = context.connectionManager.getOrConnect(targetAddress);
         this.connection = connection;
         if (!context.outboundOperationHandler.send(op, connection)) {
-            notifyError(new RetryableIOException("Packet not sent to -> " + invTarget + " over " + connection));
+            notifyError(new RetryableIOException("Packet not sent to -> " + targetAddress + " over " + connection));
         }
     }
 
@@ -628,21 +693,6 @@ public abstract class Invocation implements OperationResponseHandler {
         } else {
             throw rethrow(e);
         }
-    }
-
-    private Exception newTargetNullException() {
-        ClusterState clusterState = context.clusterService.getClusterState();
-        if (!clusterState.isMigrationAllowed()) {
-            return new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
-                    + "but partitions can't be assigned in cluster-state: " + clusterState);
-        }
-        if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-            return new NoDataMemberInClusterException(
-                    "Target of invocation cannot be found! Partition owner is null "
-                            + "but partitions can't be assigned since all nodes in the cluster are lite members.");
-        }
-        return new WrongTargetException(context.thisAddress, null, op.getPartitionId(),
-                    op.getReplicaIndex(), op.getClass().getName(), op.getServiceName());
     }
 
     // This is an idempotent operation
@@ -704,6 +754,22 @@ public abstract class Invocation implements OperationResponseHandler {
         doInvoke(false);
     }
 
+    boolean isRemote() {
+        return remote;
+    }
+
+    Address getTargetAddress() {
+        return targetAddress;
+    }
+
+    Member getTargetMember() {
+        return targetMember;
+    }
+
+    int getMemberListVersion() {
+        return memberListVersion;
+    }
+
     @Override
     public String toString() {
         return "Invocation{"
@@ -716,7 +782,7 @@ public abstract class Invocation implements OperationResponseHandler {
                 + ", firstInvocationTime='" + timeToString(firstInvocationTimeMillis) + '\''
                 + ", lastHeartbeatMillis=" + lastHeartbeatMillis
                 + ", lastHeartbeatTime='" + timeToString(lastHeartbeatMillis) + '\''
-                + ", target=" + invTarget
+                + ", target=" + targetAddress
                 + ", pendingResponse={" + pendingResponse + '}'
                 + ", backupsAcksExpected=" + backupsAcksExpected
                 + ", backupsAcksReceived=" + backupsAcksReceived

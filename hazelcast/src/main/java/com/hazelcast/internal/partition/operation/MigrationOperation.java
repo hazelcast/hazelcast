@@ -28,7 +28,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -85,7 +84,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
      */
     @Override
     public void run() throws Exception {
-        verifyMasterOnMigrationDestination();
         setActiveMigration();
 
         try {
@@ -98,14 +96,6 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             if (!success) {
                 onExecutionFailure(failureReason);
             }
-        }
-    }
-
-    private void verifyMasterOnMigrationDestination() {
-        NodeEngine nodeEngine = getNodeEngine();
-        Address masterAddress = nodeEngine.getMasterAddress();
-        if (!masterAddress.equals(migrationInfo.getMaster())) {
-            throw new IllegalStateException("Migration initiator is not master node! => " + toString());
         }
     }
 
@@ -145,7 +135,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
                 .setPartitionId(getPartitionId())
                 .setReplicaIndex(getReplicaIndex());
         op.setOperationResponseHandler(ERROR_RESPONSE_HANDLER);
-        OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
+        OperationAccessor.setCallerAddress(op, migrationInfo.getSourceAddress());
     }
 
     private void afterMigrate() {

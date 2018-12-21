@@ -294,7 +294,7 @@ public class ClusterStateManager {
 
             // if state allows join after rollback, then remove all members which left during transaction.
             if (state.isJoinAllowed()) {
-                node.getClusterService().getMembershipManager().removeMembersDeadInNotJoinableState();
+                node.getClusterService().getMembershipManager().removeAllMissingMembers();
             }
             return true;
         } finally {
@@ -326,7 +326,7 @@ public class ClusterStateManager {
 
                 // if state is changed to allow joins, then remove all members which left while not active.
                 if (newState.isJoinAllowed()) {
-                    node.getClusterService().getMembershipManager().removeMembersDeadInNotJoinableState();
+                    node.getClusterService().getMembershipManager().removeAllMissingMembers();
                 }
             } else if (stateChange.isOfType(Version.class)) {
                 // version is validated on cluster-state-lock, thus we can commit without checking compatibility

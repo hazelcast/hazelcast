@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
@@ -67,8 +68,9 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int MIGRATION = 18;
     public static final int MIGRATION_REQUEST = 19;
     public static final int NON_FRAGMENTED_SERVICE_NAMESPACE = 20;
+    public static final int PARTITION_REPLICA = 21;
 
-    private static final int LEN = NON_FRAGMENTED_SERVICE_NAMESPACE + 1;
+    private static final int LEN = PARTITION_REPLICA + 1;
 
     @Override
     public int getFactoryId() {
@@ -170,6 +172,11 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         constructors[NON_FRAGMENTED_SERVICE_NAMESPACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return NonFragmentedServiceNamespace.INSTANCE;
+            }
+        };
+        constructors[PARTITION_REPLICA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionReplica();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

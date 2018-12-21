@@ -30,6 +30,11 @@ import java.util.concurrent.TimeUnit;
 public class NoopInternalHotRestartService implements InternalHotRestartService {
 
     @Override
+    public boolean isEnabled() {
+        return false;
+    }
+
+    @Override
     public boolean triggerForceStart() {
         return false;
     }

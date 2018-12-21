@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
@@ -28,6 +29,7 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
@@ -331,9 +333,10 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
                     op.getClass().getName(), op.getServiceName());
         }
 
-        Address owner = internalPartition.getReplicaAddress(op.getReplicaIndex());
-        if (op.validatesTarget() && !thisAddress.equals(owner)) {
-            throw new WrongTargetException(thisAddress, owner, partitionId, op.getReplicaIndex(),
+        PartitionReplica owner = internalPartition.getReplica(op.getReplicaIndex());
+        if (op.validatesTarget() && (owner == null || !owner.isIdentical(node.getLocalMember()))) {
+            Member target = owner != null ? node.getClusterService().getMember(owner.address(), owner.uuid()) : null;
+            throw new WrongTargetException(node.getLocalMember(), target, partitionId, op.getReplicaIndex(),
                     op.getClass().getName(), op.getServiceName());
         }
     }

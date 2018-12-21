@@ -17,12 +17,14 @@
 package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.constructor.InternalPartitionImplConstructor;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,9 +37,9 @@ public class InternalPartitionImplConstructorTest {
 
     @Test
     public void testConstructor() throws Exception {
-        Address address = new Address("172.16.16.1", 4223);
-        Address[] addresses = new Address[]{new Address("127.0.0.1", 2342)};
-        InternalPartition partition = new InternalPartitionImpl(42, null, address, addresses);
+        PartitionReplica local = new PartitionReplica(new Address("172.16.16.1", 4223), UuidUtil.newUnsecureUuidString());
+        PartitionReplica[] replicas = new PartitionReplica[]{new PartitionReplica(new Address("127.0.0.1", 2342), UuidUtil.newUnsecureUuidString())};
+        InternalPartition partition = new InternalPartitionImpl(42, null, local, replicas);
 
         InternalPartitionImplConstructor constructor = new InternalPartitionImplConstructor(InternalPartitionImpl.class);
         InternalPartition clonedPartition = (InternalPartition) constructor.createNew(partition);
@@ -45,6 +47,7 @@ public class InternalPartitionImplConstructorTest {
         assertEquals(partition.getPartitionId(), clonedPartition.getPartitionId());
         assertEquals(partition.getOwnerOrNull(), clonedPartition.getOwnerOrNull());
         assertEquals(partition.getReplicaAddress(0), clonedPartition.getReplicaAddress(0));
-        assertEquals(partition.getReplicaIndex(addresses[0]), clonedPartition.getReplicaIndex(addresses[0]));
+        assertEquals(partition.getReplica(0), clonedPartition.getReplica(0));
+        assertEquals(partition.getReplicaIndex(replicas[0]), clonedPartition.getReplicaIndex(replicas[0]));
     }
 }

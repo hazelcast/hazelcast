@@ -357,7 +357,7 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
-    private static Config initOrCreateConfig(Config config) {
+    public static Config initOrCreateConfig(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }

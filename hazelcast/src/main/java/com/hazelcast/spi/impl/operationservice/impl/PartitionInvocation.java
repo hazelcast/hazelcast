@@ -16,12 +16,14 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.partition.IPartition;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
@@ -29,9 +31,9 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  * A {@link Invocation} evaluates a Operation Invocation for a particular partition running on top of the
  * {@link OperationServiceImpl}.
  */
-final class PartitionInvocation extends Invocation {
+final class PartitionInvocation extends Invocation<PartitionReplica> {
 
-    final boolean failOnIndeterminateOperationState;
+    private final boolean failOnIndeterminateOperationState;
 
     PartitionInvocation(Context context,
                         Operation op,
@@ -57,9 +59,19 @@ final class PartitionInvocation extends Invocation {
     }
 
     @Override
-    public Address getTarget() {
-        IPartition partition = context.partitionService.getPartition(op.getPartitionId());
-        return partition.getReplicaAddress(op.getReplicaIndex());
+    PartitionReplica getInvocationTarget() {
+        InternalPartition partition = context.partitionService.getPartition(op.getPartitionId());
+        return partition.getReplica(op.getReplicaIndex());
+    }
+
+    @Override
+    Address toTargetAddress(PartitionReplica replica) {
+        return replica.address();
+    }
+
+    @Override
+    Member toTargetMember(PartitionReplica replica) {
+        return context.clusterService.getMember(replica.address(), replica.uuid());
     }
 
     @Override

@@ -49,6 +49,16 @@ public interface ClusterService extends CoreService, Cluster {
     MemberImpl getMember(String uuid);
 
     /**
+     * Gets the member with the given UUID and address.
+     *
+     * @param address the address of the member
+     * @param uuid the UUID of the member
+     * @return the found member, or {@code null} if not found
+     * (if the UUID and/or address is {@code null}, {@code null} is returned)
+     */
+    MemberImpl getMember(Address address, String uuid);
+
+    /**
      * Gets the collection of members.
      * <p>
      * If we take care of the generics.

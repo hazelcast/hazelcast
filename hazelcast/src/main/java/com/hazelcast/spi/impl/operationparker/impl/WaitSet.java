@@ -127,7 +127,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
      * response.
      * Invoked on the migration destination. This is executed under partition migration lock!
      */
-    public void onPartitionMigrate(Address thisAddress, MigrationInfo migrationInfo) {
+    void onPartitionMigrate(MigrationInfo migrationInfo) {
         Iterator<WaitSetEntry> it = queue.iterator();
         int partitionId = migrationInfo.getPartitionId();
         while (it.hasNext()) {
@@ -142,7 +142,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
             Operation op = entry.getOperation();
             if (partitionId == op.getPartitionId()) {
                 entry.setValid(false);
-                PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
+                PartitionMigratingException pme = new PartitionMigratingException(nodeEngine.getThisAddress(),
                         partitionId, op.getClass().getName(), op.getServiceName());
                 op.sendResponse(pme);
                 it.remove();

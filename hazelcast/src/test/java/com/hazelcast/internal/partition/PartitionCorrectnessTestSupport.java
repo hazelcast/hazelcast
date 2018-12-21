@@ -202,18 +202,18 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
             Node node = getNode(hz);
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition[] partitions = partitionService.getInternalPartitions();
-            Address thisAddress = node.getThisAddress();
+            PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
 
             // find leaks
-            assertNoLeakingData(service, partitions, thisAddress, null);
+            assertNoLeakingData(service, partitions, localReplica, null);
             for (String name : NAMESPACES) {
-                assertNoLeakingData(fragmentedService, partitions, thisAddress, name);
+                assertNoLeakingData(fragmentedService, partitions, localReplica, name);
             }
 
             // find missing
-            assertNoMissingData(service, partitions, thisAddress, null);
+            assertNoMissingData(service, partitions, localReplica, null);
             for (String name : NAMESPACES) {
-                assertNoMissingData(fragmentedService, partitions, thisAddress, name);
+                assertNoMissingData(fragmentedService, partitions, localReplica, name);
             }
 
             // check values
@@ -222,6 +222,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                 assertPartitionVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, name, allowDirty);
             }
 
+            Address thisAddress = node.getThisAddress();
             assertMigrationEvents(service, thisAddress);
             assertMigrationEvents(fragmentedService, thisAddress);
         }
@@ -233,21 +234,21 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private <N> void assertNoLeakingData(TestAbstractMigrationAwareService<N> service, InternalPartition[] partitions,
-                                         Address thisAddress, N ns) {
+                                         PartitionReplica localReplica, N ns) {
         for (Integer p : service.keys(ns)) {
-            int replicaIndex = partitions[p].getReplicaIndex(thisAddress);
-            assertThat("Partition: " + p + " is leaking on " + thisAddress,
+            int replicaIndex = partitions[p].getReplicaIndex(localReplica);
+            assertThat("Partition: " + p + " is leaking on " + localReplica,
                     replicaIndex, allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(backupCount)));
         }
     }
 
     private <N> void assertNoMissingData(TestAbstractMigrationAwareService<N> service, InternalPartition[] partitions,
-                                         Address thisAddress, N ns) {
+                                         PartitionReplica localReplica, N ns) {
         for (InternalPartition partition : partitions) {
-            int replicaIndex = partition.getReplicaIndex(thisAddress);
+            int replicaIndex = partition.getReplicaIndex(localReplica);
             if (replicaIndex >= 0 && replicaIndex <= backupCount) {
                 assertTrue("Partition: " + partition.getPartitionId() + ", replica: " + replicaIndex
-                                + " data is missing on " + thisAddress,
+                                + " data is missing on " + localReplica,
                         service.contains(ns, partition.getPartitionId()));
             }
         }

@@ -18,10 +18,12 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.operation.HasOngoingMigration;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -159,8 +161,8 @@ public class PartitionReplicaStateChecker {
 
         for (InternalPartition partition : partitionStateManager.getPartitions()) {
             for (int index = 0; index < replicaCount; index++) {
-                Address address = partition.getReplicaAddress(index);
-                if (address == null) {
+                PartitionReplica replica = partition.getReplica(index);
+                if (replica == null) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("Missing replica=" + index + " for partitionId=" + partition.getPartitionId());
                     }
@@ -169,11 +171,11 @@ public class PartitionReplicaStateChecker {
 
                 // Checking IN_TRANSITION state is not needed,
                 // because to be able to change cluster state, we ensure that there are no ongoing/pending migrations
-                if (clusterService.getMember(address) == null
-                        && (clusterState.isJoinAllowed() || !clusterService.isMemberRemovedInNotJoinableState(address))) {
-
+                if (clusterService.getMember(replica.address(), replica.uuid()) == null
+                        && (clusterState.isJoinAllowed()
+                        || !clusterService.isMissingMember(replica.address(), replica.uuid()))) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest("Unknown replica owner= " + address + ", partitionId="
+                        logger.finest("Unknown replica owner= " + replica + ", partitionId="
                                 + partition.getPartitionId() + ", replica=" + index);
                     }
                     return true;
@@ -233,7 +235,7 @@ public class PartitionReplicaStateChecker {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     private int invokeReplicaSyncOperations(int maxBackupCount, Semaphore semaphore, AtomicBoolean result) {
-        Address thisAddress = node.getThisAddress();
+        MemberImpl localMember = node.getLocalMember();
         ExecutionCallback<Object> callback = new ReplicaSyncResponseCallback(result, semaphore);
 
         ClusterServiceImpl clusterService = node.getClusterService();
@@ -241,13 +243,13 @@ public class PartitionReplicaStateChecker {
 
         int ownedCount = 0;
         for (InternalPartition partition : partitionStateManager.getPartitions()) {
-            Address owner = partition.getOwnerOrNull();
+            PartitionReplica owner = partition.getOwnerReplicaOrNull();
             if (owner == null) {
                 result.set(false);
                 continue;
             }
 
-            if (!thisAddress.equals(owner)) {
+            if (!owner.isIdentical(localMember)) {
                 continue;
             }
             ownedCount++;
@@ -260,9 +262,9 @@ public class PartitionReplicaStateChecker {
             }
 
             for (int index = 1; index <= maxBackupCount; index++) {
-                Address replicaAddress = partition.getReplicaAddress(index);
+                PartitionReplica replicaOwner = partition.getReplica(index);
 
-                if (replicaAddress == null) {
+                if (replicaOwner == null) {
                     result.set(false);
                     semaphore.release();
                     continue;
@@ -270,7 +272,8 @@ public class PartitionReplicaStateChecker {
 
                 // Checking IN_TRANSITION state is not needed,
                 // because to be able to change cluster state, we ensure that there are no ongoing/pending migrations
-                if (!clusterState.isJoinAllowed() && clusterService.isMemberRemovedInNotJoinableState(replicaAddress)) {
+                if (!clusterState.isJoinAllowed()
+                        && clusterService.isMissingMember(replicaOwner.address(), replicaOwner.uuid())) {
                     semaphore.release();
                     continue;
                 }
