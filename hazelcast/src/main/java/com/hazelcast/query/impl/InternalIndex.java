@@ -24,6 +24,26 @@ import com.hazelcast.monitor.impl.PerIndexStats;
 public interface InternalIndex extends Index {
 
     /**
+     * Returns {@code true} if the given partition is indexed by this index,
+     * {@code false} otherwise.
+     */
+    boolean hasPartitionIndexed(int partitionId);
+
+    /**
+     * Marks the given partition as indexed by this index.
+     *
+     * @param partitionId the ID of the partition to mark as indexed.
+     */
+    void markPartitionAsIndexed(int partitionId);
+
+    /**
+     * Marks the given partition as unindexed by this index.
+     *
+     * @param partitionId the ID of the partition to mark as unindexed.
+     */
+    void markPartitionAsUnindexed(int partitionId);
+
+    /**
      * Returns the index stats associated with this index.
      */
     PerIndexStats getPerIndexStats();

@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
@@ -55,8 +56,13 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
 
     @Override
     public void run() throws Exception {
-        Indexes indexes = mapContainer.getIndexes(getPartitionId());
-        Index index = indexes.addOrGetIndex(attributeName, ordered);
+        int partitionId = getPartitionId();
+
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        InternalIndex index = indexes.addOrGetIndex(attributeName, ordered);
+        if (index.hasPartitionIndexed(partitionId)) {
+            return;
+        }
 
         final long now = getNow();
         final Iterator<Record> iterator = recordStore.iterator(now, false);
@@ -68,6 +74,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
             QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
             index.saveEntryIndex(queryEntry, null, Index.OperationSource.USER);
         }
+        index.markPartitionAsIndexed(partitionId);
     }
 
     private long getNow() {

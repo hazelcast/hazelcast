@@ -88,6 +88,30 @@ public class Indexes {
     }
 
     /**
+     * Marks the given partition as indexed by the given indexes.
+     *
+     * @param partitionId the ID of the partition to mark as indexed.
+     * @param indexes     the indexes by which the given partition is indexed.
+     */
+    public static void markPartitionAsIndexed(int partitionId, InternalIndex[] indexes) {
+        for (InternalIndex index : indexes) {
+            index.markPartitionAsIndexed(partitionId);
+        }
+    }
+
+    /**
+     * Marks the given partition as unindexed by the given indexes.
+     *
+     * @param partitionId the ID of the partition to mark as unindexed.
+     * @param indexes     the indexes by which the given partition is unindexed.
+     */
+    public static void markPartitionAsUnindexed(int partitionId, InternalIndex[] indexes) {
+        for (InternalIndex index : indexes) {
+            index.markPartitionAsUnindexed(partitionId);
+        }
+    }
+
+    /**
      * Obtains the existing index or creates a new one (if an index doesn't exist
      * yet) for the given attribute in this indexes instance.
      *

@@ -23,11 +23,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.LocalIndexStatsTest;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalIndexStatsImpl;
@@ -36,9 +31,6 @@ import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,7 +43,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -191,38 +182,6 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         combinedStats.setIndexStats(combinedIndexStatsMap);
 
         return combinedStats;
-    }
-
-    private static List<Indexes> getAllIndexes(IMap map) {
-        MapProxyImpl mapProxy = (MapProxyImpl) map;
-        String mapName = mapProxy.getName();
-        NodeEngine nodeEngine = mapProxy.getNodeEngine();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-
-        Indexes maybeGlobalIndexes = mapContainer.getIndexes();
-        if (maybeGlobalIndexes != null) {
-            return Collections.singletonList(maybeGlobalIndexes);
-        }
-
-        PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
-        List<Indexes> allIndexes = new ArrayList<Indexes>();
-        for (PartitionContainer partitionContainer : partitionContainers) {
-            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
-            if (!partition.isLocal()) {
-                continue;
-            }
-
-            Indexes partitionIndexes = partitionContainer.getIndexes().get(mapName);
-            if (partitionIndexes == null) {
-                continue;
-            }
-            assert !partitionIndexes.isGlobal();
-            allIndexes.add(partitionIndexes);
-        }
-        return allIndexes;
     }
 
 }

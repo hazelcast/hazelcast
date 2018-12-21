@@ -47,6 +47,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -1319,10 +1320,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * partition full-scan.
      */
     private void fullScanLocalDataToClear(Indexes indexes) {
+        InternalIndex[] indexesSnapshot = indexes.getIndexes();
         for (Record record : storage.values()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
             indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
         }
+        Indexes.markPartitionAsUnindexed(partitionId, indexesSnapshot);
     }
 }
