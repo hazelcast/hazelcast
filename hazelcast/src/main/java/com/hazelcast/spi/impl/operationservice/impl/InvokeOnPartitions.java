@@ -85,7 +85,6 @@ final class InvokeOnPartitions {
      * Executes all the operations on the partitions.
      */
     <T> Map<Integer, T> invoke() throws Exception {
-        ensureNotCallingFromPartitionOperationThread();
         return this.<T>invokeAsync().get();
     }
 
@@ -96,12 +95,12 @@ final class InvokeOnPartitions {
     <T> ICompletableFuture<Map<Integer, T>> invokeAsync() {
         assert !invoked : "already invoked";
         invoked = true;
+        ensureNotCallingFromPartitionOperationThread();
         invokeOnAllPartitions();
         return future;
     }
 
     private void ensureNotCallingFromPartitionOperationThread() {
-        // TODO [viliam] is this check necessary when it's async?
         if (Thread.currentThread() instanceof PartitionOperationThread) {
             throw new IllegalThreadStateException(Thread.currentThread() + " cannot make invocation on multiple partitions!");
         }
