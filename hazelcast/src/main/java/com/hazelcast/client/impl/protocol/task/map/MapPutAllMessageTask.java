@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -35,6 +36,8 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class MapPutAllMessageTask
         extends AbstractMapPartitionMessageTask<MapPutAllCodec.RequestParameters> {
+
+    private long startTimeNanos;
 
     public MapPutAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -60,6 +63,22 @@ public class MapPutAllMessageTask
     @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    protected void beforeProcess() {
+        startTimeNanos = System.nanoTime();
+    }
+
+    @Override
+    protected void beforeResponse() {
+        final long latencyNanos = System.nanoTime() - startTimeNanos;
+        final MapService mapService = getService(MapService.SERVICE_NAME);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
+                    .incrementPutLatencyNanos(parameters.entries.size(), latencyNanos);
+        }
     }
 
     @Override

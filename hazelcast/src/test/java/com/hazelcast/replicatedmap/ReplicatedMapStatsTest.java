@@ -25,6 +25,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,6 +33,7 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -39,84 +41,102 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
+    private static final int OPERATION_COUNT = 10;
+    private static final int DEFAULT_PARTITION_COUNT = Integer.valueOf(PARTITION_COUNT.getDefaultValue());
+    private HazelcastInstance instance;
+    private String replicatedMapName = "replicatedMap";
+
+    @Before
+    public void setUp() {
+        instance = createHazelcastInstance();
+    }
+
+    protected <K, V> ReplicatedMap<K, V> getReplicatedMap() {
+        warmUpPartitions(instance);
+        return instance.getReplicatedMap(replicatedMapName);
+    }
+
+    protected LocalReplicatedMapStats getReplicatedMapStats() {
+        return instance.getReplicatedMap(replicatedMapName).getReplicatedMapStats();
+    }
+
     @Test
     public void testGetOperationCount() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         replicatedMap.put(1, 1);
-        int count = 100;
+        int count = OPERATION_COUNT;
         for (int i = 0; i < count; i++) {
             replicatedMap.get(1);
         }
-        LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
         assertEquals(count, stats.getGetOperationCount());
     }
 
     @Test
     public void testPutOperationCount() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
-        int count = 100;
+        int count = OPERATION_COUNT;
         for (int i = 0; i < count; i++) {
             replicatedMap.put(i, i);
         }
-        LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
         assertEquals(count, stats.getPutOperationCount());
     }
 
     @Test
     public void testRemoveOperationCount() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
-        int count = 100;
+        int count = OPERATION_COUNT;
         for (int i = 0; i < count; i++) {
             replicatedMap.put(i, i);
             replicatedMap.remove(i);
         }
-        LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
         assertEquals(count, stats.getRemoveOperationCount());
     }
-
 
     @Test
     public void testHitsGenerated() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < OPERATION_COUNT; i++) {
             replicatedMap.put(i, i);
             replicatedMap.get(i);
         }
-        LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
-        assertEquals(100, stats.getHits());
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT, stats.getHits());
     }
 
     @Test
     public void testPutAndHitsGenerated() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < OPERATION_COUNT; i++) {
             replicatedMap.put(i, i);
             replicatedMap.get(i);
         }
-        LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
-        assertEquals(100, stats.getHits());
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT, stats.getHits());
     }
 
     @Test
     public void testGetAndHitsGenerated() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < OPERATION_COUNT; i++) {
             replicatedMap.put(i, i);
             replicatedMap.get(i);
         }
-        LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
-        assertEquals(100, stats.getHits());
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT, stats.getHits());
     }
 
     @Test
     public void testHitsGenerated_updatedConcurrently() {
         final ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
-        final int actionCount = 100;
+        final int actionCount = OPERATION_COUNT;
         for (int i = 0; i < actionCount; i++) {
             replicatedMap.put(i, i);
             replicatedMap.get(i);
         }
-        final LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
+        final LocalReplicatedMapStats stats = getReplicatedMapStats();
         final long initialHits = stats.getHits();
 
         new Thread(new Runnable() {
@@ -125,7 +145,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
                 for (int i = 0; i < actionCount; i++) {
                     replicatedMap.get(i);
                 }
-                replicatedMap.getReplicatedMapStats(); // causes the local stats object to update
+                getReplicatedMapStats(); // causes the local stats object to update
             }
         }).start();
 
@@ -145,7 +165,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         String key = "key";
         replicatedMap.put(key, "value");
         replicatedMap.get(key);
-        long lastAccessTime = replicatedMap.getReplicatedMapStats().getLastAccessTime();
+        long lastAccessTime = getReplicatedMapStats().getLastAccessTime();
 
         assertTrue(lastAccessTime >= startTime);
     }
@@ -157,7 +177,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         final String key = "key";
         map.put(key, "value");
         map.get(key);
-        final LocalReplicatedMapStats stats = map.getReplicatedMapStats();
+        final LocalReplicatedMapStats stats = getReplicatedMapStats();
         final long lastAccessTime = stats.getLastAccessTime();
 
         new Thread(new Runnable() {
@@ -186,12 +206,12 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         String key = "key";
         replicatedMap.put(key, "value");
 
-        long lastUpdateTime = replicatedMap.getReplicatedMapStats().getLastUpdateTime();
+        long lastUpdateTime = getReplicatedMapStats().getLastUpdateTime();
         assertTrue(lastUpdateTime >= startTime);
 
         sleepAtLeastMillis(5);
         replicatedMap.put(key, "value2");
-        long lastUpdateTime2 = replicatedMap.getReplicatedMapStats().getLastUpdateTime();
+        long lastUpdateTime2 = getReplicatedMapStats().getLastUpdateTime();
         assertTrue(lastUpdateTime2 >= lastUpdateTime);
     }
 
@@ -203,7 +223,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         final String key = "key";
         map.put(key, "value");
 
-        final LocalReplicatedMapStats stats = map.getReplicatedMapStats();
+        final LocalReplicatedMapStats stats = getReplicatedMapStats();
         final long lastUpdateTime = stats.getLastUpdateTime();
 
         new Thread(new Runnable() {
@@ -211,7 +231,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
             public void run() {
                 sleepAtLeastMillis(1);
                 map.put(key, "value2");
-                map.getReplicatedMapStats(); // causes the local stats object to update
+                getReplicatedMapStats(); // causes the local stats object to update
             }
         }).start();
 
@@ -227,24 +247,114 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
     @Test
     public void testPutOperationCount_afterPutAll() {
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-        for (int i = 1; i <= 100; i++) {
+        for (int i = 1; i <= OPERATION_COUNT; i++) {
             map.put(i, i);
         }
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         replicatedMap.putAll(map);
-        final LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
+        final LocalReplicatedMapStats stats = getReplicatedMapStats();
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(100, stats.getPutOperationCount());
+                assertEquals(OPERATION_COUNT, stats.getPutOperationCount());
             }
         });
     }
 
-    private <K, V> ReplicatedMap<K, V> getReplicatedMap() {
-        HazelcastInstance instance = createHazelcastInstance();
-        warmUpPartitions(instance);
-        return instance.getReplicatedMap(randomMapName());
+    @Test
+    public void testOtherOperationCount_containsKey() {
+        ReplicatedMap<Integer, Integer> map = getReplicatedMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.containsKey(i);
+        }
+
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_entrySet() {
+        ReplicatedMap<Integer, Integer> map = getReplicatedMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.entrySet();
+        }
+
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_keySet() {
+        ReplicatedMap<Integer, Integer> map = getReplicatedMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.keySet();
+        }
+
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_values() {
+        ReplicatedMap<Integer, Integer> map = getReplicatedMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.values();
+        }
+
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_clear() {
+        ReplicatedMap<Integer, Integer> map = getReplicatedMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.clear();
+        }
+
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_containsValue() {
+        ReplicatedMap<Integer, Integer> map = getReplicatedMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.containsValue(1);
+        }
+
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_isEmpty() {
+        ReplicatedMap<Integer, Integer> map = getReplicatedMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.isEmpty();
+        }
+
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_size() {
+        ReplicatedMap<Integer, Integer> map = getReplicatedMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            map.size();
+        }
+
+        LocalReplicatedMapStats stats = getReplicatedMapStats();
+        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
     }
 }
