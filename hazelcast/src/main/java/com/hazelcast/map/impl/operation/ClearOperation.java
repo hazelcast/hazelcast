@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -49,8 +50,16 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
         shouldBackup = true;
     }
 
+    private void updateStatistics() {
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
+        }
+    }
+
     @Override
     public void afterRun() throws Exception {
+        updateStatistics();
         super.afterRun();
         invalidateAllKeysInNearCaches();
         hintMapEvent();

@@ -67,7 +67,7 @@ public class ClearOperation extends AbstractNamedSerializableOperation implement
         if (store == null) {
             return;
         }
-        response = store.size();
+        response = store.getStorage().size();
 
         if (replicateClear) {
             store.clear();

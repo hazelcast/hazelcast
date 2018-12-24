@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
@@ -38,6 +39,10 @@ public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implement
     @Override
     public void run() {
         containsKey = recordStore.containsKey(dataKey, getCallerAddress());
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
+        }
     }
 
     @Override
