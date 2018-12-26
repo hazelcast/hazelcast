@@ -313,7 +313,8 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex = new IndexImpl("foo", false, ss, Extractors.empty(), COPY_ON_READ, PerIndexStats.EMPTY);
+        Index dummyIndex = new IndexImpl("foo", false, ss,
+                Extractors.newBuilder(ss).build(), COPY_ON_READ, PerIndexStats.EMPTY);
         QueryContext mockQueryContext = mock(QueryContext.class);
         when(mockQueryContext.getIndex(anyString())).thenReturn(dummyIndex);
 
@@ -326,7 +327,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
-            super(ss, toData("1"), attribute, Extractors.empty());
+            super(ss, toData("1"), attribute, Extractors.newBuilder(ss).build());
         }
 
         @Override
@@ -398,7 +399,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     private Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(ss, toData(key), value, Extractors.empty());
+        return new QueryEntry(ss, toData(key), value, Extractors.newBuilder(ss).build());
     }
 
     private void assertPredicateTrue(Predicate p, Comparable comparable) {

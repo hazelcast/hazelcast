@@ -21,9 +21,9 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.client.config.ClientXmlElements.ATTRIBUTES;
 import static com.hazelcast.client.config.ClientXmlElements.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientXmlElements.FLAKE_ID_GENERATOR;
@@ -266,6 +267,20 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleFlakeIdGenerator(node);
         } else if (RELIABLE_TOPIC.isEqual(nodeName)) {
             handleReliableTopic(node);
+        } else if (ATTRIBUTES.isEqual(nodeName)) {
+            handleAttributes(node);
+        }
+    }
+
+    private void handleAttributes(Node node) {
+        for (Node n : childElements(node)) {
+            String name = cleanNodeName(n);
+            if (!"attribute".equals(name)) {
+                continue;
+            }
+            String attributeName = getTextContent(n.getAttributes().getNamedItem("name"));
+            String value = getTextContent(n);
+            clientConfig.setAttribute(attributeName, value);
         }
     }
 

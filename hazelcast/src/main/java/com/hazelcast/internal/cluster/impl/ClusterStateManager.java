@@ -21,7 +21,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.LockGuard;
@@ -111,6 +110,8 @@ public class ClusterStateManager {
     void initialClusterState(ClusterState initialState, Version version) {
         clusterServiceLock.lock();
         try {
+            node.getNodeExtension().onInitialClusterState(initialState);
+
             final ClusterState currentState = getState();
             if (currentState != ClusterState.ACTIVE && currentState != initialState) {
                 logger.warning("Initial state is already set! " + "Current state: " + currentState + ", Given state: "
@@ -190,7 +191,7 @@ public class ClusterStateManager {
      * Validates the requested cluster state change and sets a {@code ClusterStateLock}.
      */
     public void lockClusterState(ClusterStateChange stateChange, Address initiator, String txnId, long leaseTime,
-            int memberListVersion, int partitionStateVersion) {
+                                 int memberListVersion, int partitionStateVersion) {
         Preconditions.checkNotNull(stateChange);
         clusterServiceLock.lock();
         try {
@@ -226,15 +227,12 @@ public class ClusterStateManager {
     }
 
     private void checkMemberListVersion(int memberListVersion) {
-        // RU_COMPAT_V3_10
-        if (clusterVersion.isGreaterOrEqual(Versions.V3_11)) {
-            int thisMemberListVersion = node.getClusterService().getMemberListVersion();
-            if (memberListVersion != thisMemberListVersion) {
-                throw new IllegalStateException(
-                        "Can not lock cluster state! Member list versions are not matching!"
-                                + " Expected version: " + memberListVersion
-                                + ", Current version: " + thisMemberListVersion);
-            }
+        int thisMemberListVersion = node.getClusterService().getMemberListVersion();
+        if (memberListVersion != thisMemberListVersion) {
+            throw new IllegalStateException(
+                    "Can not lock cluster state! Member list versions are not matching!"
+                            + " Expected version: " + memberListVersion
+                            + ", Current version: " + thisMemberListVersion);
         }
     }
 
@@ -298,7 +296,7 @@ public class ClusterStateManager {
 
             // if state allows join after rollback, then remove all members which left during transaction.
             if (state.isJoinAllowed()) {
-                node.getClusterService().getMembershipManager().removeMembersDeadInNotJoinableState();
+                node.getClusterService().getMembershipManager().removeAllMissingMembers();
             }
             return true;
         } finally {
@@ -330,7 +328,7 @@ public class ClusterStateManager {
 
                 // if state is changed to allow joins, then remove all members which left while not active.
                 if (newState.isJoinAllowed()) {
-                    node.getClusterService().getMembershipManager().removeMembersDeadInNotJoinableState();
+                    node.getClusterService().getMembershipManager().removeAllMissingMembers();
                 }
             } else if (stateChange.isOfType(Version.class)) {
                 // version is validated on cluster-state-lock, thus we can commit without checking compatibility
@@ -353,16 +351,13 @@ public class ClusterStateManager {
         }
     }
 
-    void changeClusterState(
-            ClusterStateChange stateChange, MemberMap memberMap, int partitionStateVersion, boolean isTransient
-    ) {
+    void changeClusterState(ClusterStateChange stateChange, MemberMap memberMap,
+                            int partitionStateVersion, boolean isTransient) {
         changeClusterState(stateChange, memberMap, DEFAULT_TX_OPTIONS, partitionStateVersion, isTransient);
     }
 
-    void changeClusterState(
-            ClusterStateChange stateChange, MemberMap memberMap, TransactionOptions options,
-            int partitionStateVersion, boolean isTransient
-    ) {
+    void changeClusterState(ClusterStateChange stateChange, MemberMap memberMap,
+                            TransactionOptions options, int partitionStateVersion, boolean isTransient) {
         checkParameters(stateChange, options);
         if (isCurrentStateEqualToRequestedOne(stateChange)) {
             return;
@@ -437,8 +432,10 @@ public class ClusterStateManager {
         return false;
     }
 
-    private void lockClusterStateOnAllMembers(ClusterStateChange stateChange, NodeEngineImpl nodeEngine, long leaseTime,
-            String txnId, Collection<MemberImpl> members, int memberListVersion, int partitionStateVersion) {
+    private void lockClusterStateOnAllMembers(ClusterStateChange stateChange,
+                                              NodeEngineImpl nodeEngine, long leaseTime,
+                                              String txnId, Collection<MemberImpl> members,
+                                              int memberListVersion, int partitionStateVersion) {
 
         Collection<Future> futures = new ArrayList<Future>(members.size());
 
@@ -456,7 +453,7 @@ public class ClusterStateManager {
     }
 
     private void addTransactionRecords(ClusterStateChange stateChange, Transaction tx, Collection<MemberImpl> members,
-            int memberListVersion, int partitionStateVersion, boolean isTransient) {
+                                       int memberListVersion, int partitionStateVersion, boolean isTransient) {
         long leaseTime = Math.min(tx.getTimeoutMillis(), LOCK_LEASE_EXTENSION_MILLIS);
         for (Member member : members) {
             tx.add(new ClusterStateTransactionLogRecord(stateChange, node.getThisAddress(),

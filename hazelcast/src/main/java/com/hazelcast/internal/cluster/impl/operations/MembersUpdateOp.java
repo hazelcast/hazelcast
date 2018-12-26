@@ -99,7 +99,7 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
             return;
         }
 
-        partitionRuntimeState.setEndpoint(getCallerAddress());
+        partitionRuntimeState.setMaster(getCallerAddress());
         ClusterServiceImpl clusterService = getService();
         Node node = clusterService.getNodeEngine().getNode();
         node.partitionService.processPartitionRuntimeState(partitionRuntimeState);

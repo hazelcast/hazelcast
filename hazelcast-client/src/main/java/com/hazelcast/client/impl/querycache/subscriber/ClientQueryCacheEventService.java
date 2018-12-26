@@ -80,11 +80,11 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
                 }
             };
 
-    private final ILogger logger = Logger.getLogger(getClass());
     private final StripedExecutor executor;
-    private final ConcurrentMap<String, QueryCacheToListenerMapper> registrations;
-    private final SerializationService serializationService;
     private final ClientListenerService listenerService;
+    private final InternalSerializationService serializationService;
+    private final ILogger logger = Logger.getLogger(getClass());
+    private final ConcurrentMap<String, QueryCacheToListenerMapper> registrations;
 
     public ClientQueryCacheEventService(ClientContext clientContext) {
         AbstractClientListenerService listenerService = (AbstractClientListenerService) clientContext.getListenerService();
@@ -116,21 +116,55 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     }
 
     @Override
-    public void publish(String mapName, String cacheId, Object event, int orderKey) {
+    public void publish(String mapName, String cacheId, Object event,
+                        int orderKey, Extractors extractors) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheId, "cacheId");
         checkNotNull(event, "event cannot be null");
 
+
         Collection<ListenerInfo> listeners = getListeners(mapName, cacheId);
         for (ListenerInfo info : listeners) {
+            if (!canPassFilter(event, info.getFilter(), extractors)) {
+                continue;
+            }
+
             try {
-                executor.execute(new EventDispatcher(event, info, orderKey, serializationService, EVENT_QUEUE_TIMEOUT_MILLIS));
+                executor.execute(new EventDispatcher(event, info, orderKey,
+                        serializationService, EVENT_QUEUE_TIMEOUT_MILLIS));
             } catch (RejectedExecutionException e) {
                 // TODO Should we notify user when we overloaded?
                 logger.warning("EventQueue overloaded! Can not process IMap=[" + mapName + "]"
                         + ", QueryCache=[ " + cacheId + "]" + ", Event=[" + event + "]");
             }
         }
+    }
+
+    private boolean canPassFilter(Object eventData,
+                                  EventFilter filter, Extractors extractors) {
+        if (filter == null || filter instanceof TrueEventFilter) {
+            return true;
+        }
+
+        if (!(eventData instanceof LocalEntryEventData)) {
+            return true;
+        }
+
+        LocalEntryEventData localEntryEventData = (LocalEntryEventData) eventData;
+
+        if (localEntryEventData.getEventType() != EventLostEvent.EVENT_TYPE) {
+            Object value = getValueOrOldValue(localEntryEventData);
+            Data keyData = localEntryEventData.getKeyData();
+            QueryEntry entry = new QueryEntry(serializationService, keyData, value, extractors);
+            return filter.eval(entry);
+        }
+
+        return true;
+    }
+
+    private Object getValueOrOldValue(LocalEntryEventData localEntryEventData) {
+        Object value = localEntryEventData.getValue();
+        return value != null ? value : localEntryEventData.getOldValue();
     }
 
     @Override
@@ -277,36 +311,9 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
             EventData eventData = (EventData) event;
             EventFilter filter = listenerInfo.getFilter();
 
-            if (eventData instanceof LocalEntryEventData
-                    && eventData.getEventType() != EventLostEvent.EVENT_TYPE) {
-
-                LocalEntryEventData localEntryEventData = (LocalEntryEventData) eventData;
-                if (!canPassFilter(localEntryEventData, filter)) {
-                    return;
-                }
-            }
-
             IMapEvent event = createIMapEvent(eventData, filter, null, serializationService);
             ListenerAdapter listenerAdapter = listenerInfo.getListenerAdapter();
             listenerAdapter.onEvent(event);
-        }
-
-
-        private boolean canPassFilter(LocalEntryEventData eventData, EventFilter filter) {
-            if (filter == null || filter instanceof TrueEventFilter) {
-                return true;
-            }
-            Object value = getValueOrOldValue(eventData);
-            Data keyData = eventData.getKeyData();
-            QueryEntry entry = new QueryEntry((InternalSerializationService) serializationService,
-                    keyData, value, Extractors.empty());
-            return filter.eval(entry);
-        }
-
-
-        private Object getValueOrOldValue(LocalEntryEventData localEntryEventData) {
-            Object value = localEntryEventData.getValue();
-            return value != null ? value : localEntryEventData.getOldValue();
         }
 
         @Override
@@ -321,4 +328,3 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
 
     }
 }
-

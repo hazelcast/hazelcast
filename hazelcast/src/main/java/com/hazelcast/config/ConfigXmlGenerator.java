@@ -174,6 +174,7 @@ public class ConfigXmlGenerator {
             ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
             gen.open("management-center",
                     "enabled", mcConfig.isEnabled(),
+                    "scripting-enabled", mcConfig.isScriptingEnabled(),
                     "update-interval", mcConfig.getUpdateInterval());
             gen.node("url", mcConfig.getUrl());
             if (mcConfig.getUrl() != null) {
@@ -1461,32 +1462,48 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static final class XmlGenerator {
+    /**
+     * Utility class to build xml using a {@link StringBuilder}.
+     */
+    public static final class XmlGenerator {
+
+        private static final int CAPACITY = 64;
 
         private final StringBuilder xml;
         private final ArrayDeque<String> openNodes = new ArrayDeque<String>();
 
-        private XmlGenerator(StringBuilder xml) {
+        public XmlGenerator(StringBuilder xml) {
             this.xml = xml;
         }
 
-        XmlGenerator open(String name, Object... attributes) {
+        public XmlGenerator open(String name, Object... attributes) {
             appendOpenNode(xml, name, attributes);
             openNodes.addLast(name);
             return this;
         }
 
-        XmlGenerator node(String name, Object contents, Object... attributes) {
+        public XmlGenerator node(String name, Object contents, Object... attributes) {
             appendNode(xml, name, contents, attributes);
             return this;
         }
 
-        XmlGenerator close() {
+        public XmlGenerator close() {
             appendCloseNode(xml, openNodes.pollLast());
             return this;
         }
 
-        XmlGenerator appendProperties(Properties props) {
+        public XmlGenerator appendAttributes(Map<String, String> attributes) {
+            if (!attributes.isEmpty()) {
+                open("client-attributes");
+                for (Entry<String, String> entry : attributes.entrySet()) {
+                    node("attribute", entry.getValue(), "name", entry.getKey());
+                }
+                close();
+            }
+            return this;
+        }
+
+        public XmlGenerator appendProperties(Properties props) {
             if (!props.isEmpty()) {
                 open("properties");
                 Set keys = props.keySet();
@@ -1498,7 +1515,7 @@ public class ConfigXmlGenerator {
             return this;
         }
 
-        XmlGenerator appendProperties(Map<String, ? extends Comparable> props) {
+        public XmlGenerator appendProperties(Map<String, ? extends Comparable> props) {
             if (!MapUtil.isNullOrEmpty(props)) {
                 open("properties");
                 for (Entry<String, ? extends Comparable> entry : props.entrySet()) {
@@ -1519,26 +1536,84 @@ public class ConfigXmlGenerator {
             xml.append("</").append(name).append('>');
         }
 
-        private static void appendAttributes(StringBuilder xml, Object... attributes) {
-            for (int i = 0; i < attributes.length; ) {
-                xml.append(" ").append(attributes[i++]).append("=\"").append(attributes[i++]).append("\"");
-            }
-        }
-
         private static void appendNode(StringBuilder xml, String name, Object contents, Object... attributes) {
             if (contents != null || attributes.length > 0) {
                 xml.append('<').append(name);
-                for (int i = 0; i < attributes.length; ) {
-                    Object key = attributes[i++];
-                    Object val = attributes[i++];
-                    if (val != null) {
-                        xml.append(" ").append(key).append("=\"").append(val).append("\"");
-                    }
-                }
+                appendAttributes(xml, attributes);
                 if (contents != null) {
-                    xml.append('>').append(contents).append("</").append(name).append('>');
+                    xml.append('>');
+                    escapeXml(contents, xml);
+                    xml.append("</").append(name).append('>');
                 } else {
                     xml.append("/>");
+                }
+            }
+        }
+
+        private static void appendAttributes(StringBuilder xml, Object... attributes) {
+            for (int i = 0; i < attributes.length; ) {
+                Object attributeName = attributes[i++];
+                Object attributeValue = attributes[i++];
+                if (attributeValue == null) {
+                    continue;
+                }
+                xml.append(" ").append(attributeName).append("=\"");
+                escapeXmlAttr(attributeValue, xml);
+                xml.append("\"");
+            }
+        }
+
+        /**
+         * Escapes special characters in XML element contents and appends the result to <code>appendTo</code>.
+         */
+        private static void escapeXml(Object o, StringBuilder appendTo) {
+            if (o == null) {
+                appendTo.append("null");
+                return;
+            }
+            String s = o.toString();
+            int length = s.length();
+            appendTo.ensureCapacity(appendTo.length() + length + CAPACITY);
+            for (int i = 0; i < length; i++) {
+                char ch = s.charAt(i);
+                if (ch == '<') {
+                    appendTo.append("&lt;");
+                } else if (ch == '&') {
+                    appendTo.append("&amp;");
+                } else {
+                    appendTo.append(ch);
+                }
+            }
+        }
+
+        /**
+         * Escapes special characters in XML attribute value and appends the result to <code>appendTo</code>.
+         */
+        private static void escapeXmlAttr(Object o, StringBuilder appendTo) {
+            if (o == null) {
+                appendTo.append("null");
+                return;
+            }
+            String s = o.toString();
+            int length = s.length();
+            appendTo.ensureCapacity(appendTo.length() + length + CAPACITY);
+            for (int i = 0; i < length; i++) {
+                char ch = s.charAt(i);
+                switch (ch) {
+                    case '"':
+                        appendTo.append("&quot;");
+                        break;
+                    case '\'':
+                        appendTo.append("&#39;");
+                        break;
+                    case '&':
+                        appendTo.append("&amp;");
+                        break;
+                    case '<':
+                        appendTo.append("&lt;");
+                        break;
+                    default:
+                        appendTo.append(ch);
                 }
             }
         }

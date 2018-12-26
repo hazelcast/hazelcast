@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.getters.Extractors;
 
 /**
  * Internal interface which adds some internally used methods
@@ -69,4 +70,9 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
      * @see com.hazelcast.config.QueryCacheConfig#populate
      */
     boolean reachedMaxCapacity();
+
+    /**
+     * @return extractors of this query cache instance.
+     */
+    Extractors getExtractors();
 }

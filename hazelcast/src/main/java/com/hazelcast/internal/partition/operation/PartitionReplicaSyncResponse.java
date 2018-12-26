@@ -16,7 +16,10 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -87,8 +90,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
-        Address thisAddress = nodeEngine.getThisAddress();
-        int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
+        int currentReplicaIndex = partition.getReplicaIndex(PartitionReplica.from(nodeEngine.getLocalMember()));
         try {
             if (replicaIndex == currentReplicaIndex) {
                 executeOperations();
@@ -122,19 +124,25 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
     private void nodeNotOwnsBackup(InternalPartitionImpl partition) {
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
-        Address thisAddress = getNodeEngine().getThisAddress();
-        int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
+        NodeEngine nodeEngine = getNodeEngine();
 
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
+            int currentReplicaIndex = partition.getReplicaIndex(PartitionReplica.from(nodeEngine.getLocalMember()));
             logger.finest(
                     "This node is not backup replica of partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
                             + " anymore. current replicaIndex=" + currentReplicaIndex);
         }
 
         if (operations != null) {
-            Throwable throwable = new WrongTargetException(thisAddress, partition.getReplicaAddress(replicaIndex),
-                    partitionId, replicaIndex, getClass().getName());
+            PartitionReplica replica = partition.getReplica(replicaIndex);
+            Member targetMember = null;
+            if (replica != null) {
+                ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+                targetMember = clusterService.getMember(replica.address(), replica.uuid());
+            }
+            Throwable throwable = new WrongTargetException(nodeEngine.getLocalMember(), targetMember, partitionId,
+                    replicaIndex, getClass().getName());
             for (Operation op : operations) {
                 prepareOperation(op);
                 onOperationFailure(op, throwable);

@@ -79,7 +79,7 @@ public class Statistics {
 
     private PeriodicStatistics periodicStats;
 
-    private volatile Address ownerAddress;
+    private volatile Address cachedOwnerAddress;
 
     public Statistics(final HazelcastClientInstanceImpl clientInstance) {
         this.properties = clientInstance.getProperties();
@@ -101,7 +101,7 @@ public class Statistics {
         if (periodSeconds <= 0) {
             long defaultValue = Long.parseLong(PERIOD_SECONDS.getDefaultValue());
             logger.warning("Provided client statistics " + PERIOD_SECONDS.getName()
-                    + " can not be less than or equal to 0. You provided " + periodSeconds
+                    + " cannot be less than or equal to 0. You provided " + periodSeconds
                     + " seconds as the configuration. Client will use the default value of " + defaultValue + " instead.");
             periodSeconds = defaultValue;
         }
@@ -120,28 +120,32 @@ public class Statistics {
      */
     private ClientConnection getOwnerConnection() {
         ClientConnection connection = client.getConnectionManager().getOwnerConnection();
-        if (null == connection) {
+        if (connection == null) {
             return null;
         }
 
-        Address ownerConnectionAddress = client.getConnectionManager().getOwnerConnectionAddress();
+        Address currentOwnerAddress = client.getConnectionManager().getOwnerConnectionAddress();
         int serverVersion = connection.getConnectedServerVersion();
         if (serverVersion < FEATURE_SUPPORTED_SINCE_VERSION) {
             // do not print too many logs if connected to an old version server
-            if (ownerAddress == null || !ownerConnectionAddress.equals(ownerAddress)) {
+            if (!isSameWithCachedOwnerAddress(currentOwnerAddress)) {
                 if (logger.isFinestEnabled()) {
                     logger.finest(
-                            format("Client statistics can not be sent to server " + ownerConnectionAddress + " since, connected "
+                            format("Client statistics cannot be sent to server " + currentOwnerAddress + " since, connected "
                                             + "owner server version is less than the minimum supported server version %s",
                                     FEATURE_SUPPORTED_SINCE_VERSION_STRING));
                 }
             }
             // cache the last connected server address for decreasing the log prints
-            ownerAddress = ownerConnectionAddress;
+            cachedOwnerAddress = currentOwnerAddress;
             return null;
         }
 
         return connection;
+    }
+
+    private boolean isSameWithCachedOwnerAddress(Address currentOwnerAddress) {
+        return cachedOwnerAddress != null && currentOwnerAddress.equals(cachedOwnerAddress);
     }
 
     /**
@@ -152,8 +156,8 @@ public class Statistics {
             @Override
             public void run() {
                 ClientConnection ownerConnection = getOwnerConnection();
-                if (null == ownerConnection) {
-                    logger.finest("Can not send client statistics to the server. No owner connection.");
+                if (ownerConnection == null) {
+                    logger.finest("Cannot send client statistics to the server. No owner connection.");
                     return;
                 }
 

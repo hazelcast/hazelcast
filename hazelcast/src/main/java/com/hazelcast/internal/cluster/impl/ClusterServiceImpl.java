@@ -38,7 +38,6 @@ import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -459,36 +458,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return (callerAddress != null && callerAddress.equals(getMasterAddress()));
     }
 
-    void repairPartitionTableIfReturningMember(MemberImpl member) {
-        assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
-        if (!isMaster()) {
-            return;
-        }
-
-        if (getClusterState().isMigrationAllowed()) {
-            return;
-        }
-
-        if (!node.getNodeExtension().isStartCompleted()) {
-            return;
-        }
-
-        Address address = member.getAddress();
-        MemberImpl memberRemovedWhileClusterIsNotActive
-                = membershipManager.getMemberRemovedInNotJoinableState(member.getUuid());
-        if (memberRemovedWhileClusterIsNotActive != null) {
-            Address oldAddress = memberRemovedWhileClusterIsNotActive.getAddress();
-            if (!oldAddress.equals(address)) {
-                assert !isMemberRemovedInNotJoinableState(address);
-
-                logger.warning(member + " is returning with a new address. Old one was: " + oldAddress
-                        + ". Will update partition table with the new address.");
-                InternalPartitionServiceImpl partitionService = node.partitionService;
-                partitionService.replaceAddress(oldAddress, address);
-            }
-        }
-    }
-
     private boolean shouldProcessMemberUpdate(MembersView membersView) {
         int memberListVersion = membershipManager.getMemberListVersion();
         if (memberListVersion > membersView.getVersion()) {
@@ -556,16 +525,20 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return nodeEngine;
     }
 
-    public boolean isMemberRemovedInNotJoinableState(Address target) {
-        return membershipManager.isMemberRemovedInNotJoinableState(target);
+    /**
+     * Returns whether member with given identity (either {@code UUID} or {@code Address}
+     * depending on Hot Restart is enabled or not) is a known missing member or not.
+     *
+     * @param address Address of the missing member
+     * @param uuid Uuid of the missing member
+     * @return true if it's a known missing member, false otherwise
+     */
+    public boolean isMissingMember(Address address, String uuid) {
+        return membershipManager.isMissingMember(address, uuid);
     }
 
-    boolean isMemberRemovedInNotJoinableState(String uuid) {
-        return membershipManager.isMemberRemovedInNotJoinableState(uuid);
-    }
-
-    public Collection<Member> getCurrentMembersAndMembersRemovedInNotJoinableState() {
-        return membershipManager.getCurrentMembersAndMembersRemovedInNotJoinableState();
+    public Collection<Member> getActiveAndMissingMembers() {
+        return membershipManager.getActiveAndMissingMembers();
     }
 
     public void notifyForRemovedMember(MemberImpl member) {
@@ -577,8 +550,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public void shrinkMembersRemovedInNotJoinableState(Collection<String> memberUuidsToRemove) {
-        membershipManager.shrinkMembersRemovedInNotJoinableState(memberUuidsToRemove);
+    public void shrinkMissingMembers(Collection<String> memberUuidsToRemove) {
+        membershipManager.shrinkMissingMembers(memberUuidsToRemove);
     }
 
     private void sendMemberAttributeEvent(MemberImpl member, MemberAttributeOperationType operationType, String key,
@@ -618,6 +591,14 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             return null;
         }
         return membershipManager.getMember(uuid);
+    }
+
+    @Override
+    public MemberImpl getMember(Address address, String uuid) {
+        if (address == null || uuid == null) {
+            return null;
+        }
+        return membershipManager.getMember(address, uuid);
     }
 
     @Override
@@ -916,10 +897,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         } finally {
             lock.unlock();
         }
-    }
-
-    void addMembersRemovedInNotJoinableState(Collection<MemberImpl> members) {
-        membershipManager.addMembersRemovedInNotJoinableState(members);
     }
 
     @Override

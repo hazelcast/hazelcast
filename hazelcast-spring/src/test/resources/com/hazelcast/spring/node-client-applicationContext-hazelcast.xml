@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -348,6 +348,18 @@
                 </hz:properties>
             </hz:credentials-factory>
         </hz:security>
+    </hz:client>
+
+    <hz:client id="client16-name-and-attributes">
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:instance-name>clientName</hz:instance-name>
+        <hz:attributes>
+            <hz:attribute name="foo">bar</hz:attribute>
+        </hz:attributes>
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">

@@ -114,7 +114,7 @@
         at most 2 members in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center enabled="true" update-interval="2">http://localhost:8080/hazelcast-mancenter</management-center>
+    <management-center enabled="true" scripting-enabled="false" update-interval="2">http://localhost:8080/hazelcast-mancenter</management-center>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
@@ -2114,6 +2114,16 @@
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>
             </all-permissions>
+            <config-permission>
+                <actions>
+                    <action>all</action>
+                </actions>
+            </config-permission>
+            <transaction-permission>
+                <actions>
+                    <action>all</action>
+                </actions>
+            </transaction-permission>
             <map-permission name="custom" principal="dev">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
@@ -2125,6 +2135,96 @@
                     <action>read</action>
                 </actions>
             </map-permission>
+            <queue-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </queue-permission>
+            <topic-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </topic-permission>
+            <multimap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </multimap-permission>
+            <list-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </list-permission>
+            <set-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </set-permission>
+            <id-generator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </id-generator-permission>
+            <flake-id-generator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </flake-id-generator-permission>
+            <lock-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </lock-permission>
+            <atomic-long-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </atomic-long-permission>
+            <countdown-latch-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </countdown-latch-permission>
+            <semaphore-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </semaphore-permission>
+            <executor-service-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </executor-service-permission>
+            <durable-executor-service-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </durable-executor-service-permission>
+            <cardinality-estimator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </cardinality-estimator-permission>
+            <scheduled-executor-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </scheduled-executor-permission>
+            <cache-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </cache-permission>
+            <user-code-deployment-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </user-code-deployment-permission>
+            <pn-counter-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </pn-counter-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
         <security-interceptors>

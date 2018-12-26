@@ -23,6 +23,7 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
@@ -278,22 +279,13 @@ public class ClusterJoinManager {
             return true;
         }
 
-        if (checkClusterStateBeforeJoin(target, targetUuid)) {
-            return true;
-        }
-
         if (joinRequest.getExcludedMemberUuids().contains(clusterService.getThisUuid())) {
             logger.warning("cannot join " + target + " since this node is excluded in its list...");
             hotRestartService.handleExcludedMemberUuids(target, joinRequest.getExcludedMemberUuids());
             return true;
         }
 
-        if (!node.getPartitionService().isMemberAllowedToJoin(target)) {
-            logger.warning(target + " not allowed to join right now, it seems restarted.");
-            return true;
-        }
-
-        return false;
+        return checkClusterStateBeforeJoin(target, targetUuid);
     }
 
     private boolean checkClusterStateBeforeJoin(Address target, String uuid) {
@@ -309,22 +301,25 @@ public class ClusterJoinManager {
             return checkRecentlyJoinedMemberUuidBeforeJoin(target, uuid);
         }
 
-        if (clusterService.isMemberRemovedInNotJoinableState(target)) {
-            MemberImpl removedMember = clusterService.getMembershipManager().getMemberRemovedInNotJoinableState(uuid);
+        // RU_COMPAT_3_11
+        if (clusterService.getClusterVersion().isLessThan(Versions.V3_12)
+                && node.getNodeExtension().getInternalHotRestartService().isEnabled()
+                && clusterService.isMissingMember(target, uuid)) {
 
-            if (removedMember != null && !target.equals(removedMember.getAddress())) {
-
-                logger.warning("UUID " + uuid + " was being used by " + removedMember
-                        + " before. " + target + " is not allowed to join with a UUID which belongs to"
-                        + " a known passive member.");
-
-                return true;
+            Collection<MemberImpl> missingMembers = clusterService.getMembershipManager().getMissingMembers();
+            for (MemberImpl member : missingMembers) {
+                if (!uuid.equals(member.getUuid()) && target.equals(member.getAddress())) {
+                    MemberImpl joiningMember = new MemberImpl(target, MemberVersion.UNKNOWN, false, uuid);
+                    logger.warning("Address " + target + " was being used by " + member + " before. "
+                            + joiningMember + " is not allowed to join with an address which belongs to"
+                            + " a known missing member.");
+                    return true;
+                }
             }
-
             return false;
         }
 
-        if (clusterService.isMemberRemovedInNotJoinableState(uuid)) {
+        if (clusterService.isMissingMember(target, uuid)) {
             return false;
         }
 
@@ -753,8 +748,7 @@ public class ClusterJoinManager {
                     if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
                         continue;
                     }
-                    Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time,
-                            partitionRuntimeState, true);
+                    Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time, partitionRuntimeState, true);
                     op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }

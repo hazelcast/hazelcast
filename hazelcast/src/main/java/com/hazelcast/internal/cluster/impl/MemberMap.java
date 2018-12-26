@@ -132,7 +132,7 @@ final class MemberMap {
             }
         }
 
-        return new MemberMap(source.version + 1, addressMap, uuidMap);
+        return new MemberMap(source.version + excludeMembers.length, addressMap, uuidMap);
     }
 
     /**
@@ -183,18 +183,6 @@ final class MemberMap {
             return member1;
         }
         return null;
-    }
-
-    public int getMemberIndex(MemberImpl member) {
-        int i = 0;
-        for (MemberImpl m : members) {
-            if (m.equals(member)) {
-                return i;
-            }
-            i++;
-        }
-
-        throw new IllegalArgumentException(member + " is not present in " + members);
     }
 
     boolean contains(Address address) {

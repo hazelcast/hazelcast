@@ -41,7 +41,8 @@ public class HazelcastCloudConfigTest extends ClientTestSupport {
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), token);
         config.setProperty(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY.getName(), "https://dev.hazelcast.cloud");
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config.getProperties());
-        String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(hazelcastProperties, token);
+        String cloudUrlBase = hazelcastProperties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+        String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, token);
         assertEquals("https://dev.hazelcast.cloud/cluster/discovery?token=TOKEN", urlEndpoint);
     }
 
@@ -51,7 +52,8 @@ public class HazelcastCloudConfigTest extends ClientTestSupport {
         String token = "TOKEN";
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), token);
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config.getProperties());
-        String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(hazelcastProperties, token);
+        String cloudUrlBase = hazelcastProperties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+        String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, token);
         assertEquals("https://coordinator.hazelcast.cloud/cluster/discovery?token=TOKEN", urlEndpoint);
     }
 

@@ -38,7 +38,7 @@ public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractMessa
     protected void processMessage() {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         InternalOperationService operationService = nodeEngine.getOperationService();
-        operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions(), this);
+        operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions()).andThen(this);
     }
 
     public abstract Collection<Integer> getPartitions();

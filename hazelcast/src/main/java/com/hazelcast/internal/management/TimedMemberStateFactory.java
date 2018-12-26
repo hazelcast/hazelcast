@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Client;
@@ -141,6 +142,9 @@ public class TimedMemberStateFactory {
 
         SocketInterceptorConfig interceptorConfig = instance.getConfig().getNetworkConfig().getSocketInterceptorConfig();
         timedMemberState.setSocketInterceptorEnabled(interceptorConfig != null && interceptorConfig.isEnabled());
+
+        ManagementCenterConfig managementCenterConfig = instance.node.getConfig().getManagementCenterConfig();
+        timedMemberState.setScriptingEnabled(managementCenterConfig.isScriptingEnabled());
 
         return timedMemberState;
     }

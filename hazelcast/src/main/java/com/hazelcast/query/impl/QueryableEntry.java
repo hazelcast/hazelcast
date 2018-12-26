@@ -79,7 +79,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = getTargetObject(isKey);
-            result = extractAttributeValueFromTargetObject(extractors, serializationService, attributeName, target);
+            result = extractAttributeValueFromTargetObject(extractors, attributeName, target);
         }
         return result;
     }
@@ -108,7 +108,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = isKey ? key : value;
-            result = extractAttributeValueFromTargetObject(extractors, serializationService, attributeName, target);
+            result = extractAttributeValueFromTargetObject(extractors, attributeName, target);
         }
         return result;
     }
@@ -139,9 +139,8 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     private static Object extractAttributeValueFromTargetObject(Extractors extractors,
-                                                                InternalSerializationService serializationService,
                                                                 String attributeName, Object target) {
-        return extractors.extract(serializationService, target, attributeName);
+        return extractors.extract(target, attributeName);
     }
 
     private AttributeType extractAttributeType(String attributeName) {

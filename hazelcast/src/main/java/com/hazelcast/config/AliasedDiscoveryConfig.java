@@ -159,4 +159,36 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
             properties.put(in.readUTF(), in.readUTF());
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AliasedDiscoveryConfig<?> that = (AliasedDiscoveryConfig<?>) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (usePublicIp != that.usePublicIp) {
+            return false;
+        }
+        if (!tag.equals(that.tag)) {
+            return false;
+        }
+        return properties.equals(that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = tag.hashCode();
+        result = 31 * result + (enabled ? 1 : 0);
+        result = 31 * result + (usePublicIp ? 1 : 0);
+        result = 31 * result + properties.hashCode();
+        return result;
+    }
 }

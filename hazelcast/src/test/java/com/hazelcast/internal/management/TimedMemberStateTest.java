@@ -29,8 +29,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -51,6 +51,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         timedMemberState.setTime(1827731);
         timedMemberState.setSslEnabled(true);
         timedMemberState.setLite(true);
+        timedMemberState.setScriptingEnabled(false);
     }
 
     @Test
@@ -63,6 +64,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertNotNull(cloned.getMemberState());
         assertTrue(cloned.isSslEnabled());
         assertTrue(cloned.isLite());
+        assertFalse(cloned.isScriptingEnabled());
         assertNotNull(cloned.toString());
     }
 
@@ -78,6 +80,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getMemberState());
         assertTrue(deserialized.isSslEnabled());
         assertTrue(deserialized.isLite());
+        assertFalse(deserialized.isScriptingEnabled());
         assertNotNull(deserialized.toString());
     }
 

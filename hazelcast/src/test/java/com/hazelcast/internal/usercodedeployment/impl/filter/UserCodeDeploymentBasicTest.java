@@ -16,18 +16,25 @@
 
 package com.hazelcast.internal.usercodedeployment.impl.filter;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.FilteringClassLoader;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import usercodedeployment.ClassWithTwoInnerClasses;
 
 import java.util.Collection;
 
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -48,6 +55,43 @@ public class UserCodeDeploymentBasicTest extends UserCodeDeploymentAbstractTest 
     @Override
     protected UserCodeDeploymentConfig.ClassCacheMode getClassCacheMode() {
         return classCacheMode;
+    }
+
+    @Test
+    public void givenInnerClassOneIsCachedInServer1_whenInnerClassTwoIsRequested_thenServer1RespondsNull() {
+        Config config = new Config();
+        config.getUserCodeDeploymentConfig()
+                .setEnabled(true);
+
+        Config configWithoutEnclosingClass = new Config();
+        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        configWithoutEnclosingClass.setClassLoader(filteringCL);
+        configWithoutEnclosingClass.getUserCodeDeploymentConfig()
+                .setEnabled(true);
+
+        ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor ep =
+                new ClassWithTwoInnerClasses.StaticNestedIncrementingEntryProcessor();
+
+        factory = newFactory();
+        HazelcastInstance instance1WithoutEp = factory.newHazelcastInstance(configWithoutEnclosingClass);
+
+        HazelcastInstance instance2WithoutEp = factory.newHazelcastInstance(configWithoutEnclosingClass);
+
+        // instance with ep
+        factory.newHazelcastInstance(config);
+
+        String mapName = randomName();
+        IMap<String, Integer> map = instance1WithoutEp.getMap(mapName);
+        String key = generateKeyOwnedBy(instance2WithoutEp);
+        map.put(key, 0);
+        map.executeOnEntries(ep);
+        assertEquals(1, (int) map.get(key));
+
+        ClassWithTwoInnerClasses.StaticNestedDecrementingEntryProcessor ep2 =
+                new ClassWithTwoInnerClasses.StaticNestedDecrementingEntryProcessor();
+        // executing ep on instance without that ep
+        map.executeOnKey(key, ep2);
+        assertEquals(0, (int) map.get(key));
     }
 
     protected TestHazelcastInstanceFactory newFactory() {

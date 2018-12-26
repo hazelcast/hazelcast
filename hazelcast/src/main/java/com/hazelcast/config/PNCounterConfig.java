@@ -31,7 +31,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @since 3.10
  */
 @Beta
-public class PNCounterConfig implements IdentifiedDataSerializable {
+public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig {
     /**
      * The default number of replicas on which state for this CRDT is kept
      */

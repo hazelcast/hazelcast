@@ -18,18 +18,19 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.GracefulShutdownAwareService;
+import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.List;
 
-public interface InternalPartitionService extends IPartitionService, GracefulShutdownAwareService {
+public interface InternalPartitionService extends IPartitionService, ManagedService, GracefulShutdownAwareService {
 
     /**
      * Retry count for migration operations.
@@ -53,10 +54,19 @@ public interface InternalPartitionService extends IPartitionService, GracefulShu
      */
     String PARTITION_LOST_EVENT_TOPIC = ".partitionLost";
 
+    @Override
     InternalPartition getPartition(int partitionId);
 
+    @Override
     InternalPartition getPartition(int partitionId, boolean triggerOwnerAssignment);
 
+    /**
+     * Number of the member groups to be used in partition assignments.
+     *
+     * @see com.hazelcast.partition.membergroup.MemberGroupFactory
+     * @see com.hazelcast.config.PartitionGroupConfig
+     * @return number of member groups
+     */
     int getMemberGroupsSize();
 
     /**
@@ -69,11 +79,18 @@ public interface InternalPartitionService extends IPartitionService, GracefulShu
      */
     void resumeMigration();
 
-    boolean isMemberAllowedToJoin(Address address);
+    /**
+     * Called when a member is added to the cluster. Triggers partition rebalancing.
+     * @param member new member
+     */
+    void memberAdded(Member member);
 
-    void memberAdded(MemberImpl newMember);
-
-    void memberRemoved(MemberImpl deadMember);
+    /**
+     * Called when a member is removed from the cluster.
+     * Executes maintenance tasks, removes the member from partition table and triggers promotions.
+     * @param member removed member
+     */
+    void memberRemoved(Member member);
 
     InternalPartition[] getInternalPartitions();
 
@@ -107,6 +124,10 @@ public interface InternalPartitionService extends IPartitionService, GracefulShu
 
     PartitionReplicaVersionManager getPartitionReplicaVersionManager();
 
+    /**
+     * Creates an immutable/readonly view of partition table.
+     * @return immutable view of partition table
+     */
     PartitionTableView createPartitionTableView();
 
     /**

@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.topic;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.Node;
@@ -36,7 +37,7 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
 
 public class TopicAddMessageListenerMessageTask
         extends AbstractCallableMessageTask<TopicAddMessageListenerCodec.RequestParameters>
-        implements MessageListener {
+        implements MessageListener, ListenerMessageTask {
 
     private Data partitionKey;
     private Random rand = new Random();

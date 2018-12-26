@@ -16,11 +16,13 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,155 +51,160 @@ public class InternalPartitionImplTest {
         }
     }
 
-    private final Address thisAddress = newAddress(5000);
-    private final Address[] replicaAddresses = new Address[MAX_REPLICA_COUNT];
+    private final PartitionReplica localReplica = new PartitionReplica(newAddress(5000), UuidUtil.newUnsecureUuidString());
+    private final PartitionReplica[] replicaOwners = new PartitionReplica[MAX_REPLICA_COUNT];
     private final TestPartitionListener partitionListener = new TestPartitionListener();
     private InternalPartitionImpl partition;
 
     @Before
     public void setup() {
-        partition = new InternalPartitionImpl(1, partitionListener, thisAddress);
+        partition = new InternalPartitionImpl(1, partitionListener, localReplica);
     }
 
     @Test
-    public void testIsLocal_whenOwnedByThis() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        partition.setInitialReplicaAddresses(replicaAddresses);
+    public void testIsLocal_whenOwnedByThis() {
+        replicaOwners[0] = localReplica;
+        partition.setInitialReplicas(replicaOwners);
         assertTrue(partition.isLocal());
     }
 
     @Test
-    public void testIsLocal_whenNOTOwnedByThis() throws Exception {
-        replicaAddresses[0] = newAddress(6000);
-        partition.setInitialReplicaAddresses(replicaAddresses);
+    public void testIsLocal_whenNOTOwnedByThis() {
+        replicaOwners[0] = new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUuidString());
+        partition.setInitialReplicas(replicaOwners);
         assertFalse(partition.isLocal());
     }
 
     @Test
-    public void testGetOwnerOrNull_whenOwnerExists() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        partition.setInitialReplicaAddresses(replicaAddresses);
-        assertEquals(thisAddress, partition.getOwnerOrNull());
+    public void testGetOwnerOrNull_whenOwnerExists() {
+        replicaOwners[0] = localReplica;
+        partition.setInitialReplicas(replicaOwners);
+        assertEquals(localReplica, partition.getOwnerReplicaOrNull());
+        assertEquals(localReplica.address(), partition.getOwnerOrNull());
     }
 
     @Test
-    public void testGetOwnerOrNull_whenOwnerNOTExists() throws Exception {
+    public void testGetOwnerOrNull_whenOwnerNOTExists() {
         assertNull(partition.getOwnerOrNull());
     }
 
     @Test
-    public void testGetReplicaAddress() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        partition.setInitialReplicaAddresses(replicaAddresses);
+    public void testGetReplicaAddress() {
+        replicaOwners[0] = localReplica;
+        partition.setInitialReplicas(replicaOwners);
 
-        assertEquals(thisAddress, partition.getReplicaAddress(0));
+        assertEquals(localReplica, partition.getReplica(0));
+        assertEquals(localReplica.address(), partition.getReplicaAddress(0));
         for (int i = 1; i < MAX_REPLICA_COUNT; i++) {
+            assertNull(partition.getReplica(i));
             assertNull(partition.getReplicaAddress(i));
         }
     }
 
     @Test
-    public void testSetInitialReplicaAddresses() throws Exception {
-        for (int i = 0; i < replicaAddresses.length; i++) {
-            replicaAddresses[i] = newAddress(5000 + i);
+    public void testSetInitialReplicaAddresses() {
+        for (int i = 0; i < replicaOwners.length; i++) {
+            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUuidString());
         }
-        partition.setInitialReplicaAddresses(replicaAddresses);
+        partition.setInitialReplicas(replicaOwners);
 
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            assertEquals(replicaAddresses[i], partition.getReplicaAddress(i));
+            assertEquals(replicaOwners[i], partition.getReplica(i));
         }
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testSetInitialReplicaAddresses_multipleTimes() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        partition.setInitialReplicaAddresses(replicaAddresses);
-        partition.setInitialReplicaAddresses(replicaAddresses);
+    public void testSetInitialReplicaAddresses_multipleTimes() {
+        replicaOwners[0] = localReplica;
+        partition.setInitialReplicas(replicaOwners);
+        partition.setInitialReplicas(replicaOwners);
     }
 
     @Test
-    public void testSetInitialReplicaAddresses_ListenerShouldNOTBeCalled() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        partition.setInitialReplicaAddresses(replicaAddresses);
+    public void testSetInitialReplicaAddresses_ListenerShouldNOTBeCalled() {
+        replicaOwners[0] = localReplica;
+        partition.setInitialReplicas(replicaOwners);
         assertEquals(0, partitionListener.eventCount);
     }
 
     @Test
-    public void testSetReplicaAddresses() throws Exception {
-        for (int i = 0; i < replicaAddresses.length; i++) {
-            replicaAddresses[i] = newAddress(5000 + i);
+    public void testSetReplicaAddresses() {
+        for (int i = 0; i < replicaOwners.length; i++) {
+            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUuidString());
         }
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(replicaOwners);
 
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            assertEquals(replicaAddresses[i], partition.getReplicaAddress(i));
+            assertEquals(replicaOwners[i], partition.getReplica(i));
         }
     }
 
     @Test
-    public void testSetReplicaAddresses_afterInitialSet() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        partition.setInitialReplicaAddresses(replicaAddresses);
-        partition.setReplicaAddresses(replicaAddresses);
+    public void testSetReplicaAddresses_afterInitialSet() {
+        replicaOwners[0] = localReplica;
+        partition.setInitialReplicas(replicaOwners);
+        partition.setReplicas(replicaOwners);
     }
 
     @Test
-    public void testSetReplicaAddresses_multipleTimes() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        partition.setReplicaAddresses(replicaAddresses);
-        partition.setReplicaAddresses(replicaAddresses);
+    public void testSetReplicaAddresses_multipleTimes() {
+        replicaOwners[0] = localReplica;
+        partition.setReplicas(replicaOwners);
+        partition.setReplicas(replicaOwners);
     }
 
     @Test
-    public void testSetReplicaAddresses_ListenerShouldBeCalled() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        replicaAddresses[1] = newAddress(5001);
-        partition.setReplicaAddresses(replicaAddresses);
+    public void testSetReplicaAddresses_ListenerShouldBeCalled() {
+        replicaOwners[0] = localReplica;
+        replicaOwners[1] = new PartitionReplica(newAddress(5001), UuidUtil.newUnsecureUuidString());
+        partition.setReplicas(replicaOwners);
         assertEquals(2, partitionListener.eventCount);
     }
 
     @Test
-    public void testListenerShouldNOTBeCalled_whenReplicaRemainsSame() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        partition.setReplicaAddresses(replicaAddresses);
+    public void testListenerShouldNOTBeCalled_whenReplicaRemainsSame() {
+        replicaOwners[0] = localReplica;
+        partition.setReplicas(replicaOwners);
         partitionListener.reset();
 
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(replicaOwners);
         assertEquals(0, partitionListener.eventCount);
     }
 
     @Test
-    public void testIsOwnerOrBackup() throws Exception {
-        replicaAddresses[0] = thisAddress;
+    public void testIsOwnerOrBackup() {
+        replicaOwners[0] = localReplica;
         Address otherAddress = newAddress(5001);
-        replicaAddresses[1] = otherAddress;
-        partition.setReplicaAddresses(replicaAddresses);
+        replicaOwners[1] = new PartitionReplica(otherAddress, UuidUtil.newUnsecureUuidString());
+        partition.setReplicas(replicaOwners);
 
-        assertTrue(partition.isOwnerOrBackup(thisAddress));
+        assertTrue(partition.isOwnerOrBackup(replicaOwners[0]));
+        assertTrue(partition.isOwnerOrBackup(localReplica));
+        assertTrue(partition.isOwnerOrBackup(replicaOwners[1]));
         assertTrue(partition.isOwnerOrBackup(otherAddress));
+        assertFalse(partition.isOwnerOrBackup(new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUuidString())));
         assertFalse(partition.isOwnerOrBackup(newAddress(6000)));
     }
 
     @Test
-    public void testGetReplicaIndex() throws Exception {
-        replicaAddresses[0] = thisAddress;
-        Address otherAddress = newAddress(5001);
-        replicaAddresses[1] = otherAddress;
-        partition.setReplicaAddresses(replicaAddresses);
+    public void testGetReplicaIndex() {
+        replicaOwners[0] = localReplica;
+        replicaOwners[1] = new PartitionReplica(newAddress(5001), UuidUtil.newUnsecureUuidString());
+        partition.setReplicas(replicaOwners);
 
-        assertEquals(0, partition.getReplicaIndex(thisAddress));
-        assertEquals(1, partition.getReplicaIndex(otherAddress));
-        assertEquals(-1, partition.getReplicaIndex(newAddress(6000)));
+        assertEquals(0, partition.getReplicaIndex(replicaOwners[0]));
+        assertEquals(1, partition.getReplicaIndex(replicaOwners[1]));
+        assertEquals(-1, partition.getReplicaIndex(new PartitionReplica(newAddress(6000), UuidUtil.newUnsecureUuidString())));
     }
 
     @Test
-    public void testReset() throws Exception {
+    public void testReset() {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            replicaAddresses[i] = newAddress(5000 + i);
+            replicaOwners[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUuidString());
         }
-        partition.setReplicaAddresses(replicaAddresses);
+        partition.setReplicas(replicaOwners);
 
-        partition.reset();
+        partition.reset(localReplica);
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             assertNull(partition.getReplicaAddress(i));
         }

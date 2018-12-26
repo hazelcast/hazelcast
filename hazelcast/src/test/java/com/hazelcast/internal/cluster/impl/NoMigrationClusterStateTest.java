@@ -119,6 +119,29 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void lostPartitions_shouldBeAssigned_toAvailableMembers_whenMembersRemovedWhenClusterPASSIVE() {
+        int clusterSize = MAX_REPLICA_COUNT + 3;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance[] instances = factory.newInstances(new Config(), clusterSize);
+        warmUpPartitions(instances);
+        waitAllForSafeState(instances);
+
+        changeClusterStateEventually(instances[1], ClusterState.PASSIVE);
+
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            terminateInstance(instances[i]);
+        }
+
+        changeClusterStateEventually(instances[instances.length - 1], ClusterState.NO_MIGRATION);
+
+        for (int i = MAX_REPLICA_COUNT; i < clusterSize; i++) {
+            assertClusterSizeEventually(clusterSize - MAX_REPLICA_COUNT, instances[i]);
+            assertAllPartitionsAreAssigned(instances[i], 1);
+        }
+    }
+
+    @Test
     public void lostPartitions_shouldBeAssigned_toNewMembers() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 

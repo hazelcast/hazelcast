@@ -131,6 +131,9 @@ public class TestClientApplicationContext {
     @Resource(name = "client15-credentials-factory")
     private HazelcastClientProxy credentialsFactory;
 
+    @Resource(name = "client16-name-and-attributes")
+    private HazelcastClientProxy namedClient;
+
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
@@ -471,5 +474,17 @@ public class TestClientApplicationContext {
             }
         }
         return null;
+    }
+
+    @Test
+    public void testInstanceNameConfig() {
+        assertEquals("clientName", namedClient.getName());
+    }
+
+    @Test
+    public void testAttributesConfig() {
+        Map<String, String> attributes = namedClient.getClientConfig().getAttributes();
+        assertEquals(1, attributes.size());
+        assertEquals("bar", attributes.get("foo"));
     }
 }

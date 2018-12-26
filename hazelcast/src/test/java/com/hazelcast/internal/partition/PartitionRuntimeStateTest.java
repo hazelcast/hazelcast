@@ -39,8 +39,8 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
     @Test
     public void toString_whenConstructed() throws UnknownHostException {
         PartitionRuntimeState state = createPartitionState(0,
-                address("127.0.0.1", 5701),
-                address("127.0.0.2", 5702)
+                replica("127.0.0.1", 5701),
+                replica("127.0.0.2", 5702)
         );
         assertContains(state.toString(), "127.0.0.1");
         assertContains(state.toString(), "127.0.0.2");
@@ -49,8 +49,8 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
     @Test
     public void toString_whenDeserialized() throws UnknownHostException {
         PartitionRuntimeState state = createPartitionState(0,
-                address("127.0.0.1", 5701),
-                address("127.0.0.2", 5702)
+                replica("127.0.0.1", 5701),
+                replica("127.0.0.2", 5702)
         );
 
         state = serializeAndDeserialize(state);
@@ -61,8 +61,8 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
     @Test
     public void toString_whenDeserializedTwice() throws UnknownHostException {
         PartitionRuntimeState state = createPartitionState(0,
-                address("127.0.0.1", 5701),
-                address("127.0.0.2", 5702)
+                replica("127.0.0.1", 5701),
+                replica("127.0.0.2", 5702)
         );
 
         state = serializeAndDeserialize(state);
@@ -82,12 +82,12 @@ public class PartitionRuntimeStateTest extends HazelcastTestSupport {
         return state;
     }
 
-    private PartitionRuntimeState createPartitionState(int partitionId, Address... addresss) throws UnknownHostException {
-        DummyInternalPartition partition = new DummyInternalPartition(addresss, partitionId);
+    private PartitionRuntimeState createPartitionState(int partitionId, PartitionReplica... replicas) {
+        DummyInternalPartition partition = new DummyInternalPartition(replicas, partitionId);
         return new PartitionRuntimeState(new InternalPartition[]{partition}, Collections.<MigrationInfo>emptyList(), partitionId);
     }
 
-    private Address address(String host, int port) throws UnknownHostException {
-        return new Address(host, port);
+    private PartitionReplica replica(String host, int port) throws UnknownHostException {
+        return new PartitionReplica(new Address(host, port), host + port);
     }
 }

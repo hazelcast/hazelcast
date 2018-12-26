@@ -23,6 +23,7 @@ import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
+import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -65,26 +66,26 @@ class ClusterConnector {
     private final ExecutorService clusterConnectionExecutor;
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
-    private final Collection<AddressProvider> addressProviders;
+    private final AddressProvider addressProvider;
     private volatile Address ownerConnectionAddress;
     private volatile Address previousOwnerConnectionAddress;
 
     ClusterConnector(HazelcastClientInstanceImpl client,
                      ClientConnectionManagerImpl connectionManager,
                      ClientConnectionStrategy connectionStrategy,
-                     Collection<AddressProvider> addressProviders) {
+                     AddressProvider addressProvider) {
         this.client = client;
         this.connectionManager = connectionManager;
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         this.connectionStrategy = connectionStrategy;
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
-        this.addressProviders = addressProviders;
+        this.addressProvider = addressProvider;
         this.waitStrategy = initializeWaitStrategy(client.getClientConfig());
     }
 
     private WaitStrategy initializeWaitStrategy(ClientConfig clientConfig) {
-        ClientConnectionStrategyConfig connectionStrategyConfig = client.getClientConfig().getConnectionStrategyConfig();
+        ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig expoRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
         if (expoRetryConfig.isEnabled()) {
             return new ExponentialWaitStrategy(expoRetryConfig.getInitialBackoffMillis(),
@@ -108,7 +109,6 @@ class ClusterConnector {
         }
 
         return new DefaultWaitStrategy(connectionAttemptPeriod, connectionAttemptLimit);
-
     }
 
     void connectToCluster() {
@@ -118,7 +118,6 @@ class ClusterConnector {
             throw rethrow(e);
         }
     }
-
 
     Address getOwnerConnectionAddress() {
         return ownerConnectionAddress;
@@ -136,7 +135,7 @@ class ClusterConnector {
             connection = connectionManager.getOrConnect(address, true);
             client.onClusterConnect(connection);
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-            connectionStrategy.onConnectToCluster();
+            connectionStrategy.onClusterConnect();
         } catch (Exception e) {
             logger.warning("Exception during initial connection to " + address + ", exception " + e);
             if (null != connection) {
@@ -176,7 +175,6 @@ class ClusterConnector {
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         SingleExecutorThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, client.getName() + ".cluster-");
-
         return Executors.newSingleThreadExecutor(threadFactory);
     }
 
@@ -231,7 +229,6 @@ class ClusterConnector {
                 return null;
             }
         });
-
     }
 
     Collection<Address> getPossibleMemberAddresses() {
@@ -246,22 +243,26 @@ class ClusterConnector {
             addresses = (LinkedHashSet<Address>) shuffle(addresses);
         }
 
-        LinkedHashSet<Address> providerAddresses = new LinkedHashSet<Address>();
-        for (AddressProvider addressProvider : addressProviders) {
-            try {
-                providerAddresses.addAll(addressProvider.loadAddresses());
-            } catch (NullPointerException e) {
-                throw e;
-            } catch (Exception e) {
-                logger.warning("Exception from AddressProvider: " + addressProvider, e);
+        LinkedHashSet<Address> providedAddresses = new LinkedHashSet<Address>();
+        try {
+            Addresses result = addressProvider.loadAddresses();
+            if (shuffleMemberList) {
+                // The relative order between primary and secondary addresses should not be changed.
+                // so we shuffle the lists separately and then add them to the final list so that
+                // secondary addresses are not tried before all primary addresses have been tried.
+                // Otherwise we can get startup delays.
+                Collections.shuffle(result.primary());
+                Collections.shuffle(result.secondary());
             }
+            providedAddresses.addAll(result.primary());
+            providedAddresses.addAll(result.secondary());
+        } catch (NullPointerException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.warning("Exception from AddressProvider: " + addressProvider, e);
         }
 
-        if (shuffleMemberList) {
-            providerAddresses = (LinkedHashSet<Address>) shuffle(providerAddresses);
-        }
-
-        addresses.addAll(providerAddresses);
+        addresses.addAll(providedAddresses);
 
         if (previousOwnerConnectionAddress != null) {
             /*
@@ -272,6 +273,7 @@ class ClusterConnector {
             addresses.remove(previousOwnerConnectionAddress);
             addresses.add(previousOwnerConnectionAddress);
         }
+
         return addresses;
     }
 
@@ -331,7 +333,6 @@ class ClusterConnector {
 
     }
 
-
     class ExponentialWaitStrategy implements WaitStrategy {
 
         private final int initialBackoffMillis;
@@ -340,7 +341,6 @@ class ClusterConnector {
         private final boolean failOnMaxBackoff;
         private final double jitter;
         private final Random random = new Random();
-
         private int attempt;
         private int currentBackoffMillis;
 

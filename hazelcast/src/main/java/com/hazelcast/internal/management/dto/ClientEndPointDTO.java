@@ -17,8 +17,13 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.core.Client;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.util.JsonUtil;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -30,6 +35,8 @@ public class ClientEndPointDTO implements JsonSerializable {
     public String uuid;
     public String address;
     public String clientType;
+    public String name;
+    public Map<String, String> attributes;
 
     public ClientEndPointDTO() {
     }
@@ -38,6 +45,8 @@ public class ClientEndPointDTO implements JsonSerializable {
         this.uuid = client.getUuid();
         this.address = client.getSocketAddress().getHostName() + ":" + client.getSocketAddress().getPort();
         this.clientType = client.getClientType().toString();
+        this.name = client.getName();
+        this.attributes = client.getAttributes();
     }
 
     @Override
@@ -46,6 +55,12 @@ public class ClientEndPointDTO implements JsonSerializable {
         root.add("uuid", uuid);
         root.add("address", address);
         root.add("clientType", clientType);
+        root.add("name", name);
+        JsonObject attrObject = Json.object();
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            attrObject.add(entry.getKey(), entry.getValue());
+        }
+        root.add("attributes", attrObject);
         return root;
     }
 
@@ -54,5 +69,12 @@ public class ClientEndPointDTO implements JsonSerializable {
         uuid = getString(json, "uuid");
         address = getString(json, "address");
         clientType = getString(json, "clientType");
+        name = getString(json, "name");
+        JsonObject attrObject = JsonUtil.getObject(json, "attributes");
+        attributes = new HashMap<String, String>();
+        for (JsonObject.Member member : attrObject) {
+            String value = member.getValue().asString();
+            attributes.put(member.getName(), value);
+        }
     }
 }

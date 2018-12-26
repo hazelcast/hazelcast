@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
@@ -45,7 +46,7 @@ import java.util.Map;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public class MapExecuteWithPredicateMessageTask
-        extends AbstractCallableMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<MapExecuteWithPredicateCodec.RequestParameters> implements BlockingMessageTask {
 
     public MapExecuteWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

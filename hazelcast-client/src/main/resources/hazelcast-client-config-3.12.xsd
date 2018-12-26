@@ -42,6 +42,7 @@
                 <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="client-attributes" type="attributes" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0"
                             maxOccurs="unbounded"/>
@@ -235,7 +236,6 @@
                 <xs:element name="keep-alive" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="linger-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="3"/>
-                <xs:element name="timeout" type="xs:int" minOccurs="0" maxOccurs="1" default="-1"/>
                 <xs:element name="buffer-size" minOccurs="0" maxOccurs="1" default="128">
                     <xs:simpleType>
                         <xs:restriction base="xs:unsignedInt">
@@ -717,6 +717,18 @@
     <xs:complexType name="properties">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="property" type="property"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="attribute">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="name" use="required" type="non-space-string"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="attributes">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="attribute" type="attribute"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="ssl">

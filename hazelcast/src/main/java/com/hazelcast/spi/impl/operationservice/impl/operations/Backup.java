@@ -16,7 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.logging.ILogger;
@@ -33,7 +35,6 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -89,14 +90,11 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         int partitionId = getPartitionId();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         ILogger logger = getLogger();
-
-        IPartition partition = partitionService.getPartition(partitionId);
-        Address owner = partition.getReplicaAddress(getReplicaIndex());
 
         ensureBackupOperationInitialized();
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
@@ -110,7 +108,10 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             }
             return;
         }
-        if (!nodeEngine.getThisAddress().equals(owner)) {
+
+        InternalPartition partition = partitionService.getPartition(partitionId);
+        PartitionReplica owner = partition.getReplica(getReplicaIndex());
+        if (owner == null || !owner.isIdentical(nodeEngine.getLocalMember())) {
             validationFailure = new IllegalStateException("Wrong target! " + toString()
                     + " cannot be processed! Target should be: " + owner);
             if (logger.isFinestEnabled()) {

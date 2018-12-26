@@ -21,6 +21,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
@@ -62,20 +63,24 @@ public class TestHazelcastInstanceFactory {
         this(0);
     }
 
-    public TestHazelcastInstanceFactory(int count) {
-        fillAddressMap(count);
-        this.count = count;
-        this.registry = createRegistry();
+    public TestHazelcastInstanceFactory(int initialPort, String... addresses) {
+        fillAddressMap(initialPort, addresses);
+        this.count = addresses.length;
+        this.registry = isMockNetwork ? createRegistry() : null;
     }
 
     public TestHazelcastInstanceFactory(String... addresses) {
         this(-1, addresses);
     }
 
-    public TestHazelcastInstanceFactory(int initialPort, String... addresses) {
-        fillAddressMap(initialPort, addresses);
-        this.count = addresses.length;
-        this.registry = createRegistry();
+    public TestHazelcastInstanceFactory(int count) {
+        fillAddressMap(count);
+        this.count = count;
+        this.registry = isMockNetwork ? createRegistry() : null;
+    }
+
+    protected TestNodeRegistry createRegistry() {
+        return new TestNodeRegistry(getKnownAddresses(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
     }
 
     public int getCount() {
@@ -319,10 +324,6 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
-    private TestNodeRegistry createRegistry() {
-        return isMockNetwork ? new TestNodeRegistry(getKnownAddresses()) : null;
-    }
-
     /**
      * Returns a list of addresses with the {@code 127.0.0.1} host and starting
      * with the {@value DEFAULT_INITIAL_PORT} port or an empty list in case mock
@@ -356,7 +357,7 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
-    private static Config initOrCreateConfig(Config config) {
+    public static Config initOrCreateConfig(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }

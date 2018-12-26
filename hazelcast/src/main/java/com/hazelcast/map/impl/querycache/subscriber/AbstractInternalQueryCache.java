@@ -56,8 +56,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final QueryCacheContext context;
     protected final QueryCacheConfig queryCacheConfig;
     protected final QueryCacheRecordStore recordStore;
-    protected final InternalSerializationService serializationService;
     protected final PartitioningStrategy partitioningStrategy;
+    protected final InternalSerializationService serializationService;
+    protected final Extractors extractors;
     /**
      * ID of registered listener on publisher side.
      */
@@ -78,8 +79,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.indexes = Indexes.newBuilder(serializationService, COPY_ON_READ).build();
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
+        this.extractors = Extractors.newBuilder(serializationService).build();
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes,
-                queryCacheConfig, getEvictionListener());
+                queryCacheConfig, getEvictionListener(), extractors);
 
         for (MapIndexConfig indexConfig : queryCacheConfig.getIndexConfigs()) {
             indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered());
@@ -116,7 +118,8 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         return new EvictionListener<Data, QueryCacheRecord>() {
             @Override
             public void onEvict(Data dataKey, QueryCacheRecord record, boolean wasExpired) {
-                EventPublisherHelper.publishEntryEvent(context, mapName, cacheId, dataKey, null, record, EVICTED);
+                EventPublisherHelper.publishEntryEvent(context, mapName, cacheId,
+                        dataKey, null, record, EVICTED, extractors);
             }
         };
     }
@@ -138,7 +141,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
 
-            queryEntry.init(serializationService, keyData, value, Extractors.empty());
+            queryEntry.init(serializationService, keyData, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
@@ -156,7 +159,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
             Data keyData = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
-            queryEntry.init(serializationService, keyData, value, Extractors.empty());
+            queryEntry.init(serializationService, keyData, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
@@ -178,7 +181,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
 
-            queryEntry.init(serializationService, keyData, value, Extractors.empty());
+            queryEntry.init(serializationService, keyData, value, extractors);
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
@@ -203,6 +206,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     protected Data toData(Object key) {
         return serializationService.toData(key, partitioningStrategy);
+    }
+
+    @Override
+    public Extractors getExtractors() {
+        return extractors;
     }
 
     @Override

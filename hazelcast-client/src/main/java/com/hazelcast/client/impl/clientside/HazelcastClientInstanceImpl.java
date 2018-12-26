@@ -152,7 +152,6 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -166,7 +165,6 @@ import com.hazelcast.util.ServiceLoader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -210,7 +208,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final MetricsRegistryImpl metricsRegistry;
     private final Statistics statistics;
     private final Diagnostics diagnostics;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private final ClientExceptionFactory clientExceptionFactory;
@@ -250,10 +248,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
         discoveryService = initDiscoveryService(config);
-        Collection<AddressProvider> addressProviders = createAddressProviders(externalAddressProvider);
+        AddressProvider addressProvider = createAddressProvider(externalAddressProvider);
         AddressTranslator addressTranslator = createAddressTranslator();
         connectionManager = (ClientConnectionManagerImpl) clientConnectionManagerFactory
-                .createConnectionManager(this, addressTranslator, addressProviders);
+                .createConnectionManager(this, addressTranslator, addressProvider);
         clusterService = new ClientClusterServiceImpl(this);
 
 
@@ -298,38 +296,38 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return metricsRegistry;
     }
 
-    private Collection<AddressProvider> createAddressProviders(AddressProvider externalAddressProvider) {
+    private AddressProvider createAddressProvider(AddressProvider externalAddressProvider) {
         ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
-        Collection<AddressProvider> addressProviders = new LinkedList<AddressProvider>();
 
         if (externalAddressProvider != null) {
-            addressProviders.add(externalAddressProvider);
+            return externalAddressProvider;
         }
 
         if (discoveryService != null) {
-            addressProviders.add(new DiscoveryAddressProvider(discoveryService, loggingService));
+            return new DiscoveryAddressProvider(discoveryService, loggingService);
         }
 
         ClientCloudConfig cloudConfig = networkConfig.getCloudConfig();
         HazelcastCloudAddressProvider cloudAddressProvider = initCloudAddressProvider(cloudConfig);
         if (cloudAddressProvider != null) {
-            addressProviders.add(cloudAddressProvider);
+            return cloudAddressProvider;
         }
 
-        addressProviders.add(new DefaultAddressProvider(networkConfig, addressProviders.isEmpty()));
-        return addressProviders;
+        return new DefaultAddressProvider(networkConfig);
     }
 
     private HazelcastCloudAddressProvider initCloudAddressProvider(ClientCloudConfig cloudConfig) {
         if (cloudConfig.isEnabled()) {
             String discoveryToken = cloudConfig.getDiscoveryToken();
-            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), discoveryToken);
+            String cloudUrlBase = getProperties().getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             return new HazelcastCloudAddressProvider(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
 
         String cloudToken = properties.getString(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN);
         if (cloudToken != null) {
-            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), cloudToken);
+            String cloudUrlBase = getProperties().getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, cloudToken);
             return new HazelcastCloudAddressProvider(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
         return null;
@@ -367,7 +365,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             } else {
                 discoveryToken = cloudDiscoveryToken;
             }
-            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(getProperties(), discoveryToken);
+            String cloudUrlBase = getProperties().getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
+            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             return new HazelcastCloudAddressTranslator(urlEndpoint, getConnectionTimeoutMillis(), loggingService);
         }
 
@@ -892,7 +891,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 
@@ -968,7 +967,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
         metricsRegistry.shutdown();
         diagnostics.shutdown();
-        ((InternalSerializationService) serializationService).dispose();
+        serializationService.dispose();
     }
 
     public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {

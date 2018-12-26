@@ -46,6 +46,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ConcurrentModificationException;
+
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -55,7 +57,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 // intentionally not in ParallelTest category,
 // test is starting standalone HazelcastInstances.
-public class MemcacheTest extends HazelcastTestSupport {
+public class MemcachedTest extends HazelcastTestSupport {
 
     private Config config = new Config();
     private HazelcastInstance instance;
@@ -71,7 +73,7 @@ public class MemcacheTest extends HazelcastTestSupport {
         join.getTcpIpConfig().setEnabled(false);
 
         instance = Hazelcast.newHazelcastInstance(config);
-        client = getMemcacheClient(instance);
+        client = getMemcachedClient(instance);
     }
 
     @After
@@ -80,6 +82,9 @@ public class MemcacheTest extends HazelcastTestSupport {
             if (client != null) {
                 client.shutdown();
             }
+        } catch (ConcurrentModificationException e) {
+            // See https://github.com/hazelcast/hazelcast/issues/14204
+            // Due to a MemcachedClient bug, we swallow this exception
         } finally {
             if (instance != null) {
                 instance.getLifecycleService().terminate();
@@ -375,7 +380,7 @@ public class MemcacheTest extends HazelcastTestSupport {
         assertEquals(String.valueOf(decMisses), stats.get("decr_misses"));
     }
 
-    private MemcachedClient getMemcacheClient(HazelcastInstance instance) throws Exception {
+    private MemcachedClient getMemcachedClient(HazelcastInstance instance) throws Exception {
         InetSocketAddress address = instance.getCluster().getLocalMember().getSocketAddress();
         ConnectionFactory factory = new ConnectionFactoryBuilder()
                 .setOpTimeout(60 * 60 * 60)

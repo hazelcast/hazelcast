@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -40,11 +41,12 @@ public class ShutdownRequestOperation extends AbstractPartitionOperation impleme
         final ClusterService clusterService = nodeEngine.getClusterService();
 
         if (clusterService.isMaster()) {
-            if (clusterService.getMember(caller) != null) {
+            Member member = clusterService.getMember(caller);
+            if (member != null) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Received shutdown request from " + caller);
                 }
-                partitionService.onShutdownRequest(caller);
+                partitionService.onShutdownRequest(member);
             } else {
                 logger.warning("Ignoring shutdown request from " + caller + " because it is not a member");
             }

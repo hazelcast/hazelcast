@@ -207,10 +207,9 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * You create cluster B and for some time both will generate IDs and you want to have them unique.
      * In this case, configure node ID offset for generators on cluster B.
      *
-     * @see FlakeIdGenerator for the node id logic
-     *
      * @param nodeIdOffset the value added to the node id
      * @return this instance for fluent API
+     * @see FlakeIdGenerator for the node id logic
      */
     public FlakeIdGeneratorConfig setNodeIdOffset(long nodeIdOffset) {
         checkNotNegative(nodeIdOffset, "node id offset must be non-negative");
@@ -230,7 +229,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * {@link LocalFlakeIdGeneratorStats}.
      *
      * @param statisticsEnabled {@code true} if statistics gathering is enabled
-     *        (which is also the default), {@code false} otherwise
+     *                          (which is also the default), {@code false} otherwise
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setStatisticsEnabled(boolean statisticsEnabled) {
@@ -259,7 +258,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(new Object[] { name, prefetchCount, prefetchValidityMillis, idOffset, statisticsEnabled });
+        return Arrays.hashCode(new Object[]{name, prefetchCount, prefetchValidityMillis, idOffset, statisticsEnabled});
     }
 
     @Override

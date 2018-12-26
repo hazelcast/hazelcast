@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.MapService;
@@ -31,7 +32,7 @@ import com.hazelcast.security.permission.MapPermission;
 import java.security.Permission;
 
 public class MapAddPartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<MapAddPartitionLostListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<MapAddPartitionLostListenerCodec.RequestParameters> implements ListenerMessageTask {
 
 
     public MapAddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {

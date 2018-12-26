@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -54,7 +55,7 @@ import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
 
 public abstract class AbstractMapReduceTask<Parameters>
         extends AbstractMessageTask<Parameters>
-        implements ExecutionCallback {
+        implements ExecutionCallback, BlockingMessageTask {
 
     public AbstractMapReduceTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -26,8 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.nio.ssl.TestKeyStoreUtil.createSslProperties;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SSLWithoutEnterpriseTest extends HazelcastTestSupport {
@@ -36,8 +34,7 @@ public class SSLWithoutEnterpriseTest extends HazelcastTestSupport {
     public void test() {
         ClientConfig config = new ClientConfig();
         SSLConfig sslConfig = new SSLConfig();
-        sslConfig.setEnabled(true)
-                .setProperties(createSslProperties());
+        sslConfig.setEnabled(true);
 
         config.getNetworkConfig().setSSLConfig(sslConfig);
 

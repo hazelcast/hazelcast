@@ -40,12 +40,16 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     private static final float LOAD_FACTOR = 0.91f;
 
     public SampleableConcurrentHashMap(int initialCapacity) {
-        // Concurrency level 1 is important for fetch-method to function properly.
-        // Moreover partitions are single threaded and higher concurrency has not much gain
-        this(initialCapacity, LOAD_FACTOR, 1, ReferenceType.STRONG, ReferenceType.STRONG, null);
+        this(initialCapacity, ReferenceType.STRONG, ReferenceType.STRONG);
     }
 
-    public SampleableConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
+    public SampleableConcurrentHashMap(int initialCapacity, ReferenceType keyType, ReferenceType valueType) {
+        // Concurrency level 1 is important for fetch-method to function properly.
+        // Moreover partitions are single threaded and higher concurrency has not much gain
+        this(initialCapacity, LOAD_FACTOR, 1, keyType, valueType, null);
+    }
+
+    private SampleableConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
                                        ReferenceType keyType, ReferenceType valueType, EnumSet<Option> options) {
         super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
     }
@@ -257,7 +261,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
                             V value = mostRecentlyReturnedEntry.value();
                             K key = mostRecentlyReturnedEntry.key();
 
-                            if (isValidForSampling(value)) {
+                            if (isValidForSampling(key, value)) {
                                 currentSample = createSamplingEntry(key, value);
                                 // If we reached end of entries, advance current bucket index
                                 returnedEntryCount++;
@@ -306,7 +310,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         }
     }
 
-    protected boolean isValidForSampling(V value) {
-        return value != null;
+    protected boolean isValidForSampling(K key, V value) {
+        return key != null && value != null;
     }
 }

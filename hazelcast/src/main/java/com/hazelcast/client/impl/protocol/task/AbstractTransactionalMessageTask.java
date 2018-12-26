@@ -21,7 +21,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.ThreadUtil;
 
-public abstract class AbstractTransactionalMessageTask<P> extends AbstractCallableMessageTask<P> {
+public abstract class AbstractTransactionalMessageTask<P> extends AbstractCallableMessageTask<P>
+        implements TransactionalMessageTask {
 
     public AbstractTransactionalMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

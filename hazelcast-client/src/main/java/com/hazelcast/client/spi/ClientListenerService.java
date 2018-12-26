@@ -22,7 +22,7 @@ import com.hazelcast.client.spi.impl.ListenerMessageCodec;
  * Client service to add/remove remote listeners.
  *
  * For smart client, it registers local  listeners to all nodes in cluster.
- * For dummy client, it registers global listener to one node.
+ * For unisocket client, it registers global listener to one node.
  */
 public interface ClientListenerService {
 

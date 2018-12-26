@@ -17,7 +17,6 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.TextCommandService;
-
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -29,13 +28,19 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
 
     @Override
     public void handle(HttpDeleteCommand command) {
-        String uri = command.getURI();
-        if (uri.startsWith(URI_MAPS)) {
-            handleMap(command, uri);
-        } else if (uri.startsWith(URI_QUEUES)) {
-            handleQueue(command, uri);
-        } else {
+        try {
+            String uri = command.getURI();
+            if (uri.startsWith(URI_MAPS)) {
+                handleMap(command, uri);
+            } else if (uri.startsWith(URI_QUEUES)) {
+                handleQueue(command, uri);
+            } else {
+                command.send404();
+            }
+        } catch (IndexOutOfBoundsException e) {
             command.send400();
+        } catch (Exception e) {
+            command.send500();
         }
         textCommandService.sendResponse(command);
     }

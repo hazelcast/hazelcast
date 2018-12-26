@@ -66,7 +66,7 @@ public class Indexes {
         this.serializationService = serializationService;
         this.usesCachedQueryableEntries = usesCachedQueryableEntries;
         this.stats = createStats(global, statisticsEnabled);
-        this.extractors = extractors == null ? Extractors.empty() : extractors;
+        this.extractors = extractors == null ? Extractors.newBuilder(serializationService).build() : extractors;
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
     }
@@ -84,6 +84,30 @@ public class Indexes {
             return global ? new GlobalIndexesStats() : new PartitionIndexesStats();
         } else {
             return IndexesStats.EMPTY;
+        }
+    }
+
+    /**
+     * Marks the given partition as indexed by the given indexes.
+     *
+     * @param partitionId the ID of the partition to mark as indexed.
+     * @param indexes     the indexes by which the given partition is indexed.
+     */
+    public static void markPartitionAsIndexed(int partitionId, InternalIndex[] indexes) {
+        for (InternalIndex index : indexes) {
+            index.markPartitionAsIndexed(partitionId);
+        }
+    }
+
+    /**
+     * Marks the given partition as unindexed by the given indexes.
+     *
+     * @param partitionId the ID of the partition to mark as unindexed.
+     * @param indexes     the indexes by which the given partition is unindexed.
+     */
+    public static void markPartitionAsUnindexed(int partitionId, InternalIndex[] indexes) {
+        for (InternalIndex index : indexes) {
+            index.markPartitionAsUnindexed(partitionId);
         }
     }
 

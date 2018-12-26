@@ -207,4 +207,34 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
             wanPublisherConfigs.add(publisherConfig);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        WanReplicationConfig that = (WanReplicationConfig) o;
+
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (wanConsumerConfig != null
+                ? !wanConsumerConfig.equals(that.wanConsumerConfig)
+                : that.wanConsumerConfig != null) {
+            return false;
+        }
+        return wanPublisherConfigs.equals(that.wanPublisherConfigs);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + (wanConsumerConfig != null ? wanConsumerConfig.hashCode() : 0);
+        result = 31 * result + wanPublisherConfigs.hashCode();
+        return result;
+    }
 }

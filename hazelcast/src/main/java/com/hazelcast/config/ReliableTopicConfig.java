@@ -49,7 +49,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * messages.
  */
 @Beta
-public class ReliableTopicConfig implements IdentifiedDataSerializable {
+public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The default read batch size.

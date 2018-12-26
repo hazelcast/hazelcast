@@ -47,20 +47,27 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
     @Override
     public void handle(HttpGetCommand command) {
-        String uri = command.getURI();
-        if (uri.startsWith(URI_MAPS)) {
-            handleMap(command, uri);
-        } else if (uri.startsWith(URI_QUEUES)) {
-            handleQueue(command, uri);
-        } else if (uri.startsWith(URI_CLUSTER)) {
-            handleCluster(command);
-        } else if (uri.startsWith(URI_HEALTH_URL)) {
-            handleHealthcheck(command, uri);
-        } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
-            handleGetClusterVersion(command);
-        } else {
+        try {
+            String uri = command.getURI();
+            if (uri.startsWith(URI_MAPS)) {
+                handleMap(command, uri);
+            } else if (uri.startsWith(URI_QUEUES)) {
+                handleQueue(command, uri);
+            } else if (uri.startsWith(URI_CLUSTER)) {
+                handleCluster(command);
+            } else if (uri.startsWith(URI_HEALTH_URL)) {
+                handleHealthcheck(command, uri);
+            } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
+                handleGetClusterVersion(command);
+            } else {
+                command.send404();
+            }
+        } catch (IndexOutOfBoundsException e) {
             command.send400();
+        } catch (Exception e) {
+            command.send500();
         }
+
         textCommandService.sendResponse(command);
     }
 

@@ -71,7 +71,7 @@ public enum ClusterState {
      * In {@code ACTIVE} state, cluster will continue to operate without any restriction.
      * All operations are allowed. This is default state of a cluster.
      */
-    ACTIVE(true, true),
+    ACTIVE(true, true, true),
 
     /**
      * In {@code NO_MIGRATION} state of the cluster, migrations (partition rebalancing) and backup replications
@@ -90,7 +90,7 @@ public enum ClusterState {
      *
      * @since 3.9
      */
-    NO_MIGRATION(true, false),
+    NO_MIGRATION(true, false, true),
 
     /**
      * In {@code FROZEN} state of the cluster:
@@ -119,7 +119,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    FROZEN(false, false),
+    FROZEN(false, false, false),
 
     /**
      * In {@code PASSIVE} state of the cluster:
@@ -144,7 +144,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    PASSIVE(false, false),
+    PASSIVE(false, false, false),
 
     /**
      * Shows that ClusterState is in transition. When a state change transaction is started,
@@ -165,14 +165,16 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    IN_TRANSITION(false, false);
+    IN_TRANSITION(false, false, false);
 
     private final boolean joinAllowed;
     private final boolean migrationAllowed;
+    private final boolean partitionPromotionAllowed;
 
-    ClusterState(boolean joinAllowed, boolean migrationAllowed) {
+    ClusterState(boolean joinAllowed, boolean migrationAllowed, boolean partitionPromotionAllowed) {
         this.joinAllowed = joinAllowed;
         this.migrationAllowed = migrationAllowed;
+        this.partitionPromotionAllowed = partitionPromotionAllowed;
     }
 
     /**
@@ -189,5 +191,13 @@ public enum ClusterState {
      */
     public boolean isMigrationAllowed() {
         return migrationAllowed;
+    }
+
+    /**
+     * Shows whether partition promotions are allowed.
+     * @return true when partition promotions are allowed, false otherwise
+     */
+    public boolean isPartitionPromotionAllowed() {
+        return partitionPromotionAllowed;
     }
 }

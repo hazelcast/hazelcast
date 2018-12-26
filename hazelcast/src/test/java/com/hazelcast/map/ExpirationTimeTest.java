@@ -173,15 +173,15 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
     @Test
     public void testExpirationTime_withMaxIdleTime_withEntryCustomMaxIdle() {
-        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(10);
+        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(20);
 
-        map.put(1, 1, -1, MILLISECONDS, 2, SECONDS);
+        map.put(1, 1, -1, MILLISECONDS, 10, SECONDS);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
         long creationTime = entryView.getCreationTime();
         long expirationTime = entryView.getExpirationTime();
 
-        long expectedExpirationTime = creationTime + TimeUnit.SECONDS.toMillis(2);
+        long expectedExpirationTime = creationTime + TimeUnit.SECONDS.toMillis(10);
         assertEquals(expectedExpirationTime, expirationTime);
     }
 

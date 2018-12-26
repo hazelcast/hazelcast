@@ -86,12 +86,11 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             oldValue = (V) current.getValueInternal();
             storage.remove(marshalledKey, current);
         }
-        Object unmarshalledOldValue = unmarshall(oldValue);
         if (replicatedMapConfig.isStatisticsEnabled()) {
             getStats().incrementRemoves(Clock.currentTimeMillis() - time);
         }
         cancelTtlEntry(marshalledKey);
-        return unmarshalledOldValue;
+        return oldValue;
     }
 
     @Override
@@ -385,8 +384,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         InternalReplicatedMapStorage<K, V> storage = getStorage();
         ReplicatedRecord<K, V> existingRecord = storage.get(marshalledKey);
         if (existingRecord == null) {
-            ReplicatedMapEntryView nullEntryView = new ReplicatedMapEntryView<Object, V>()
-                    .setKey(unmarshall(key));
+            ReplicatedMapEntryView nullEntryView
+                    = new ReplicatedMapEntryView<Object, V>(serializationService).setKey(key);
             V newValue = (V) mergePolicy.merge(name, mergingEntry, nullEntryView);
             if (newValue == null) {
                 return false;
@@ -399,9 +398,9 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
             sendReplicationOperation(false, name, dataKey, dataValue, existingRecord.getTtlMillis(), responsePair);
         } else {
-            ReplicatedMapEntryView existingEntry = new ReplicatedMapEntryView<Object, Object>()
-                    .setKey(unmarshall(key))
-                    .setValue(unmarshall(existingRecord.getValueInternal()))
+            ReplicatedMapEntryView existingEntry = new ReplicatedMapEntryView<Object, Object>(serializationService)
+                    .setKey(key)
+                    .setValue(existingRecord.getValueInternal())
                     .setCreationTime(existingRecord.getCreationTime())
                     .setLastUpdateTime(existingRecord.getUpdateTime())
                     .setLastAccessTime(existingRecord.getLastAccessTime())

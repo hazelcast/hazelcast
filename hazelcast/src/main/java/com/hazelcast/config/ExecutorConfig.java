@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
  */
-public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
+public class ExecutorConfig implements IdentifiedDataSerializable, Versioned, NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.

@@ -89,4 +89,23 @@ public class WanSyncConfig implements IdentifiedDataSerializable {
                 + "consistencyCheckStrategy=" + consistencyCheckStrategy
                 + '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        WanSyncConfig that = (WanSyncConfig) o;
+
+        return consistencyCheckStrategy == that.consistencyCheckStrategy;
+    }
+
+    @Override
+    public int hashCode() {
+        return consistencyCheckStrategy != null ? consistencyCheckStrategy.hashCode() : 0;
+    }
 }

@@ -157,6 +157,21 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public boolean hasPartitionIndexed(int partitionId) {
+            return delegate.hasPartitionIndexed(partitionId);
+        }
+
+        @Override
+        public void markPartitionAsIndexed(int partitionId) {
+            delegate.markPartitionAsIndexed(partitionId);
+        }
+
+        @Override
+        public void markPartitionAsUnindexed(int partitionId) {
+            delegate.markPartitionAsUnindexed(partitionId);
+        }
+
+        @Override
         public PerIndexStats getPerIndexStats() {
             return delegate.getPerIndexStats();
         }

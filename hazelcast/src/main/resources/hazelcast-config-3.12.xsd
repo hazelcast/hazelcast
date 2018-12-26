@@ -2626,6 +2626,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="scripting-enabled" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    True to allow scripting on the member, false to disallow.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -2753,6 +2760,7 @@
                         maxOccurs="unbounded"/>
             <xs:element name="semaphore-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="id-generator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="flake-id-generator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="durable-executor-service-permission" type="instance-permission" minOccurs="0"
@@ -2762,6 +2770,7 @@
             <xs:element name="pn-counter-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
             <xs:element name="cache-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="user-code-deployment-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
         </xs:choice>
     </xs:complexType>

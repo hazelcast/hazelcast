@@ -86,7 +86,7 @@ class MigrationThread extends Thread implements Runnable {
     private void doRun() throws InterruptedException {
         boolean migrating = false;
         for (; ; ) {
-            if (!migrationManager.isMigrationAllowed()) {
+            if (!migrationManager.areMigrationTasksAllowed()) {
                 break;
             }
             MigrationRunnable runnable = queue.poll(1, TimeUnit.SECONDS);
@@ -106,7 +106,7 @@ class MigrationThread extends Thread implements Runnable {
                 logger.info("All migration tasks have been completed, queues are empty.");
             }
             Thread.sleep(sleepTime);
-        } else if (!migrationManager.isMigrationAllowed()) {
+        } else if (!migrationManager.areMigrationTasksAllowed()) {
             Thread.sleep(sleepTime);
         }
     }

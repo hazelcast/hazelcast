@@ -16,6 +16,14 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import static com.hazelcast.internal.util.JavaVersion.JAVA_10;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_11;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_12;
@@ -28,21 +36,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class JavaVersionTest extends HazelcastTestSupport {
 
     @Test
-    public void parseVersion() throws Exception {
+    public void parseVersion() {
         assertEquals(UNKNOWN, JavaVersion.parseVersion("foo"));
         assertEquals(JAVA_1_6, JavaVersion.parseVersion("1.6"));
         assertEquals(JAVA_1_7, JavaVersion.parseVersion("1.7"));
@@ -130,5 +129,22 @@ public class JavaVersionTest extends HazelcastTestSupport {
         assertFalse(JavaVersion.isAtLeast(JAVA_9, JAVA_10));
         assertFalse(JavaVersion.isAtLeast(JAVA_10, JAVA_11));
         assertFalse(JavaVersion.isAtLeast(JAVA_11, JAVA_12));
+    }
+
+    @Test
+    public void testIsAtMostSequence() {
+        assertTrue(JavaVersion.isAtMost(JAVA_1_6, JAVA_1_6));
+        assertTrue(JavaVersion.isAtMost(JAVA_1_6, JAVA_1_7));
+        assertTrue(JavaVersion.isAtMost(JAVA_1_8, JAVA_9));
+        assertTrue(JavaVersion.isAtMost(JAVA_9, JAVA_10));
+        assertTrue(JavaVersion.isAtMost(JAVA_11, JAVA_12));
+        assertTrue(JavaVersion.isAtMost(JAVA_12, JAVA_12));
+
+        assertFalse(JavaVersion.isAtMost(JAVA_1_7, JAVA_1_6));
+        assertFalse(JavaVersion.isAtMost(JAVA_1_8, JAVA_1_7));
+        assertFalse(JavaVersion.isAtMost(JAVA_9, JAVA_1_8));
+        assertFalse(JavaVersion.isAtMost(JAVA_10, JAVA_9));
+        assertFalse(JavaVersion.isAtMost(JAVA_11, JAVA_10));
+        assertFalse(JavaVersion.isAtMost(JAVA_12, JAVA_11));
     }
 }

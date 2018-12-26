@@ -30,7 +30,8 @@ import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributed
 import java.security.Permission;
 import java.util.Collection;
 
-public class CreateProxyMessageTask extends AbstractInvocationMessageTask<ClientCreateProxyCodec.RequestParameters> {
+public class CreateProxyMessageTask extends AbstractInvocationMessageTask<ClientCreateProxyCodec.RequestParameters>
+        implements BlockingMessageTask {
 
     public CreateProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

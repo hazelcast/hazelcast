@@ -29,12 +29,16 @@ public class FieldGetter extends AbstractMultiValueGetter {
 
     @Override
     protected Object extractFrom(Object object) throws IllegalAccessException {
-        return field.get(object);
+        try {
+            return field.get(object);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(composeAttributeValueExtractionFailedMessage(field), e);
+        }
     }
 
     @Override
     boolean isCacheable() {
-        return ReflectionHelper.THIS_CL.equals(field.getDeclaringClass().getClassLoader());
+        return true;
     }
 
     @Override

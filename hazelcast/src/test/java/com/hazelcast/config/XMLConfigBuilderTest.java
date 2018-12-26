@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
@@ -46,10 +48,13 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -759,7 +764,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"true\">"
+                + "<management-center enabled=\"true\" scripting-enabled='false'>"
                 + "someUrl"
                 + "</management-center>"
                 + HAZELCAST_END_TAG;
@@ -768,6 +773,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
 
         assertTrue(manCenterCfg.isEnabled());
+        assertFalse(manCenterCfg.isScriptingEnabled());
         assertEquals("someUrl", manCenterCfg.getUrl());
     }
 
@@ -2783,6 +2789,23 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         PermissionConfig expected = new PermissionConfig(CONFIG, "*", "dev");
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
+    }
+
+    @Test
+    public void testAllPermissionsCovered() {
+        InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-fullconfig.xml");
+        Config config = null;
+        try {
+            config = new XmlConfigBuilder(xmlResource).build();
+        } finally {
+            IOUtil.closeResource(xmlResource);
+        }
+        Set<PermissionType> permTypes = new HashSet<PermissionType>(Arrays.asList(PermissionType.values()));
+        for (PermissionConfig pc : config.getSecurityConfig().getClientPermissionConfigs()) {
+            permTypes.remove(pc.getType());
+        }
+        assertTrue("All permission types should be listed in hazelcast-fullconfig.xml. Not found ones: " + permTypes,
+                permTypes.isEmpty());
     }
 
     @Test(expected = InvalidConfigurationException.class)

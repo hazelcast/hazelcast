@@ -59,7 +59,7 @@ public class EncodeDecodeCompatibilityTest {
     @org.junit.Test
             public void test() {
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
     ClientAuthenticationCodec.RequestParameters params = ClientAuthenticationCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.username));
             assertTrue(isEqual(aString, params.password));
@@ -69,6 +69,8 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aString, params.clientType));
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
+            assertTrue(isEqual(aString, params.clientName));
+            assertTrue(isEqual(aListOfStringToString, params.attributes));
 }
 {
     ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    anAddress ,    aString ,    aString ,    aByte ,    aString ,    members   );
@@ -82,7 +84,7 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(members, params.clientUnregisteredMembers));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
     ClientAuthenticationCustomCodec.RequestParameters params = ClientAuthenticationCustomCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aData, params.credentials));
             assertTrue(isEqual(aString, params.uuid));
@@ -91,6 +93,8 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aString, params.clientType));
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
+            assertTrue(isEqual(aString, params.clientName));
+            assertTrue(isEqual(aListOfStringToString, params.attributes));
 }
 {
     ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    anAddress ,    aString ,    aString ,    aByte ,    aString ,    members   );

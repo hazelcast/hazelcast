@@ -26,6 +26,7 @@ import com.hazelcast.internal.management.events.WanSyncIgnoredEvent;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.wan.AddWanConfigResult;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
@@ -160,7 +161,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void addWanReplicationConfig(WanReplicationConfig wanConfig) {
+    public AddWanConfigResult addWanReplicationConfig(WanReplicationConfig wanConfig) {
         node.getManagementCenterService().log(AddWanConfigIgnoredEvent.enterpriseOnly(wanConfig.getName()));
 
         throw new UnsupportedOperationException("Adding new WAN config is not supported.");

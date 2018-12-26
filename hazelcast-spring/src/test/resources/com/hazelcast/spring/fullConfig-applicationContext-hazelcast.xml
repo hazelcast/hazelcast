@@ -24,7 +24,7 @@
         http://www.hazelcast.com/schema/sample
         hazelcast-sample-service.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -42,7 +42,7 @@
                     name="${cluster.group.name}"
                     password="${cluster.group.password}"/>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
-            <hz:management-center enabled="true" update-interval="2">
+            <hz:management-center enabled="true" update-interval="2" scripting-enabled="false">
                 <hz:url>myserver:80</hz:url>
                 <hz:mutual-auth enabled="true">
                     <hz:factory-class-name>who.let.the.cat.out.class</hz:factory-class-name>
@@ -633,6 +633,109 @@
                             <hz:action>create</hz:action>
                         </hz:actions>
                     </hz:pn-counter-permission>
+                    <hz:all-permissions principal="admin">
+                        <hz:endpoints>
+                            <hz:endpoint>127.0.0.1</hz:endpoint>
+                        </hz:endpoints>
+                    </hz:all-permissions>
+                    <hz:config-permission principal="deployer"/>
+                    <hz:transaction-permission principal="deployer"/>
+                    <hz:map-permission name="custom" principal="dev">
+                        <hz:endpoints>
+                            <hz:endpoint>127.0.0.1</hz:endpoint>
+                        </hz:endpoints>
+                        <hz:actions>
+                            <hz:action>create</hz:action>
+                            <hz:action>destroy</hz:action>
+                            <hz:action>put</hz:action>
+                            <hz:action>read</hz:action>
+                        </hz:actions>
+                    </hz:map-permission>
+                    <hz:queue-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:queue-permission>
+                    <hz:topic-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:topic-permission>
+                    <hz:multimap-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:multimap-permission>
+                    <hz:list-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:list-permission>
+                    <hz:set-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:set-permission>
+                    <hz:id-generator-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:id-generator-permission>
+                    <hz:flake-id-generator-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:flake-id-generator-permission>
+                    <hz:lock-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:lock-permission>
+                    <hz:atomic-long-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:atomic-long-permission>
+                    <hz:countdown-latch-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:countdown-latch-permission>
+                    <hz:semaphore-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:semaphore-permission>
+                    <hz:executor-service-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:executor-service-permission>
+                    <hz:durable-executor-service-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:durable-executor-service-permission>
+                    <hz:cardinality-estimator-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:cardinality-estimator-permission>
+                    <hz:scheduled-executor-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:scheduled-executor-permission>
+                    <hz:cache-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:cache-permission>
+                    <hz:user-code-deployment-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:user-code-deployment-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>

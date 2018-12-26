@@ -62,7 +62,7 @@ import static com.hazelcast.quorum.QuorumType.READ_WRITE;
  * @see com.hazelcast.quorum.impl.ProbabilisticQuorumFunction
  * @see com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction
  */
-public class QuorumConfig implements IdentifiedDataSerializable {
+public class QuorumConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
     private boolean enabled;

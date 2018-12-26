@@ -419,6 +419,7 @@ public class ConfigXmlGeneratorTest {
     public void testManagementCenterConfigGenerator() {
         ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
                 .setEnabled(true)
+                .setScriptingEnabled(false)
                 .setUpdateInterval(8)
                 .setUrl("http://foomybar.ber")
                 .setMutualAuthConfig(
@@ -437,6 +438,7 @@ public class ConfigXmlGeneratorTest {
 
         ManagementCenterConfig xmlManCenterConfig = xmlConfig.getManagementCenterConfig();
         assertEquals(managementCenterConfig.isEnabled(), xmlManCenterConfig.isEnabled());
+        assertEquals(managementCenterConfig.isScriptingEnabled(), xmlManCenterConfig.isScriptingEnabled());
         assertEquals(managementCenterConfig.getUpdateInterval(), xmlManCenterConfig.getUpdateInterval());
         assertEquals(managementCenterConfig.getUrl(), xmlManCenterConfig.getUrl());
         assertEquals(managementCenterConfig.getMutualAuthConfig().isEnabled(), xmlManCenterConfig.getMutualAuthConfig().isEnabled());

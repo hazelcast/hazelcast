@@ -31,6 +31,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.function.BiConsumer;
 
 import java.util.Collection;
@@ -76,17 +77,17 @@ class ReplicatedMapMergeRunnable
         while (iterator.hasNext()) {
             ReplicatedRecord record = iterator.next();
 
-            ReplicatedMapEntryView entryView = createEntryView(record);
+            ReplicatedMapEntryView entryView = createEntryView(record, getSerializationService());
             LegacyMergeOperation operation = new LegacyMergeOperation(name, record.getKeyInternal(), entryView, mergePolicy);
 
             consumer.accept(partitionId, operation);
         }
     }
 
-    private ReplicatedMapEntryView createEntryView(ReplicatedRecord record) {
-        return new ReplicatedMapEntryView<Object, Object>()
-                .setKey(getSerializationService().toObject(record.getKeyInternal()))
-                .setValue(getSerializationService().toObject(record.getValueInternal()))
+    private static ReplicatedMapEntryView createEntryView(ReplicatedRecord record, SerializationService ss) {
+        return new ReplicatedMapEntryView<Object, Object>(ss)
+                .setKey(record.getKeyInternal())
+                .setValue(record.getValueInternal())
                 .setHits(record.getHits())
                 .setTtl(record.getTtlMillis())
                 .setLastAccessTime(record.getLastAccessTime())

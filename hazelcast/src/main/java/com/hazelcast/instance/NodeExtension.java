@@ -197,6 +197,13 @@ public interface NodeExtension {
     void validateJoinRequest(JoinMessage joinMessage);
 
     /**
+     * Called when initial cluster state is received while joining the cluster.
+     *
+     * @param initialState initial cluster state
+     */
+    void onInitialClusterState(ClusterState initialState);
+
+    /**
      * Called before starting a cluster state change transaction. Called only
      * on the member that initiated the state change.
      *

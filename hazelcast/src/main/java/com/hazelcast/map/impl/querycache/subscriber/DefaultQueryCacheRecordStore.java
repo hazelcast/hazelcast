@@ -43,20 +43,24 @@ import java.util.Set;
 class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
 
     private static final int DEFAULT_CACHE_CAPACITY = 1000;
-    private final QueryCacheRecordHashMap cache;
-    private final QueryCacheRecordFactory recordFactory;
+
     private final Indexes indexes;
-    private final InternalSerializationService serializationService;
+    private final QueryCacheRecordHashMap cache;
     private final EvictionOperator evictionOperator;
+    private final QueryCacheRecordFactory recordFactory;
+    private final InternalSerializationService serializationService;
+    private final Extractors extractors;
 
     public DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
                                         Indexes indexes,
-                                        QueryCacheConfig config, EvictionListener listener) {
+                                        QueryCacheConfig config, EvictionListener listener,
+                                        Extractors extractors) {
         this.cache = new QueryCacheRecordHashMap(serializationService, DEFAULT_CACHE_CAPACITY);
         this.serializationService = serializationService;
         this.recordFactory = getRecordFactory(config.getInMemoryFormat());
         this.indexes = indexes;
         this.evictionOperator = new EvictionOperator(cache, config, listener, serializationService.getClassLoader());
+        this.extractors = extractors;
     }
 
     private QueryCacheRecord accessRecord(QueryCacheRecord record) {
@@ -98,7 +102,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {
         if (indexes.hasIndex()) {
             Object currentValue = currentRecord.getValue();
-            QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, Extractors.empty());
+            QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
             indexes.saveEntryIndex(queryEntry, oldValue, Index.OperationSource.USER);
         }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.nio.Address;
 import com.hazelcast.partition.membergroup.MemberGroup;
 
 import java.util.Collection;
@@ -35,7 +34,7 @@ public interface PartitionStateGenerator {
      * @param currentState current partition state.
      * @return proposed partition table
      */
-    Address[][] arrange(Collection<MemberGroup> groups, InternalPartition[] currentState);
+    PartitionReplica[][] arrange(Collection<MemberGroup> groups, InternalPartition[] currentState);
 
     /**
      * Arranges the partition layout.
@@ -53,5 +52,6 @@ public interface PartitionStateGenerator {
      * @param partitions Partitions to be arranged only.
      * @return proposed partition table
      */
-    Address[][] arrange(Collection<MemberGroup> groups, InternalPartition[] currentState, Collection<Integer> partitions);
+    PartitionReplica[][] arrange(Collection<MemberGroup> groups, InternalPartition[] currentState,
+            Collection<Integer> partitions);
 }

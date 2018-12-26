@@ -1113,38 +1113,8 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    /**
-     * TODO This method can be replaced with {@code executeOnKeysInternalAsync(...).get()} in 3.12
-     */
-    public Map<K, Object> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys, EntryProcessor entryProcessor) {
-        // TODO: why are we not forwarding to executeOnKeysInternal(keys, entryProcessor, null) or some other kind of fake
-        // callback? now there is a lot of code duplication
-        if (dataKeys.isEmpty()) {
-            toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
-        }
-        Collection<Integer> partitionsForKeys = getPartitionsForKeys(dataKeys);
-        Map<K, Object> result = createHashMap(partitionsForKeys.size());
-        try {
-            OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, dataKeys,
-                    entryProcessor);
-            Map<Integer, Object> results = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitionsForKeys);
-            for (Object object : results.values()) {
-                if (object != null) {
-                    MapEntries mapEntries = (MapEntries) object;
-                    mapEntries.putAllToMap(serializationService, result);
-                }
-            }
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-        return result;
-    }
-
-    /**
-     * Async version of {@link #executeOnKeysInternal}.
-     */
-    public ICompletableFuture<Map<K, Object>> executeOnKeysInternalAsync(Set<K> keys, Set<Data> dataKeys,
-                EntryProcessor entryProcessor, final ExecutionCallback<Map<K, Object>> callback) {
+    public ICompletableFuture<Map<K, Object>> submitToKeysInternal(Set<K> keys, Set<Data> dataKeys,
+                                                                   EntryProcessor entryProcessor) {
         if (dataKeys.isEmpty()) {
             toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
@@ -1165,26 +1135,17 @@ abstract class MapProxySupport<K, V>
                     }
                 } catch (Throwable e) {
                     resultFuture.setResult(e);
-                    if (callback != null) {
-                        callback.onFailure(e);
-                    }
                 }
                 resultFuture.setResult(result);
-                if (callback != null) {
-                    callback.onResponse(result);
-                }
             }
 
             @Override
             public void onFailure(Throwable t) {
                 resultFuture.setResult(t);
-                if (callback != null) {
-                    callback.onFailure(t);
-                }
             }
         };
 
-        operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys, partialCallback);
+        operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitionsForKeys).andThen(partialCallback);
         return resultFuture;
     }
 

@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentParser;
+import com.hazelcast.util.Preconditions;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Map;
 
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
+import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
 
 // one instance per MapContainer
 public final class Extractors {
@@ -41,26 +43,31 @@ public final class Extractors {
     private volatile PortableGetter genericPortableGetter;
 
     /**
-     * Maps the extractorAttributeName WITHOUT the arguments to a ValueExtractor instance.
-     * The name does not contain the argument since it's not allowed to register an extractor under an attribute name
-     * that contains an argument in square brackets.
+     * Maps the extractorAttributeName WITHOUT the arguments to a
+     * ValueExtractor instance. The name does not contain the argument
+     * since it's not allowed to register an extractor under an
+     * attribute name that contains an argument in square brackets.
      */
     private final Map<String, ValueExtractor> extractors;
+    private final InternalSerializationService ss;
     private final EvictableGetterCache getterCache;
     private final DefaultArgumentParser argumentsParser;
 
-    // TODO InternalSerializationService should be passed in constructor
-    public Extractors(List<MapAttributeConfig> mapAttributeConfigs, ClassLoader classLoader) {
-        this.extractors = ExtractorHelper.instantiateExtractors(mapAttributeConfigs, classLoader);
-        this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE, MAX_GETTERS_PER_CLASS_IN_CACHE,
-                EVICTION_PERCENTAGE);
+    private Extractors(List<MapAttributeConfig> mapAttributeConfigs,
+                       ClassLoader classLoader, InternalSerializationService ss) {
+        this.extractors = mapAttributeConfigs == null
+                ? Collections.<String, ValueExtractor>emptyMap()
+                : instantiateExtractors(mapAttributeConfigs, classLoader);
+        this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE,
+                MAX_GETTERS_PER_CLASS_IN_CACHE, EVICTION_PERCENTAGE, false);
         this.argumentsParser = new DefaultArgumentParser();
+        this.ss = ss;
     }
 
-    public Object extract(InternalSerializationService serializationService, Object target, String attributeName) {
-        Object targetObject = getTargetObject(serializationService, target);
+    public Object extract(Object target, String attributeName) {
+        Object targetObject = getTargetObject(target);
         if (targetObject != null) {
-            Getter getter = getGetter(serializationService, targetObject, attributeName);
+            Getter getter = getGetter(targetObject, attributeName);
             try {
                 return getter.getValue(targetObject, attributeName);
             } catch (Exception ex) {
@@ -71,12 +78,13 @@ public final class Extractors {
     }
 
     /**
-     * @return Data (in this case it's portable) or Object (in this case it's non-portable)
+     * @return Data (in this case it's portable) or Object (in this case it's
+     * non-portable)
      */
-    private static Object getTargetObject(InternalSerializationService serializationService, Object target) {
+    private Object getTargetObject(Object target) {
         Data targetData;
         if (target instanceof Portable) {
-            targetData = serializationService.toData(target);
+            targetData = ss.toData(target);
             if (targetData.isPortable()) {
                 return targetData;
             }
@@ -88,17 +96,17 @@ public final class Extractors {
                 return targetData;
             } else {
                 // convert non-portable Data to object
-                return serializationService.toObject(target);
+                return ss.toObject(target);
             }
         }
 
         return target;
     }
 
-    Getter getGetter(InternalSerializationService serializationService, Object targetObject, String attributeName) {
+    Getter getGetter(Object targetObject, String attributeName) {
         Getter getter = getterCache.getGetter(targetObject.getClass(), attributeName);
         if (getter == null) {
-            getter = instantiateGetter(serializationService, targetObject, attributeName);
+            getter = instantiateGetter(targetObject, attributeName);
             if (getter.isCacheable()) {
                 getterCache.putGetter(targetObject.getClass(), attributeName, getter);
             }
@@ -106,18 +114,17 @@ public final class Extractors {
         return getter;
     }
 
-    private Getter instantiateGetter(InternalSerializationService serializationService,
-                                     Object targetObject, String attributeName) {
+    private Getter instantiateGetter(Object targetObject, String attributeName) {
         String attributeNameWithoutArguments = extractAttributeNameNameWithoutArguments(attributeName);
         ValueExtractor valueExtractor = extractors.get(attributeNameWithoutArguments);
         if (valueExtractor != null) {
             Object arguments = argumentsParser.parse(extractArgumentsFromAttributeName(attributeName));
-            return new ExtractorGetter(serializationService, valueExtractor, arguments);
+            return new ExtractorGetter(ss, valueExtractor, arguments);
         } else {
             if (targetObject instanceof Data) {
                 if (genericPortableGetter == null) {
                     // will be initialised a couple of times in the worst case
-                    genericPortableGetter = new PortableGetter(serializationService);
+                    genericPortableGetter = new PortableGetter(ss);
                 }
                 return genericPortableGetter;
             } else {
@@ -126,8 +133,38 @@ public final class Extractors {
         }
     }
 
-    public static Extractors empty() {
-        return new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
+    public static Extractors.Builder newBuilder(InternalSerializationService ss) {
+        return new Extractors.Builder(ss);
     }
 
+    /**
+     * Builder which is used to create a new Extractors object.
+     */
+    public static final class Builder {
+        private ClassLoader classLoader;
+        private List<MapAttributeConfig> mapAttributeConfigs;
+
+        private final InternalSerializationService ss;
+
+        public Builder(InternalSerializationService ss) {
+            this.ss = Preconditions.checkNotNull(ss);
+        }
+
+        public Builder setMapAttributeConfigs(List<MapAttributeConfig> mapAttributeConfigs) {
+            this.mapAttributeConfigs = mapAttributeConfigs;
+            return this;
+        }
+
+        public Builder setClassLoader(ClassLoader classLoader) {
+            this.classLoader = classLoader;
+            return this;
+        }
+
+        /**
+         * @return a new instance of Extractors
+         */
+        public Extractors build() {
+            return new Extractors(mapAttributeConfigs, classLoader, ss);
+        }
+    }
 }

@@ -2295,6 +2295,15 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         managementCenterConfig.setEnabled(enabled);
         managementCenterConfig.setUpdateInterval(interval);
 
+        Node scriptingEnabledNode = attrs.getNamedItem("scripting-enabled");
+        if (scriptingEnabledNode != null) {
+            managementCenterConfig.setScriptingEnabled(getBooleanValue(getTextContent(scriptingEnabledNode)));
+        }
+
+        handleManagementCenterChildElements(node, managementCenterConfig);
+    }
+
+    private void handleManagementCenterChildElements(Node node, ManagementCenterConfig managementCenterConfig) {
         // < 3.9 - Backwards compatibility
         boolean isComplexType = false;
         List<String> complexTypeElements = Arrays.asList("url", "mutual-auth");
@@ -2498,7 +2507,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 type = PermissionType.PN_COUNTER;
             } else if ("cache-permission".equals(nodeName)) {
                 type = PermissionType.CACHE;
-            } else if ("user-code-deployment".equals(nodeName)) {
+            } else if ("user-code-deployment-permission".equals(nodeName)) {
                 type = PermissionType.USER_CODE_DEPLOYMENT;
             } else if (PermissionType.CONFIG.getNodeName().equals(nodeName)) {
                 type = PermissionType.CONFIG;

@@ -36,7 +36,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Configuration for MultiMap.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
+public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned, NamedConfig {
 
     /**
      * The default number of synchronous backups for this MultiMap.

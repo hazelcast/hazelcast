@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
@@ -42,8 +43,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -51,6 +54,7 @@ import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TA
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -110,31 +114,86 @@ public class BackupExpirationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void updates_on_same_key_prevents_expiration_on_backups() throws Exception {
+    public void updates_on_same_key_prevents_expiration_on_backups() {
         configureAndStartNodes(10, 1, 1);
+        long waitTimeInMillis = 1000;
 
         IMap map = nodes[0].getMap(MAP_NAME);
         map.put(1, 1);
-        map.put(2, 2);
-        map.put(3, 3);
 
-        sleepSeconds(11);
+        final BackupExpiryTimeReader backupExpiryTimeReader = new BackupExpiryTimeReader(MAP_NAME);
 
-        map.get(1);
-        map.get(2);
-        map.get(3);
+        // First call to read expiry time
+        map.executeOnKey(1, backupExpiryTimeReader);
 
+        sleepAtLeastMillis(waitTimeInMillis);
         map.put(1, 1);
 
-        sleepSeconds(5);
+        // Second call to read expiry time
+        map.executeOnKey(1, backupExpiryTimeReader);
 
-        int total = 0;
-        for (HazelcastInstance node : nodes) {
-            total += getTotalEntryCount(node.getMap(MAP_NAME).getLocalMapStats());
+        final int backupCount = NODE_COUNT - 1;
+        final int executeOnKeyCallCount = 2;
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(executeOnKeyCallCount * backupCount,
+                        backupExpiryTimeReader.TIMES_QUEUE.size());
+            }
+        });
+
+        long expiryFoundAt1stCall = -1;
+        for (int i = 0; i < backupCount; i++) {
+            expiryFoundAt1stCall = backupExpiryTimeReader.TIMES_QUEUE.poll();
         }
 
-        // key 1 should still be in all replicas
-        assertEquals(REPLICA_COUNT, total);
+        long expiryFoundAt2ndCall = -1;
+        for (int i = 0; i < backupCount; i++) {
+            expiryFoundAt2ndCall = backupExpiryTimeReader.TIMES_QUEUE.poll();
+        }
+
+
+        assertTrue(expiryFoundAt2ndCall + "-" + expiryFoundAt1stCall,
+                expiryFoundAt2ndCall >= expiryFoundAt1stCall + waitTimeInMillis);
+    }
+
+
+    public static class BackupExpiryTimeReader
+            implements EntryProcessor<Integer, Integer>,
+            EntryBackupProcessor<Integer, Integer>, HazelcastInstanceAware, Serializable {
+
+        public static final ConcurrentLinkedQueue<Long> TIMES_QUEUE = new ConcurrentLinkedQueue<Long>();
+
+        private transient HazelcastInstance instance;
+
+        private String mapName;
+
+        public BackupExpiryTimeReader(String mapName) {
+            this.mapName = mapName;
+        }
+
+        @Override
+        public Object process(Map.Entry<Integer, Integer> entry) {
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor<Integer, Integer> getBackupProcessor() {
+            return this;
+        }
+
+        @Override
+        public void processBackup(Map.Entry<Integer, Integer> entry) {
+            EntryView entryView = instance.getMap(mapName).getEntryView(entry.getKey());
+
+            TIMES_QUEUE.add(entryView.getExpirationTime());
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.instance = hazelcastInstance;
+        }
     }
 
     @Test

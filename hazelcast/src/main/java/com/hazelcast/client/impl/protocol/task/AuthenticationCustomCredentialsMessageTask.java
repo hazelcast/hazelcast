@@ -24,7 +24,10 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Custom Authentication with custom credential impl
@@ -59,6 +62,18 @@ public class AuthenticationCustomCredentialsMessageTask
         clientSerializationVersion = parameters.serializationVersion;
         if (parameters.clientHazelcastVersionExist) {
             clientVersion = parameters.clientHazelcastVersion;
+        }
+
+        if (parameters.clientNameExist) {
+            clientName = parameters.clientName;
+        }
+
+        if (parameters.attributesExist) {
+            Map<String, String> map = new HashMap<String, String>();
+            for (Map.Entry<String, String> attribute : parameters.attributes) {
+                map.put(attribute.getKey(), attribute.getValue());
+            }
+            attributes = Collections.unmodifiableMap(map);
         }
         return parameters;
     }

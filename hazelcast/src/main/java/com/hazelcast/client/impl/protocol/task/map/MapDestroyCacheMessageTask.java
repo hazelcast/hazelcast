@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -43,7 +44,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
  * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_DESTROYCACHE}
  */
 public class MapDestroyCacheMessageTask
-        extends AbstractCallableMessageTask<ContinuousQueryDestroyCacheCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<ContinuousQueryDestroyCacheCodec.RequestParameters> implements BlockingMessageTask {
 
     public MapDestroyCacheMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

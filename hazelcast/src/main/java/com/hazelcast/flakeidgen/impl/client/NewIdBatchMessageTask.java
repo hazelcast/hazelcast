@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
@@ -33,7 +34,7 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class NewIdBatchMessageTask
-        extends AbstractMessageTask<RequestParameters> {
+        extends AbstractMessageTask<RequestParameters> implements BlockingMessageTask {
 
     public NewIdBatchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

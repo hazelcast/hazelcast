@@ -31,7 +31,7 @@
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.12.xsd">
 
     <config-replacers fail-if-value-missing="false">
         <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
@@ -50,6 +50,7 @@
         <name>dev</name>
         <password>dev-pass</password>
     </group>
+    <instance-name>CLIENT_NAME</instance-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <properties>
         <property name="hazelcast.client.shuffle.member.list">true</property>
@@ -59,6 +60,10 @@
         <property name="hazelcast.client.event.queue.capacity">1000000</property>
         <property name="hazelcast.client.invocation.timeout.seconds">120</property>
     </properties>
+    <client-attributes>
+        <attribute name="role">admin</attribute>
+        <attribute name="foo">bar</attribute>
+    </client-attributes>
 
     <network>
         <cluster-members>
@@ -79,7 +84,6 @@
             <keep-alive>true</keep-alive>
             <reuse-address>true</reuse-address>
             <linger-seconds>3</linger-seconds>
-            <timeout>-1</timeout>
             <buffer-size>128</buffer-size>
         </socket-options>
         <socket-interceptor enabled="true">
@@ -145,6 +149,16 @@
         <hazelcast-cloud enabled="false">
             <discovery-token>EXAMPLE_TOKEN</discovery-token>
         </hazelcast-cloud>
+        <discovery-strategies>
+            <node-filter class="DummyFilterClass" />
+            <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
+                <properties>
+                    <property name="key-string">foo</property>
+                    <property name="key-int">123</property>
+                    <property name="key-boolean">true</property>
+                </properties>
+            </discovery-strategy>
+        </discovery-strategies>
     </network>
 
     <executor-pool-size>40</executor-pool-size>
