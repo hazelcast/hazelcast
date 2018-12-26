@@ -76,7 +76,7 @@ public final class AndPredicate
 
         for (Predicate predicate : predicates) {
             if (isIndexedPredicate(predicate, queryContext)) {
-                //This resultSet is lazy, so I can call size() without any cost, other than AndPredicate & OrPrecidate
+                //This resultSet is lazy, so I can call size() without any cost, other than AndPredicate & OrPredicate
                 Set<QueryableEntry> currentResultSet = ((IndexAwarePredicate) predicate).filter(queryContext);
                 if (smallestResultSet == null) {
                     smallestResultSet = currentResultSet;

@@ -250,9 +250,11 @@ public class Indexes {
         if (result != null) {
             stats.incrementIndexedQueryCount();
             queryContext.applyPerQueryStats();
-            //access result iterator to initiate record copy from indexes since query result
-            // is a {@com.hazelcast.query.impl.LazyResultSet}
-            result.iterator();
+            // If result is {@com.hazelcast.query.impl.LazyResultSet} then call `init` method
+            // to initiate record copy from indexes
+            if (result instanceof LazyResultSet) {
+                ((LazyResultSet) result).init();
+            }
         }
 
         return result;
