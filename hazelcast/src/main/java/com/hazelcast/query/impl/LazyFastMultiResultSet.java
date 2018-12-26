@@ -126,6 +126,11 @@ public class LazyFastMultiResultSet extends AbstractSet<QueryableEntry> implemen
 
     @Override
     public int size() {
+        return estimatedSize();
+    }
+
+    @Override
+    public int estimatedSize() {
         if (initialized) {
             return size;
         } else {

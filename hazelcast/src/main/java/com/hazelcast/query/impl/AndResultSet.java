@@ -30,7 +30,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * And Result set for Predicates.
  */
-public class AndResultSet extends AbstractSet<QueryableEntry> {
+public class AndResultSet extends AbstractSet<QueryableEntry> implements LazyResultSet {
 
     private static final int SIZE_UNINITIALIZED = -1;
 
@@ -68,8 +68,6 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     class It implements Iterator<QueryableEntry> {
 
         QueryableEntry currentEntry;
-        /* This initialization is required. setSmallest is a {@com.hazelcast.query.impl.LazyResultSet} and
-         values copied from index when iterator or contains method called. */
         final Iterator<QueryableEntry> it = setSmallest.iterator();
 
         @Override
@@ -123,20 +121,14 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public int size() {
-        if (estimatedSize == SIZE_UNINITIALIZED) {
-            int calculatedSize = 0;
-            for (Iterator<QueryableEntry> it = iterator(); it.hasNext(); it.next()) {
-                calculatedSize++;
-            }
-            estimatedSize = calculatedSize;
-        }
-        return estimatedSize;
+        return estimatedSize();
     }
 
     /**
      * @return returns estimated size without calculating the full
      * result set in full-result scan.
      */
+    @Override
     public int estimatedSize() {
         if (estimatedSize == SIZE_UNINITIALIZED) {
             if (setSmallest == null) {
@@ -146,6 +138,13 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
             }
         }
         return estimatedSize;
+    }
+
+    @Override
+    public void init() {
+        if (setSmallest instanceof LazyResultSet) {
+            ((LazyResultSet) setSmallest).init();
+        }
     }
 
 }

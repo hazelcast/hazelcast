@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.impl.AndResultSet;
+import com.hazelcast.query.impl.LazyResultSet;
 import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -28,20 +29,19 @@ public final class PredicateUtils {
     }
 
     /**
-     * In case of AndResultSet and OrResultSet calling size() may be very
+     * In case of {@link LazyResultSet} calling size() may be very
      * expensive so quicker estimatedSize() is used.
      *
      * @param result result of a predicated search
      * @return size or estimated size
      *
+     * @see LazyResultSet#estimatedSize()
      * @see AndResultSet#estimatedSize()
      * @see OrResultSet#estimatedSize()
      */
     public static int estimatedSizeOf(Collection<QueryableEntry> result) {
-        if (result instanceof AndResultSet) {
-            return ((AndResultSet) result).estimatedSize();
-        } else if (result instanceof OrResultSet) {
-            return ((OrResultSet) result).estimatedSize();
+        if (result instanceof LazyResultSet) {
+            return ((LazyResultSet) result).estimatedSize();
         }
         return result.size();
     }

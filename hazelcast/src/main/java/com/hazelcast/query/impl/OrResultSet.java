@@ -28,7 +28,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 /**
  * Or result set for Predicates.
  */
-public class OrResultSet extends AbstractSet<QueryableEntry> {
+public class OrResultSet extends AbstractSet<QueryableEntry> implements LazyResultSet {
 
     private static final int ENTRY_MULTIPLE = 4;
     private static final int ENTRY_MIN_SIZE = 8;
@@ -60,17 +60,19 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public Iterator<QueryableEntry> iterator() {
-        return getEntries().iterator();
+        init();
+        return entries.iterator();
     }
 
     @Override
     public int size() {
-        return getEntries().size();
+        return estimatedSize();
     }
 
     /**
      * @return returns estimated size without allocating the full result set
      */
+    @Override
     public int estimatedSize() {
         if (entries == null) {
             return estimatedSize;
@@ -79,7 +81,8 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
         }
     }
 
-    private Set<QueryableEntry> getEntries() {
+    @Override
+    public void init() {
         if (entries == null) {
             if (indexedResults.isEmpty()) {
                 entries = Collections.emptySet();
@@ -94,7 +97,5 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                 }
             }
         }
-        return entries;
     }
-
 }

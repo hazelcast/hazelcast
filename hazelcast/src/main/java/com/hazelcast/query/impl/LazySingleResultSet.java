@@ -33,7 +33,7 @@ public class LazySingleResultSet extends AbstractSet<QueryableEntry> implements 
     private boolean initialized;
     private int estimatedSize;
 
-    public LazySingleResultSet(Supplier<Map<Data, QueryableEntry>> recordsSupplier, int resultSetSize) {
+    LazySingleResultSet(Supplier<Map<Data, QueryableEntry>> recordsSupplier, int resultSetSize) {
         this.recordsSupplier = recordsSupplier;
         this.estimatedSize = resultSetSize;
     }
@@ -69,6 +69,11 @@ public class LazySingleResultSet extends AbstractSet<QueryableEntry> implements 
 
     @Override
     public int size() {
+        return estimatedSize();
+    }
+
+    @Override
+    public int estimatedSize() {
         if (initialized) {
             return records == null ? 0 : records.size();
         } else {

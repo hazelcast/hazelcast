@@ -28,4 +28,10 @@ public interface LazyResultSet {
      */
     void init();
 
+    /**
+     *
+     * @return estimated size on the lazy collection without initializing any data copy
+     */
+    int estimatedSize();
+
 }

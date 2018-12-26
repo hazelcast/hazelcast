@@ -21,7 +21,6 @@ import com.hazelcast.util.function.Supplier;
 
 import java.util.AbstractSet;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -55,9 +54,6 @@ public class LazyDuplicateDetectingMultiResult extends AbstractSet<QueryableEntr
     @Override
     public Iterator<QueryableEntry> iterator() {
         init();
-        if (records == null) {
-            return Collections.<QueryableEntry>emptyList().iterator();
-        }
         return records.values().iterator();
     }
 
@@ -70,6 +66,11 @@ public class LazyDuplicateDetectingMultiResult extends AbstractSet<QueryableEntr
 
     @Override
     public int size() {
+        return estimatedSize();
+    }
+
+    @Override
+    public int estimatedSize() {
         if (initialized) {
             return records.size();
         } else {
