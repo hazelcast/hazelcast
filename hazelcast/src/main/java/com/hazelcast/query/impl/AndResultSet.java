@@ -139,7 +139,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> implements LazyRes
 
     @Override
     public void init() {
-        if(size == SIZE_UNINITIALIZED) {
+        if (size == SIZE_UNINITIALIZED) {
             if (setSmallest instanceof LazyResultSet) {
                 ((LazyResultSet) setSmallest).init();
             }
