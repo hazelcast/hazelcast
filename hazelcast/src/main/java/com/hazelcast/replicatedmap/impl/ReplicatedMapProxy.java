@@ -52,6 +52,8 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,8 +101,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private final InternalPartitionServiceImpl partitionService;
     private final ReplicatedMapConfig config;
 
-    private int retryCount;
-
     ReplicatedMapProxy(NodeEngine nodeEngine, String name, ReplicatedMapService service, ReplicatedMapConfig config) {
         super(nodeEngine, service);
         this.name = name;
@@ -120,17 +120,30 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         }
         fireMapDataLoadingTasks();
         if (!config.isAsyncFillup()) {
-            for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-                ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, i);
-                while (store == null || !store.isLoaded()) {
-                    if ((retryCount++) % RETRY_INTERVAL_COUNT == 0) {
-                        requestDataForPartition(i);
-                    }
-                    sleep();
-                    if (store == null) {
-                        store = service.getReplicatedRecordStore(name, false, i);
+            int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+            Set<Integer> nonLoadedStores = new LinkedHashSet<Integer>(partitionCount);
+            int[] retryCount = new int[partitionCount];
+            for (int i = 0; i < partitionCount; i++) {
+                nonLoadedStores.add(i);
+            }
+            while (true) {
+                Iterator<Integer> nonLoadedStoresIterator = nonLoadedStores.iterator();
+                while (nonLoadedStoresIterator.hasNext()) {
+                    int nonLoadedPartition = nonLoadedStoresIterator.next();
+                    ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, nonLoadedPartition);
+                    if (store == null || !store.isLoaded()) {
+                        if ((retryCount[nonLoadedPartition]++) % RETRY_INTERVAL_COUNT == 0) {
+                            requestDataForPartition(nonLoadedPartition);
+                        }
+                    } else {
+                        nonLoadedStoresIterator.remove();
                     }
                 }
+
+                if (nonLoadedStores.isEmpty()) {
+                    break;
+                }
+                sleep();
             }
         }
     }
