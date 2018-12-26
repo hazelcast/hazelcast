@@ -35,22 +35,24 @@ public class LazyFastMultiResultSet extends AbstractSet<QueryableEntry> implemen
     private final List<Map<Data, QueryableEntry>> resultSets = new ArrayList<Map<Data, QueryableEntry>>();
     private boolean initialized;
     private int size;
-    private int cachedSize;
+    private int estimatedSize;
 
     @Override
     public void addResultSetSupplier(Supplier<Map<Data, QueryableEntry>> resultSetSupplier, int resultSetSize) {
         resultSuppliers.add(resultSetSupplier);
-        cachedSize += resultSetSize;
+        estimatedSize += resultSetSize;
     }
 
     @Override
     public void init() {
         if (!initialized) {
+            int recordSize = 0;
             for (Supplier<Map<Data, QueryableEntry>> orgResult : resultSuppliers) {
                 Map<Data, QueryableEntry> resultSet = orgResult.get();
                 resultSets.add(resultSet);
-                size += resultSet.size();
+                recordSize += resultSet.size();
             }
+            size = recordSize;
             initialized = true;
         }
     }
@@ -127,7 +129,7 @@ public class LazyFastMultiResultSet extends AbstractSet<QueryableEntry> implemen
         if (initialized) {
             return size;
         } else {
-            return cachedSize;
+            return estimatedSize;
         }
     }
 

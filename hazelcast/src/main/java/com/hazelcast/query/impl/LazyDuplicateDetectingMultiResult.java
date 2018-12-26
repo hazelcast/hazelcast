@@ -34,12 +34,12 @@ public class LazyDuplicateDetectingMultiResult extends AbstractSet<QueryableEntr
             = new ArrayList<Supplier<Map<Data, QueryableEntry>>>();
     private final Map<Data, QueryableEntry> records = createHashMap(4);
     private boolean initialized;
-    private int cachedSize;
+    private int estimatedSize;
 
     @Override
     public void addResultSetSupplier(Supplier<Map<Data, QueryableEntry>> resultSetSupplier, int resultSetSize) {
         resultSuppliers.add(resultSetSupplier);
-        cachedSize += resultSetSize;
+        estimatedSize += resultSetSize;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class LazyDuplicateDetectingMultiResult extends AbstractSet<QueryableEntr
         if (initialized) {
             return records.size();
         } else {
-            return cachedSize;
+            return estimatedSize;
         }
     }
 }

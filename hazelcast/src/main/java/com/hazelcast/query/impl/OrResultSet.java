@@ -35,9 +35,17 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
 
     private final List<Set<QueryableEntry>> indexedResults;
     private Set<QueryableEntry> entries;
+    private final int estimatedSize;
 
     public OrResultSet(List<Set<QueryableEntry>> indexedResults) {
         this.indexedResults = indexedResults;
+        int resultSize = 0;
+        // Since all results are {@com.hazelcast.query.impl.LazyResultSet}, calling size has no cost
+        // and gave more accurate size estimate
+        for (Set<QueryableEntry> indexedResult : indexedResults) {
+            resultSize += indexedResult.size();
+        }
+        estimatedSize = resultSize;
     }
 
     @Override
@@ -65,13 +73,10 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
      */
     public int estimatedSize() {
         if (entries == null) {
-            if (indexedResults.isEmpty()) {
-                return 0;
-            } else {
-                return indexedResults.get(0).size();
-            }
+            return estimatedSize;
+        } else {
+            return entries.size();
         }
-        return entries.size();
     }
 
     private Set<QueryableEntry> getEntries() {

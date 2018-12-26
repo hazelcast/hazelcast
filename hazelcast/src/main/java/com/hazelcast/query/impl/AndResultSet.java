@@ -36,12 +36,12 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     private final Set<QueryableEntry> setSmallest;
     private final List<Predicate> lsNoIndexPredicates;
-    private int cachedSize;
+    private int estimatedSize;
 
     public AndResultSet(Set<QueryableEntry> setSmallest, List<Predicate> lsNoIndexPredicates) {
         this.setSmallest = isNotNull(setSmallest, "setSmallest");
         this.lsNoIndexPredicates = lsNoIndexPredicates;
-        this.cachedSize = SIZE_UNINITIALIZED;
+        this.estimatedSize = SIZE_UNINITIALIZED;
     }
 
     @Override
@@ -123,28 +123,28 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public int size() {
-        if (cachedSize == SIZE_UNINITIALIZED) {
+        if (estimatedSize == SIZE_UNINITIALIZED) {
             int calculatedSize = 0;
             for (Iterator<QueryableEntry> it = iterator(); it.hasNext(); it.next()) {
                 calculatedSize++;
             }
-            cachedSize = calculatedSize;
+            estimatedSize = calculatedSize;
         }
-        return cachedSize;
+        return estimatedSize;
     }
 
     /**
      * @return returns estimated size without calculating the full result set in full-result scan.
      */
     public int estimatedSize() {
-        if (cachedSize == SIZE_UNINITIALIZED) {
+        if (estimatedSize == SIZE_UNINITIALIZED) {
             if (setSmallest == null) {
                 return 0;
             } else {
                 return setSmallest.size();
             }
         }
-        return cachedSize;
+        return estimatedSize;
     }
 
 }
