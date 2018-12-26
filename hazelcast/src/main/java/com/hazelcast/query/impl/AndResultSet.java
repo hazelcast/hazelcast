@@ -36,12 +36,12 @@ public class AndResultSet extends AbstractSet<QueryableEntry> implements LazyRes
 
     private final Set<QueryableEntry> setSmallest;
     private final List<Predicate> lsNoIndexPredicates;
-    private int estimatedSize;
+    private int size;
 
     public AndResultSet(Set<QueryableEntry> setSmallest, List<Predicate> lsNoIndexPredicates) {
         this.setSmallest = isNotNull(setSmallest, "setSmallest");
         this.lsNoIndexPredicates = lsNoIndexPredicates;
-        this.estimatedSize = SIZE_UNINITIALIZED;
+        this.size = SIZE_UNINITIALIZED;
     }
 
     @Override
@@ -130,14 +130,11 @@ public class AndResultSet extends AbstractSet<QueryableEntry> implements LazyRes
      */
     @Override
     public int estimatedSize() {
-        if (estimatedSize == SIZE_UNINITIALIZED) {
-            if (setSmallest == null) {
-                return 0;
-            } else {
-                return setSmallest.size();
-            }
+        if (size == SIZE_UNINITIALIZED) {
+            return setSmallest.size();
+        } else {
+            return size;
         }
-        return estimatedSize;
     }
 
     @Override
@@ -145,6 +142,12 @@ public class AndResultSet extends AbstractSet<QueryableEntry> implements LazyRes
         if (setSmallest instanceof LazyResultSet) {
             ((LazyResultSet) setSmallest).init();
         }
+        //Apply predicates & calculate real size
+        int calculatedSize = 0;
+        for (Iterator<QueryableEntry> it = iterator(); it.hasNext(); it.next()) {
+            calculatedSize++;
+        }
+        size = calculatedSize;
     }
 
 }
