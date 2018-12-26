@@ -233,7 +233,12 @@ public abstract class BaseIndexStore implements IndexStore {
 
         @Override
         public Map<Data, QueryableEntry> get() {
-            return resultCopyFunctor.invoke(orgRecords);
+            try {
+                takeReadLock();
+                return resultCopyFunctor.invoke(orgRecords);
+            } finally {
+                releaseReadLock();
+            }
         }
     }
 }
