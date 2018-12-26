@@ -226,6 +226,9 @@ public class Indexes {
         if (result != null) {
             stats.incrementIndexedQueryCount();
             queryContext.applyPerQueryStats();
+            //access result iterator to initiate record copy from indexes since query result
+            // is a {@com.hazelcast.query.impl.LazyResultSet}
+            result.iterator();
         }
 
         return result;
