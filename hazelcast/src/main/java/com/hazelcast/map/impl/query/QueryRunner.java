@@ -262,6 +262,10 @@ public class QueryRunner {
             return null;
         }
 
+        //access result iterator to initiate record copy from indexes since query result
+        // is a {@com.hazelcast.query.impl.LazyResultSet}
+        entries.iterator();
+
         // If a migration is in progress or migration ownership changes,
         // do not attempt to use an index as they may have not been created yet.
         // This means migrations were executed and we may

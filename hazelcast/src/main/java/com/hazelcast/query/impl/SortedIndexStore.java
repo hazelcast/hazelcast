@@ -78,7 +78,7 @@ public class SortedIndexStore extends BaseIndexStore {
     public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
         takeReadLock();
         try {
-            MultiResultSet results = createMultiResultSet();
+            LazyMultiResultSet results = createMultiResultSet();
             SortedMap<Comparable, Map<Data, QueryableEntry>> subMap =
                     recordMap.subMap(from, true, to, true);
             for (Map<Data, QueryableEntry> value : subMap.values()) {
@@ -94,7 +94,7 @@ public class SortedIndexStore extends BaseIndexStore {
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         takeReadLock();
         try {
-            MultiResultSet results = createMultiResultSet();
+            LazyMultiResultSet results = createMultiResultSet();
             SortedMap<Comparable, Map<Data, QueryableEntry>> subMap;
             switch (comparisonType) {
                 case LESSER:
@@ -149,7 +149,7 @@ public class SortedIndexStore extends BaseIndexStore {
     public Set<QueryableEntry> getRecords(Set<Comparable> values) {
         takeReadLock();
         try {
-            MultiResultSet results = createMultiResultSet();
+            LazyMultiResultSet results = createMultiResultSet();
             for (Comparable value : values) {
                 Map<Data, QueryableEntry> records;
                 if (value instanceof IndexImpl.NullObject) {

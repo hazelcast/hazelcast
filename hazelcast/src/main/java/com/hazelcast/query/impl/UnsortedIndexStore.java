@@ -76,7 +76,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
         takeReadLock();
         try {
-            MultiResultSet results = createMultiResultSet();
+            LazyMultiResultSet results = createMultiResultSet();
             Comparable paramFrom = from;
             Comparable paramTo = to;
             int trend = paramFrom.compareTo(paramTo);
@@ -111,7 +111,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         takeReadLock();
         try {
-            MultiResultSet results = createMultiResultSet();
+            LazyMultiResultSet results = createMultiResultSet();
             for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
                 Comparable value = recordMapEntry.getKey();
                 boolean valid;
@@ -166,7 +166,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     public Set<QueryableEntry> getRecords(Set<Comparable> values) {
         takeReadLock();
         try {
-            MultiResultSet results = createMultiResultSet();
+            LazyMultiResultSet results = createMultiResultSet();
             for (Comparable value : values) {
                 Map<Data, QueryableEntry> records;
                 if (value instanceof IndexImpl.NullObject) {

@@ -71,21 +71,24 @@ public final class AndPredicate
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Set<QueryableEntry> smallestResultSet = null;
-        List<Set<QueryableEntry>> otherResultSets = null;
+        Predicate smallestPredicate = null;
         List<Predicate> unindexedPredicates = null;
 
         for (Predicate predicate : predicates) {
             if (isIndexedPredicate(predicate, queryContext)) {
+                //This result is lazy, so I can call size() without any copy cost, if any
                 Set<QueryableEntry> currentResultSet = ((IndexAwarePredicate) predicate).filter(queryContext);
                 if (smallestResultSet == null) {
                     smallestResultSet = currentResultSet;
+                    smallestPredicate = predicate;
                 } else if (sizeOf(currentResultSet) < sizeOf(smallestResultSet)) {
-                    otherResultSets = initOrGetListOf(otherResultSets);
-                    otherResultSets.add(smallestResultSet);
+                    unindexedPredicates = initOrGetListOf(unindexedPredicates);
+                    unindexedPredicates.add(smallestPredicate);
                     smallestResultSet = currentResultSet;
+                    smallestPredicate = predicate;
                 } else {
-                    otherResultSets = initOrGetListOf(otherResultSets);
-                    otherResultSets.add(currentResultSet);
+                    unindexedPredicates = initOrGetListOf(unindexedPredicates);
+                    unindexedPredicates.add(predicate);
                 }
             } else {
                 unindexedPredicates = initOrGetListOf(unindexedPredicates);
@@ -96,7 +99,7 @@ public final class AndPredicate
         if (smallestResultSet == null) {
             return null;
         }
-        return new AndResultSet(smallestResultSet, otherResultSets, unindexedPredicates);
+        return new AndResultSet(smallestResultSet, unindexedPredicates);
     }
 
     private static boolean isIndexedPredicate(Predicate predicate, QueryContext queryContext) {

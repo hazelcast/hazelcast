@@ -35,14 +35,11 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     private static final int SIZE_UNINITIALIZED = -1;
 
     private final Set<QueryableEntry> setSmallest;
-    private final List<Set<QueryableEntry>> otherIndexedResults;
     private final List<Predicate> lsNoIndexPredicates;
     private int cachedSize;
 
-    public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults,
-                        List<Predicate> lsNoIndexPredicates) {
+    public AndResultSet(Set<QueryableEntry> setSmallest, List<Predicate> lsNoIndexPredicates) {
         this.setSmallest = isNotNull(setSmallest, "setSmallest");
-        this.otherIndexedResults = otherIndexedResults;
         this.lsNoIndexPredicates = lsNoIndexPredicates;
         this.cachedSize = SIZE_UNINITIALIZED;
     }
@@ -53,13 +50,6 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
             return false;
         }
 
-        if (otherIndexedResults != null) {
-            for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
-                if (!otherIndexedResult.contains(o)) {
-                    return false;
-                }
-            }
-        }
         if (lsNoIndexPredicates != null) {
             for (Predicate noIndexPredicate : lsNoIndexPredicates) {
                 if (!noIndexPredicate.apply((Map.Entry) o)) {
@@ -78,6 +68,8 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     class It implements Iterator<QueryableEntry> {
 
         QueryableEntry currentEntry;
+        /* This initialization is required. setSmallest is a {@com.hazelcast.query.impl.LazyResultSet} and
+         values copied from index when iterator or contains method called. */
         final Iterator<QueryableEntry> it = setSmallest.iterator();
 
         @Override
@@ -89,7 +81,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
             while (it.hasNext()) {
                 QueryableEntry entry = it.next();
 
-                if (checkOtherIndexedResults(entry) && checkNoIndexPredicates(entry)) {
+                if (checkNoIndexPredicates(entry)) {
                     currentEntry = entry;
                     return true;
                 }
@@ -109,19 +101,6 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
                 }
             }
 
-            return true;
-        }
-
-        private boolean checkOtherIndexedResults(QueryableEntry currentEntry) {
-            if (otherIndexedResults == null) {
-                return true;
-            }
-
-            for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
-                if (!otherIndexedResult.contains(currentEntry)) {
-                    return false;
-                }
-            }
             return true;
         }
 

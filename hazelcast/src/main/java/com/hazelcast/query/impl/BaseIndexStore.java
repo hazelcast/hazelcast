@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.HashMap;
 import java.util.List;
@@ -177,8 +178,8 @@ public abstract class BaseIndexStore implements IndexStore {
 
     }
 
-    final MultiResultSet createMultiResultSet() {
-        return multiResultHasToDetectDuplicates ? new DuplicateDetectingMultiResult() : new FastMultiResultSet();
+    final LazyMultiResultSet createMultiResultSet() {
+        return multiResultHasToDetectDuplicates ? new LazyDuplicateDetectingMultiResult() : new LazyFastMultiResultSet();
     }
 
     interface CopyFunctor<A, B> {
@@ -202,15 +203,37 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
-        resultSet.addResultSet(resultCopyFunctor.invoke(records));
+    final void copyToMultiResultSet(LazyMultiResultSet resultSet, Map<Data, QueryableEntry> records) {
+        resultSet.addResultSetSupplier(new RecordSupplier(records), getRecordsSize(records));
     }
 
     final Set<QueryableEntry> toSingleResultSet(Map<Data, QueryableEntry> records) {
-        return new SingleResultSet(resultCopyFunctor.invoke(records));
+        return new LazySingleResultSet(new RecordSupplier(records), getRecordsSize(records));
+    }
+
+    private int getRecordsSize(Map map) {
+        if (map == null || map.isEmpty()) {
+            return 0;
+        } else {
+            return map.size();
+        }
     }
 
     interface IndexFunctor<A, B> {
         Object invoke(A param1, B param2);
+    }
+
+    class RecordSupplier implements Supplier<Map<Data, QueryableEntry>> {
+
+        final Map<Data, QueryableEntry> orgRecords;
+
+        RecordSupplier(Map<Data, QueryableEntry> orgRecords) {
+            this.orgRecords = orgRecords;
+        }
+
+        @Override
+        public Map<Data, QueryableEntry> get() {
+            return resultCopyFunctor.invoke(orgRecords);
+        }
     }
 }
