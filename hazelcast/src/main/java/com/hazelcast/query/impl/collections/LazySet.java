@@ -109,7 +109,7 @@ public abstract class LazySet<E> implements Set<E> {
      */
     @Override
     public Object[] toArray() {
-        return delegate.toArray();
+        return delegate().toArray();
     }
 
     /**

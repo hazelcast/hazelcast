@@ -257,7 +257,6 @@ public class Indexes {
                 return ((LazySet<QueryableEntry>) result).getDelegate();
             }
         }
-
         return result;
     }
 
