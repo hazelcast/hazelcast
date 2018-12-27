@@ -27,7 +27,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 
-public class KubernetesDiscoveryStrategyTest {
+public class HazelcastKubernetesDiscoveryStrategyTest {
+
     @Test
     public void testReadFileContents()
             throws IOException {

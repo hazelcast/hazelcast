@@ -75,7 +75,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
         String apiToken = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN, null);
         if (apiToken == null) {
-            apiToken = getAccountToken();
+            apiToken = readAccountToken();
         }
 
         logger.info("Kubernetes Discovery properties: { "
@@ -129,8 +129,8 @@ final class HazelcastKubernetesDiscoveryStrategy
             String hostname = InetAddress.getLocalHost().getHostName();
             return client.zone(namespace, hostname);
         } catch (Exception e) {
-            getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature disabled");
-            getLogger().fine(e);
+            getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
+            getLogger().finest(e);
         }
         return "unknown";
     }
@@ -228,13 +228,13 @@ final class HazelcastKubernetesDiscoveryStrategy
 
     private KubernetesClient buildKubernetesClient(String token, String kubernetesMaster) {
         if (StringUtil.isNullOrEmpty(token)) {
-            token = getAccountToken();
+            token = readAccountToken();
         }
         return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, token));
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private String getAccountToken() {
+    private static String readAccountToken() {
         return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
     }
 

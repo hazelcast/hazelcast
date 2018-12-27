@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 
 import static com.hazelcast.kubernetes.RetryUtils.BACKOFF_MULTIPLIER;
 import static com.hazelcast.kubernetes.RetryUtils.INITIAL_BACKOFF_MS;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.verify;
 public class RetryUtilsTest {
     private static final Integer RETRIES = 1;
     private static final String RESULT = "result string";
+    private static final String NON_RETRYABLE_KEYWORD = "\"reason\":\"Forbidden\"";
 
     private Callable<String> callable = mock(Callable.class);
 
@@ -107,4 +109,36 @@ public class RetryUtilsTest {
         assertTrue(twoBackoffIntervalsMs < (endTimeMs - startTimeMs));
     }
 
+    @Test(expected = NonRetryableException.class)
+    public void retryNonRetryableKeyword()
+            throws Exception {
+        // given
+        given(callable.call()).willThrow(new NonRetryableException()).willReturn(RESULT);
+
+        // when
+        RetryUtils.retry(callable, RETRIES, asList(NON_RETRYABLE_KEYWORD));
+
+        // then
+        // throws exception
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void retryNonRetryableKeywordOnCause()
+            throws Exception {
+        // given
+        given(callable.call()).willThrow(new RuntimeException(new NonRetryableException())).willReturn(RESULT);
+
+        // when
+        RetryUtils.retry(callable, RETRIES, asList(NON_RETRYABLE_KEYWORD));
+
+        // then
+        // throws exception
+    }
+
+    private static class NonRetryableException
+            extends RuntimeException {
+        private NonRetryableException() {
+            super(String.format("Message: %s", NON_RETRYABLE_KEYWORD));
+        }
+    }
 }

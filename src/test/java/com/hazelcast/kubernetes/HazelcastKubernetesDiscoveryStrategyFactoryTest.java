@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(KubernetesApiEndpointResolver.class)
-public class KubernetesDiscoveryStrategyFactoryTest {
+public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
 
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
     private static final String API_TOKEN = "token";
