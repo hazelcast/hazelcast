@@ -166,42 +166,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return records != null;
     }
 
-    protected Data valueToData(V value) {
-        if (value instanceof Data) {
-            return (Data) value;
-        } else if (value != null) {
-            return serializationService.toData(value);
-        } else {
-            return null;
-        }
-    }
-
-    protected V dataToValue(Data data) {
-        if (data != null) {
-            return serializationService.toObject(data);
-        } else {
-            return null;
-        }
-    }
-
     protected Data toData(Object obj) {
-        if (obj == null) {
-            return null;
-        } else if (obj instanceof Data) {
-            return (Data) obj;
-        } else {
-            return valueToData((V) obj);
-        }
+        return serializationService.toData(obj);
     }
 
     protected V toValue(Object obj) {
-        if (obj == null) {
-            return null;
-        } else if (obj instanceof Data) {
-            return dataToValue((Data) obj);
-        } else {
-            return (V) obj;
-        }
+        return serializationService.toObject(obj);
     }
 
     protected long getTotalStorageMemoryCost(K key, R record) {
