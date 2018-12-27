@@ -69,6 +69,10 @@ public class Employee implements Serializable, Comparable<Employee> {
         return age;
     }
 
+    public void setAge(int age) {
+        this.age = age;
+    }
+
     public double getSalary() {
         return salary;
     }

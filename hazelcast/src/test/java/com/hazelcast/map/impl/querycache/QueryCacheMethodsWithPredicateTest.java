@@ -20,6 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.AssertTask;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -114,6 +116,47 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         assertEntrySetSizeEventually(expectedSize, new SqlPredicate("id >= " + equalsOrBiggerThan), cache);
     }
 
+
+    @Test
+    public void testEntrySetIsNotBackedByQueryCache() {
+        int count = 111;
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+
+        populateMap(map, count);
+
+        Predicate predicate = Predicates.lessThan("id", count);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
+        cache.addIndex("id", true);
+
+        for (Map.Entry<Integer, Employee> entry: cache.entrySet(predicate)) {
+            entry.getValue().setAge(Employee.MAX_AGE + 1);
+        }
+
+        for (Map.Entry<Integer, Employee> entry: cache.entrySet(predicate)) {
+            assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
+        }
+    }
+
+    @Test
+    public void testEntrySetIsNotBackedByQueryCache_nonIndexedAttribute() {
+        int count = 111;
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+
+        populateMap(map, count);
+
+        Predicate predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
+        cache.addIndex("id", true);
+
+        for (Map.Entry<Integer, Employee> entry: cache.entrySet(predicate)) {
+            entry.getValue().setAge(Employee.MAX_AGE + 1);
+        }
+
+        for (Map.Entry<Integer, Employee> entry: cache.entrySet(predicate)) {
+            assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
+        }
+    }
+
     @Test
     public void testEntrySet_whenIncludeValueFalse() throws Exception {
         int count = 111;
@@ -167,6 +210,46 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         int equalsOrBiggerThan = 27;
         int expectedSize = 2 * count - equalsOrBiggerThan;
         assertValuesSizeEventually(expectedSize, new SqlPredicate("id >= " + equalsOrBiggerThan), cache);
+    }
+
+    @Test
+    public void testValuesAreNotBackedByQueryCache() {
+        int count = 111;
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+
+        populateMap(map, count);
+
+        Predicate predicate = Predicates.lessThan("id", count);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
+        cache.addIndex("id", true);
+
+        for (Employee employee: cache.values(predicate)) {
+            employee.setAge(Employee.MAX_AGE + 1);
+        }
+
+        for (Employee employee: cache.values(predicate)) {
+            assertNotEquals(Employee.MAX_AGE + 1, employee.getAge());
+        }
+    }
+
+    @Test
+    public void testValuesAreNotBackedByQueryCache_nonIndexedAttribute() {
+        int count = 111;
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+
+        populateMap(map, count);
+
+        Predicate predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
+        cache.addIndex("id", true);
+
+        for (Employee employee: cache.values(predicate)) {
+            employee.setAge(Employee.MAX_AGE + 1);
+        }
+
+        for (Employee employee: cache.values(predicate)) {
+            assertNotEquals(Employee.MAX_AGE + 1, employee.getAge());
+        }
     }
 
     @Test
