@@ -24,8 +24,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.collections.LazySet;
+import com.hazelcast.query.impl.collections.LazySetUtils;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
+import com.hazelcast.util.function.BiConsumer;
 
 import java.util.Collections;
 import java.util.Set;
@@ -117,8 +120,8 @@ public abstract class AbstractIndex implements InternalIndex {
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
                 }
-                Set<QueryableEntry> result = indexStore.getRecords(convertedValues);
-                stats.onIndexHit(timestamp, result.size());
+                LazySet<QueryableEntry> result = indexStore.getRecords(convertedValues);
+                LazySetUtils.addDeferredOperation(result, new IndexHitOperation(timestamp));
                 return result;
             }
 
@@ -136,8 +139,8 @@ public abstract class AbstractIndex implements InternalIndex {
             return new SingleResultSet(null);
         }
 
-        Set<QueryableEntry> result = indexStore.getRecords(convert(attributeValue));
-        stats.onIndexHit(timestamp, result.size());
+        LazySet<QueryableEntry> result = indexStore.getRecords(convert(attributeValue));
+        LazySetUtils.addDeferredOperation(result, new IndexHitOperation(timestamp));
         return result;
     }
 
@@ -150,8 +153,8 @@ public abstract class AbstractIndex implements InternalIndex {
             return Collections.emptySet();
         }
 
-        Set<QueryableEntry> result = indexStore.getSubRecords(comparisonType, convert(searchedAttributeValue));
-        stats.onIndexHit(timestamp, result.size());
+        LazySet<QueryableEntry> result = indexStore.getSubRecords(comparisonType, convert(searchedAttributeValue));
+        LazySetUtils.addDeferredOperation(result, new IndexHitOperation(timestamp));
         return result;
     }
 
@@ -164,8 +167,8 @@ public abstract class AbstractIndex implements InternalIndex {
             return Collections.emptySet();
         }
 
-        Set<QueryableEntry> result = indexStore.getSubRecordsBetween(convert(fromAttributeValue), convert(toAttributeValue));
-        stats.onIndexHit(timestamp, result.size());
+        LazySet<QueryableEntry> result = indexStore.getSubRecordsBetween(convert(fromAttributeValue), convert(toAttributeValue));
+        LazySetUtils.addDeferredOperation(result, new IndexHitOperation(timestamp));
         return result;
     }
 
@@ -258,6 +261,20 @@ public abstract class AbstractIndex implements InternalIndex {
         @Override
         public int getId() {
             return PredicateDataSerializerHook.NULL_OBJECT;
+        }
+    }
+
+    final class IndexHitOperation implements BiConsumer<Long, Integer> {
+        /*Time spent before calling this operation.*/
+        private final long elapsed;
+
+        IndexHitOperation(long start) {
+            this.elapsed = System.nanoTime() - start;
+        }
+
+        @Override
+        public void accept(Long timestamp, Integer recordSize) {
+            stats.onIndexHit(timestamp - elapsed, recordSize);
         }
     }
 }

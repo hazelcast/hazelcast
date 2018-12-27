@@ -47,7 +47,6 @@ public class OrResultSetTest extends HazelcastTestSupport {
         indexedResults.add(entries2);
 
         OrResultSet resultSet = new OrResultSet(indexedResults);
-        resultSet.init();
         int sizeMethod = resultSet.size();
         int sizeIterator = 0;
         for (QueryableEntry queryableEntry : resultSet) {
@@ -68,7 +67,6 @@ public class OrResultSetTest extends HazelcastTestSupport {
         indexedResults.add(entries2);
 
         OrResultSet resultSet = new OrResultSet(indexedResults);
-        resultSet.init();
         Set<QueryableEntry> combinedEntries = new HashSet<QueryableEntry>(entries1);
         combinedEntries.addAll(entries2);
 

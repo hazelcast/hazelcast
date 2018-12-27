@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.collections.LazySet;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,7 +74,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
+    public LazySet<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
         takeReadLock();
         try {
             LazyMultiResultSet results = createMultiResultSet();
@@ -108,7 +109,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
+    public LazySet<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         takeReadLock();
         try {
             LazyMultiResultSet results = createMultiResultSet();
@@ -149,7 +150,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Comparable value) {
+    public LazySet<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
             if (value instanceof IndexImpl.NullObject) {
@@ -163,7 +164,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Set<Comparable> values) {
+    public LazySet<QueryableEntry> getRecords(Set<Comparable> values) {
         takeReadLock();
         try {
             LazyMultiResultSet results = createMultiResultSet();

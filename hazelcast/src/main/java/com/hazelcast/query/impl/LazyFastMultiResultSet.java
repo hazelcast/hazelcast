@@ -17,125 +17,51 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.collections.ReadOnlyMultiCollectionDelegate;
 import com.hazelcast.util.function.Supplier;
 
-import java.util.AbstractSet;
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Lazy Multiple result set for Predicates.
  */
-public class LazyFastMultiResultSet extends AbstractSet<QueryableEntry> implements LazyMultiResultSet {
+public class LazyFastMultiResultSet extends LazyMultiResultSet<QueryableEntry> {
 
     private final List<Supplier<Map<Data, QueryableEntry>>> resultSuppliers
             = new ArrayList<Supplier<Map<Data, QueryableEntry>>>();
-    private final List<Map<Data, QueryableEntry>> resultSets = new ArrayList<Map<Data, QueryableEntry>>();
-    private boolean initialized;
-    private int size;
     private int estimatedSize;
 
     @Override
-    public void addResultSetSupplier(Supplier<Map<Data, QueryableEntry>> resultSetSupplier, int resultSetSize) {
-        resultSuppliers.add(resultSetSupplier);
-        estimatedSize += resultSetSize;
+    void addResultSetSupplier(Supplier<Map<Data, QueryableEntry>> resultSupplier, int resultSize) {
+        resultSuppliers.add(resultSupplier);
+        estimatedSize += resultSize;
     }
 
+    @Nonnull
     @Override
-    public void init() {
-        if (!initialized) {
-            int recordSize = 0;
-            for (Supplier<Map<Data, QueryableEntry>> orgResult : resultSuppliers) {
-                Map<Data, QueryableEntry> resultSet = orgResult.get();
-                resultSets.add(resultSet);
-                recordSize += resultSet.size();
-            }
-            size = recordSize;
-            initialized = true;
+    protected Set<QueryableEntry> initialize() {
+        if (resultSuppliers.isEmpty()) {
+            return Collections.emptySet();
         }
-    }
-
-    @Override
-    public boolean contains(Object o) {
-        init();
-        QueryableEntry entry = (QueryableEntry) o;
-        for (Map<Data, QueryableEntry> resultSet : resultSets) {
-            if (resultSet.containsKey(entry.getKeyData())) {
-                return true;
-            }
+        List<Map<Data, QueryableEntry>> results = new LinkedList<Map<Data, QueryableEntry>>();
+        int size = 0;
+        for (Supplier<Map<Data, QueryableEntry>> resultSupplier : resultSuppliers) {
+            Map<Data, QueryableEntry> result = resultSupplier.get();
+            results.add(result);
+            size += result.size();
         }
-        return false;
-    }
-
-    @Override
-    public Iterator<QueryableEntry> iterator() {
-        init();
-        return new It();
-    }
-
-    class It implements Iterator<QueryableEntry> {
-        int currentIndex;
-        Iterator<QueryableEntry> currentIterator;
-
-        @Override
-        public boolean hasNext() {
-            if (resultSets.size() == 0) {
-                return false;
-            }
-            if (currentIterator != null && currentIterator.hasNext()) {
-                return true;
-            }
-            while (currentIndex < resultSets.size()) {
-                currentIterator = resultSets.get(currentIndex++).values().iterator();
-                if (currentIterator.hasNext()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public QueryableEntry next() {
-            if (resultSets.size() == 0) {
-                return null;
-            }
-            if (currentIterator != null && currentIterator.hasNext()) {
-                return currentIterator.next();
-            }
-            while (currentIndex < resultSets.size()) {
-                currentIterator = resultSets.get(currentIndex++).values().iterator();
-                if (currentIterator.hasNext()) {
-                    return currentIterator.next();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    @Override
-    public boolean add(QueryableEntry obj) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int size() {
-        return estimatedSize();
+        return new ReadOnlyMultiCollectionDelegate(results, size);
     }
 
     @Override
     public int estimatedSize() {
-        if (initialized) {
-            return size;
-        } else {
-            return estimatedSize;
-        }
+        return estimatedSize;
     }
 
 }

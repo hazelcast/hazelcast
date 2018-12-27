@@ -17,67 +17,38 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.collections.LazySet;
+import com.hazelcast.query.impl.collections.ReadOnlyMapDelegate;
 import com.hazelcast.util.function.Supplier;
 
-import java.util.AbstractSet;
+import javax.annotation.Nonnull;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Multiple result set for Predicates.
  */
-public class LazySingleResultSet extends AbstractSet<QueryableEntry> implements LazyResultSet {
-    private final Supplier<Map<Data, QueryableEntry>> recordsSupplier;
-    private Map<Data, QueryableEntry> records;
-    private boolean initialized;
-    private int estimatedSize;
+public class LazySingleResultSet extends LazySet<QueryableEntry> {
 
-    LazySingleResultSet(Supplier<Map<Data, QueryableEntry>> recordsSupplier, int resultSetSize) {
-        this.recordsSupplier = recordsSupplier;
-        this.estimatedSize = resultSetSize;
+    private final Supplier<Map<Data, QueryableEntry>> resultSupplier;
+    private final int estimatedSize;
+
+    LazySingleResultSet(Supplier<Map<Data, QueryableEntry>> resultSupplier, int resultSize) {
+        this.resultSupplier = resultSupplier;
+        this.estimatedSize = resultSize;
     }
 
+    @Nonnull
     @Override
-    public void init() {
-        if (!initialized) {
-            records = recordsSupplier.get();
-            initialized = true;
-        }
-    }
-
-    @Override
-    public boolean contains(Object mapEntry) {
-        init();
-        if (records == null) {
-            return false;
-        }
-
-        Data keyData = ((QueryableEntry) mapEntry).getKeyData();
-        return records.containsKey(keyData);
-    }
-
-    @Override
-    public Iterator<QueryableEntry> iterator() {
-        init();
-        if (records == null) {
-            return Collections.EMPTY_SET.iterator();
-        } else {
-            return records.values().iterator();
-        }
-    }
-
-    @Override
-    public int size() {
-        return estimatedSize();
+    protected Set<QueryableEntry> initialize() {
+        Map<Data, QueryableEntry> records = resultSupplier.get();
+        return records == null ? Collections.<QueryableEntry>emptySet() : new ReadOnlyMapDelegate(records);
     }
 
     @Override
     public int estimatedSize() {
-        if (initialized) {
-            return records == null ? 0 : records.size();
-        } else {
-            return estimatedSize;
-        }
+        return estimatedSize;
     }
+
 }

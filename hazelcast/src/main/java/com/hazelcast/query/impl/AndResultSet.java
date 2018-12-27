@@ -17,139 +17,43 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.collections.LazySet;
+import com.hazelcast.query.impl.collections.ReadOnlyCollectionDelegate;
+import com.hazelcast.query.impl.collections.ReadOnlyFilterableCollectionDelegate;
 
-import java.util.AbstractSet;
-import java.util.Iterator;
+import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
 
 /**
  * And Result set for Predicates.
  */
-public class AndResultSet extends AbstractSet<QueryableEntry> implements LazyResultSet {
+public class AndResultSet extends LazySet<QueryableEntry> {
 
-    private static final int SIZE_UNINITIALIZED = -1;
+    @Nonnull
+    private final Set<QueryableEntry> smallestResult;
+    private final List<Predicate> otherPredicates;
 
-    private final Set<QueryableEntry> setSmallest;
-    private final List<Predicate> lsNoIndexPredicates;
-    private int size;
-
-    public AndResultSet(Set<QueryableEntry> setSmallest, List<Predicate> lsNoIndexPredicates) {
-        this.setSmallest = isNotNull(setSmallest, "setSmallest");
-        this.lsNoIndexPredicates = lsNoIndexPredicates;
-        this.size = SIZE_UNINITIALIZED;
+    public AndResultSet(@Nonnull Set<QueryableEntry> smallestResult, List<Predicate> otherPredicates) {
+        this.smallestResult = smallestResult;
+        this.otherPredicates = otherPredicates;
     }
 
+    @Nonnull
     @Override
-    public boolean contains(Object o) {
-        if (!setSmallest.contains(o)) {
-            return false;
-        }
-
-        if (lsNoIndexPredicates != null) {
-            for (Predicate noIndexPredicate : lsNoIndexPredicates) {
-                if (!noIndexPredicate.apply((Map.Entry) o)) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public Iterator<QueryableEntry> iterator() {
-        return new It();
-    }
-
-    class It implements Iterator<QueryableEntry> {
-
-        QueryableEntry currentEntry;
-        final Iterator<QueryableEntry> it = setSmallest.iterator();
-
-        @Override
-        public boolean hasNext() {
-            if (currentEntry != null) {
-                return true;
-            }
-
-            while (it.hasNext()) {
-                QueryableEntry entry = it.next();
-
-                if (checkNoIndexPredicates(entry)) {
-                    currentEntry = entry;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private boolean checkNoIndexPredicates(QueryableEntry currentEntry) {
-            if (lsNoIndexPredicates == null) {
-                return true;
-            }
-
-            for (Predicate noIndexPredicate : lsNoIndexPredicates) {
-                if (!noIndexPredicate.apply(currentEntry)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        @Override
-        public QueryableEntry next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-
-            QueryableEntry result = currentEntry;
-            currentEntry = null;
-            return result;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
+    protected Set<QueryableEntry> initialize() {
+        if (otherPredicates == null || otherPredicates.isEmpty()) {
+            return new ReadOnlyCollectionDelegate(smallestResult);
+        } else {
+            return new ReadOnlyFilterableCollectionDelegate(smallestResult, otherPredicates);
         }
     }
 
-    @Override
-    public int size() {
-        return estimatedSize();
-    }
-
-    /**
-     * @return returns estimated size without calculating the full
-     * result set in full-result scan.
-     */
     @Override
     public int estimatedSize() {
-        if (size == SIZE_UNINITIALIZED) {
-            return setSmallest.size();
-        } else {
-            return size;
-        }
-    }
-
-    @Override
-    public void init() {
-        if (size == SIZE_UNINITIALIZED) {
-            if (setSmallest instanceof LazyResultSet) {
-                ((LazyResultSet) setSmallest).init();
-            }
-            //Apply predicates & calculate real size
-            int calculatedSize = 0;
-            for (Iterator<QueryableEntry> it = iterator(); it.hasNext(); it.next()) {
-                calculatedSize++;
-            }
-            size = calculatedSize;
-        }
+        return estimatedSizeOf(smallestResult);
     }
 
 }

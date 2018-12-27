@@ -23,6 +23,7 @@ import com.hazelcast.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.collections.LazySet;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -250,10 +251,10 @@ public class Indexes {
         if (result != null) {
             stats.incrementIndexedQueryCount();
             queryContext.applyPerQueryStats();
-            // If result is {@com.hazelcast.query.impl.LazyResultSet} then call `init` method
+            // If result is {@com.hazelcast.query.impl.collections.LazySet} then return `delegate` collection
             // to initiate record copy from indexes
-            if (result instanceof LazyResultSet) {
-                ((LazyResultSet) result).init();
+            if (result instanceof LazySet) {
+                return ((LazySet<QueryableEntry>) result).getDelegate();
             }
         }
 

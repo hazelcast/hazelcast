@@ -17,64 +17,47 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.collections.ReadOnlyMapDelegate;
 import com.hazelcast.util.function.Supplier;
 
-import java.util.AbstractSet;
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
-
-public class LazyDuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> implements LazyMultiResultSet {
+public class LazyDuplicateDetectingMultiResult extends LazyMultiResultSet<QueryableEntry> {
 
     private final List<Supplier<Map<Data, QueryableEntry>>> resultSuppliers
             = new ArrayList<Supplier<Map<Data, QueryableEntry>>>();
-    private final Map<Data, QueryableEntry> records = createHashMap(4);
-    private boolean initialized;
     private int estimatedSize;
 
     @Override
-    public void addResultSetSupplier(Supplier<Map<Data, QueryableEntry>> resultSetSupplier, int resultSetSize) {
-        resultSuppliers.add(resultSetSupplier);
-        estimatedSize += resultSetSize;
+    public void addResultSetSupplier(Supplier<Map<Data, QueryableEntry>> resultSupplier, int resultSize) {
+        resultSuppliers.add(resultSupplier);
+        estimatedSize += resultSize;
     }
 
+    @Nonnull
     @Override
-    public void init() {
-        if (!initialized) {
-            for (Supplier<Map<Data, QueryableEntry>> orgResult : resultSuppliers) {
-                records.putAll(orgResult.get());
-            }
-            initialized = true;
+    protected Set<QueryableEntry> initialize() {
+        if (resultSuppliers.isEmpty()) {
+            return Collections.emptySet();
         }
-    }
-
-    @Override
-    public Iterator<QueryableEntry> iterator() {
-        init();
-        return records.values().iterator();
-    }
-
-    @Override
-    public boolean contains(Object mapEntry) {
-        init();
-        Data keyData = ((QueryableEntry) mapEntry).getKeyData();
-        return records.containsKey(keyData);
-    }
-
-    @Override
-    public int size() {
-        return estimatedSize();
+        //Since duplicate detection required, we're paying copy cost again
+        //TODO : check what can be done to prevent second copy cost
+        Map<Data, QueryableEntry> results = new HashMap<Data, QueryableEntry>();
+        for (Supplier<Map<Data, QueryableEntry>> resultSupplier : resultSuppliers) {
+            Map<Data, QueryableEntry> result = resultSupplier.get();
+            results.putAll(result);
+        }
+        return new ReadOnlyMapDelegate(results);
     }
 
     @Override
     public int estimatedSize() {
-        if (initialized) {
-            return records.size();
-        } else {
-            return estimatedSize;
-        }
+        return estimatedSize;
     }
 }

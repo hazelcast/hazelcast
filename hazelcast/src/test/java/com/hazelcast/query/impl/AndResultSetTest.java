@@ -47,7 +47,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void iteratingOver_noException() {
         Set<QueryableEntry> entries = generateEntries(100000);
         AndResultSet resultSet = new AndResultSet(entries, asList(new FalsePredicate()));
-        resultSet.init();
         assertFalse(resultSet.iterator().hasNext());
     }
 
@@ -56,7 +55,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void size_nonMatchingPredicate() {
         Set<QueryableEntry> entries = generateEntries(100000);
         AndResultSet resultSet = new AndResultSet(entries, asList(new FalsePredicate()));
-        resultSet.init();
         int size = resultSet.size();
         int countedSize = 0;
         for (QueryableEntry queryableEntry : resultSet) {
@@ -72,7 +70,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void size_matchingPredicate_noOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
         AndResultSet resultSet = new AndResultSet(entries, asList(new TruePredicate()));
-        resultSet.init();
         int size = resultSet.size();
         int countedSize = 0;
         for (QueryableEntry queryableEntry : resultSet) {
@@ -95,7 +92,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void contains_matchingPredicate_noOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
         AndResultSet resultSet = new AndResultSet(entries, asList(new TruePredicate()));
-        resultSet.init();
         for (QueryableEntry entry : entries) {
             assertContains(resultSet, entry);
         }
@@ -105,7 +101,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
     public void removeUnsupported() throws IOException {
         Set<QueryableEntry> entries = generateEntries(100000);
         AndResultSet resultSet = new AndResultSet(entries, asList(new TruePredicate()));
-        resultSet.init();
         resultSet.remove(resultSet.iterator().next());
     }
 

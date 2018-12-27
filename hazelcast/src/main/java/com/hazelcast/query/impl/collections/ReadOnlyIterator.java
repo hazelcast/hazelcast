@@ -14,24 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query.impl.collections;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.collections.LazySet;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.query.impl.QueryableEntry;
 
-import java.util.Map;
+import java.util.Iterator;
 
-/**
- * Lazy MultiResultSet for query results.
- */
-public abstract class LazyMultiResultSet<E> extends LazySet<E> {
+public class ReadOnlyIterator implements Iterator<QueryableEntry> {
 
-    /**
-     * addResultSet supplier to the resultSet & update estimated size with size
-     *
-     * @param resultSupplier
-     * @param resultSize
-     */
-    abstract void addResultSetSupplier(Supplier<Map<Data, E>> resultSupplier, int resultSize);
+    private final Iterator<QueryableEntry> delegate;
+
+    ReadOnlyIterator(final Iterator<QueryableEntry> iterator) {
+        this.delegate = iterator;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return delegate.hasNext();
+    }
+
+    @Override
+    public QueryableEntry next() {
+        return delegate.next();
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
 }

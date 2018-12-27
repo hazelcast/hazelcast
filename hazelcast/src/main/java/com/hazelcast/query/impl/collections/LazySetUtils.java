@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query.impl.collections;
 
-/**
- * Lazy ResultSet for query results. Store result suppliers.
- * Implementation must ensure that contains & iterator methods calls init method & collect supplier results.
- * Other collections contains LazyResultSet must call contains or iterator methods to initialize the lazy collection
- */
-public interface LazyResultSet {
+import com.hazelcast.util.function.BiConsumer;
 
-    /**
-     * Iterate through result suppliers and populate the result collection.
-     */
-    void init();
+public final class LazySetUtils {
 
-    /**
-     *
-     * @return estimated size on the lazy collection without initializing any data copy
-     */
-    int estimatedSize();
+    private LazySetUtils() {
+    }
 
+    public static <E> void addDeferredOperation(LazySet<E> lazySet, BiConsumer<Long, Integer> operation) {
+        lazySet.addDeferredOperation(operation);
+    }
 }

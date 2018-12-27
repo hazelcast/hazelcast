@@ -16,86 +16,52 @@
 
 package com.hazelcast.query.impl;
 
-import java.util.AbstractSet;
+import com.hazelcast.query.impl.collections.LazySet;
+import com.hazelcast.query.impl.collections.ReadOnlyCollectionDelegate;
+
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
 
 /**
  * Or result set for Predicates.
  */
-public class OrResultSet extends AbstractSet<QueryableEntry> implements LazyResultSet {
-
-    private static final int ENTRY_MULTIPLE = 4;
-    private static final int ENTRY_MIN_SIZE = 8;
+public class OrResultSet extends LazySet<QueryableEntry> {
 
     private final List<Set<QueryableEntry>> indexedResults;
-    private Set<QueryableEntry> entries;
     private final int estimatedSize;
 
     public OrResultSet(List<Set<QueryableEntry>> indexedResults) {
         this.indexedResults = indexedResults;
-        int resultSize = 0;
-        // Since all results are {@com.hazelcast.query.impl.LazyResultSet}, calling size has no cost
-        // and gave more accurate size estimate
+        int size = 0;
+        // Results may be {@com.hazelcast.query.impl.collections.LazySet}, so get estimated size
         for (Set<QueryableEntry> indexedResult : indexedResults) {
-            resultSize += indexedResult.size();
+            size += estimatedSizeOf(indexedResult);
         }
-        estimatedSize = resultSize;
+        estimatedSize = size;
     }
 
+    @Nonnull
     @Override
-    public boolean contains(Object o) {
-        for (Set<QueryableEntry> otherIndexedResult : indexedResults) {
-            if (otherIndexedResult.contains(o)) {
-                return true;
-            }
+    protected Set<QueryableEntry> initialize() {
+        if (indexedResults.isEmpty()) {
+            return Collections.emptySet();
         }
-        return false;
+        //Since combining all predicate results required (duplicate removal), we're paying copy cost again
+        //TODO : check what can be done to prevent second copy cost
+        Set<QueryableEntry> results = new HashSet<QueryableEntry>();
+        for (Set<QueryableEntry> result : indexedResults) {
+            results.addAll(result);
+        }
+        return new ReadOnlyCollectionDelegate(results);
     }
 
-    @Override
-    public Iterator<QueryableEntry> iterator() {
-        init();
-        return entries.iterator();
-    }
-
-    @Override
-    public int size() {
-        return estimatedSize();
-    }
-
-    /**
-     * @return returns estimated size without allocating the full result set
-     */
     @Override
     public int estimatedSize() {
-        if (entries == null) {
-            return estimatedSize;
-        } else {
-            return entries.size();
-        }
-    }
-
-    @Override
-    public void init() {
-        if (entries == null) {
-            if (indexedResults.isEmpty()) {
-                entries = Collections.emptySet();
-            } else {
-                if (indexedResults.size() == 1) {
-                    entries = new HashSet<QueryableEntry>(indexedResults.get(0));
-                } else {
-                    entries = createHashSet(Math.max(ENTRY_MIN_SIZE, indexedResults.size() * ENTRY_MULTIPLE));
-                    for (Set<QueryableEntry> result : indexedResults) {
-                        entries.addAll(result);
-                    }
-                }
-            }
-        }
+        return estimatedSize;
     }
 }

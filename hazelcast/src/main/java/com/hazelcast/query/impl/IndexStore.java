@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.collections.LazySet;
 
 import java.util.Set;
 
@@ -32,8 +33,8 @@ public interface IndexStore {
     void clear();
     void destroy();
 
-    Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
-    Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
-    Set<QueryableEntry> getRecords(Comparable value);
-    Set<QueryableEntry> getRecords(Set<Comparable> values);
+    LazySet<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
+    LazySet<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
+    LazySet<QueryableEntry> getRecords(Comparable value);
+    LazySet<QueryableEntry> getRecords(Set<Comparable> values);
 }

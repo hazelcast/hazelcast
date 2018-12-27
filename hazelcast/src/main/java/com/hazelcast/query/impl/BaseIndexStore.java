@@ -18,13 +18,13 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.collections.LazySet;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.util.function.Supplier;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -207,7 +207,7 @@ public abstract class BaseIndexStore implements IndexStore {
         resultSet.addResultSetSupplier(new RecordSupplier(records), getRecordsSize(records));
     }
 
-    final Set<QueryableEntry> toSingleResultSet(Map<Data, QueryableEntry> records) {
+    final LazySet<QueryableEntry> toSingleResultSet(Map<Data, QueryableEntry> records) {
         return new LazySingleResultSet(new RecordSupplier(records), getRecordsSize(records));
     }
 
@@ -223,9 +223,9 @@ public abstract class BaseIndexStore implements IndexStore {
         Object invoke(A param1, B param2);
     }
 
-    class RecordSupplier implements Supplier<Map<Data, QueryableEntry>> {
+    final class RecordSupplier implements Supplier<Map<Data, QueryableEntry>> {
 
-        final Map<Data, QueryableEntry> orgRecords;
+        private final Map<Data, QueryableEntry> orgRecords;
 
         RecordSupplier(Map<Data, QueryableEntry> orgRecords) {
             this.orgRecords = orgRecords;
