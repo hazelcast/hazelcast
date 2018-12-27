@@ -126,8 +126,17 @@ final class HazelcastKubernetesDiscoveryStrategy
 
     private String discoverZone() {
         try {
-            String hostname = InetAddress.getLocalHost().getHostName();
-            return client.zone(namespace, hostname);
+            String podName = System.getenv("POD_NAME");
+            if (podName == null) {
+                podName = System.getenv("HOSTNAME");
+            }
+            if (podName == null) {
+                podName = InetAddress.getLocalHost().getHostName();
+            }
+            String zone = client.zone(namespace, podName);
+            if (zone != null) {
+                return zone;
+            }
         } catch (Exception e) {
             getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
             getLogger().finest(e);
