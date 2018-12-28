@@ -164,7 +164,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
                 Object keyObject = queryEntry.getKey();
-                Object valueObject = queryEntry.getValue();
+                Object valueObject = toObject(queryEntry.getValueData());
                 Map.Entry simpleEntry = new AbstractMap.SimpleEntry(keyObject, valueObject);
                 resultingSet.add(simpleEntry);
             }
@@ -185,7 +185,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                Object valueObject = queryEntry.getValue();
+                Object valueObject = toObject(queryEntry.getValueData());
                 resultingSet.add((V) valueObject);
             }
         }

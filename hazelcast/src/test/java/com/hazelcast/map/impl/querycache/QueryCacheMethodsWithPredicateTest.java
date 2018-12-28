@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.mapreduce.helpers.Employee;
@@ -24,26 +25,49 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSupport {
 
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
+
+    @Parameters(name = "inMemoryFormat: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {BINARY}, {OBJECT},
+        });
+    }
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Override
+    InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
+    }
 
     @Test
     public void testKeySet_onIndexedField() {
@@ -96,6 +120,50 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
         int smallerThan = 17;
         int expectedSize = 17;
         assertKeySetSizeEventually(expectedSize, new SqlPredicate("id < " + smallerThan), cache);
+    }
+
+    @Test
+    public void testKeySetIsNotBackedByQueryCache() {
+        int count = 111;
+        IMap<Employee, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+
+        for (int i = 0; i < count; i++) {
+            map.put(new Employee(i), new Employee(i));
+        }
+
+        Predicate predicate = Predicates.lessThan("id", count);
+        QueryCache<Employee, Employee> cache = map.getQueryCache(cacheName);
+        cache.addIndex("id", true);
+
+        for (Map.Entry<Employee, Employee> entry: cache.entrySet(predicate)) {
+            entry.getValue().setAge(Employee.MAX_AGE + 1);
+        }
+
+        for (Map.Entry<Employee, Employee> entry: cache.entrySet(predicate)) {
+            assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
+        }
+    }
+
+    @Test
+    public void testKeySetIsNotBackedByQueryCache_nonIndexedAttribute() {
+        int count = 111;
+        IMap<Employee, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+
+        for (int i = 0; i < count; i++) {
+            map.put(new Employee(i), new Employee(i));
+        }
+
+        Predicate predicate = Predicates.lessThan("salary", Employee.MAX_SALARY);
+        QueryCache<Employee, Employee> cache = map.getQueryCache(cacheName);
+        cache.addIndex("id", true);
+
+        for (Map.Entry<Employee, Employee> entry: cache.entrySet(predicate)) {
+            entry.getValue().setAge(Employee.MAX_AGE + 1);
+        }
+
+        for (Map.Entry<Employee, Employee> entry: cache.entrySet(predicate)) {
+            assertNotEquals(Employee.MAX_AGE + 1, entry.getValue().getAge());
+        }
     }
 
     @Test
