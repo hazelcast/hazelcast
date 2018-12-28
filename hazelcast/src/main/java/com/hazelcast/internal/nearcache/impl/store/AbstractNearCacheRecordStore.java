@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
+import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.RESERVED;
@@ -142,11 +143,9 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract long getRecordStorageMemoryCost(R record);
 
-    protected abstract R valueToRecord(V value);
+    protected abstract R createRecord(V value);
 
     protected abstract void updateRecordValue(R record, V value);
-
-    protected abstract V recordToValue(R record);
 
     protected abstract R getOrCreateToReserve(K key, Data keyData);
 
@@ -185,6 +184,13 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         } else {
             return record.isIdleAt(maxIdleMillis, now);
         }
+    }
+
+    protected V recordToValue(R record) {
+        if (record.getValue() == null) {
+            return (V) CACHED_AS_NULL;
+        }
+        return toValue(record.getValue());
     }
 
     @SuppressWarnings("unused")
@@ -276,7 +282,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         R record = null;
         R oldRecord = null;
         try {
-            record = valueToRecord((V) selectInMemoryFormatFriendlyValue(inMemoryFormat, value, valueData));
+            record = createRecord((V) selectInMemoryFormatFriendlyValue(inMemoryFormat, value, valueData));
             onRecordCreate(key, keyData, record);
             oldRecord = putRecord(key, record);
             if (oldRecord == null) {
@@ -474,7 +480,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         public R apply(K key) {
             R record = null;
             try {
-                record = valueToRecord(null);
+                record = createRecord(null);
                 onRecordCreate(key, keyData, record);
                 record.casRecordState(READ_PERMITTED, RESERVED);
             } catch (Throwable throwable) {

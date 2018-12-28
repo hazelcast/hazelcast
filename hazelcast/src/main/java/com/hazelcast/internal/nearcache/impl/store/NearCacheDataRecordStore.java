@@ -21,7 +21,6 @@ import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_INTEGER_FIELD_TYPES;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_LONG_FIELD_TYPES;
@@ -79,7 +78,7 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     }
 
     @Override
-    protected NearCacheDataRecord valueToRecord(V value) {
+    protected NearCacheDataRecord createRecord(V value) {
         Data dataValue = toData(value);
         long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
@@ -87,14 +86,6 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
         } else {
             return new NearCacheDataRecord(dataValue, creationTime, TIME_NOT_SET);
         }
-    }
-
-    @Override
-    protected V recordToValue(NearCacheDataRecord record) {
-        if (record.getValue() == null) {
-            return (V) CACHED_AS_NULL;
-        }
-        return toValue(record.getValue());
     }
 
     @Override

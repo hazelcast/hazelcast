@@ -20,7 +20,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 
@@ -53,7 +52,7 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     }
 
     @Override
-    protected NearCacheObjectRecord<V> valueToRecord(V value) {
+    protected NearCacheObjectRecord<V> createRecord(V value) {
         value = toValue(value);
         long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
@@ -66,13 +65,5 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     @Override
     protected void updateRecordValue(NearCacheObjectRecord<V> record, V value) {
         record.setValue(toValue(value));
-    }
-
-    @Override
-    protected V recordToValue(NearCacheObjectRecord<V> record) {
-        if (record.getValue() == null) {
-            return (V) CACHED_AS_NULL;
-        }
-        return record.getValue();
     }
 }
