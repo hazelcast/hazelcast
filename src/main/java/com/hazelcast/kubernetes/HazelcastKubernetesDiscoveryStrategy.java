@@ -138,9 +138,10 @@ final class HazelcastKubernetesDiscoveryStrategy
                 return zone;
             }
         } catch (Exception e) {
-            getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
+            // only log the exception and the message, Hazelcast should still start
             getLogger().finest(e);
         }
+        getLogger().warning("Cannot fetch the current zone, ZONE_AWARE feature is disabled");
         return "unknown";
     }
 
