@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -32,6 +33,10 @@ public abstract class AbstractQueryCacheTestSupport extends HazelcastTestSupport
     protected String mapName = randomString();
     protected String cacheName = randomString();
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+
+    InMemoryFormat getInMemoryFormat() {
+        return InMemoryFormat.BINARY;
+    }
 
     void populateMap(IMap<Integer, Employee> map, int count) {
         populateMap(map, 0, count);
@@ -64,6 +69,7 @@ public abstract class AbstractQueryCacheTestSupport extends HazelcastTestSupport
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
         queryCacheConfig.getPredicateConfig().setImplementation(predicate);
+        queryCacheConfig.setInMemoryFormat(getInMemoryFormat());
         config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
 
         return factory.newInstances(config)[0].getMap(mapName);

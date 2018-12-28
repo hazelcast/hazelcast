@@ -35,6 +35,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
@@ -343,7 +344,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
             for (QueryableEntry entry : query) {
-                K key = (K) entry.getKey();
+                K key = toObject(entry.getKeyData());
                 resultingSet.add(key);
             }
         } else {
@@ -362,7 +363,9 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
             for (QueryableEntry entry : query) {
-                resultingSet.add(entry);
+                Map.Entry<K, V> copyEntry = new CachedQueryEntry<K, V>(serializationService, entry.getKeyData(),
+                        entry.getValueData(), null);
+                resultingSet.add(copyEntry);
             }
         } else {
             doFullEntryScan(predicate, resultingSet);
@@ -383,7 +386,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
             for (QueryableEntry entry : query) {
-                resultingSet.add((V) entry.getValue());
+                resultingSet.add((V) toObject(entry.getValueData()));
             }
         } else {
             doFullValueScan(predicate, resultingSet);
