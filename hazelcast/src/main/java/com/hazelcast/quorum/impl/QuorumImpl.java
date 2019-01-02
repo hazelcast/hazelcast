@@ -198,30 +198,43 @@ public class QuorumImpl implements Quorum {
      * @throws IllegalArgumentException if the quorum configuration type is not handled
      */
     private boolean isQuorumNeeded(Operation op) {
-        if (op instanceof QuorumCheckAwareOperation
-                && !((QuorumCheckAwareOperation) op).shouldCheckQuorum()) {
-            return false;
-        }
-
         QuorumType type = config.getType();
         switch (type) {
             case WRITE:
-                return isWriteOperation(op);
+                return isWriteOperation(op) && shouldCheckQuorum(op);
             case READ:
-                return isReadOperation(op);
+                return isReadOperation(op) && shouldCheckQuorum(op);
             case READ_WRITE:
-                return isReadOperation(op) || isWriteOperation(op);
+                return (isReadOperation(op) || isWriteOperation(op)) && shouldCheckQuorum(op);
             default:
                 throw new IllegalStateException("Unhandled quorum type: " + type);
         }
     }
 
+    /**
+     * Returns {@code true} if this operation is marked as a read-only operation.
+     * If this method returns {@code false}, the operation still might be
+     * read-only but is not marked as such.
+     */
     private static boolean isReadOperation(Operation op) {
         return op instanceof ReadonlyOperation;
     }
 
+    /**
+     * Returns {@code true} if this operation is marked as a mutating operation.
+     * If this method returns {@code false}, the operation still might be
+     * mutating but is not marked as such.
+     */
     private static boolean isWriteOperation(Operation op) {
         return op instanceof MutatingOperation;
+    }
+
+    /**
+     * Returns {@code true} if the operation allows checking for quorum,
+     * {@code false} if the quorum check does not apply to this operation.
+     */
+    private static boolean shouldCheckQuorum(Operation op) {
+        return !(op instanceof QuorumCheckAwareOperation) || ((QuorumCheckAwareOperation) op).shouldCheckQuorum();
     }
 
     /**
