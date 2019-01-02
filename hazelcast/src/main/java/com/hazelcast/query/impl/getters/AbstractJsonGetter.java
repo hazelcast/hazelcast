@@ -24,10 +24,15 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public abstract class AbstractJsonGetter extends Getter {
 
     private static final String DELIMITER = "\\.|\\[";
+
+    AbstractJsonGetter() {
+        super(null);
+    }
 
     AbstractJsonGetter(Getter parent) {
         super(parent);
@@ -240,7 +245,11 @@ public abstract class AbstractJsonGetter extends Getter {
         }
     }
 
-    private String[] getPath(String attributePath) {
-        return attributePath.split(DELIMITER);
+    public static String[] getPath(String attributePath) {
+        String[] path = attributePath.split(DELIMITER);
+        if (path[0].length() == 0) {
+            path = Arrays.copyOfRange(path, 1, path.length);
+        }
+        return path;
     }
 }

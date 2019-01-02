@@ -26,13 +26,11 @@ import static com.hazelcast.internal.serialization.impl.HeapData.HEAP_DATA_OVERH
 
 public final class JsonDataGetter extends AbstractJsonGetter {
 
-    public static final JsonDataGetter INSTANCE = new JsonDataGetter();
-
     private static final int UTF_CHARACTER_COUNT_FIELD_SIZE = 4;
 
     private JsonFactory factory = new JsonFactory();
 
-    private JsonDataGetter() {
+    public JsonDataGetter() {
         super(null);
     }
 
