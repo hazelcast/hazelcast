@@ -1303,7 +1303,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         HazelcastJsonValue retrieved = map.get("item1");
 
         assertEquals(value, retrieved);
-        assertEquals(4, Json.parse(retrieved.toString()).asObject().get("age").asInt());
+        assertEquals(4, Json.parse(retrieved.toJsonString()).asObject().get("age").asInt());
     }
 
     @Test

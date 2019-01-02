@@ -55,7 +55,7 @@ public abstract class AbstractJsonSchemaTest {
 
     protected NavigableJsonInputAdapter toAdapter(HazelcastJsonValue jsonValue) {
         if (getInMemoryFormay() == InMemoryFormat.OBJECT) {
-            return new StringNavigableJsonAdapter(jsonValue.toString(), 0);
+            return new StringNavigableJsonAdapter(jsonValue.toJsonString(), 0);
         } else {
             return new DataInputNavigableJsonAdapter(serializationService.createObjectDataInput(serializationService.toData(jsonValue)), JSON_UTF8_START_OFFSET);
         }

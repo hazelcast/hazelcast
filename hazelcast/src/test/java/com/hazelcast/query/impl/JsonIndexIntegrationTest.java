@@ -179,7 +179,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry<Integer, HazelcastJsonValue> entry) {
-            JsonObject jsonObject = Json.parse(entry.getValue().toString()).asObject();
+            JsonObject jsonObject = Json.parse(entry.getValue().toJsonString()).asObject();
             jsonObject.set("age", 0);
             jsonObject.set("active", false);
 
