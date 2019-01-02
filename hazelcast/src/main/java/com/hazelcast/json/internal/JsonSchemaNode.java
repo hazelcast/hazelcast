@@ -19,7 +19,7 @@ package com.hazelcast.json.internal;
 /**
  * A node that describes either a JsonValue
  */
-abstract class JsonSchemaNode {
+public abstract class JsonSchemaNode {
 
     private JsonSchemaStructNode parent;
 

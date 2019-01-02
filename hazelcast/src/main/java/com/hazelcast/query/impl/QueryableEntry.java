@@ -16,14 +16,15 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.query.Metadata;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
@@ -46,6 +47,16 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
 
     protected InternalSerializationService serializationService;
     protected Extractors extractors;
+
+    private Metadata metadata;
+
+    public Metadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
+    }
 
     @Override
     public Object getAttributeValue(String attributeName) throws QueryException {
@@ -78,7 +89,11 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = getTargetObject(isKey);
-            result = extractAttributeValueFromTargetObject(extractors, attributeName, target);
+            Object metadata = getMetadataOrNull(this.metadata, isKey);
+            result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
+        }
+        if (result instanceof HazelcastJsonValue) {
+            return Json.parse(result.toString());
         }
         return result;
     }
@@ -101,13 +116,13 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
      * an instance of the QueryableEntry, but is in possession of key and value.
      */
     static Object extractAttributeValue(Extractors extractors, InternalSerializationService serializationService,
-                                        String attributeName, Data key, Object value) throws QueryException {
+                                        String attributeName, Data key, Object value, Object metadata) throws QueryException {
         Object result = extractAttributeValueIfAttributeQueryConstant(serializationService, attributeName, key, value);
         if (result == null) {
             boolean isKey = startsWithKeyConstant(attributeName);
             attributeName = getAttributeName(isKey, attributeName);
             Object target = isKey ? key : value;
-            result = extractAttributeValueFromTargetObject(extractors, attributeName, target);
+            result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
         }
         return result;
     }
@@ -138,8 +153,8 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     private static Object extractAttributeValueFromTargetObject(Extractors extractors,
-                                                                String attributeName, Object target) {
-        return extractors.extract(target, attributeName);
+                                                                String attributeName, Object target, Object metadata) {
+        return extractors.extract(target, attributeName, metadata);
     }
 
     public static AttributeType extractAttributeType(Object attributeValue) {
@@ -171,9 +186,6 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         if (extractedSingleResult == null) {
             return null;
         }
-        if (extractedSingleResult instanceof HazelcastJsonValue) {
-            return extractAttributeTypeFromJsonValue(Json.parse(extractedSingleResult.toString()));
-        }
         if (extractedSingleResult instanceof Portable) {
             return AttributeType.PORTABLE;
         }
@@ -193,6 +205,13 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             return null;
         }
         return ReflectionHelper.getAttributeType(firstNonNullResult.getClass());
+    }
+
+    private static Object getMetadataOrNull(Metadata metadata, boolean isKey) {
+        if (metadata == null) {
+            return null;
+        }
+        return metadata.get(isKey);
     }
 
 }

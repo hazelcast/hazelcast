@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.map.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
-/**
- * Factory for creating records. Created for every partition.
- *
- * @param <T> the type of object which is going to be created.
- */
-public interface RecordFactory<T> {
+import java.io.IOException;
 
-    Record<T> newRecord(Data key, Object value);
+public interface MetadataInitializer {
 
-    void setValue(Record<T> record, Object value);
+    Object createFromData(Data keyData) throws IOException;
+
+    Object createFromObject(Object object) throws IOException;
 }

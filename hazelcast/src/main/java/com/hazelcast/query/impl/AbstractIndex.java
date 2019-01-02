@@ -215,11 +215,11 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private Object extractAttributeValue(Data key, Object value) {
         if (components == null) {
-            return QueryableEntry.extractAttributeValue(extractors, ss, name, key, value);
+            return QueryableEntry.extractAttributeValue(extractors, ss, name, key, value, null);
         } else {
             Comparable[] valueComponents = new Comparable[components.length];
             for (int i = 0; i < components.length; ++i) {
-                Object extractedValue = QueryableEntry.extractAttributeValue(extractors, ss, components[i], key, value);
+                Object extractedValue = QueryableEntry.extractAttributeValue(extractors, ss, components[i], key, value, null);
                 if (extractedValue instanceof MultiResult) {
                     throw new IllegalStateException(
                             "Collection/array attributes are not supported by composite indexes: " + components[i]);

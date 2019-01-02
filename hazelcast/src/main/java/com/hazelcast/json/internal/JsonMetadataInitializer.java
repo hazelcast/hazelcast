@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.json.internal;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.hazelcast.nio.serialization.Data;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
+import static com.hazelcast.internal.serialization.impl.HeapData.HEAP_DATA_OVERHEAD;
+
+/**
+ * Used to create metadata for Json data.
+ */
+public final class JsonMetadataInitializer {
+
+    private static final int UTF_CHAR_COUNT_FIELD_SIZE = 4;
+
+    private static final JsonFactory FACTORY = new JsonFactory();
+
+    private JsonMetadataInitializer() {
+        // default constructor
+    }
+
+    /**
+     * Creates Json schema from Data instance without deserialization.
+     * @param data
+     * @return
+     * @throws IOException
+     */
+    public static JsonSchemaNode createSchema(Data data) throws IOException {
+        JsonParser parser = FACTORY.createParser(new ByteArrayInputStream(data.toByteArray(),
+                HEAP_DATA_OVERHEAD + UTF_CHAR_COUNT_FIELD_SIZE, data.dataSize() - UTF_CHAR_COUNT_FIELD_SIZE));
+        return JsonSchemaHelper.createSchema(parser);
+    }
+
+    /**
+     * Creates Json schema from Json string.
+     * @param string
+     * @return
+     * @throws IOException
+     */
+    public static JsonSchemaNode createSchema(String string) throws IOException {
+        JsonParser parser = FACTORY.createParser(string);
+        return JsonSchemaHelper.createSchema(parser);
+    }
+}

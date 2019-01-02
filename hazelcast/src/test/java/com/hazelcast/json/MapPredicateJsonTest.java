@@ -577,6 +577,27 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSecondTimeKnownPatternIsUsed() {
+        IMap<String, JsonValue> map = instance.getMap(randomMapName());
+
+        HazelcastJsonValue p1 = putJsonString(map, "a", 30, true);
+        HazelcastJsonValue p2 = putJsonString(map, "b", 20, false);
+        HazelcastJsonValue p3 = putJsonString(map, "c", 10, true);
+
+        Collection<JsonValue> vals = map.values(Predicates.greaterEqual("name", "b"));
+
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+
+        vals = map.values(Predicates.greaterEqual("name", "b"));
+
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+    }
+
+    @Test
     public void testJsonPredicateOnKey() {
         JsonValue array1 = Json.array();
         array1.asArray().add(createNameAgeOnDuty("a", 50, false))

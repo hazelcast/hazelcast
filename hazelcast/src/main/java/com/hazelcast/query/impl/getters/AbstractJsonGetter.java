@@ -21,10 +21,22 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.JsonTokenId;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
+import com.hazelcast.json.internal.JsonPattern;
+import com.hazelcast.json.internal.JsonSchemaHelper;
+import com.hazelcast.json.internal.JsonSchemaNode;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractJsonGetter extends Getter {
+
+    private Map<String, JsonPattern> patternMap = new ConcurrentHashMap<String, JsonPattern>();
+
+    AbstractJsonGetter() {
+        super(null);
+    }
 
     AbstractJsonGetter(Getter parent) {
         super(parent);
@@ -113,6 +125,39 @@ public abstract class AbstractJsonGetter extends Getter {
         }
     }
 
+    JsonPattern getOrCreatePattern(NavigableJsonInputAdapter adapter,
+                                   JsonSchemaNode jsonSchemaNode,
+                                   JsonPathCursor pathCursor) {
+        JsonPattern knownPattern = patternMap.get(pathCursor.getAttributePath());
+        if (knownPattern == null) {
+            knownPattern = JsonSchemaHelper.createPattern(adapter, jsonSchemaNode, pathCursor);
+            if (knownPattern != null) {
+                patternMap.put(pathCursor.getAttributePath(), knownPattern);
+            }
+            pathCursor.reset();
+        }
+        return knownPattern;
+    }
+
+    @Override
+    Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+        if (metadata == null) {
+            return getValue(obj, attributePath);
+        }
+        JsonSchemaNode schemaNode = (JsonSchemaNode) metadata;
+        JsonPathCursor pathCursor = getPath(attributePath);
+
+        NavigableJsonInputAdapter adapter = annotate(obj);
+        JsonPattern knownPattern = getOrCreatePattern(adapter, schemaNode, pathCursor);
+        if (knownPattern == null) {
+            return null;
+        }
+        if (knownPattern.hasAny()) {
+            return getValue(obj, attributePath);
+        }
+        return JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor);
+    }
+
     @Override
     Class getReturnType() {
         throw new IllegalArgumentException("Non applicable for Json getters");
@@ -122,6 +167,8 @@ public abstract class AbstractJsonGetter extends Getter {
     boolean isCacheable() {
         return false;
     }
+
+    protected abstract NavigableJsonInputAdapter annotate(Object object);
 
     /**
      * Looks for the attribute with the given name only in current

@@ -18,24 +18,50 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
 
     @Override
-    void newRecordFactory(boolean isStatisticsEnabled, CacheDeserializedValues cacheDeserializedValues) {
+    void newRecordFactory(boolean isStatisticsEnabled,
+                          CacheDeserializedValues cacheDeserializedValues,
+                          MetadataInitializer metadataInitializer) {
         MapConfig mapConfig = new MapConfig()
                 .setStatisticsEnabled(isStatisticsEnabled)
                 .setCacheDeserializedValues(cacheDeserializedValues);
 
-        factory = new ObjectRecordFactory(mapConfig, serializationService);
+        factory = new ObjectRecordFactory(mapConfig, serializationService, metadataInitializer);
+    }
+
+    @Test
+    public void testMetadataInitializerIsCalledAtCreation() {
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
+        newRecord(factory, data1, object1);
+
+        assertEquals(1, metadataInitializer.getDataCall());
+        assertEquals(1, metadataInitializer.getObjectCall());
+    }
+
+    @Test
+    public void testMetadataInitializerIsCalledAtUpdate() {
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
+        record = newRecord(factory, data1, object1);
+
+        factory.setValue(record, object2);
+
+        assertEquals(1, metadataInitializer.getDataCall());
+        assertEquals(2, metadataInitializer.getObjectCall());
     }
 
     @Override

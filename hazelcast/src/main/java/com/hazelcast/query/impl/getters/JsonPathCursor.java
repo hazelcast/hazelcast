@@ -16,6 +16,10 @@
 
 package com.hazelcast.query.impl.getters;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.nio.charset.Charset;
+
 /**
  * Represents a query path for Json querying. Parsing of a query path
  * is lazy. This cursor splits parts of an attribute path by "."s and
@@ -23,8 +27,11 @@ package com.hazelcast.query.impl.getters;
  */
 public class JsonPathCursor {
 
+    private static final Charset UTF8_CHARSET = Charset.forName("UTF8");
+
     private String attributePath;
     private String current;
+    private byte[] currentAsUtf8;
     private int currentArrayIndex = -1;
     private boolean isArray;
     private boolean isAny;
@@ -37,6 +44,11 @@ public class JsonPathCursor {
     public JsonPathCursor(String attributePath) {
         this.attributePath = attributePath;
         cursor = 0;
+    }
+
+
+    public String getAttributePath() {
+        return attributePath;
     }
 
     /**
@@ -60,6 +72,22 @@ public class JsonPathCursor {
      */
     public String getCurrent() {
         return current;
+    }
+
+    /**
+     * Returns byte array of UTF8 encoded {@link #getCurrent()}. This
+     * method caches the UTF8 encoded byte array, so it is more
+     * efficient to call repeteadly.
+     *
+     * The returned byte array must not be modified!
+     * @return
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "Making a copy reverses the benefit of this method")
+    public byte[] getCurrentAsUTF8() {
+        if (currentAsUtf8 == null) {
+            currentAsUtf8 = current.getBytes(UTF8_CHARSET);
+        }
+        return currentAsUtf8;
     }
 
     /**
@@ -95,6 +123,7 @@ public class JsonPathCursor {
     }
 
     private void next() {
+        currentAsUtf8 = null;
         currentArrayIndex = -1;
         isAny = false;
         isArray = false;

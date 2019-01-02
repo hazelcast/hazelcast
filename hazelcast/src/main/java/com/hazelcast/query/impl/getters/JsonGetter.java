@@ -18,6 +18,9 @@ package com.hazelcast.query.impl.getters;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
+import com.hazelcast.internal.serialization.impl.StringNavigableJsonAdapter;
 
 import java.io.IOException;
 
@@ -29,6 +32,12 @@ public final class JsonGetter extends AbstractJsonGetter {
 
     protected JsonGetter() {
         super(null);
+    }
+
+    @Override
+    protected NavigableJsonInputAdapter annotate(Object object) {
+        HazelcastJsonValue hazelcastJson = (HazelcastJsonValue) object;
+        return new StringNavigableJsonAdapter(hazelcastJson.toString(), 0);
     }
 
     @Override

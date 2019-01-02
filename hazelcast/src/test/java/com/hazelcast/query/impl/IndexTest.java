@@ -20,7 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.map.impl.record.AbstractRecord;
+import com.hazelcast.map.impl.NoMetadataInitializer;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -89,7 +89,7 @@ public class IndexTest {
 
     private PartitioningStrategy partitionStrategy = new DefaultPartitioningStrategy();
 
-    final DataRecordFactory recordFactory = new DataRecordFactory(new MapConfig(), ss, partitionStrategy);
+    final DataRecordFactory recordFactory = new DataRecordFactory(new MapConfig(), ss, partitionStrategy, new NoMetadataInitializer());
 
     @Test
     public void testBasics() {
@@ -109,8 +109,7 @@ public class IndexTest {
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         assertNotNull(is.getIndex("favoriteCity"));
-        Record record = recordFactory.newRecord(value);
-        ((AbstractRecord) record).setKey(key);
+        Record record = recordFactory.newRecord(key, value);
         is.removeEntry(key, Records.getValueOrCachedValue(record, ss), Index.OperationSource.USER);
         assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
     }
@@ -464,8 +463,7 @@ public class IndexTest {
         }
 
         public Record toRecord() {
-            Record<Data> record = recordFactory.newRecord(attributeValue);
-            ((AbstractRecord) record).setKey(key);
+            Record<Data> record = recordFactory.newRecord(key, attributeValue);
             return record;
         }
     }

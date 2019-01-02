@@ -40,6 +40,10 @@ abstract class Getter {
         return getValue(obj);
     }
 
+    Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+        return getValue(obj, attributePath);
+    }
+
     /**
      * Returns extracted object type for non-generic getters. It is only applicable when
      * extracted object type can be determined before running the getter.

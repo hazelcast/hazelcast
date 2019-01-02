@@ -67,12 +67,12 @@ public final class Extractors {
         this.ss = ss;
     }
 
-    public Object extract(Object target, String attributeName) {
+    public Object extract(Object target, String attributeName, Object metadata) {
         Object targetObject = getTargetObject(target);
         if (targetObject != null) {
             Getter getter = getGetter(targetObject, attributeName);
             try {
-                return getter.getValue(targetObject, attributeName);
+                return getter.getValue(targetObject, attributeName, metadata);
             } catch (Exception ex) {
                 throw new QueryException(ex);
             }
@@ -140,7 +140,7 @@ public final class Extractors {
                 } else if (((Data) targetObject).isJson()) {
                     if (jsonDataGetter == null) {
                         // will be initialised a couple of times in the worst case
-                        jsonDataGetter = new JsonDataGetter();
+                        jsonDataGetter = new JsonDataGetter(ss);
                     }
                     return jsonDataGetter;
                 } else {

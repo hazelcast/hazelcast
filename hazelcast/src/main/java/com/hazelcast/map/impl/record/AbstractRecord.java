@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Metadata;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
@@ -58,8 +59,19 @@ public abstract class AbstractRecord<V> implements Record<V> {
     private volatile int lastAccessTime = NOT_AVAILABLE;
     private volatile int lastUpdateTime = NOT_AVAILABLE;
     private int creationTime = NOT_AVAILABLE;
+    private Metadata metadata;
 
     AbstractRecord() {
+    }
+
+    @Override
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
+    }
+
+    @Override
+    public Metadata getMetadata() {
+        return metadata;
     }
 
     @Override
