@@ -25,10 +25,6 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,7 +37,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -76,17 +71,6 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     protected Config getConfig() {
         Config config = super.getConfig();
         config.getMapConfig("default").setInMemoryFormat(inMemoryFormat);
-        config.getSerializationConfig().addPortableFactory(1, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                if (classId == 1) {
-                    return new MyPortable();
-                } else if (classId == 2) {
-                    return new LittlePortable();
-                }
-                return null;
-            }
-        });
         return config;
     }
 
@@ -629,75 +613,5 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertEquals(2, vals.size());
         assertTrue(vals.contains("one"));
         assertTrue(vals.contains("two"));
-    }
-
-    public static class MyPortable implements Portable {
-
-        private LittlePortable[] littlePortables;
-
-        public MyPortable() {
-
-        }
-
-        public MyPortable(LittlePortable[] littlePortables) {
-            this.littlePortables = littlePortables;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 1;
-        }
-
-        @Override
-        public int getClassId() {
-            return 1;
-        }
-
-        @Override
-        public void writePortable(PortableWriter writer) throws IOException {
-            writer.writePortableArray("littlePortables", this.littlePortables);
-        }
-
-        @Override
-        public void readPortable(PortableReader reader) throws IOException {
-            this.littlePortables = (LittlePortable[]) reader.readPortableArray("littlePortables");
-        }
-    }
-
-    public static class LittlePortable implements Portable {
-
-        private int real;
-        private int[] tempReals;
-
-        public LittlePortable() {
-
-        }
-
-        public LittlePortable(int real, int[] tempReals) {
-            this.real = real;
-            this.tempReals = tempReals;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 1;
-        }
-
-        @Override
-        public int getClassId() {
-            return 2;
-        }
-
-        @Override
-        public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeInt("real", this.real);
-            writer.writeIntArray("tempReals", this.tempReals);
-        }
-
-        @Override
-        public void readPortable(PortableReader reader) throws IOException {
-            this.real = reader.readInt("real");
-            this.tempReals = reader.readIntArray("tempReals");
-        }
     }
 }

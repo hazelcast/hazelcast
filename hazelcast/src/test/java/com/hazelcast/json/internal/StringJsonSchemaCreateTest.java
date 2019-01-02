@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl.getters;
+package com.hazelcast.json.internal;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.serialization.impl.HeapData.HEAP_DATA_OVERHEAD;
-
-public final class JsonDataGetter extends AbstractJsonGetter {
-
-    private static final int UTF_CHARACTER_COUNT_FIELD_SIZE = 4;
+@Category({ParallelTest.class, QuickTest.class})
+@RunWith(HazelcastParallelClassRunner.class)
+public class StringJsonSchemaCreateTest extends AbstractJsonSchemaCreateTest {
 
     private JsonFactory factory = new JsonFactory();
 
-    public JsonDataGetter() {
-        super(null);
-    }
-
-    protected JsonParser createParser(Object obj) throws IOException {
-        Data data = (Data) obj;
-        return factory.createParser(data.toByteArray(),
-                HEAP_DATA_OVERHEAD + UTF_CHARACTER_COUNT_FIELD_SIZE,
-                data.dataSize() - UTF_CHARACTER_COUNT_FIELD_SIZE);
+    protected JsonParser createParserFromString(String jsonString) throws IOException {
+        return factory.createParser(jsonString);
     }
 }

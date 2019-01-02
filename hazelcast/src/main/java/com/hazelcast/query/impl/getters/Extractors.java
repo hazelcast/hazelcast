@@ -43,6 +43,7 @@ public final class Extractors {
     private static final float EVICTION_PERCENTAGE = 0.2f;
 
     private volatile PortableGetter genericPortableGetter;
+    private volatile JsonDataGetter jsonDataGetter;
 
     /**
      * Maps the extractorAttributeName WITHOUT the arguments to a
@@ -131,14 +132,17 @@ public final class Extractors {
         } else {
             if (targetObject instanceof Data) {
                 if (((Data) targetObject).isPortable()) {
-                    //targetObject may be a Data whose object form is a json?
                     if (genericPortableGetter == null) {
                         // will be initialised a couple of times in the worst case
                         genericPortableGetter = new PortableGetter(ss);
                     }
                     return genericPortableGetter;
                 } else if (((Data) targetObject).isJson()) {
-                    return JsonDataGetter.INSTANCE;
+                    if (jsonDataGetter == null) {
+                        // will be initialised a couple of times in the worst case
+                        jsonDataGetter = new JsonDataGetter();
+                    }
+                    return jsonDataGetter;
                 } else {
                     throw new HazelcastSerializationException("No Data getter found for type " + ((Data) targetObject).getType());
                 }
