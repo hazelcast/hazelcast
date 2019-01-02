@@ -17,8 +17,8 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
@@ -81,8 +80,15 @@ public final class Extractors {
     }
 
     /**
-     * @return Data (in this case it's portable) or Object (in this case it's
-     * non-portable)
+     * Returns the form of this data that is queryable.
+     * Returns {@link Data} if {@code target} is
+     * <ul>
+     *     <li>a portable object either in Data form or Object form</li>
+     *     <li>a {@link HazelcastJsonValue} in Data form</li>
+     * </ul>
+     * Otherwise, returns object form.
+     *
+     * @return Data or Object
      */
     private Object getTargetObject(Object target) {
         Data targetData;
@@ -94,7 +100,7 @@ public final class Extractors {
         }
         if (target instanceof Data) {
             targetData = (Data) target;
-            if (targetData.isPortable() || targetData.getType() == JAVASCRIPT_JSON_SERIALIZATION_TYPE) {
+            if (targetData.isPortable() || targetData.isJson()) {
                 return targetData;
             } else {
                 // convert non-portable Data to object
@@ -131,7 +137,7 @@ public final class Extractors {
                         genericPortableGetter = new PortableGetter(ss);
                     }
                     return genericPortableGetter;
-                } else if (((Data) targetObject).getType() == JAVASCRIPT_JSON_SERIALIZATION_TYPE) {
+                } else if (((Data) targetObject).isJson()) {
                     return JsonDataGetter.INSTANCE;
                 } else {
                     throw new HazelcastSerializationException("No Data getter found for type " + ((Data) targetObject).getType());

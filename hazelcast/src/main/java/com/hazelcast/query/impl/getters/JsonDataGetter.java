@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,11 @@ import java.io.IOException;
 
 import static com.hazelcast.internal.serialization.impl.HeapData.HEAP_DATA_OVERHEAD;
 
-@SuppressWarnings("checkstyle:magicnumber")
 public final class JsonDataGetter extends AbstractJsonGetter {
 
     public static final JsonDataGetter INSTANCE = new JsonDataGetter();
+
+    private static final int UTF_CHARACTER_COUNT_FIELD_SIZE = 4;
 
     private JsonFactory factory = new JsonFactory();
 
@@ -37,6 +38,8 @@ public final class JsonDataGetter extends AbstractJsonGetter {
 
     protected JsonParser createParser(Object obj) throws IOException {
         Data data = (Data) obj;
-        return factory.createParser(data.toByteArray(), HEAP_DATA_OVERHEAD + 4, data.dataSize() - 4);
+        return factory.createParser(data.toByteArray(),
+                HEAP_DATA_OVERHEAD + UTF_CHARACTER_COUNT_FIELD_SIZE,
+                data.dataSize() - UTF_CHARACTER_COUNT_FIELD_SIZE);
     }
 }

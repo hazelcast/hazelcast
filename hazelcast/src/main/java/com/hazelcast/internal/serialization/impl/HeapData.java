@@ -163,6 +163,11 @@ public class HeapData implements Data {
     }
 
     @Override
+    public boolean isJson() {
+        return SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE == getType();
+    }
+
+    @Override
     public String toString() {
         return "HeapData{"
                 + "type=" + getType()

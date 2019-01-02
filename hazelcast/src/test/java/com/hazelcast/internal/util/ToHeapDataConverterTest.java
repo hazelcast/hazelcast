@@ -100,5 +100,10 @@ public class ToHeapDataConverterTest {
         public boolean isPortable() {
             return false;
         }
+
+        @Override
+        public boolean isJson() {
+            return false;
+        }
     }
 }

@@ -113,4 +113,12 @@ public interface Data {
      */
     boolean isPortable();
 
+    /**
+     * Returns true if this Data is created from a {@link com.hazelcast.json.HazelcastJson} object,
+     * false otherwise
+     *
+     * @return true if source object is <tt>HazelcastJson</tt>, false otherwise.
+     */
+    boolean isJson();
+
 }
