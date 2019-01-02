@@ -21,13 +21,10 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.JsonTokenId;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.IOException;
 
 public abstract class AbstractJsonGetter extends Getter {
-
-    private static final String DELIMITER = "\\.|\\[";
 
     AbstractJsonGetter(Getter parent) {
         super(parent);
@@ -65,8 +62,10 @@ public abstract class AbstractJsonGetter extends Getter {
         } else if (value.isString()) {
             return value.asString();
         }
-        throw new HazelcastSerializationException("Unknown Json type: " + value);
+        throw new IllegalArgumentException("Unknown Json type: " + value);
     }
+
+    abstract JsonParser createParser(Object obj) throws IOException;
 
     @Override
     Object getValue(Object obj) {
@@ -76,31 +75,28 @@ public abstract class AbstractJsonGetter extends Getter {
 
     @Override
     Object getValue(Object obj, String attributePath) throws Exception {
-        String[] paths = getPath(attributePath);
+        JsonPathCursor pathCursor = getPath(attributePath);
         JsonParser parser = createParser(obj);
 
         try {
             parser.nextToken();
-            for (int i = 0; i < paths.length; i++) {
-                String path = paths[i];
-                String arrayIndexText = getIndexTextOrNull(path);
-                if (arrayIndexText == null) {
+            while (pathCursor.getNext() != null) {
+                if (!pathCursor.isArray()) {
                     // non array case
-                    if (!findAttribute(parser, path)) {
+                    if (!findAttribute(parser, pathCursor)) {
                         return null;
                     }
                 } else {
                     // array case
-                    if ("any".equals(arrayIndexText)) {
-                        String lastPath = i + 1 < paths.length ? paths[i + 1] : null;
-                        return getMultiValue(parser, lastPath);
+                    if (pathCursor.isAny()) {
+                        return getMultiValue(parser, pathCursor);
                     } else {
                         JsonToken token = parser.currentToken();
                         if (token != JsonToken.START_ARRAY) {
                             return null;
                         }
                         token = parser.nextToken();
-                        int arrayIndex = Integer.parseInt(arrayIndexText);
+                        int arrayIndex = pathCursor.getArrayIndex();
                         for (int j = 0; j < arrayIndex; j++) {
                             if (token == JsonToken.END_ARRAY) {
                                 return null;
@@ -127,20 +123,21 @@ public abstract class AbstractJsonGetter extends Getter {
         return false;
     }
 
-    abstract JsonParser createParser(Object obj) throws IOException;
-
     /**
-     * Looks for the attribute with the given name only in current object. If found, parser points to the value
-     * of the given attribute when this method returns. If given {@code path} does not exist in the current level,
-     * then parser points to matching {@code JsonToken.END_OBJECT} of the current object.
+     * Looks for the attribute with the given name only in current
+     * object. If found, parser points to the value of the given
+     * attribute when this method returns. If given path does not exist
+     * in the current level, then parser points to matching
+     * {@code JsonToken.END_OBJECT} of the current object.
      *
      * Assumes the parser points to a {@code JsonToken.START_OBJECT}
+     *
      * @param parser
-     * @param path
+     * @param pathCursor
      * @return {@code true} if given attribute name exists in the current object
      * @throws IOException
      */
-    private boolean findAttribute(JsonParser parser, String path) throws IOException {
+    private boolean findAttribute(JsonParser parser, JsonPathCursor pathCursor) throws IOException {
         JsonToken token = parser.getCurrentToken();
         if (token != JsonToken.START_OBJECT) {
             return false;
@@ -150,7 +147,7 @@ public abstract class AbstractJsonGetter extends Getter {
             if (token == JsonToken.END_OBJECT) {
                 return false;
             }
-            if (path.equals(parser.getCurrentName())) {
+            if (pathCursor.getCurrent().equals(parser.getCurrentName())) {
                 parser.nextToken();
                 return true;
             } else {
@@ -161,20 +158,22 @@ public abstract class AbstractJsonGetter extends Getter {
     }
 
     /**
-     * Traverses given array. If {@code lastPath} is {@code null}, this
-     * method adds all the scalar values in current array to the result.
-     * Otherwise, it traverses all objects in given array and adds their
-     * scalar values named {@code lastPath} to the result.
+     * Traverses given array. If {@code cursor#getNext()} is
+     * {@code null}, this method adds all the scalar values in current
+     * array to the result. Otherwise, it traverses all objects in
+     * given array and adds their scalar values named
+     * {@code cursor#getNext()} to the result.
      *
      * Assumes the parser points to an array.
      *
      * @param parser
-     * @param lastPath
+     * @param cursor
      * @return All matches in the current array that conform to
      *          [any].lastPath search
      * @throws IOException
      */
-    private MultiResult getMultiValue(JsonParser parser, String lastPath) throws IOException {
+    private MultiResult getMultiValue(JsonParser parser, JsonPathCursor cursor) throws IOException {
+        cursor.getNext();
         MultiResult<Object> multiResult = new MultiResult<Object>();
 
         JsonToken currentToken = parser.currentToken();
@@ -186,14 +185,14 @@ public abstract class AbstractJsonGetter extends Getter {
             if (currentToken == JsonToken.END_ARRAY) {
                 break;
             }
-            if (lastPath == null) {
+            if (cursor.getCurrent() == null) {
                 if (currentToken.isScalarValue()) {
                     multiResult.add(convertJsonTokenToValue(parser));
                 } else {
                     parser.skipChildren();
                 }
             } else {
-                if (currentToken == JsonToken.START_OBJECT && findAttribute(parser, lastPath)) {
+                if (currentToken == JsonToken.START_OBJECT && findAttribute(parser, cursor)) {
                     multiResult.add(convertJsonTokenToValue(parser));
                     while (parser.getCurrentToken() != JsonToken.END_OBJECT) {
                         if (parser.currentToken().isStructStart()) {
@@ -207,19 +206,6 @@ public abstract class AbstractJsonGetter extends Getter {
             }
         }
         return multiResult;
-    }
-
-    /**
-     * Extracts path name from a query if query is in the form of [pathName].*
-     * @param path
-     * @return path name of {@code null}
-     */
-    private String getIndexTextOrNull(String path) {
-        if (path.charAt(path.length() - 1) == ']') {
-            return path.substring(0, path.length() - 1);
-        } else {
-            return null;
-        }
     }
 
     private Object convertJsonTokenToValue(JsonParser parser) throws IOException {
@@ -240,7 +226,7 @@ public abstract class AbstractJsonGetter extends Getter {
         }
     }
 
-    private String[] getPath(String attributePath) {
-        return attributePath.split(DELIMITER);
+    public static JsonPathCursor getPath(String attributePath) {
+        return new JsonPathCursor(attributePath);
     }
 }

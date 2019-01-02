@@ -30,6 +30,8 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -120,6 +122,14 @@ public final class SerializationUtil {
 
     public static ObjectDataInputStream createObjectDataInputStream(InputStream in, InternalSerializationService ss) {
         return new ObjectDataInputStream(in, ss);
+    }
+
+    public static InputStream convertToInputStream(DataInput in, int offset) {
+        if (!(in instanceof ByteArrayObjectDataInput)) {
+            throw new HazelcastSerializationException("Cannot convert " + in.getClass().getName() + " to input stream");
+        }
+        ByteArrayObjectDataInput byteArrayInput = (ByteArrayObjectDataInput) in;
+        return new ByteArrayInputStream(byteArrayInput.data, offset, byteArrayInput.size - offset);
     }
 
     @SerializableByConvention
