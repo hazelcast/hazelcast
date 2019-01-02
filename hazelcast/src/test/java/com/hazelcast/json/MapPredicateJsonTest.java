@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -404,9 +404,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject value1 = Json.object();
         JsonObject value2 = Json.object();
         JsonObject value3 = Json.object();
-        JsonArray array1 = Json.array(new int[]{1, 2, 3, 4, 20});
-        JsonArray array2 = Json.array(new int[]{10, 20, 30});
-        JsonArray array3 = Json.array(new int[]{100, 200, 300, 400});
+        JsonArray array1 = Json.array(1, 2, 3, 4, 20);
+        JsonArray array2 = Json.array(10, 20, 30);
+        JsonArray array3 = Json.array(100, 200, 300, 400);
         value1.add("numbers", array1);
         value2.add("numbers", array2);
         value3.add("numbers", array3);
@@ -420,6 +420,80 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertEquals(2, vals.size());
         assertTrue(vals.contains(p2));
         assertTrue(vals.contains(p3));
+    }
+
+    @Test
+    public void testSkipsNestedArraysInAnyQuery() {
+        JsonObject value1 = Json.object();
+        JsonObject value2 = Json.object();
+        JsonObject value3 = Json.object();
+        JsonArray innerArray1 = Json.array(1001, 1002);
+        JsonArray array1 = Json.array();
+        array1.add(1).add(2).add(innerArray1).add(3).add(4).add(20);
+        JsonArray array2 = Json.array(10, 20, 30);
+        JsonArray array3 = Json.array(100, 200, 300, 400);
+        value1.add("numbers", array1);
+        value2.add("numbers", array2);
+        value3.add("numbers", array3);
+
+        IMap<String, JsonValue> map = instance.getMap(randomMapName());
+        putJsonString(map, "one", value1);
+        HazelcastJsonValue p2 = putJsonString(map, "two", value2);
+        HazelcastJsonValue p3 = putJsonString(map, "three", value3);
+
+        Collection<JsonValue> vals = map.values(Predicates.greaterThan("numbers[any]", 20));
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+    }
+
+    @Test
+    public void testSkipsNestedObjectsInAnyQuery() {
+        JsonObject value1 = Json.object();
+        JsonObject value2 = Json.object();
+        JsonObject value3 = Json.object();
+        JsonObject innerObject = Json.object()
+                .add("s1", 1001)
+                .add("s2", 1002);
+        JsonArray array1 = Json.array();
+        array1.add(1).add(2).add(innerObject).add(3).add(4).add(20);
+        JsonArray array2 = Json.array(10, 20, 30);
+        JsonArray array3 = Json.array(100, 200, 300, 400);
+        value1.add("numbers", array1);
+        value2.add("numbers", array2);
+        value3.add("numbers", array3);
+
+        IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        putJsonString(map, "one", value1);
+        HazelcastJsonValue p2 = putJsonString(map, "two", value2);
+        HazelcastJsonValue p3 = putJsonString(map, "three", value3);
+
+        Collection<HazelcastJsonValue> vals = map.values(Predicates.greaterThan("numbers[any]", 20));
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+    }
+
+    @Test
+    public void testSkipsScalarValuesInCaseOfAnyAndAttributeName() {
+        JsonArray array1 = Json.array(1, 2, 3, 5000);
+        JsonArray array2 = Json.array(1, 5000, 3, 5);
+        JsonArray array3 = Json.array(1, 5000, 30, 40);
+
+        array1.add(Json.object().add("innerAttribute", 5000));
+
+        JsonValue value1 = Json.object().add("arr", array1);
+        JsonValue value2 = Json.object().add("arr", array2);
+        JsonValue value3 = Json.object().add("arr", array3);
+
+        IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        HazelcastJsonValue p1 = putJsonString(map, "one", value1);
+        putJsonString(map, "two", value2);
+        putJsonString(map, "three", value3);
+
+        Collection<HazelcastJsonValue> vals = map.values(Predicates.equal("arr[any].innerAttribute", 5000));
+        assertEquals(1, vals.size());
+        assertTrue(vals.contains(p1));
     }
 
     @Test

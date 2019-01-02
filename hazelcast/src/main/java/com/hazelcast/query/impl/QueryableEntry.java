@@ -187,11 +187,12 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
 
     private AttributeType extractAttributeTypeFromJsonValue(JsonValue value) {
         if (value.isNumber()) {
-            try {
-                value.asLong();
-                return AttributeType.LONG;
-            } catch (NumberFormatException e) {
+            // toString method does not do any encoding in number case, it just returns stored string.
+            if (value.toString().contains(".")) {
+                // floating point number
                 return AttributeType.DOUBLE;
+            } else {
+                return AttributeType.LONG;
             }
         } else if (value.isBoolean()) {
             return AttributeType.BOOLEAN;

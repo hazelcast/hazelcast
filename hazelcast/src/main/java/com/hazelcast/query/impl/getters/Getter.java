@@ -40,7 +40,23 @@ abstract class Getter {
         return getValue(obj);
     }
 
+    /**
+     * Returns extracted object type for non-generic getters. It is only applicable when
+     * extracted object type can be determined before running the getter.
+     *
+     * @return The type of extracted attribute
+     */
     abstract Class getReturnType();
 
+    /**
+     * A getter instance may be re-used for all predicates that has the same target object
+     * type and attribute path.
+     *
+     * Generic getters such as {@link PortableGetter} should not be cached because the same
+     * getter is used for all entries regardless of attribute path. Instead, generic getters
+     * should use a singleton instance.
+     *
+     * @return {@code true} if this getter is cacheable, {@code false} otherwise.
+     */
     abstract boolean isCacheable();
 }
