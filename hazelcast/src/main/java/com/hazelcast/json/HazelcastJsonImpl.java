@@ -27,7 +27,7 @@ class HazelcastJsonImpl implements HazelcastJsonValue {
     }
 
     @Override
-    public String toString() {
+    public String toJsonString() {
         return string;
     }
 

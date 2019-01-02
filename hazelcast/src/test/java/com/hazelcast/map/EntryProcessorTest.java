@@ -491,14 +491,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (String key : keys) {
             HazelcastJsonValue jsonObject = map.get(key);
             assertNotNull(jsonObject);
-            assertTrue(Json.parse(jsonObject.toString()).asObject().get(JsonStringPropAdder.NEW_FIELD).asBoolean());
+            assertTrue(Json.parse(jsonObject.toJsonString()).asObject().get(JsonStringPropAdder.NEW_FIELD).asBoolean());
         }
 
         instance1.shutdown();
         for (Object key : keys) {
             HazelcastJsonValue jsonObject = map.get(key);
             assertNotNull(jsonObject);
-            assertTrue(Json.parse(jsonObject.toString()).asObject().get(JsonStringPropAdder.NEW_FIELD).asBoolean());
+            assertTrue(Json.parse(jsonObject.toJsonString()).asObject().get(JsonStringPropAdder.NEW_FIELD).asBoolean());
         }
     }
 
@@ -1847,7 +1847,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry<String, HazelcastJsonValue> entry) {
             HazelcastJsonValue value = entry.getValue();
-            JsonValue jsonValue = Json.parse(value.toString());
+            JsonValue jsonValue = Json.parse(value.toJsonString());
             jsonValue.asObject().add(NEW_FIELD, true);
             entry.setValue(HazelcastJson.fromString(jsonValue.toString()));
             return null;

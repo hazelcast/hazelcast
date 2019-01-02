@@ -37,7 +37,7 @@ public final class JsonGetter extends AbstractJsonGetter {
     @Override
     protected NavigableJsonInputAdapter annotate(Object object) {
         HazelcastJsonValue hazelcastJson = (HazelcastJsonValue) object;
-        return new StringNavigableJsonAdapter(hazelcastJson.toString(), 0);
+        return new StringNavigableJsonAdapter(hazelcastJson.toJsonString(), 0);
     }
 
     @Override

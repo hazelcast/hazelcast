@@ -35,7 +35,10 @@ package com.hazelcast.core;
  */
 public interface HazelcastJsonValue {
 
-    @Override
-    String toString();
+    /**
+     * This method returns a Json representation of the object
+     * @return Json representation
+     */
+    String toJsonString();
 
 }

@@ -325,11 +325,11 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class JsonStringSerializer extends SingletonSerializer<HazelcastJsonValue> {
+    public static final class HazelcastJsonValueSerializer extends SingletonSerializer<HazelcastJsonValue> {
 
         @Override
         public void write(ObjectDataOutput out, HazelcastJsonValue object) throws IOException {
-            out.writeUTF(object.toString());
+            out.writeUTF(object.toJsonString());
         }
 
         @Override

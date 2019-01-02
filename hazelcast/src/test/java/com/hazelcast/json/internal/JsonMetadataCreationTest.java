@@ -320,7 +320,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
 
         @Override
         public HazelcastJsonValue load(HazelcastJsonValue key) {
-            int value = Json.parse(key.toString()).asObject().get("value").asInt();
+            int value = Json.parse(key.toJsonString()).asObject().get("value").asInt();
             return createValue("value", value);
         }
 
@@ -328,7 +328,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         public Map<HazelcastJsonValue, HazelcastJsonValue> loadAll(Collection<HazelcastJsonValue> keys) {
             Map<HazelcastJsonValue, HazelcastJsonValue> localMap = new HashMap<HazelcastJsonValue, HazelcastJsonValue>();
             for (HazelcastJsonValue key : keys) {
-                int value = Json.parse(key.toString()).asObject().get("value").asInt();
+                int value = Json.parse(key.toJsonString()).asObject().get("value").asInt();
                 localMap.put(key, createValue("value", value));
             }
 
@@ -349,7 +349,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry<HazelcastJsonValue, Object> entry) {
             HazelcastJsonValue key = entry.getKey();
-            int value = Json.parse(key.toString()).asObject().get("value").asInt();
+            int value = Json.parse(key.toJsonString()).asObject().get("value").asInt();
             entry.setValue(createValue("value", value));
             return null;
         }

@@ -502,7 +502,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         Collection<HazelcastJsonValue> vals = map.values(Predicates.greaterEqual("this", 3));
         assertEquals(7, vals.size());
         for (HazelcastJsonValue value : vals) {
-            int intValue = Json.parse(value.toString()).asInt();
+            int intValue = Json.parse(value.toJsonString()).asInt();
             assertTrue(intValue >= 3);
             assertGreaterOrEquals("predicate result ", intValue, 3);
         }
@@ -517,7 +517,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         Collection<HazelcastJsonValue> vals = map.values(Predicates.greaterEqual("this", "s3"));
         assertEquals(7, vals.size());
         for (HazelcastJsonValue value : vals) {
-            String stringVal = Json.parse(value.toString()).asString();
+            String stringVal = Json.parse(value.toJsonString()).asString();
             assertTrue(stringVal.compareTo("s3") >= 0);
         }
     }
@@ -532,7 +532,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertEquals(7, vals.size());
         for (Map.Entry<Integer, HazelcastJsonValue> entry : vals) {
             assertTrue(entry.getKey() < 7);
-            assertEquals("true", entry.getValue().toString());
+            assertEquals("true", entry.getValue().toJsonString());
         }
 
     }

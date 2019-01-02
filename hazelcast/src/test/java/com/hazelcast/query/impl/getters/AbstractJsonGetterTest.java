@@ -137,7 +137,7 @@ public class AbstractJsonGetterTest {
     }
 
     private JsonSchemaNode createMetadata(HazelcastJsonValue value) throws IOException {
-        return JsonSchemaHelper.createSchema(factory.createParser(value.toString()));
+        return JsonSchemaHelper.createSchema(factory.createParser(value.toJsonString()));
     }
 
     private class GetterRunner implements Runnable {
