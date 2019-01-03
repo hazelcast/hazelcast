@@ -41,6 +41,14 @@ public class LocalLockCleanupOperation extends UnlockOperation
 
     private final String uuid;
 
+    /**
+     * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
+     * coding conventions.
+     */
+    public LocalLockCleanupOperation() {
+        uuid = "";
+    }
+
     public LocalLockCleanupOperation(ObjectNamespace namespace, Data key, String uuid) {
         super(namespace, key, -1, true);
         this.uuid = uuid;
