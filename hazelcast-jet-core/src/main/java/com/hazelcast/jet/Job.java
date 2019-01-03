@@ -220,7 +220,7 @@ public interface Job {
      * <p>
      * You can call this method on a suspended job: in that case it will export
      * the last successful snapshot. You can also export the state of
-     * non-snapshotted jobs (those with {@link ProcessingGuarantee#NONE}.
+     * non-snapshotted jobs (those with {@link ProcessingGuarantee#NONE}).
      * <p>
      * If you issue any graceful job-control actions such as a graceful member
      * shutdown or suspending a snapshotted job while Jet is exporting a
@@ -232,6 +232,9 @@ public interface Job {
      *
      * @param name name of the snapshot. If name is already used, it will be
      *            overwritten
+     * @throws JetException if the job is in an incorrect state: completed,
+     *            cancelled, or also in the process of restarting or
+     *            suspending.
      */
     JobStateSnapshot exportSnapshot(String name);
 }
