@@ -25,12 +25,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.QuorumCheckAwareOperation;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
 
-public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
+public final class UnlockIfLeaseExpiredOperation extends UnlockOperation implements QuorumCheckAwareOperation {
 
     private int version;
 
@@ -43,7 +44,7 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         LockStoreImpl lockStore = getLockStore();
         int lockVersion = lockStore.getVersion(key);
         ILogger logger = getLogger();
@@ -93,5 +94,10 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
     @Override
     public int getId() {
         return LockDataSerializerHook.UNLOCK_IF_LEASE_EXPIRED;
+    }
+
+    @Override
+    public boolean shouldCheckQuorum() {
+        return false;
     }
 }

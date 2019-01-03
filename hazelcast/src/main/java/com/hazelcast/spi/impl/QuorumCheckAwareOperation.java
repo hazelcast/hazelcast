@@ -19,16 +19,21 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Marker interface for operations that change state/data.
- * Used for quorum to reject operations if the quorum size not satisfied.
- * <p>
- * Operations implementing {@link com.hazelcast.spi.BackupOperation} should
- * not be marked with this interface.
+ * Marker interface for operations which need to control whether the check
+ * for quorum will be performed. Internal operations (not triggered by the
+ * user) may need to skip the quorum check to conserve consistency of data.
  *
  * @see com.hazelcast.config.QuorumConfig
  * @see QuorumCheckAwareOperation
  * @see com.hazelcast.spi.ReadonlyOperation
  */
 @Beta
-public interface MutatingOperation {
+public interface QuorumCheckAwareOperation {
+
+    /**
+     * Returns {@code true} if the quorum check should be performed. Operations
+     * which require a quorum check may get rejected if there are not enough
+     * members in the cluster.
+     */
+    boolean shouldCheckQuorum();
 }

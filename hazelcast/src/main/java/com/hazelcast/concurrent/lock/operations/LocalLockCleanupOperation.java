@@ -26,12 +26,18 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.QuorumCheckAwareOperation;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
 
-public class LocalLockCleanupOperation extends UnlockOperation implements Notifier, BackupAwareOperation {
+/**
+ * Locally executed operation which unlocks a lock if it is held by a
+ * specific owner.
+ */
+public class LocalLockCleanupOperation extends UnlockOperation
+        implements Notifier, BackupAwareOperation, QuorumCheckAwareOperation {
 
     private final String uuid;
 
@@ -73,16 +79,21 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("LocalLockCleanupOperation is local only.");
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("LocalLockCleanupOperation is local only.");
     }
 
     @Override
     public int getId() {
         throw new UnsupportedOperationException("LocalLockCleanupOperation is local only.");
+    }
+
+    @Override
+    public boolean shouldCheckQuorum() {
+        return false;
     }
 }

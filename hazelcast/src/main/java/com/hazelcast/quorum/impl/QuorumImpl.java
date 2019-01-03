@@ -34,6 +34,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.QuorumCheckAwareOperation;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 
 import java.util.Collection;
@@ -43,7 +44,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * {@link QuorumImpl} can be used to notify quorum service for a particular quorum result that originated externally.
- *
+ * <p>
  * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
  * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
  * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
@@ -188,8 +189,9 @@ public class QuorumImpl implements Quorum {
     }
 
     /**
-     * Returns if quorum is needed for this operation. This is determined by the {@link QuorumConfig#type} and by the type
-     * of the operation - {@link ReadonlyOperation} or {@link MutatingOperation}.
+     * Returns if quorum is needed for this operation.
+     * The quorum is determined by the {@link QuorumConfig#type} and by the type of the operation -
+     * {@link ReadonlyOperation} or {@link MutatingOperation}.
      *
      * @param op the operation which is to be executed
      * @return if this quorum should be consulted for this operation
@@ -199,22 +201,40 @@ public class QuorumImpl implements Quorum {
         QuorumType type = config.getType();
         switch (type) {
             case WRITE:
-                return isWriteOperation(op);
+                return isWriteOperation(op) && shouldCheckQuorum(op);
             case READ:
-                return isReadOperation(op);
+                return isReadOperation(op) && shouldCheckQuorum(op);
             case READ_WRITE:
-                return isReadOperation(op) || isWriteOperation(op);
+                return (isReadOperation(op) || isWriteOperation(op)) && shouldCheckQuorum(op);
             default:
                 throw new IllegalStateException("Unhandled quorum type: " + type);
         }
     }
 
+    /**
+     * Returns {@code true} if this operation is marked as a read-only operation.
+     * If this method returns {@code false}, the operation still might be
+     * read-only but is not marked as such.
+     */
     private static boolean isReadOperation(Operation op) {
         return op instanceof ReadonlyOperation;
     }
 
+    /**
+     * Returns {@code true} if this operation is marked as a mutating operation.
+     * If this method returns {@code false}, the operation still might be
+     * mutating but is not marked as such.
+     */
     private static boolean isWriteOperation(Operation op) {
         return op instanceof MutatingOperation;
+    }
+
+    /**
+     * Returns {@code true} if the operation allows checking for quorum,
+     * {@code false} if the quorum check does not apply to this operation.
+     */
+    private static boolean shouldCheckQuorum(Operation op) {
+        return !(op instanceof QuorumCheckAwareOperation) || ((QuorumCheckAwareOperation) op).shouldCheckQuorum();
     }
 
     /**
