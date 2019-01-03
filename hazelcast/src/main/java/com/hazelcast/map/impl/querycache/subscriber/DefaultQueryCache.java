@@ -41,6 +41,7 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.MapUtil;
@@ -381,17 +382,17 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return Collections.emptySet();
         }
 
-        Set<V> resultingSet = new HashSet<V>();
+        List<Data> resultingList = new ArrayList<Data>();
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
             for (QueryableEntry entry : query) {
-                resultingSet.add((V) toObject(entry.getValueData()));
+                resultingList.add(entry.getValueData());
             }
         } else {
-            doFullValueScan(predicate, resultingSet);
+            doFullValueScan(predicate, resultingList);
         }
-        return resultingSet;
+        return new UnmodifiableLazyList<V>(resultingList, serializationService);
     }
 
     @Override

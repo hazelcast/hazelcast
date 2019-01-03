@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
@@ -33,7 +34,7 @@ import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
-import java.util.AbstractMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -163,15 +164,14 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                Object keyObject = queryEntry.getKey();
-                Object valueObject = toObject(queryEntry.getValueData());
-                Map.Entry simpleEntry = new AbstractMap.SimpleEntry(keyObject, valueObject);
+                Map.Entry simpleEntry = new LazyMapEntry(queryEntry.getKeyData(), queryEntry.getValueData(),
+                        serializationService);
                 resultingSet.add(simpleEntry);
             }
         }
     }
 
-    protected void doFullValueScan(Predicate predicate, Set<V> resultingSet) {
+    protected void doFullValueScan(Predicate predicate, List<Data> resultingSet) {
         InternalSerializationService serializationService = this.serializationService;
 
         CachedQueryEntry queryEntry = new CachedQueryEntry();
@@ -185,8 +185,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
             boolean valid = predicate.apply(queryEntry);
             if (valid) {
-                Object valueObject = toObject(queryEntry.getValueData());
-                resultingSet.add((V) valueObject);
+                resultingSet.add(queryEntry.getValueData());
             }
         }
     }
