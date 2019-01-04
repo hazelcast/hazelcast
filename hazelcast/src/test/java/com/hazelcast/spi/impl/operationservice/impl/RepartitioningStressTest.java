@@ -55,7 +55,7 @@ import static org.junit.Assert.fail;
 @Category(NightlyTest.class)
 public class RepartitioningStressTest extends HazelcastTestSupport {
 
-    private static final int DUPLICATE_OPS_TOLERANCE = 5;
+    private static final int DUPLICATE_OPS_TOLERANCE = 10;
 
     private static final int INITIAL_MEMBER_COUNT = 5;
     private static final int THREAD_COUNT = 10;
