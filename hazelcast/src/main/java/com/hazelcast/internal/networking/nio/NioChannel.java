@@ -147,13 +147,13 @@ public final class NioChannel extends AbstractChannel {
             inboundPipeline.requestClose();
             outboundPipeline.requestClose();
 
-            if (DELAY_MS > 0) {
-                try {
-                    Thread.sleep(DELAY_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
+//            if (DELAY_MS > 0) {
+//                try {
+//                    Thread.sleep(DELAY_MS);
+//                } catch (InterruptedException e) {
+//                    Thread.currentThread().interrupt();
+//                }
+//            }
 
             try {
                 socketChannel.close();

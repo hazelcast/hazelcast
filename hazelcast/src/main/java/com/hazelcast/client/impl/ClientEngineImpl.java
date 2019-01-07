@@ -248,8 +248,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         InternalOperationService operationService = nodeEngine.getOperationService();
         if (partitionId < 0) {
-            if(messageTask instanceof AuthenticationMessageTask){
-              messageTask.run();
+            if (messageTask instanceof AuthenticationMessageTask) {
+                messageTask.run();
             } else if (isUrgent(messageTask)) {
                 operationService.execute(new PriorityPartitionSpecificRunnable(messageTask));
             } else if (isQuery(messageTask)) {

@@ -97,15 +97,14 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     @Override
     public final void run() {
-        System.out.println(getClass().getSimpleName()+".run()");
+        //System.out.println(getClass().getSimpleName()+".run()");
         try {
             doRun();
         } catch (Throwable e) {
             handleProcessingFailure(e);
             e.printStackTrace();
         }
-        System.out.println(getClass().getSimpleName()+".run() complete");
-
+        //System.out.println(getClass().getSimpleName()+".run() complete");
     }
 
     protected void doRun() throws Throwable {

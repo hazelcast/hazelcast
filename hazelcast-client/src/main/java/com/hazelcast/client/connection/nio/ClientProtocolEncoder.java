@@ -45,7 +45,7 @@ public class ClientProtocolEncoder extends OutboundHandler<ByteBuffer, ByteBuffe
         compactOrClear(dst);
         try {
             dst.put(stringToBytes(CLIENT_BINARY_NEW));
-            System.out.println(channel+" ClientProtocolEncoder protocol written");
+           // System.out.println(channel+" ClientProtocolEncoder protocol written");
             channel.outboundPipeline().remove(this);
             return CLEAN;
         } finally {

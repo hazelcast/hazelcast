@@ -38,7 +38,7 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
     @Override
     public HandlerStatus onWrite() {
         int batchedItemsWritten = 0;
-        System.out.println(src);
+        //System.out.println(src);
 
         compactOrClear(dst);
         try {
@@ -63,7 +63,7 @@ public class ClientMessageEncoder extends OutboundHandler<Supplier<ClientMessage
             }
         } finally {
             dst.flip();
-            System.out.println(channel+" ClientMessageEncoder, batched items written:"+batchedItemsWritten);
+            //System.out.println(channel+" ClientMessageEncoder, batched items written:"+batchedItemsWritten);
         }
     }
 }

@@ -105,7 +105,7 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
             return CLEAN;
         } finally {
             compactOrClear(src);
-            System.out.println(channel+" ClientMessageDecoder messages read in batch:"+messagesReadInBatch);
+            //System.out.println(channel+" ClientMessageDecoder messages read in batch:"+messagesReadInBatch);
         }
     }
 
