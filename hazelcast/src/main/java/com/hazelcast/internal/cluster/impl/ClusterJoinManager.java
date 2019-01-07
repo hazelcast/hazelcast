@@ -588,7 +588,7 @@ public class ClusterJoinManager {
             return;
         }
 
-        if (clusterService.getMasterAddress() != null) {
+        if (clusterService.isJoined()) {
             if (!checkIfJoinRequestFromAnExistingMember(joinMessage, connection)) {
                 sendMasterAnswer(joinMessage.getAddress());
             }
