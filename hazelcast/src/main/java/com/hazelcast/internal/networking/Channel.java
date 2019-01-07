@@ -173,20 +173,7 @@ public interface Channel extends Closeable {
      */
     void start();
 
-    /**
-     * Closes the Channel.
-     *
-     * It could be that the actual closing of the Channel is executed asynchronous
-     * and completes at some point in the future. This is important for e.g. TLS
-     * goodbye handshake.
-     *
-     * This method is thread-safe.
-     *
-     * When the channel already is closed, the call is ignored.
-     */
-    void close() throws IOException;
-
-    /**
+      /**
      * Connects the channel.
      *
      * This call should only be made once and is not threadsafe.
@@ -205,6 +192,18 @@ public interface Channel extends Closeable {
      * @throws IOException if connecting fails.
      */
     void connect(InetSocketAddress address, int timeoutMillis) throws IOException;
+
+    /**
+     * Closes the Channel.
+     *
+     * This method is thread-safe.
+     *
+     * This method can safely be called from an IO thread. Close-listeners will not
+     * be executed on an IO thread.
+     *
+     * When the channel already is closed, the call is ignored.
+     */
+    void close() throws IOException;
 
     /**
      * Checks if this Channel is closed. This method is very cheap to make.
@@ -227,7 +226,10 @@ public interface Channel extends Closeable {
      * Checks if this side is the Channel is in client mode or server mode.
      *
      * A channel is in client-mode if it initiated the connection, and in
-     * server-mode if it was the one accepting the connection.
+     * server-mode if it was the one accepting the connection. Client mode isn't related
+     * to Hazelcast clients (although a Hazelcast client will always have clientMode=true).
+     * A connection from one member to another member can also have clientMode=true if that
+     * member connected to the other member.
      *
      * One of the reasons this property is valuable is for protocol/handshaking
      * so that it is clear distinction between the side that initiated the connection,

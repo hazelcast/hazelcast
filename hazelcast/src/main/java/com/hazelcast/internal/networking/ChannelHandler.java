@@ -133,19 +133,4 @@ public abstract class ChannelHandler<H extends ChannelHandler, S, D> {
      */
     public void interceptError(Throwable error) throws Throwable {
     }
-
-    /**
-     * Asks handler to trigger the closing process.
-     *
-     * Only has meaning currently for TLS. Probably this method will be replaced
-     * by some kind of general purpose event handler. An event can be thrown
-     * in the pipeline and will be pushed through each handler and it is up
-     * to the handler to respond (or not). SO we could have a close event, but
-     * also other events like handlers sending messages to each other which requires
-     * custom exchange logic currently.
-     *
-     * @throws Exception
-     */
-    public void requestClose() throws Exception {
-    }
 }
