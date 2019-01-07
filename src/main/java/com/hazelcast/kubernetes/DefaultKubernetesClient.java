@@ -246,7 +246,12 @@ class DefaultKubernetesClient
     }
 
     private static String parseZone(JsonObject json) {
-        return toString(json.get("metadata").asObject().get("labels").asObject().get("failure-domain.beta.kubernetes.io/zone"));
+        JsonObject labels = json.get("metadata").asObject().get("labels").asObject();
+        JsonValue zone = labels.get("failure-domain.kubernetes.io/zone");
+        if (zone != null) {
+            return toString(zone);
+        }
+        return toString(labels.get("failure-domain.beta.kubernetes.io/zone"));
     }
 
     private static JsonArray toJsonArray(JsonValue jsonValue) {

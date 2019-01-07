@@ -116,6 +116,25 @@ public class DefaultKubernetesClientTest {
     }
 
     @Test
+    public void zoneBeta() {
+        // given
+        String podName = "my-release-hazelcast-0";
+        String nodeName = "gke-rafal-test-cluster-default-pool-9238654c-12tz";
+        stubFor(get(urlPathMatching(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName)))
+                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
+                .willReturn(aResponse().withStatus(200).withBody(podBody(nodeName))));
+        stubFor(get(urlPathMatching(String.format("/api/v1/nodes/%s", nodeName)))
+                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
+                .willReturn(aResponse().withStatus(200).withBody(nodeBetaBody())));
+
+        // when
+        String zone = kubernetesClient.zone(NAMESPACE, podName);
+
+        // then
+        assertEquals(ZONE, zone);
+    }
+
+    @Test
     public void zone() {
         // given
         String podName = "my-release-hazelcast-0";
@@ -896,9 +915,9 @@ public class DefaultKubernetesClientTest {
     }
 
     /**
-     * Real response recorded from the Kubernetes API call "/api/v1/nodes/{node-name}".
+     * Real response recorded from the Kubernetes (version < 1.13) API call "/api/v1/nodes/{node-name}".
      */
-    private static String nodeBody() {
+    private static String nodeBetaBody() {
         return String.format(
                 "{"
                         + "  \"kind\": \"Node\",\n"
@@ -918,6 +937,45 @@ public class DefaultKubernetesClientTest {
                         + "      \"cloud.google.com/gke-os-distribution\": \"cos\",\n"
                         + "      \"failure-domain.beta.kubernetes.io/region\": \"us-central1\",\n"
                         + "      \"failure-domain.beta.kubernetes.io/zone\": \"%s\",\n"
+                        + "      \"kubernetes.io/hostname\": \"gke-rafal-test-cluster-default-pool-9238654c-12tz\"\n"
+                        + "    },\n"
+                        + "    \"annotations\": {\n"
+                        + "      \"node.alpha.kubernetes.io/ttl\": \"0\",\n"
+                        + "      \"volumes.kubernetes.io/controller-managed-attach-detach\": \"true\"\n"
+                        + "    }\n"
+                        + "  },\n"
+                        + "  \"spec\": {\n"
+                        + "  },\n"
+                        + "  \"status\": {\n"
+                        + "  }\n"
+                        + "}", ZONE);
+    }
+
+    /**
+     * Real response recorded from the Kubernetes (version >= 1.13) API call "/api/v1/nodes/{node-name}".
+     */
+    private static String nodeBody() {
+        return String.format(
+                "{"
+                        + "  \"kind\": \"Node\",\n"
+                        + "  \"apiVersion\": \"v1\",\n"
+                        + "  \"metadata\": {\n"
+                        + "    \"name\": \"gke-rafal-test-cluster-default-pool-9238654c-12tz\",\n"
+                        + "    \"selfLink\": \"/api/v1/nodes/gke-rafal-test-cluster-default-pool-9238654c-12tz\",\n"
+                        + "    \"uid\": \"ceab9c17-0508-11e9-9c53-42010a800013\",\n"
+                        + "    \"resourceVersion\": \"7954\",\n"
+                        + "    \"creationTimestamp\": \"2018-12-21T10:11:39Z\",\n"
+                        + "    \"labels\": {\n"
+                        + "      \"beta.kubernetes.io/arch\": \"amd64\",\n"
+                        + "      \"beta.kubernetes.io/fluentd-ds-ready\": \"true\",\n"
+                        + "      \"beta.kubernetes.io/instance-type\": \"n1-standard-1\",\n"
+                        + "      \"beta.kubernetes.io/os\": \"linux\",\n"
+                        + "      \"cloud.google.com/gke-nodepool\": \"default-pool\",\n"
+                        + "      \"cloud.google.com/gke-os-distribution\": \"cos\",\n"
+                        + "      \"failure-domain.beta.kubernetes.io/region\": \"deprecated-region\",\n"
+                        + "      \"failure-domain.beta.kubernetes.io/zone\": \"deprecated-zone\",\n"
+                        + "      \"failure-domain.kubernetes.io/region\": \"us-central1\",\n"
+                        + "      \"failure-domain.kubernetes.io/zone\": \"%s\",\n"
                         + "      \"kubernetes.io/hostname\": \"gke-rafal-test-cluster-default-pool-9238654c-12tz\"\n"
                         + "    },\n"
                         + "    \"annotations\": {\n"
