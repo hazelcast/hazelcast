@@ -16,5 +16,7 @@
 
 /**
  * Provides connection interfaces/classes for com.hazelcast.client
+ *
+ * Everything in this package and its subpackages is private.
  */
 package com.hazelcast.client.connection;
