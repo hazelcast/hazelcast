@@ -240,7 +240,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             int hash = clientMessage.getPartitionId();
             // todo: we should also unset the flag
             clientMessage.setPartitionId(hashToIndex(hash, getPartitionService().getPartitionCount()));
-            System.out.println("hash:" + hash + " partitionId:" + clientMessage.getPartitionId());
+            //System.out.println("hash:" + hash + " partitionId:" + clientMessage.getPartitionId());
         }
 
         int partitionId = clientMessage.getPartitionId();

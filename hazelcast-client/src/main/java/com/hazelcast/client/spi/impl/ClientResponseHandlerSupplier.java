@@ -136,7 +136,7 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
             }
             future.notifyException(exception);
         } else {
-            System.out.println("Notify success");
+            //System.out.println("Notify success");
             future.notify(clientMessage);
         }
     }
