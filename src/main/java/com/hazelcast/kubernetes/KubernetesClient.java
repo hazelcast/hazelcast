@@ -58,7 +58,7 @@ interface KubernetesClient {
     /**
      * Retrieves zone name for the given {@code namespace} and the given {@code podName}.
      * <p>
-     * Note that the Kubernetes environment must provide such information as defined as defined
+     * Note that the Kubernetes environment must provide such information as defined
      * <a href="https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints">here</a>.
      *
      * @param namespace namespace name
