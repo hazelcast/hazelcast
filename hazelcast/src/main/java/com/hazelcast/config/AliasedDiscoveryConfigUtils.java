@@ -37,7 +37,7 @@ public final class AliasedDiscoveryConfigUtils {
         ALIAS_MAPPINGS.put("gcp", "com.hazelcast.gcp.GcpDiscoveryStrategy");
         ALIAS_MAPPINGS.put("azure", "com.hazelcast.azure.AzureDiscoveryStrategy");
         ALIAS_MAPPINGS.put("kubernetes", "com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy");
-        ALIAS_MAPPINGS.put("eureka", "com.hazelcast.eureka.one.HazelcastKubernetesDiscoveryStrategy");
+        ALIAS_MAPPINGS.put("eureka", "com.hazelcast.eureka.one.EurekaOneDiscoveryStrategy");
     }
 
     /**
