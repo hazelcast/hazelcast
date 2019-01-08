@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -23,12 +24,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class StreamSourceStageTest extends StreamSourceStageTestBase {
@@ -114,6 +118,19 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
     @Test
     public void test_sourceJournal_withTimestamps() {
         test(createSourceJournal(), withTimestampsFn, asList(2L, 3L), null);
+    }
+
+    @Test
+    public void test_withTimestampsButTimestampsNotUsed() {
+        IList sinkList = instances[0].getList("sinkList");
+
+        Pipeline p = Pipeline.create();
+        p.drawFrom(createSourceJournal())
+         .withIngestionTimestamps()
+         .drainTo(Sinks.list(sinkList));
+
+        instances[0].newJob(p);
+        assertTrueEventually(() -> assertEquals(Arrays.asList(1, 2), new ArrayList<>(sinkList)), 5);
     }
 
     @Test

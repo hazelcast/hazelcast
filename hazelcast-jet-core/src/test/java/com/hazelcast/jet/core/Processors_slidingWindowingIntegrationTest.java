@@ -46,17 +46,15 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
-import static com.hazelcast.jet.core.WatermarkPolicies.limitingLagAndLull;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
+import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Category(ParallelTest.class)
@@ -81,16 +79,6 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
 
     @Test
     public void smokeTest() throws Exception {
-        runTest(
-                singletonList(new MyEvent(10, "a", 1L)),
-                asList(
-                        new TimestampedEntry<>(1000, "a", 1L),
-                        new TimestampedEntry<>(2000, "a", 1L)
-                ));
-    }
-
-    private void runTest(List<MyEvent> sourceEvents, List<TimestampedEntry<String, Long>> expectedOutput)
-            throws Exception {
         JetInstance instance = createJetMember();
 
         SlidingWindowPolicy wDef = slidingWinPolicy(2000, 1000);
@@ -101,9 +89,10 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         DistributedFunction<? super MyEvent, ?> keyFn = MyEvent::getKey;
         DistributedToLongFunction<? super MyEvent> timestampFn = MyEvent::getTimestamp;
 
-        Vertex source = dag.newVertex("source", () -> new EmitListP(sourceEvents, isBatchLocal)).localParallelism(1);
+        List<MyEvent> inputData = singletonList(new MyEvent(10, "a", 1L));
+        Vertex source = dag.newVertex("source", () -> new EmitListP(inputData, isBatchLocal)).localParallelism(1);
         Vertex insertPP = dag.newVertex("insertWmP", insertWatermarksP(eventTimePolicy(
-                timestampFn, limitingLagAndLull(500, 1000), emitByFrame(wDef), -1
+                timestampFn, limitingLag(0), wDef.frameSize(), wDef.frameOffset(), -1
         ))).localParallelism(1);
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
 
@@ -148,13 +137,16 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
 
         IList<MyEvent> sinkList = instance.getList("sink");
 
+        List<TimestampedEntry<String, Long>> expectedOutput = asList(
+                new TimestampedEntry<>(1000, "a", 1L),
+                new TimestampedEntry<>(2000, "a", 1L)
+        );
         assertTrueEventually(() ->
                 assertEquals(streamToString(expectedOutput.stream()), streamToString(new ArrayList<>(sinkList).stream())),
                 5);
         // wait a little more and make sure, that there are no more frames
         Thread.sleep(1000);
-
-        assertTrue(sinkList.size() == expectedOutput.size());
+        assertEquals(expectedOutput.size(), sinkList.size());
     }
 
     private static String streamToString(Stream<?> stream) {
@@ -167,12 +159,16 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
      * A processor that will emit contents of a list and optionally complete.
      */
     private static class EmitListP extends AbstractProcessor {
-        private final Traverser<Object> traverser;
+        private Traverser<Object> traverser;
         private final boolean complete;
 
         EmitListP(List<?> list, boolean complete) {
             this.traverser = traverseIterable(list);
             this.complete = complete;
+            if (!complete) {
+                // append a flushing wm for the streaming case
+                traverser = traverser.append(new Watermark(100_000));
+            }
         }
 
         @Override

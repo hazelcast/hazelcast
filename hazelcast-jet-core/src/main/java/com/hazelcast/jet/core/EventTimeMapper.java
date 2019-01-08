@@ -27,14 +27,15 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 
+import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * A utility to help emitting {@link Watermark}s from a source which reads
- * events from multiple external partitions.
- *
- * <h3>The problems</h3>
+ * A utility to that helps a source emit events according to a given {@link
+ * EventTimePolicy}. Generally this class should be used if a source needs
+ * to emit {@link Watermark watermarks}. The mapper deals with the
+ * following concerns:
  *
  * <h4>1. Reading partition by partition</h4>
  *
@@ -60,6 +61,19 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * processor will emit a special <em>idle message</em> and the downstream
  * will exclude this processor from watermark coalescing.
  *
+ * <h4>3. Wrapping of events</h4>
+ *
+ * Events may need to be wrapped with the extracted timestamp if {@link
+ * EventTimePolicy#wrapFn()} is set.
+ *
+ * <h4>4. Throttling of Watermarks</h4>
+ *
+ * Watermarks are only consumed by windowing operations and emitting
+ * watermarks more frequently than the given {@link
+ * EventTimePolicy#watermarkThrottlingFrameSize()} is wasteful since they
+ * are broadcast to all processors. The mapper ensures that watermarks are
+ * emitted as seldom as possible.
+ *
  * <h3>Usage</h3>
  *
  * The API is designed to be used as a flat-mapping step in the {@link
@@ -71,10 +85,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     if (traverser == null) {
  *         List<Record> records = poll();
  *         if (records.isEmpty()) {
- *             traverser = wmSourceUtil.handleNoEvent();
+ *             traverser = eventTimeMapper.flatMapIdle();
  *         } else {
  *             traverser = traverserIterable(records)
- *                 .flatMap(event -> wmSourceUtil.handleEvent(
+ *                 .flatMap(event -> eventTimeMapper.flatMapEvent(
  *                      event, event.getPartition()));
  *         }
  *         traverser = traverser.onFirstNull(() -> traverser = null);
@@ -108,11 +122,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *
  * @param <T> event type
  */
-public class WatermarkSourceUtil<T> {
+public class EventTimeMapper<T> {
 
     /**
      * Value to use as the {@code nativeEventTime} argument when calling
-     * {@link #handleEvent(Object, int, long)} whene there's no native event
+     * {@link #flatMapEvent(Object, int, long)} whene there's no native event
      * time to supply.
      */
     public static final long NO_NATIVE_TIME = Long.MIN_VALUE;
@@ -125,7 +139,8 @@ public class WatermarkSourceUtil<T> {
     private final ToLongFunction<? super T> timestampFn;
     private final Supplier<? extends WatermarkPolicy> newWmPolicyFn;
     private final ObjLongBiFunction<? super T, ?> wrapFn;
-    private final WatermarkEmissionPolicy wmEmitPolicy;
+    @Nullable
+    private final SlidingWindowPolicy watermarkThrottlingFrame;
     private final AppendableTraverser<Object> traverser = new AppendableTraverser<>(2);
 
     private WatermarkPolicy[] wmPolicies = EMPTY_WATERMARK_POLICIES;
@@ -142,12 +157,17 @@ public class WatermarkSourceUtil<T> {
      * @param eventTimePolicy event time policy as passed in {@link
      *                        Sources#streamFromProcessorWithWatermarks}
      **/
-    public WatermarkSourceUtil(EventTimePolicy<? super T> eventTimePolicy) {
+    public EventTimeMapper(EventTimePolicy<? super T> eventTimePolicy) {
         this.idleTimeoutNanos = MILLISECONDS.toNanos(eventTimePolicy.idleTimeoutMillis());
         this.timestampFn = eventTimePolicy.timestampFn();
         this.wrapFn = eventTimePolicy.wrapFn();
         this.newWmPolicyFn = eventTimePolicy.newWmPolicyFn();
-        this.wmEmitPolicy = eventTimePolicy.wmEmitPolicy();
+        if (eventTimePolicy.watermarkThrottlingFrameSize() != 0) {
+            this.watermarkThrottlingFrame = tumblingWinPolicy(eventTimePolicy.watermarkThrottlingFrameSize())
+                    .withOffset(eventTimePolicy.watermarkThrottlingFrameOffset());
+        } else {
+            this.watermarkThrottlingFrame = null;
+        }
     }
 
     /**
@@ -155,7 +175,7 @@ public class WatermarkSourceUtil<T> {
      * watermark. Designed to use when emitting from traverser:
      * <pre>{@code
      *     Traverser t = traverserIterable(...)
-     *         .flatMap(event -> watermarkSourceUtil.handleEvent(
+     *         .flatMap(event -> eventTimeMapper.flatMapEvent(
      *                 event, event.getPartition(), nativeEventTime));
      * }</pre>
      *
@@ -165,22 +185,21 @@ public class WatermarkSourceUtil<T> {
      *                        {@link #NO_NATIVE_TIME} if the event has no native timestamp
      */
     @Nonnull
-    public Traverser<Object> handleEvent(T event, int partitionIndex, long nativeEventTime) {
-        return handleEvent(System.nanoTime(), event, partitionIndex, nativeEventTime);
+    public Traverser<Object> flatMapEvent(T event, int partitionIndex, long nativeEventTime) {
+        return flatMapEvent(System.nanoTime(), event, partitionIndex, nativeEventTime);
     }
 
     /**
      * Call this method when there is no event coming. It returns a traverser
-     * with 0 or 1 object (the watermark). If you need just the Watermark, call
-     * {@code next()} on the result.
+     * with 0 or 1 object (the watermark).
      */
     @Nonnull
-    public Traverser<Object> handleNoEvent() {
-        return handleEvent(System.nanoTime(), null, -1, NO_NATIVE_TIME);
+    public Traverser<Object> flatMapIdle() {
+        return flatMapEvent(System.nanoTime(), null, -1, NO_NATIVE_TIME);
     }
 
     // package-visible for tests
-    Traverser<Object> handleEvent(long now, @Nullable T event, int partitionIndex, long nativeEventTime) {
+    Traverser<Object> flatMapEvent(long now, @Nullable T event, int partitionIndex, long nativeEventTime) {
         assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all " +
                 "items from the traverser before you call this method again.";
         if (event != null) {
@@ -226,7 +245,7 @@ public class WatermarkSourceUtil<T> {
         }
 
         if (min > lastEmittedWm) {
-            long newWm = wmEmitPolicy.throttleWm(min, lastEmittedWm);
+            long newWm = watermarkThrottlingFrame != null ? watermarkThrottlingFrame.floorFrameTs(min) : Long.MIN_VALUE;
             if (newWm > lastEmittedWm) {
                 traverser.append(new Watermark(newWm));
                 lastEmittedWm = newWm;

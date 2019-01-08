@@ -26,9 +26,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.GenericPredicates;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
@@ -111,8 +111,8 @@ public final class Sources {
      * policy specifies.
      * <p>
      * If you are implementing a custom source processor, be sure to check out
-     * the {@link WatermarkSourceUtil} class that will help you correctly
-     * implement watermark emission.
+     * the {@link EventTimeMapper} class that will help you correctly implement
+     * watermark emission.
      *
      * @param sourceName user-friendly source name
      * @param metaSupplierFn factory of processor meta-suppliers

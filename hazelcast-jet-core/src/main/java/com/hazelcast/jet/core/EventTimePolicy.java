@@ -24,7 +24,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * A holder of functions and parameters Jet needs to handle event time and the
@@ -33,12 +34,12 @@ import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
  *     {@code timestampFn}: extracts the timestamp from an event in the stream
  * </li><li>
  *     {@code newWmPolicyFn}: a factory of <em>watermark policy</em> objects.
- *     Refer to its {@link WatermarkPolicy documentation} for explanation.
+ *     Refer to its {@linkplain WatermarkPolicy documentation} for explanation.
  * </li><li>
- *     {@code wmEmitPolicy}: a {@link WatermarkEmissionPolicy policy object} that
- *     allows the processor to filter out redundant watermark items before
- *     emitting them. For example, a sliding/tumbling window processor doesn't
- *     need to observe more than one watermark item per frame.
+ *     <i>frame size</i> and <i>frame offset</i> for <i>watermark throttling</i>:
+ *     they allow the processor to filter out redundant watermark items before
+ *     emitting them. For example, a sliding/tumbling window processor doesn't need
+ *     to observe more than one watermark item per frame.
  * </li><li>
  *     {@code idleTimeoutMillis}: a measure to mitigate the issue with temporary
  *     lulls in a distributed event stream. It pertains to each <em>partition
@@ -53,6 +54,9 @@ import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
  *     to propagate the event timestamps through the pipeline regardless of
  *     the transformation the user does on the event objects themselves.
  * </li></ul>
+ *
+ * This class should be used with {@link EventTimeMapper} when implementing a
+ * source processor.
  *
  * @param <T> event type
  */
@@ -80,44 +84,57 @@ public final class EventTimePolicy<T> implements Serializable {
     private final DistributedToLongFunction<? super T> timestampFn;
     private final DistributedObjLongBiFunction<? super T, ?> wrapFn;
     private final DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn;
-    private final WatermarkEmissionPolicy wmEmitPolicy;
+    private final long watermarkThrottlingFrameSize;
+    private final long watermarkThrottlingFrameOffset;
+
     private final long idleTimeoutMillis;
 
     private EventTimePolicy(
             @Nullable DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
             @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
-            @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
+            long watermarkThrottlingFrameSize,
+            long watermarkThrottlingFrameOffset,
             long idleTimeoutMillis
     ) {
+        checkNotNegative(watermarkThrottlingFrameSize, "watermarkThrottlingFrameSize must be >= 0");
+        checkNotNegative(watermarkThrottlingFrameOffset, "watermarkThrottlingFrameOffset must be >= 0");
+        checkTrue(watermarkThrottlingFrameOffset < watermarkThrottlingFrameSize || watermarkThrottlingFrameSize == 0,
+                "offset must be smaller than frame size");
         this.timestampFn = timestampFn;
         this.newWmPolicyFn = newWmPolicyFn;
-        this.wmEmitPolicy = wmEmitPolicy;
         this.wrapFn = wrapFn;
         this.idleTimeoutMillis = idleTimeoutMillis;
+        this.watermarkThrottlingFrameSize = watermarkThrottlingFrameSize;
+        this.watermarkThrottlingFrameOffset = watermarkThrottlingFrameOffset;
     }
 
     /**
      * Creates and returns a new event time policy. To get a policy that
      * results in no timestamping, call {@link #noEventTime()}.
      *
-     * @param timestampFn       function that extracts the timestamp from the event; if null, Jet will
-     *                          use the source's native timestamp
-     * @param wrapFn            function that transforms the received item and its timestamp into the
-     *                          emitted item
-     * @param newWmPolicyFn     factory of the watermark policy objects
-     * @param wmEmitPolicy      watermark emission policy (decides how to suppress redundant watermarks)
-     * @param idleTimeoutMillis the timeout after which a partition will be marked as <em>idle</em>.
-     *                          If <= 0, partitions will never be marked as idle.
+     * @param timestampFn function that extracts the timestamp from the event;
+     *      if null, Jet will use the source's native timestamp
+     * @param wrapFn function that transforms the received item and its
+     *      timestamp into the emitted item
+     * @param newWmPolicyFn factory of the watermark policy objects
+     * @param watermarkThrottlingFrameSize the frame length to which we
+     *      throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
+     * @param watermarkThrottlingFrameOffset the frame offset to which we
+     *      throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
+     * @param idleTimeoutMillis the timeout after which a partition will be
+     *      marked as <em>idle</em>.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
             @Nullable DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
             @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
-            @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
+            long watermarkThrottlingFrameSize,
+            long watermarkThrottlingFrameOffset,
             long idleTimeoutMillis
     ) {
-        return new EventTimePolicy<>(timestampFn, wrapFn, newWmPolicyFn, wmEmitPolicy, idleTimeoutMillis);
+        return new EventTimePolicy<>(timestampFn, wrapFn, newWmPolicyFn, watermarkThrottlingFrameSize,
+                watermarkThrottlingFrameOffset, idleTimeoutMillis);
     }
 
     /**
@@ -125,20 +142,25 @@ public final class EventTimePolicy<T> implements Serializable {
      * results in no watermarks being emitted, call {@link
      * #noEventTime()}.
      *
-     * @param timestampFn       function that extracts the timestamp from the event; if null, Jet will
-     *                          use the source's native timestamp
-     * @param newWmPolicyFn     factory of the watermark policy objects
-     * @param wmEmitPolicy      watermark emission policy (decides how to suppress redundant watermarks)
-     * @param idleTimeoutMillis the timeout after which a partition will be marked as <em>idle</em>.
-     *                          If <= 0, partitions will never be marked as idle.
+     * @param timestampFn function that extracts the timestamp from the event;
+     *      if null, Jet will use the source's native timestamp
+     * @param newWmPolicyFn factory of the watermark policy objects
+     * @param watermarkThrottlingFrameSize the frame length to which we
+     *      throttle watermarks, see {@link #watermarkThrottlingFrameSize()}
+     * @param watermarkThrottlingFrameOffset the frame offset to which we
+     *      throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
+     * @param idleTimeoutMillis the timeout after which a partition will be
+     *      marked as <em>idle</em>.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
             @Nullable DistributedToLongFunction<? super T> timestampFn,
             @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
-            @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
+            long watermarkThrottlingFrameSize,
+            long watermarkThrottlingFrameOffset,
             long idleTimeoutMillis
     ) {
-        return eventTimePolicy(timestampFn, noWrapping(), newWmPolicyFn, wmEmitPolicy, idleTimeoutMillis);
+        return eventTimePolicy(timestampFn, noWrapping(), newWmPolicyFn, watermarkThrottlingFrameSize,
+                watermarkThrottlingFrameOffset, idleTimeoutMillis);
     }
 
     /**
@@ -148,7 +170,7 @@ public final class EventTimePolicy<T> implements Serializable {
      * your job will keep accumulating the data without producing any output.
      */
     public static <T> EventTimePolicy<T> noEventTime() {
-        return eventTimePolicy(i -> Long.MIN_VALUE, noWrapping(), NO_WATERMARKS, noThrottling(), -1);
+        return eventTimePolicy(i -> Long.MIN_VALUE, noWrapping(), NO_WATERMARKS, 0, 0, -1);
     }
 
     @SuppressWarnings("unchecked")
@@ -182,12 +204,31 @@ public final class EventTimePolicy<T> implements Serializable {
     }
 
     /**
-     * Returns the watermark emission policy, which decides how to suppress
-     * redundant watermarks.
+     * This value together with {@link #watermarkThrottlingFrameOffset()}
+     * specify the frame size the watermarks are throttled to. Generally it
+     * should match the window slide step used downstream. If there are
+     * multiple sliding windows downstream, use the greatest common denominator
+     * of them.
+     * <p>
+     * If this parameter is equal to 0, all watermarks will be suppressed.
+     * <p>
+     * Technically, a watermark should be emitted after every increase in event
+     * time. Because watermarks are broadcast from each processor to all
+     * downstream processors, this will bring some overhead. But the watermarks
+     * are only needed for window aggregation and only when a window should
+     * close, that is at the frame boundary of a sliding window. To reduce the
+     * amount of watermarks on the stream, you can configure to emit only those
+     * watermarks that would trigger an emission of a new window.
      */
-    @Nonnull
-    public WatermarkEmissionPolicy wmEmitPolicy() {
-        return wmEmitPolicy;
+    public long watermarkThrottlingFrameSize() {
+        return watermarkThrottlingFrameSize;
+    }
+
+    /**
+     * See {@link #watermarkThrottlingFrameSize()}
+     */
+    public long watermarkThrottlingFrameOffset() {
+        return watermarkThrottlingFrameOffset;
     }
 
     /**
@@ -198,18 +239,11 @@ public final class EventTimePolicy<T> implements Serializable {
      * output edges. This signals Jet that the watermark can advance as
      * if the partition didn't exist.
      * <p>
-     * If supply a zero or negative value, partitions will never be marked as
-     * idle.
+     * If you supply a zero or negative value, partitions will never be marked
+     * as idle.
      */
     public long idleTimeoutMillis() {
         return idleTimeoutMillis;
     }
 
-    /**
-     * Returns new instance with emit policy replaced with the given argument.
-     */
-    @Nonnull
-    public EventTimePolicy<T> withEmitPolicy(WatermarkEmissionPolicy emitPolicy) {
-        return eventTimePolicy(timestampFn, wrapFn, newWmPolicyFn, emitPolicy, idleTimeoutMillis);
-    }
 }

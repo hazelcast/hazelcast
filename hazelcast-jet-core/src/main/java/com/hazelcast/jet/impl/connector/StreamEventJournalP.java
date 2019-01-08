@@ -29,11 +29,11 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
+import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -93,7 +93,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     @Nonnull
     private final int[] partitionIds;
     @Nonnull
-    private final WatermarkSourceUtil<? super T> watermarkSourceUtil;
+    private final EventTimeMapper<? super T> eventTimeMapper;
 
     private final boolean isRemoteReader;
 
@@ -135,7 +135,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         emitOffsets = new long[partitionIds.length];
         readOffsets = new long[partitionIds.length];
 
-        watermarkSourceUtil = new WatermarkSourceUtil<>(eventTimePolicy);
+        eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
 
         // Do not coalesce partition WMs because the number of partitions is far
         // larger than the number of consumers by default and it is not
@@ -147,7 +147,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         // from one partition before the rest and the partition advancing ahead of
         // others. This might be changed in the future and/or made optional.
         assert partitionIds.length > 0 : "no partitions assigned";
-        watermarkSourceUtil.increasePartitionCount(1);
+        eventTimeMapper.increasePartitionCount(1);
     }
 
     @Override
@@ -187,7 +187,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             if (event != null) {
                 // Always use partition index of 0, treating all the partitions the
                 // same for coalescing purposes.
-                traverser = watermarkSourceUtil.handleEvent(event, 0, WatermarkSourceUtil.NO_NATIVE_TIME);
+                traverser = eventTimeMapper.flatMapEvent(event, 0, EventTimeMapper.NO_NATIVE_TIME);
                 if (!emitFromTraverser(traverser)) {
                     return;
                 }
@@ -210,7 +210,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                             broadcastKey(partitionIds[pIdx]),
                             // Always use partition index of 0, treating all the partitions the
                             // same for coalescing purposes.
-                            new long[] {emitOffsets[pIdx], watermarkSourceUtil.getWatermark(0)})));
+                            new long[] {emitOffsets[pIdx], eventTimeMapper.getWatermark(0)})));
         }
         boolean done = emitFromTraverserToSnapshot(snapshotTraverser);
         if (done) {
@@ -233,7 +233,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             emitOffsets[partitionIndex] = offset;
             // Always use partition index of 0, treating all the partitions the
             // same for coalescing purposes.
-            watermarkSourceUtil.restoreWatermark(0, wm);
+            eventTimeMapper.restoreWatermark(0, wm);
         }
     }
 
@@ -283,7 +283,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         if (currentPartitionIndex == partitionIds.length) {
             currentPartitionIndex = -1;
-            traverser = watermarkSourceUtil.handleNoEvent();
+            traverser = eventTimeMapper.flatMapIdle();
         }
     }
 

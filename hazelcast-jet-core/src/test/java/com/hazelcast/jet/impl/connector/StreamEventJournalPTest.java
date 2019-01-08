@@ -26,7 +26,6 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.WatermarkEmissionPolicy;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
@@ -49,9 +48,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
-import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
@@ -93,14 +90,10 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
         supplier = () -> new StreamEventJournalP<>(map, allPartitions, e -> true,
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, false,
-                eventTimePolicy(Integer::intValue, limitingLag(0), suppressAll(), -1));
+                noEventTime());
 
         key0 = generateKeyForPartition(instance.getHazelcastInstance(), 0);
         key1 = generateKeyForPartition(instance.getHazelcastInstance(), 1);
-    }
-
-    private WatermarkEmissionPolicy suppressAll() {
-        return (currentWm, lastEmittedWm) -> lastEmittedWm;
     }
 
     @Test

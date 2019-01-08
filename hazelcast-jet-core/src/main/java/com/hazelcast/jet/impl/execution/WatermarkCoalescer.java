@@ -17,15 +17,12 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.impl.util.TimestampHistory;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Implements {@link Watermark} coalescing. Tracks WMs on queues and decides
@@ -43,9 +40,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public abstract class WatermarkCoalescer {
 
-    public static final long NO_NEW_WM = Long.MIN_VALUE;
-
     public static final Watermark IDLE_MESSAGE = new Watermark(Long.MAX_VALUE);
+
+    static final long NO_NEW_WM = Long.MIN_VALUE;
 
     private WatermarkCoalescer() { }
 
@@ -70,22 +67,20 @@ public abstract class WatermarkCoalescer {
      *
      * @param queueIndex index of the queue on which the WM was received.
      * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE}
-     * @param systemTime the value obtained from {@link #getTime()}
      * @return the watermark value to emit or {@link #NO_NEW_WM} if no
      *      watermark should be forwarded. It can return {@link #IDLE_MESSAGE}
      */
-    public abstract long observeWm(long systemTime, int queueIndex, long wmValue);
+    public abstract long observeWm(int queueIndex, long wmValue);
 
     /**
      * Checks if there is a watermark to emit now based on the passage of
      * system time or if all input queues are idle and we should forward the
      * idle marker.
      *
-     * @param systemTime the value obtained from {@link #getTime()}
      * @return the watermark value to emit, {@link #IDLE_MESSAGE} or
      *      {@link #NO_NEW_WM} if no watermark should be forwarded
      */
-    public abstract long checkWmHistory(long systemTime);
+    public abstract long checkWmHistory();
 
     /**
      * Returns the last emitted watermark.
@@ -98,24 +93,19 @@ public abstract class WatermarkCoalescer {
     public abstract long topObservedWm();
 
     /**
-     * Returns {@code System.nanoTime()} or a dummy value, if it is not needed,
-     * because the call is expensive in hot loop.
-     */
-    abstract long getTime();
-
-    /**
      * Factory method.
      *
-     * @param maxWatermarkRetainMillis see {@link JobConfig#setMaxWatermarkRetainMillis}
      * @param queueCount number of queues
      */
-    public static WatermarkCoalescer create(int maxWatermarkRetainMillis, int queueCount) {
+    public static WatermarkCoalescer create(int queueCount) {
         checkNotNegative(queueCount, "queueCount must be >= 0, but is " + queueCount);
         switch (queueCount) {
             case 0:
                 return new ZeroInputImpl();
+            case 1:
+                return new SingleInputImpl();
             default:
-                return new StandardImpl(maxWatermarkRetainMillis, queueCount);
+                return new StandardImpl(queueCount);
         }
     }
 
@@ -130,7 +120,7 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long observeWm(long systemTime, int queueIndex, long wmValue) {
+        public long observeWm(int queueIndex, long wmValue) {
             throw new UnsupportedOperationException();
         }
 
@@ -140,7 +130,7 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long checkWmHistory(long systemTime) {
+        public long checkWmHistory() {
             return NO_NEW_WM;
         }
 
@@ -153,19 +143,61 @@ public abstract class WatermarkCoalescer {
         public long topObservedWm() {
             return Long.MIN_VALUE;
         }
+    }
+
+    /**
+     * Special-case implementation for single input (i.e. no coalescing, just
+     * forwarding).
+     */
+    private static final class SingleInputImpl extends WatermarkCoalescer {
+
+        private AtomicLong queueWm = new AtomicLong(Long.MIN_VALUE);
 
         @Override
-        public long getTime() {
-            return -1;
+        public long queueDone(int queueIndex) {
+            assert queueWm.get() < Long.MAX_VALUE : "Duplicate DONE call";
+            queueWm.lazySet(Long.MAX_VALUE);
+            return NO_NEW_WM;
+        }
+
+        @Override
+        public void observeEvent(int queueIndex) {
+        }
+
+        @Override
+        public long observeWm(int queueIndex, long wmValue) {
+            assert queueIndex == 0 : "queueIndex=" + queueIndex;
+            if (queueWm.get() >= wmValue) {
+                throw new JetException("Watermarks not monotonically increasing on queue: " +
+                        "last one=" + queueWm + ", new one=" + wmValue);
+            }
+            if (wmValue != IDLE_MESSAGE.timestamp()) {
+                queueWm.lazySet(wmValue);
+            }
+            return wmValue;
+        }
+
+        @Override
+        public long checkWmHistory() {
+            return NO_NEW_WM;
+        }
+
+        @Override
+        public long coalescedWm() {
+            return queueWm.get();
+        }
+
+        @Override
+        public long topObservedWm() {
+            return queueWm.get();
         }
     }
 
     /**
      * Standard implementation for 1..n inputs.
      */
-    private static final class StandardImpl extends WatermarkCoalescer {
+    static final class StandardImpl extends WatermarkCoalescer {
 
-        private final TimestampHistory watermarkHistory;
         private final long[] queueWms;
         private final boolean[] isIdle;
         private AtomicLong lastEmittedWm = new AtomicLong(Long.MIN_VALUE);
@@ -173,14 +205,10 @@ public abstract class WatermarkCoalescer {
         private boolean allInputsAreIdle;
         private boolean idleMessagePending;
 
-        StandardImpl(int maxWatermarkRetainMillis, int queueCount) {
+        StandardImpl(int queueCount) {
             isIdle = new boolean[queueCount];
             queueWms = new long[queueCount];
             Arrays.fill(queueWms, Long.MIN_VALUE);
-
-            watermarkHistory = maxWatermarkRetainMillis >= 0 && queueCount > 1
-                    ? new TimestampHistory(MILLISECONDS.toNanos(maxWatermarkRetainMillis))
-                    : null;
         }
 
         @Override
@@ -199,7 +227,7 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long observeWm(long systemTime, int queueIndex, long wmValue) {
+        public long observeWm(int queueIndex, long wmValue) {
             if (queueWms[queueIndex] >= wmValue) {
                 throw new JetException("Watermarks not monotonically increasing on queue: " +
                         "last one=" + queueWms[queueIndex] + ", new one=" + wmValue);
@@ -214,9 +242,6 @@ public abstract class WatermarkCoalescer {
                 queueWms[queueIndex] = wmValue;
                 if (wmValue > topObservedWm.get()) {
                     topObservedWm.lazySet(wmValue);
-                    if (watermarkHistory != null) {
-                        watermarkHistory.sample(systemTime, wmValue);
-                    }
                 }
                 return checkObservedWms();
             }
@@ -240,7 +265,7 @@ public abstract class WatermarkCoalescer {
                 }
             }
 
-            // if the lowest observed wm is MAX_VALUE that means that all inputs are idle
+            // if the lowest observed wm is MAX_VALUE that means that all inputs are idle or done
             if (min == Long.MAX_VALUE) {
                 // When all inputs are idle, we should first emit top observed WM.
                 // For example: have 2 queues. Q1 got to wm(1), Q2 to wm(2). Later on, both become idle at the
@@ -272,18 +297,10 @@ public abstract class WatermarkCoalescer {
         }
 
         @Override
-        public long checkWmHistory(long systemTime) {
+        public long checkWmHistory() {
             if (idleMessagePending) {
                 idleMessagePending = false;
                 return IDLE_MESSAGE.timestamp();
-            }
-            if (watermarkHistory == null) {
-                return NO_NEW_WM;
-            }
-            long historicWm = watermarkHistory.sample(systemTime, topObservedWm.get());
-            if (historicWm > lastEmittedWm.get()) {
-                lastEmittedWm.lazySet(historicWm);
-                return historicWm;
             }
             return NO_NEW_WM;
         }
@@ -296,11 +313,6 @@ public abstract class WatermarkCoalescer {
         @Override
         public long topObservedWm() {
             return topObservedWm.get();
-        }
-
-        @Override
-        public long getTime() {
-            return watermarkHistory != null ? System.nanoTime() : -1;
         }
     }
 }

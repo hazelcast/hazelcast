@@ -45,7 +45,6 @@ public class JobConfig implements Serializable {
     private boolean autoScaling = true;
     private boolean splitBrainProtectionEnabled;
     private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
-    private int maxWatermarkRetainMillis = -1;
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
 
@@ -196,53 +195,6 @@ public class JobConfig implements Serializable {
         Preconditions.checkNotNegative(snapshotInterval, "snapshotInterval can't be negative");
         this.snapshotIntervalMillis = snapshotInterval;
         return this;
-    }
-
-    /**
-     * Sets the maximum time to retain the watermarks while coalescing them.
-     * A negative value disables the limit and Jet will retain the watermark
-     * as long as needed. With this setting you choose a trade-off between
-     * latency and correctness that arises when dealing with stream skew.
-     *
-     * <h3>Stream Skew</h3>
-     * The <em>skew</em> between two slices of a distributed stream is defined
-     * as the difference in their watermark values. There is always some skew
-     * in the system and it's acceptable, but it can grow very large due to
-     * various causes such as a hiccup on one of the cluster members (a long GC
-     * pause), external source hiccup on a member, skew between partitions of a
-     * distributed source, and so on.
-     *
-     * <h3>Detrimental Effects of Stream Skew</h3>
-     * To maintain full correctness, Jet must wait indefinitely for the
-     * watermark to advance in all the slices of the stream in order to advance
-     * the overall watermark. The process that does this is called <em>watermark
-     * coalescing</em> and it results in increased latency of the output with
-     * respect to the input and possibly also increased memory usage due to the
-     * retention of all the pending data.
-     *
-     * <h3>Detrimental Effects of Limiting Retention Time</h3>
-     * Limiting the watermark retention time allows it to advance, and therefore
-     * the processing to continue, in the face of exceedingly large stream skew.
-     * However, since any event with a timestamp less than the current watermark
-     * is categorized as a <em>late event</em> and dropped, this limit can
-     * result in data loss.
-     *
-     * @param retainMillis maximum time to retain watermarks for delayed queues
-     *                     or -1 to disable (the default)
-     * @return {@code this} instance for fluent API
-     */
-    @Nonnull
-    public JobConfig setMaxWatermarkRetainMillis(int retainMillis) {
-        maxWatermarkRetainMillis = retainMillis;
-        return this;
-    }
-
-    /**
-     * Returns the maximum watermark retention time, see {@link
-     * #setMaxWatermarkRetainMillis(int)}.
-     */
-    public int getMaxWatermarkRetainMillis() {
-        return maxWatermarkRetainMillis;
     }
 
     /**

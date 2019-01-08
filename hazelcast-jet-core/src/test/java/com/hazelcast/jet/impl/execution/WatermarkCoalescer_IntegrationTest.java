@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -41,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
@@ -50,10 +48,8 @@ import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Category(ParallelTest.class)
@@ -116,52 +112,16 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_i1_active_i2_active_then_wmForwardedImmediately() {
         dag = createDag(mode, singletonList(wm(100)), singletonList(wm(100)));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        instance.newJob(dag, config);
+        instance.newJob(dag);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
     }
 
     @Test
-    public void when_i1_active_i2_activeNoWm_then_wmForwardedAfterDelay() {
-        dag = createDag(mode, singletonList(wm(100)), singletonList(entry(1, 1)));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        long time = System.nanoTime();
-        instance.newJob(dag, config);
-
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()));
-        assertEquals(entry(1, 1), sinkList.get(0));
-
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()));
-        assertEquals("wm(100)", sinkList.get(1));
-        assertElapsedTime(time);
-    }
-
-    @Test
-    public void when_i1_activeNoWm_i2_active_then_wmForwardedAfterDelay() {
-        dag = createDag(mode, singletonList(entry(1, 1)), singletonList(wm(100)));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        long time = System.nanoTime();
-        instance.newJob(dag, config);
-
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()));
-        assertEquals(entry(1, 1), sinkList.get(0));
-
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()));
-        assertEquals("wm(100)", sinkList.get(1));
-        assertElapsedTime(time);
-    }
-
-    @Test
     public void when_i1_active_i2_idle_then_wmForwardedImmediately() {
         dag = createDag(mode, singletonList(wm(100)), singletonList(IDLE_MESSAGE));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        instance.newJob(dag, config);
+        instance.newJob(dag);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
@@ -170,68 +130,16 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_i1_idle_i2_active_then_wmForwardedImmediately() {
         dag = createDag(mode, singletonList(IDLE_MESSAGE), singletonList(wm(100)));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        instance.newJob(dag, config);
+        instance.newJob(dag);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
-    }
-
-    @Test
-    public void when_i1_activeNoWm_i2_activeNoWm_then_wmForwardedAfterDelay() {
-        dag = createDag(mode, singletonList(wm(100)), singletonList(wm(150)));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        long time = System.nanoTime();
-        instance.newJob(dag, config);
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()));
-        assertEquals("wm(100)", sinkList.get(0));
-
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()));
-
-        assertEquals("wm(150)", sinkList.get(1));
-        assertElapsedTime(time);
-    }
-
-    @Test
-    public void when_i1_activeNoWm_i2_aheadAndIdle_then_wmForwardedAfterADelay() {
-        dag = createDag(mode, singletonList(entry(1, 1)), asList(wm(150), IDLE_MESSAGE));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        long time = System.nanoTime();
-        instance.newJob(dag, config);
-
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()));
-        assertEquals(entry(1, 1), sinkList.get(0));
-
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()));
-        assertEquals("wm(150)", sinkList.get(1));
-        assertElapsedTime(time);
-    }
-
-    @Test
-    public void when_i1_aheadAndIdle_i2_activeNoWm_then_wmForwardedAfterADelay() {
-        dag = createDag(mode, asList(wm(150), IDLE_MESSAGE), singletonList(entry(1, 1)));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        long time = System.nanoTime();
-        instance.newJob(dag, config);
-
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()));
-        assertEquals(entry(1, 1), sinkList.get(0));
-
-        assertTrueEventually(() -> assertEquals(2, sinkList.size()));
-        assertEquals("wm(150)", sinkList.get(1));
-        assertElapsedTime(time);
     }
 
     @Test
     public void when_i1_idle_i2_idle_then_idleMessageForwardedImmediately() {
         dag = createDag(mode, singletonList(IDLE_MESSAGE), singletonList(IDLE_MESSAGE));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        instance.newJob(dag, config);
+        instance.newJob(dag);
 
         // the idle message should not be presented to the processor
         assertTrueAllTheTime(() -> assertEquals(0, sinkList.size()), 3);
@@ -240,9 +148,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_waitingForWmOnI2ButI2BecomesDone_then_wmFromI1Forwarded() {
         dag = createDag(mode, singletonList(wm(100)), asList(delay(500), DONE_ITEM_STR));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10_000);
-        instance.newJob(dag, config);
+        instance.newJob(dag);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
@@ -251,9 +157,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_multipleWm_then_allForwarded() {
         dag = createDag(mode, asList(wm(100), delay(500), wm(101)), asList(wm(100), delay(500), wm(101)));
-
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10000);
-        instance.newJob(dag, config);
+        instance.newJob(dag);
 
         assertTrueEventually(() -> assertEquals(2, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
@@ -266,12 +170,6 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
     private ListSource.Delay delay(long ms) {
         return new ListSource.Delay(ms);
-    }
-
-    private void assertElapsedTime(long start) {
-        long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - start);
-        assertTrue("Too little elapsed time, WM probably emitted immediately: " + elapsedMs,
-                elapsedMs > 3000);
     }
 
     /**
@@ -358,10 +256,6 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
             private SerializableWm(long timestamp) {
                 this.timestamp = timestamp;
-            }
-
-            Watermark toRealWm() {
-                return new Watermark(timestamp);
             }
         }
 

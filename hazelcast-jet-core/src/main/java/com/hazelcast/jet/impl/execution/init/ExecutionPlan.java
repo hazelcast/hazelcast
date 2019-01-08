@@ -149,7 +149,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
             ConcurrentConveyor<Object> ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
             StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
-                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, true, -1,
+                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, true,
                             "ssFrom:" + vertex.name()),
                     new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount),
                     nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "." + vertex.name()),
@@ -214,7 +214,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
                 ProcessorTasklet processorTasklet = new ProcessorTasklet(context, nodeEngine.getSerializationService(),
                         processor, inboundStreams, outboundStreams, snapshotContext, snapshotCollector,
-                        jobConfig.getMaxWatermarkRetainMillis(), processorProbeBuilder);
+                        processorProbeBuilder);
                 tasklets.add(processorTasklet);
                 this.processors.add(processor);
                 localProcessorIdx++;
@@ -592,7 +592,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                       String debugName) {
         return new ConcurrentInboundEdgeStream(conveyor, inEdge.destOrdinal(), inEdge.priority(),
                 jobConfig.getProcessingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE,
-                jobConfig.getMaxWatermarkRetainMillis(), debugName);
+                debugName);
     }
 
     public List<Processor> getProcessors() {

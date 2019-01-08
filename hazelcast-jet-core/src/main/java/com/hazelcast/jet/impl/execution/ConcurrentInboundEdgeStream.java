@@ -66,13 +66,13 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      *          is {@code false}.
      */
     public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority,
-                                       boolean waitForAllBarriers, int maxWatermarkRetainMillis, String debugName) {
+                                       boolean waitForAllBarriers, String debugName) {
         this.conveyor = conveyor;
         this.ordinal = ordinal;
         this.priority = priority;
         this.waitForAllBarriers = waitForAllBarriers;
 
-        watermarkCoalescer = WatermarkCoalescer.create(maxWatermarkRetainMillis, conveyor.queueCount());
+        watermarkCoalescer = WatermarkCoalescer.create(conveyor.queueCount());
 
         numActiveQueues = conveyor.queueCount();
         receivedBarriers = new BitSet(conveyor.queueCount());
@@ -92,11 +92,6 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     @Override
     public ProgressState drainTo(Predicate<Object> dest) {
-        return drainTo(watermarkCoalescer.getTime(), dest);
-    }
-
-    // package-visible for testing
-    ProgressState drainTo(long now, Predicate<Object> dest) {
         tracker.reset();
         for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
             final QueuedPipe<Object> q = conveyor.queue(queueIndex);
@@ -125,7 +120,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 }
             } else if (itemDetector.item instanceof Watermark) {
                 long wmTimestamp = ((Watermark) itemDetector.item).timestamp();
-                boolean forwarded = maybeEmitWm(watermarkCoalescer.observeWm(now, queueIndex, wmTimestamp), dest);
+                boolean forwarded = maybeEmitWm(watermarkCoalescer.observeWm(queueIndex, wmTimestamp), dest);
                 if (logger.isFinestEnabled()) {
                     logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
                             + (forwarded ? ", forwarded" : ", not forwarded"));
@@ -157,7 +152,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         }
 
         // try to emit WM based on history
-        if (maybeEmitWm(watermarkCoalescer.checkWmHistory(now), dest)) {
+        if (maybeEmitWm(watermarkCoalescer.checkWmHistory(), dest)) {
             return MADE_PROGRESS;
         }
 

@@ -77,16 +77,6 @@ public class JobConfigTest {
     }
 
     @Test
-    public void when_setMaxWatermarkRetainMillis_thenReturnsMaxWatermarkRetainMillis() {
-        // When
-        JobConfig config = new JobConfig();
-        config.setMaxWatermarkRetainMillis(500);
-
-        // Then
-        assertEquals(500, config.getMaxWatermarkRetainMillis());
-    }
-
-    @Test
     public void when_setSnapshotIntervalMillis_thenReturnsSnapshotIntervalMillis() {
         // When
         JobConfig config = new JobConfig();

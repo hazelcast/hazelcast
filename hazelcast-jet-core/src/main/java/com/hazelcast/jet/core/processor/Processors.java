@@ -20,13 +20,13 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
@@ -631,7 +631,7 @@ public final class Processors {
      * Returns a supplier of processors for a vertex that inserts {@link
      * com.hazelcast.jet.core.Watermark watermark items} into the stream. The
      * value of the watermark is determined by the supplied {@link
-     * com.hazelcast.jet.core.WatermarkPolicy} instance.
+     * com.hazelcast.jet.core.EventTimePolicy} instance.
      * <p>
      * This processor also drops late items. It never allows an event which is
      * late with regard to already emitted watermark to pass.

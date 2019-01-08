@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 
@@ -55,7 +55,7 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
     private final BiConsumer<? super S, ? super SourceBufferConsumerSide<?>> fillBufferFn;
     private final Consumer<? super S> destroyFn;
     private final SourceBufferConsumerSide<?> buffer;
-    private final WatermarkSourceUtil<T> wsu;
+    private final EventTimeMapper<T> eventTimeMapper;
 
     private boolean initialized;
     private S src;
@@ -73,10 +73,10 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
         this.destroyFn = destroyFn;
         this.buffer = buffer;
         if (eventTimePolicy != null) {
-            this.wsu = new WatermarkSourceUtil<>(eventTimePolicy);
-            wsu.increasePartitionCount(1);
+            eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+            eventTimeMapper.increasePartitionCount(1);
         } else {
-            this.wsu = null;
+            eventTimeMapper = null;
         }
     }
 
@@ -97,12 +97,12 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
         if (traverser == null) {
             fillBufferFn.accept(src, buffer);
             traverser =
-                    wsu == null ? buffer.traverse()
-                    : buffer.isEmpty() ? wsu.handleNoEvent()
+                    eventTimeMapper == null ? buffer.traverse()
+                    : buffer.isEmpty() ? eventTimeMapper.flatMapIdle()
                     : buffer.traverse().flatMap(t -> {
-                        // if wsu is not null, we know that T is TimestampedItem<?>
+                        // if eventTimeMapper is not null, we know that T is TimestampedItem<?>
                         TimestampedItem<T> t1 = (TimestampedItem<T>) t;
-                        return wsu.handleEvent(t1.item(), 0, t1.timestamp());
+                        return eventTimeMapper.flatMapEvent(t1.item(), 0, t1.timestamp());
                     });
         }
         boolean bufferEmpty = emitFromTraverser(traverser);

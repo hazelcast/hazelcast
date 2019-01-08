@@ -111,9 +111,7 @@ public interface Processor {
     /**
      * Tries to process the supplied watermark. The value is always greater
      * than in the previous call. The watermark is delivered for processing
-     * after it has been received from all the edges or the {@link
-     * com.hazelcast.jet.config.JobConfig#setMaxWatermarkRetainMillis(int)
-     * maximum retention time} has elapsed.
+     * after it has been received from all the edges.
      * <p>
      * The implementation may choose to process only partially and return
      * {@code false}, in which case it will be called again later with the same

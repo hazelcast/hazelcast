@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -57,7 +57,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
     private final DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn;
     private final DistributedConsumer<? super Session> flushFn;
     private final DistributedFunction<? super Message, ? extends T> projectionFn;
-    private final WatermarkSourceUtil<? super T> wsu;
+    private final EventTimeMapper<? super T> eventTimeMapper;
 
     private Session session;
     private MessageConsumer consumer;
@@ -76,8 +76,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
         this.flushFn = flushFn;
         this.projectionFn = projectionFn;
 
-        wsu = new WatermarkSourceUtil<>(eventTimePolicy);
-        wsu.increasePartitionCount(1);
+        eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+        eventTimeMapper.increasePartitionCount(1);
     }
 
     /**
@@ -100,14 +100,14 @@ public class StreamJmsP<T> extends AbstractProcessor {
         session = sessionFn.apply(connection);
         consumer = consumerFn.apply(session);
         traverser = ((Traverser<Message>) () -> uncheckCall(() -> consumer.receiveNoWait()))
-                .flatMap(t -> wsu.handleEvent(projectionFn.apply(t), 0, handleJmsTimestamp(t)))
+                .flatMap(t -> eventTimeMapper.flatMapEvent(projectionFn.apply(t), 0, handleJmsTimestamp(t)))
                 .peek(item -> flushFn.accept(session));
     }
 
     private long handleJmsTimestamp(Message msg) {
         try {
             // as per `getJMSTimestamp` javadoc, it can return 0 if the timestamp was optimized away
-            return msg.getJMSTimestamp() == 0 ? WatermarkSourceUtil.NO_NATIVE_TIME : msg.getJMSTimestamp();
+            return msg.getJMSTimestamp() == 0 ? EventTimeMapper.NO_NATIVE_TIME : msg.getJMSTimestamp();
         } catch (JMSException e) {
             throw sneakyThrow(e);
         }
