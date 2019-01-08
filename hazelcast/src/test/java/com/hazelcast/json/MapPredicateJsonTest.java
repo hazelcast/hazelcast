@@ -404,9 +404,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject value1 = Json.object();
         JsonObject value2 = Json.object();
         JsonObject value3 = Json.object();
-        JsonArray array1 = Json.array(1f, 2f, 3f, 4f, 20f);
-        JsonArray array2 = Json.array(10f, 20f, 30f);
-        JsonArray array3 = Json.array(100f, 200f, 300f, 400f);
+        JsonArray array1 = Json.array(new int[]{1, 2, 3, 4, 20});
+        JsonArray array2 = Json.array(new int[]{10, 20, 30});
+        JsonArray array3 = Json.array(new int[]{100, 200, 300, 400});
         value1.add("numbers", array1);
         value2.add("numbers", array2);
         value3.add("numbers", array3);
@@ -427,11 +427,11 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject value1 = Json.object();
         JsonObject value2 = Json.object();
         JsonObject value3 = Json.object();
-        JsonArray innerArray1 = Json.array(1001f, 1002f);
+        JsonArray innerArray1 = Json.array(new int[]{1001, 1002});
         JsonArray array1 = Json.array();
         array1.add(1).add(2).add(innerArray1).add(3).add(4).add(20);
-        JsonArray array2 = Json.array(10f, 20f, 30f);
-        JsonArray array3 = Json.array(100f, 200f, 300f, 400f);
+        JsonArray array2 = Json.array(new int[]{10, 20, 30});
+        JsonArray array3 = Json.array(new int[]{100, 200, 300, 400});
         value1.add("numbers", array1);
         value2.add("numbers", array2);
         value3.add("numbers", array3);
@@ -457,8 +457,8 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
                 .add("s2", 1002);
         JsonArray array1 = Json.array();
         array1.add(1).add(2).add(innerObject).add(3).add(4).add(20);
-        JsonArray array2 = Json.array(10f, 20f, 30f);
-        JsonArray array3 = Json.array(100f, 200f, 300f, 400f);
+        JsonArray array2 = Json.array(new int[]{10, 20, 30});
+        JsonArray array3 = Json.array(new int[]{100, 200, 300, 400});
         value1.add("numbers", array1);
         value2.add("numbers", array2);
         value3.add("numbers", array3);
@@ -476,9 +476,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     @Test
     public void testSkipsScalarValuesInCaseOfAnyAndAttributeName() {
-        JsonArray array1 = Json.array(1f, 2f, 3f, 5000f);
-        JsonArray array2 = Json.array(1f, 5000f, 3f, 5f);
-        JsonArray array3 = Json.array(1f, 5000f, 30f, 40f);
+        JsonArray array1 = Json.array(new int[]{1, 2, 3, 5000});
+        JsonArray array2 = Json.array(new int[]{1, 5000, 3, 5});
+        JsonArray array3 = Json.array(new int[]{1, 5000, 30, 40});
 
         array1.add(Json.object().add("innerAttribute", 5000));
 
