@@ -16,34 +16,34 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.collections.LazySet;
-import com.hazelcast.query.impl.collections.ReadOnlyMapDelegate;
+import com.hazelcast.query.impl.collections.ReadOnlyCollectionDelegate;
 import com.hazelcast.util.function.Supplier;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Multiple result set for Predicates.
  */
-public class LazySingleResultSet extends LazySet<QueryableEntry> {
+public class LazySingleResultSet<T> extends LazySet<T> {
 
-    private final Supplier<Map<Data, QueryableEntry>> resultSupplier;
+    private final Supplier<Collection<T>> resultSupplier;
     private final int estimatedSize;
 
-    LazySingleResultSet(Supplier<Map<Data, QueryableEntry>> resultSupplier, int resultSize) {
+    LazySingleResultSet(Supplier<Collection<T>> resultSupplier, int resultSize) {
         this.resultSupplier = resultSupplier;
         this.estimatedSize = resultSize;
     }
 
     @Nonnull
     @Override
-    protected Set<QueryableEntry> initialize() {
-        Map<Data, QueryableEntry> records = resultSupplier.get();
-        return records == null ? Collections.<QueryableEntry>emptySet() : new ReadOnlyMapDelegate(records);
+    protected Set<T> initialize() {
+        Collection<T> records = resultSupplier.get();
+        return records == null ? Collections.<T>emptySet() : new ReadOnlyCollectionDelegate<T>(records);
     }
 
     @Override

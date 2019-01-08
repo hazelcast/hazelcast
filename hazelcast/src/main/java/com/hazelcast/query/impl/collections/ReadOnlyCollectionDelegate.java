@@ -16,25 +16,38 @@
 
 package com.hazelcast.query.impl.collections;
 
-import com.hazelcast.query.impl.QueryableEntry;
-
 import javax.annotation.Nonnull;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class ReadOnlyCollectionDelegate extends AbstractSet<QueryableEntry> {
+public class ReadOnlyCollectionDelegate<T> extends AbstractSet<T> {
 
     @Nonnull
-    private final Collection<QueryableEntry> delegate;
+    private final Collection<T> delegate;
 
-    public ReadOnlyCollectionDelegate(final Collection<QueryableEntry> delegate) {
+    public ReadOnlyCollectionDelegate(final Collection<T> delegate) {
         this.delegate = delegate;
     }
 
     @Override
-    public Iterator<QueryableEntry> iterator() {
-        return new ReadOnlyIterator(delegate.iterator());
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+            private final Iterator<? extends T> i = delegate.iterator();
+
+            public boolean hasNext() {
+                return i.hasNext();
+            }
+
+            public T next() {
+                return i.next();
+            }
+
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+
     }
 
     @Override

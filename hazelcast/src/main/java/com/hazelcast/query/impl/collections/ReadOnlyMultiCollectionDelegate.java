@@ -16,29 +16,25 @@
 
 package com.hazelcast.query.impl.collections;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.QueryableEntry;
-
 import javax.annotation.Nonnull;
 import java.util.AbstractSet;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
-public class ReadOnlyMultiCollectionDelegate extends AbstractSet<QueryableEntry> {
+public class ReadOnlyMultiCollectionDelegate<T> extends AbstractSet<T> {
 
     @Nonnull
-    private final List<Map<Data, QueryableEntry>> delegates;
+    private final Collection<Collection<T>> delegates;
 
     private final int size;
 
-    public ReadOnlyMultiCollectionDelegate(final List<Map<Data, QueryableEntry>> delegates, int size) {
+    public ReadOnlyMultiCollectionDelegate(final Collection<Collection<T>> delegates, int size) {
         this.delegates = delegates;
         this.size = size;
     }
 
     @Override
-    public Iterator<QueryableEntry> iterator() {
+    public Iterator<T> iterator() {
         return new ReadOnlyMultiCollectionIterator(delegates.iterator());
     }
 
@@ -54,13 +50,7 @@ public class ReadOnlyMultiCollectionDelegate extends AbstractSet<QueryableEntry>
 
     @Override
     public boolean contains(final Object o) {
-        QueryableEntry entry = (QueryableEntry) o;
-        for (Map<Data, QueryableEntry> delegate : delegates) {
-            if (delegate.containsKey(entry.getKeyData())) {
-                return true;
-            }
-        }
-        return false;
+        throw new UnsupportedOperationException();
     }
 
 }

@@ -18,10 +18,10 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.collections.LazySet;
-import com.hazelcast.query.impl.collections.ReadOnlyCollectionDelegate;
 import com.hazelcast.query.impl.collections.ReadOnlyFilterableCollectionDelegate;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -34,9 +34,9 @@ public class AndResultSet extends LazySet<QueryableEntry> {
 
     @Nonnull
     private final Set<QueryableEntry> smallestResult;
-    private final List<Predicate> otherPredicates;
+    private final List<? extends Predicate> otherPredicates;
 
-    public AndResultSet(@Nonnull Set<QueryableEntry> smallestResult, List<Predicate> otherPredicates) {
+    public AndResultSet(@Nonnull Set<QueryableEntry> smallestResult, List<? extends Predicate> otherPredicates) {
         this.smallestResult = smallestResult;
         this.otherPredicates = otherPredicates;
     }
@@ -45,7 +45,7 @@ public class AndResultSet extends LazySet<QueryableEntry> {
     @Override
     protected Set<QueryableEntry> initialize() {
         if (otherPredicates == null || otherPredicates.isEmpty()) {
-            return new ReadOnlyCollectionDelegate(smallestResult);
+            return Collections.unmodifiableSet(smallestResult);
         } else {
             return new ReadOnlyFilterableCollectionDelegate(smallestResult, otherPredicates);
         }

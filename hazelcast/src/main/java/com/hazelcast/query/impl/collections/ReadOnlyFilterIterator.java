@@ -17,20 +17,20 @@
 package com.hazelcast.query.impl.collections;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
-public class ReadOnlyFilterIterator implements Iterator<QueryableEntry> {
+public class ReadOnlyFilterIterator<T extends Map.Entry> implements Iterator<T> {
 
-    private final Iterator<QueryableEntry> delegate;
+    private final Iterator<T> delegate;
     private final List<Predicate> filters;
 
-    private QueryableEntry currentEntry;
+    private T currentEntry;
 
-    ReadOnlyFilterIterator(final Iterator<QueryableEntry> iterator, final List<Predicate> filters) {
+    ReadOnlyFilterIterator(final Iterator<T> iterator, final List<Predicate> filters) {
         this.delegate = iterator;
         this.filters = filters;
     }
@@ -42,7 +42,7 @@ public class ReadOnlyFilterIterator implements Iterator<QueryableEntry> {
         }
 
         while (delegate.hasNext()) {
-            QueryableEntry entry = delegate.next();
+            T entry = delegate.next();
             if (checkFilters(entry)) {
                 currentEntry = entry;
                 return true;
@@ -52,7 +52,7 @@ public class ReadOnlyFilterIterator implements Iterator<QueryableEntry> {
         return false;
     }
 
-    private boolean checkFilters(QueryableEntry entry) {
+    private boolean checkFilters(T entry) {
         for (Predicate predicate : filters) {
             if (!predicate.apply(entry)) {
                 return false;
@@ -62,12 +62,12 @@ public class ReadOnlyFilterIterator implements Iterator<QueryableEntry> {
     }
 
     @Override
-    public QueryableEntry next() {
+    public T next() {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
 
-        QueryableEntry result = currentEntry;
+        T result = currentEntry;
         currentEntry = null;
         return result;
     }

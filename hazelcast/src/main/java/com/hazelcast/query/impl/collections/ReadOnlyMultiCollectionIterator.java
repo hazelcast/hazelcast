@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.collections;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -33,9 +34,9 @@ class ReadOnlyMultiCollectionIterator<E> implements Iterator<E> {
      */
     private Iterator<? extends E> currentIterator;
 
-    public ReadOnlyMultiCollectionIterator(final Iterator<Map<?, ? extends E>> iterator) {
+    public ReadOnlyMultiCollectionIterator(final Iterator<Collection<E>> iterator) {
         while (iterator.hasNext()) {
-            iteratorChain.add(iterator.next().values().iterator());
+            iteratorChain.add(iterator.next().iterator());
         }
     }
 

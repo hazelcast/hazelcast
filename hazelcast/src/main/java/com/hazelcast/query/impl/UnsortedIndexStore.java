@@ -21,10 +21,9 @@ import com.hazelcast.query.impl.collections.LazySet;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Store indexes out of turn.
@@ -33,8 +32,8 @@ public class UnsortedIndexStore extends BaseIndexStore {
 
     private volatile Map<Data, QueryableEntry> recordsWithNullValue;
 
-    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap
-            = new ConcurrentHashMap<Comparable, Map<Data, QueryableEntry>>(1000);
+    private final Map<Comparable, Map<Data, QueryableEntry>> recordMap
+            = new HashMap<Comparable, Map<Data, QueryableEntry>>(1000);
 
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
@@ -48,7 +47,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
         } else {
             addFunctor = new AddFunctor();
             removeFunctor = new RemoveFunctor();
-            recordsWithNullValue = new ConcurrentHashMap<Data, QueryableEntry>();
+            recordsWithNullValue = new HashMap<Data, QueryableEntry>();
         }
     }
 
@@ -75,78 +74,12 @@ public class UnsortedIndexStore extends BaseIndexStore {
 
     @Override
     public LazySet<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
-        takeReadLock();
-        try {
-            LazyMultiResultSet results = createMultiResultSet();
-            Comparable paramFrom = from;
-            Comparable paramTo = to;
-            int trend = paramFrom.compareTo(paramTo);
-            if (trend == 0) {
-                Map<Data, QueryableEntry> records = recordMap.get(paramFrom);
-                if (records != null) {
-                    copyToMultiResultSet(results, records);
-                }
-                return results;
-            }
-            if (trend < 0) {
-                Comparable oldFrom = paramFrom;
-                paramFrom = to;
-                paramTo = oldFrom;
-            }
-            for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
-                Comparable value = recordMapEntry.getKey();
-                if (value.compareTo(paramFrom) <= 0 && value.compareTo(paramTo) >= 0) {
-                    Map<Data, QueryableEntry> records = recordMapEntry.getValue();
-                    if (records != null) {
-                        copyToMultiResultSet(results, records);
-                    }
-                }
-            }
-            return results;
-        } finally {
-            releaseReadLock();
-        }
+        return null;
     }
 
     @Override
     public LazySet<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
-        takeReadLock();
-        try {
-            LazyMultiResultSet results = createMultiResultSet();
-            for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
-                Comparable value = recordMapEntry.getKey();
-                boolean valid;
-                int result = searchedValue.compareTo(value);
-                switch (comparisonType) {
-                    case LESSER:
-                        valid = result > 0;
-                        break;
-                    case LESSER_EQUAL:
-                        valid = result >= 0;
-                        break;
-                    case GREATER:
-                        valid = result < 0;
-                        break;
-                    case GREATER_EQUAL:
-                        valid = result <= 0;
-                        break;
-                    case NOT_EQUAL:
-                        valid = result != 0;
-                        break;
-                    default:
-                        throw new IllegalStateException("Unrecognized comparisonType: " + comparisonType);
-                }
-                if (valid) {
-                    Map<Data, QueryableEntry> records = recordMapEntry.getValue();
-                    if (records != null) {
-                        copyToMultiResultSet(results, records);
-                    }
-                }
-            }
-            return results;
-        } finally {
-            releaseReadLock();
-        }
+        return null;
     }
 
     @Override
@@ -199,7 +132,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records == null) {
-                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
+                    records = new LinkedHashMap<Data, QueryableEntry>(1, LOAD_FACTOR);
                     recordMap.put(attribute, records);
                 }
                 return records.put(entry.getKeyData(), entry);
@@ -218,16 +151,16 @@ public class UnsortedIndexStore extends BaseIndexStore {
         public Object invoke(Comparable attribute, QueryableEntry entry) {
             Object oldValue;
             if (attribute instanceof IndexImpl.NullObject) {
-                HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
+                Map<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
                 oldValue = copy.put(entry.getKeyData(), entry);
                 recordsWithNullValue = copy;
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records == null) {
-                    records = new HashMap<Data, QueryableEntry>();
+                    records = Collections.emptyMap();
                 }
 
-                records = new HashMap<Data, QueryableEntry>(records);
+                records = new LinkedHashMap<Data, QueryableEntry>(records);
                 oldValue = records.put(entry.getKeyData(), entry);
 
                 recordMap.put(attribute, records);
@@ -276,13 +209,13 @@ public class UnsortedIndexStore extends BaseIndexStore {
         public Object invoke(Comparable attribute, Data indexKey) {
             Object oldValue;
             if (attribute instanceof IndexImpl.NullObject) {
-                HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
+                Map<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
                 oldValue = copy.remove(indexKey);
                 recordsWithNullValue = copy;
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records != null) {
-                    records = new HashMap<Data, QueryableEntry>(records);
+                    records = new LinkedHashMap<Data, QueryableEntry>(records);
                     oldValue = records.remove(indexKey);
 
                     if (records.isEmpty()) {
@@ -305,4 +238,11 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 + "recordMap=" + recordMap.size()
                 + '}';
     }
+
+    @Override
+    public long selectivity() {
+        long adjustedSize = ((long) recordMap.size()) << 10;
+        return adjustedSize / getRecordCount();
+    }
+
 }

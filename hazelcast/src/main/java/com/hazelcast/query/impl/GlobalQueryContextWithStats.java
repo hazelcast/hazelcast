@@ -157,6 +157,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public long avgSelectivity() {
+            return delegate.avgSelectivity();
+        }
+
+        @Override
         public boolean hasPartitionIndexed(int partitionId) {
             return delegate.hasPartitionIndexed(partitionId);
         }

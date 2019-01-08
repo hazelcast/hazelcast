@@ -22,6 +22,8 @@ import com.hazelcast.query.impl.collections.LazySet;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.util.function.Supplier;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,7 @@ public abstract class BaseIndexStore implements IndexStore {
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
 
     private boolean multiResultHasToDetectDuplicates;
+    private long recordCount;
 
     BaseIndexStore(IndexCopyBehavior copyOn) {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE || copyOn == IndexCopyBehavior.NEVER) {
@@ -96,10 +99,12 @@ public abstract class BaseIndexStore implements IndexStore {
                 Object oldValue = newIndexInternal(sanitizedValue, record);
                 operationStats.onEntryAdded(oldValue, newValue);
             }
+            recordCount += results.size();
         } else {
             Comparable sanitizedValue = sanitizeValue(newValue);
             Object oldValue = newIndexInternal(sanitizedValue, record);
             operationStats.onEntryAdded(oldValue, newValue);
+            recordCount++;
         }
     }
 
@@ -121,10 +126,12 @@ public abstract class BaseIndexStore implements IndexStore {
                 Object removedValue = removeIndexInternal(sanitizedValue, indexKey);
                 operationStats.onEntryRemoved(removedValue);
             }
+            recordCount -= results.size();
         } else {
             Comparable sanitizedValue = sanitizeValue(oldValue);
             Object removedValue = removeIndexInternal(sanitizedValue, indexKey);
             operationStats.onEntryRemoved(removedValue);
+            recordCount++;
         }
     }
 
@@ -189,7 +196,7 @@ public abstract class BaseIndexStore implements IndexStore {
     private static class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
-            return map;
+            return map != null ? map : Collections.<Data, QueryableEntry>emptyMap();
         }
     }
 
@@ -199,7 +206,7 @@ public abstract class BaseIndexStore implements IndexStore {
             if (map != null && !map.isEmpty()) {
                 return new HashMap<Data, QueryableEntry>(map);
             }
-            return map;
+            return Collections.emptyMap();
         }
     }
 
@@ -212,10 +219,10 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     private int getRecordsSize(Map map) {
-        if (map == null || map.isEmpty()) {
-            return 0;
-        } else {
+        if (map != null) {
             return map.size();
+        } else {
+            return 0;
         }
     }
 
@@ -223,7 +230,7 @@ public abstract class BaseIndexStore implements IndexStore {
         Object invoke(A param1, B param2);
     }
 
-    final class RecordSupplier implements Supplier<Map<Data, QueryableEntry>> {
+    final class RecordSupplier implements Supplier<Collection<QueryableEntry>> {
 
         private final Map<Data, QueryableEntry> orgRecords;
 
@@ -232,13 +239,17 @@ public abstract class BaseIndexStore implements IndexStore {
         }
 
         @Override
-        public Map<Data, QueryableEntry> get() {
+        public Collection<QueryableEntry> get() {
             try {
                 takeReadLock();
-                return resultCopyFunctor.invoke(orgRecords);
+                return resultCopyFunctor.invoke(orgRecords).values();
             } finally {
                 releaseReadLock();
             }
         }
+    }
+
+    public long getRecordCount() {
+        return recordCount;
     }
 }

@@ -277,4 +277,9 @@ public abstract class AbstractIndex implements InternalIndex {
             stats.onIndexHit(timestamp - elapsed, recordSize);
         }
     }
+
+    @Override
+    public long avgSelectivity() {
+        return indexStore.selectivity();
+    }
 }

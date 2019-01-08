@@ -16,11 +16,10 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.collections.LazySet;
 import com.hazelcast.util.function.Supplier;
 
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * Lazy MultiResultSet for query results.
@@ -33,5 +32,5 @@ public abstract class LazyMultiResultSet<E> extends LazySet<E> {
      * @param resultSupplier
      * @param resultSize
      */
-    abstract void addResultSetSupplier(Supplier<Map<Data, E>> resultSupplier, int resultSize);
+    abstract void addResultSetSupplier(Supplier<Collection<E>> resultSupplier, int resultSize);
 }

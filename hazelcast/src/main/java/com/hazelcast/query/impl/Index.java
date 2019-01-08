@@ -150,4 +150,7 @@ public interface Index {
         SYSTEM
     }
 
+    
+    long avgSelectivity();
+
 }

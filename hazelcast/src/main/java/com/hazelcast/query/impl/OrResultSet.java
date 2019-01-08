@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.query.impl.collections.LazySet;
-import com.hazelcast.query.impl.collections.ReadOnlyCollectionDelegate;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -57,7 +56,7 @@ public class OrResultSet extends LazySet<QueryableEntry> {
         for (Set<QueryableEntry> result : indexedResults) {
             results.addAll(result);
         }
-        return new ReadOnlyCollectionDelegate(results);
+        return Collections.unmodifiableSet(results);
     }
 
     @Override

@@ -16,44 +16,42 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.collections.ReadOnlyMapDelegate;
 import com.hazelcast.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-public class LazyDuplicateDetectingMultiResult extends LazyMultiResultSet<QueryableEntry> {
+public class LazyDuplicateDetectingMultiResult<T> extends LazyMultiResultSet<T> {
 
-    private final List<Supplier<Map<Data, QueryableEntry>>> resultSuppliers
-            = new ArrayList<Supplier<Map<Data, QueryableEntry>>>();
+    private final List<Supplier<Collection<T>>> resultSuppliers
+            = new ArrayList<Supplier<Collection<T>>>();
     private int estimatedSize;
 
     @Override
-    public void addResultSetSupplier(Supplier<Map<Data, QueryableEntry>> resultSupplier, int resultSize) {
+    public void addResultSetSupplier(Supplier<Collection<T>> resultSupplier, int resultSize) {
         resultSuppliers.add(resultSupplier);
         estimatedSize += resultSize;
     }
 
     @Nonnull
     @Override
-    protected Set<QueryableEntry> initialize() {
+    protected Set<T> initialize() {
         if (resultSuppliers.isEmpty()) {
             return Collections.emptySet();
         }
         //Since duplicate detection required, we're paying copy cost again
         //TODO : check what can be done to prevent second copy cost
-        Map<Data, QueryableEntry> results = new HashMap<Data, QueryableEntry>();
-        for (Supplier<Map<Data, QueryableEntry>> resultSupplier : resultSuppliers) {
-            Map<Data, QueryableEntry> result = resultSupplier.get();
-            results.putAll(result);
+        Set<T> results = new HashSet<T>();
+        for (Supplier<Collection<T>> resultSupplier : resultSuppliers) {
+            Collection<T> result = resultSupplier.get();
+            results.addAll(result);
         }
-        return new ReadOnlyMapDelegate(results);
+        return Collections.unmodifiableSet(results);
     }
 
     @Override

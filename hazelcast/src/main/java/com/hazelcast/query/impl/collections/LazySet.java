@@ -52,7 +52,7 @@ public abstract class LazySet<E> implements Set<E> {
      * @return the delegate.
      */
     @Nonnull
-    private synchronized Set<E> delegate() {
+    private Set<E> delegate() {
         if (delegate == null) {
             long start = System.nanoTime();
             delegate = initialize();

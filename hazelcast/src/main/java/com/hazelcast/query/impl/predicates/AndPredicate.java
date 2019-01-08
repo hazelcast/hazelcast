@@ -38,6 +38,8 @@ import java.util.Set;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isRangePredicate;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isValuePredicate;
 
 /**
  * And Predicate
@@ -71,34 +73,74 @@ public final class AndPredicate
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Set<QueryableEntry> smallestResultSet = null;
-        Predicate smallestPredicate = null;
-        List<Predicate> unindexedPredicates = null;
+        IndexAwarePredicate smallestPredicate = null;
+        List<Predicate> otherPredicates = initList();
+        List<IndexAwarePredicate> rangePredicates = initList();
+        List<IndexAwarePredicate> otherIndexedPredicates = initList();
 
         for (Predicate predicate : predicates) {
             if (isIndexedPredicate(predicate, queryContext)) {
-                Set<QueryableEntry> currentResultSet = ((IndexAwarePredicate) predicate).filter(queryContext);
-                if (smallestResultSet == null) {
-                    smallestResultSet = currentResultSet;
-                    smallestPredicate = predicate;
-                } else if (estimatedSizeOf(currentResultSet) < estimatedSizeOf(smallestResultSet)) {
-                    unindexedPredicates = initOrGetListOf(unindexedPredicates);
-                    unindexedPredicates.add(smallestPredicate);
-                    smallestResultSet = currentResultSet;
-                    smallestPredicate = predicate;
+                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+                //Check Equal & In predicates first
+                if (isValuePredicate(iap)) {
+                    Set<QueryableEntry> currentResultSet = iap.filter(queryContext);
+                    if (smallestResultSet == null) {
+                        smallestResultSet = currentResultSet;
+                        smallestPredicate = iap;
+                    } else if (estimatedSizeOf(currentResultSet) < estimatedSizeOf(smallestResultSet)) {
+                        otherPredicates.add(smallestPredicate);
+                        smallestResultSet = currentResultSet;
+                        smallestPredicate = iap;
+                    } else {
+                        otherPredicates.add(iap);
+                    }
+                } else if (isRangePredicate(predicate)) {
+                    rangePredicates.add(iap);
                 } else {
-                    unindexedPredicates = initOrGetListOf(unindexedPredicates);
-                    unindexedPredicates.add(predicate);
+                    otherIndexedPredicates.add(iap);
                 }
             } else {
-                unindexedPredicates = initOrGetListOf(unindexedPredicates);
-                unindexedPredicates.add(predicate);
+                otherPredicates.add(predicate);
             }
         }
 
+
         if (smallestResultSet == null) {
-            return null;
+            if (rangePredicates.isEmpty()) {
+                if (otherIndexedPredicates.isEmpty()) {
+                    return null;
+                } else {
+                    //Get the first one, since it's Or Predicate
+                    smallestResultSet = otherIndexedPredicates.get(0).filter(queryContext);
+                    otherIndexedPredicates.remove(0);
+                }
+            } else {
+                long maxSe = 0;
+                smallestPredicate = null;
+                for (IndexAwarePredicate iap : rangePredicates) {
+                    long se = queryContext.getIndex(((AbstractPredicate) iap).attributeName).avgSelectivity();
+                    if (se > maxSe) {
+                        smallestPredicate = iap;
+                        maxSe = se;
+                    }
+                }
+
+                if (smallestPredicate == null) {
+                    return null;
+                }
+
+                smallestResultSet = smallestPredicate.filter(queryContext);
+
+                if (smallestResultSet == null) {
+                    return null;
+                }
+                rangePredicates.remove(smallestPredicate);
+            }
         }
-        return new AndResultSet(smallestResultSet, unindexedPredicates);
+
+        otherPredicates.addAll(otherIndexedPredicates);
+        otherPredicates.addAll(rangePredicates);
+        return new AndResultSet(smallestResultSet, otherPredicates);
     }
 
     private static boolean isIndexedPredicate(Predicate predicate, QueryContext queryContext) {
@@ -110,6 +152,10 @@ public final class AndPredicate
             list = new LinkedList<T>();
         }
         return list;
+    }
+
+    private static <T> List<T> initList() {
+        return new LinkedList<T>();
     }
 
     @Override

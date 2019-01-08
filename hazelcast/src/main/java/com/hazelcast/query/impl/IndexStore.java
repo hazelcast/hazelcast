@@ -37,4 +37,6 @@ public interface IndexStore {
     LazySet<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
     LazySet<QueryableEntry> getRecords(Comparable value);
     LazySet<QueryableEntry> getRecords(Set<Comparable> values);
+
+    long selectivity();
 }

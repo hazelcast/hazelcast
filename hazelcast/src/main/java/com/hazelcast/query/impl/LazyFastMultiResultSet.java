@@ -16,43 +16,42 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.collections.ReadOnlyMultiCollectionDelegate;
 import com.hazelcast.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Lazy Multiple result set for Predicates.
  */
-public class LazyFastMultiResultSet extends LazyMultiResultSet<QueryableEntry> {
+public class LazyFastMultiResultSet<E> extends LazyMultiResultSet<E> {
 
-    private final List<Supplier<Map<Data, QueryableEntry>>> resultSuppliers
-            = new ArrayList<Supplier<Map<Data, QueryableEntry>>>();
+    private final List<Supplier<Collection<E>>> resultSuppliers
+            = new ArrayList<Supplier<Collection<E>>>();
     private int estimatedSize;
 
     @Override
-    void addResultSetSupplier(Supplier<Map<Data, QueryableEntry>> resultSupplier, int resultSize) {
+    void addResultSetSupplier(Supplier<Collection<E>> resultSupplier, int resultSize) {
         resultSuppliers.add(resultSupplier);
         estimatedSize += resultSize;
     }
 
     @Nonnull
     @Override
-    protected Set<QueryableEntry> initialize() {
+    protected Set<E> initialize() {
         if (resultSuppliers.isEmpty()) {
             return Collections.emptySet();
         }
-        List<Map<Data, QueryableEntry>> results = new LinkedList<Map<Data, QueryableEntry>>();
+        List<Collection<E>> results = new LinkedList<Collection<E>>();
         int size = 0;
-        for (Supplier<Map<Data, QueryableEntry>> resultSupplier : resultSuppliers) {
-            Map<Data, QueryableEntry> result = resultSupplier.get();
+        for (Supplier<Collection<E>> resultSupplier : resultSuppliers) {
+            Collection<E> result = resultSupplier.get();
             results.add(result);
             size += result.size();
         }

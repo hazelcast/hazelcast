@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl.collections;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryableEntry;
 
 import javax.annotation.Nonnull;
 import java.util.AbstractSet;
@@ -26,19 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ReadOnlyFilterableCollectionDelegate extends AbstractSet<QueryableEntry> {
+public class ReadOnlyFilterableCollectionDelegate<T> extends AbstractSet<T> {
 
     private static final int SIZE_UNINITIALIZED = -1;
 
     @Nonnull
-    private final Set<QueryableEntry> delegate;
+    private final Set<T> delegate;
 
     @Nonnull
     private final List<Predicate> filters;
 
     private int size;
 
-    public ReadOnlyFilterableCollectionDelegate(@Nonnull Set<QueryableEntry> delegate,
+    public ReadOnlyFilterableCollectionDelegate(@Nonnull Set<T> delegate,
                                                 @Nonnull List<Predicate> filters) {
         this.delegate = delegate;
         this.filters = filters;
@@ -46,7 +45,7 @@ public class ReadOnlyFilterableCollectionDelegate extends AbstractSet<QueryableE
     }
 
     @Override
-    public Iterator<QueryableEntry> iterator() {
+    public Iterator<T> iterator() {
         return new ReadOnlyFilterIterator(delegate.iterator(), filters);
     }
 
@@ -54,7 +53,7 @@ public class ReadOnlyFilterableCollectionDelegate extends AbstractSet<QueryableE
     public int size() {
         if (size == SIZE_UNINITIALIZED) {
             int calculatedSize = 0;
-            for (Iterator<QueryableEntry> it = iterator(); it.hasNext(); it.next()) {
+            for (Iterator<T> it = iterator(); it.hasNext(); it.next()) {
                 calculatedSize++;
             }
             size = calculatedSize;
@@ -69,16 +68,7 @@ public class ReadOnlyFilterableCollectionDelegate extends AbstractSet<QueryableE
 
     @Override
     public boolean contains(final Object o) {
-        if (!delegate.contains(o)) {
-            return false;
-        }
-
-        for (Predicate filter : filters) {
-            if (!filter.apply((Map.Entry) o)) {
-                return false;
-            }
-        }
-        return true;
+        throw new UnsupportedOperationException();
     }
 
 }

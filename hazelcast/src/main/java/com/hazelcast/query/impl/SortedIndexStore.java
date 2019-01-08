@@ -21,11 +21,11 @@ import com.hazelcast.query.impl.collections.LazySet;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.TreeMap;
 
 /**
  * Store indexes rankly.
@@ -34,8 +34,8 @@ public class SortedIndexStore extends BaseIndexStore {
 
     private volatile Map<Data, QueryableEntry> recordsWithNullValue;
 
-    private final ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>> recordMap
-            = new ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>>();
+    private final NavigableMap<Comparable, Map<Data, QueryableEntry>> recordMap
+            = new TreeMap<Comparable, Map<Data, QueryableEntry>>();
 
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
@@ -50,7 +50,7 @@ public class SortedIndexStore extends BaseIndexStore {
         } else {
             addFunctor = new AddFunctor();
             removeFunctor = new RemoveFunctor();
-            recordsWithNullValue = new ConcurrentHashMap<Data, QueryableEntry>();
+            recordsWithNullValue = new HashMap<Data, QueryableEntry>();
         }
     }
 
@@ -80,7 +80,7 @@ public class SortedIndexStore extends BaseIndexStore {
         takeReadLock();
         try {
             LazyMultiResultSet results = createMultiResultSet();
-            SortedMap<Comparable, Map<Data, QueryableEntry>> subMap =
+            NavigableMap<Comparable, Map<Data, QueryableEntry>> subMap =
                     recordMap.subMap(from, true, to, true);
             for (Map<Data, QueryableEntry> value : subMap.values()) {
                 copyToMultiResultSet(results, value);
@@ -96,7 +96,7 @@ public class SortedIndexStore extends BaseIndexStore {
         takeReadLock();
         try {
             LazyMultiResultSet results = createMultiResultSet();
-            SortedMap<Comparable, Map<Data, QueryableEntry>> subMap;
+            NavigableMap<Comparable, Map<Data, QueryableEntry>> subMap;
             switch (comparisonType) {
                 case LESSER:
                     subMap = recordMap.headMap(searchedValue, false);
@@ -114,6 +114,8 @@ public class SortedIndexStore extends BaseIndexStore {
                     // TODO There maybe more efficient way such as
                     // Make a copy of current record map and just remove searched value.
                     // So remaining records are not equal to searched value
+                    //Map<Data, QueryableEntry> equalEntries = recordMap.get(searchedValue);
+                    //long size = getRecordCount() - equalEntries.size();
                     for (Map.Entry<Comparable, Map<Data, QueryableEntry>> entry : recordMap.entrySet()) {
                         if (!searchedValue.equals(entry.getKey())) {
                             copyToMultiResultSet(results, entry.getValue());
@@ -182,7 +184,7 @@ public class SortedIndexStore extends BaseIndexStore {
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records == null) {
-                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
+                    records = new LinkedHashMap<Data, QueryableEntry>(1, LOAD_FACTOR);
                     recordMap.put(attribute, records);
                 }
                 return records.put(entry.getKeyData(), entry);
@@ -201,7 +203,7 @@ public class SortedIndexStore extends BaseIndexStore {
         public Object invoke(Comparable attribute, QueryableEntry entry) {
             Object oldValue;
             if (attribute instanceof IndexImpl.NullObject) {
-                HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
+                Map<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
                 oldValue = copy.put(entry.getKeyData(), entry);
                 recordsWithNullValue = copy;
             } else {
@@ -210,7 +212,7 @@ public class SortedIndexStore extends BaseIndexStore {
                     records = Collections.emptyMap();
                 }
 
-                records = new HashMap<Data, QueryableEntry>(records);
+                records = new LinkedHashMap<Data, QueryableEntry>(records);
                 oldValue = records.put(entry.getKeyData(), entry);
 
                 recordMap.put(attribute, records);
@@ -258,13 +260,13 @@ public class SortedIndexStore extends BaseIndexStore {
         public Object invoke(Comparable attribute, Data indexKey) {
             Object oldValue;
             if (attribute instanceof IndexImpl.NullObject) {
-                HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
+                Map<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
                 oldValue = copy.remove(indexKey);
                 recordsWithNullValue = copy;
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(attribute);
                 if (records != null) {
-                    records = new HashMap<Data, QueryableEntry>(records);
+                    records = new LinkedHashMap<Data, QueryableEntry>(records);
                     oldValue = records.remove(indexKey);
 
                     if (records.isEmpty()) {
@@ -287,6 +289,12 @@ public class SortedIndexStore extends BaseIndexStore {
         return "SortedIndexStore{"
                 + "recordMap=" + recordMap.size()
                 + '}';
+    }
+
+    @Override
+    public long selectivity() {
+        long adjustedSize = ((long) recordMap.size()) << 10;
+        return adjustedSize / getRecordCount();
     }
 
 }
