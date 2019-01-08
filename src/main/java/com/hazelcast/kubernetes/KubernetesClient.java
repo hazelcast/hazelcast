@@ -56,6 +56,19 @@ interface KubernetesClient {
     Endpoints endpointsByName(String namespace, String endpointName);
 
     /**
+     * Retrieves zone name for the given {@code namespace} and the given {@code podName}.
+     * <p>
+     * Note that the Kubernetes environment must provide such information as defined
+     * <a href="https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints">here</a>.
+     *
+     * @param namespace namespace name
+     * @param podName   POD name
+     * @return zone name
+     * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11">Kubernetes Endpoint API</a>
+     */
+    String zone(String namespace, String podName);
+
+    /**
      * Result which stores the information about all addresses.
      */
     final class Endpoints {

@@ -91,6 +91,17 @@ class DefaultKubernetesClient
         return parseEndpoint(json);
     }
 
+    @Override
+    public String zone(String namespace, String podName) {
+        String podUrlString = String.format("%s/api/v1/namespaces/%s/pods/%s", kubernetesMaster, namespace, podName);
+        JsonObject podJson = callGet(podUrlString);
+        String nodeName = parseNodeName(podJson);
+
+        String nodeUrlString = String.format("%s/api/v1/nodes/%s", kubernetesMaster, nodeName);
+        JsonObject nodeJson = callGet(nodeUrlString);
+        return parseZone(nodeJson);
+    }
+
     private JsonObject callGet(String urlString) {
         HttpURLConnection connection = null;
         try {
@@ -228,6 +239,19 @@ class DefaultKubernetesClient
             }
         }
         return result;
+    }
+
+    private static String parseNodeName(JsonObject json) {
+        return toString(json.get("spec").asObject().get("nodeName"));
+    }
+
+    private static String parseZone(JsonObject json) {
+        JsonObject labels = json.get("metadata").asObject().get("labels").asObject();
+        JsonValue zone = labels.get("failure-domain.kubernetes.io/zone");
+        if (zone != null) {
+            return toString(zone);
+        }
+        return toString(labels.get("failure-domain.beta.kubernetes.io/zone"));
     }
 
     private static JsonArray toJsonArray(JsonValue jsonValue) {

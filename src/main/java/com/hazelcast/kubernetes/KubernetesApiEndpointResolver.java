@@ -21,16 +21,9 @@ import com.hazelcast.kubernetes.KubernetesClient.Endpoints;
 import com.hazelcast.kubernetes.KubernetesClient.EntrypointAddress;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import com.hazelcast.util.StringUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +40,7 @@ class KubernetesApiEndpointResolver
     private final KubernetesClient client;
 
     KubernetesApiEndpointResolver(ILogger logger, String serviceName, int port, String serviceLabel, String serviceLabelValue,
-                                  String namespace, Boolean resolveNotReadyAddresses, String kubernetesMaster, String apiToken) {
+                                  String namespace, Boolean resolveNotReadyAddresses, KubernetesClient client) {
 
         super(logger);
 
@@ -57,14 +50,7 @@ class KubernetesApiEndpointResolver
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
         this.resolveNotReadyAddresses = resolveNotReadyAddresses;
-        this.client = buildKubernetesClient(apiToken, kubernetesMaster);
-    }
-
-    private KubernetesClient buildKubernetesClient(String token, String kubernetesMaster) {
-        if (StringUtil.isNullOrEmpty(token)) {
-            token = getAccountToken();
-        }
-        return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, token));
+        this.client = client;
     }
 
     @Override
@@ -115,25 +101,5 @@ class KubernetesApiEndpointResolver
             return entrypointAddress.getPort();
         }
         return NetworkConfig.DEFAULT_PORT;
-    }
-
-    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private String getAccountToken() {
-        return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
-    }
-
-    protected static String readFileContents(String tokenFile) {
-        InputStream is = null;
-        try {
-            File file = new File(tokenFile);
-            byte[] data = new byte[(int) file.length()];
-            is = new FileInputStream(file);
-            is.read(data);
-            return new String(data, "UTF-8");
-        } catch (IOException e) {
-            throw new RuntimeException("Could not get token file", e);
-        } finally {
-            IOUtil.closeResource(is);
-        }
     }
 }

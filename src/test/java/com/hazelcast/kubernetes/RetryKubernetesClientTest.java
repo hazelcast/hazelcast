@@ -36,6 +36,8 @@ public class RetryKubernetesClientTest {
     private static final String SERVICE_LABEL = "someServiceLabel";
     private static final String SERVICE_LABEL_VALUE = "someServiceLabelValue";
     private static final String SERVICE_NAME = "someServiceName";
+    private static final String POD_NAME = "hazelcast-0";
+    private static final String ZONE = "us-central1-a";
 
     private static final Endpoints ENDPOINTS = new Endpoints(null, null);
 
@@ -72,7 +74,7 @@ public class RetryKubernetesClientTest {
                                               .willThrow(KubernetesClientException.class).willReturn(ENDPOINTS);
 
         // when
-        Endpoints result = client.endpoints(NAMESPACE);
+        client.endpoints(NAMESPACE);
 
         // then
         // throws exception
@@ -99,7 +101,7 @@ public class RetryKubernetesClientTest {
                 .willThrow(KubernetesClientException.class).willReturn(ENDPOINTS);
 
         // when
-        Endpoints result = client.endpointsByLabel(NAMESPACE, SERVICE_LABEL, SERVICE_LABEL_VALUE);
+        client.endpointsByLabel(NAMESPACE, SERVICE_LABEL, SERVICE_LABEL_VALUE);
 
         // then
         // throws exception
@@ -126,7 +128,32 @@ public class RetryKubernetesClientTest {
                 .willThrow(KubernetesClientException.class).willReturn(ENDPOINTS);
 
         // when
-        Endpoints result = client.endpointsByName(NAMESPACE, SERVICE_NAME);
+        client.endpointsByName(NAMESPACE, SERVICE_NAME);
+
+        // then
+        // throws exception
+    }
+
+    @Test
+    public void zone() {
+        // given
+        given(mockClient.zone(NAMESPACE, POD_NAME)).willThrow(KubernetesClientException.class).willReturn(ZONE);
+
+        // when
+        String result = client.zone(NAMESPACE, POD_NAME);
+
+        // then
+        assertEquals(ZONE, result);
+    }
+
+    @Test(expected = KubernetesClientException.class)
+    public void zoneRetriesExceeded() {
+        // given
+        given(mockClient.zone(NAMESPACE, POD_NAME)).willThrow(KubernetesClientException.class)
+                                                   .willThrow(KubernetesClientException.class).willReturn(ZONE);
+
+        // when
+        client.zone(NAMESPACE, POD_NAME);
 
         // then
         // throws exception

@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -45,14 +46,14 @@ final class RetryUtils {
      * <p>
      * If {@code callable} throws an unchecked exception, it is wrapped into {@link HazelcastException}.
      */
-    public static <T> T retry(Callable<T> callable, int retries) {
+    public static <T> T retry(Callable<T> callable, int retries, List<String> nonRetryableKeywords) {
         int retryCount = 0;
         while (true) {
             try {
                 return callable.call();
             } catch (Exception e) {
                 retryCount++;
-                if (retryCount > retries) {
+                if (retryCount > retries || containsAnyOf(e, nonRetryableKeywords)) {
                     throw ExceptionUtil.rethrow(e);
                 }
                 long waitIntervalMs = backoffIntervalForRetry(retryCount);
@@ -62,6 +63,20 @@ final class RetryUtils {
                 sleep(waitIntervalMs);
             }
         }
+    }
+
+    private static boolean containsAnyOf(Exception e, List<String> nonRetryableKeywords) {
+        Throwable currentException = e;
+        while (currentException != null) {
+            String exceptionMessage = currentException.getMessage();
+            for (String keyword : nonRetryableKeywords) {
+                if (exceptionMessage != null && exceptionMessage.contains(keyword)) {
+                    return true;
+                }
+            }
+            currentException = currentException.getCause();
+        }
+        return false;
     }
 
     private static long backoffIntervalForRetry(int retryCount) {

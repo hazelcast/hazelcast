@@ -35,6 +35,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DefaultKubernetesClientTest {
@@ -51,6 +52,7 @@ public class DefaultKubernetesClientTest {
     private static final String SAMPLE_IP_PORT_1 = ipPort(SAMPLE_ADDRESS_1, SAMPLE_PORT_1);
     private static final String SAMPLE_IP_PORT_2 = ipPort(SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
     private static final String SAMPLE_NOT_READY_IP = ipPort(SAMPLE_NOT_READY_ADDRESS, null);
+    private static final String ZONE = "us-central1-a";
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
@@ -111,6 +113,44 @@ public class DefaultKubernetesClientTest {
         // then
         assertThat(extractIpPort(result.getAddresses()), containsInAnyOrder(SAMPLE_IP_PORT_1, SAMPLE_IP_PORT_2));
         assertTrue(result.getNotReadyAddresses().isEmpty());
+    }
+
+    @Test
+    public void zoneBeta() {
+        // given
+        String podName = "my-release-hazelcast-0";
+        String nodeName = "gke-rafal-test-cluster-default-pool-9238654c-12tz";
+        stubFor(get(urlPathMatching(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName)))
+                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
+                .willReturn(aResponse().withStatus(200).withBody(podBody(nodeName))));
+        stubFor(get(urlPathMatching(String.format("/api/v1/nodes/%s", nodeName)))
+                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
+                .willReturn(aResponse().withStatus(200).withBody(nodeBetaBody())));
+
+        // when
+        String zone = kubernetesClient.zone(NAMESPACE, podName);
+
+        // then
+        assertEquals(ZONE, zone);
+    }
+
+    @Test
+    public void zone() {
+        // given
+        String podName = "my-release-hazelcast-0";
+        String nodeName = "gke-rafal-test-cluster-default-pool-9238654c-12tz";
+        stubFor(get(urlPathMatching(String.format("/api/v1/namespaces/%s/pods/%s", NAMESPACE, podName)))
+                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
+                .willReturn(aResponse().withStatus(200).withBody(podBody(nodeName))));
+        stubFor(get(urlPathMatching(String.format("/api/v1/nodes/%s", nodeName)))
+                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
+                .willReturn(aResponse().withStatus(200).withBody(nodeBody())));
+
+        // when
+        String zone = kubernetesClient.zone(NAMESPACE, podName);
+
+        // then
+        assertEquals(ZONE, zone);
     }
 
     @Test(expected = KubernetesClientException.class)
@@ -749,6 +789,205 @@ public class DefaultKubernetesClientTest {
                         "  ]" +
                         "}"
                 , SAMPLE_ADDRESS_1, SAMPLE_PORT_1, SAMPLE_ADDRESS_2, SAMPLE_PORT_2);
+    }
+
+    /**
+     * Real response recorded from the Kubernetes API call "/api/v1/namespaces/{namespace}/pods/{pod-name}".
+     */
+    private static String podBody(String nodeName) {
+        return String.format(
+                "{  \"kind\": \"Pod\",\n"
+                        + "  \"apiVersion\": \"v1\",\n"
+                        + "  \"metadata\": {\n"
+                        + "    \"name\": \"my-release-hazelcast-0\",\n"
+                        + "    \"generateName\": \"my-release-hazelcast-\",\n"
+                        + "    \"namespace\": \"default\",\n"
+                        + "    \"selfLink\": \"/api/v1/namespaces/default/pods/my-release-hazelcast-0\",\n"
+                        + "    \"uid\": \"53112ead-0511-11e9-9c53-42010a800013\",\n"
+                        + "    \"resourceVersion\": \"7724\",\n"
+                        + "    \"creationTimestamp\": \"2018-12-21T11:12:37Z\",\n"
+                        + "    \"labels\": {\n"
+                        + "      \"app\": \"hazelcast\",\n"
+                        + "      \"controller-revision-hash\": \"my-release-hazelcast-695d9d97dd\",\n"
+                        + "      \"release\": \"my-release\",\n"
+                        + "      \"role\": \"hazelcast\",\n"
+                        + "      \"statefulset.kubernetes.io/pod-name\": \"my-release-hazelcast-0\"\n"
+                        + "    },\n"
+                        + "    \"annotations\": {\n"
+                        + "      \"kubernetes.io/limit-ranger\": \"LimitRanger plugin set: cpu request for container my-release-hazelcast\"\n"
+                        + "    },\n"
+                        + "    \"ownerReferences\": [\n"
+                        + "      {\n"
+                        + "        \"apiVersion\": \"apps/v1\",\n"
+                        + "        \"kind\": \"StatefulSet\",\n"
+                        + "        \"name\": \"my-release-hazelcast\",\n"
+                        + "        \"uid\": \"53096f3b-0511-11e9-9c53-42010a800013\",\n"
+                        + "        \"controller\": true,\n"
+                        + "        \"blockOwnerDeletion\": true\n"
+                        + "      }\n"
+                        + "    ]\n"
+                        + "  },\n"
+                        + "  \"spec\": {\n"
+                        + "    \"volumes\": [\n"
+                        + "      {\n"
+                        + "        \"name\": \"hazelcast-storage\",\n"
+                        + "        \"configMap\": {\n"
+                        + "          \"name\": \"my-release-hazelcast-configuration\",\n"
+                        + "          \"defaultMode\": 420\n"
+                        + "        }\n"
+                        + "      },\n"
+                        + "      {\n"
+                        + "        \"name\": \"my-release-hazelcast-token-j89v4\",\n"
+                        + "        \"secret\": {\n"
+                        + "          \"secretName\": \"my-release-hazelcast-token-j89v4\",\n"
+                        + "          \"defaultMode\": 420\n"
+                        + "        }\n"
+                        + "      }\n"
+                        + "    ],\n"
+                        + "    \"containers\": [\n"
+                        + "      {\n"
+                        + "        \"name\": \"my-release-hazelcast\",\n"
+                        + "        \"image\": \"hazelcast/hazelcast:latest\",\n"
+                        + "        \"ports\": [\n"
+                        + "          {\n"
+                        + "            \"name\": \"hazelcast\",\n"
+                        + "            \"containerPort\": 5701,\n"
+                        + "            \"protocol\": \"TCP\"\n"
+                        + "          }\n"
+                        + "        ],\n"
+                        + "        \"env\": [\n"
+                        + "          {\n"
+                        + "            \"name\": \"JAVA_OPTS\",\n"
+                        + "            \"value\": \"-Dhazelcast.rest.enabled=true -Dhazelcast.config=/data/hazelcast/hazelcast.xml -DserviceName=my-release-hazelcast -Dnamespace=default -Dhazelcast.mancenter.enabled=true -Dhazelcast.mancenter.url=http://my-release-hazelcast-mancenter:8080/hazelcast-mancenter -Dhazelcast.shutdownhook.policy=GRACEFUL -Dhazelcast.shutdownhook.enabled=true -Dhazelcast.graceful.shutdown.max.wait=600 \"\n"
+                        + "          }\n"
+                        + "        ],\n"
+                        + "        \"resources\": {\n"
+                        + "          \"requests\": {\n"
+                        + "            \"cpu\": \"100m\"\n"
+                        + "          }\n"
+                        + "        },\n"
+                        + "        \"volumeMounts\": [\n"
+                        + "          {\n"
+                        + "            \"name\": \"hazelcast-storage\",\n"
+                        + "            \"mountPath\": \"/data/hazelcast\"\n"
+                        + "          },\n"
+                        + "          {\n"
+                        + "            \"name\": \"my-release-hazelcast-token-j89v4\",\n"
+                        + "            \"readOnly\": true,\n"
+                        + "            \"mountPath\": \"/var/run/secrets/kubernetes.io/serviceaccount\"\n"
+                        + "          }\n"
+                        + "        ],\n"
+                        + "        \"terminationMessagePath\": \"/dev/termination-log\",\n"
+                        + "        \"terminationMessagePolicy\": \"File\",\n"
+                        + "        \"imagePullPolicy\": \"Always\"\n"
+                        + "      }\n"
+                        + "    ],\n"
+                        + "    \"restartPolicy\": \"Always\",\n"
+                        + "    \"terminationGracePeriodSeconds\": 600,\n"
+                        + "    \"dnsPolicy\": \"ClusterFirst\",\n"
+                        + "    \"serviceAccountName\": \"my-release-hazelcast\",\n"
+                        + "    \"serviceAccount\": \"my-release-hazelcast\",\n"
+                        + "    \"nodeName\": \"%s\",\n"
+                        + "    \"securityContext\": {\n"
+                        + "      \"runAsUser\": 1001,\n"
+                        + "      \"fsGroup\": 1001\n"
+                        + "    },\n"
+                        + "    \"hostname\": \"my-release-hazelcast-0\",\n"
+                        + "    \"schedulerName\": \"default-scheduler\",\n"
+                        + "    \"tolerations\": [\n"
+                        + "      {\n"
+                        + "        \"key\": \"node.kubernetes.io/not-ready\",\n"
+                        + "        \"operator\": \"Exists\",\n"
+                        + "        \"effect\": \"NoExecute\",\n"
+                        + "        \"tolerationSeconds\": 300\n"
+                        + "      },\n"
+                        + "      {\n"
+                        + "        \"key\": \"node.kubernetes.io/unreachable\",\n"
+                        + "        \"operator\": \"Exists\",\n"
+                        + "        \"effect\": \"NoExecute\",\n"
+                        + "        \"tolerationSeconds\": 300\n"
+                        + "      }\n"
+                        + "    ]\n"
+                        + "  },\n"
+                        + "  \"status\": {\n"
+                        + "  }\n"
+                        + "}", nodeName);
+    }
+
+    /**
+     * Real response recorded from the Kubernetes (version < 1.13) API call "/api/v1/nodes/{node-name}".
+     */
+    private static String nodeBetaBody() {
+        return String.format(
+                "{"
+                        + "  \"kind\": \"Node\",\n"
+                        + "  \"apiVersion\": \"v1\",\n"
+                        + "  \"metadata\": {\n"
+                        + "    \"name\": \"gke-rafal-test-cluster-default-pool-9238654c-12tz\",\n"
+                        + "    \"selfLink\": \"/api/v1/nodes/gke-rafal-test-cluster-default-pool-9238654c-12tz\",\n"
+                        + "    \"uid\": \"ceab9c17-0508-11e9-9c53-42010a800013\",\n"
+                        + "    \"resourceVersion\": \"7954\",\n"
+                        + "    \"creationTimestamp\": \"2018-12-21T10:11:39Z\",\n"
+                        + "    \"labels\": {\n"
+                        + "      \"beta.kubernetes.io/arch\": \"amd64\",\n"
+                        + "      \"beta.kubernetes.io/fluentd-ds-ready\": \"true\",\n"
+                        + "      \"beta.kubernetes.io/instance-type\": \"n1-standard-1\",\n"
+                        + "      \"beta.kubernetes.io/os\": \"linux\",\n"
+                        + "      \"cloud.google.com/gke-nodepool\": \"default-pool\",\n"
+                        + "      \"cloud.google.com/gke-os-distribution\": \"cos\",\n"
+                        + "      \"failure-domain.beta.kubernetes.io/region\": \"us-central1\",\n"
+                        + "      \"failure-domain.beta.kubernetes.io/zone\": \"%s\",\n"
+                        + "      \"kubernetes.io/hostname\": \"gke-rafal-test-cluster-default-pool-9238654c-12tz\"\n"
+                        + "    },\n"
+                        + "    \"annotations\": {\n"
+                        + "      \"node.alpha.kubernetes.io/ttl\": \"0\",\n"
+                        + "      \"volumes.kubernetes.io/controller-managed-attach-detach\": \"true\"\n"
+                        + "    }\n"
+                        + "  },\n"
+                        + "  \"spec\": {\n"
+                        + "  },\n"
+                        + "  \"status\": {\n"
+                        + "  }\n"
+                        + "}", ZONE);
+    }
+
+    /**
+     * Real response recorded from the Kubernetes (version >= 1.13) API call "/api/v1/nodes/{node-name}".
+     */
+    private static String nodeBody() {
+        return String.format(
+                "{"
+                        + "  \"kind\": \"Node\",\n"
+                        + "  \"apiVersion\": \"v1\",\n"
+                        + "  \"metadata\": {\n"
+                        + "    \"name\": \"gke-rafal-test-cluster-default-pool-9238654c-12tz\",\n"
+                        + "    \"selfLink\": \"/api/v1/nodes/gke-rafal-test-cluster-default-pool-9238654c-12tz\",\n"
+                        + "    \"uid\": \"ceab9c17-0508-11e9-9c53-42010a800013\",\n"
+                        + "    \"resourceVersion\": \"7954\",\n"
+                        + "    \"creationTimestamp\": \"2018-12-21T10:11:39Z\",\n"
+                        + "    \"labels\": {\n"
+                        + "      \"beta.kubernetes.io/arch\": \"amd64\",\n"
+                        + "      \"beta.kubernetes.io/fluentd-ds-ready\": \"true\",\n"
+                        + "      \"beta.kubernetes.io/instance-type\": \"n1-standard-1\",\n"
+                        + "      \"beta.kubernetes.io/os\": \"linux\",\n"
+                        + "      \"cloud.google.com/gke-nodepool\": \"default-pool\",\n"
+                        + "      \"cloud.google.com/gke-os-distribution\": \"cos\",\n"
+                        + "      \"failure-domain.beta.kubernetes.io/region\": \"deprecated-region\",\n"
+                        + "      \"failure-domain.beta.kubernetes.io/zone\": \"deprecated-zone\",\n"
+                        + "      \"failure-domain.kubernetes.io/region\": \"us-central1\",\n"
+                        + "      \"failure-domain.kubernetes.io/zone\": \"%s\",\n"
+                        + "      \"kubernetes.io/hostname\": \"gke-rafal-test-cluster-default-pool-9238654c-12tz\"\n"
+                        + "    },\n"
+                        + "    \"annotations\": {\n"
+                        + "      \"node.alpha.kubernetes.io/ttl\": \"0\",\n"
+                        + "      \"volumes.kubernetes.io/controller-managed-attach-detach\": \"true\"\n"
+                        + "    }\n"
+                        + "  },\n"
+                        + "  \"spec\": {\n"
+                        + "  },\n"
+                        + "  \"status\": {\n"
+                        + "  }\n"
+                        + "}", ZONE);
     }
 
     /**
