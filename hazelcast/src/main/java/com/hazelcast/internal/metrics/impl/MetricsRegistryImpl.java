@@ -63,7 +63,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     final ILogger logger;
     private final ProbeLevel minimumLevel;
 
-    private final ScheduledExecutorService scheduledExecutorService;
+//    private final ScheduledExecutorService scheduledExecutorService;
     private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
 
     // use ConcurrentReferenceHashMap to allow unreferenced Class instances to be garbage collected
@@ -100,8 +100,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         this.logger = checkNotNull(logger, "logger can't be null");
         this.minimumLevel = checkNotNull(minimumLevel, "minimumLevel can't be null");
 
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(2,
-                new ThreadFactoryImpl(createThreadPoolName(name, "MetricsRegistry")));
+//        scheduledExecutorService = new ScheduledThreadPoolExecutor(0,
+//                new ThreadFactoryImpl(createThreadPoolName(name, "MetricsRegistry")));
 
         if (logger.isFinestEnabled()) {
             logger.finest("MetricsRegistry minimumLevel:" + minimumLevel);
@@ -336,12 +336,12 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public void scheduleAtFixedRate(final Runnable publisher, long period, TimeUnit timeUnit) {
-        scheduledExecutorService.scheduleAtFixedRate(publisher, 0, period, timeUnit);
+       // scheduledExecutorService.scheduleAtFixedRate(publisher, 0, period, timeUnit);
     }
 
     public void shutdown() {
         // we want to immediately terminate; we don't want to wait till pending tasks have completed.
-        scheduledExecutorService.shutdownNow();
+        //scheduledExecutorService.shutdownNow();
     }
 
     private static class SortedProbeInstances {
