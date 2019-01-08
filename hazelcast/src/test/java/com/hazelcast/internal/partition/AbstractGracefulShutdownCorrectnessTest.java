@@ -80,7 +80,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
             shutdownNodes(shutdownNodeCount);
             size -= shutdownNodeCount;
 
-            assertSizeAndData();
+            assertSizeAndDataEventually();
         }
     }
 
@@ -106,7 +106,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
             addresses = shutdownNodes(shutdownNodeCount);
             size -= shutdownNodeCount;
 
-            assertSizeAndData();
+            assertSizeAndDataEventually();
         }
     }
 

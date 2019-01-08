@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -28,7 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractPartitionAssignmentsCorrectnessTest extends PartitionCorrectnessTestSupport {
 
@@ -97,12 +97,14 @@ public abstract class AbstractPartitionAssignmentsCorrectnessTest extends Partit
             Node node = getNode(hz);
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition[] partitions = partitionService.getInternalPartitions();
+            ClusterServiceImpl clusterService = node.getClusterService();
+            Address thisAddress = node.getThisAddress();
 
             for (InternalPartition partition : partitions) {
                 for (int i = 0; i < replicaCount; i++) {
                     Address replicaAddress = partition.getReplicaAddress(i);
-                    assertNotNull("Replica " + i + " is not found in " + partition, replicaAddress);
-                    assertTrue("Not member: " + replicaAddress, node.getClusterService().getMember(replicaAddress) != null);
+                    assertNotNull("On " + thisAddress + ", Replica " + i + " is not found in " + partition, replicaAddress);
+                    assertNotNull("On " + thisAddress + ", Not member: " + replicaAddress, clusterService.getMember(replicaAddress));
                 }
             }
         }

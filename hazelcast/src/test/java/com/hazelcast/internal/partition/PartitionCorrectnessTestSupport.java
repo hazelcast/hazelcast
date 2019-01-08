@@ -255,8 +255,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private <N> void assertPartitionVersionsAndBackupValues(int actualBackupCount, TestAbstractMigrationAwareService<N> service,
-                                                            Node node, InternalPartition[] partitions, N name,
-                                                            boolean allowDirty) throws InterruptedException {
+                                                            Node node, InternalPartition[] partitions, N name, boolean allowDirty) {
         Address thisAddress = node.getThisAddress();
         ServiceNamespace namespace = service.getNamespace(name);
 
@@ -267,7 +266,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
                 for (int replica = 1; replica <= actualBackupCount; replica++) {
                     Address address = partition.getReplicaAddress(replica);
-                    assertNotNull("Replica: " + replica + " is not found in " + partition, address);
+                    assertNotNull("On " + thisAddress + ", Replica: " + replica + " is not found in " + partition, address);
 
                     HazelcastInstance backupInstance = factory.getInstance(address);
                     assertNotNull("Instance for " + address + " is not found! -> " + partition, backupInstance);

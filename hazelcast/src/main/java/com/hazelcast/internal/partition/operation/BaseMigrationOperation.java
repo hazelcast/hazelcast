@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -46,12 +47,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
         implements MigrationCycleOperation, PartitionAwareOperation, Versioned {
 
     protected MigrationInfo migrationInfo;
     protected boolean success;
+    protected List<MigrationInfo> completedMigrations;
     protected int partitionStateVersion;
 
     private transient boolean nodeStartCompleted;
@@ -59,8 +63,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     BaseMigrationOperation() {
     }
 
-    BaseMigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion) {
+    BaseMigrationOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations, int partitionStateVersion) {
         this.migrationInfo = migrationInfo;
+        this.completedMigrations = completedMigrations;
         this.partitionStateVersion = partitionStateVersion;
         setPartitionId(migrationInfo.getPartitionId());
     }
@@ -83,6 +88,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
             verifyMaster();
             verifyMigrationParticipant();
             verifyClusterState();
+            applyCompletedMigrations();
             verifyPartitionStateVersion();
         } catch (Exception e) {
             onMigrationComplete();
@@ -97,6 +103,17 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         if (!nodeStartCompleted) {
             throw new IllegalStateException("Migration operation is received before startup is completed. "
                     + "Sender: " + getCallerAddress());
+        }
+    }
+
+    private void applyCompletedMigrations() {
+        // RU_COMPAT_3_11 : completedMigrations is null when cluster is 3.11
+        if (completedMigrations == null || completedMigrations.isEmpty()) {
+            return;
+        }
+        InternalPartitionServiceImpl partitionService = getService();
+        if (!partitionService.applyCompletedMigrations(completedMigrations, partitionStateVersion, migrationInfo.getMaster())) {
+            throw new PartitionStateVersionMismatchException(partitionStateVersion, partitionService.getPartitionStateVersion());
         }
     }
 
@@ -274,6 +291,8 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         if (e instanceof PartitionStateVersionMismatchException) {
             if (logger.isFineEnabled()) {
                 logger.fine(e.getMessage(), e);
+            } else {
+                logger.info(e.getMessage());
             }
             return;
         }
@@ -292,6 +311,15 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         super.writeInternal(out);
         migrationInfo.writeData(out);
         out.writeInt(partitionStateVersion);
+
+        // RU_COMPAT_3_11
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            int len = completedMigrations.size();
+            out.writeInt(len);
+            for (MigrationInfo migrationInfo : completedMigrations) {
+                migrationInfo.writeData(out);
+            }
+        }
     }
 
     @Override
@@ -300,6 +328,17 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
         partitionStateVersion = in.readInt();
+
+        // RU_COMPAT_3_11
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            int len = in.readInt();
+            completedMigrations = new ArrayList<MigrationInfo>(len);
+            for (int i = 0; i < len; i++) {
+                MigrationInfo migrationInfo = new MigrationInfo();
+                migrationInfo.readData(in);
+                completedMigrations.add(migrationInfo);
+            }
+        }
     }
 
     @Override
