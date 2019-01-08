@@ -41,7 +41,6 @@ public class HttpPostCommand extends HttpCommand {
     private final TextDecoder decoder;
 
     private boolean chunked;
-    private boolean nextLine;
     private boolean readyToReadData;
     private ByteBuffer data;
     private String contentType;

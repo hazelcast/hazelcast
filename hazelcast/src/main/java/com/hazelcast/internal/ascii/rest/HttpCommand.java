@@ -56,6 +56,9 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public HttpCommand(TextCommandConstants.TextCommandType type, String uri) {
         super(type);
         this.uri = uri;
+        // the command line was parsed already, let's start with clear next line
+        this.nextLine = true;
+
     }
 
     @Override
