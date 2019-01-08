@@ -61,6 +61,9 @@ import java.util.concurrent.TimeUnit;
  *      tm.rollback();
  * }
  * </code></pre>
+ * <h2>ACID Guarantees</h2>
+ * It should be noted that in split-brain situations or during a node failure Hazelcast might not be able
+ * to always hold ACID guarantees.
  *
  * @param <K> type of the map key
  * @param <V> type of the map value
