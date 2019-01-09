@@ -80,18 +80,17 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
     AbstractClientListenerService(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
         this.client = client;
-        serializationService = client.getSerializationService();
-        logger = client.getLoggingService().getLogger(ClientListenerService.class);
+        this.serializationService = client.getSerializationService();
+        this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
-        eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity);
+        this.eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity);
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
-
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
-        registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        clientConnectionManager = client.getConnectionManager();
+        this.registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        this.clientConnectionManager = client.getConnectionManager();
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
-        invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
+        this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
+        this.invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
     }
 
     @Override
