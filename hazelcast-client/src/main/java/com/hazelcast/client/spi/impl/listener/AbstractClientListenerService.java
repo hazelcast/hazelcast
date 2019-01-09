@@ -27,6 +27,7 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -34,6 +35,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -78,20 +80,22 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
     private final StripedExecutor eventExecutor;
 
-    AbstractClientListenerService(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
+    AbstractClientListenerService(HazelcastClientInstanceImpl client) {
         this.client = client;
-        serializationService = client.getSerializationService();
-        logger = client.getLoggingService().getLogger(ClientListenerService.class);
+        this.serializationService = client.getSerializationService();
+        this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
-        eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity);
+        HazelcastProperties properties = client.getProperties();
+        int eventQueueCapacity = properties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
+        int eventThreadCount = properties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
+        this.eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity);
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
-
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
-        registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        clientConnectionManager = client.getConnectionManager();
+        this.registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        this.clientConnectionManager = client.getConnectionManager();
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
-        invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
+        this.invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
+        this.invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
     }
 
     @Override

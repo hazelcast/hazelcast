@@ -540,14 +540,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @SuppressWarnings("checkstyle:illegaltype")
     private AbstractClientListenerService initListenerService() {
-        int eventQueueCapacity = properties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
-        int eventThreadCount = properties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
-        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        if (networkConfig.isSmartRouting()) {
-            return new SmartClientListenerService(this, eventThreadCount, eventQueueCapacity);
-        } else {
-            return new NonSmartClientListenerService(this, eventThreadCount, eventQueueCapacity);
-        }
+        return config.getNetworkConfig().isSmartRouting()
+                ? new SmartClientListenerService(this)
+                : new NonSmartClientListenerService(this);
     }
 
     private ClientExecutionServiceImpl initExecutionService() {

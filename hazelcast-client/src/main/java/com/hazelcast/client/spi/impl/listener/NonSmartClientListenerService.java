@@ -21,9 +21,8 @@ import com.hazelcast.nio.ConnectionListener;
 
 public class NonSmartClientListenerService extends AbstractClientListenerService implements ConnectionListener {
 
-    public NonSmartClientListenerService(HazelcastClientInstanceImpl client,
-                                         int eventThreadCount, int eventQueueCapacity) {
-        super(client, eventThreadCount, eventQueueCapacity);
+    public NonSmartClientListenerService(HazelcastClientInstanceImpl client) {
+        super(client);
     }
 
     boolean registersLocalOnly() {

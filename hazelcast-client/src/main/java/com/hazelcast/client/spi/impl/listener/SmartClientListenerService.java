@@ -32,9 +32,8 @@ import static com.hazelcast.util.StringUtil.timeToString;
 
 public class SmartClientListenerService extends AbstractClientListenerService  {
 
-    public SmartClientListenerService(HazelcastClientInstanceImpl client,
-                                      int eventThreadCount, int eventQueueCapacity) {
-        super(client, eventThreadCount, eventQueueCapacity);
+    public SmartClientListenerService(HazelcastClientInstanceImpl client) {
+        super(client);
     }
 
     @Override
