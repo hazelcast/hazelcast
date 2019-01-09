@@ -288,7 +288,6 @@ public class GracefulShutdownTest extends JetTestSupport {
         private int counter;
         private int globalIndex;
         private int numItems;
-        private boolean emitSucceeded;
 
         EmitIntegersP(int numItems) {
             this.numItems = numItems;
@@ -301,8 +300,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
         @Override
         public boolean complete() {
-            emitSucceeded = tryEmit(counter);
-            if (emitSucceeded) {
+            if (tryEmit(counter)) {
                 counter++;
             }
             return counter == numItems;
@@ -310,12 +308,6 @@ public class GracefulShutdownTest extends JetTestSupport {
 
         @Override
         public boolean saveToSnapshot() {
-            if (!emitSucceeded) {
-                complete();
-                if (!emitSucceeded) {
-                    return false;
-                }
-            }
             savedCounters.put(globalIndex, counter);
             return tryEmitToSnapshot(broadcastKey(globalIndex), counter);
         }

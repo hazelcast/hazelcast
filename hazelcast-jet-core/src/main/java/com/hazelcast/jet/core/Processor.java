@@ -192,20 +192,15 @@ public interface Processor {
 
     /**
      * Stores its snapshotted state by adding items to the outbox's {@linkplain
-     * Outbox#offerToSnapshot(Object, Object) snapshot bucket}. If it returns
-     * {@code false}, it will be called again before proceeding to call any
-     * other method.
+     * Outbox#offerToSnapshot(Object, Object) snapshot bucket}. If this method
+     * returns {@code false}, it will be called again before proceeding to call
+     * any other method.
      * <p>
      * This method will only be called after a call to {@link #process(int,
-     * Inbox) process()} returns and the inbox is empty. After all the input is
-     * exhausted, it may also be called between {@link #complete()} calls. Once
+     * Inbox) process()} returns with an empty inbox. After all the input is
+     * exhausted, it is also called between {@link #complete()} calls. Once
      * {@code complete()} returns {@code true}, this method won't be called
      * anymore.
-     * <p>
-     * <b>Note:</b> if you returned from {@link #complete()} because some of
-     * the {@code Outbox.offer()} method returned false, you need to make sure
-     * to re-offer the pending item in this method before offering any items to
-     * {@link Outbox#offerToSnapshot}.
      * <p>
      * The default implementation takes no action and returns {@code true}.
      */

@@ -347,10 +347,15 @@ public class ProcessorTasklet implements Tasklet {
                 assert currSnapshotId <= pendingSnapshotId : "Unexpected new snapshot id " + currSnapshotId
                         + ", current was" + pendingSnapshotId;
                 if (currSnapshotId == pendingSnapshotId) {
-                    state = SAVE_SNAPSHOT;
-                    currentBarrier = new SnapshotBarrier(currSnapshotId, ssContext.isTerminalSnapshot());
-                    progTracker.madeProgress();
-                    return;
+                    if (outbox.hasUnfinishedItem()) {
+                        outbox.block();
+                    } else {
+                        outbox.unblock();
+                        state = SAVE_SNAPSHOT;
+                        currentBarrier = new SnapshotBarrier(currSnapshotId, ssContext.isTerminalSnapshot());
+                        progTracker.madeProgress();
+                        return;
+                    }
                 }
                 if (processor.complete()) {
                     progTracker.madeProgress();

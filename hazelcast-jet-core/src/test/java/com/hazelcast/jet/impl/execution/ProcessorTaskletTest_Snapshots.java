@@ -232,7 +232,6 @@ public class ProcessorTaskletTest_Snapshots {
         int nullaryProcessCallCountdown;
         int itemsToEmitInComplete;
         int completedCount;
-        boolean offerSucceeded = true;
         private Outbox outbox;
 
         private Queue<Map.Entry> snapshotQueue = new ArrayDeque<>();
@@ -255,24 +254,11 @@ public class ProcessorTaskletTest_Snapshots {
 
         @Override
         public boolean complete() {
-            if (completedCount == itemsToEmitInComplete) {
-                return true;
-            }
-            offerSucceeded = false;
-            finishOffering();
-            return completedCount == itemsToEmitInComplete;
-        }
-
-        private boolean finishOffering() {
-            if (offerSucceeded) {
-                return true;
-            }
-            offerSucceeded = outbox.offer(completedCount);
-            if (offerSucceeded) {
-                snapshotQueue.offer(entry(UuidUtil.newUnsecureUUID(), completedCount));
+            if (completedCount < itemsToEmitInComplete && outbox.offer(completedCount)) {
+                snapshotQueue.add(entry(UuidUtil.newUnsecureUUID(), completedCount));
                 completedCount++;
             }
-            return offerSucceeded;
+            return completedCount == itemsToEmitInComplete;
         }
 
         @Override
@@ -282,9 +268,6 @@ public class ProcessorTaskletTest_Snapshots {
 
         @Override
         public boolean saveToSnapshot() {
-            if (!finishOffering()) {
-                return false;
-            }
             for (Map.Entry item; (item = snapshotQueue.peek()) != null; ) {
                 if (!outbox.offerToSnapshot(item.getKey(), item.getValue())) {
                     return false;

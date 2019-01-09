@@ -55,6 +55,8 @@ public class OutboxImpl implements Outbox {
     private Object unfinishedSnapshotKey;
     private Object unfinishedSnapshotValue;
 
+    private boolean blocked;
+
     /**
      * @param outstreams The output queues
      * @param hasSnapshot If the last queue in {@code outstreams} is the snapshot queue
@@ -105,6 +107,9 @@ public class OutboxImpl implements Outbox {
     }
 
     private boolean offerInternal(@Nonnull int[] ordinals, @Nonnull Object item) {
+        if (shouldBlock()) {
+            return false;
+        }
         assert unfinishedItem == null || item.equals(unfinishedItem)
                 : "Different item offered after previous call returned false: expected=" + unfinishedItem
                         + ", got=" + item;
@@ -168,6 +173,9 @@ public class OutboxImpl implements Outbox {
         if (snapshotEdge == null) {
             throw new IllegalStateException("Outbox does not have snapshot queue");
         }
+        if (shouldBlock()) {
+            return false;
+        }
 
         assert unfinishedSnapshotKey == null || unfinishedSnapshotKey.equals(key)
                 : "Different key offered after previous call returned false: expected="
@@ -195,6 +203,30 @@ public class OutboxImpl implements Outbox {
             unfinishedSnapshotValue = value;
         }
         return success;
+    }
+
+    public boolean hasUnfinishedItem() {
+        return unfinishedItem != null || unfinishedSnapshotKey != null;
+    }
+
+    /**
+     * Blocks the outbox so that it only allows offering of the current
+     * unfinished item. If there's no unfinished item, the outbox will reject
+     * all {@code offer} calls, until {@link #unblock()} is called.
+     */
+    public void block() {
+        blocked = true;
+    }
+
+    /**
+     * Reverses the {@link #block()} call.
+     */
+    public void unblock() {
+        blocked = false;
+    }
+
+    private boolean shouldBlock() {
+        return blocked && !hasUnfinishedItem();
     }
 
     /**
