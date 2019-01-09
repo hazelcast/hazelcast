@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.yaml;
 
-import org.snakeyaml.engine.v1.api.Load;
-import org.snakeyaml.engine.v1.api.LoadSettings;
-import org.snakeyaml.engine.v1.api.LoadSettingsBuilder;
+import com.hazelcast.internal.util.JavaVersion;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -50,7 +48,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(InputStream inputStream, String rootName) {
         try {
-            Load load = getLoad();
+            YamlDocumentLoader load = getLoad();
             Object document = load.loadFromInputStream(inputStream);
 
             return buildDom(rootName, document);
@@ -68,7 +66,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(InputStream inputStream) {
         try {
-            Load load = getLoad();
+            YamlDocumentLoader load = getLoad();
             Object document = load.loadFromInputStream(inputStream);
 
             return buildDom(document);
@@ -89,7 +87,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(Reader reader, String rootName) {
         try {
-            Load load = getLoad();
+            YamlDocumentLoader load = getLoad();
             Object document = load.loadFromReader(reader);
 
             return buildDom(rootName, document);
@@ -107,7 +105,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(Reader reader) {
         try {
-            Load load = getLoad();
+            YamlDocumentLoader load = getLoad();
             Object document = load.loadFromReader(reader);
 
             return buildDom(document);
@@ -128,7 +126,7 @@ public final class YamlLoader {
      */
     public static YamlNode load(String yaml, String rootName) {
         try {
-            Load load = getLoad();
+            YamlDocumentLoader load = getLoad();
             Object document = load.loadFromString(yaml);
 
             return buildDom(rootName, document);
@@ -146,8 +144,8 @@ public final class YamlLoader {
      */
     public static YamlNode load(String yaml) {
         try {
-            Load load = getLoad();
-            Object document = load.loadFromString(yaml);
+            YamlDocumentLoader loader = getLoad();
+            Object document = loader.loadFromString(yaml);
 
             return buildDom(document);
         } catch (Exception ex) {
@@ -155,9 +153,12 @@ public final class YamlLoader {
         }
     }
 
-    private static Load getLoad() {
-        LoadSettings loadSettings = new LoadSettingsBuilder().build();
-        return new Load(loadSettings);
+    private static YamlDocumentLoader getLoad() {
+        if (!JavaVersion.isAtLeast(JavaVersion.JAVA_1_8)) {
+            throw new UnsupportedOperationException("Processing YAML documents requires Java 8 or higher version");
+        }
+
+        return new ReflectiveYamlDocumentLoader();
     }
 
     private static YamlNode buildDom(String rootName, Object document) {

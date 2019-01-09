@@ -32,6 +32,8 @@ import java.io.InputStreamReader;
 
 import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asSequence;
+import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK6;
+import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -47,8 +49,18 @@ public class YamlTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Test(expected = YamlException.class)
+    public void testLoadOnJdk6Throws() {
+        assumeThatJDK6();
+
+        YamlLoader.load("irrelevant");
+    }
+
+
     @Test
     public void testYamlFromInputStream() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map.yaml");
         YamlNode root = YamlLoader.load(inputStream, "root-map");
         verify(root);
@@ -56,6 +68,8 @@ public class YamlTest {
 
     @Test
     public void testYamlFromInputStreamWithoutRootName() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map.yaml");
         YamlNode root = YamlLoader.load(inputStream);
         verify(asMapping(root).childAsMapping("root-map"));
@@ -63,6 +77,8 @@ public class YamlTest {
 
     @Test
     public void testYamlExtendedTestFromInputStream() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map-extended.yaml");
         YamlNode root = YamlLoader.load(inputStream, "root-map");
         verify(root);
@@ -71,6 +87,8 @@ public class YamlTest {
 
     @Test
     public void testJsonFromInputStream() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map.json");
         YamlNode root = YamlLoader.load(inputStream, "root-map");
         verify(root);
@@ -78,6 +96,8 @@ public class YamlTest {
 
     @Test
     public void testYamlFromReader() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         YamlNode root = YamlLoader.load(reader, "root-map");
@@ -86,6 +106,8 @@ public class YamlTest {
 
     @Test
     public void testYamlFromReaderWithoutRootName() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         YamlNode root = YamlLoader.load(reader);
@@ -94,6 +116,8 @@ public class YamlTest {
 
     @Test
     public void testYamlFromString() throws IOException {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         String yamlString = CharStreams.toString(reader);
@@ -103,6 +127,8 @@ public class YamlTest {
 
     @Test
     public void testYamlFromStringWithoutRootMap() throws IOException {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         String yamlString = CharStreams.toString(reader);
@@ -112,6 +138,8 @@ public class YamlTest {
 
     @Test
     public void testLoadingInvalidYamlFromInputStream() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
         expectedException.expect(YamlException.class);
         YamlLoader.load(inputStream);
@@ -119,6 +147,8 @@ public class YamlTest {
 
     @Test
     public void testLoadingInvalidYamlFromInputStreamWithRootName() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
         expectedException.expect(YamlException.class);
         YamlLoader.load(inputStream, "root-map");
@@ -126,6 +156,8 @@ public class YamlTest {
 
     @Test
     public void testLoadingInvalidYamlFromReader() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         expectedException.expect(YamlException.class);
@@ -134,6 +166,8 @@ public class YamlTest {
 
     @Test
     public void testLoadingInvalidYamlFromReaderWithRootName() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         expectedException.expect(YamlException.class);
@@ -142,6 +176,8 @@ public class YamlTest {
 
     @Test
     public void testLoadingInvalidYamlFromString() throws IOException {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         String yamlString = CharStreams.toString(reader);
@@ -151,6 +187,8 @@ public class YamlTest {
 
     @Test
     public void testLoadingInvalidYamlFromStringWithRootName() throws IOException {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-invalid.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         String yamlString = CharStreams.toString(reader);
@@ -160,26 +198,32 @@ public class YamlTest {
 
     @Test
     public void testInvalidScalarValueTypeMap() {
+        assumeThatJDK8();
+
         YamlMapping rootMap = getYamlRoot();
         YamlMapping embeddedMap = rootMap.childAsMapping("embedded-map");
 
         expectedException.expect(ClassCastException.class);
-        int notAnInt = embeddedMap.childAsScalarValue("scalar-str");
+        int notAnInt = (Integer) embeddedMap.childAsScalarValue("scalar-str");
     }
 
     @Test
     public void testInvalidScalarValueTypeSeq() {
+        assumeThatJDK8();
+
         YamlMapping rootMap = getYamlRoot();
         YamlSequence embeddedList = rootMap
                 .childAsMapping("embedded-map")
                 .childAsSequence("embedded-list");
 
         expectedException.expect(ClassCastException.class);
-        int notAnInt = embeddedList.childAsScalarValue(0);
+        int notAnInt = (Integer) embeddedList.childAsScalarValue(0);
     }
 
     @Test
     public void testInvalidScalarValueTypeHintedMap() {
+        assumeThatJDK8();
+
         YamlMapping rootMap = getYamlRoot();
         YamlMapping embeddedMap = rootMap.childAsMapping("embedded-map");
 
@@ -191,6 +235,8 @@ public class YamlTest {
 
     @Test
     public void testInvalidScalarValueTypeHintedSeq() {
+        assumeThatJDK8();
+
         YamlMapping rootMap = getYamlRoot();
         YamlSequence embeddedList = rootMap
                 .childAsMapping("embedded-map")
@@ -204,21 +250,29 @@ public class YamlTest {
 
     @Test
     public void testNotExistingMappingFromMap() {
+        assumeThatJDK8();
+
         assertNull(getYamlRoot().childAsMapping("not-existing"));
     }
 
     @Test
     public void testNotExistingSequenceFromMap() {
+        assumeThatJDK8();
+
         assertNull(getYamlRoot().childAsSequence("not-existing"));
     }
 
     @Test
     public void testNotExistingScalarFromMap() {
+        assumeThatJDK8();
+
         assertNull(getYamlRoot().childAsScalar("not-existing"));
     }
 
     @Test
     public void testNotExistingMappingFromSeq() {
+        assumeThatJDK8();
+
         YamlSequence seq = getYamlRoot()
                 .childAsMapping("embedded-map")
                 .childAsSequence("embedded-list");
@@ -227,6 +281,8 @@ public class YamlTest {
 
     @Test
     public void testNotExistingSequenceFromSeq() {
+        assumeThatJDK8();
+
         YamlSequence seq = getYamlRoot()
                 .childAsMapping("embedded-map")
                 .childAsSequence("embedded-list");
@@ -235,6 +291,8 @@ public class YamlTest {
 
     @Test
     public void testNotExistingScalarFromSeq() {
+        assumeThatJDK8();
+
         YamlSequence seq = getYamlRoot()
                 .childAsMapping("embedded-map")
                 .childAsSequence("embedded-list");
@@ -243,6 +301,8 @@ public class YamlTest {
 
     @Test
     public void testInvalidNodeTypeNotAMapping() {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map.yaml");
         YamlNode root = YamlLoader.load(inputStream, "root-map");
 
@@ -255,6 +315,8 @@ public class YamlTest {
 
     @Test
     public void testInvalidNodeTypeNotASeq() {
+        assumeThatJDK8();
+
         YamlMapping rootMap = getYamlRoot();
 
         expectedException.expect(YamlException.class);
@@ -263,6 +325,8 @@ public class YamlTest {
 
     @Test
     public void testInvalidNodeTypeNotAScalar() {
+        assumeThatJDK8();
+
         YamlMapping rootMap = getYamlRoot();
 
         expectedException.expect(YamlException.class);
@@ -271,6 +335,8 @@ public class YamlTest {
 
     @Test
     public void testIterateChildrenMap() {
+        assumeThatJDK8();
+
         YamlMapping embeddedMap = getYamlRoot()
                 .childAsMapping("embedded-map");
 
@@ -285,6 +351,8 @@ public class YamlTest {
 
     @Test
     public void testIterateChildrenSeq() {
+        assumeThatJDK8();
+
         YamlSequence embeddedList = getYamlRoot()
                 .childAsMapping("embedded-map")
                 .childAsSequence("embedded-list");
@@ -300,28 +368,38 @@ public class YamlTest {
 
     @Test
     public void testParentOfRootIsNull() {
+        assumeThatJDK8();
+
         assertNull(getYamlRoot().parent());
     }
 
     @Test
     public void testParentOfEmbeddedMapIsRoot() {
+        assumeThatJDK8();
+
         YamlMapping root = getYamlRoot();
         assertSame(root, root.childAsMapping("embedded-map").parent());
     }
 
     @Test
     public void testParentOfScalarIntIsEmbeddedMap() {
+        assumeThatJDK8();
+
         YamlMapping embeddedMap = getYamlRoot().childAsMapping("embedded-map");
         assertSame(embeddedMap, embeddedMap.childAsScalar("scalar-int").parent());
     }
 
     @Test
     public void testNameOfMap() {
+        assumeThatJDK8();
+
         assertEquals("embedded-map", getYamlRoot().childAsMapping("embedded-map").nodeName());
     }
 
     @Test
     public void testNameOfSeq() {
+        assumeThatJDK8();
+
         assertEquals("embedded-list", getYamlRoot().childAsMapping("embedded-map")
                                                    .childAsSequence("embedded-list")
                                                    .nodeName());
@@ -329,6 +407,8 @@ public class YamlTest {
 
     @Test
     public void testNameOfNamedScalar() {
+        assumeThatJDK8();
+
         assertEquals("scalar-int", getYamlRoot().childAsMapping("embedded-map")
                                                 .childAsScalar("scalar-int")
                                                 .nodeName());
@@ -336,6 +416,8 @@ public class YamlTest {
 
     @Test
     public void testNameOfUnnamedScalar() {
+        assumeThatJDK8();
+
         assertSame(YamlNode.UNNAMED_NODE, getYamlRoot().childAsMapping("embedded-map")
                                                        .childAsSequence("embedded-list")
                                                        .childAsScalar(0)
@@ -349,20 +431,20 @@ public class YamlTest {
         YamlMapping rootMap = (YamlMapping) root;
         YamlMapping embeddedMap = rootMap.childAsMapping("embedded-map");
         String scalarString = embeddedMap.childAsScalarValue("scalar-str");
-        int scalarInt = embeddedMap.childAsScalarValue("scalar-int");
-        double scalarDouble = embeddedMap.childAsScalarValue("scalar-double");
-        boolean scalarBool = embeddedMap.childAsScalarValue("scalar-bool");
+        int scalarInt = (Integer) embeddedMap.childAsScalarValue("scalar-int");
+        double scalarDouble = (Double) embeddedMap.childAsScalarValue("scalar-double");
+        boolean scalarBool = (Boolean) embeddedMap.childAsScalarValue("scalar-bool");
 
         YamlSequence embeddedList = embeddedMap.childAsSequence("embedded-list");
         String elItem0 = embeddedList.childAsScalarValue(0);
         YamlScalar elItem0AsScalar = embeddedList.childAsScalar(0);
-        int elItem1 = embeddedList.childAsScalarValue(1);
-        double elItem2 = embeddedList.childAsScalarValue(2);
-        boolean elItem3 = embeddedList.childAsScalarValue(3);
+        int elItem1 = (Integer) embeddedList.childAsScalarValue(1);
+        double elItem2 = (Double) embeddedList.childAsScalarValue(2);
+        boolean elItem3 = (Boolean) embeddedList.childAsScalarValue(3);
 
         YamlSequence embeddedList2 = embeddedMap.childAsSequence("embedded-list2");
         String el2Item0 = embeddedList2.childAsScalarValue(0);
-        double el2Item1 = embeddedList2.childAsScalarValue(1);
+        double el2Item1 = (Double) embeddedList2.childAsScalarValue(1);
 
         assertEquals("embedded-map", embeddedMap.nodeName());
         assertEquals("embedded-list", embeddedList.nodeName());
@@ -418,6 +500,8 @@ public class YamlTest {
 
     @Test
     public void testYamlListInRoot() throws IOException {
+        assumeThatJDK8();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-seq.yaml");
         InputStreamReader reader = new InputStreamReader(inputStream);
         String yamlString = CharStreams.toString(reader);
