@@ -82,7 +82,7 @@
 
     <!-- Config -->
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
-              files="com[\\/]hazelcast[\\/]config[\\/]AbstractXmlConfigHelper"/>
+              files="com[\\/]hazelcast[\\/]config[\\/]AbstractDomConfigProcessor"/>
     <suppress checks="ExecutableStatementCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheConfig"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheSimpleConfig"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]config[\\/]Config"/>
@@ -94,9 +94,9 @@
     <suppress checks="MethodCount|CyclomaticComplexity|NPathComplexity|BooleanExpressionComplexity|ExecutableStatementCount"
               files="com[\\/]hazelcast[\\/]config[\\/]MapConfig"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]SerializationConfig"/>
-    <suppress checks="MethodCount|MethodLength|FileLength" files="com[\\/]hazelcast[\\/]config[\\/]XmlConfigBuilder"/>
+    <suppress checks="MethodCount|MethodLength|FileLength" files="com[\\/]hazelcast[\\/]config[\\/]MemberDomConfigProcessor"/>
     <suppress checks="CyclomaticComplexity|ClassFanOutComplexity|ClassDataAbstractionCoupling"
-              files="com[\\/]hazelcast[\\/]config[\\/]XmlConfigBuilder"/>
+              files="com[\\/]hazelcast[\\/]config[\\/]MemberDomConfigProcessor"/>
 
     <!-- Concurrent -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]concurrent[\\/]"/>
@@ -137,8 +137,8 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]connection[\\/]nio[\\/]ClientConnection"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEngineImpl"/>
-    <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling|ClassFanOutComplexity"
-              files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]XmlClientConfigBuilder"/>
+    <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling|ClassFanOutComplexity|MethodCount"
+              files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]ClientDomConfigProcessor"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]MemberImpl"/>
     <suppress checks="ClassFanOutComplexity|AnonInnerLength"
               files="com[\\/]hazelcast[\\/]client[\\/]connection[\\/]nio[\\/]ClientConnectionManagerImpl"/>

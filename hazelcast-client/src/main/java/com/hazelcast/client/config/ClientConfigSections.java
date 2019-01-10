@@ -16,7 +16,11 @@
 
 package com.hazelcast.client.config;
 
-enum ClientXmlElements {
+/**
+ * Configuration sections for the clients shared by XML and YAML based
+ * configurations
+ */
+enum ClientConfigSections {
     HAZELCAST_CLIENT("hazelcast-client", false),
     IMPORT("import", true),
     SECURITY("security", false),
@@ -42,13 +46,13 @@ enum ClientXmlElements {
     final String name;
     final boolean multipleOccurrence;
 
-    ClientXmlElements(String name, boolean multipleOccurrence) {
+    ClientConfigSections(String name, boolean multipleOccurrence) {
         this.name = name;
         this.multipleOccurrence = multipleOccurrence;
     }
 
     public static boolean canOccurMultipleTimes(String name) {
-        for (ClientXmlElements element : values()) {
+        for (ClientConfigSections element : values()) {
             if (name.equals(element.name)) {
                 return element.multipleOccurrence;
             }

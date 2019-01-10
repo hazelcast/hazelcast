@@ -131,6 +131,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
+import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;

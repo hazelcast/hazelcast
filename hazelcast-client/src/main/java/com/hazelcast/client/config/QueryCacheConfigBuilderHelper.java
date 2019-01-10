@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -27,14 +27,21 @@ import com.hazelcast.config.QueryCacheConfig;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
  * Helper which is used for building {@link QueryCacheConfig} from declarative configurations.
  */
-final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
+final class QueryCacheConfigBuilderHelper {
 
-    QueryCacheConfigBuilderHelper() {
+    private final boolean domLevel3;
+
+    QueryCacheConfigBuilderHelper(boolean domLevel3) {
+        this.domLevel3 = domLevel3;
     }
 
     void handleQueryCache(ClientConfig clientConfig, Node node) {
@@ -52,6 +59,10 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
                 clientConfig.addQueryCacheConfig(mapName, queryCacheConfig);
             }
         }
+    }
+
+    private String getTextContent(Node node) {
+        return DomConfigHelper.getTextContent(node, domLevel3);
     }
 
     private void populateQueryCacheConfig(QueryCacheConfig queryCacheConfig,
