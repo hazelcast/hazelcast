@@ -360,6 +360,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.setConnectionAttemptLimit(1);
         networkConfig.setConnectionAttemptPeriod(1);
+        networkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(new DiscoveryStrategyConfig());
         networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
 
         try {
@@ -377,15 +378,16 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
         final DiscoveryService discoveryService = mock(DiscoveryService.class);
+        when(discoveryService.discoverNodes()).thenReturn(Collections.<DiscoveryNode>emptyList());
         DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
             public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
-                when(discoveryService.discoverNodes()).thenReturn(Collections.<DiscoveryNode>emptyList());
                 return discoveryService;
             }
         };
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.setConnectionAttemptLimit(1);
         networkConfig.setConnectionAttemptPeriod(1);
+        networkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(new DiscoveryStrategyConfig());
         networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
 
         try {

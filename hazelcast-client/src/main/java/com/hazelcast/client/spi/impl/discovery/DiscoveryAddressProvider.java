@@ -18,8 +18,6 @@ package com.hazelcast.client.spi.impl.discovery;
 
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Addresses;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
@@ -28,12 +26,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class DiscoveryAddressProvider
         implements AddressProvider {
 
-    private final ILogger logger;
     private final DiscoveryService discoveryService;
 
-    public DiscoveryAddressProvider(DiscoveryService discoveryService, LoggingService loggingService) {
+    public DiscoveryAddressProvider(DiscoveryService discoveryService) {
         this.discoveryService = discoveryService;
-        logger = loggingService.getLogger(DiscoveryAddressProvider.class);
     }
 
     @Override

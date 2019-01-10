@@ -17,8 +17,6 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
@@ -81,10 +79,8 @@ class TestClientRegistry {
         }
 
         @Override
-        public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client,
-                                                               AddressTranslator addressTranslator,
-                                                               AddressProvider addressProvider) {
-            return new MockClientConnectionManager(client, addressTranslator, addressProvider, host, ports);
+        public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client) {
+            return new MockClientConnectionManager(client, host, ports);
         }
     }
 
@@ -96,9 +92,8 @@ class TestClientRegistry {
         private final String host;
         private final AtomicInteger ports;
 
-        MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
-                                    AddressProvider addressProvider, String host, AtomicInteger ports) {
-            super(client, addressTranslator, addressProvider);
+        MockClientConnectionManager(HazelcastClientInstanceImpl client, String host, AtomicInteger ports) {
+            super(client);
             this.client = client;
             this.host = host;
             this.ports = ports;

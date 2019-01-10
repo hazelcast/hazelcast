@@ -30,11 +30,10 @@ import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.util.function.BiConsumer;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,8 +52,10 @@ import static com.hazelcast.util.Preconditions.checkFalse;
  */
 public class ClientConfig {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientConfig.class);
-
+    /**
+     * Client Configs for alternative clusters
+     */
+    private Collection<ClientConfig> alternativeClientConfigs = new LinkedList<ClientConfig>();
     /**
      * To pass properties
      */
@@ -989,6 +990,15 @@ public class ClientConfig {
     public ClientConfig setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
         return this;
+    }
+
+    public ClientConfig addAlternativeClientConfig(ClientConfig alternativeClientConfig) {
+        this.alternativeClientConfigs.add(alternativeClientConfig);
+        return this;
+    }
+
+    public Collection<ClientConfig> getAlternativeClientConfigs() {
+        return alternativeClientConfigs;
     }
 
     public ClientConfig setUserContext(ConcurrentMap<String, Object> userContext) {

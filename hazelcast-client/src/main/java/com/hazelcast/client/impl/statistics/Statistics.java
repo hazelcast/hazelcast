@@ -145,7 +145,7 @@ public class Statistics {
     }
 
     private boolean isSameWithCachedOwnerAddress(Address currentOwnerAddress) {
-        return cachedOwnerAddress != null && currentOwnerAddress.equals(cachedOwnerAddress);
+        return currentOwnerAddress != null && currentOwnerAddress.equals(cachedOwnerAddress);
     }
 
     /**

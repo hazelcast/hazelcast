@@ -39,8 +39,7 @@ public class DefaultAddressProviderTest {
 
     @Test
     public void whenNoAddresses() throws UnknownHostException {
-        ClientNetworkConfig config = new ClientNetworkConfig();
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
+        DefaultAddressProvider provider = new DefaultAddressProvider();
         Addresses addresses = provider.loadAddresses();
 
         assertPrimary(addresses, new Address("127.0.0.1", 5701));
@@ -51,7 +50,7 @@ public class DefaultAddressProviderTest {
     public void whenExplicitNoPortAddress() throws UnknownHostException {
         ClientNetworkConfig config = new ClientNetworkConfig();
         config.addAddress("10.0.0.1");
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
+        DefaultAddressProvider provider = new DefaultAddressProvider(config.getAddresses());
         Addresses addresses = provider.loadAddresses();
 
         assertPrimary(addresses, new Address("10.0.0.1", 5701));
@@ -63,7 +62,7 @@ public class DefaultAddressProviderTest {
         ClientNetworkConfig config = new ClientNetworkConfig();
         config.addAddress("10.0.0.1:5703");
         config.addAddress("10.0.0.1:5702");
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
+        DefaultAddressProvider provider = new DefaultAddressProvider(config.getAddresses());
         Addresses addresses = provider.loadAddresses();
 
         assertPrimary(addresses, new Address("10.0.0.1", 5703), new Address("10.0.0.1", 5702));
@@ -76,7 +75,7 @@ public class DefaultAddressProviderTest {
         config.addAddress("10.0.0.1:5701");
         config.addAddress("10.0.0.1:5702");
         config.addAddress("10.0.0.2");
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
+        DefaultAddressProvider provider = new DefaultAddressProvider(config.getAddresses());
         Addresses addresses = provider.loadAddresses();
 
         assertPrimary(addresses, new Address("10.0.0.1", 5701),
@@ -89,7 +88,7 @@ public class DefaultAddressProviderTest {
     public void whenBogusAddress() {
         ClientNetworkConfig config = new ClientNetworkConfig();
         config.addAddress(UUID.randomUUID().toString());
-        DefaultAddressProvider provider = new DefaultAddressProvider(config);
+        DefaultAddressProvider provider = new DefaultAddressProvider(config.getAddresses());
         Addresses addresses = provider.loadAddresses();
 
         assertPrimaryEmpty(addresses);

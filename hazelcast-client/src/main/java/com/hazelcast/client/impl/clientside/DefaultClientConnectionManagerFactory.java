@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 
@@ -27,11 +25,7 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
     }
 
     @Override
-    public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client,
-                                                           AddressTranslator addressTranslator,
-                                                           AddressProvider addressProvider) {
-
-
-        return new ClientConnectionManagerImpl(client, addressTranslator, addressProvider);
+    public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client) {
+        return new ClientConnectionManagerImpl(client);
     }
 }

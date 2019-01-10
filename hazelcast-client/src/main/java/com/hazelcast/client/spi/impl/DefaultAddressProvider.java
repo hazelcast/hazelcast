@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.util.AddressHelper;
@@ -30,25 +29,21 @@ import java.util.List;
  */
 public class DefaultAddressProvider implements AddressProvider {
 
-    private final ClientNetworkConfig networkConfig;
+    private final Addresses addresses = new Addresses();
 
-    public DefaultAddressProvider(ClientNetworkConfig networkConfig) {
-        this.networkConfig = networkConfig;
+    public DefaultAddressProvider() {
+        addresses.addAll(AddressHelper.getSocketAddresses("127.0.0.1"));
+    }
+
+    public DefaultAddressProvider(List<String> configuredAddresses) {
+        assert !configuredAddresses.isEmpty();
+        for (String address : configuredAddresses) {
+            addresses.addAll(AddressHelper.getSocketAddresses(address));
+        }
     }
 
     @Override
     public Addresses loadAddresses() {
-        List<String> configuredAddresses = networkConfig.getAddresses();
-
-        if (configuredAddresses.isEmpty()) {
-            configuredAddresses.add("127.0.0.1");
-        }
-
-        Addresses addresses = new Addresses();
-        for (String address : configuredAddresses) {
-            addresses.addAll(AddressHelper.getSocketAddresses(address));
-        }
-
         return addresses;
     }
 }

@@ -81,7 +81,7 @@ public final class AliasedDiscoveryConfigUtils {
         return result;
     }
 
-    private static DiscoveryStrategyConfig createDiscoveryStrategyConfig(AliasedDiscoveryConfig<?> config) {
+    public static DiscoveryStrategyConfig createDiscoveryStrategyConfig(AliasedDiscoveryConfig<?> config) {
         validateConfig(config);
 
         String className = discoveryStrategyFrom(config);

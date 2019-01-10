@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -40,7 +41,7 @@ public class ClientNetworkConfig {
 
     private static final int CONNECTION_TIMEOUT = 5000;
     private static final int CONNECTION_ATTEMPT_PERIOD = 3000;
-    private final List<String> addressList = new ArrayList<String>(10);
+    private List<String> addressList = new ArrayList<String>();
     private boolean smartRouting = true;
     private boolean redoOperation;
     private int connectionTimeout = CONNECTION_TIMEOUT;
@@ -55,7 +56,7 @@ public class ClientNetworkConfig {
     private KubernetesConfig kubernetesConfig = new KubernetesConfig();
     private EurekaConfig eurekaConfig = new EurekaConfig();
     private ClientCloudConfig cloudConfig = new ClientCloudConfig();
-    private DiscoveryConfig discoveryConfig;
+    private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
     private Collection<String> outboundPortDefinitions;
     private Collection<Integer> outboundPorts;
     private ClientIcmpPingConfig clientIcmpPingConfig = new ClientIcmpPingConfig();
@@ -66,9 +67,6 @@ public class ClientNetworkConfig {
      * @return Discovery Provider SPI configuration
      */
     public DiscoveryConfig getDiscoveryConfig() {
-        if (discoveryConfig == null) {
-            discoveryConfig = new DiscoveryConfig();
-        }
         return discoveryConfig;
     }
 
@@ -226,8 +224,7 @@ public class ClientNetworkConfig {
      */
     // required for spring module
     public ClientNetworkConfig setAddresses(List<String> addresses) {
-        addressList.clear();
-        addressList.addAll(addresses);
+        this.addressList = new LinkedList<String>(addresses);
         return this;
     }
 

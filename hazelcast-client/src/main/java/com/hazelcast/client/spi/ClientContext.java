@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheInvalidationMetaDataFetcher;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapInvalidationMetaDataFetcher;
@@ -56,6 +57,7 @@ public class ClientContext {
     private final ClientExecutionService executionService;
     private final ClientListenerService listenerService;
     private final ClientConnectionManager clientConnectionManager;
+    private final ClusterConnectorService clusterConnectorService;
     private final LifecycleService lifecycleService;
     private final ClientTransactionManagerService transactionManager;
     private final ProxyManager proxyManager;
@@ -84,6 +86,7 @@ public class ClientContext {
         this.executionService = client.getClientExecutionService();
         this.listenerService = client.getListenerService();
         this.clientConnectionManager = client.getConnectionManager();
+        this.clusterConnectorService = client.getClusterConnectorService();
         this.lifecycleService = client.getLifecycleService();
         this.proxyManager = client.getProxyManager();
         this.clientConfig = client.getClientConfig();
@@ -154,6 +157,10 @@ public class ClientContext {
         public int getPartitionCount() {
             return partitionService.getPartitionCount();
         }
+    }
+
+    public ClusterConnectorService getClusterConnectorService() {
+        return clusterConnectorService;
     }
 
     public HazelcastInstance getHazelcastInstance() {

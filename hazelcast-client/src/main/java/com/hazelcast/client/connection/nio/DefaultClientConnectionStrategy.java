@@ -35,13 +35,12 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     private volatile boolean disconnectedFromCluster;
     private boolean clientStartAsync;
     private ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
-    private ClusterConnector connector;
+    private ClusterConnectorService clusterConnectorService;
 
     @Override
     public void init(ClientContext clientContext) {
         super.init(clientContext);
-        ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) clientContext.getConnectionManager();
-        this.connector = connectionManager.getClusterConnector();
+        this.clusterConnectorService = clientContext.getClusterConnectorService();
         this.clientStartAsync = clientConnectionStrategyConfig.isAsyncStart();
         this.reconnectMode = clientConnectionStrategyConfig.getReconnectMode();
     }
@@ -49,15 +48,15 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     @Override
     public void start() {
         if (clientStartAsync) {
-            connector.connectToClusterAsync();
+            clusterConnectorService.connectToClusterAsync();
         } else {
-            connector.connectToCluster();
+            clusterConnectorService.connectToCluster();
         }
     }
 
     @Override
     public void beforeGetConnection(Address target) {
-        if (isClusterAvailable()) {
+        if (clusterConnectorService.isClusterAvailable()) {
             return;
         }
         if (clientStartAsync && !disconnectedFromCluster) {
@@ -70,7 +69,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void beforeOpenConnection(Address target) {
-        if (isClusterAvailable()) {
+        if (clusterConnectorService.isClusterAvailable()) {
             return;
         }
         if (reconnectMode == ASYNC && disconnectedFromCluster) {
@@ -95,7 +94,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
         }
         if (clientContext.getLifecycleService().isRunning()) {
             try {
-                connector.connectToClusterAsync();
+                clusterConnectorService.connectToClusterAsync();
             } catch (RejectedExecutionException r) {
                 shutdownWithExternalThread();
             }
@@ -127,7 +126,4 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     public void shutdown() {
     }
 
-    private boolean isClusterAvailable() {
-        return clientContext.getConnectionManager().getOwnerConnectionAddress() != null;
-    }
 }

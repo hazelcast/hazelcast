@@ -17,19 +17,16 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
@@ -74,7 +71,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
                 currentThread.setContextClassLoader(HazelcastClient.class.getClassLoader());
             }
             HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config,
-                    clientRegistry.createClientServiceFactory(), createAddressProvider(config));
+                    clientRegistry.createClientServiceFactory(), createAddressProvider());
             client.start();
             clients.add(client);
             OutOfMemoryErrorDispatcher.registerClient(client);
@@ -84,20 +81,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         }
     }
 
-    private AddressProvider createAddressProvider(ClientConfig config) {
-        boolean discoveryEnabled = new HazelcastProperties(config.getProperties())
-                .getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED);
-        ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
-        List<String> userConfiguredAddresses = config.getNetworkConfig().getAddresses();
-
-        boolean isAtLeastAProviderConfigured
-                = discoveryEnabled || (awsConfig != null && awsConfig.isEnabled()) || !userConfiguredAddresses.isEmpty();
-
-        if (isAtLeastAProviderConfigured) {
-            // address providers or addresses are configured explicitly, don't add more addresses
-            return null;
-        }
-
+    private AddressProvider createAddressProvider() {
         return new AddressProvider() {
             @Override
             public Addresses loadAddresses() {
