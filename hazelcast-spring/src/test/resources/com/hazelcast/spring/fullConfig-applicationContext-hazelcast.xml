@@ -799,6 +799,7 @@
             <hz:hot-restart-persistence enabled="true"
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
+                                        auto-remove-stale-data="false"
                                         cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE">
                 <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
                 <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>

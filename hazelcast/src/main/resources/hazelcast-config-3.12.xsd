@@ -3719,6 +3719,19 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="auto-remove-stale-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets whether or not automatically removal of stale Hot Restart data is enabled.
+                        When a member terminates or crashes when cluster state is ACTIVE, remaining members
+                        redistributes data among themselves and data persisted on terminated member's storage becomes
+                        stale. That terminated member cannot rejoin the cluster without removing Hot Restart data.
+                        When auto-removal of stale Hot Restart data is enabled, while restarting that member,
+                        Hot Restart data is automatically removed and it joins the cluster as a completely new member.
+                        Otherwise, Hot Restart data should be removed manually.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
