@@ -42,7 +42,7 @@ public final class DomConfigHelper {
     private DomConfigHelper() {
     }
 
-    static void fillProperties(final Node node, Map<String, Comparable> properties, boolean domLevel3) {
+    public static void fillProperties(final Node node, Map<String, Comparable> properties, boolean domLevel3) {
         if (properties == null) {
             return;
         }
@@ -63,7 +63,7 @@ public final class DomConfigHelper {
         }
     }
 
-    static void fillProperties(final Node node, Properties properties, boolean domLevel3) {
+    public static void fillProperties(final Node node, Properties properties, boolean domLevel3) {
         if (properties == null) {
             return;
         }
@@ -82,7 +82,7 @@ public final class DomConfigHelper {
         return new IterableNodeList(node, Node.ELEMENT_NODE);
     }
 
-    static Iterable<Node> asElementIterable(NodeList list) {
+    public static Iterable<Node> asElementIterable(NodeList list) {
         return new IterableNodeList(list, Node.ELEMENT_NODE);
     }
 
