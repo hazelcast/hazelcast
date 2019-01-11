@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.instance.BuildInfo;
@@ -43,6 +44,8 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.Properties;
 
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getClientConfigStream;
 import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getJetConfigStream;
 import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getMemberConfigStream;
@@ -265,5 +268,13 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
 
     private Optional<Boolean> getBooleanAttribute(Node node, String name) {
         return Optional.ofNullable(node.getAttributes().getNamedItem(name)).map(this::booleanValue);
+    }
+
+    private String getTextContent(Node node) {
+        return DomConfigHelper.getTextContent(node, domLevel3);
+    }
+
+    public void fillProperties(Node node, Properties properties) {
+        DomConfigHelper.fillProperties(node, properties, domLevel3);
     }
 }
