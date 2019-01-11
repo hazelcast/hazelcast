@@ -1573,6 +1573,10 @@ public abstract class HazelcastTestSupport {
     // ########## test assumptions ##########
     // ######################################
 
+    public static void assumeThatJDK6() {
+        assumeTrue("Java 6 should be used", JAVA_VERSION.startsWith("1.6."));
+    }
+
     public static void assumeThatNoJDK6() {
         assumeFalse("Java 6 used", JAVA_VERSION.startsWith("1.6."));
     }

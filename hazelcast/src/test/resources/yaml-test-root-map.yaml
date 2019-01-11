@@ -1,0 +1,16 @@
+# contains structure that can be defined in a JSON config as well
+# see yaml-test-root-map.json
+root-map:
+  embedded-map:
+    scalar-str: h4z3lc4st
+    scalar-int: 123
+    scalar-double: 123.12312
+    scalar-bool: true
+    embedded-list:
+      - value1
+      - 42
+      - 42.42
+      - false
+    embedded-list2:
+      - !!str value2
+      - !!float 1
