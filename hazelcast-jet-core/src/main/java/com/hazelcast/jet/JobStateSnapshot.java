@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 
 /**
- * A handle to exported state snapshot created using {@link
+ * A handle to an exported state snapshot created using {@link
  * Job#exportSnapshot(String)}.
  */
 public final class JobStateSnapshot {

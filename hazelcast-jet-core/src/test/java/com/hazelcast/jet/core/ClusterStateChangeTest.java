@@ -71,7 +71,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
     }
 
     @Test
-    public void when_enterPassiveState_then_jobTerminated() throws Exception {
+    public void when_enterPassiveState_then_executionTerminated() throws Exception {
         // Given
         Job job = jet.newJob(dag);
         NoOutputSourceP.executionStarted.await();

@@ -383,6 +383,7 @@ public class MasterContext {
      * If there was a membership change and the partition table is not completely
      * fixed yet, job restart is rescheduled.
      */
+    @SuppressWarnings("checkstyle:ReturnCount")
     void tryStartJob(Function<Long, Long> executionIdSupplier) {
         ClassLoader classLoader = null;
         DAG dag = null;
@@ -397,12 +398,22 @@ public class MasterContext {
                 exception = new CancellationException();
                 break synchronized_block;
             }
-
-            if (!setJobStatusToStarting()
-                    || scheduleRestartIfQuorumAbsent()
-                    || scheduleRestartIfClusterIsNotSafe()) {
+            if (jobStatus != NOT_RUNNING) {
+                logger.fine("Not starting job '" + jobName + "': status is " + jobStatus);
                 return;
             }
+
+            if (jobExecutionRecord.isSuspended()) {
+                jobExecutionRecord.setSuspended(false);
+                writeJobExecutionRecord(false);
+                jobStatus = NOT_RUNNING;
+            }
+
+            if (scheduleRestartIfQuorumAbsent() || scheduleRestartIfClusterIsNotSafe()) {
+                return;
+            }
+            executionStartTime = System.nanoTime();
+            jobStatus = STARTING;
 
             // ensure JobExecutionRecord exists
             writeJobExecutionRecord(true);
@@ -517,29 +528,6 @@ public class MasterContext {
             dag.edge(new SnapshotRestoreEdge(explodeVertex, index, userVertex, destOrdinal));
             index++;
         }
-    }
-
-    /**
-     * Sets job status to starting.
-     * Returns false if the job start process cannot proceed.
-     */
-    private boolean setJobStatusToStarting() {
-        assertLockHeld();
-        JobStatus status = jobStatus();
-        if (status != NOT_RUNNING) {
-            logger.fine("Not starting job '" + jobName + "': status is " + status);
-            return false;
-        }
-
-        assert jobStatus == NOT_RUNNING : "cannot start job " + idToString(jobId) + " with status: " + jobStatus;
-        jobStatus = STARTING;
-        executionStartTime = System.nanoTime();
-        if (jobExecutionRecord.isSuspended()) {
-            jobExecutionRecord.setSuspended(false);
-            writeJobExecutionRecord(false);
-        }
-
-        return true;
     }
 
     private boolean scheduleRestartIfQuorumAbsent() {
@@ -883,7 +871,7 @@ public class MasterContext {
 
         Throwable finalError;
         if (status == STARTING || status == RUNNING) {
-            logger.fine("Completing " + jobIdString());
+            logger.fine("Sending CompleteExecutionOperation for " + jobIdString());
             finalError = error;
         } else {
             logCannotComplete(error);
@@ -1045,7 +1033,7 @@ public class MasterContext {
             // We don't bubble up the exceptions, if we can't write the record out, the universe is
             // probably crumbling apart anyway. And we don't depend on it, we only write out for
             // others to know or for the case should the master we fail.
-            logger.warning("Failed to update JobRecord", e);
+            logger.warning("Failed to update JobExecutionRecord", e);
         }
     }
 

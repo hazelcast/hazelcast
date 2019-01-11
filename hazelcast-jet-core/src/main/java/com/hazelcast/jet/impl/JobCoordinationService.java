@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -426,7 +427,9 @@ public class JobCoordinationService {
     }
 
     boolean shouldStartJobs() {
-        if (!(isMaster() && nodeEngine.isRunning() && !isClusterEnteringPassiveState)) {
+        ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
+        if (!isMaster() || !nodeEngine.isRunning() || isClusterEnteringPassiveState
+                || clusterState != ClusterState.ACTIVE && clusterState != ClusterState.NO_MIGRATION) {
             return false;
         }
         // if there are any members in a shutdown process, don't start jobs
