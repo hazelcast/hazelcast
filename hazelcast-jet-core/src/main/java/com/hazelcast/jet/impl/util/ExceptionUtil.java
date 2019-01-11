@@ -30,6 +30,7 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
@@ -180,5 +181,30 @@ public final class ExceptionUtil {
     @Nonnull
     public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
         throw (T) t;
+    }
+
+    /**
+     * If the given exception has "java.lang.ClassCastException: cannot assign
+     * instance of java.lang.invoke.SerializedLambda" in the causes, wrap it in
+     * another JetException explaining the possible reason.
+     * <p>
+     * This is a hack to improve readability of this common exception.
+     *
+     * @param e the exception to handle
+     * @return the given exception wrapped, if it is a case of CCE for SerializedLambda
+     *     or the given exception otherwise
+     */
+    public static RuntimeException handleSerializedLambdaCce(HazelcastSerializationException e) {
+        Throwable cause = e.getCause();
+        while (cause != null) {
+            if (cause instanceof ClassCastException
+                    && cause.getMessage().startsWith("cannot assign instance of java.lang.invoke.SerializedLambda")) {
+                throw new JetException("Class containing the lambda probably missing from class path, did you add it " +
+                        "using JobConfig.addClass()?: " + e, e);
+            }
+            cause = cause.getCause();
+        }
+
+        throw e;
     }
 }

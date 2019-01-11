@@ -201,6 +201,8 @@ public class JobConfig implements Serializable {
      * Adds the supplied classes to the list of resources that will be
      * available on the job's classpath while it's executing in the Jet
      * cluster.
+     * <p>
+     * See also {@link #addJar} and {@link #addResource}.
      *
      * @return {@code this} instance for fluent API
      */
