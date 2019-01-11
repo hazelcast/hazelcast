@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestOutbox;
-import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP.MigrationWatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,7 +34,6 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class ReadWithPartitionIteratorPTest {
@@ -49,10 +47,8 @@ public class ReadWithPartitionIteratorPTest {
                 iterate(51, 52, 53),
                 iterate(71, 72, 73),
         };
-        MigrationWatcher migrationWatcher = mock(MigrationWatcher.class);
-        when(!migrationWatcher.clusterChanged()).thenReturn(false);
         ReadWithPartitionIteratorP<Entry<Integer, Integer>> r =
-                new ReadWithPartitionIteratorP<>(p -> content[p], partitions, migrationWatcher);
+                new ReadWithPartitionIteratorP<>(p -> content[p], partitions);
         TestOutbox outbox = new TestOutbox(3);
         Queue<Object> bucket = outbox.queue(0);
         r.init(outbox, mock(Processor.Context.class));

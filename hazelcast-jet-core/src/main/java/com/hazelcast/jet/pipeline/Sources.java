@@ -153,11 +153,8 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -182,11 +179,8 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -222,11 +216,8 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -292,11 +283,8 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -530,11 +518,8 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
      * <p>
      * The default local parallelism for this processor is 1.
      */
@@ -570,11 +555,8 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * If the {@code IMap} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
      * <p>
      * The default local parallelism for this processor is 1.
      *
@@ -711,11 +693,8 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * If the {@code ICache} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -810,11 +789,8 @@ public final class Sources {
      * it will re-emit all entries.
      * <p>
      * If the {@code ICache} is modified while being read, or if there is a
-     * cluster topology change (triggering data migration), the source may miss
-     * and/or duplicate some entries. If we detect a topology change, the job
-     * will fail, but the detection is only on a best-effort basis - we might
-     * still give incorrect results without reporting a failure. Concurrent
-     * mutation is not detected at all.
+     * cluster topology change (triggering data migration), the source may
+     * miss and/or duplicate some entries.
      * <p>
      * The default local parallelism for this processor is 1.
      */
