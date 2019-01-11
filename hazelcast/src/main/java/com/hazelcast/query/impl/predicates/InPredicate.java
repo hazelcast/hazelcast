@@ -58,11 +58,12 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         if (attributeValue == null) {
             return false;
         }
+        attributeValue = (Comparable) convertEnumValue(attributeValue);
         Set<Comparable> set = convertedInValues;
         if (set == null) {
             set = createHashSet(values.length);
             for (Comparable value : values) {
-                set.add(convert(entry, attributeValue, value));
+                set.add(convert(attributeValue, value));
             }
             convertedInValues = set;
         }

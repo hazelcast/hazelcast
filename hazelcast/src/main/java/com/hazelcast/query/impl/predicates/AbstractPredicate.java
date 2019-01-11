@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.internal.json.Json;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
@@ -27,6 +27,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.JsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
 
@@ -72,7 +73,7 @@ public abstract class AbstractPredicate<K, V>
     private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
         List<Object> results = result.getResults();
         for (Object o : results) {
-            Comparable entryValue = (Comparable) convertEnumValue(o);
+            Comparable entryValue = (Comparable) o;
             // it's enough if there's only one result in the MultiResult that satisfies the predicate
             boolean satisfied = convertAndApplyForSingleAttributeValue(mapEntry, entryValue);
             if (satisfied) {
@@ -96,12 +97,11 @@ public abstract class AbstractPredicate<K, V>
      * Converts givenAttributeValue to the type of entryAttributeValue
      * Good practice: do not invoke this method if entryAttributeValue == null
      *
-     * @param entry               map entry on the basis of which the conversion will be executed
      * @param entryAttributeValue attribute value extracted from the entry
      * @param givenAttributeValue given attribute value to be converted
      * @return converted givenAttributeValue
      */
-    protected Comparable convert(Map.Entry entry, Comparable entryAttributeValue, Comparable givenAttributeValue) {
+    protected Comparable convert(Comparable entryAttributeValue, Comparable givenAttributeValue) {
         if (givenAttributeValue == null) {
             return null;
         }
@@ -115,15 +115,16 @@ public abstract class AbstractPredicate<K, V>
                 // Returning unconverted value is an optimization since the given value will be compared with null.
                 return givenAttributeValue;
             }
-            type = ((Extractable) entry).getAttributeType(attributeName);
+            type = QueryableEntry.extractAttributeType(entryAttributeValue);
             attributeType = type;
         }
 
-        Class<?> entryAttributeClass = entryAttributeValue != null ? entryAttributeValue.getClass() : null;
-        return convert(type, entryAttributeClass, givenAttributeValue);
+        return convert(type, entryAttributeValue, givenAttributeValue);
     }
 
-    private Comparable convert(AttributeType entryAttributeType, Class<?> entryAttributeClass, Comparable givenAttributeValue) {
+    private Comparable convert(AttributeType entryAttributeType, Comparable entryAttributeValue, Comparable givenAttributeValue) {
+
+        Class<?> entryAttributeClass = entryAttributeValue != null ? entryAttributeValue.getClass() : null;
         if (entryAttributeType == AttributeType.ENUM) {
             // if attribute type is enum, convert given attribute to enum string
             return entryAttributeType.getConverter().convert(givenAttributeValue);
@@ -143,7 +144,7 @@ public abstract class AbstractPredicate<K, V>
     protected Object readAttributeValue(Map.Entry entry) {
         Extractable extractable = (Extractable) entry;
         Object attributeValue = extractable.getAttributeValue(attributeName);
-        return convertEnumValue(attributeValue);
+        return attributeValue;
     }
 
     protected Object convertEnumValue(Object attributeValue) {

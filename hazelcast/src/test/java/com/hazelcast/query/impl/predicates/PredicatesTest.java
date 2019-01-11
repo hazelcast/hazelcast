@@ -30,14 +30,12 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
-import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -334,11 +332,6 @@ public class PredicatesTest extends HazelcastTestSupport {
         public Comparable getAttributeValue(String attributeName) throws QueryException {
             return (Comparable) getValue();
         }
-
-        @Override
-        public AttributeType getAttributeType(String attributeName) {
-            return ReflectionHelper.getAttributeType(getValue().getClass());
-        }
     }
 
     private final class NullDummyEntry extends QueryableEntry {
@@ -374,11 +367,6 @@ public class PredicatesTest extends HazelcastTestSupport {
         @Override
         public Comparable getAttributeValue(String attributeName) throws QueryException {
             return null;
-        }
-
-        @Override
-        public AttributeType getAttributeType(String attributeName) {
-            return AttributeType.INTEGER;
         }
 
         @Override
