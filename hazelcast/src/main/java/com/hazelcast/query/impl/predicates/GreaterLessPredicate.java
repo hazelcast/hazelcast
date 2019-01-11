@@ -61,7 +61,8 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         if (attributeValue == null) {
             return false;
         }
-        Comparable givenValue = convert(mapEntry, attributeValue, value);
+        Comparable givenValue = convert(attributeValue, value);
+        attributeValue = (Comparable) convertEnumValue(attributeValue);
         int result = attributeValue.compareTo(givenValue);
         return equal && result == 0 || (less ? (result < 0) : (result > 0));
     }

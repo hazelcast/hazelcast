@@ -55,11 +55,12 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
         if (attributeValue == null) {
             return false;
         }
-        Comparable fromConvertedValue = convert(entry, attributeValue, from);
-        Comparable toConvertedValue = convert(entry, attributeValue, to);
+        Comparable fromConvertedValue = convert(attributeValue, from);
+        Comparable toConvertedValue = convert(attributeValue, to);
         if (fromConvertedValue == null || toConvertedValue == null) {
             return false;
         }
+        attributeValue = (Comparable) convertEnumValue(attributeValue);
         return attributeValue.compareTo(fromConvertedValue) >= 0 && attributeValue.compareTo(toConvertedValue) <= 0;
     }
 

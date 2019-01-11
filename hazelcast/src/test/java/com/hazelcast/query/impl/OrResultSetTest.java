@@ -103,11 +103,6 @@ public class OrResultSetTest extends HazelcastTestSupport {
         }
 
         @Override
-        public AttributeType getAttributeType(String attributeName) {
-            return null;
-        }
-
-        @Override
         public Object getTargetObject(boolean key) {
             return null;
         }

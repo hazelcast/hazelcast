@@ -19,12 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.query.QueryException;
 
 /**
- * Enables extracting attribute values and types and their type from an object, usually from an Entry
+ * Enables extracting attribute value from an object, usually from an Entry
  */
 public interface Extractable {
-
     Object getAttributeValue(String attributeName) throws QueryException;
-
-    AttributeType getAttributeType(String attributeName) throws QueryException;
-
 }

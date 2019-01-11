@@ -61,7 +61,8 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
         if (attributeValue == null) {
             return value == null || value == IndexImpl.NULL;
         }
-        value = convert(mapEntry, attributeValue, value);
+        value = convert(attributeValue, value);
+        attributeValue = (Comparable) convertEnumValue(attributeValue);
         return attributeValue.equals(value);
     }
 
