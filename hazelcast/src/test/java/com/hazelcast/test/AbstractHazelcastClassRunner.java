@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.internal.runners.statements.RunAfters;
 import org.junit.internal.runners.statements.RunBefores;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -187,14 +188,18 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         List<FrameworkMethod> afters = getTestClass().getAnnotatedMethods(After.class);
         Statement nextStatement = statement;
         List<TestRule> testRules = getTestRules(target);
+        boolean expectsException = false;
         if (!testRules.isEmpty()) {
             for (TestRule rule : testRules) {
                 if (rule instanceof BounceMemberRule) {
                     nextStatement = ((BounceMemberRule) rule).stopBouncing(statement);
                 }
+                if (rule instanceof ExpectedException) {
+                    expectsException = true;
+                }
             }
         }
-        if (THREAD_DUMP_ON_FAILURE) {
+        if (THREAD_DUMP_ON_FAILURE && !expectsException) {
             return new ThreadDumpAwareRunAfters(method, nextStatement, afters, target);
         }
         if (afters.isEmpty()) {
