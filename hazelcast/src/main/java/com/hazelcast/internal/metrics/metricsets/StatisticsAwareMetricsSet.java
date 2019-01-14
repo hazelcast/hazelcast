@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.util.StringUtil.lowerCaseFirstChar;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -60,7 +61,7 @@ public class StatisticsAwareMetricsSet {
     }
 
     public void register(MetricsRegistry metricsRegistry) {
-        metricsRegistry.scheduleAtFixedRate(new Task(metricsRegistry), SCAN_PERIOD_SECONDS, SECONDS);
+        metricsRegistry.scheduleAtFixedRate(new Task(metricsRegistry), SCAN_PERIOD_SECONDS, SECONDS, INFO);
     }
 
     // Periodic task that goes through all StatisticsAwareService asking for stats and registers and if it doesn't exist,

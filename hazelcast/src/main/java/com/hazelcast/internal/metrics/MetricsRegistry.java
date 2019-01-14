@@ -163,15 +163,16 @@ public interface MetricsRegistry {
      * Schedules a publisher to be executed at a fixed rate.
      *
      * Probably this method will be removed in the future, but we need a mechanism
-     * for complex gauges that require some
-     * calculation to provide their values.
+     * for complex gauges that require some calculation to provide their values.
      *
      * @param publisher the published task that needs to be executed
      * @param period    the time between executions
      * @param timeUnit  the time unit for period
+     * @param probeLevel the ProbeLevel publisher it publishing on. This is needed to prevent scheduling
+     *                   publishers if their probe level isn't sufficient.
      * @throws NullPointerException if publisher or timeUnit is null.
      */
-    void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit);
+    void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel);
 
     /**
      * Renders the content of the MetricsRegistry.
