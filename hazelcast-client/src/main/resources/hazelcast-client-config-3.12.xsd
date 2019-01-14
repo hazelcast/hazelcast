@@ -402,7 +402,14 @@
     <xs:complexType name="cluster-group">
         <xs:all>
             <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev"/>
-            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1" default="dev-pass"/>
+            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1" default="dev-pass">
+                <xs:annotation>
+                    <xs:documentation>
+                        Password of the group to connect to.
+                        The password is only checked when security is enabled on Hazelcast members.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="listeners">

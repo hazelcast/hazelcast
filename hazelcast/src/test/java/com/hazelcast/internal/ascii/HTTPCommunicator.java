@@ -168,9 +168,9 @@ public class HTTPCommunicator {
         return doDelete(url).responseCode;
     }
 
-    public int shutdownCluster(String groupName, String groupPassword) throws IOException {
+    public ConnectionResponse shutdownCluster(String groupName, String groupPassword) throws IOException {
         String url = address + "management/cluster/clusterShutdown";
-        return doPost(url, groupName, groupPassword).responseCode;
+        return doPost(url, groupName, groupPassword);
     }
 
     public String shutdownMember(String groupName, String groupPassword) throws IOException {
