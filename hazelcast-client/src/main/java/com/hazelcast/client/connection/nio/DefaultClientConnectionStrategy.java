@@ -33,7 +33,7 @@ import static com.hazelcast.client.config.ClientConnectionStrategyConfig.Reconne
 public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     private volatile boolean disconnectedFromCluster;
-    private boolean clientStartAsync;
+    private boolean asyncStart;
     private ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
     private ClusterConnector connector;
 
@@ -42,13 +42,13 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
         super.init(clientContext);
         ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) clientContext.getConnectionManager();
         this.connector = connectionManager.getClusterConnector();
-        this.clientStartAsync = clientConnectionStrategyConfig.isAsyncStart();
+        this.asyncStart = clientConnectionStrategyConfig.isAsyncStart();
         this.reconnectMode = clientConnectionStrategyConfig.getReconnectMode();
     }
 
     @Override
     public void start() {
-        if (clientStartAsync) {
+        if (asyncStart) {
             connector.connectToClusterAsync();
         } else {
             connector.connectToCluster();
@@ -60,7 +60,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
         if (isClusterAvailable()) {
             return;
         }
-        if (clientStartAsync && !disconnectedFromCluster) {
+        if (asyncStart && !disconnectedFromCluster) {
             throw new HazelcastClientOfflineException("Client is connecting to cluster.");
         }
         if (reconnectMode == ASYNC && disconnectedFromCluster) {
