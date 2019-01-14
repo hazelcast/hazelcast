@@ -24,6 +24,7 @@ import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.nio.NioNetworking;
+import com.hazelcast.internal.util.InstantiationUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -35,8 +36,6 @@ import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.List;
 import java.util.Properties;
@@ -76,63 +75,58 @@ public class DefaultNodeContext implements NodeContext {
         }
         ClassLoader classLoader = config.getClassLoader();
         String classname = memberAddressProviderConfig.getClassName();
-        Class<?> clazz = loadMemberAddressProviderClass(classLoader, classname);
+        Class<? extends MemberAddressProvider> clazz = loadMemberAddressProviderClass(classLoader, classname);
+        ILogger memberAddressProviderLogger = node.getLogger(clazz);
 
-        Constructor<?> constructor = findMemberAddressProviderConstructor(clazz);
         Properties properties = memberAddressProviderConfig.getProperties();
-        MemberAddressProvider memberAddressProvider = newMemberAddressProviderInstance(constructor, properties);
+        MemberAddressProvider memberAddressProvider = newMemberAddressProviderInstance(clazz,
+                memberAddressProviderLogger, properties);
         return new DelegatingAddressPicker(memberAddressProvider, config.getNetworkConfig(), addressPickerLogger);
-
     }
 
-    private MemberAddressProvider newMemberAddressProviderInstance(Constructor<?> constructor, Properties properties) {
-        Class<?>[] parameterTypes = constructor.getParameterTypes();
-        Class<?> clazz = constructor.getDeclaringClass();
-        String classname = clazz.getName();
-        try {
-            if (parameterTypes.length == 0) {
-                //we have only the no-arg constructor -> we have to fail-fast when some properties were configured
-                if (properties != null && !properties.isEmpty()) {
-                    throw new ConfigurationException("Cannot find a matching constructor for MemberAddressProvider.  "
-                            + "The member address provider has properties configured, but the class " + "'" + classname
-                            + "' does not have a public constructor accepting properties.");
-                }
-
-                return (MemberAddressProvider) constructor.newInstance();
-            } else {
-                if (properties == null) {
-                    properties = new Properties();
-                }
-                return (MemberAddressProvider) constructor.newInstance(properties);
-            }
-        } catch (InstantiationException e) {
-            throw new ConfigurationException("Cannot create a new instance of MemberAddressProvider '" + clazz + "'", e);
-        } catch (IllegalAccessException e) {
-            throw new ConfigurationException("Cannot create a new instance of MemberAddressProvider '" + clazz + "'", e);
-        } catch (InvocationTargetException e) {
-            throw new ConfigurationException("Cannot create a new instance of MemberAddressProvider '" + clazz + "'", e);
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    // justification for the suppression: the flow is pretty straightforward and breaking this up into smaller pieces
+    // would make it harder to read
+    private static MemberAddressProvider newMemberAddressProviderInstance(Class<? extends MemberAddressProvider> clazz,
+                                                                          ILogger logger, Properties properties) {
+        Properties nonNullProps = properties == null ? new Properties() : properties;
+        MemberAddressProvider provider = InstantiationUtils.newInstanceOrNull(clazz, nonNullProps, logger);
+        if (provider == null) {
+            provider = InstantiationUtils.newInstanceOrNull(clazz, logger, nonNullProps);
         }
-    }
-
-    private Constructor<?> findMemberAddressProviderConstructor(Class<?> clazz) {
-        Constructor<?> constructor;
-        try {
-            constructor = clazz.getConstructor(Properties.class);
-        } catch (NoSuchMethodException e) {
-            try {
-                constructor = clazz.getConstructor();
-            } catch (NoSuchMethodException e1) {
-                throw new ConfigurationException("Cannot create a new instance of MemberAddressProvider '" + clazz + "'", e);
-            }
+        if (provider == null) {
+            provider = InstantiationUtils.newInstanceOrNull(clazz, nonNullProps);
         }
-        return constructor;
+        if (provider == null) {
+            if (properties != null && !properties.isEmpty()) {
+                throw new ConfigurationException("Cannot find a matching constructor for MemberAddressProvider.  "
+                        + "The member address provider has properties configured, but the class " + "'"
+                        + clazz.getName() + "' does not have a public constructor accepting properties.");
+            }
+            provider = InstantiationUtils.newInstanceOrNull(clazz, logger);
+        }
+        if (provider == null) {
+            provider = InstantiationUtils.newInstanceOrNull(clazz);
+        }
+        if (provider == null) {
+            throw new ConfigurationException("Cannot find a matching constructor for MemberAddressProvider "
+                    + "implementation '" + clazz.getName() + "'.");
+        }
+        return provider;
     }
 
-    private Class<?> loadMemberAddressProviderClass(ClassLoader classLoader, String classname) {
+    private Class<? extends MemberAddressProvider> loadMemberAddressProviderClass(ClassLoader classLoader,
+                                                                                  String classname) {
         try {
-            return ClassLoaderUtil.loadClass(classLoader, classname);
+            Class<?> clazz = ClassLoaderUtil.loadClass(classLoader, classname);
+            if (!(MemberAddressProvider.class.isAssignableFrom(clazz))) {
+                throw new ConfigurationException("Configured member address provider " + clazz.getName()
+                        + " does not implement the interface" + MemberAddressProvider.class.getName());
+            }
+            return (Class<? extends MemberAddressProvider>) clazz;
         } catch (ClassNotFoundException e) {
-            throw new ConfigurationException("Cannot create a new instance of MemberAddressProvider '" + classname + "'", e);
+            throw new ConfigurationException("Cannot create a new instance of MemberAddressProvider '" + classname
+                    + "'", e);
         }
     }
 
