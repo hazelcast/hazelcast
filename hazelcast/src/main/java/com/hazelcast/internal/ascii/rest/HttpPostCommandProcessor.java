@@ -25,10 +25,11 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
-import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.security.SecurityService;
+import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.JsonUtil;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
@@ -37,6 +38,9 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
@@ -117,17 +121,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleChangeClusterState(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
-        String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
-        String stateParam = URLDecoder.decode(strList[2], "UTF-8");
         String res;
         try {
             Node node = textCommandService.getNode();
             ClusterService clusterService = node.getClusterService();
-            GroupConfig groupConfig = node.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
+            if (authenticate(command, strList[0], strList.length > 1 ? strList[1] : null)) {
+                String stateParam = URLDecoder.decode(strList[2], "UTF-8");
                 ClusterState state = ClusterState.valueOf(upperCaseInternal(stateParam));
                 if (!state.equals(clusterService.getClusterState())) {
                     clusterService.changeClusterState(state);
@@ -135,6 +134,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 } else {
                     res = response(ResponseType.FAIL, "state", state.toString().toLowerCase(StringUtil.LOCALE_INTERNAL));
                 }
+            } else {
+                res = response(ResponseType.FORBIDDEN);
             }
         } catch (Throwable throwable) {
             logger.warning("Error occurred while changing cluster state", throwable);
@@ -164,20 +165,17 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleChangeClusterVersion(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
-        String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
-        String versionParam = URLDecoder.decode(strList[2], "UTF-8");
         String res;
         try {
             Node node = textCommandService.getNode();
             ClusterService clusterService = node.getClusterService();
-            GroupConfig groupConfig = node.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
-                res = response(ResponseType.FORBIDDEN);
-            } else {
+            if (authenticate(command, strList[0], strList.length > 1 ? strList[1] : null)) {
+                String versionParam = URLDecoder.decode(strList[2], "UTF-8");
                 Version version = Version.of(versionParam);
                 clusterService.changeClusterVersion(version);
                 res = response(ResponseType.SUCCESS, "version", clusterService.getClusterVersion().toString());
+            } else {
+                res = response(ResponseType.FORBIDDEN);
             }
         } catch (Throwable throwable) {
             logger.warning("Error occurred while changing cluster version", throwable);
@@ -348,22 +346,29 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleManagementCenterUrlChange(HttpPostCommand command) throws UnsupportedEncodingException {
-        if (textCommandService.getNode().getProperties().getBoolean(GroupProperty.MC_URL_CHANGE_ENABLED)) {
-            byte[] res = HttpCommand.RES_204;
-            byte[] data = command.getData();
-            String[] strList = bytesToString(data).split("&");
-            String cluster = URLDecoder.decode(strList[0], "UTF-8");
-            String pass = URLDecoder.decode(strList[1], "UTF-8");
-            String url = URLDecoder.decode(strList[2], "UTF-8");
-
+        HazelcastProperties properties = textCommandService.getNode().getProperties();
+        if (! properties.getBoolean(GroupProperty.MC_URL_CHANGE_ENABLED)) {
+            logger.warning("Hazelcast property " + GroupProperty.MC_URL_CHANGE_ENABLED.getName() + " is deprecated.");
+            command.setResponse(HttpCommand.RES_503);
+            return;
+        }
+        byte[] res;
+        String[] strList = bytesToString(command.getData()).split("&");
+        if (authenticate(command, strList[0], strList.length > 1 ? strList[1] : null)) {
             ManagementCenterService managementCenterService = textCommandService.getNode().getManagementCenterService();
             if (managementCenterService != null) {
-                res = managementCenterService.clusterWideUpdateManagementCenterUrl(cluster, pass, url);
+                String url = URLDecoder.decode(strList[2], "UTF-8");
+                res = managementCenterService.clusterWideUpdateManagementCenterUrl(url);
+            } else {
+                logger.warning(
+                        "Unable to change URL of ManagementCenter as the ManagementCenterService is not running on this member.");
+                res = HttpCommand.RES_204;
             }
-            command.setResponse(res);
         } else {
-            command.setResponse(HttpCommand.RES_503);
+            res = HttpCommand.RES_403;
         }
+
+        command.setResponse(res);
     }
 
     private void handleMap(HttpPostCommand command, String uri) {
@@ -589,41 +594,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return;
     }
 
-    // This is intentionally not used. Instead handleUpdatePermissions() returns FORBIDDEN always.
-    private void doHandleUpdatePermissions(HttpPostCommand command) throws UnsupportedEncodingException {
-
-        if (!checkCredentials(command)) {
-            String res = response(ResponseType.FORBIDDEN);
-            command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
-            return;
-        }
-
-        SecurityService securityService = textCommandService.getNode().getSecurityService();
-        if (securityService == null) {
-            String res = response(ResponseType.FAIL, "message", "Security features are only available on Hazelcast Enterprise!");
-            command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
-            return;
-        }
-
-        String res;
-        byte[] data = command.getData();
-        String[] strList = bytesToString(data).split("&");
-        //Start from 3rd item of strList as first two are used for credentials
-        String permConfigsJSON = URLDecoder.decode(strList[2], "UTF-8");
-
-        try {
-            UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest();
-            request.fromJson(Json.parse(permConfigsJSON).asObject());
-            securityService.refreshClientPermissions(request.getPermissionConfigs());
-            res = response(ResponseType.SUCCESS, "message", "Permissions updated.");
-        } catch (Exception ex) {
-            logger.warning("Error occurred while updating permission config", ex);
-            res = exceptionResponse(ex);
-        }
-
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
-    }
-
     private static String exceptionResponse(Throwable throwable) {
         return response(ResponseType.FAIL, "message", throwable.getMessage());
     }
@@ -674,14 +644,41 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
     private boolean checkCredentials(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
-        final String[] strList = bytesToString(data).split("&");
-        if (strList.length < 2) {
+        if (data == null) {
             return false;
         }
-        final String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        final String groupPass = URLDecoder.decode(strList[1], "UTF-8");
-        final GroupConfig groupConfig = textCommandService.getNode().getConfig().getGroupConfig();
-        return groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass);
+        final String[] strList = bytesToString(data).split("&");
+        return authenticate(command, strList[0], strList.length > 1 ? strList[1] : null);
+    }
+
+    /**
+     * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given group name is compared to
+     * configuration. Otherwise member JAAS authentication (member login module stack) is used to authenticate the command.
+     */
+    private boolean authenticate(HttpPostCommand command, final String groupName, final String pass)
+            throws UnsupportedEncodingException {
+        String decodedName = URLDecoder.decode(groupName, "UTF-8");
+        SecurityContext securityContext = textCommandService.getNode().getNodeExtension().getSecurityContext();
+        if (securityContext == null) {
+            final GroupConfig groupConfig = textCommandService.getNode().getConfig().getGroupConfig();
+            if (pass != null && !pass.isEmpty()) {
+                logger.fine("Password was provided but the Hazelcast Security is disabled.");
+            }
+            return groupConfig.getName().equals(decodedName);
+        }
+        if (pass == null) {
+            logger.fine("Empty password is not allowed when the Hazelcast Security is enabled.");
+            return false;
+        }
+        String decodedPass = URLDecoder.decode(pass, "UTF-8");
+        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(groupName, decodedPass);
+        try {
+            LoginContext lc = securityContext.createMemberLoginContext(credentials);
+            lc.login();
+        } catch (LoginException e) {
+            return false;
+        }
+        return true;
     }
 
     private void sendResponse(HttpPostCommand command, String value) {

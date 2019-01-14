@@ -206,13 +206,8 @@ public class ManagementCenterService {
         }
     }
 
-    public byte[] clusterWideUpdateManagementCenterUrl(String groupName, String groupPass, String newUrl) {
+    public byte[] clusterWideUpdateManagementCenterUrl(String newUrl) {
         try {
-            GroupConfig groupConfig = instance.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
-                return HttpCommand.RES_403;
-            }
-
             final Collection<Member> memberList = instance.node.clusterService.getMembers();
             for (Member member : memberList) {
                 send(member.getAddress(), new UpdateManagementCenterUrlOperation(newUrl));

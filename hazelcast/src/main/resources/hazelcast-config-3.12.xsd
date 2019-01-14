@@ -2860,6 +2860,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         Password of the group to be created.
+                        The password is only checked when security is enabled on the member.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

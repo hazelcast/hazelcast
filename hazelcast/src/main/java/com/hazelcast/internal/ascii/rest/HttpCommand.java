@@ -36,7 +36,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final String HEADER_CUSTOM_PREFIX = "Hazelcast-";
     public static final byte[] RES_200 = stringToBytes("HTTP/1.1 200 OK\r\n");
     public static final byte[] RES_400 = stringToBytes("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n");
-    public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\n\r\n");
+    public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n");
     public static final byte[] RES_404 = stringToBytes("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
     public static final byte[] RES_100 = stringToBytes("HTTP/1.1 100 Continue\r\n\r\n");
     public static final byte[] RES_204 = stringToBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n");
