@@ -132,7 +132,7 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     }
 
     private List<BlockingQueue<Runnable>> getEventQueues() {
-        return eventExecutor.getWorkQueues();
+        return eventExecutor.getTaskQueues();
     }
 
     private void scan(DiagnosticsLogWriter writer, BlockingQueue<Runnable> eventQueue, int index) {
