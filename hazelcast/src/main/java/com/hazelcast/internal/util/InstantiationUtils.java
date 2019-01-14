@@ -85,17 +85,27 @@ public final class InstantiationUtils {
         }
         for (int i = 0; i < constructorParamTypes.length; i++) {
             Class<?> constructorParamType = constructorParamTypes[i];
+            Object param = params[i];
             if (constructorParamType.isPrimitive()) {
-                if (params[i] == null) {
-                    // passed argument was null, but the argument in constructor is primitive - it's not matching
+                // 1. Constructors can accept primitive arguments
+                // 2. Parameters are never primitives because they are passed inside an object array
+                // 3. As a user I expect this utility class to do auto-unboxing of passed parameters
+                //  ->  If a constructor argument is a primitive type then we have to use its boxed version otherwise
+                //      isAssignableFrom() bellow fails. It's because an instance of Integer.class cannot be directly
+                //      assigned to int.class without Java compiler doing its magic.
+                if (param == null) {
+                    // passed parameter was null, but the argument in constructor is primitive - it's not matching
                     return false;
                 } else {
                     constructorParamType = toBoxedType(constructorParamType);
                 }
             }
-            Object param = params[i];
-            Class<?> paramType = param == null ? null : param.getClass();
-            if (paramType != null && !constructorParamType.isAssignableFrom(paramType)) {
+            if (param == null) {
+                // null is matching all non-primitive types
+                continue;
+            }
+            Class<?> paramType = param.getClass();
+            if (!constructorParamType.isAssignableFrom(paramType)) {
                 return false;
             }
         }

@@ -53,9 +53,16 @@ public class InstantiationUtilsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void newInstanceOrNull_noMatchingConstructorFound() {
+    public void newInstanceOrNull_noMatchingConstructorFound_different_length() {
         ClassWithNonArgConstructor instance = InstantiationUtils.newInstanceOrNull(ClassWithNonArgConstructor.class,
                 "foo");
+        assertNull(instance);
+    }
+
+    @Test
+    public void newInstanceOrNull_noMatchingConstructorFound_different_types() {
+        ClassWithStringConstructor instance = InstantiationUtils.newInstanceOrNull(ClassWithStringConstructor.class,
+                43);
         assertNull(instance);
     }
 
