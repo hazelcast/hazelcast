@@ -21,12 +21,14 @@ import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetMemberXmlConfigurationCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
@@ -64,6 +66,9 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
         factories[JetGetJobSummaryListCodec.REQUEST_TYPE.id()] = toFactory(JetGetJobSummaryListMessageTask::new);
         factories[JetExistsDistributedObjectCodec.REQUEST_TYPE.id()] =
                 toFactory(JetExistsDistributedObjectMessageTask::new);
+        factories[JetGetClusterMetadataCodec.REQUEST_TYPE.id()] = toFactory(JetGetClusterMetadataMessageTask::new);
+        factories[JetGetMemberXmlConfigurationCodec.REQUEST_TYPE.id()] =
+                toFactory(JetGetMemberXmlConfigurationMessageTask::new);
     }
 
     @Override

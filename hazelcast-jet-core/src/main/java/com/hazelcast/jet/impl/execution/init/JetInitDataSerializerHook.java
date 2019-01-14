@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
@@ -31,6 +32,7 @@ import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
 import com.hazelcast.jet.impl.operation.ExportSnapshotOperation;
+import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
@@ -96,6 +98,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 35;
     public static final int EXPORT_SNAPSHOT_OP = 36;
     public static final int SNAPSHOT_VALIDATION_RECORD = 37;
+    public static final int CLUSTER_METADATA = 38;
+    public static final int GET_CLUSTER_METADATA_OP = 39;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -177,10 +181,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new ResumeJobOperation();
                 case NOTIFY_MEMBER_SHUTDOWN_OP:
                     return new NotifyMemberShutdownOperation();
-                case JOB_SUMMARY:
-                    return new JobSummary();
                 case GET_JOB_SUMMARY_LIST_OP:
                     return new GetJobSummaryListOperation();
+                case JOB_SUMMARY:
+                    return new JobSummary();
                 case SNAPSHOT_STATS:
                     return new SnapshotStats();
                 case PREPARE_FOR_PASSIVE_CLUSTER_OP:
@@ -189,6 +193,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new ExportSnapshotOperation();
                 case SNAPSHOT_VALIDATION_RECORD:
                     return new SnapshotValidationRecord();
+                case CLUSTER_METADATA:
+                    return new ClusterMetadata();
+                case GET_CLUSTER_METADATA_OP:
+                    return new GetClusterMetadataOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

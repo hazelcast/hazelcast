@@ -20,12 +20,16 @@ import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetMemberXmlConfigurationCodec;
 import com.hazelcast.client.impl.protocol.codec.JetReadMetricsCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryXmlConfig;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
@@ -44,9 +48,9 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.stream.Collectors.toList;
 
@@ -135,13 +139,27 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
      */
     @Nonnull
     public List<JobSummary> getJobSummaryList() {
-        ClientMessage request = JetGetJobSummaryListCodec.encodeRequest();
-        ClientInvocation invocation = new ClientInvocation(client, request, null, masterAddress(client.getCluster()));
+        return invokeRequestOnMasterAndDecodeResponse(JetGetJobSummaryListCodec.encodeRequest(),
+                response -> JetGetJobSummaryListCodec.decodeResponse(response).response);
+    }
 
-        return uncheckCall(() -> {
-            ClientMessage response = invocation.invoke().get();
-            return serializationService.toObject(JetGetJobSummaryListCodec.decodeResponse(response).response);
-        });
+    /**
+     * Returns summary of cluster details.
+     */
+    @Nonnull
+    public ClusterMetadata getClusterMetadata() {
+        return invokeRequestOnMasterAndDecodeResponse(JetGetClusterMetadataCodec.encodeRequest(),
+                response -> JetGetClusterMetadataCodec.decodeResponse(response).response);
+    }
+
+    /**
+     * Returns the member configuration.
+     */
+    @Nonnull
+    public Config getHazelcastConfig() {
+        String configString = invokeRequestOnMasterAndDecodeResponse(JetGetMemberXmlConfigurationCodec.encodeRequest(),
+                response -> JetGetMemberXmlConfigurationCodec.decodeResponse(response).response);
+        return new InMemoryXmlConfig(configString);
     }
 
     @Nonnull
@@ -149,14 +167,35 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         return client;
     }
 
-    private List<Long> getJobIdsByName(String name) {
-        ClientInvocation invocation = new ClientInvocation(
-                client, JetGetJobIdsByNameCodec.encodeRequest(name), null, masterAddress(client.getCluster())
+    @Override
+    public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
+        return invokeRequestOnAnyMemberAndDecodeResponse(
+                JetExistsDistributedObjectCodec.encodeRequest(serviceName, objectName),
+                response -> JetExistsDistributedObjectCodec.decodeResponse(response).response
         );
+    }
 
+    private List<Long> getJobIdsByName(String name) {
+        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsByNameCodec.encodeRequest(name),
+                response -> JetGetJobIdsByNameCodec.decodeResponse(response).response);
+    }
+
+    private <S> S invokeRequestOnMasterAndDecodeResponse(ClientMessage request,
+                                                         Function<ClientMessage, Object> decoder) {
+        return invokeRequestAndDecodeResponse(masterAddress(client.getCluster()), request, decoder);
+    }
+
+    private <S> S invokeRequestOnAnyMemberAndDecodeResponse(ClientMessage request,
+                                                            Function<ClientMessage, Object> decoder) {
+        return invokeRequestAndDecodeResponse(null, request, decoder);
+    }
+
+    private <S> S invokeRequestAndDecodeResponse(Address address, ClientMessage request,
+                                                 Function<ClientMessage, Object> decoder) {
+        ClientInvocation invocation = new ClientInvocation(client, request, null, address);
         return uncheckCall(() -> {
             ClientMessage response = invocation.invoke().get();
-            return serializationService.toObject(JetGetJobIdsByNameCodec.decodeResponse(response).response);
+            return serializationService.toObject(decoder.apply(response));
         });
     }
 
@@ -166,15 +205,4 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
                       .getAddress();
     }
 
-    @Override
-    public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
-        ClientInvocation invocation =
-                new ClientInvocation(client, JetExistsDistributedObjectCodec.encodeRequest(serviceName, objectName), null);
-        try {
-            ClientMessage response = invocation.invoke().get();
-            return serializationService.toObject(JetExistsDistributedObjectCodec.decodeResponse(response).response);
-        } catch (Exception e) {
-            throw sneakyThrow(e);
-        }
-    }
 }

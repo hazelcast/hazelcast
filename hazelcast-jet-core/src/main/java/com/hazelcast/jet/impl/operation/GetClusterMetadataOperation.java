@@ -16,30 +16,31 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobCoordinationService;
-import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
 
-import java.util.List;
+public class GetClusterMetadataOperation extends Operation implements
+        IdentifiedDataSerializable,
+        ReadonlyOperation {
 
-public class GetJobSummaryListOperation
-        extends Operation
-        implements IdentifiedDataSerializable, ReadonlyOperation {
+    private ClusterMetadata response;
 
-    private List<JobSummary> response;
-
-    public GetJobSummaryListOperation() {
+    public GetClusterMetadataOperation() {
     }
 
     @Override
     public void run() {
         JetService service = getService();
-        JobCoordinationService coordinationService = service.getJobCoordinationService();
-        response = coordinationService.getJobSummaryList();
+        HazelcastInstance instance = service.getJetInstance().getHazelcastInstance();
+        Cluster cluster = instance.getCluster();
+        String name = instance.getConfig().getGroupConfig().getName();
+        response = new ClusterMetadata(name, cluster);
     }
 
     @Override
@@ -54,7 +55,7 @@ public class GetJobSummaryListOperation
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.GET_JOB_SUMMARY_LIST_OP;
+        return JetInitDataSerializerHook.GET_CLUSTER_METADATA_OP;
     }
 
 }
