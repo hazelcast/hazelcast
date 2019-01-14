@@ -47,12 +47,7 @@ public final class InstantiationUtils {
      * @throws AmbigiousInstantiationException when multiple constructors matching the parameters
      */
     public static <T> T newInstanceOrNull(Class<? extends T> clazz, Object...params)  {
-        Class[] paramTypes = new Class[params.length];
-        for (int i = 0; i < params.length; i++) {
-            Object param = params[i];
-            paramTypes[i] = param == null ? null : param.getClass();
-        }
-        Constructor<T> constructor = selectMatchingConstructor(clazz, params, paramTypes);
+        Constructor<T> constructor = selectMatchingConstructor(clazz, params);
         if (constructor == null) {
             return null;
         }
@@ -67,26 +62,25 @@ public final class InstantiationUtils {
         }
     }
 
-    private static <T> Constructor<T> selectMatchingConstructor(Class<? extends T> clazz, Object[] params,
-                                                                Class<?>[] paramTypes) {
+    private static <T> Constructor<T> selectMatchingConstructor(Class<? extends T> clazz, Object[] params) {
         Constructor<?>[] constructors = clazz.getConstructors();
         Constructor<T> selectedConstructor = null;
         for (Constructor<?> constructor : constructors) {
-            if (isParamsMatching(constructor, params, paramTypes)) {
+            if (isParamsMatching(constructor, params)) {
                 if (selectedConstructor == null) {
                     selectedConstructor = (Constructor<T>) constructor;
                 } else {
                     throw new AmbigiousInstantiationException("Class " + clazz + " has multiple constructors matching "
-                            + "given parameter types: " + Arrays.toString(paramTypes));
+                            + "given parameters: " + Arrays.toString(params));
                 }
             }
         }
         return selectedConstructor;
     }
 
-    private static boolean isParamsMatching(Constructor<?> constructor, Object[] params, Class[] paramTypes) {
+    private static boolean isParamsMatching(Constructor<?> constructor, Object[] params) {
         Class<?>[] constructorParamTypes = constructor.getParameterTypes();
-        if (constructorParamTypes.length != paramTypes.length) {
+        if (constructorParamTypes.length != params.length) {
             return false;
         }
         for (int i = 0; i < constructorParamTypes.length; i++) {
@@ -99,7 +93,8 @@ public final class InstantiationUtils {
                     constructorParamType = toBoxedType(constructorParamType);
                 }
             }
-            Class paramType = paramTypes[i];
+            Object param = params[i];
+            Class<?> paramType = param == null ? null : param.getClass();
             if (paramType != null && !constructorParamType.isAssignableFrom(paramType)) {
                 return false;
             }
