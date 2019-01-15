@@ -115,8 +115,9 @@ public final class InstantiationUtils {
     private static Class<?> toBoxedType(Class<?> type) {
         assert type.isPrimitive();
 
-        //note: void.class is missing because this cannot be used as a constructor argument,
-        //      not in Java anyway
+        // void cannot be used as a constructor argument in Java
+        assert type != void.class;
+
         if (type == boolean.class) {
             return Boolean.class;
         } else if (type == byte.class) {
