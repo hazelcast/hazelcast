@@ -88,7 +88,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         HazelcastProperties properties = client.getProperties();
         int eventQueueCapacity = properties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
         int eventThreadCount = properties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
-        this.eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity);
+        this.eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity, true);
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
         this.registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
