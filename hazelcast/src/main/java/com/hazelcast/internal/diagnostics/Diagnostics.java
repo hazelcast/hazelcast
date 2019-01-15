@@ -140,7 +140,7 @@ public class Diagnostics {
     final String hzName;
     final HazelcastProperties properties;
     final boolean includeEpochTime;
-    final String directory;
+    final File directory;
 
     DiagnosticsLogFile diagnosticsLogFile;
 
@@ -157,7 +157,7 @@ public class Diagnostics {
         this.hzName = hzName;
         this.properties = properties;
         this.includeEpochTime = properties.getBoolean(INCLUDE_EPOCH_TIME);
-        this.directory = properties.getString(DIRECTORY);
+        this.directory = new File(properties.getString(DIRECTORY));
         this.enabled = properties.getBoolean(ENABLED);
     }
 

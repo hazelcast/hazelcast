@@ -71,7 +71,7 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
         if (diagnostics == null) {
             return;
         }
-        File[] files = new File(diagnostics.directory).listFiles();
+        File[] files = diagnostics.directory.listFiles();
         if (files == null) {
             return;
         }
