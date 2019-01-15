@@ -20,6 +20,7 @@ import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,11 +48,13 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class W3cDomTest {
+public class W3cDomTest extends HazelcastTestSupport {
     private static final int NOT_EXISTING = 42;
 
     @Test
-    public void testYamlExtendedTestFromInputStream() {
+    public void testW3cDomAdapter() {
+        assumeThatJDK8OrHigher();
+
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map-extended.yaml");
         YamlNode yamlRoot = YamlLoader.load(inputStream, "root-map");
         Node domRoot = W3cDomUtil.asW3cNode(yamlRoot);

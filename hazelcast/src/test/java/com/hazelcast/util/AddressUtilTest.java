@@ -211,7 +211,7 @@ public class AddressUtilTest extends HazelcastTestSupport {
     @Test
     public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress() throws SocketException, UnknownHostException {
         // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8();
+        assumeThatJDK8OrHigher();
 
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
         when(inet6Address.isLinkLocalAddress()).thenReturn(true);
@@ -223,7 +223,7 @@ public class AddressUtilTest extends HazelcastTestSupport {
     @Test
     public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress_withNoInterfaceBind() throws SocketException, UnknownHostException {
         // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8();
+        assumeThatJDK8OrHigher();
 
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
         when(inet6Address.isLinkLocalAddress()).thenReturn(true);
@@ -236,7 +236,7 @@ public class AddressUtilTest extends HazelcastTestSupport {
     @Test
     public void testGetInetAddressFor() throws SocketException, UnknownHostException {
         // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8();
+        assumeThatJDK8OrHigher();
 
         InetAddress expected = InetAddress.getByName("2001:db8:85a3:0:0:8a2e:370:7334");
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
@@ -257,7 +257,7 @@ public class AddressUtilTest extends HazelcastTestSupport {
     @Test
     public void testGetPossibleInetAddressesFor_whenNotLocalAddress() {
         // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8();
+        assumeThatJDK8OrHigher();
 
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
         when(inet6Address.isSiteLocalAddress()).thenReturn(false);
@@ -270,7 +270,7 @@ public class AddressUtilTest extends HazelcastTestSupport {
     @Test
     public void testGetPossibleInetAddressesFor_whenLocalAddress() throws SocketException, UnknownHostException {
         // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8();
+        assumeThatJDK8OrHigher();
 
         InetAddress expected = InetAddress.getByName("2001:db8:85a3:0:0:8a2e:370:7334");
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);

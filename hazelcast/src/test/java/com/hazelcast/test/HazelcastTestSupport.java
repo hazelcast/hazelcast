@@ -1585,8 +1585,9 @@ public abstract class HazelcastTestSupport {
         assumeFalse("Java 7 used", JAVA_VERSION.startsWith("1.7."));
     }
 
-    public static void assumeThatJDK8() {
-        assumeTrue("Java 8 should be used", JAVA_VERSION.startsWith("1.8."));
+    public static void assumeThatJDK8OrHigher() {
+        assumeFalse("Java 8+ should be used", JAVA_VERSION.startsWith("1.6."));
+        assumeFalse("Java 8+ should be used", JAVA_VERSION.startsWith("1.7."));
     }
 
     public static void assumeThatNotZingJDK6() {
