@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -129,7 +130,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     }
 
     @Override
-    public ClientResponseHandler getResponseHandler() {
+    public Consumer<ClientMessage> getResponseHandler() {
         return responseHandlerSupplier.get();
     }
 
