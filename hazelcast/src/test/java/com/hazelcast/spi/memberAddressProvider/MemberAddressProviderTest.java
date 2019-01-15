@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,6 +39,7 @@ import java.net.InetSocketAddress;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,6 +55,11 @@ public class MemberAddressProviderTest {
     @After
     public void tearDown() {
         MemberAddressProviderWithStaticProperties.properties = null;
+        MemberAddressProviderWithLogger.logger = null;
+        MemberAddressProviderWithPropertiesAndLogger.logger = null;
+        MemberAddressProviderWithPropertiesAndLogger.properties = null;
+        MemberAddressProviderWithLoggerAndProperties.logger = null;
+        MemberAddressProviderWithLoggerAndProperties.properties = null;
         Hazelcast.shutdownAll();
     }
 
@@ -69,6 +76,87 @@ public class MemberAddressProviderTest {
         Hazelcast.newHazelcastInstance(config);
         final String property = MemberAddressProviderWithStaticProperties.properties.getProperty("propName");
         assertEquals("propValue", property);
+    }
+
+    @Test
+    public void testLoggerIsInjected() {
+        final Config config = new Config();
+        config.getNetworkConfig().getMemberAddressProviderConfig()
+                .setEnabled(true)
+                .setClassName(MemberAddressProviderWithLogger.class.getName());
+
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
+        Hazelcast.newHazelcastInstance(config);
+        assertNotNull(MemberAddressProviderWithLogger.logger);
+    }
+
+    @Test
+    public void testLoggerAndPropertiesAreInjected() {
+        final Config config = new Config();
+        config.getNetworkConfig().getMemberAddressProviderConfig()
+                .setEnabled(true)
+                .setClassName(MemberAddressProviderWithLoggerAndProperties.class.getName())
+                .getProperties().setProperty("propName", "propValue");
+
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
+        Hazelcast.newHazelcastInstance(config);
+        assertNotNull(MemberAddressProviderWithLoggerAndProperties.logger);
+        final String property = MemberAddressProviderWithLoggerAndProperties.properties.getProperty("propName");
+        assertEquals("propValue", property);
+    }
+
+    @Test
+    public void testPropertiesAndLoggerAreInjected() {
+        final Config config = new Config();
+        config.getNetworkConfig().getMemberAddressProviderConfig()
+                .setEnabled(true)
+                .setClassName(MemberAddressProviderWithPropertiesAndLogger.class.getName())
+                .getProperties().setProperty("propName", "propValue");
+
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
+        Hazelcast.newHazelcastInstance(config);
+        assertNotNull(MemberAddressProviderWithPropertiesAndLogger.logger);
+        final String property = MemberAddressProviderWithPropertiesAndLogger.properties.getProperty("propName");
+        assertEquals("propValue", property);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testProviderDoesNotImplementTheInterface() {
+        final Config config = new Config();
+        config.getNetworkConfig().getMemberAddressProviderConfig()
+                .setEnabled(true)
+                .setClassName(MemberAddressProviderNotImplementingTheInterface.class.getName());
+
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
+        Hazelcast.newHazelcastInstance(config);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testProviderDoesNotHaveMatchingConstructor() {
+        final Config config = new Config();
+        config.getNetworkConfig().getMemberAddressProviderConfig()
+                .setEnabled(true)
+                .setClassName(MemberAddressProviderWithoutMatchingConstructor.class.getName());
+
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
+        Hazelcast.newHazelcastInstance(config);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testProviderClassDoesNotExist() {
+        final Config config = new Config();
+        config.getNetworkConfig().getMemberAddressProviderConfig()
+                .setEnabled(true)
+                .setClassName("com.hazelcast.clazz.does.not.Exist");
+
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
+        Hazelcast.newHazelcastInstance(config);
     }
 
     @Test
@@ -191,7 +279,87 @@ public class MemberAddressProviderTest {
         }
     }
 
+    public static final class MemberAddressProviderWithLogger implements MemberAddressProvider {
+        public static ILogger logger;
+
+        public MemberAddressProviderWithLogger(ILogger logger) {
+            this.logger = logger;
+        }
+
+        @Override
+        public InetSocketAddress getBindAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+    }
+
+    public static final class MemberAddressProviderWithLoggerAndProperties implements MemberAddressProvider {
+        public static ILogger logger;
+        public static Properties properties;
+
+
+        public MemberAddressProviderWithLoggerAndProperties(ILogger logger, Properties properties) {
+            this.logger = logger;
+            this.properties = properties;
+        }
+
+        @Override
+        public InetSocketAddress getBindAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+    }
+
+    public static final class MemberAddressProviderWithPropertiesAndLogger implements MemberAddressProvider {
+        public static ILogger logger;
+        public static Properties properties;
+
+
+        public MemberAddressProviderWithPropertiesAndLogger(Properties properties, ILogger logger) {
+            this.logger = logger;
+            this.properties = properties;
+        }
+
+        @Override
+        public InetSocketAddress getBindAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("localhost", 0);
+        }
+    }
+
     public static final class SimpleMemberAddressProvider implements MemberAddressProvider {
+        @Override
+        public InetSocketAddress getBindAddress() {
+            return new InetSocketAddress("localhost", 9999);
+        }
+
+        @Override
+        public InetSocketAddress getPublicAddress() {
+            return new InetSocketAddress("1.2.3.4", 0);
+        }
+    }
+
+    public static final class MemberAddressProviderNotImplementingTheInterface {
+    }
+
+    public static final class MemberAddressProviderWithoutMatchingConstructor implements MemberAddressProvider {
+
+        public MemberAddressProviderWithoutMatchingConstructor(String ignored) {
+
+        }
+
         @Override
         public InetSocketAddress getBindAddress() {
             return new InetSocketAddress("localhost", 9999);
