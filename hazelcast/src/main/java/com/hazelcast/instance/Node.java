@@ -887,7 +887,7 @@ public class Node {
     private void logGroupPasswordInfo() {
         if (!isNullOrEmpty(config.getGroupConfig().getPassword())) {
             logger.info("A non-empty group password is configured for the Hazelcast member."
-                    + " Starting with Hazelcast version 3.8.2, members with the same group name,"
+                    + " Since version 3.8.2, members with the same group name,"
                     + " but with different group passwords (that do not use authentication) form a cluster."
                     + " The group password configuration will be removed completely in a future release.");
         }
