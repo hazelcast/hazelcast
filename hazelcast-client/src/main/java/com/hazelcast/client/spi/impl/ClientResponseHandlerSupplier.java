@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.MutableInteger;
+import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Supplier;
 
 import java.util.concurrent.BlockingQueue;
@@ -33,7 +34,8 @@ import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandle
 import static com.hazelcast.util.HashUtil.hashToIndex;
 
 /**
- * A {@link Supplier} for {@link ClientResponseHandler} instance.
+ * A {@link Supplier} for {@link Supplier} instance that processes responses for client
+ * invocations.
  *
  * Depending on the configuration the supplier provides:
  * <ol>
@@ -46,7 +48,7 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
  *
  * {@see InboundResponseHandlerSupplier}.
  */
-public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHandler> {
+public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMessage>> {
 
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
@@ -63,7 +65,7 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
     private final HazelcastClientInstanceImpl client;
 
     private final ILogger logger;
-    private final ClientResponseHandler responseHandler;
+    private final Consumer<ClientMessage> responseHandler;
 
     public ClientResponseHandlerSupplier(AbstractClientInvocationService invocationService) {
         this.invocationService = invocationService;
@@ -105,7 +107,7 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
     }
 
     @Override
-    public ClientResponseHandler get() {
+    public Consumer<ClientMessage> get() {
         return responseHandler;
     }
 
@@ -167,23 +169,23 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
         }
     }
 
-    class SyncResponseHandler implements ClientResponseHandler {
+    class SyncResponseHandler implements Consumer<ClientMessage> {
         @Override
-        public void handle(ClientMessage message) {
+        public void accept(ClientMessage message) {
             process(message);
         }
     }
 
-    class AsyncSingleThreadedResponseHandler implements ClientResponseHandler {
+    class AsyncSingleThreadedResponseHandler implements Consumer<ClientMessage> {
         @Override
-        public void handle(ClientMessage message) {
-            responseThreads[0].responseQueue.add(message);
+        public void accept(ClientMessage message) {
+          responseThreads[0].responseQueue.add(message);
         }
     }
 
-    class AsyncMultiThreadedResponseHandler implements ClientResponseHandler {
+    class AsyncMultiThreadedResponseHandler implements Consumer<ClientMessage> {
         @Override
-        public void handle(ClientMessage message) {
+        public void accept(ClientMessage message) {
             int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
             responseThreads[threadIndex].responseQueue.add(message);
         }
