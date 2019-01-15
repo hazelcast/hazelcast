@@ -510,7 +510,7 @@ public class YamlTest {
         assertTrue(root instanceof YamlSequence);
 
         YamlSequence rootSeq = asSequence(root);
-        assertEquals(42, rootSeq.childAsScalarValue(0));
+        assertEquals(42, ((Integer) rootSeq.childAsScalarValue(0)).intValue());
 
         YamlMapping map = rootSeq.childAsMapping(1);
         assertEquals(YamlNode.UNNAMED_NODE, map.nodeName());
