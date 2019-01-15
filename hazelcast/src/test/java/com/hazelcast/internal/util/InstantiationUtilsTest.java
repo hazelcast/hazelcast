@@ -95,6 +95,14 @@ public class InstantiationUtilsTest extends HazelcastTestSupport {
         InstantiationUtils.newInstanceOrNull(ClassWithTwoConstructors.class, "foo");
     }
 
+    @Test
+    public void newInstanceOrNull_primitiveArrayArgInConstructor() {
+        ClassWithPrimitiveArrayInConstructor instance = InstantiationUtils.newInstanceOrNull(
+                ClassWithPrimitiveArrayInConstructor.class,
+                "foo", new int[]{42, 42});
+        assertNotNull(instance);
+    }
+
     public static class ClassWithNonArgConstructor {
 
     }
@@ -140,6 +148,12 @@ public class InstantiationUtilsTest extends HazelcastTestSupport {
         }
 
         public ClassWithTwoConstructors(Object ignored) {
+
+        }
+    }
+
+    public static class ClassWithPrimitiveArrayInConstructor {
+        public ClassWithPrimitiveArrayInConstructor(String ignored, int[] a) {
 
         }
     }
