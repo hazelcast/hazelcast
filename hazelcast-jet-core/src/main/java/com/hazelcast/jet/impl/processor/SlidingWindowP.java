@@ -87,23 +87,26 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Nonnull
     private final AggregateOperation<A, R> aggrOp;
     @Nonnull
+    private final A emptyAcc;
+    @Nonnull
     private final KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn;
     @Nullable
     private final BiConsumer<? super A, ? super A> combineFn;
     private final boolean isLastStage;
-
     @Nonnull
     private final FlatMapper<Watermark, ?> wmFlatMapper;
 
-    @Probe
-    private AtomicLong lateEventsDropped = new AtomicLong();
-    @Probe
-    private AtomicLong totalFrames = new AtomicLong();
-    @Probe
-    private AtomicLong totalKeysInFrames = new AtomicLong();
+    // extracted lambdas to reduce GC litter
+    private final Function<Long, Map<K, A>> createMapPerTsFunction;
+    private final Function<K, A> createAccFunction;
 
-    @Nonnull
-    private final A emptyAcc;
+    @Probe
+    private final AtomicLong lateEventsDropped = new AtomicLong();
+    @Probe
+    private final AtomicLong totalFrames = new AtomicLong();
+    @Probe
+    private final AtomicLong totalKeysInFrames = new AtomicLong();
+
     private Traverser<Object> flushTraverser;
     private Traverser<Entry> snapshotTraverser;
 
@@ -117,9 +120,6 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     private long minRestoredFrameTs = Long.MAX_VALUE;
     private ProcessingGuarantee processingGuarantee;
 
-    // extracted lambdas to reduce GC litter
-    private Function<Long, Map<K, A>> createMapPerTsFunction;
-    private Function<K, A> createAccFunction;
     private boolean badFrameRestored;
 
     @SuppressWarnings("unchecked")
@@ -149,12 +149,11 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                         .onFirstNull(() -> nextWinToEmit = winPolicy.higherFrameTs(wm.timestamp()))
         );
         this.emptyAcc = aggrOp.createFn().get();
-
-        createMapPerTsFunction = x -> {
+        this.createMapPerTsFunction = x -> {
             lazyIncrement(totalFrames);
             return new HashMap<>();
         };
-        createAccFunction = k -> {
+        this.createAccFunction = k -> {
             lazyIncrement(totalKeysInFrames);
             return aggrOp.createFn().get();
         };
@@ -167,7 +166,6 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        @SuppressWarnings("unchecked")
         final long frameTs = frameTimestampFns.get(ordinal).applyAsLong(item);
         assert frameTs == winPolicy.floorFrameTs(frameTs) : "getFrameTsFn returned an invalid frame timestamp";
 
@@ -237,14 +235,15 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             return;
         }
         SnapshotKey k = (SnapshotKey) key;
-        // align frame timestamp to our frame - they can be misaligned if slide step was changed in updated DAG
+        // align frame timestamp to our frame - they can be misaligned
+        // if the slide step was changed in the updated DAG
         long higherFrameTs = winPolicy.higherFrameTs(k.timestamp - 1);
         if (higherFrameTs != k.timestamp) {
             if (!badFrameRestored) {
                 badFrameRestored = true;
                 getLogger().warning("Frames in the state do not match the current frame size: they were likely " +
-                        "saved for different window slide step or different offset. The window results will probably be " +
-                        "incorrect until all restored frames are emitted.");
+                        "saved for a different window slide step or a different offset. The window results will " +
+                        "probably be incorrect until all restored frames are emitted.");
             }
         }
         minRestoredFrameTs = Math.min(higherFrameTs, minRestoredFrameTs);

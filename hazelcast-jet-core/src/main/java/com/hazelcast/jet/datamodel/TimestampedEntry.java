@@ -99,8 +99,9 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
      * Constructs a {@code TimestampedEntry} using the window end time as the
      * timestamp.
      */
-    public static <K, V> TimestampedEntry<K, V> fromWindowResult(long winStart, long winEnd, @Nonnull K key,
-                                                                 @Nonnull V value) {
+    public static <K, V> TimestampedEntry<K, V> fromWindowResult(
+            long winStart, long winEnd, @Nonnull K key, @Nonnull V value
+    ) {
         return new TimestampedEntry<>(winEnd, key, value);
     }
 }

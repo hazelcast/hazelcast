@@ -71,7 +71,6 @@ public class StageWithKeyAndWindowImpl<T, K>
     }
 
     // This method was extracted in order to capture the wildcard parameter A.
-    @SuppressWarnings("unchecked")
     private <A, R, OUT> StreamStage<OUT> attachAggregate(
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
@@ -100,7 +99,6 @@ public class StageWithKeyAndWindowImpl<T, K>
     }
 
     // This method was extracted in order to capture the wildcard parameter A.
-    @SuppressWarnings("unchecked")
     private <T1, A, R, OUT> StreamStage<OUT> attachAggregate2(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
@@ -120,7 +118,6 @@ public class StageWithKeyAndWindowImpl<T, K>
     }
 
     @Nonnull @Override
-    @SuppressWarnings("unchecked")
     public <T1, T2, R, OUT> StreamStage<OUT> aggregate3(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
             @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
@@ -137,7 +134,6 @@ public class StageWithKeyAndWindowImpl<T, K>
     }
 
     // This method was extracted in order to capture the wildcard parameter A.
-    @SuppressWarnings("unchecked")
     private <T1, T2, A, R, OUT> StreamStage<OUT> attachAggregate3(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
             @Nonnull StreamStageWithKey<T2, ? extends K> stage2,

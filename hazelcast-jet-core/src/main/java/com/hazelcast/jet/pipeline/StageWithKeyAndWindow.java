@@ -108,7 +108,6 @@ public interface StageWithKeyAndWindow<T, K> {
      * @param <OUT> type of the output item
      */
     @Nonnull
-    @SuppressWarnings("unchecked")
     <R, OUT> StreamStage<OUT> aggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn

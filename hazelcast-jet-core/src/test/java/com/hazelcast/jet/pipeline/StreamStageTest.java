@@ -498,10 +498,11 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         });
 
         // When
-        StreamHashJoinBuilder<Integer> b = srcStage.withoutTimestamps().hashJoinBuilder();
-        Tag<String> tagA = b.add(enrichingStage1, joinMapEntries(wholeItem()));
-        Tag<String> tagB = b.add(enrichingStage2, joinMapEntries(wholeItem()));
-        GeneralStage<Tuple2<Integer, ItemsByTag>> joined = b.build((t1, t2) -> tuple2(t1, t2));
+        StreamHashJoinBuilder<Integer> builder = srcStage.withoutTimestamps().hashJoinBuilder();
+        Tag<String> tagA = builder.add(enrichingStage1, joinMapEntries(wholeItem()));
+        Tag<String> tagB = builder.add(enrichingStage2, joinMapEntries(wholeItem()));
+        @SuppressWarnings("Convert2MethodRef") // there's a method ref bug in JDK
+        GeneralStage<Tuple2<Integer, ItemsByTag>> joined = builder.build((a, b) -> tuple2(a, b));
 
         // Then
         joined.drainTo(sink);

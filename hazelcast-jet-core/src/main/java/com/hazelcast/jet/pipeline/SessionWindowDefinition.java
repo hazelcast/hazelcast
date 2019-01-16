@@ -27,12 +27,12 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
  *
  * @param <T> type of the stream item
  */
-public class SessionWindowDef<T> implements WindowDefinition {
+public class SessionWindowDefinition<T> extends WindowDefinitionBase {
     private static final int MAX_WATERMARK_STRIDE = 100;
     private static final int MIN_WMS_PER_SESSION = 100;
     private final long sessionTimeout;
 
-    SessionWindowDef(long sessionTimeout) {
+    SessionWindowDefinition(long sessionTimeout) {
         this.sessionTimeout = sessionTimeout;
     }
 
@@ -43,7 +43,7 @@ public class SessionWindowDef<T> implements WindowDefinition {
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public SessionWindowDef<T> downcast() {
+    public SessionWindowDefinition<T> downcast() {
         return this;
     }
 

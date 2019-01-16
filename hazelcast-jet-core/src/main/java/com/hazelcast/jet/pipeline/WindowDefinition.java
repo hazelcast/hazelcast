@@ -81,8 +81,8 @@ public interface WindowDefinition {
      * @param slideBy the size of the sliding step. Window size must be multiple of this number.
      */
     @Nonnull
-    static SlidingWindowDef sliding(long windowSize, long slideBy) {
-        return new SlidingWindowDef(windowSize, slideBy);
+    static SlidingWindowDefinition sliding(long windowSize, long slideBy) {
+        return new SlidingWindowDefinition(windowSize, slideBy);
     }
 
     /**
@@ -93,8 +93,8 @@ public interface WindowDefinition {
      * @param windowSize the size of the window (size of the range of the timestamps it covers)
      */
     @Nonnull
-    static SlidingWindowDef tumbling(long windowSize) {
-        return new SlidingWindowDef(windowSize, windowSize);
+    static SlidingWindowDefinition tumbling(long windowSize) {
+        return new SlidingWindowDefinition(windowSize, windowSize);
     }
 
     /**

@@ -55,12 +55,12 @@ import static org.junit.Assert.assertEquals;
 
 public class WindowAggregateTest extends PipelineStreamTestSupport {
 
-    private static final long FILTERED_WINDOW_START = 0;
+    private static final long FILTERED_OUT_WINDOW_START = 0;
 
     @Test
     public void when_setWindowDefinition_then_windowDefinitionReturnsIt() {
         // Given
-        SlidingWindowDef tumbling = tumbling(2);
+        SlidingWindowDefinition tumbling = tumbling(2);
 
         // When
         StageWithWindow<Integer> stage = srcStage.withoutTimestamps().window(tumbling);
@@ -103,7 +103,6 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void distinct_withOutputFn() {
         // Given
         int winSize = itemCount;
@@ -119,7 +118,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .withTimestamps(i -> i, maxLag)
                 .window(tumbling(winSize))
                 .groupingKey(keyFn)
-                .distinct((start, end, item) -> start == FILTERED_WINDOW_START ? null
+                .distinct((start, end, item) -> start == FILTERED_OUT_WINDOW_START ? null
                         : formatFn.apply(end, item));
 
         // Then
@@ -130,7 +129,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stream()
                 .map(i -> {
                     long end = (long) winSize + i - i % winSize;
-                    return end - winSize == FILTERED_WINDOW_START ? null : formatFn.apply(end, i);
+                    return end - winSize == FILTERED_OUT_WINDOW_START ? null : formatFn.apply(end, i);
                 })
                 .filter(Objects::nonNull)
                 .distinct()
@@ -186,7 +185,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StreamStage<String> aggregated = srcStage
                 .withTimestamps(i -> i, maxLag)
                 .window(sliding(winSize, slideBy))
-                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_WINDOW_START ? null
+                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START ? null
                         : formatFn.apply(end, sum));
 
         // Then
@@ -206,7 +205,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stream()
                 .map(i -> i - i % slideBy)
                 .distinct()
-                .map(start -> start == FILTERED_WINDOW_START ? null
+                .map(start -> start == FILTERED_OUT_WINDOW_START ? null
                         : formatFn.apply((long) start + winSize,
                                 expectedWindowSum.apply(start, min(start + winSize, itemCount))))
                 .filter(Objects::nonNull);
@@ -233,7 +232,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StreamStage<String> aggregated = srcStage
                 .withTimestamps(i -> i, maxLag)
                 .window(session(sessionTimeout))
-                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_WINDOW_START ? null
+                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START ? null
                         : formatFn.apply(start, sum));
 
         // Then
@@ -245,7 +244,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stream()
                 .map(i -> i - i % (sessionLength + sessionTimeout))
                 .distinct()
-                .map(start -> start == FILTERED_WINDOW_START ? null
+                .map(start -> start == FILTERED_OUT_WINDOW_START ? null
                         : formatFn.apply((long) start, expectedWindowSum.apply(start)))
                 .filter(Objects::nonNull)
                 .collect(toList()));
@@ -311,7 +310,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         AggregateOperation1<Integer, LongAccumulator, Long> aggrOp = summingLong(i -> i);
         testAggregate2_withOutputFn((stage0, stage1, formatFn) ->
                 stage0.aggregate2(aggrOp, stage1, aggrOp,
-                        (start, end, sum0, sum1) -> start == FILTERED_WINDOW_START ? null
+                        (start, end, sum0, sum1) -> start == FILTERED_OUT_WINDOW_START ? null
                                 : formatFn.apply(end, tuple2(sum0, sum1))));
     }
 
@@ -320,7 +319,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         AggregateOperation1<Integer, LongAccumulator, Long> aggrOp = summingLong(i -> i);
         testAggregate2_withOutputFn((stage0, stage1, formatFn) ->
                 stage0.aggregate2(stage1, aggregateOperation2(aggrOp, aggrOp),
-                        (start, end, sums) -> start == FILTERED_WINDOW_START ? null
+                        (start, end, sums) -> start == FILTERED_OUT_WINDOW_START ? null
                                 : formatFn.apply(end, sums)));
     }
 
@@ -364,7 +363,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .distinct()
                 .map(start -> {
                     long sum = expectedWindowSum.apply(start);
-                    return start == FILTERED_WINDOW_START ? null
+                    return start == FILTERED_OUT_WINDOW_START ? null
                             : formatFn.apply((long) start + winSize, tuple2(sum, sum));
                 })
                 .filter(Objects::nonNull)
@@ -440,7 +439,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         AggregateOperation1<Integer, LongAccumulator, Long> aggrOp = summingLong(i -> i);
         testAggregate3_withOutputFn((stage0, stage1, stage2, formatFn) ->
                 stage0.aggregate3(aggrOp, stage1, aggrOp, stage2, aggrOp,
-                        (start, end, sum0, sum1, sum2) -> start == FILTERED_WINDOW_START ? null
+                        (start, end, sum0, sum1, sum2) -> start == FILTERED_OUT_WINDOW_START ? null
                                 : formatFn.apply(end, tuple3(sum0, sum1, sum2))));
     }
 
@@ -449,7 +448,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         AggregateOperation1<Integer, LongAccumulator, Long> aggrOp = summingLong(i -> i);
         testAggregate3_withOutputFn((stage0, stage1, stage2, formatFn) ->
                 stage0.aggregate3(stage1, stage2, aggregateOperation3(aggrOp, aggrOp, aggrOp),
-                        (start, end, sums) -> start == FILTERED_WINDOW_START ? null
+                        (start, end, sums) -> start == FILTERED_OUT_WINDOW_START ? null
                                 : formatFn.apply(end, tuple3(sums.f0(), sums.f1(), sums.f2()))));
     }
 
@@ -499,7 +498,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .distinct()
                 .map(start -> {
                     long sum = expectedWindowSum.apply(start);
-                    return start == FILTERED_WINDOW_START ? null
+                    return start == FILTERED_OUT_WINDOW_START ? null
                             : formatFn.apply((long) start + winSize, tuple3(sum, sum, sum));
                 })
                 .filter(Objects::nonNull)
@@ -540,7 +539,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 (timestamp, sums) -> String.format("(%03d: %03d, %03d)", timestamp, sums.get(tag0), sums.get(tag1));
 
         StreamStage<String> aggregated = b.build((start, end, sums) ->
-                start == FILTERED_WINDOW_START ? null : formatFn.apply(end, sums));
+                start == FILTERED_OUT_WINDOW_START ? null : formatFn.apply(end, sums));
 
         // Then
         validateAggrBuilder(aggregated, fx, winSize, tag0, tag1, formatFn);
@@ -566,7 +565,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         StreamStage<String> aggregated = b.build(
                 b2.build(),
-                (start, end, sums) -> start == FILTERED_WINDOW_START ? null : formatFn.apply(end, sums));
+                (start, end, sums) -> start == FILTERED_OUT_WINDOW_START ? null : formatFn.apply(end, sums));
 
         // Then
         validateAggrBuilder(aggregated, fx, winSize, tag0, tag1, formatFn);
@@ -589,7 +588,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .distinct()
                 .map(start -> {
                     long sum = expectedWindowSum.apply(start);
-                    return start == FILTERED_WINDOW_START ? null
+                    return start == FILTERED_OUT_WINDOW_START ? null
                             : formatFn.apply((long) start + winSize, itemsByTag(tag0, sum, tag1, sum));
                 })
                 .filter(Objects::nonNull)

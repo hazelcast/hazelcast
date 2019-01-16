@@ -306,7 +306,7 @@ public class InsertWatermarksPTest {
 
     private String myToString(Object o) {
         return o instanceof Watermark
-                ? "Watermark{timestamp=" + ((Watermark) o).timestamp() + "}"
+                ? "Watermark{timestamp=" + ((Watermark) o).timestamp() + '}'
                 : o.toString();
     }
 

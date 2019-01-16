@@ -27,8 +27,6 @@ import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 
-import java.util.function.Function;
-
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientTimestampedSourceP;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -293,9 +291,8 @@ public final class SourceBuilder<S> {
      * <p>
      * <strong>NOTE 1:</strong> the source you build with this builder is not
      * fault-tolerant. You shouldn't use it in jobs that require a processing
-     * guarantee. Use {@linkplain
-     * Sources#streamFromProcessorWithWatermarks(String, Function) custom
-     * processor} if you need fault tolerance.
+     * guarantee. Use a {@linkplain Sources#streamFromProcessorWithWatermarks
+     * custom processor} if you need fault tolerance.
      * <p>
      * <strong>NOTE 2:</strong> if the data source you're adapting to Jet is
      * partitioned, you may run into issues with event skew between partitions
@@ -303,9 +300,9 @@ public final class SourceBuilder<S> {
      * partition may be significantly behind the timestamp you already got from
      * another partition. If the skew is more than the allowed lag you
      * {@linkplain StreamSourceStage#withNativeTimestamps(long) configured},
-     * you risk that the events will be dropped. Use {@linkplain
-     * Sources#streamFromProcessorWithWatermarks(String, Function) custom
-     * processor} if you need to coalesce watermarks from multiple partitions.
+     * you risk that the events will be dropped. Use a {@linkplain
+     * Sources#streamFromProcessorWithWatermarks custom processor} if you need
+     * to coalesce watermarks from multiple partitions.
      *
      * @param name a descriptive name for the source (for diagnostic purposes)
      * @param createFn a function that creates the state object

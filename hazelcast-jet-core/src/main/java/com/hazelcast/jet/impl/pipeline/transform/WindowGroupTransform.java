@@ -26,8 +26,8 @@ import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.pipeline.SessionWindowDef;
-import com.hazelcast.jet.pipeline.SlidingWindowDef;
+import com.hazelcast.jet.pipeline.SessionWindowDefinition;
+import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
@@ -101,7 +101,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
     //             ---------------------------
     //            | aggregateToSlidingWindowP |
     //             ---------------------------
-    private void addSlidingWindowSingleStage(Planner p, SlidingWindowDef wDef) {
+    private void addSlidingWindowSingleStage(Planner p, SlidingWindowDefinition wDef) {
         PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(),
                 aggregateToSlidingWindowP(
                         keyFns,
@@ -131,7 +131,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
     //              -------------------------
     //             | combineToSlidingWindowP |
     //              -------------------------
-    private void addSlidingWindowTwoStage(Planner p, SlidingWindowDef wDef) {
+    private void addSlidingWindowTwoStage(Planner p, SlidingWindowDefinition wDef) {
         String vertexName = p.uniqueVertexName(name());
         SlidingWindowPolicy winPolicy = wDef.toSlidingWindowPolicy();
         Vertex v1 = p.dag.newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(

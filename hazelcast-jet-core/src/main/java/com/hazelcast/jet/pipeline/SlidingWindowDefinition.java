@@ -29,11 +29,11 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * Represents the definition of a {@link WindowKind#SLIDING sliding
  * window}.
  */
-public class SlidingWindowDef implements WindowDefinition {
+public class SlidingWindowDefinition extends WindowDefinitionBase {
     private final long windowSize;
     private final long slideBy;
 
-    SlidingWindowDef(long windowSize, long slideBy) {
+    SlidingWindowDefinition(long windowSize, long slideBy) {
         checkPositive(windowSize, "windowSize must be positive");
         checkPositive(slideBy, "slideBy must be positive");
         checkTrue(windowSize % slideBy == 0, "windowSize must be integer multiple of slideBy, mod("
@@ -49,7 +49,7 @@ public class SlidingWindowDef implements WindowDefinition {
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public SlidingWindowDef downcast() {
+    public SlidingWindowDefinition downcast() {
         return this;
     }
 

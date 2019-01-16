@@ -121,7 +121,6 @@ public abstract class GeneralHashJoinBuilder<T0> {
         private final Transform transform;
         private final JoinClause<K, E0, T1, T1_OUT> joinClause;
 
-        @SuppressWarnings("unchecked")
         TransformAndClause(GeneralStage<T1> stage, JoinClause<K, E0, T1, T1_OUT> joinClause) {
             this.transform = transformOf(stage);
             this.joinClause = joinClause;

@@ -111,7 +111,7 @@ public interface StreamStage<T> extends GeneralStage<T> {
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     );
 
-    @Override @Nonnull
+    @Nonnull @Override
     default <K, V, R> StreamStage<R> mapUsingReplicatedMap(
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<? super ReplicatedMap<K, V>, ? super T, ? extends R> mapFn
@@ -119,7 +119,7 @@ public interface StreamStage<T> extends GeneralStage<T> {
         return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingReplicatedMap(mapName, mapFn);
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     default <K, V, R> StreamStage<R> mapUsingReplicatedMap(
             @Nonnull ReplicatedMap<K, V> replicatedMap,
             @Nonnull DistributedBiFunction<? super ReplicatedMap<K, V>, ? super T, ? extends R> mapFn
@@ -127,7 +127,7 @@ public interface StreamStage<T> extends GeneralStage<T> {
         return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingReplicatedMap(replicatedMap, mapFn);
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     default <K, V, R> StreamStage<R> mapUsingIMapAsync(
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
@@ -135,7 +135,7 @@ public interface StreamStage<T> extends GeneralStage<T> {
         return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMapAsync(mapName, mapFn);
     }
 
-    @Override @Nonnull
+    @Nonnull @Override
     default <K, V, R> StreamStage<R> mapUsingIMapAsync(
             @Nonnull IMap<K, V> iMap,
             @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn

@@ -26,9 +26,7 @@ import com.hazelcast.jet.impl.pipeline.StreamStageImpl;
  * stage, the one whose data will be enriched from all other stages.
  * <p>
  * Collect all the tags returned from {@code add()} and use them to retrieve
- * the enriching items from {@link ItemsByTag} you get in the result. Retrieve
- * the tag of the first stage (from which you obtained the builder) by calling
- * {@link #tag0()}.
+ * the enriching items from {@link ItemsByTag} you get in the result.
  * <p>
  * This object is mainly intended to build a hash-join of the primary stage
  * with three or more contributing stages. For one or two stages, prefer the
