@@ -29,7 +29,7 @@ import java.util.concurrent.Callable;
  */
 public class SerializedCounterCallable
         implements Callable, IdentifiedDataSerializable {
-    public static final int CLASS_ID = 15;
+    public static final int CLASS_ID = 13;
 
     private int counter;
 

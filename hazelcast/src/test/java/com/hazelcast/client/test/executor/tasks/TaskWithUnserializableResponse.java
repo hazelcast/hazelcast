@@ -29,7 +29,7 @@ import java.util.concurrent.Callable;
  */
 public class TaskWithUnserializableResponse
         implements Callable, IdentifiedDataSerializable {
-    public static final int CLASS_ID = 16;
+    public static final int CLASS_ID = 14;
 
     public TaskWithUnserializableResponse() {
     }

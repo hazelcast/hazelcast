@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 public class SelectAllMembers
         implements MemberSelector, IdentifiedDataSerializable {
-    public static final int CLASS_ID = 13;
+    public static final int CLASS_ID = 11;
 
     @Override
     public boolean select(Member member) {

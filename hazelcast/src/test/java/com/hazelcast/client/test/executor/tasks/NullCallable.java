@@ -29,7 +29,7 @@ import java.util.concurrent.Callable;
  */
 public class NullCallable
         implements Callable<String>, IdentifiedDataSerializable {
-    public static final int CLASS_ID = 12;
+    public static final int CLASS_ID = 10;
 
     @Override
     public String call()
