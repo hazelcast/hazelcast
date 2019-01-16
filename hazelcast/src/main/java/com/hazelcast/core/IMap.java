@@ -393,26 +393,26 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * Removes all entries which match with the supplied predicate.
      * <p>
-     * If this map has index, matching entries will be found via index search,
-     * otherwise they will be found by full-scan.
+     * If this map has index, matching entries will be found via
+     * index search, otherwise they will be found by full-scan.
      * <p>
-     * Note that calling this method also removes all entries from callers Near Cache.
-     *
+     * Note that calling this method also removes all entries from
+     * caller's Near Cache.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
-     * If write-through persistence mode is configured, before a value
-     * is removed from the memory, {@link MapStore#delete(Object)} is
-     * called to remove the value from the map store. Exceptions thrown
-     * by delete fail the operation and are propagated to the caller.
+     * If write-through persistence mode is configured, before a value is
+     * removed from the memory, {@link MapStore#delete(Object)} is called to
+     * remove the value from the map store. Exceptions thrown by delete fail
+     * the operation and are propagated to the caller.
      * <p>
-     * If write-behind persistence mode is configured with
-     * write-coalescing turned off,
-     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
-     * if the write-behind queue has reached its per-node maximum
+     * If write-behind persistence mode is configured with write-coalescing
+     * turned off, {@link com.hazelcast.map.ReachedMaxSizeException} may be
+     * thrown if the write-behind queue has reached its per-node maximum
      * capacity.
      *
-     * @param predicate matching entries with this predicate will be removed from this map
+     * @param predicate matching entries with this predicate will be removed
+     *                  from this map
      * @throws NullPointerException if the specified predicate is null
      */
     void removeAll(Predicate<K, V> predicate);
