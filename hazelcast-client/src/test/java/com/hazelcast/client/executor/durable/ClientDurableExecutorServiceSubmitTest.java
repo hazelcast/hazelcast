@@ -16,11 +16,15 @@
 
 package com.hazelcast.client.executor.durable;
 
-import com.hazelcast.client.executor.tasks.AppendCallable;
-import com.hazelcast.client.executor.tasks.MapPutPartitionAwareCallable;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.executor.tasks.MapPutPartitionAwareRunnable;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.test.executor.tasks.AppendCallable;
+import com.hazelcast.client.test.executor.tasks.MapPutPartitionAwareCallable;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -37,6 +41,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -59,11 +64,16 @@ public class ClientDurableExecutorServiceSubmitTest {
     private HazelcastInstance client;
 
     @Before
-    public void setup() {
-        hazelcastFactory.newHazelcastInstance();
-        server = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
+    public void setup()
+            throws IOException {
+        Config config = new XmlConfigBuilder(getClass().getClassLoader().getResourceAsStream("hazelcast-test-executor.xml"))
+                .build();
+        ClientConfig clientConfig = new XmlClientConfigBuilder("classpath:hazelcast-client-test-executor.xml").build();
+
+        hazelcastFactory.newHazelcastInstance(config);
+        server = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @After
@@ -239,7 +249,7 @@ public class ClientDurableExecutorServiceSubmitTest {
         final IMap map = client.getMap(mapName);
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(map.containsKey(member.getUuid()));
             }
         });
@@ -261,7 +271,7 @@ public class ClientDurableExecutorServiceSubmitTest {
 
         assertEquals(expectedResult, result.get());
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(map.containsKey(member.getUuid()));
             }
         });

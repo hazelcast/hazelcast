@@ -16,10 +16,13 @@
 
 package com.hazelcast.client.executor.durable;
 
-import com.hazelcast.client.executor.tasks.FailingCallable;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.test.executor.tasks.FailingCallable;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -73,8 +76,11 @@ public class ClientDurableExecutorServiceTest {
     private HazelcastInstance client;
 
     @Before
-    public void setup() {
-        Config config = new Config();
+    public void setup()
+            throws IOException {
+        Config config = new XmlConfigBuilder(getClass().getClassLoader().getResourceAsStream("hazelcast-test-executor.xml"))
+                .build();
+        ClientConfig clientConfig = new XmlClientConfigBuilder("classpath:hazelcast-client-test-executor.xml").build();
         DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(SINGLE_TASK + "*");
         durableExecutorConfig.setCapacity(1);
 
@@ -82,7 +88,7 @@ public class ClientDurableExecutorServiceTest {
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
-        client = hazelcastFactory.newHazelcastClient();
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @After
@@ -188,7 +194,7 @@ public class ClientDurableExecutorServiceTest {
         assertFalse(onResponse.get());
     }
 
-    public void testFullRingBuffer_WithExecutionCallback() throws InterruptedException {
+    public void testFullRingBuffer_WithExecutionCallback() {
         String key = randomString();
         DurableExecutorService service = client.getDurableExecutorService(SINGLE_TASK + randomString());
         service.submitToKeyOwner(new SleepingTask(100), key);
@@ -233,7 +239,7 @@ public class ClientDurableExecutorServiceTest {
         service.shutdownNow();
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(service.isShutdown());
             }
         });
@@ -246,7 +252,7 @@ public class ClientDurableExecutorServiceTest {
         service.shutdown();
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(service.isShutdown());
             }
         });
@@ -305,7 +311,7 @@ public class ClientDurableExecutorServiceTest {
         }
 
         @Override
-        public Object call() throws Exception {
+        public Object call() {
             return counter;
         }
 

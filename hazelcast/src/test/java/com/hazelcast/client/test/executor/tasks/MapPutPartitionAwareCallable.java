@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.executor.tasks;
+package com.hazelcast.client.test.executor.tasks;
 
+import com.hazelcast.client.test.IdentifiedFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
@@ -23,24 +24,27 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
+ * This class is for Non-java clients as well. Please do not remove or modify.
+ * <p>
  * this task should execute on a node owning the given partitionKey argument,
  * the action is to put the UUid of the executing node into a map with the given name
  * and return that UUid
  */
-public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSerializable, PartitionAware<P>, HazelcastInstanceAware {
+public class MapPutPartitionAwareCallable<T, P>
+        implements Callable<T>, IdentifiedDataSerializable, PartitionAware<P>, HazelcastInstanceAware {
+    public static final int CLASS_ID = 9;
 
     private HazelcastInstance instance;
 
     public String mapName;
-    public P partitionKey;
+    private P partitionKey;
 
-    @SuppressWarnings("unused")
     public MapPutPartitionAwareCallable() {
     }
 
@@ -50,7 +54,8 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
     }
 
     @Override
-    public T call() throws Exception {
+    public T call()
+            throws Exception {
         Member member = instance.getCluster().getLocalMember();
 
         IMap<String, String> map = instance.getMap(mapName);
@@ -60,13 +65,17 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(mapName);
+        out.writeObject(partitionKey);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         mapName = in.readUTF();
+        partitionKey = in.readObject();
     }
 
     @Override
@@ -85,5 +94,15 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
 
     public void setMapName(String mapName) {
         this.mapName = mapName;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return IdentifiedFactory.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CLASS_ID;
     }
 }

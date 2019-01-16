@@ -16,8 +16,12 @@
 
 package com.hazelcast.client.executor;
 
-import com.hazelcast.client.executor.tasks.AppendCallable;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.test.executor.tasks.AppendCallable;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,6 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -52,13 +57,19 @@ public class ClientExecutorServiceInvokeTest {
     }
 
     @Before
-    public void setup() {
-        hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
+    public void setup()
+            throws IOException {
+        Config config = new XmlConfigBuilder(getClass().getClassLoader().getResourceAsStream("hazelcast-test-executor.xml"))
+                .build();
+        ClientConfig clientConfig = new XmlClientConfigBuilder("classpath:hazelcast-client-test-executor.xml").build();
+
+        hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @Test
-    public void testInvokeAll() throws Throwable {
+    public void testInvokeAll()
+            throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
         String msg = randomString();
         Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
@@ -72,7 +83,8 @@ public class ClientExecutorServiceInvokeTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAll_withTimeOut() throws Throwable {
+    public void testInvokeAll_withTimeOut()
+            throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
         Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
         collection.add(new AppendCallable());
@@ -82,7 +94,8 @@ public class ClientExecutorServiceInvokeTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAny() throws Throwable {
+    public void testInvokeAny()
+            throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
         Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
         collection.add(new AppendCallable());
@@ -92,7 +105,8 @@ public class ClientExecutorServiceInvokeTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAnyTimeOut() throws Throwable {
+    public void testInvokeAnyTimeOut()
+            throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
         Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
         collection.add(new AppendCallable());

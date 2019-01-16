@@ -14,27 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.executor.tasks;
+package com.hazelcast.client.test.executor.tasks;
 
+import com.hazelcast.client.test.IdentifiedFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class FailingCallable implements Callable<String>, DataSerializable {
+/**
+ * This class is for Non-java clients as well. Please do not remove or modify.
+ */
+public class NullCallable
+        implements Callable<String>, IdentifiedDataSerializable {
+    public static final int CLASS_ID = 12;
 
     @Override
-    public String call() throws Exception {
-        throw new IllegalStateException();
+    public String call()
+            throws Exception {
+        return null;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public int getFactoryId() {
+        return IdentifiedFactory.FACTORY_ID;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public int getId() {
+        return CLASS_ID;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
     }
 }

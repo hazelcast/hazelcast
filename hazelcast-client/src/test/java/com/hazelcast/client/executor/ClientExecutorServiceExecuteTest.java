@@ -16,9 +16,13 @@
 
 package com.hazelcast.client.executor;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
-import com.hazelcast.client.executor.tasks.SelectAllMembers;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.test.executor.tasks.SelectAllMembers;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
@@ -34,6 +38,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -59,11 +64,16 @@ public class ClientExecutorServiceExecuteTest {
     }
 
     @Before
-    public void setup() {
-        server1 = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-        server2 = hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
+    public void setup()
+            throws IOException {
+        Config config = new XmlConfigBuilder(getClass().getClassLoader().getResourceAsStream("hazelcast-test-executor.xml"))
+                .build();
+        ClientConfig clientConfig = new XmlClientConfigBuilder("classpath:hazelcast-client-test-executor.xml").build();
+
+        server1 = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+        server2 = hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @Test
@@ -110,7 +120,7 @@ public class ClientExecutorServiceExecuteTest {
         final IMap map = client.getMap(mapName);
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(map.containsKey(targetUuid));
             }
         });
@@ -135,7 +145,7 @@ public class ClientExecutorServiceExecuteTest {
         final IMap map = client.getMap(mapName);
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(map.containsKey(targetUuid));
             }
         });
@@ -162,7 +172,7 @@ public class ClientExecutorServiceExecuteTest {
 
         final IMap map = client.getMap(mapName);
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(map.containsKey(member1.getUuid()));
                 assertTrue(map.containsKey(member2.getUuid()));
             }

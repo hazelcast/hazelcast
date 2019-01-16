@@ -16,8 +16,11 @@
 
 package com.hazelcast.client.executor;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
@@ -32,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -55,7 +59,27 @@ public class ExecutorServiceLiteMemberTest {
 
     private TestHazelcastFactory factory;
 
-    private Config liteConfig = new Config().setLiteMember(true);
+    private final String defaultMemberConfigXml = "hazelcast-test-executor.xml";
+    private Config liteConfig = new XmlConfigBuilder(getClass().getClassLoader().getResourceAsStream(defaultMemberConfigXml))
+            .build().setLiteMember(true);
+    private Config config = new XmlConfigBuilder(getClass().getClassLoader().getResourceAsStream(defaultMemberConfigXml)).build();
+    private ClientConfig clientConfig = new XmlClientConfigBuilder("classpath:hazelcast-client-test-executor.xml").build();
+
+    public ExecutorServiceLiteMemberTest()
+            throws IOException {
+    }
+
+    private HazelcastInstance newHazelcastInstance() {
+        return factory.newHazelcastInstance(config);
+    }
+
+    private HazelcastInstance newHazelcastLiteMember() {
+        return factory.newHazelcastInstance(liteConfig);
+    }
+
+    private HazelcastInstance newHazelcastClient() {
+        return factory.newHazelcastClient(clientConfig);
+    }
 
     @Before
     public void before() {
@@ -69,8 +93,8 @@ public class ExecutorServiceLiteMemberTest {
 
     @Test(expected = RejectedExecutionException.class)
     public void test_executeRunnable_failsWhenNoLiteMemberExists() {
-        factory.newHazelcastInstance();
-        final HazelcastInstance client = factory.newHazelcastClient();
+        newHazelcastInstance();
+        final HazelcastInstance client = newHazelcastClient();
 
         final String name = randomString();
         final IExecutorService executor = client.getExecutorService(name);
@@ -79,10 +103,10 @@ public class ExecutorServiceLiteMemberTest {
 
     @Test
     public void test_executeRunnable_onLiteMember() {
-        final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        factory.newHazelcastInstance();
-        final HazelcastInstance client = factory.newHazelcastClient();
+        final HazelcastInstance lite1 = newHazelcastLiteMember();
+        final HazelcastInstance lite2 = newHazelcastLiteMember();
+        newHazelcastInstance();
+        final HazelcastInstance client = newHazelcastClient();
 
         final String name = randomString();
         final IExecutorService executor = client.getExecutorService(name);
@@ -90,8 +114,7 @@ public class ExecutorServiceLiteMemberTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 final IMap<Object, Object> results = lite1.getMap(name);
                 assertEquals(1, results.size());
                 final boolean executedOnLite1 = results.containsKey(lite1.getCluster().getLocalMember());
@@ -104,10 +127,10 @@ public class ExecutorServiceLiteMemberTest {
 
     @Test
     public void test_executeRunnable_onAllLiteMembers() {
-        final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        factory.newHazelcastInstance();
-        final HazelcastInstance client = factory.newHazelcastClient();
+        final HazelcastInstance lite1 = newHazelcastLiteMember();
+        final HazelcastInstance lite2 = newHazelcastLiteMember();
+        newHazelcastInstance();
+        final HazelcastInstance client = newHazelcastClient();
 
         final String name = randomString();
         final IExecutorService executor = client.getExecutorService(name);
@@ -115,8 +138,7 @@ public class ExecutorServiceLiteMemberTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 final IMap<Object, Object> results = lite1.getMap(name);
                 assertEquals(2, results.size());
                 assertTrue(results.containsKey(lite1.getCluster().getLocalMember()));
@@ -127,8 +149,8 @@ public class ExecutorServiceLiteMemberTest {
 
     @Test(expected = RejectedExecutionException.class)
     public void test_submitCallable_failsWhenNoLiteMemberExists() {
-        factory.newHazelcastInstance();
-        final HazelcastInstance client = factory.newHazelcastClient();
+        newHazelcastInstance();
+        final HazelcastInstance client = newHazelcastClient();
 
         final IExecutorService executor = client.getExecutorService(randomString());
         executor.submit(new LocalMemberReturningCallable(), LITE_MEMBER_SELECTOR);
@@ -137,10 +159,10 @@ public class ExecutorServiceLiteMemberTest {
     @Test
     public void test_submitCallable_onLiteMember()
             throws ExecutionException, InterruptedException {
-        final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        factory.newHazelcastInstance();
-        final HazelcastInstance client = factory.newHazelcastClient();
+        final HazelcastInstance lite1 = newHazelcastLiteMember();
+        final HazelcastInstance lite2 = newHazelcastLiteMember();
+        newHazelcastInstance();
+        final HazelcastInstance client = newHazelcastClient();
 
         final IExecutorService executor = client.getExecutorService(randomString());
         final Future<Member> future = executor.submit(new LocalMemberReturningCallable(), LITE_MEMBER_SELECTOR);
@@ -154,10 +176,10 @@ public class ExecutorServiceLiteMemberTest {
     @Test
     public void test_submitCallable_onLiteMembers()
             throws ExecutionException, InterruptedException {
-        final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        factory.newHazelcastInstance();
-        final HazelcastInstance client = factory.newHazelcastClient();
+        final HazelcastInstance lite1 = newHazelcastLiteMember();
+        final HazelcastInstance lite2 = newHazelcastLiteMember();
+        newHazelcastInstance();
+        final HazelcastInstance client = newHazelcastClient();
 
         final IExecutorService executor = client.getExecutorService(randomString());
         final Map<Member, Future<Member>> results = executor
@@ -174,10 +196,10 @@ public class ExecutorServiceLiteMemberTest {
 
     @Test
     public void test_submitCallableWithCallback_toLiteMember() {
-        final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        factory.newHazelcastInstance();
-        final HazelcastInstance client = factory.newHazelcastClient();
+        final HazelcastInstance lite1 = newHazelcastLiteMember();
+        final HazelcastInstance lite2 = newHazelcastLiteMember();
+        newHazelcastInstance();
+        final HazelcastInstance client = newHazelcastClient();
 
         final CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<Member>(1);
         final IExecutorService executor = client.getExecutorService(randomString());
@@ -192,10 +214,10 @@ public class ExecutorServiceLiteMemberTest {
 
     @Test
     public void test_submitCallableWithCallback_toLiteMembers() {
-        final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        factory.newHazelcastInstance();
-        final HazelcastInstance client = factory.newHazelcastClient();
+        final HazelcastInstance lite1 = newHazelcastLiteMember();
+        final HazelcastInstance lite2 = newHazelcastLiteMember();
+        newHazelcastInstance();
+        final HazelcastInstance client = newHazelcastClient();
 
         final ResultHoldingMultiExecutionCallback callback = new ResultHoldingMultiExecutionCallback();
         final IExecutorService executor = client.getExecutorService(randomString());
@@ -203,8 +225,7 @@ public class ExecutorServiceLiteMemberTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 final Map<Member, Object> results = callback.getResults();
 
                 assertNotNull(results);
