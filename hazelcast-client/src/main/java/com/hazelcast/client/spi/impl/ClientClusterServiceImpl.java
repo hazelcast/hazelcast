@@ -172,6 +172,11 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         if (listener instanceof InitialMembershipListener) {
             Cluster cluster = client.getCluster();
             Collection<Member> memberCollection = members.get().values();
+            if (memberCollection.isEmpty()) {
+                //if members are empty,it means initial event did not arrive yet
+                //it will be redirected to listeners when it arrives see #handleInitialMembershipEvent
+                return;
+            }
             LinkedHashSet<Member> members = new LinkedHashSet<Member>(memberCollection);
             InitialMembershipEvent event = new InitialMembershipEvent(cluster, members);
             ((InitialMembershipListener) listener).init(event);
