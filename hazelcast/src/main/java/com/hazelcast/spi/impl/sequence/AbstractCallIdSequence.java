@@ -28,8 +28,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * <p>
  * It is possible to temporarily create more concurrent invocations than the declared capacity due to:
  * <ul>
- *     <li>system operations</li>
- *     <li>the racy nature of checking if space is available and getting the next sequence. </li>
+ * <li>system operations</li>
+ * <li>the racy nature of checking if space is available and getting the next sequence. </li>
  * </ul>
  * The latter cause is not a problem since the capacity is exceeded temporarily and it isn't sustainable.
  * So perhaps there are a few threads that at the same time see that the there is space and do a next.
@@ -85,7 +85,11 @@ public abstract class AbstractCallIdSequence implements CallIdSequence {
     }
 
     protected boolean hasSpace() {
-        return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL) < maxConcurrentInvocations;
+        return concurrentInvocations() < maxConcurrentInvocations;
     }
 
+    @Override
+    public long concurrentInvocations() {
+        return longs.get(INDEX_HEAD) - longs.get(INDEX_TAIL);
+    }
 }

@@ -76,4 +76,10 @@ public interface CallIdSequence {
      */
     long getLastCallId();
 
+    /**
+     * Returns the number of concurrent invocations.
+     *
+     * @return the number of concurrent invocations. Returns -1 if not known.
+     */
+    long concurrentInvocations();
 }
