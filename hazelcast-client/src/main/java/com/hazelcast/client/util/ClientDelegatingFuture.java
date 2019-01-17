@@ -80,28 +80,14 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         this(clientInvocationFuture, serializationService, clientMessageDecoder, null, deserializeResponse);
     }
 
-    /**
-     * Uses internal executor to execute callbacks instead of {@link #userExecutor}.
-     * This method is intended to use by hazelcast internals.
-     *
-     * @param callback              callback to execute
-     * @param shouldDeserializeData when {@code true} execution result is converted to object format
-     *                              before passing to {@link ExecutionCallback#onResponse},
-     *                              otherwise execution result will be in {@link com.hazelcast.nio.serialization.Data} format
-     * @param <T>                   type of the execution result which is passed to {@link ExecutionCallback#onResponse}
-     */
-    public <T> void andThenInternal(ExecutionCallback<T> callback, boolean shouldDeserializeData) {
-        future.andThen(new DelegatingExecutionCallback<T>(callback, shouldDeserializeData));
-    }
-
     @Override
     public void andThen(ExecutionCallback<V> callback) {
-        future.andThen(new DelegatingExecutionCallback<V>(callback, true), userExecutor);
+        future.andThen(new DelegatingExecutionCallback<V>(callback, deserializeResponse), userExecutor);
     }
 
     @Override
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
-        future.andThen(new DelegatingExecutionCallback<V>(callback, true), executor);
+        future.andThen(new DelegatingExecutionCallback<V>(callback, deserializeResponse), executor);
     }
 
     @Override

@@ -120,7 +120,7 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         testMaxAllowed(new RegisterCallback() {
             @Override
             public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
-                future.andThenInternal(callback, false);
+                future.andThen(callback);
             }
         });
     }
@@ -177,7 +177,7 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         testMaxAllowed_withWaitingCallbacks(new RegisterCallback() {
             @Override
             public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
-                future.andThenInternal(callback, false);
+                future.andThen(callback);
             }
         });
     }
