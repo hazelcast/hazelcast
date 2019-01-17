@@ -17,7 +17,10 @@
 package com.hazelcast.client.executor;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.test.AssertTask;
@@ -59,15 +62,19 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     }
 
     @Before
-    public void setup() throws IOException {
+    public void setup() {
+        Config config = new XmlConfigBuilder(getClass().getClassLoader().getResourceAsStream("hazelcast-test-executor.xml"))
+                .build();
+
         hazelcastFactory = new TestHazelcastFactory();
         for (int i = 0; i < CLUSTER_SIZE; i++) {
-            instances.add(hazelcastFactory.newHazelcastInstance());
+            instances.add(hazelcastFactory.newHazelcastInstance(config));
         }
     }
 
     @Test
-    public void testExecutorRetriesTask_whenOneNodeTerminates() throws InterruptedException, ExecutionException {
+    public void testExecutorRetriesTask_whenOneNodeTerminates()
+            throws InterruptedException, ExecutionException, IOException {
         final int taskCount = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
@@ -83,7 +90,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     final int taskExecutions = COUNTER.get();
                     assertTrue(taskExecutions >= taskCount);
                 }
@@ -94,7 +101,8 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecutorRetriesTask_whenOneNodeShutdowns() throws InterruptedException, ExecutionException {
+    public void testExecutorRetriesTask_whenOneNodeShutdowns()
+            throws InterruptedException, ExecutionException, IOException {
         final int taskCount = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
@@ -110,7 +118,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     final int taskExecutions = COUNTER.get();
                     assertTrue(taskExecutions >= taskCount);
                 }
@@ -120,8 +128,9 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
         }
     }
 
-    private void runClient(Task task, int executions) throws InterruptedException, ExecutionException {
-        ClientConfig clientConfig = new ClientConfig();
+    private void runClient(Task task, int executions)
+            throws InterruptedException, ExecutionException, IOException {
+        ClientConfig clientConfig = new XmlClientConfigBuilder("classpath:hazelcast-client-test-executor.xml").build();
         clientConfig.getNetworkConfig().setRedoOperation(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         IExecutorService executor = client.getExecutorService("executor");
@@ -138,7 +147,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object call() throws Exception {
+        public Object call() {
             COUNTER.incrementAndGet();
             return null;
         }

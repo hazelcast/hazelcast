@@ -256,13 +256,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     @Override
     public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
         final Collection<Member> memberList = getContext().getClusterService().getMemberList();
-        MultiExecutionCallbackWrapper multiExecutionCallbackWrapper =
-                new MultiExecutionCallbackWrapper(memberList.size(), callback);
-        for (Member member : memberList) {
-            final ExecutionCallbackWrapper<T> executionCallback =
-                    new ExecutionCallbackWrapper<T>(multiExecutionCallbackWrapper, member);
-            submitToMember(task, member, executionCallback);
-        }
+        submitToMembers(task, memberList, callback);
     }
 
     // submit random

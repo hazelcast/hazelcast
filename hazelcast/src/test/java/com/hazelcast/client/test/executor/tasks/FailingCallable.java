@@ -14,36 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.executor.tasks;
+package com.hazelcast.client.test.executor.tasks;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.client.test.IdentifiedFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class GetMemberUuidTask implements Callable<String>, DataSerializable, HazelcastInstanceAware {
-
-    private HazelcastInstance node;
+/**
+ * This class is for Non-java clients as well. Please do not remove or modify.
+ */
+public class FailingCallable
+        implements Callable<String>, IdentifiedDataSerializable {
+    public static final int CLASS_ID = 7;
 
     @Override
-    public String call() throws Exception {
-        return node.getCluster().getLocalMember().getUuid();
+    public String call()
+            throws Exception {
+        throw new IllegalStateException();
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
     }
 
     @Override
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        node = hazelcastInstance;
+    public int getFactoryId() {
+        return IdentifiedFactory.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CLASS_ID;
     }
 }

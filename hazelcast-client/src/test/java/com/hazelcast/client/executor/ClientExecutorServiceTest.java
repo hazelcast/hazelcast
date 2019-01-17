@@ -16,18 +16,21 @@
 
 package com.hazelcast.client.executor;
 
-import com.hazelcast.client.executor.tasks.CancellationAwareTask;
-import com.hazelcast.client.executor.tasks.FailingCallable;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
-import com.hazelcast.client.executor.tasks.SelectNoMembers;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.test.executor.tasks.CancellationAwareTask;
+import com.hazelcast.client.test.executor.tasks.FailingCallable;
+import com.hazelcast.client.test.executor.tasks.SelectNoMembers;
+import com.hazelcast.client.test.executor.tasks.SerializedCounterCallable;
+import com.hazelcast.client.test.executor.tasks.TaskWithUnserializableResponse;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MemberSelector;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,8 +44,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -73,63 +74,69 @@ public class ClientExecutorServiceTest {
     }
 
     @Before
-    public void setup() throws IOException {
-        instance = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
+    public void setup()
+            throws IOException {
+        Config config = new XmlConfigBuilder(getClass().getClassLoader().getResourceAsStream("hazelcast-test-executor.xml"))
+                .build();
+        ClientConfig clientConfig = new XmlClientConfigBuilder("classpath:hazelcast-client-test-executor.xml").build();
+
+        instance = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testGetLocalExecutorStats() throws Throwable {
+    public void testGetLocalExecutorStats() {
         IExecutorService service = client.getExecutorService(randomString());
 
         service.getLocalExecutorStats();
     }
 
     @Test
-    public void testIsTerminated() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testIsTerminated() {
         IExecutorService service = client.getExecutorService(randomString());
 
         assertFalse(service.isTerminated());
     }
 
     @Test
-    public void testIsShutdown() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testIsShutdown() {
         IExecutorService service = client.getExecutorService(randomString());
 
         assertFalse(service.isShutdown());
     }
 
     @Test
-    public void testShutdownNow() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testShutdownNow() {
         final IExecutorService service = client.getExecutorService(randomString());
 
         service.shutdownNow();
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(service.isShutdown());
             }
         });
     }
 
     @Test
-    public void testShutdownMultipleTimes() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testShutdownMultipleTimes() {
         final IExecutorService service = client.getExecutorService(randomString());
         service.shutdownNow();
         service.shutdown();
 
         assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(service.isShutdown());
             }
         });
     }
 
     @Test(expected = TimeoutException.class)
-    public void testCancellationAwareTask_whenTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testCancellationAwareTask_whenTimeOut()
+            throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
         CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
@@ -139,7 +146,8 @@ public class ClientExecutorServiceTest {
     }
 
     @Test
-    public void testFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testFutureAfterCancellationAwareTaskTimeOut()
+            throws InterruptedException, ExecutionException {
         IExecutorService service = client.getExecutorService(randomString());
         CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
@@ -157,7 +165,8 @@ public class ClientExecutorServiceTest {
     @Test
     @Ignore("https://github.com/hazelcast/hazelcast/issues/4677")
     //Ignored because fixing it requires extensive refactoring see ClientExecutorServiceCancelTest
-    public void testCancelFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testCancelFutureAfterCancellationAwareTaskTimeOut()
+            throws InterruptedException, ExecutionException {
         IExecutorService service = client.getExecutorService(randomString());
         CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
@@ -174,7 +183,8 @@ public class ClientExecutorServiceTest {
     }
 
     @Test(expected = CancellationException.class)
-    public void testGetFutureAfterCancel() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testGetFutureAfterCancel()
+            throws InterruptedException, ExecutionException {
         IExecutorService service = client.getExecutorService(randomString());
         CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
@@ -189,7 +199,8 @@ public class ClientExecutorServiceTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void testSubmitFailingCallableException() throws ExecutionException, InterruptedException {
+    public void testSubmitFailingCallableException()
+            throws ExecutionException, InterruptedException {
         IExecutorService service = client.getExecutorService(randomString());
         Future<String> failingFuture = service.submit(new FailingCallable());
 
@@ -197,7 +208,8 @@ public class ClientExecutorServiceTest {
     }
 
     @Test
-    public void testSubmitFailingCallableException_withExecutionCallback() throws ExecutionException, InterruptedException {
+    public void testSubmitFailingCallableException_withExecutionCallback()
+            throws InterruptedException {
         IExecutorService service = client.getExecutorService(randomString());
         final CountDownLatch latch = new CountDownLatch(1);
         service.submit(new FailingCallable(), new ExecutionCallback<String>() {
@@ -213,9 +225,9 @@ public class ClientExecutorServiceTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-
     @Test(expected = IllegalStateException.class)
-    public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {
+    public void testSubmitFailingCallableReasonExceptionCause()
+            throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
         Future<String> failingFuture = service.submit(new FailingCallable());
 
@@ -236,7 +248,8 @@ public class ClientExecutorServiceTest {
     }
 
     @Test
-    public void testCallableSerializedOnce() throws ExecutionException, InterruptedException {
+    public void testCallableSerializedOnce()
+            throws ExecutionException, InterruptedException {
         String name = randomString();
         IExecutorService service = client.getExecutorService(name);
         SerializedCounterCallable counterCallable = new SerializedCounterCallable();
@@ -245,7 +258,8 @@ public class ClientExecutorServiceTest {
     }
 
     @Test
-    public void testCallableSerializedOnce_submitToAddress() throws ExecutionException, InterruptedException {
+    public void testCallableSerializedOnce_submitToAddress()
+            throws ExecutionException, InterruptedException {
         String name = randomString();
         IExecutorService service = client.getExecutorService(name);
         SerializedCounterCallable counterCallable = new SerializedCounterCallable();
@@ -253,35 +267,11 @@ public class ClientExecutorServiceTest {
         assertEquals(2, future.get());
     }
 
-
-    static class SerializedCounterCallable implements Callable, DataSerializable {
-
-
-        int counter;
-
-        public SerializedCounterCallable() {
-        }
-
-        @Override
-        public Object call() throws Exception {
-            return counter;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(++counter);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            counter = in.readInt() + 1;
-        }
-    }
-
     @Test(expected = HazelcastSerializationException.class)
-    public void testUnserializableResponse_exceptionPropagatesToClient() throws Throwable {
+    public void testUnserializableResponse_exceptionPropagatesToClient()
+            throws Throwable {
         IExecutorService service = client.getExecutorService("executor");
-        TaskWithUnserialazableResponse counterCallable = new TaskWithUnserialazableResponse();
+        TaskWithUnserializableResponse counterCallable = new TaskWithUnserializableResponse();
         Future future = service.submit(counterCallable);
         try {
             future.get();
@@ -291,9 +281,10 @@ public class ClientExecutorServiceTest {
     }
 
     @Test(expected = HazelcastSerializationException.class)
-    public void testUnserializableResponse_exceptionPropagatesToClientCallback() throws Throwable {
+    public void testUnserializableResponse_exceptionPropagatesToClientCallback()
+            throws Throwable {
         IExecutorService service = client.getExecutorService("executor");
-        TaskWithUnserialazableResponse counterCallable = new TaskWithUnserialazableResponse();
+        TaskWithUnserializableResponse counterCallable = new TaskWithUnserializableResponse();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
         service.submit(counterCallable, new ExecutionCallback() {
@@ -311,12 +302,4 @@ public class ClientExecutorServiceTest {
         assertOpenEventually(countDownLatch);
         throw throwable.get();
     }
-
-    private static class TaskWithUnserialazableResponse implements Callable, Serializable {
-        @Override
-        public Object call() throws Exception {
-            return new Object();
-        }
-    }
-
 }
