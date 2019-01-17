@@ -242,7 +242,7 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
                     config.setCollectionIntervalSeconds(intValue(child));
                     break;
                 case "metrics-for-data-structures":
-                    config.setMetricsForDataStructures(booleanValue(child));
+                    config.setMetricsForDataStructuresEnabled(booleanValue(child));
                     break;
                 default:
                     throw new AssertionError("Unrecognized XML element: " + name);

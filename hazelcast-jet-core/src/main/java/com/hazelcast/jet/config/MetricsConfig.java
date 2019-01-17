@@ -39,7 +39,7 @@ public class MetricsConfig {
     private boolean enabled = true;
     private boolean jmxEnabled = true;
     private int retentionSeconds = DEFAULT_METRICS_RETENTION_SECONDS;
-    private boolean metricsForDataStructures;
+    private boolean metricsForDataStructuresEnabled;
     private int intervalSeconds = DEFAULT_METRICS_COLLECTION_SECONDS;
 
     /**
@@ -155,8 +155,8 @@ public class MetricsConfig {
      * default.
      */
     @Nonnull
-    public MetricsConfig setMetricsForDataStructures(boolean metricsForDataStructures) {
-        this.metricsForDataStructures = metricsForDataStructures;
+    public MetricsConfig setMetricsForDataStructuresEnabled(boolean metricsForDataStructuresEnabled) {
+        this.metricsForDataStructuresEnabled = metricsForDataStructuresEnabled;
         return this;
     }
 
@@ -164,7 +164,7 @@ public class MetricsConfig {
      * Returns if statistics for data structures are added to metrics. See
      * {@link Diagnostics#METRICS_DISTRIBUTED_DATASTRUCTURES}.
      */
-    public boolean isMetricsForDataStructures() {
-        return metricsForDataStructures;
+    public boolean isMetricsForDataStructuresEnabled() {
+        return metricsForDataStructuresEnabled;
     }
 }

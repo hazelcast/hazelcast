@@ -79,7 +79,7 @@ public class JobRepository {
     /**
      * A cache to speed up access to details about exported snapshots.
      */
-    public static final String EXPORTED_SNAPSHOTS_DETAIL_CACHE = "exportedSnapshotsCache";
+    public static final String EXPORTED_SNAPSHOTS_DETAIL_CACHE = INTERNAL_JET_OBJECTS_PREFIX + "exportedSnapshotsCache";
 
     /**
      * Name of internal IMap which stores job resources.

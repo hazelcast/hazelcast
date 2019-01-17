@@ -64,7 +64,7 @@ public class XmlConfigTest {
         assertTrue(jetConfig.getMetricsConfig().isJmxEnabled());
         assertEquals(DEFAULT_METRICS_RETENTION_SECONDS, jetConfig.getMetricsConfig().getRetentionSeconds());
         assertEquals(DEFAULT_METRICS_COLLECTION_SECONDS, jetConfig.getMetricsConfig().getCollectionIntervalSeconds());
-        assertFalse(jetConfig.getMetricsConfig().isMetricsForDataStructures());
+        assertFalse(jetConfig.getMetricsConfig().isMetricsForDataStructuresEnabled());
 
         assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
     }
@@ -206,7 +206,7 @@ public class XmlConfigTest {
         assertFalse("isJmxEnabled", metricsCfg.isJmxEnabled());
         assertEquals("metricsRetentionSeconds", 124, metricsCfg.getRetentionSeconds());
         assertEquals("metricsCollectionInterval", 123, metricsCfg.getCollectionIntervalSeconds());
-        assertTrue("metricsForDataStructures", metricsCfg.isMetricsForDataStructures());
+        assertTrue("metricsForDataStructures", metricsCfg.isMetricsForDataStructuresEnabled());
     }
 
     private static void assertDefaultMemberConfig(Config config) {

@@ -48,7 +48,7 @@
         <jet:metrics-config enabled="false"
                             jmxEnabled="false"
                             retention-seconds="123"
-                            metrics-for-data-structures="true"
+                            metrics-for-data-structures-enabled="true"
                             collection-interval-seconds="10"
         />
     </jet:instance>

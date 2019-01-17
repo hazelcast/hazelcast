@@ -161,7 +161,7 @@
         <xs:attribute name="jmxEnabled" type="hz:parameterized-boolean"/>
         <xs:attribute name="retention-seconds" type="hz:parameterized-positive-integer"/>
         <xs:attribute name="collection-interval-seconds" type="hz:parameterized-positive-integer"/>
-        <xs:attribute name="metrics-for-data-structures" type="hz:parameterized-boolean"/>
+        <xs:attribute name="metrics-for-data-structures-enabled" type="hz:parameterized-boolean"/>
     </xs:complexType>
 
     <xs:simpleType name="nonNegativeLong" id="nonNegativeLong">

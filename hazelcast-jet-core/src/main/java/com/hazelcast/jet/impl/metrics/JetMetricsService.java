@@ -178,7 +178,7 @@ public class JetMetricsService implements ManagedService, ConfigurableService<Me
     public static void applyMetricsConfig(Config hzConfig, MetricsConfig metricsConfig) {
         if (metricsConfig.isEnabled()) {
             hzConfig.setProperty(Diagnostics.METRICS_LEVEL.getName(), ProbeLevel.INFO.name());
-            if (metricsConfig.isMetricsForDataStructures()) {
+            if (metricsConfig.isMetricsForDataStructuresEnabled()) {
                 hzConfig.setProperty(Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES.getName(), "true");
             }
         }

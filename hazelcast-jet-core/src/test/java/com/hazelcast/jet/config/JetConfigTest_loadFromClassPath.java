@@ -71,6 +71,6 @@ public class JetConfigTest_loadFromClassPath {
         assertFalse(metricsConfig.isJmxEnabled());
         assertEquals(123, metricsConfig.getCollectionIntervalSeconds());
         assertEquals(124, metricsConfig.getRetentionSeconds());
-        assertTrue(metricsConfig.isMetricsForDataStructures());
+        assertTrue(metricsConfig.isMetricsForDataStructuresEnabled());
     }
 }
