@@ -51,7 +51,8 @@ import static org.junit.Assert.assertTrue;
  * For random and partition, the reason of broken order is also unknown to me (@sancar)
  * For submit to member, it is because we do not have order guarantee in the first place.
  * and when there is partition movement, we can not is partition ID since tasks will not move with partitions
- */ public class ClientExecutorServiceCancelTest
+ */
+public class ClientExecutorServiceCancelTest
         extends HazelcastTestSupport {
 
     private static final int SLEEP_TIME = 1000000;
