@@ -204,7 +204,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
 
     @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
+    protected static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
             return (T) MapGetCodec.decodeResponse(clientMessage).response;
@@ -411,15 +411,15 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public ICompletableFuture<V> getAsync(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return getAsyncInternal(key);
+        return new ClientDelegatingFuture<V>(getAsyncInternal(key),
+                getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
     }
 
-    protected ICompletableFuture<V> getAsyncInternal(Object key) {
+    protected ClientInvocationFuture getAsyncInternal(Object key) {
         try {
             Data keyData = toData(key);
             ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
-            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
+            return invokeOnKeyOwner(request, keyData);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -652,7 +652,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             request = MapPutIfAbsentWithMaxIdleCodec.encodeRequest(name, keyData, valueData,
                     getThreadId(), ttlMillis, timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
         } else {
-             request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData,
+            request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData,
                     getThreadId(), ttlMillis);
         }
 

@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
@@ -60,6 +61,7 @@ import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 
@@ -145,39 +147,43 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public ICompletableFuture<V> getAsyncInternal(Object keyParameter) {
-        final Object key = toNearCacheKey(keyParameter);
-        Object value = getCachedValue(key, false);
+    public ICompletableFuture<V> getAsync(K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+        final Object ncKey = toNearCacheKey(key);
+        Object value = getCachedValue(ncKey, false);
         if (value != NOT_CACHED) {
             ExecutorService executor = getContext().getExecutionService().getUserExecutor();
             return new CompletedFuture<V>(getSerializationService(), value, executor);
         }
 
-        Data keyData = toData(key);
-        final long reservationId = nearCache.tryReserveForUpdate(key, keyData);
-        ICompletableFuture<V> future;
+        Data keyData = toData(ncKey);
+        final long reservationId = nearCache.tryReserveForUpdate(ncKey, keyData);
+        ClientInvocationFuture invocationFuture;
         try {
-            future = super.getAsyncInternal(keyData);
+            invocationFuture = super.getAsyncInternal(keyData);
         } catch (Throwable t) {
-            invalidateNearCache(key);
+            invalidateNearCache(ncKey);
             throw rethrow(t);
         }
 
         if (reservationId != NOT_RESERVED) {
-            ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Object>() {
+            invocationFuture.andThen(new ExecutionCallback<ClientMessage>() {
                 @Override
-                public void onResponse(Object value) {
-                    nearCache.tryPublishReserved(key, value, reservationId, false);
+                public void onResponse(ClientMessage response) {
+                    Object newDecodedResponse = GET_ASYNC_RESPONSE_DECODER.decodeClientMessage(response);
+                    nearCache.tryPublishReserved(ncKey, newDecodedResponse, reservationId, false);
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
-                    invalidateNearCache(key);
+                    invalidateNearCache(ncKey);
                 }
-            }, false);
+            }, getClient().getClientExecutionService());
         }
 
-        return future;
+        return new ClientDelegatingFuture<V>(getAsyncInternal(key),
+                getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
     }
 
     @Override

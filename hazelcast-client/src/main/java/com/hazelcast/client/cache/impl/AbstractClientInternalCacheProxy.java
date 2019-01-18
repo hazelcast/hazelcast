@@ -411,7 +411,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         if (callback == null) {
             return;
         }
-        delegatingFuture.andThenInternal(callback, true);
+        delegatingFuture.andThen(callback);
     }
 
     private ClientInvocationFuture putInternal(Data keyData, Data valueData, Data expiryPolicyData, boolean isGet,
@@ -475,7 +475,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
 
         CallbackAwareClientDelegatingFuture<V> future = new CallbackAwareClientDelegatingFuture<V>(invocationFuture,
                 getSerializationService(), PUT_RESPONSE_DECODER, callback);
-        future.andThenInternal(callback, true);
+        future.andThen(callback);
 
         return future;
     }
