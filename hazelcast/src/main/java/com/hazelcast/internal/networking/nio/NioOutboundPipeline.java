@@ -179,8 +179,11 @@ public final class NioOutboundPipeline
             return;
         }
 
-        run();
-        //addTaskAndWakeup(this);
+        try {
+            process();
+        } catch (Throwable t) {
+            onError(t);
+        }
     }
 
     @Override
