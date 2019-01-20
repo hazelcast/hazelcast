@@ -25,14 +25,30 @@ import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.json.internal.JsonPattern;
 import com.hazelcast.json.internal.JsonSchemaHelper;
 import com.hazelcast.json.internal.JsonSchemaNode;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.collection.WeightedEvictableList;
+import com.hazelcast.util.collection.WeightedEvictableList.WeightedItem;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public abstract class AbstractJsonGetter extends Getter {
 
-    private Map<String, JsonPattern> patternMap = new ConcurrentHashMap<String, JsonPattern>();
+    private static final int PATTERN_CACHE_MAX_SIZE = 20;
+    private static final int PATTERN_CACHE_MAX_VOTES = 400;
+    private static final ConstructorFunction<String, WeightedEvictableList<JsonPattern>> PATTERN_LIST_CONSTRUCTOR =
+            new ConstructorFunction<String, WeightedEvictableList<JsonPattern>>() {
+                @Override
+                public WeightedEvictableList<JsonPattern> createNew(String arg) {
+                    return new WeightedEvictableList<JsonPattern>(PATTERN_CACHE_MAX_SIZE, PATTERN_CACHE_MAX_VOTES);
+                }
+            };
+
+    private ConcurrentMap<String, WeightedEvictableList<JsonPattern>> patternMap =
+            new ConcurrentHashMap<String, WeightedEvictableList<JsonPattern>>();
 
     AbstractJsonGetter() {
         super(null);
@@ -40,6 +56,10 @@ public abstract class AbstractJsonGetter extends Getter {
 
     AbstractJsonGetter(Getter parent) {
         super(parent);
+    }
+
+    public static JsonPathCursor getPath(String attributePath) {
+        return new JsonPathCursor(attributePath);
     }
 
     /**
@@ -125,20 +145,6 @@ public abstract class AbstractJsonGetter extends Getter {
         }
     }
 
-    JsonPattern getOrCreatePattern(NavigableJsonInputAdapter adapter,
-                                   JsonSchemaNode jsonSchemaNode,
-                                   JsonPathCursor pathCursor) {
-        JsonPattern knownPattern = patternMap.get(pathCursor.getAttributePath());
-        if (knownPattern == null) {
-            knownPattern = JsonSchemaHelper.createPattern(adapter, jsonSchemaNode, pathCursor);
-            if (knownPattern != null) {
-                patternMap.put(pathCursor.getAttributePath(), knownPattern);
-            }
-            pathCursor.reset();
-        }
-        return knownPattern;
-    }
-
     @Override
     Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
         if (metadata == null) {
@@ -148,14 +154,31 @@ public abstract class AbstractJsonGetter extends Getter {
         JsonPathCursor pathCursor = getPath(attributePath);
 
         NavigableJsonInputAdapter adapter = annotate(obj);
-        JsonPattern knownPattern = getOrCreatePattern(adapter, schemaNode, pathCursor);
-        if (knownPattern == null) {
-            return null;
+        WeightedEvictableList<JsonPattern> patternList =
+                ConcurrencyUtil.getOrPutIfAbsent(patternMap, attributePath, PATTERN_LIST_CONSTRUCTOR);
+        List<WeightedItem<JsonPattern>> patternsSnapshot = patternList.getSnapshot();
+        JsonPattern knownPattern = null;
+        for (int i = 0; i < 2 && i < patternsSnapshot.size(); i++) {
+            WeightedItem<JsonPattern> patternWeightedItem = patternsSnapshot.get(i);
+            knownPattern = patternWeightedItem.getItem();
+            JsonValue value = JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor);
+            pathCursor.reset();
+            if (value != null) {
+                patternList.voteFor(patternWeightedItem);
+                return value;
+            }
         }
-        if (knownPattern.hasAny()) {
-            return getValue(obj, attributePath);
+        knownPattern = JsonSchemaHelper.createPattern(adapter, schemaNode, pathCursor);
+        pathCursor.reset();
+        if (knownPattern != null) {
+            if (knownPattern.hasAny()) {
+                return getValue(obj, attributePath);
+            }
+            WeightedItem<JsonPattern> weightedItem = patternList.add(knownPattern);
+            patternList.voteFor(weightedItem);
+            return JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor);
         }
-        return JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor);
+        return null;
     }
 
     @Override
@@ -271,9 +294,5 @@ public abstract class AbstractJsonGetter extends Getter {
             default:
                 return null;
         }
-    }
-
-    public static JsonPathCursor getPath(String attributePath) {
-        return new JsonPathCursor(attributePath);
     }
 }
