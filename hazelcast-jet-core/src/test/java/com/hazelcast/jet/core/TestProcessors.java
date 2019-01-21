@@ -392,8 +392,8 @@ public final class TestProcessors {
      */
     public static class DummyStatefulP extends AbstractProcessor {
         public static volatile boolean wasRestored;
+        public static int parallelism;
         private static final int ITEMS_TO_SAVE = 100;
-        private static int parallelism;
 
         private Traverser<Map.Entry<BroadcastKey<Integer>, Integer>> traverser;
         private int[] restored;

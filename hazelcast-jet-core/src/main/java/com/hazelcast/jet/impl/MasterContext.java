@@ -1109,8 +1109,9 @@ public class MasterContext {
     }
 
     private boolean hasParticipant(String uuid) {
-        return executionPlanMap != null
-                && executionPlanMap.keySet().stream().anyMatch(mi -> mi.getUuid().equals(uuid));
+        // a member is a participant when it is a master member (that's we) or it's in the execution plan
+        return nodeEngine.getLocalMember().getUuid().equals(uuid)
+               || executionPlanMap != null && executionPlanMap.keySet().stream().anyMatch(mi -> mi.getUuid().equals(uuid));
     }
 
     /**
