@@ -19,6 +19,7 @@ package com.hazelcast.json.internal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.PreprocessingPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
@@ -52,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -67,6 +69,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
     private HazelcastInstance[] instances;
     private IMap map;
     private IMap mapWithMapStore;
+    private IMap mapWithoutPreprocessing;
 
     @Parameterized.Parameters(name = "InMemoryFormat: {0}")
     public static Collection<Object[]> parameters() {
@@ -84,6 +87,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         factory = createHazelcastInstanceFactory(NODE_COUNT);
         instances = factory.newInstances(getConfig());
         map = instances[0].getMap(randomMapName());
+        mapWithoutPreprocessing = instances[0].getMap("noprocessing" + randomMapName());
         mapWithMapStore = instances[0].getMap("mapStore" + randomName());
     }
 
@@ -93,6 +97,14 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
             map.put(createValue("key", i), createValue("value", i));
         }
         assertMetadataCreated(map.getName());
+    }
+
+    @Test
+    public void testPutDoesNotCreateMetadata_whenPreprocessingIsOff() {
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            mapWithoutPreprocessing.put(createValue("key", i), createValue("value", i));
+        }
+        assertMetadataNotCreated(mapWithoutPreprocessing.getName());
     }
 
     @Test
@@ -227,18 +239,33 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
             }
         });
     }
+
     protected void assertMetadataCreated(String mapName) {
         assertMetadataCreated(mapName, NODE_COUNT);
     }
 
     protected void assertMetadataCreated(String mapName, int replicaCount) {
-
         for (int i = 0; i < replicaCount; i++) {
             MapBackupAccessor mapBackupAccessor = (MapBackupAccessor) TestBackupUtils.newMapAccessor(instances, mapName, i);
             for (int j = 0; j < ENTRY_COUNT; j++) {
                 Record record = mapBackupAccessor.getRecord(createValue("key", j));
                 assertNotNull(record);
                 assertMetadata(record.getMetadata());
+            }
+        }
+    }
+
+    protected void assertMetadataNotCreated(String mapName) {
+        assertMetadataNotCreated(mapName, NODE_COUNT);
+    }
+
+    protected void assertMetadataNotCreated(String mapName, int replicaCount) {
+        for (int i = 0; i < replicaCount; i++) {
+            MapBackupAccessor mapBackupAccessor = (MapBackupAccessor) TestBackupUtils.newMapAccessor(instances, mapName, i);
+            for (int j = 0; j < ENTRY_COUNT; j++) {
+                Record record = mapBackupAccessor.getRecord(createValue("key", j));
+                assertNotNull(record);
+                assertNull(record.getMetadata());
             }
         }
     }
@@ -264,6 +291,10 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         config.getMapConfig("default")
                 .setBackupCount(getNodeCount() - 1)
                 .setAsyncBackupCount(0)
+                .setInMemoryFormat(getInMemoryFormat())
+                .setPreprocessingPolicy(PreprocessingPolicy.CREATION_TIME);
+        config.getMapConfig("noprocessing*")
+                .setPreprocessingPolicy(PreprocessingPolicy.OFF)
                 .setInMemoryFormat(getInMemoryFormat());
         config.getMapConfig("mapStore*")
                 .setInMemoryFormat(getInMemoryFormat())

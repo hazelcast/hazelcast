@@ -17,6 +17,7 @@
 package com.hazelcast.json.internal;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.PreprocessingPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
@@ -114,7 +115,8 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getMapConfig("default")
                 .setBackupCount(NODE_COUNT - 1)
-                .setAsyncBackupCount(0);
+                .setAsyncBackupCount(0)
+                .setPreprocessingPolicy(PreprocessingPolicy.CREATION_TIME);
         return config;
     }
 

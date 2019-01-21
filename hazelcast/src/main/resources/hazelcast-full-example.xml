@@ -31,7 +31,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.12.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -1093,7 +1093,7 @@
      -->
     <map name="default">
         <in-memory-format>BINARY</in-memory-format>
-        <preprocessing-poliy>OFF</preprocessing-poliy>
+        <preprocessing-policy>OFF</preprocessing-policy>
         <statistics-enabled>true</statistics-enabled>
         <optimize-queries>true</optimize-queries>
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
