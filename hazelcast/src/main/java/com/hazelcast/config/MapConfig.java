@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
@@ -1092,6 +1093,10 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         out.writeObject(partitioningStrategyConfig);
         out.writeUTF(quorumName);
         out.writeObject(hotRestartConfig);
+        // RU_COMPAT_3_11
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            out.writeShort(preprocessingPolicy.getId());
+        }
     }
 
     @Override
@@ -1120,5 +1125,9 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         partitioningStrategyConfig = in.readObject();
         quorumName = in.readUTF();
         hotRestartConfig = in.readObject();
+        // RU_COMPAT_3_11
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+            preprocessingPolicy = PreprocessingPolicy.getById(in.readShort());
+        }
     }
 }
