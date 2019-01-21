@@ -45,8 +45,8 @@ import com.hazelcast.util.function.Consumer;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -66,7 +66,7 @@ public class JetService
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final LiveOperationRegistry liveOperationRegistry;
-    private final AtomicBoolean shutdownInitiated = new AtomicBoolean();
+    private final AtomicReference<CompletableFuture> shutdownFuture = new AtomicReference<>();
     private final Thread shutdownHookThread;
 
     private JetConfig config;
@@ -129,8 +129,9 @@ public class JetService
      * Gracefully shuts down jobs on this member. Blocks until all are down.
      */
     void shutDownJobs() {
-        if (!shutdownInitiated.compareAndSet(false, true)) {
-            logger.info("Shutdown requested, but already shut down or being shut down");
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        if (!shutdownFuture.compareAndSet(null, future)) {
+            shutdownFuture.get().join();
             return;
         }
         // this will prevent accepting more jobs
@@ -138,7 +139,6 @@ public class JetService
         jobExecutionService.shutdown(true);
         taskletExecutionService.shutdown(true);
 
-        CompletableFuture<Void> future = new CompletableFuture<>();
         notifyMasterWeAreShuttingDown(future);
         // We initiated shutdown on this member, it won't accept any new jobs. After all
         // tasklets running locally are done, we can continue the shutdown.
