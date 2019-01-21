@@ -434,7 +434,8 @@ public class JobCoordinationService {
         }
         // if there are any members in a shutdown process, don't start jobs
         if (!membersShuttingDown.isEmpty()) {
-            LoggingUtil.logFine(logger, "Not starting jobs because members are shutting down: %s", membersShuttingDown);
+            LoggingUtil.logFine(logger, "Not starting jobs because members are shutting down: %s",
+                    membersShuttingDown.keySet());
             return false;
         }
         InternalPartitionServiceImpl partitionService = getInternalPartitionService();
@@ -455,7 +456,7 @@ public class JobCoordinationService {
     void onMemberLeave(String uuid) {
         if (membersShuttingDown.remove(uuid) != null) {
             LoggingUtil.logFine(logger, "Removed a shutting-down member: %s, now shuttingDownMembers=%s",
-                    uuid, membersShuttingDown);
+                    uuid, membersShuttingDown.keySet());
         }
     }
 
@@ -544,6 +545,7 @@ public class JobCoordinationService {
         // if we can't start jobs yet, we also won't tear them down
         if (!shouldStartJobs()) {
             scheduleScaleUp(RETRY_DELAY_IN_MILLIS);
+            return;
         }
 
         boolean allSucceeded = true;

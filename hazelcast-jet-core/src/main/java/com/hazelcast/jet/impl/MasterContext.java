@@ -80,12 +80,12 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
-import static com.hazelcast.jet.core.JobStatus.EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
@@ -259,7 +259,7 @@ public class MasterContext {
      * </ol>
      *
      * @param allowWhileExportingSnapshot if false and jobStatus is
-     *      EXPORTING_SNAPSHOT, termination will be rejected
+     *      SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
      */
     @Nonnull
     Tuple2<CompletableFuture<Void>, String> requestTermination(TerminationMode mode, boolean allowWhileExportingSnapshot) {
@@ -274,8 +274,9 @@ public class MasterContext {
             }
 
             localStatus = jobStatus();
-            if (localStatus == EXPORTING_SNAPSHOT && !allowWhileExportingSnapshot) {
-                return tuple2(executionCompletionFuture, "Cannot cancel when job status is " + EXPORTING_SNAPSHOT);
+            if (localStatus == SUSPENDED_EXPORTING_SNAPSHOT && !allowWhileExportingSnapshot) {
+                return tuple2(executionCompletionFuture, "Cannot cancel when job status is "
+                        + SUSPENDED_EXPORTING_SNAPSHOT);
             }
             if (localStatus == SUSPENDED && mode != CANCEL_FORCEFUL) {
                 // if suspended, we can only cancel the job. Other terminations have no effect.
@@ -289,7 +290,7 @@ public class MasterContext {
             }
             requestedTerminationMode = mode;
             // handle cancellation of a suspended job
-            if (localStatus == SUSPENDED || localStatus == EXPORTING_SNAPSHOT) {
+            if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
                 this.jobStatus = FAILED;
                 setFinalResult(new CancellationException());
             }
@@ -327,13 +328,13 @@ public class MasterContext {
                     throw new JetException("Cannot export state snapshot: job is suspended and no successful snapshot " +
                             "was created while it was running");
                 }
-                localStatus = jobStatus = EXPORTING_SNAPSHOT;
+                localStatus = jobStatus = SUSPENDED_EXPORTING_SNAPSHOT;
             } else {
                 snapshotQueue.add(tuple3(name, cancelJob, future));
             }
         }
 
-        if (localStatus == EXPORTING_SNAPSHOT) {
+        if (localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
             String sourceMapName = jobExecutionRecord.successfulSnapshotDataMapName(jobId);
             JetInstance jetInstance = coordinationService.getJetService().getJetInstance();
             return copyMapUsingJob(jetInstance, COPY_MAP_JOB_QUEUE_SIZE, sourceMapName, EXPORTED_SNAPSHOTS_PREFIX + name)
