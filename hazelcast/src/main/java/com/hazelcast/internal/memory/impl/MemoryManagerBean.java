@@ -21,7 +21,7 @@ import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.internal.memory.MemoryManager;
 
 /**
- * Simp]e implementation of {@link MemoryManager} which aggregates the
+ * Simple implementation of {@link MemoryManager} which aggregates the
  * {@link MemoryAllocator} and {@link MemoryAccessor} supplied at construction time.
  */
 public class MemoryManagerBean implements MemoryManager {

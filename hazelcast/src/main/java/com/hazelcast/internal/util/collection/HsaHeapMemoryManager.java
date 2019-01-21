@@ -23,7 +23,7 @@ import com.hazelcast.internal.memory.MemoryManager;
 import static java.lang.System.arraycopy;
 
 /**
- * Memory manager backed by {@code long[][]}. Supports the minimum function needod for {@link LongSetHsa}:
+ * Memory manager backed by {@code long[][]}. Supports the minimum function needed for {@link LongSetHsa}:
  * <ul>
  *     <li>A maximum of two blocks can be allocated at any time.</li>
  *     <li>All addresses and sizes must be 8 byte-aligned.</li>
