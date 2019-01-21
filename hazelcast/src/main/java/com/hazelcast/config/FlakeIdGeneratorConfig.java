@@ -118,7 +118,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * @see #setPrefetchCount(int)
      */
     public int getPrefetchCount() {
-        return Math.max(1, prefetchCount);
+        return prefetchCount;
     }
 
     /**
@@ -156,11 +156,10 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * This setting pertains only to {@link FlakeIdGenerator#newId newId} calls made on the member
      * that configured it.
      *
-     * @param prefetchValidityMs the desired ID validity or unlimited, if configured to 0.
+     * @param prefetchValidityMs the desired ID validity or unlimited, if &lt;=0
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
-        checkNotNegative(prefetchValidityMs, "prefetchValidityMs must be non negative");
         this.prefetchValidityMillis = prefetchValidityMs;
         return this;
     }
