@@ -1007,6 +1007,7 @@ public class ConfigXmlGeneratorTest {
         MapConfig expectedConfig = new MapConfig()
                 .setName("carMap")
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
+                .setPreprocessingPolicy(PreprocessingPolicy.CREATION_TIME)
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .setMaxIdleSeconds(100)
                 .setTimeToLiveSeconds(1000)

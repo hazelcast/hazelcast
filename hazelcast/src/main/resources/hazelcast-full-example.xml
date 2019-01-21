@@ -845,6 +845,13 @@
         rely on it. If true, it increases the speed of query processes in the map. It only works when
         <in-memory-format> is set to BINARY and performs a pre-caching on the entries queried. Its default
         value is false.
+        * <preprocessing-policy>
+        Pre-processing policy for this map. Hazelcast may process objects of supported types ahead of time to
+        create additional metadata about them. This metadata then is used to make querying and indexing faster.
+        Turning on preprocessing may decrease put throughput.
+        Valid values are:
+        CREATION_TIME: Objects of supported types are pre-processed when they are created and updated.
+        OFF (default): No pre-processing is done.
         * <cache-deserialized-values>:
         Controls caching of deserialized values. Caching makes the query evaluation faster, but it costs memory.
         Available values are as follows:
@@ -1086,6 +1093,7 @@
      -->
     <map name="default">
         <in-memory-format>BINARY</in-memory-format>
+        <preprocessing-poliy>OFF</preprocessing-poliy>
         <statistics-enabled>true</statistics-enabled>
         <optimize-queries>true</optimize-queries>
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>

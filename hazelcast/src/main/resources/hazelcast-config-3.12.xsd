@@ -114,6 +114,18 @@
 
     <xs:complexType name="map">
         <xs:all>
+            <xs:element name="preprocessing-policy" type="preprocessing-policy" minOccurs="0" maxOccurs="1" default="OFF">
+                <xs:annotation>
+                    <xs:documentation>
+                        Pre-processing policy for this map. Hazelcast may process objects of supported types ahead of time to
+                        create additional metadata about them. This metadata then is used to make querying and indexing faster.
+                        Turning on preprocessing may decrease put throughput.
+                        Valid values are:
+                        CREATION_TIME: Objects of supported types are pre-processed when they are created and updated.
+                        OFF (default): No pre-processing is done.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
                 <xs:annotation>
                     <xs:documentation>
@@ -2980,6 +2992,13 @@
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
             <xs:enumeration value="NATIVE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="preprocessing-policy">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="CREATION_TIME"/>
+            <xs:enumeration value="OFF"/>
         </xs:restriction>
     </xs:simpleType>
 

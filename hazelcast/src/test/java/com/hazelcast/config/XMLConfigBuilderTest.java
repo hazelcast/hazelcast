@@ -915,6 +915,33 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapConfig_preprocessingPolicy() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<preprocessing-policy>CREATION_TIME</preprocessing-policy>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("mymap");
+
+        assertEquals(PreprocessingPolicy.CREATION_TIME, mapConfig.getPreprocessingPolicy());
+    }
+
+    @Test
+    public void testMapConfig_preprocessingPolicy_defaultValue() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("mymap");
+
+        assertEquals(PreprocessingPolicy.OFF, mapConfig.getPreprocessingPolicy());
+    }
+
+    @Test
     public void testMapConfig_evictions() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"lruMap\">"
