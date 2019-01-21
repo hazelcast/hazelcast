@@ -761,6 +761,7 @@ public class ConfigCompatibilityChecker {
 
             return nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getInMemoryFormat(), c2.getInMemoryFormat())
+                    && nullSafeEqual(c1.getPreprocessingPolicy(), c2.getPreprocessingPolicy())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
                     && nullSafeEqual(c1.isOptimizeQueries(), c2.isOptimizeQueries())
                     && nullSafeEqual(c1.getCacheDeserializedValues(), c2.getCacheDeserializedValues())

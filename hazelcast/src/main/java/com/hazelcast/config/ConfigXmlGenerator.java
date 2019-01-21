@@ -775,7 +775,8 @@ public class ConfigXmlGenerator {
                     .node("min-eviction-check-millis", m.getMinEvictionCheckMillis())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .node("quorum-ref", m.getQuorumName())
-                    .node("read-backup-data", m.isReadBackupData());
+                    .node("read-backup-data", m.isReadBackupData())
+                    .node("preprocessing-policy", m.getPreprocessingPolicy());
 
             appendHotRestartConfig(gen, m.getHotRestartConfig());
             mapStoreConfigXmlGenerator(gen, m);

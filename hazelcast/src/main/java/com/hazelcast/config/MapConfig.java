@@ -105,6 +105,11 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      */
     public static final CacheDeserializedValues DEFAULT_CACHED_DESERIALIZED_VALUES = CacheDeserializedValues.INDEX_ONLY;
 
+    /**
+     * Default pre-processing policy
+     */
+    public static final PreprocessingPolicy DEFAULT_PREPROCESSING_POLICY = PreprocessingPolicy.OFF;
+
     private String name;
 
     private int backupCount = DEFAULT_BACKUP_COUNT;
@@ -155,6 +160,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     private String quorumName;
 
+    private PreprocessingPolicy preprocessingPolicy = DEFAULT_PREPROCESSING_POLICY;
+
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
     private transient MapConfigReadOnly readOnly;
@@ -179,6 +186,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         this.minEvictionCheckMillis = config.minEvictionCheckMillis;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
+        this.preprocessingPolicy = config.preprocessingPolicy;
         this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
         this.evictionPolicy = config.evictionPolicy;
         this.mapEvictionPolicy = config.mapEvictionPolicy;
@@ -704,6 +712,26 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     /**
+     * Returns {@link PreprocessingPolicy} for this map.
+     *
+     * @return {@link PreprocessingPolicy} for this map
+     */
+    public PreprocessingPolicy getPreprocessingPolicy() {
+        return preprocessingPolicy;
+    }
+
+    /**
+     * Sets the pre-processing policy. See {@link PreprocessingPolicy} for
+     * more information
+     *
+     * @param preprocessing
+     */
+    public MapConfig setPreprocessingPolicy(PreprocessingPolicy preprocessing) {
+        this.preprocessingPolicy = preprocessing;
+        return this;
+    }
+
+    /**
      * Adds a new {@link QueryCacheConfig} to this {@code MapConfig}.
      *
      * @param queryCacheConfig the config to be added
@@ -936,6 +964,9 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
+        if (preprocessingPolicy != that.preprocessingPolicy) {
+            return false;
+        }
         if (wanReplicationRef != null ? !wanReplicationRef.equals(that.wanReplicationRef) : that.wanReplicationRef != null) {
             return false;
         }
@@ -981,6 +1012,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         result = 31 * result + cacheDeserializedValues.hashCode();
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         result = 31 * result + inMemoryFormat.hashCode();
+        result = 31 * result + preprocessingPolicy.hashCode();
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
         result = 31 * result + getEntryListenerConfigs().hashCode();
         result = 31 * result + getMapIndexConfigs().hashCode();
@@ -999,6 +1031,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         return "MapConfig{"
                 + "name='" + name + '\''
                 + ", inMemoryFormat=" + inMemoryFormat + '\''
+                + ", preprocessingPolicy=" + preprocessingPolicy
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", timeToLiveSeconds=" + timeToLiveSeconds

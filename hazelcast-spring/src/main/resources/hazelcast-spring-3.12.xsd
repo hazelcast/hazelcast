@@ -728,6 +728,16 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="preprocessing-policy" use="optional" type="preprocessing-policy" default="OFF">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Pre-processing policy for this map.
+                                            Valid values are:
+                                            CREATION_TIME (default): Objects of supported types are pre-processed when they are created and updated.
+                                            OFF: No pre-processing is done.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="statistics-enabled" use="optional" type="parameterized-boolean"
                                               default="true">
                                     <xs:annotation>
@@ -3292,6 +3302,12 @@
     </xs:simpleType>
     <xs:simpleType name="parameterized-backup-count">
         <xs:union memberTypes="backup-count parameterizedValueType"/>
+    </xs:simpleType>
+    <xs:simpleType name="preprocessing-policy">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="CREATION_TIME"/>
+            <xs:enumeration value="OFF"/>
+        </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="backup-count">
         <xs:restriction base="xs:byte">
