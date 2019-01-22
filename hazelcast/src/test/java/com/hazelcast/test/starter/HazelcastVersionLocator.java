@@ -54,7 +54,7 @@ public class HazelcastVersionLocator {
     static {
         LOCAL_M2_REPOSITORY_PREFIX = System.getProperty("user.home") + separator + ".m2" + separator + "repository";
         MAVEN_CENTRAL_PREFIX = "https://repo1.maven.org/maven2";
-        HAZELCAST_REPOSITORY_PREFIX = "https://repository-hazelcast-l337.forge.cloudbees.com/release";
+        HAZELCAST_REPOSITORY_PREFIX = "https://repository.hazelcast.com/release";
     }
 
     public static File[] locateVersion(String version, File target, boolean enterprise) {
@@ -199,7 +199,7 @@ public class HazelcastVersionLocator {
             sb.append(member ? "hazelcast:" : "hazelcast-client:");
         }
         sb.append(version)
-                .append(enterprise ? " -DremoteRepositories=https://repository-hazelcast-l337.forge.cloudbees.com/release" : "");
+                .append(enterprise ? " -DremoteRepositories=https://repository.hazelcast.com/release" : "");
         LOGGER.warning(sb.toString());
     }
 }
