@@ -552,12 +552,12 @@
                 <repository>
                     <id>private-repository</id>
                     <name>Hazelcast Private Repository</name>
-                    <url>https://repository-hazelcast-l337.forge.cloudbees.com/release/</url>
+                    <url>https://repository.hazelcast.com/release/</url>
                 </repository>
                 <repository>
                     <id>private-snapshot-repository</id>
                     <name>Hazelcast Private Repository</name>
-                    <url>https://repository-hazelcast-l337.forge.cloudbees.com/snapshot/</url>
+                    <url>https://repository.hazelcast.com/snapshot/</url>
                 </repository>
             </repositories>
             <dependencies>
