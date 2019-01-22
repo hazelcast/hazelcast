@@ -61,7 +61,7 @@ public final class HazelcastClient {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
 
-    private static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS
+    static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS
             = new ConcurrentHashMap<String, HazelcastClientProxy>(5);
 
     private HazelcastClient() {
