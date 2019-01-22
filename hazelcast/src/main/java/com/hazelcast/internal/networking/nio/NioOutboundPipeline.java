@@ -26,6 +26,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.util.function.Supplier;
 
 import java.io.IOException;
@@ -61,6 +62,7 @@ public final class NioOutboundPipeline
     private OutboundHandler[] handlers = new OutboundHandler[0];
     private ByteBuffer sendBuffer;
 
+    private final boolean writeThrough;
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
@@ -80,8 +82,10 @@ public final class NioOutboundPipeline
                         NioThread owner,
                         ChannelErrorHandler errorHandler,
                         ILogger logger,
-                        IOBalancer balancer) {
+                        IOBalancer balancer,
+                        boolean writeThrough) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
+        this.writeThrough = writeThrough;
     }
 
     @Override
@@ -140,6 +144,7 @@ public final class NioOutboundPipeline
         } else {
             writeQueue.offer(frame);
         }
+
         schedule();
     }
 
@@ -179,7 +184,25 @@ public final class NioOutboundPipeline
             return;
         }
 
-        addTaskAndWakeup(this);
+        if (writeThrough) {
+            boolean allowed = true;
+            if(Thread.currentThread() instanceof PartitionOperationThread){
+                PartitionOperationThread op = (PartitionOperationThread)Thread.currentThread();
+                allowed = op.queue.isEmpty();
+            }
+
+            if(allowed) {
+                try {
+                    process();
+                } catch (Throwable t) {
+                    onError(t);
+                }
+            }else{
+                addTaskAndWakeup(this);
+            }
+        } else {
+            addTaskAndWakeup(this);
+        }
     }
 
     @Override
@@ -256,16 +279,20 @@ public final class NioOutboundPipeline
         // So there are frames, but we just unscheduled ourselves. If we don't try to reschedule, then these
         // Frames are at risk not to be send.
         if (!scheduled.compareAndSet(false, true)) {
-            //someone else managed to schedule this OutboundHandler, so we are done.
+            //someone else managed to schedule this NioOutboundPipeline, so we are done.
             return;
         }
 
         // We managed to reschedule. So lets add ourselves to the owner so we are processed again.
-        // We don't need to call wakeup because the current thread is the IO-thread and the selectionQueue will be processed
-        // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
+        if (!writeThrough || Thread.currentThread() instanceof NioThread) {
+              // We don't need to call wakeup because the current thread is the IO-thread and the selectionQueue will be processed
+            // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
 
-        // owner can't be null because this method is made by the owning io thread.
-        owner().addTask(this);
+            // owner can't be null because this method is made by the owning io thread.
+            owner().addTask(this);
+        } else {
+            addTaskAndWakeup(this);
+        }
     }
 
     private void flushToSocket() throws IOException {

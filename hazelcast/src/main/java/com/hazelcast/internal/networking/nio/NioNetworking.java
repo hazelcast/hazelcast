@@ -95,6 +95,7 @@ public final class NioNetworking implements Networking {
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
     private final ExecutorService closeListenerExecutor;
+    private final boolean writeThrough;
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
@@ -112,6 +113,7 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
+        this.writeThrough = ctx.writeThrough;
         this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -250,7 +252,8 @@ public final class NioNetworking implements Networking {
                 threads[index],
                 errorHandler,
                 loggingService.getLogger(NioOutboundPipeline.class),
-                ioBalancer);
+                ioBalancer,
+                writeThrough);
     }
 
     private NioInboundPipeline newInboundPipeline(NioChannel channel) {
@@ -330,6 +333,7 @@ public final class NioNetworking implements Networking {
         // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
         private SelectorMode selectorMode = SelectorMode.getConfiguredValue();
         private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
+        private boolean writeThrough = Boolean.parseBoolean(System.getProperty("hazelcast.io.writethrough", "false"));
         private ChannelInitializer channelInitializer;
 
         public Context() {
