@@ -80,11 +80,17 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         HazelcastProperties properties = client.getProperties();
         int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
         long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
-        boolean isBackPressureEnabled = maxAllowedConcurrentInvocations != Integer.MAX_VALUE;
-        callIdSequence = CallIdFactory
-                .newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
+        // clients needs to have a call id generator capable of determining how many
+        // pending calls there are. So backpressure needs to be on
+        this.callIdSequence = CallIdFactory
+                .newCallIdSequence(true, maxAllowedConcurrentInvocations, backofftimeoutMs);
 
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
+    }
+
+    @Override
+    public long concurrentInvocations() {
+        return callIdSequence.concurrentInvocations();
     }
 
     private long initInvocationRetryPauseMillis() {

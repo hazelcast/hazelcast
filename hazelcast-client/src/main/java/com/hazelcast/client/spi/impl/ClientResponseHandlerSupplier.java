@@ -21,14 +21,18 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.MutableInteger;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Supplier;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_COUNT;
+import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 import static com.hazelcast.util.HashUtil.hashToIndex;
@@ -45,13 +49,21 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
  * <li>a multi threaded ClientResponseHandler that offloads the response processing
  * to a pool of ResponseThreads.</li>
  * </ol>
- *
+ * <p>
  * {@see InboundResponseHandlerSupplier}.
  */
 public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMessage>> {
 
+    // expert setting; we don't want to expose this to the public
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
+
+    // expert setting; we don't want to expose this to the public
+    // there can be some concurrent request from HZ itself that we need to exclude
+    // with a single user thread doing e.g. map.get, 4 is the minimum number of concurrent invocations
+    // before we consider the system to be actually concurrent and to process on response threads.
+    private static final HazelcastProperty MIN_CONCURRENT_INVOCATIONS
+            = new HazelcastProperty("hazelcast.client.responsequeue.dynamic.min.concurrent.invocations", "4");
 
     private static final ThreadLocal<MutableInteger> INT_HOLDER = new ThreadLocal<MutableInteger>() {
         @Override
@@ -66,35 +78,43 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
 
     private final ILogger logger;
     private final Consumer<ClientMessage> responseHandler;
+    private final boolean responseThreadsDynamic;
+    private final int minConcurrentInvocations;
 
     public ClientResponseHandlerSupplier(AbstractClientInvocationService invocationService) {
         this.invocationService = invocationService;
         this.client = invocationService.client;
         this.logger = invocationService.invocationLogger;
 
-        int responseThreadCount = client.getProperties().getInteger(RESPONSE_THREAD_COUNT);
+        HazelcastProperties properties = client.getProperties();
+        this.minConcurrentInvocations = properties.getInteger(MIN_CONCURRENT_INVOCATIONS);
+        int responseThreadCount = properties.getInteger(RESPONSE_THREAD_COUNT);
         if (responseThreadCount < 0) {
             throw new IllegalArgumentException(RESPONSE_THREAD_COUNT.getName() + " can't be smaller than 0");
         }
-        logger.info("Running with " + responseThreadCount + " response threads");
+        this.responseThreadsDynamic = properties.getBoolean(RESPONSE_THREAD_DYNAMIC);
+        logger.info("Running with " + responseThreadCount + " response threads, dynamic=" + responseThreadsDynamic);
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreads.length; k++) {
             responseThreads[k] = new ResponseThread(invocationService.client.getName() + ".responsethread-" + k + "-");
         }
 
-        switch (responseThreads.length) {
-            case 0:
-                this.responseHandler = new SyncResponseHandler();
-                break;
-            case 1:
-                this.responseHandler = new AsyncSingleThreadedResponseHandler();
-                break;
-            default:
-                this.responseHandler = new AsyncMultiThreadedResponseHandler();
+        if (responseThreadCount == 0) {
+            this.responseHandler = new SyncResponseHandler();
+        } else if (responseThreadsDynamic) {
+            this.responseHandler = new DynamicResponseHandler();
+        } else {
+            this.responseHandler = new AsyncResponseHandler();
         }
     }
 
     public void start() {
+        if (responseThreadsDynamic) {
+            // when dynamic mode is enabled, response threads should not be started.
+            // this is useful for ephemeral clients where thread creation can be a
+            // significant part of the total execution time.
+            return;
+        }
         for (ResponseThread responseThread : responseThreads) {
             responseThread.start();
         }
@@ -120,29 +140,40 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
     }
 
-    private void handleResponse(ClientMessage clientMessage) {
-        long correlationId = clientMessage.getCorrelationId();
+    private void handleResponse(ClientMessage message) {
+        long correlationId = message.getCorrelationId();
 
         ClientInvocation future = invocationService.deRegisterCallId(correlationId);
         if (future == null) {
-            logger.warning("No call for callId: " + correlationId + ", response: " + clientMessage);
+            logger.warning("No call for callId: " + correlationId + ", response: " + message);
             return;
         }
 
-        if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
-            future.notifyException(client.getClientExceptionFactory().createException(clientMessage));
+        if (ErrorCodec.TYPE == message.getMessageType()) {
+            future.notifyException(client.getClientExceptionFactory().createException(message));
         } else {
-            future.notify(clientMessage);
+            future.notify(message);
+        }
+    }
+
+    private ResponseThread nextResponseThread() {
+        if (responseThreads.length == 1) {
+            return responseThreads[0];
+        } else {
+            int index = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
+            return responseThreads[index];
         }
     }
 
     private class ResponseThread extends Thread {
         private final BlockingQueue<ClientMessage> responseQueue;
+        private final AtomicBoolean started = new AtomicBoolean();
 
         ResponseThread(String name) {
             super(name);
             setContextClassLoader(client.getClientConfig().getClassLoader());
-            this.responseQueue = new MPSCQueue<ClientMessage>(this, getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
+            this.responseQueue = new MPSCQueue<ClientMessage>(this,
+                    getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
         }
 
         @Override
@@ -167,6 +198,18 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
                 process(response);
             }
         }
+
+        private void queue(ClientMessage message) {
+            responseQueue.add(message);
+        }
+
+        @SuppressFBWarnings(value = "IA_AMBIGUOUS_INVOCATION_OF_INHERITED_OR_OUTER_METHOD",
+                justification = "The thread.start method is the one we want to call")
+        private void ensureStarted() {
+            if (!started.get() && started.compareAndSet(false, true)) {
+                start();
+            }
+        }
     }
 
     class SyncResponseHandler implements Consumer<ClientMessage> {
@@ -176,18 +219,26 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
     }
 
-    class AsyncSingleThreadedResponseHandler implements Consumer<ClientMessage> {
+
+    class AsyncResponseHandler implements Consumer<ClientMessage> {
         @Override
         public void accept(ClientMessage message) {
-          responseThreads[0].responseQueue.add(message);
+            nextResponseThread().queue(message);
         }
     }
 
-    class AsyncMultiThreadedResponseHandler implements Consumer<ClientMessage> {
+    // dynamically switches between direct processing on io thread and processing on
+    // response thread based on the number of invocations.
+    class DynamicResponseHandler  implements Consumer<ClientMessage> {
         @Override
         public void accept(ClientMessage message) {
-            int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
-            responseThreads[threadIndex].responseQueue.add(message);
+            if (invocationService.concurrentInvocations() <= minConcurrentInvocations) {
+                process(message);
+            } else {
+                ResponseThread responseThread = nextResponseThread();
+                responseThread.queue(message);
+                responseThread.ensureStarted();
+            }
         }
     }
 }

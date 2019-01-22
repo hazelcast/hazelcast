@@ -19,8 +19,8 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.spi.impl.ClientResponseHandlerSupplier.AsyncMultiThreadedResponseHandler;
-import com.hazelcast.client.spi.impl.ClientResponseHandlerSupplier.AsyncSingleThreadedResponseHandler;
+import com.hazelcast.client.spi.impl.ClientResponseHandlerSupplier.AsyncResponseHandler;
+import com.hazelcast.client.spi.impl.ClientResponseHandlerSupplier.DynamicResponseHandler;
 import com.hazelcast.client.spi.impl.ClientResponseHandlerSupplier.SyncResponseHandler;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -36,6 +36,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_COUNT;
+import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -54,31 +55,44 @@ public class ClientResponseHandlerSupplierTest extends ClientTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void whenNegativeResponseThreads() {
-        getResponseHandler(-1);
+        getResponseHandler(-1, false);
     }
 
     @Test
     public void whenZeroResponseThreads() {
-        Consumer<ClientMessage> handler = getResponseHandler(0);
+        Consumer<ClientMessage> handler = getResponseHandler(0, false);
         assertInstanceOf(SyncResponseHandler.class, handler);
     }
 
     @Test
-    public void whenOneResponseThreads() {
-        Consumer<ClientMessage> handler = getResponseHandler(1);
-        assertInstanceOf(AsyncSingleThreadedResponseHandler.class, handler);
+    public void whenOneResponseThreads_andStatic() {
+        Consumer<ClientMessage> handler = getResponseHandler(1, false);
+        assertInstanceOf(AsyncResponseHandler.class, handler);
     }
 
     @Test
-    public void whenMultipleResponseThreads() {
-        Consumer<ClientMessage> handler = getResponseHandler(2);
-        assertInstanceOf(AsyncMultiThreadedResponseHandler.class, handler);
+    public void whenMultipleResponseThreads_andStatic() {
+        Consumer<ClientMessage> handler = getResponseHandler(2, false);
+        assertInstanceOf(AsyncResponseHandler.class, handler);
     }
 
-    private Consumer<ClientMessage> getResponseHandler(int threadCount) {
+    @Test
+    public void whenOneResponseThreads_andDynamic() {
+        Consumer<ClientMessage> handler = getResponseHandler(1, true);
+        assertInstanceOf(DynamicResponseHandler.class, handler);
+    }
+
+    @Test
+    public void whenMultipleResponseThreads_andDynamic() {
+        Consumer<ClientMessage> handler = getResponseHandler(2, true);
+        assertInstanceOf(DynamicResponseHandler.class, handler);
+    }
+
+    private Consumer<ClientMessage> getResponseHandler(int threadCount, boolean dynamic) {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(
                 new ClientConfig()
-                        .setProperty(RESPONSE_THREAD_COUNT.getName(), "" + threadCount));
+                        .setProperty(RESPONSE_THREAD_COUNT.getName(), "" + threadCount)
+                        .setProperty(RESPONSE_THREAD_DYNAMIC.getName(), "" + dynamic));
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) clientInstanceImpl.getInvocationService();
 
