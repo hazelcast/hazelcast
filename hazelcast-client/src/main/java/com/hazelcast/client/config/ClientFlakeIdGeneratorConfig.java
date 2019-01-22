@@ -70,7 +70,7 @@ public class ClientFlakeIdGeneratorConfig {
      * @see #setPrefetchCount(int)
      */
     public int getPrefetchCount() {
-        return Math.max(1, prefetchCount);
+        return prefetchCount;
     }
 
     /**

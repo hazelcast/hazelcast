@@ -20,7 +20,7 @@ import com.hazelcast.core.Member;
 
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} indicating that an operation is executed on
- * the wrong machine.
+ * a wrong member.
  */
 public class WrongTargetException extends RetryableHazelcastException {
 
