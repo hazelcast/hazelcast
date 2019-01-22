@@ -85,7 +85,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
         addresses.put(new Address("10.47.0.9", 32298), new Address("54.245.77.185", 32298));
         addresses.put(new Address("10.47.0.10", 32298), new Address("54.186.232.37", 32298));
 
-        httpsServer = HttpServer.create(new InetSocketAddress(8000), 0);
+        httpsServer = HttpServer.create(new InetSocketAddress(0), 0);
 
         httpsServer.createContext("/", new MyHandler());
         httpsServer.setExecutor(null); // creates a default executor
@@ -99,7 +99,8 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
 
     @Test
     public void testWithValidToken() {
-        String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint("http://127.0.0.1:8000", validToken);
+        String cloudBaseUrl = "http://127.0.0.1:" + httpsServer.getAddress().getPort();
+        String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudBaseUrl, validToken);
         HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE);
         Map<Address, Address> addressMap = cloudDiscovery.discoverNodes();
 
@@ -112,7 +113,8 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
 
     @Test(expected = HazelcastException.class)
     public void testWithInvalidToken() {
-        String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint("http://127.0.0.1:8000", "invalid");
+        String cloudBaseUrl = "http://127.0.0.1:" + httpsServer.getAddress().getPort();
+        String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudBaseUrl, "invalid");
         HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE);
         cloudDiscovery.discoverNodes();
     }
