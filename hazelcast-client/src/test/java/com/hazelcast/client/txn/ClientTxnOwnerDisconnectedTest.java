@@ -18,14 +18,10 @@ package com.hazelcast.client.txn;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.HazelcastClientFactory;
-import com.hazelcast.client.HazelcastClientManager;
+import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Addresses;
-import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.core.Hazelcast;
@@ -88,17 +84,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         };
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        final HazelcastInstance client = HazelcastClientManager.newHazelcastClient(clientConfig, new HazelcastClientFactory() {
-            @Override
-            public HazelcastClientInstanceImpl createHazelcastInstanceClient(ClientConfig config, ClientConnectionManagerFactory factory) {
-                return new HazelcastClientInstanceImpl(config, factory, addressProvider);
-            }
-
-            @Override
-            public HazelcastClientProxy createProxy(HazelcastClientInstanceImpl client) {
-                return new HazelcastClientProxy(client);
-            }
-        });
+        final HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, addressProvider);
 
         Hazelcast.newHazelcastInstance();
         final TransactionContext context = client.newTransactionContext();
@@ -146,18 +132,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         };
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        final HazelcastInstance client = HazelcastClientManager.newHazelcastClient(clientConfig, new HazelcastClientFactory() {
-            @Override
-            public HazelcastClientInstanceImpl createHazelcastInstanceClient(ClientConfig config, ClientConnectionManagerFactory factory) {
-                return new HazelcastClientInstanceImpl(config, factory, addressProvider);
-            }
-
-            @Override
-            public HazelcastClientProxy createProxy(HazelcastClientInstanceImpl client) {
-                return new HazelcastClientProxy(client);
-            }
-        });
-
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, addressProvider);
 
         Hazelcast.newHazelcastInstance();
 
@@ -205,17 +180,7 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         clientConfig.setProperty(ClientProperty.ALLOW_INVOCATIONS_WHEN_DISCONNECTED.getName(), "true");
-        final HazelcastInstance client = HazelcastClientManager.newHazelcastClient(clientConfig, new HazelcastClientFactory() {
-            @Override
-            public HazelcastClientInstanceImpl createHazelcastInstanceClient(ClientConfig config, ClientConnectionManagerFactory factory) {
-                return new HazelcastClientInstanceImpl(config, factory, addressProvider);
-            }
-
-            @Override
-            public HazelcastClientProxy createProxy(HazelcastClientInstanceImpl client) {
-                return new HazelcastClientProxy(client);
-            }
-        });
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, addressProvider);
 
         Hazelcast.newHazelcastInstance();
 

@@ -17,7 +17,7 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CachePutAllTest;
-import com.hazelcast.client.HazelcastClientManager;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -61,7 +61,7 @@ public class ClientCachePutAllTest extends CachePutAllTest {
         // Client factory is already shutdown at this test's super class (`CachePutAllTest`)
         // because it is returned instance factory from overridden `getInstanceFactory` method.
         client = null;
-        HazelcastClientManager.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 
     @Override

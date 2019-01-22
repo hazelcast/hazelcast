@@ -18,7 +18,6 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheCreationTest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.HazelcastClientManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.spi.properties.ClientProperty;
@@ -110,6 +109,6 @@ public class ClientCacheCreationTest extends CacheCreationTest {
     @Override
     public void teardown() {
         super.teardown();
-        HazelcastClientManager.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 }
