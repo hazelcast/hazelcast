@@ -19,6 +19,8 @@ package com.hazelcast.query.impl.getters;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a query path for Json querying. Parsing of a query path
@@ -28,6 +30,11 @@ import java.nio.charset.Charset;
 public class JsonPathCursor {
 
     private static final Charset UTF8_CHARSET = Charset.forName("UTF8");
+    private static final int DEFAULT_PATH_ELEMENT_COUNT = 5;
+
+    private List<String> stringList;
+    private List<byte[]> utfList;
+    private List<Boolean> isArrayList;
 
     private String attributePath;
     private String current;
@@ -37,15 +44,66 @@ public class JsonPathCursor {
     private boolean isAny;
     private int cursor;
 
+    private JsonPathCursor(String originalPath, List<String> stringList, List<byte[]> utfList, List<Boolean> isArrayList) {
+        this.attributePath = originalPath;
+        this.stringList = stringList;
+        this.utfList = utfList;
+        this.isArrayList = isArrayList;
+    }
+
+    /**
+     * Creates a shallow copy of this object
+     * @param other
+     */
+    JsonPathCursor(JsonPathCursor other) {
+        this.attributePath = other.attributePath;
+        this.stringList = other.stringList;
+        this.utfList = other.utfList;
+        this.isArrayList = other.isArrayList;
+    }
+
     /**
      * Creates a new cursor from given attribute path.
      * @param attributePath
      */
-    public JsonPathCursor(String attributePath) {
-        this.attributePath = attributePath;
-        cursor = 0;
+    public static JsonPathCursor createCursor(String attributePath) {
+        ArrayList<String> stringList = new ArrayList<String>(DEFAULT_PATH_ELEMENT_COUNT);
+        ArrayList<byte[]> utfList = new ArrayList<byte[]>(DEFAULT_PATH_ELEMENT_COUNT);
+        ArrayList<Boolean> isArrayList = new ArrayList<Boolean>(DEFAULT_PATH_ELEMENT_COUNT);
+        int start = 0;
+        int end;
+        while (start < attributePath.length()) {
+            boolean isArray = false;
+            try {
+                while (attributePath.charAt(start) == '[' || attributePath.charAt(start) == '.') {
+                    start++;
+                }
+            } catch (IndexOutOfBoundsException e) {
+                throw createIllegalArgumentException(attributePath);
+            }
+            end = start + 1;
+            while (end < attributePath.length()) {
+                char c = attributePath.charAt(end);
+                if ('.' == c || '[' == c) {
+                    break;
+                } else if (']' == c) {
+                    isArray = true;
+                    break;
+                }
+                end++;
+            }
+            String part = attributePath.substring(start, end);
+            stringList.add(part);
+            utfList.add(part.getBytes(UTF8_CHARSET));
+            isArrayList.add(isArray);
+            start = end + 1;
+        }
+        return new JsonPathCursor(attributePath, stringList, utfList, isArrayList);
     }
 
+    private static IllegalArgumentException createIllegalArgumentException(String attributePath) {
+        return new IllegalArgumentException("Malformed query path " + attributePath);
+    }
 
     public String getAttributePath() {
         return attributePath;
@@ -84,9 +142,6 @@ public class JsonPathCursor {
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "Making a copy reverses the benefit of this method")
     public byte[] getCurrentAsUTF8() {
-        if (currentAsUtf8 == null) {
-            currentAsUtf8 = current.getBytes(UTF8_CHARSET);
-        }
         return currentAsUtf8;
     }
 
@@ -123,58 +178,23 @@ public class JsonPathCursor {
     }
 
     private void next() {
+        current = null;
         currentAsUtf8 = null;
         currentArrayIndex = -1;
         isAny = false;
         isArray = false;
-        int nextCursor = iterate();
-        if (nextCursor == -1) {
-            return;
-        }
-        current = attributePath.substring(cursor, nextCursor);
-        cursor = nextCursor + 1;
-        if (isArray) {
-            if ("any".equals(current)) {
-                isAny = true;
-            } else {
-                try {
+        if (cursor < stringList.size()) {
+            current = stringList.get(cursor);
+            currentAsUtf8 = utfList.get(cursor);
+            isArray = isArrayList.get(cursor);
+            if (isArray) {
+                if ("any".equals(current)) {
+                    isAny = true;
+                } else {
                     currentArrayIndex = Integer.parseInt(current);
-                } catch (NumberFormatException e) {
-                    throw createIllegalArgumentException();
                 }
             }
+            cursor++;
         }
-    }
-
-    private int iterate() {
-        if (cursor < attributePath.length()) {
-            try {
-                while (attributePath.charAt(cursor) == '[' || attributePath.charAt(cursor) == '.') {
-                    cursor++;
-                }
-            } catch (IndexOutOfBoundsException e) {
-                throw createIllegalArgumentException();
-            }
-        } else {
-            current = null;
-            return -1;
-        }
-        for (int i = cursor; i < attributePath.length(); i++) {
-            switch (attributePath.charAt(i)) {
-                case '.':
-                case '[':
-                    return i;
-                case ']':
-                    isArray = true;
-                    return i;
-                default:
-                    // no-op
-            }
-        }
-        return attributePath.length();
-    }
-
-    private IllegalArgumentException createIllegalArgumentException() {
-        return new IllegalArgumentException("Malformed query path " + attributePath);
     }
 }

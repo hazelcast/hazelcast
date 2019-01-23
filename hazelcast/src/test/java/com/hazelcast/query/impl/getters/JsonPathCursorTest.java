@@ -34,7 +34,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testOneItemPath() {
-        JsonPathCursor cursor = new JsonPathCursor("abc");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("abc");
         assertEquals("abc", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -44,19 +44,19 @@ public class JsonPathCursorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testPathWithUnMatchedCloseBraceShouldThrowIllegalArgumentException() {
-        JsonPathCursor cursor = new JsonPathCursor("a]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("a]");
         cursor.getNext();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testPathWithNonNumberArrayIndexShouldThrowIllegalArgumentException() {
-        JsonPathCursor cursor = new JsonPathCursor("[a]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[a]");
         cursor.getNext();
     }
 
     @Test
     public void testOneItemArrayPath() {
-        JsonPathCursor cursor = new JsonPathCursor("[4]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[4]");
         assertEquals("4", cursor.getNext());
         assertEquals(4, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -66,7 +66,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testTwoItemPath() {
-        JsonPathCursor cursor = new JsonPathCursor("abc.def");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("abc.def");
         assertEquals("abc", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -80,7 +80,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testTwoArrayItemPath() {
-        JsonPathCursor cursor = new JsonPathCursor("[4][1]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[4][1]");
         assertEquals("4", cursor.getNext());
         assertEquals(4, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -94,7 +94,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testTwoItemPath_whenTheSecondIsArray() {
-        JsonPathCursor cursor = new JsonPathCursor("abc[1]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("abc[1]");
         assertEquals("abc", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -108,7 +108,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testTwoItemPath_whenTheFirstIsArray() {
-        JsonPathCursor cursor = new JsonPathCursor("[1].abc");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[1].abc");
         assertEquals("1", cursor.getNext());
         assertEquals(1, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -122,7 +122,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testOneItemArrayPath_whenAny() {
-        JsonPathCursor cursor = new JsonPathCursor("[any]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[any]");
         assertEquals("any", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertTrue(cursor.isAny());
@@ -132,7 +132,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testTwoItemArrayPath_whenAny() {
-        JsonPathCursor cursor = new JsonPathCursor("[any][any]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[any][any]");
         assertEquals("any", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertTrue(cursor.isAny());
@@ -146,7 +146,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testTwoItemPath_whenFirstIsAny() {
-        JsonPathCursor cursor = new JsonPathCursor("[any].abc");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[any].abc");
         assertEquals("any", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertTrue(cursor.isAny());
@@ -160,7 +160,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testTwoItemPath_whenSecondIsAny() {
-        JsonPathCursor cursor = new JsonPathCursor("abc[any]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("abc[any]");
         assertEquals("abc", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -174,7 +174,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testThreeItemPath_whenAllNonArray() {
-        JsonPathCursor cursor = new JsonPathCursor("abc.def.ghi");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("abc.def.ghi");
         assertEquals("abc", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -192,7 +192,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testThreeItemPath_whenNonArray_array_any() {
-        JsonPathCursor cursor = new JsonPathCursor("abc[12][any]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("abc[12][any]");
         assertEquals("abc", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -210,7 +210,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testThreeItemPath_whenNonArray_any_array() {
-        JsonPathCursor cursor = new JsonPathCursor("abc[any][12]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("abc[any][12]");
         assertEquals("abc", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -228,7 +228,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testThreeItemPath_whenArray_nonArray_any() {
-        JsonPathCursor cursor = new JsonPathCursor("[12].abc[any]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[12].abc[any]");
         assertEquals("12", cursor.getNext());
         assertEquals(12, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -246,7 +246,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testThreeItemPath_whenArray_any_nonArray() {
-        JsonPathCursor cursor = new JsonPathCursor("[12][any].abc");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[12][any].abc");
         assertEquals("12", cursor.getNext());
         assertEquals(12, cursor.getArrayIndex());
         assertFalse(cursor.isAny());
@@ -264,7 +264,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testThreeItemPath_whenAny_nonArray_array() {
-        JsonPathCursor cursor = new JsonPathCursor("[any].abc[12]");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[any].abc[12]");
         assertEquals("any", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertTrue(cursor.isAny());
@@ -282,7 +282,7 @@ public class JsonPathCursorTest {
 
     @Test
     public void testThreeItemPath_whenAny_array_nonArray() {
-        JsonPathCursor cursor = new JsonPathCursor("[any][12].abc");
+        JsonPathCursor cursor = JsonPathCursor.createCursor("[any][12].abc");
         assertEquals("any", cursor.getNext());
         assertEquals(-1, cursor.getArrayIndex());
         assertTrue(cursor.isAny());

@@ -161,6 +161,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.haveAtLeastOneIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
+            queryableEntry.setMetadata(record.getMetadata());
             indexes.putEntry(queryableEntry, oldValue, Index.OperationSource.USER);
         }
     }

@@ -56,7 +56,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
             default:
                 record = statisticsEnabled ? new CachedDataRecordWithStats(data) : new CachedDataRecord(data);
         }
-
+        record.setKey(key);
         record.setMetadata(initializeMetadata(key, data));
         return record;
     }
