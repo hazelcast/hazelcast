@@ -25,9 +25,11 @@
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/](impl|internal)[\\/]"/>
 
+    <!-- Exclude command line classes from Javadoc checks -->
+    <suppress checks="Javadoc(Type|Method|Variable)" files="com[\\/]hazelcast[\\/]jet[\\/]server[\\/]" />
+
     <!-- Exclude variations of JDK classes from Javadoc checks -->
     <suppress checks="Javadoc(Type|Method|Variable)" files="com[\\/]hazelcast[\\/]jet[\\/]function" />
-    <suppress checks="Javadoc(Type|Method|Variable)" files="com[\\/]hazelcast[\\/]jet[\\/]stream[\\/]Distributed.+\.java" />
 
     <!-- Javadoc includes links to JDK classes -->
     <suppress checks="UnusedImports" files="com[\\/]hazelcast[\\/]jet[\\/]stream[\\/]Distributed.+\.java" />

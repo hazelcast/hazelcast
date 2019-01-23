@@ -46,7 +46,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
@@ -165,7 +164,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     private ClientInvocation invocation(ClientMessage request, Address invocationAddr) {
         return new ClientInvocation(
-                container().getHazelcastClient(), request, "jobId=" + idToString(getId()), invocationAddr
+                container().getHazelcastClient(), request, "jobId=" + getIdString(), invocationAddr
         );
     }
 

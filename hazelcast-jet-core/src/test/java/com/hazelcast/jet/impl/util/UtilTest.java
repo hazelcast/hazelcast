@@ -111,17 +111,6 @@ public class UtilTest extends JetTestSupport {
     }
 
     @Test
-    public void test_idFromString() {
-        assertEquals(0, Util.idFromString("0000-0000-0000-0000"));
-        assertEquals(1, Util.idFromString("0000-0000-0000-0001"));
-        assertEquals(Long.MAX_VALUE, Util.idFromString("7fff-ffff-ffff-ffff"));
-        assertEquals(Long.MIN_VALUE, Util.idFromString("8000-0000-0000-0000"));
-        assertEquals(-1, Util.idFromString("ffff-ffff-ffff-ffff"));
-        assertEquals(1234567890123456789L, Util.idFromString("1122-10f4-7de9-8115"));
-        assertEquals(-1234567890123456789L, Util.idFromString("eedd-ef0b-8216-7eeb"));
-    }
-
-    @Test
     public void test_calculateGcd2() {
         assertEquals(2, gcd(0L, 2L));
         assertEquals(1, gcd(1L, 2L));

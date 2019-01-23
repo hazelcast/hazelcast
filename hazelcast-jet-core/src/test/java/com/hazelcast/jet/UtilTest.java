@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.Util.idFromString;
 import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
 
@@ -46,5 +47,16 @@ public class UtilTest extends JetTestSupport {
         assertEquals("ffff-ffff-ffff-ffff", idToString(-1));
         assertEquals("1122-10f4-7de9-8115", idToString(1234567890123456789L));
         assertEquals("eedd-ef0b-8216-7eeb", idToString(-1234567890123456789L));
+    }
+
+    @Test
+    public void test_idFromString() {
+        assertEquals(0, idFromString("0000-0000-0000-0000"));
+        assertEquals(1, idFromString("0000-0000-0000-0001"));
+        assertEquals(Long.MAX_VALUE, idFromString("7fff-ffff-ffff-ffff"));
+        assertEquals(Long.MIN_VALUE, idFromString("8000-0000-0000-0000"));
+        assertEquals(-1, idFromString("ffff-ffff-ffff-ffff"));
+        assertEquals(1234567890123456789L, idFromString("1122-10f4-7de9-8115"));
+        assertEquals(-1234567890123456789L, idFromString("eedd-ef0b-8216-7eeb"));
     }
 }

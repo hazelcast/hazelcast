@@ -27,12 +27,15 @@ import com.hazelcast.map.journal.EventJournalMapEvent;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 /**
  * Miscellaneous utility methods useful in DAG building logic.
  */
 public final class Util {
+
     private static final char[] ID_TEMPLATE = "0000-0000-0000-0000".toCharArray();
+    private static final Pattern ID_PATTERN = Pattern.compile("(\\p{XDigit}{4}-){3}\\p{XDigit}{4}");
 
     private Util() {
     }
@@ -112,5 +115,24 @@ public final class Util {
             }
         }
         return new String(buf);
+    }
+
+    /**
+     * Parses the jobId formatted with {@link
+     * Util#idToString(long)}.
+     *
+     * <p>The method is lenient: if the string doesn't match the structure
+     * output by {@code idToString} or if the string is null, it will return
+     * -1.
+     *
+     * @return the parsed ID or -1 if parsing failed.
+     */
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static long idFromString(String str) {
+        if (str == null || !ID_PATTERN.matcher(str).matches()) {
+            return -1;
+        }
+        str = str.replaceAll("-", "");
+        return Long.parseUnsignedLong(str, 16);
     }
 }

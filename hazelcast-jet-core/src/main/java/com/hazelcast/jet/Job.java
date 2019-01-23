@@ -36,9 +36,17 @@ public interface Job {
     /**
      * Returns the ID of this job.
      *
-     * @throws IllegalStateException if the job has not started yet, and thus has no id.
+     * @throws IllegalStateException if the job has not started yet, and thus has no ID.
      */
     long getId();
+
+    /**
+     * Returns the string representation of this job's ID
+     */
+    @Nonnull
+    default String getIdString() {
+        return Util.idToString(getId());
+    }
 
     /**
      * Returns the configuration this job was submitted with. Changes made to the
@@ -169,7 +177,7 @@ public interface Job {
     void cancel();
 
     /**
-     * Initiates an export of a state snapshot, saves it under the given name,
+     * Exports and saves a state snapshot with the given name,
      * and then cancels the job without processing any more data after the
      * barrier (graceful cancellation). It's similar to {@link #suspend()}
      * followed by a {@link #cancel()}, except that it won't process any more
@@ -201,7 +209,7 @@ public interface Job {
     JobStateSnapshot cancelAndExportSnapshot(String name);
 
     /**
-     * Initiates an export of a state snapshot and saves it under the given
+     * Exports a state snapshot and saves it under the given
      * name. You can start a new job using the exported state using {@link
      * JobConfig#setInitialSnapshotName(String)}.
      * <p>
