@@ -25,7 +25,9 @@ import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
@@ -41,6 +43,9 @@ public class ClusterStateChangeTest extends JetTestSupport {
     private static final int LOCAL_PARALLELISM = 4;
     private static final int TOTAL_PARALLELISM = NODE_COUNT * LOCAL_PARALLELISM;
 
+    @Rule
+    public final ExpectedException thrown = ExpectedException.none();
+
     private JetInstance[] members;
     private JetInstance jet;
     private Cluster cluster;
@@ -52,21 +57,31 @@ public class ClusterStateChangeTest extends JetTestSupport {
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         members = createJetMembers(config, NODE_COUNT);
+
+        assertTrueEventually(() -> {
+            for (JetInstance instance : members) {
+                assertClusterSizeEventually(NODE_COUNT, instance.getHazelcastInstance());
+            }
+        });
+
         for (JetInstance member : members) {
             if (!getNodeEngineImpl(member).getClusterService().isMaster()) {
                 jet = member;
                 break;
             }
         }
+
         cluster = jet.getCluster();
         dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(() -> new MockPS(NoOutputSourceP::new, NODE_COUNT))));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void when_clusterPassive_then_jobSubmissionFails() {
         cluster.changeClusterState(PASSIVE);
         assertEquals("Cluster state", PASSIVE, cluster.getClusterState());
+
+        thrown.expect(IllegalStateException.class);
         jet.newJob(dag);
     }
 

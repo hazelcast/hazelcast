@@ -23,6 +23,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -41,6 +42,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +55,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.Util.idToString;
@@ -65,12 +66,15 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.util.executor.ExecutorType.CACHED;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * A service that handles MasterContexts on the coordinator member.
@@ -95,6 +99,7 @@ public class JobCoordinationService {
     private final Object lock = new Object();
     private volatile boolean isShutDown;
     private volatile boolean isClusterEnteringPassiveState;
+    private volatile boolean jobsScanned;
 
     private final AtomicInteger scaleUpScheduledCount = new AtomicInteger();
 
@@ -144,15 +149,25 @@ public class JobCoordinationService {
         JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize, false);
         MasterContext masterContext = new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
 
+        boolean hasDuplicateJobName;
         synchronized (lock) {
+            assertIsMaster("Cannot submit job " + idToString(jobId) + " from non-master node");
             checkOperationalState();
-
-            // just try to initiate the coordination
-            MasterContext prev = masterContexts.putIfAbsent(jobId, masterContext);
-            if (prev != null) {
-                logger.fine("Joining to already existing masterContext " + prev.jobIdString());
-                return;
+            hasDuplicateJobName = config.getName() != null && hasActiveJobWithName(config.getName());
+            if (!hasDuplicateJobName) {
+                // just try to initiate the coordination
+                MasterContext prev = masterContexts.putIfAbsent(jobId, masterContext);
+                if (prev != null) {
+                    logger.fine("Joining to already existing masterContext " + prev.jobIdString());
+                    return;
+                }
             }
+        }
+
+        if (hasDuplicateJobName) {
+            jobRepository.deleteJob(jobId);
+            throw new JobAlreadyExistsException("Another active job with equal name (" + config.getName()
+                    + ") exists: " + idToString(jobId));
         }
 
         // If job is not currently running, it might be that it is just completed
@@ -165,6 +180,20 @@ public class JobCoordinationService {
 
         logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request from client");
         nodeEngine.getExecutionService().execute(COORDINATOR_EXECUTOR_NAME, () -> tryStartJob(masterContext));
+    }
+
+    private boolean hasActiveJobWithName(@Nonnull String jobName) {
+        // if scanJob() has not run yet, master context objects may not be initialized.
+        // in this case, we cannot check if the new job submission has a duplicate job name.
+        // therefore, we will retry until scanJob() task runs at least once.
+        if (!jobsScanned) {
+            throw new RetryableHazelcastException("Cannot submit job with name '" + jobName
+                    + "' before the master node initializes job coordination service state");
+        }
+
+        return masterContexts.values()
+                             .stream()
+                             .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
     }
 
     public void shutdown() {
@@ -193,8 +222,14 @@ public class JobCoordinationService {
 
     public void reset() {
         assert !isMaster() : "this member is a master";
-        masterContexts.values().forEach(ctx -> ctx.setFinalResult(new CancellationException()));
-        masterContexts.clear();
+        List<MasterContext> ctxes;
+        synchronized (lock) {
+            ctxes = new ArrayList<>(masterContexts.values());
+            masterContexts.clear();
+            jobsScanned = false;
+        }
+
+        ctxes.forEach(ctx -> ctx.setFinalResult(new CancellationException()));
     }
 
     public CompletableFuture<Void> joinSubmittedJob(long jobId) {
@@ -269,23 +304,22 @@ public class JobCoordinationService {
     }
 
     /**
-     * Return the job IDs of jobs with given name, sorted by creation time, newest first.
+     * Return the job IDs of jobs with given name, sorted by <active/completed, creation time>, active & newest first.
      */
-    public List<Long> getJobIds(String name) {
-        Map<Long, Long> jobs = new HashMap<>();
+    public List<Long> getJobIds(@Nonnull String name) {
+        Map<Long, Long> jobs = jobRepository.getJobResults(name).stream()
+                .collect(toMap(JobResult::getJobId, JobResult::getCreationTime));
 
-        jobRepository.getJobRecords(name).forEach(r -> jobs.put(r.getJobId(), r.getCreationTime()));
-
-        masterContexts.values().stream()
-                      .filter(ctx -> name.equals(ctx.jobConfig().getName()))
-                      .forEach(ctx -> jobs.put(ctx.jobId(), ctx.jobRecord().getCreationTime()));
-
-        jobRepository.getJobResults(name)
-                     .forEach(r -> jobs.put(r.getJobId(), r.getCreationTime()));
+        for (MasterContext ctx : masterContexts.values()) {
+            if (name.equals(ctx.jobConfig().getName())) {
+                jobs.putIfAbsent(ctx.jobId(), Long.MAX_VALUE);
+            }
+        }
 
         return jobs.entrySet().stream()
-                   .sorted(comparing((Function<Entry<Long, Long>, Long>) Entry::getValue).reversed())
-                   .map(Entry::getKey).collect(toList());
+                   .sorted(comparing(Entry<Long, Long>::getValue).reversed())
+                   .map(Entry::getKey)
+                   .collect(toList());
     }
 
     /**
@@ -455,7 +489,7 @@ public class JobCoordinationService {
 
     void onMemberLeave(String uuid) {
         if (membersShuttingDown.remove(uuid) != null) {
-            LoggingUtil.logFine(logger, "Removed a shutting-down member: %s, now shuttingDownMembers=%s",
+            logFine(logger, "Removed a shutting-down member: %s, now shuttingDownMembers=%s",
                     uuid, membersShuttingDown.keySet());
         }
     }
@@ -643,8 +677,12 @@ public class JobCoordinationService {
             return masterContext.jobCompletionFuture();
         }
 
-        logger.info("Starting job " + idToString(masterContext.jobId()) + ": " + reason);
-        tryStartJob(masterContext);
+        if (jobExecutionRecord.isSuspended()) {
+            logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
+        } else {
+            logger.info("Starting job " + jobId + ": " + reason);
+            tryStartJob(masterContext);
+        }
 
         return masterContext.jobCompletionFuture();
     }
@@ -711,12 +749,14 @@ public class JobCoordinationService {
             for (JobRecord jobRecord : jobs) {
                 JobExecutionRecord jobExecutionRecord = ensureExecutionRecord(jobRecord.getJobId(),
                         jobRepository.getJobExecutionRecord(jobRecord.getJobId()));
-                if (!jobExecutionRecord.isSuspended()) {
-                    startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord,
-                            "discovered by scanning of JobRecords");
-                }
+                startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord, "discovered by scanning of JobRecords");
             }
             performCleanup();
+            if (!jobsScanned) {
+                synchronized (lock) {
+                    jobsScanned = true;
+                }
+            }
         } catch (Exception e) {
             if (e instanceof HazelcastInstanceNotActiveException) {
                 return;

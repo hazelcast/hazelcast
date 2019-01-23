@@ -47,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
  * {@link Job} proxy on client.
@@ -98,8 +97,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         ClientMessage request = JetResumeJobCodec.encodeRequest(getId());
         try {
             new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
-        } catch (Exception e) {
-            throw rethrow(e);
+        } catch (Throwable t) {
+            throw rethrow(t);
         }
     }
 
@@ -108,8 +107,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, true);
         try {
             new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
-        } catch (Exception e) {
-            throw rethrow(e);
+        } catch (Throwable t) {
+            throw rethrow(t);
         }
         return container().getJobStateSnapshot(name);
     }
@@ -119,8 +118,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, false);
         try {
             new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
-        } catch (Exception e) {
-            throw rethrow(e);
+        } catch (Throwable t) {
+            throw rethrow(t);
         }
         return container().getJobStateSnapshot(name);
     }
@@ -131,19 +130,21 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         try {
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response).response;
-        } catch (Exception e) {
-            throw rethrow(e);
+        } catch (Throwable t) {
+            throw rethrow(t);
         }
     }
 
     @Override
     protected JobConfig doGetJobConfig() {
         ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
-        return uncheckCall(() -> {
+        try {
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
             Data data = JetGetJobConfigCodec.decodeResponse(response).response;
             return serializationService().toObject(data);
-        });
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     @Override

@@ -31,6 +31,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -194,12 +195,21 @@ public final class JetBootstrap {
 
         @Nonnull @Override
         public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
+            return instance.newJob(dag, updateJobConfig(config));
+        }
+
+        @Nonnull @Override
+        public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
+            return instance.newJobIfAbsent(dag, updateJobConfig(config));
+        }
+
+        private JobConfig updateJobConfig(@Nonnull JobConfig config) {
             if (jarName != null) {
                 config.addJar(jarName);
             }
             config.setInitialSnapshotName(snapshotName);
             config.setName(jobName);
-            return instance.newJob(dag, config);
+            return config;
         }
 
         @Nonnull @Override
@@ -245,6 +255,26 @@ public final class JetBootstrap {
         @Override
         public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
             return instance.existsDistributedObject(serviceName, objectName);
+        }
+
+        @Override
+        public ILogger getLogger() {
+            return instance.getLogger();
+        }
+
+        @Override
+        public Job newJobProxy(long jobId) {
+            return instance.newJobProxy(jobId);
+        }
+
+        @Override
+        public Job newJobProxy(long jobId, DAG dag, JobConfig config) {
+            return instance.newJobProxy(jobId, dag, config);
+        }
+
+        @Override
+        public List<Long> getJobIdsByName(String name) {
+            return instance.getJobIdsByName(name);
         }
     }
 }

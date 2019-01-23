@@ -24,6 +24,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.RestartableException;
+import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.datamodel.Tuple3;
@@ -53,6 +54,8 @@ public final class ExceptionUtil {
                     (ExceptionFactory) TopologyChangedException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class,
                     (ExceptionFactory) JobNotFoundException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class,
+                    (ExceptionFactory) JobAlreadyExistsException::new),
     };
 
     private ExceptionUtil() { }

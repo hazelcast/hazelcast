@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.util.Preconditions;
 
@@ -57,9 +58,13 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Sets the name for the job. Job names do not have to be unique but it's
-     * good to keep them unique to be able to distinguish them in logs and the
-     * Management Center.
+     * Sets the name of the job. There can be at most one active job in the
+     * cluster with particular name, however, the name can be reused after the
+     * previous job with that name completed or failed. See {@link
+     * JetInstance#newJobIfAbsent}. An active job is a job that is running,
+     * suspended or waiting to be run.
+     * <p>
+     * The job name is printed in logs and is visible in Jet Management Center.
      * <p>
      * The default value is {@code null}.
      *

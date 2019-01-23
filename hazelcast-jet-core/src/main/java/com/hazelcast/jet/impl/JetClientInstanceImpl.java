@@ -37,10 +37,10 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.metrics.management.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.jet.impl.metrics.management.MetricsResultSet;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -50,8 +50,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -85,41 +84,18 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     }
 
     @Nonnull @Override
-    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        long jobId = uploadResourcesAndAssignId(config);
-        return new ClientJobProxy(this, jobId, dag, config);
-    }
-
-    @Nonnull @Override
     public List<Job> getJobs() {
         ClientInvocation invocation = new ClientInvocation(
                 client, JetGetJobIdsCodec.encodeRequest(), null, masterAddress(client.getCluster())
         );
-        return uncheckCall(() -> {
+
+        try {
             ClientMessage response = invocation.invoke().get();
             Set<Long> jobs = serializationService.toObject(JetGetJobIdsCodec.decodeResponse(response).response);
             return jobs.stream().map(jobId -> new ClientJobProxy(this, jobId)).collect(toList());
-        });
-    }
-
-    @Override
-    public Job getJob(long jobId) {
-        try {
-            Job job = new ClientJobProxy(this, jobId);
-            job.getStatus();
-            return job;
-        } catch (Exception e) {
-            if (peel(e) instanceof JobNotFoundException) {
-                return null;
-            }
-
-            throw e;
+        } catch (Throwable t) {
+            throw rethrow(t);
         }
-    }
-
-    @Nonnull @Override
-    public List<Job> getJobs(@Nonnull String name) {
-        return getJobIdsByName(name).stream().map(jobId -> new ClientJobProxy(this, jobId)).collect(toList());
     }
 
     /**
@@ -175,9 +151,25 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         );
     }
 
-    private List<Long> getJobIdsByName(String name) {
+    @Override
+    public List<Long> getJobIdsByName(String name) {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsByNameCodec.encodeRequest(name),
                 response -> JetGetJobIdsByNameCodec.decodeResponse(response).response);
+    }
+
+    @Override
+    public Job newJobProxy(long jobId, DAG dag, JobConfig config) {
+        return new ClientJobProxy(this, jobId, dag, config);
+    }
+
+    @Override
+    public Job newJobProxy(long jobId) {
+        return new ClientJobProxy(this, jobId);
+    }
+
+    @Override
+    public ILogger getLogger() {
+        return client.getLoggingService().getLogger(getClass());
     }
 
     private <S> S invokeRequestOnMasterAndDecodeResponse(ClientMessage request,
@@ -193,10 +185,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     private <S> S invokeRequestAndDecodeResponse(Address address, ClientMessage request,
                                                  Function<ClientMessage, Object> decoder) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, address);
-        return uncheckCall(() -> {
+        try {
             ClientMessage response = invocation.invoke().get();
             return serializationService.toObject(decoder.apply(response));
-        });
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     private static Address masterAddress(Cluster cluster) {
@@ -204,5 +198,4 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
                       .orElseThrow(() -> new IllegalStateException("No members found in cluster"))
                       .getAddress();
     }
-
 }

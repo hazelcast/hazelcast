@@ -81,17 +81,6 @@ public interface JetInstance {
     }
 
     /**
-     * Creates and returns a Jet job based on the supplied DAG and job
-     * configuration. Jet will asynchronously start executing the job.
-     *
-     * <p>If the name in the JobConfig is null, it will set the generated jobId
-     * as a name. If the name looks like a previously assigned jobId, it will
-     * be replaced as well.
-     */
-    @Nonnull
-    Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config);
-
-    /**
      * Creates and returns an executable job based on the supplied pipeline.
      * Jet will asynchronously start executing the job.
      */
@@ -101,16 +90,93 @@ public interface JetInstance {
     }
 
     /**
+     * Creates and returns a Jet job based on the supplied DAG and job
+     * configuration. Jet will asynchronously start executing the job.
+     *
+     * <p>If the name in the JobConfig is non-null, Jet checks if there is an
+     * active job with equal name, in which case it throws {@link
+     * JobAlreadyExistsException}. Job is active if it is running,
+     * suspended or waiting to be run; that is it has not completed or failed.
+     * Thus there can be at most one active job with a given name at a time and
+     * you can re-use the job name after the previous job completed.
+     *
+     * <p>See also {@link #newJobIfAbsent}.
+     *
+     * @throws JobAlreadyExistsException if there is an active job with
+     *      an equal name
+     */
+    @Nonnull
+    Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config);
+
+    /**
      * Creates and returns a Jet job based on the supplied pipeline and job
      * configuration. Jet will asynchronously start executing the job.
      *
-     * <p>If the name in the JobConfig is null, it will set the generated jobId
-     * as a name. If the name looks like a previously assigned jobId, it will
-     * be replaced as well.
+     * <p>If the name in the JobConfig is non-null, Jet checks if there is an
+     * active job with equal name, in which case it throws {@link
+     * JobAlreadyExistsException}. Job is active if it is running,
+     * suspended or waiting to be run; that is it has not completed or failed.
+     * Thus there can be at most one active job with a given name at a time and
+     * you can re-use the job name after the previous job completed.
+     *
+     * <p>See also {@link #newJobIfAbsent}.
+     *
+     * @throws JobAlreadyExistsException if there is an active job with
+     *      an equal name
      */
     @Nonnull
     default Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         return newJob(pipeline.toDag(), config);
+    }
+
+    /**
+     * Creates and returns a Jet job based on the supplied DAG and job
+     * configuration. Jet will asynchronously start executing the job.
+     *
+     * <p>If the name in the JobConfig is non-null, Jet checks if there is an
+     * active job with equal name. If there is, it will join that job instead
+     * of submitting a new one. Job is active if it is running, suspended or
+     * waiting to be run; that is it has not completed or failed. In other
+     * words, this method ensures that the job with this name is running and is
+     * not running multiple times in parallel.
+     *
+     * <p>This method is useful for microservices deployment when each package
+     * contains a jet member and the job and you want the job to run only once.
+     * But if the job is a batch job and runs very quickly, it can happen that
+     * it executes multiple times, because the job name can be reused after a
+     * previous execution completed.
+     *
+     * <p>If the job name is null, a new job is always submitted.
+     *
+     * <p>See also {@link #newJob}.
+     */
+    @Nonnull
+    Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config);
+
+    /**
+     * Creates and returns a Jet job based on the supplied pipeline and job
+     * configuration. Jet will asynchronously start executing the job.
+     *
+     * <p>If the name in the JobConfig is non-null, Jet checks if there is an
+     * active job with equal name. If there is, it will join that job instead
+     * of submitting a new one. Job is active if it is running, suspended or
+     * waiting to be run; that is it has not completed or failed. In other
+     * words, this method ensures that the job with this name is running and is
+     * not running multiple times in parallel.
+     *
+     * <p>This method is useful for microservices deployment when each package
+     * contains a jet member and the job and you want the job to run only once.
+     * But if the job is a batch job and runs very quickly, it can happen that
+     * it executes multiple times, because the job name can be reused after a
+     * previous execution completed.
+     *
+     * <p>If the job name is null, a new job is always submitted.
+     *
+     * <p>See also {@link #newJob}.
+     */
+    @Nonnull
+    default Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+        return newJobIfAbsent(pipeline.toDag(), config);
     }
 
     /**
@@ -120,22 +186,25 @@ public interface JetInstance {
     List<Job> getJobs();
 
     /**
-     * Returns the job with the given id or {@code null} if no such job could be found
+     * Returns the job with the given id or {@code null} if no such job could
+     * be found.
      */
     @Nullable
     Job getJob(long jobId);
 
     /**
-     * Returns all jobs submitted with the given name, ordered in descending order
-     * by submission time. Empty list will be returned if no job with the given
-     * name exists. The list includes completed jobs.
+     * Returns all jobs submitted with the given name, ordered in descending
+     * order by submission time. The active job is always first. Empty list
+     * will be returned if no job with the given name exists. The list includes
+     * completed jobs.
      */
     @Nonnull
     List<Job> getJobs(@Nonnull String name);
 
     /**
-     * Returns the last submitted job with the given name or {@code null}
-     * if no such job could be found.
+     * Returns the active or last submitted job with the given name or {@code
+     * null} if no such job could be found. The returned job can be already
+     * completed.
      */
     @Nullable
     default Job getJob(@Nonnull String name) {

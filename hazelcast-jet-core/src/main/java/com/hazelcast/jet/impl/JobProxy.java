@@ -41,7 +41,6 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
  * {@link Job} proxy on member.
@@ -58,11 +57,11 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Nonnull @Override
     public JobStatus getStatus() {
-        return uncheckCall(
-                () -> this.<JobStatus>invokeOp(
-                        new GetJobStatusOperation(getId())
-                ).get()
-        );
+        try {
+            return this.<JobStatus>invokeOp(new GetJobStatusOperation(getId())).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     @Override
@@ -111,20 +110,20 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Override
     protected long doGetJobSubmissionTime() {
-        return uncheckCall(
-                () -> this.<Long>invokeOp(
-                        new GetJobSubmissionTimeOperation(getId())
-                ).get()
-        );
+        try {
+            return this.<Long>invokeOp(new GetJobSubmissionTimeOperation(getId())).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     @Override
     protected JobConfig doGetJobConfig() {
-        return uncheckCall(
-                () -> this.<JobConfig>invokeOp(
-                        new GetJobConfigOperation(getId())
-                ).get()
-        );
+        try {
+            return this.<JobConfig>invokeOp(new GetJobConfigOperation(getId())).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     @Override

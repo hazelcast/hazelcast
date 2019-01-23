@@ -76,10 +76,13 @@ public abstract class AbstractJobProxy<T> implements Job {
         this.container = container;
         this.logger = loggingService().getLogger(Job.class);
 
-        doSubmitJob(dag, config);
-
-        joinedJob.set(true);
-        doInvokeJoinJob();
+        try {
+            doSubmitJob(dag, config);
+            joinedJob.set(true);
+            doInvokeJoinJob();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     @Override

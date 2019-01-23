@@ -87,9 +87,6 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
     @Test
     public void when_jobIsCompletedBeforeSubmissionCallReturns_then_jobRunsOnlyOnce() throws Throwable {
         // Given that the job is already completed
-        dropOperationsBetween(instance1.getHazelcastInstance(), instance2.getHazelcastInstance(),
-                SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
-
         String jobName = "job1";
         Future<Job> future = spawn(() -> {
             DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, 1)));
@@ -97,6 +94,10 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
         });
 
         NoOutputSourceP.executionStarted.await();
+
+        dropOperationsBetween(instance1.getHazelcastInstance(), instance2.getHazelcastInstance(),
+                SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+
         Job submittedJob = instance1.getJob(jobName);
         assertNotNull(submittedJob);
         NoOutputSourceP.proceedLatch.countDown();
