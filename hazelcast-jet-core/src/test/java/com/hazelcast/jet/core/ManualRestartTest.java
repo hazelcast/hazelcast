@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
@@ -166,6 +167,7 @@ public class ManualRestartTest extends JetTestSupport {
         // wait for the first snapshot
         JetService jetService = getNode(instances[0]).nodeEngine.getService(JetService.SERVICE_NAME);
         JobRepository jobRepository = jetService.getJobCoordinationService().jobRepository();
+        assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertTrue(
                 jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));
 
