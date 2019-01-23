@@ -25,6 +25,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
@@ -109,8 +110,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @AfterClass
     public static void teardown() {
-        Hazelcast.shutdownAll();
-        factory.shutdownAll();
+        HazelcastInstanceFactory.terminateAll();
+        factory.terminateAll();
     }
 
     @Before
@@ -124,7 +125,6 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void destroyObjects(HazelcastInstance hz) {
         hz.getDistributedObjects().forEach(DistributedObject::destroy);
     }
-
 
     @Test
     public void when_readRemoteMap_withNativePredicateAndProjection() {
