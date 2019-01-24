@@ -37,7 +37,7 @@ class NodeExtensionCommon {
             "\to---o o---o   o   o-o   |     o     o---o o---o   |          | o-o     |\n" +
             "\t|   | |   |  /    |     |     |     |   |     |   |      \\   | |       |\n" +
             "\to   o o   o o---o o---o o---o o---o o   o o---o   o       o--o o---o   o";
-    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.";
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.";
 
     private final Node node;
     private JetService jetService;

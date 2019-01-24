@@ -126,6 +126,6 @@ Hazelcast Jet is available under the Apache 2 License. Please see the
 
 #### Copyright
 
-Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.
