@@ -66,7 +66,7 @@ import static org.mockito.Mockito.when;
  * in.getVersion.isUnknownOrLessThan(CURRENT).
  */
 @RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.net.ssl.*", "javax.security.*"})
+@PowerMockIgnore({"javax.net.ssl.*", "javax.security.*", "javax.management.*"})
 @PrepareForTest(Version.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class VersionedInCurrentVersionTest {
