@@ -16,14 +16,16 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.IMapJet;
+import com.hazelcast.jet.function.DistributedBiFunction;
 
 import javax.annotation.Nonnull;
 
 /**
- * Utility class with methods that create several useful kinds of {@link
- * ContextFactory context factories}.
+ * Utility class with methods that create several useful {@link ContextFactory
+ * context factories}.
  */
 public final class ContextFactories {
 
@@ -67,24 +69,12 @@ public final class ContextFactories {
      * the data in the map can change while the job is running so you can keep
      * the enriching dataset up-to-date.
      * <p>
-     * The downside of accessing an {@code IMap} in a Jet job is that it's a
-     * partitioned data structure, so you'll be accessing remote data and
-     * causing blocking in the stream processing pipeline. This will
-     * significantly reduce the maximum throughput of the job. If you need more
-     * throughput, consider using a {@link #replicatedMapContext(String)
-     * ReplicatedMap} as the context or, alternatively, enable the near-cache on
-     * the {@code IMap}.
+     * Instead of using this factory, you can call {@link
+     * GeneralStage#mapUsingIMapAsync(IMap, DistributedBiFunction)} or {@link
+     * GeneralStageWithKey#mapUsingIMapAsync(IMap, DistributedBiFunction)}.
      * <p>
-     * If you want to destroy the map after the job finishes, call {@code
-     * factory.destroyFn(IMap::destroy)} on the object you get from this
-     * method.
-     * <p>
-     * Example usage (without destroyFn):
-     * <pre>
-     * p.drawFrom( /* a batch or streaming source &#42;/ )
-     *  .mapUsingContext(iMapContext("fooMapName"),
-     *      (map, item) -> tuple2(item, map.get(item.getKey())));
-     * </pre>
+     * If you plan to use a sync method on the map, call {@link
+     * ContextFactory#nonCooperative()} on the returned factory.
      *
      * @param mapName name of the map used as context
      * @param <K> key type
@@ -95,8 +85,7 @@ public final class ContextFactories {
     public static <K, V> ContextFactory<IMapJet<K, V>> iMapContext(@Nonnull String mapName) {
         return ContextFactory
                 .withCreateFn(jet -> jet.<K, V>getMap(mapName))
-                .shareLocally()
-                .nonCooperative();
+                .shareLocally();
     }
 
 }

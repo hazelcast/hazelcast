@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.function.DistributedTriFunction;
@@ -26,10 +25,8 @@ import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithContext.supplierWithContext;
 
 /**
  * Backing processor for {@link
@@ -56,9 +53,9 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
      */
     private TransformUsingContextP(
             @Nonnull ContextFactory<C> contextFactory,
+            @Nullable C contextObject,
             @Nonnull DistributedTriFunction<ResettableSingletonTraverser<R>, ? super C, ? super T,
-                    ? extends Traverser<? extends R>> flatMapFn,
-            @Nullable C contextObject
+            ? extends Traverser<? extends R>> flatMapFn
     ) {
         this.contextFactory = contextFactory;
         this.flatMapFn = flatMapFn;
@@ -103,46 +100,6 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
         contextObject = null;
     }
 
-    private static final class Supplier<C, T, R> implements ProcessorSupplier {
-
-        static final long serialVersionUID = 1L;
-
-        private final ContextFactory<C> contextFactory;
-        private final DistributedTriFunction<ResettableSingletonTraverser<R>, ? super C, ? super T,
-                ? extends Traverser<? extends R>> flatMapFn;
-        private transient C contextObject;
-
-        private Supplier(
-                @Nonnull ContextFactory<C> contextFactory,
-                @Nonnull DistributedTriFunction<ResettableSingletonTraverser<R>, ? super C, ? super T,
-                        ? extends Traverser<? extends R>> flatMapFn
-        ) {
-            this.contextFactory = contextFactory;
-            this.flatMapFn = flatMapFn;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-            if (contextFactory.isSharedLocally()) {
-                contextObject = contextFactory.createFn().apply(context.jetInstance());
-            }
-        }
-
-        @Nonnull @Override
-        public Collection<? extends Processor> get(int count) {
-            return Stream.generate(() -> new TransformUsingContextP<>(contextFactory, flatMapFn, contextObject))
-                         .limit(count)
-                         .collect(toList());
-        }
-
-        @Override
-        public void close(Throwable error) {
-            if (contextObject != null) {
-                contextFactory.destroyFn().accept(contextObject);
-            }
-        }
-    }
-
     /**
      * The {@link ResettableSingletonTraverser} is passed as a first argument to
      * {@code flatMapFn}, it can be used if needed.
@@ -152,6 +109,8 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
             @Nonnull DistributedTriFunction<ResettableSingletonTraverser<R>, ? super C, ? super T,
                     ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return new Supplier<>(contextFactory, flatMapFn);
+        return supplierWithContext(contextFactory,
+                (ctxF, ctxO) -> new TransformUsingContextP<C, T, R>(ctxF, ctxO, flatMapFn)
+        );
     }
 }

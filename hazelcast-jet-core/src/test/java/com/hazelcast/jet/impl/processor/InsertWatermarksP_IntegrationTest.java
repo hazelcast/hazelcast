@@ -23,8 +23,10 @@ import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.TestProcessors.MapWatermarksToString;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 
@@ -35,6 +37,7 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class InsertWatermarksP_IntegrationTest extends JetTestSupport {
 
     private JetInstance instance;

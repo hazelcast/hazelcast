@@ -79,14 +79,14 @@ public class TraversersTest {
         validateTraversal(traverseArray(new Integer[] {1, 2}));
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = NullPointerException.class)
     public void when_traverserOverArgsWithNull_then_failure() {
         Traverser<Integer> trav = traverseItems(1, null);
         trav.next();
         trav.next();
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = NullPointerException.class)
     public void when_traverseIteratorWithNull_then_failure() {
         Traverser<Integer> trav = traverseIterator(asList(1, null).iterator());
         trav.next();
@@ -101,28 +101,28 @@ public class TraversersTest {
         assertNull(trav.next());
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = NullPointerException.class)
     public void when_traverseSpliteratorWithNull_then_failure() {
         Traverser<Integer> trav = traverseSpliterator(Stream.of(1, null).spliterator());
         trav.next();
         trav.next();
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = NullPointerException.class)
     public void when_traverseEnumerationWithNull_then_failure() {
         Traverser<Integer> trav = traverseEnumeration(new Vector<>(asList(1, null)).elements());
         trav.next();
         trav.next();
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = NullPointerException.class)
     public void when_traverseIterableWithNull_then_failure() {
         Traverser<Integer> trav = traverseIterable(asList(1, null));
         trav.next();
         trav.next();
     }
 
-    @Test(expected = AssertionError.class)
+    @Test(expected = NullPointerException.class)
     public void when_traverseArrayWithNull_then_failure() {
         Traverser<Integer> trav = traverseArray(new Integer[] {1, null});
         trav.next();

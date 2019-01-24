@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Watermark;
 
 import javax.annotation.Nonnull;
 
@@ -55,6 +56,11 @@ public final class ThrottleWrappedP implements Processor {
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         wrappedProcessor.process(ordinal, inbox);
+    }
+
+    @Override
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        return wrappedProcessor.tryProcessWatermark(watermark);
     }
 
     @Override
@@ -123,6 +129,11 @@ public final class ThrottleWrappedP implements Processor {
         @Override
         public boolean offerToSnapshot(@Nonnull Object key, @Nonnull Object value) {
             return wrappedOutbox.offerToSnapshot(key, value);
+        }
+
+        @Override
+        public boolean hasUnfinishedItem() {
+            return wrappedOutbox.hasUnfinishedItem();
         }
     }
 }

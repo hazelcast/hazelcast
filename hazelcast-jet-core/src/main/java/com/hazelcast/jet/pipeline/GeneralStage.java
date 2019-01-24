@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedBiFunction;
@@ -30,6 +32,7 @@ import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.function.DistributedTriFunction;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
 
@@ -113,6 +116,28 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
+     * Asynchronous version of {@link #mapUsingContext}: the {@code mapAsyncFn}
+     * returns a {@code CompletableFuture<R>} instead of just {@code R}.
+     * <p>
+     * The function can return a null future or the future can return a null
+     * result: in both cases it will act just like a filter.
+     * <p>
+     * The latency of the async call will add to the latency of items.
+     *
+     * @param <C> type of context object
+     * @param <R> the future's result type of the mapping function
+     * @param contextFactory the context factory
+     * @param mapAsyncFn a stateless mapping function. Can map to null (return
+     *      a null future)
+     * @return the newly attached stage
+     */
+    @Nonnull
+    <C, R> GeneralStage<R> mapUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
+    );
+
+    /**
      * Attaches a filtering stage which applies the provided predicate function
      * to each input item to decide whether to pass the item to the output or
      * to discard it. The predicate function receives another parameter, the
@@ -136,6 +161,26 @@ public interface GeneralStage<T> extends Stage {
     <C> GeneralStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    );
+
+    /**
+     * Asynchronous version of {@link #filterUsingContext}: the {@code
+     * filterAsyncFn} returns a {@code CompletableFuture<Boolean>} instead of
+     * just a {@code boolean}.
+     * <p>
+     * The function must not return a null future.
+     * <p>
+     * The latency of the async call will add to the latency of items.
+     *
+     * @param <C> type of context object
+     * @param contextFactory the context factory
+     * @param filterAsyncFn a stateless filtering function
+     * @return the newly attached stage
+     */
+    @Nonnull
+    <C> GeneralStage<T> filterUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     );
 
     /**
@@ -164,7 +209,31 @@ public interface GeneralStage<T> extends Stage {
     @Nonnull
     <C, R> GeneralStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<R>> flatMapFn
+    );
+
+    /**
+     * Asynchronous version of {@link #flatMapUsingContext}: the {@code
+     * flatMapAsyncFn} returns a {@code CompletableFuture<Traverser<R>>}
+     * instead of just {@code Traverser<R>}.
+     * <p>
+     * The function can return a null future or the future can return a null
+     * traverser: in both cases it will act just like a filter.
+     * <p>
+     * The latency of the async call will add to the latency of items.
+     *
+     * @param <C> type of context object
+     * @param <R> the type of the returned stage
+     * @param contextFactory the context factory
+     * @param flatMapAsyncFn a stateless flatmapping function. Can map to null
+     *      (return a null future)
+     * @return the newly attached stage
+     */
+    @Nonnull
+    <C, R> GeneralStage<R> flatMapUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>>
+                    flatMapAsyncFn
     );
 
     /**
@@ -210,9 +279,16 @@ public interface GeneralStage<T> extends Stage {
     }
 
     /**
-     * Attaches a {@link #mapUsingContext} stage where the context is a
-     * Hazelcast {@code IMap} with the supplied name. The mapping function
-     * will receive it as the first argument.
+     * Attaches a {@link #mapUsingContextAsync} stage where the context is a
+     * Hazelcast {@code IMap} with the supplied name. The mapping function will
+     * receive it as the first argument.
+     * <p>
+     * The operations on {@link IMap} typically return Hazelcast's custom
+     * {@link com.hazelcast.core.ICompletableFuture}, not the standard {@link
+     * java.util.concurrent.CompletableFuture}. Use {@link
+     * Util#toCompletableFuture(ICompletableFuture)} to convert them.
+     * <p>
+     * See also {@link GeneralStageWithKey#mapUsingIMapAsync}.
      *
      * @param mapName name of the {@code IMap}
      * @param mapFn the mapping function
@@ -222,19 +298,24 @@ public interface GeneralStage<T> extends Stage {
      * @return the newly attached stage
      */
     @Nonnull
-    default <K, V, R> GeneralStage<R> mapUsingIMap(
+    default <K, V, R> GeneralStage<R> mapUsingIMapAsync(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends R> mapFn
+            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
     ) {
-        return mapUsingContext(ContextFactories.iMapContext(mapName), mapFn);
+        return mapUsingContextAsync(ContextFactories.iMapContext(mapName), mapFn);
     }
 
     /**
-     * Attaches a {@link #mapUsingContext} stage where the context is a
-     * Hazelcast {@code IMap}. <strong>It is not necessarily the map you
-     * provide here</strong>, but a map with the same name in the Jet cluster
-     * that executes the pipeline. The mapping function will receive the
-     * replicated map as the first argument.
+     * Attaches a {@link #mapUsingContextAsync} stage where the context is a
+     * Hazelcast {@code IMap}. The mapping function will receive the map as the
+     * first argument.
+     * <p>
+     * The operations on {@link IMap} typically return Hazelcast's custom
+     * {@link com.hazelcast.core.ICompletableFuture}, not the standard {@link
+     * java.util.concurrent.CompletableFuture}. Use {@link
+     * Util#toCompletableFuture(ICompletableFuture)} to convert them.
+     * <p>
+     * See also {@link GeneralStageWithKey#mapUsingIMapAsync}.
      *
      * @param iMap the {@code IMap} to use as the context
      * @param mapFn the mapping function
@@ -244,11 +325,11 @@ public interface GeneralStage<T> extends Stage {
      * @return the newly attached stage
      */
     @Nonnull
-    default <K, V, R> GeneralStage<R> mapUsingIMap(
+    default <K, V, R> GeneralStage<R> mapUsingIMapAsync(
             @Nonnull IMap<K, V> iMap,
-            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends R> mapFn
+            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
     ) {
-        return mapUsingIMap(iMap.getName(), mapFn);
+        return mapUsingIMapAsync(iMap.getName(), mapFn);
     }
 
     /**

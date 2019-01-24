@@ -113,6 +113,6 @@ public class VertexTest {
         assertEquals(NoopP.class, processors.iterator().next().getClass());
     }
 
-    private static class NoopP implements Processor {
+    private static class NoopP extends AbstractProcessor {
     }
 }

@@ -44,7 +44,7 @@ public class MetricsConfig {
 
     /**
      * Sets whether metrics collection should be enabled for the node. If
-     * enabled, Hazelcast Management Center will be able to connect to this
+     * enabled, Hazelcast Jet Management Center will be able to connect to this
      * member. It's enabled by default.
      */
     @Nonnull

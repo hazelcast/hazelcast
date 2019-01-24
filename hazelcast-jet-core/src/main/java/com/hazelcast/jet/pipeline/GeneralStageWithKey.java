@@ -29,6 +29,9 @@ import com.hazelcast.jet.function.DistributedTriPredicate;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.jet.Util.toCompletableFuture;
 
 /**
  * An intermediate step when constructing a group-and-aggregate pipeline
@@ -81,6 +84,28 @@ public interface GeneralStageWithKey<T, K> {
     );
 
     /**
+     * Asynchronous version of {@link #mapUsingContext}: the {@code mapAsyncFn}
+     * returns a {@code CompletableFuture<R>} instead of just {@code R}.
+     * <p>
+     * The function can return a null future or the future can return a null
+     * result: in both cases it will act just like a filter.
+     * <p>
+     * The latency of the async call will add to the latency of the items.
+     *
+     * @param <C> type of context object
+     * @param <R> the future's result type of the mapping function
+     * @param contextFactory the context factory
+     * @param mapAsyncFn a stateless mapping function. Can map to null (return
+     *      a null future)
+     * @return the newly attached stage
+     */
+    @Nonnull
+    <C, R> GeneralStage<R> mapUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
+    );
+
+    /**
      * Attaches a filtering stage which applies the provided predicate function
      * to each input item to decide whether to pass the item to the output or
      * to discard it. The predicate function receives another parameter, the
@@ -110,6 +135,26 @@ public interface GeneralStageWithKey<T, K> {
     <C> GeneralStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
+    );
+
+    /**
+     * Asynchronous version of {@link #filterUsingContext}: the {@code
+     * filterAsyncFn} returns a {@code CompletableFuture<Boolean>} instead of
+     * just a {@code boolean}.
+     * <p>
+     * The function must not return a null future.
+     * <p>
+     * The latency of the async call will add to the latency of the items.
+     *
+     * @param <C> type of context object
+     * @param contextFactory the context factory
+     * @param filterAsyncFn a stateless filtering function
+     * @return the newly attached stage
+     */
+    @Nonnull
+    <C> GeneralStage<T> filterUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     );
 
     /**
@@ -147,13 +192,37 @@ public interface GeneralStageWithKey<T, K> {
     );
 
     /**
-     * Attaches a {@link #mapUsingContext} stage where the context is a
+     * Asynchronous version of {@link #flatMapUsingContext}: the {@code
+     * flatMapAsyncFn} returns a {@code CompletableFuture<Traverser<R>>}
+     * instead of just {@code Traverser<R>}.
+     * <p>
+     * The function can return a null future or the future can return a null
+     * traverser: in both cases it will act just like a filter.
+     * <p>
+     * The latency of the async call will add to the latency of the items.
+     *
+     * @param <C> type of context object
+     * @param <R> the type of the returned stage
+     * @param contextFactory the context factory
+     * @param flatMapAsyncFn a stateless flatmapping function. Can map to null
+     *      (return a null future)
+     * @return the newly attached stage
+     */
+    @Nonnull
+    <C, R> GeneralStage<R> flatMapUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
+                    flatMapAsyncFn
+    );
+
+    /**
+     * Attaches a {@link #mapUsingContextAsync} stage where the context is a
      * Hazelcast {@code IMap} with the supplied name. Jet will use the
-     * specified {@linkplain #keyFn() key function} to retrieve a value from
+     * specified {@linkplain #keyFn() key function} to retrieve the value from
      * the map and pass it to the mapping function you supply, as the second
      * argument.
      * <p>
-     * This stage is similar to {@link GeneralStage#mapUsingIMap(String,
+     * This stage is similar to {@link GeneralStage#mapUsingIMapAsync(String,
      * DistributedBiFunction) stageWithoutKey.mapUsingIMap()}, but here Jet
      * knows the key and uses it to partition and distribute the input in order
      * to achieve data locality. The value it fetches from the {@code IMap} is
@@ -168,12 +237,12 @@ public interface GeneralStageWithKey<T, K> {
      * @return the newly attached stage
      */
     @Nonnull
-    default <V, R> GeneralStage<R> mapUsingIMap(
+    default <V, R> GeneralStage<R> mapUsingIMapAsync(
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingContext(ContextFactories.<K, V>iMapContext(mapName),
-                (map, key, item) -> mapFn.apply(item, map.get(key)));
+        return mapUsingContextAsync(ContextFactories.<K, V>iMapContext(mapName),
+                (map, key, item) -> toCompletableFuture(map.getAsync(key)).thenApply(value -> mapFn.apply(item, value)));
     }
 
     /**
@@ -184,7 +253,7 @@ public interface GeneralStageWithKey<T, K> {
      * #keyFn() key function} to retrieve a value from the map and pass it to
      * the mapping function you supply, as the second argument.
      * <p>
-     * This stage is similar to {@link GeneralStage#mapUsingIMap(IMap,
+     * This stage is similar to {@link GeneralStage#mapUsingIMapAsync(IMap,
      * DistributedBiFunction) stageWithoutKey.mapUsingIMap()}, but here Jet
      * knows the key and uses it to partition and distribute the input in order
      * to achieve data locality. The value it fetches from the {@code IMap} is
@@ -199,11 +268,11 @@ public interface GeneralStageWithKey<T, K> {
      * @return the newly attached stage
      */
     @Nonnull
-    default <V, R> GeneralStage<R> mapUsingIMap(
+    default <V, R> GeneralStage<R> mapUsingIMapAsync(
             @Nonnull IMap<K, V> iMap,
             @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingIMap(iMap.getName(), mapFn);
+        return mapUsingIMapAsync(iMap.getName(), mapFn);
     }
 
     /**
@@ -228,7 +297,6 @@ public interface GeneralStageWithKey<T, K> {
      * @return the newly attached stage
      */
     @Nonnull
-    @SuppressWarnings("unchecked")
     <R, OUT> GeneralStage<OUT> rollingAggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn

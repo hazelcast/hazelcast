@@ -40,6 +40,7 @@ import com.hazelcast.jet.pipeline.JoinClause;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 
@@ -91,6 +92,15 @@ public class FunctionAdapter {
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return flatMapFn;
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    <C, T, R> DistributedBiFunction<? super C, ?, ? extends CompletableFuture<Traverser<?>>>
+    adaptFlatMapUsingContextAsyncFn(
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    ) {
+        return (DistributedBiFunction) flatMapAsyncFn;
     }
 
     @Nonnull
@@ -260,6 +270,15 @@ class JetEventFunctionAdapter extends FunctionAdapter {
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return (context, e) -> flatMapFn.apply(context, e.payload()).map(r -> jetEvent(r, e.timestamp()));
+    }
+
+    @Nonnull @Override
+    <C, T, R> DistributedBiFunction<? super C, ?, ? extends CompletableFuture<Traverser<?>>>
+    adaptFlatMapUsingContextAsyncFn(
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    ) {
+        return (C context, JetEvent<T> e) ->
+                flatMapAsyncFn.apply(context, e.payload()).thenApply(trav -> trav.map(re -> jetEvent(re, e.timestamp())));
     }
 
     @Nonnull @Override

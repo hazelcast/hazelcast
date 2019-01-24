@@ -17,9 +17,9 @@
 package com.hazelcast.jet.core.test;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.impl.execution.OutboundCollector;
 import com.hazelcast.jet.impl.execution.OutboxImpl;
+import com.hazelcast.jet.impl.execution.OutboxInternal;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.nio.serialization.Data;
@@ -44,7 +44,7 @@ import static java.util.function.Function.identity;
 /**
  * {@code Outbox} implementation suitable to be used in tests.
  */
-public final class TestOutbox implements Outbox {
+public final class TestOutbox implements OutboxInternal {
 
     private final Queue<Object>[] buckets;
     private final Queue<Entry<Data, Data>> snapshotQueue = new ArrayDeque<>();
@@ -196,14 +196,29 @@ public final class TestOutbox implements Outbox {
         reset();
     }
 
-    /**
-     * Call this method after any of the {@code offer()} methods returned
-     * {@code false} to be able to offer again. Method is called automatically
-     * from {@link #drainQueueAndReset} and {@link #drainSnapshotQueueAndReset}
-     * methods.
-     */
+    @Override
     public void reset() {
         outbox.reset();
+    }
+
+    @Override
+    public boolean hasUnfinishedItem() {
+        return outbox.hasUnfinishedItem();
+    }
+
+    @Override
+    public void block() {
+        outbox.block();
+    }
+
+    @Override
+    public void unblock() {
+        outbox.unblock();
+    }
+
+    @Override
+    public long lastForwardedWm() {
+        return outbox.lastForwardedWm();
     }
 
     @Override

@@ -573,8 +573,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     }
 
     /**
-     * A source processor which never completes and
-     * only allows the first snapshot to finish
+     * A source processor which never completes and only allows the first
+     * snapshot to finish.
      */
     private static final class FirstSnapshotProcessor implements Processor {
         private boolean firstSnapshotDone;

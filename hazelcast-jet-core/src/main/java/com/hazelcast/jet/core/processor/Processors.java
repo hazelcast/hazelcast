@@ -17,16 +17,19 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
@@ -37,6 +40,8 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextOrderedP;
+import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextUnorderedP;
 import com.hazelcast.jet.impl.processor.GroupP;
 import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.RollingAggregateP;
@@ -49,6 +54,7 @@ import com.hazelcast.jet.pipeline.ContextFactory;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.TimestampKind.EVENT;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
@@ -755,6 +761,35 @@ public final class Processors {
     }
 
     /**
+     * Asynchronous version of {@link #mapUsingContextP}: the {@code
+     * mapAsyncFn} returns a {@code CompletableFuture<R>} instead of just
+     * {@code R}.
+     * <p>
+     * The function can return a null future and the future can return a null
+     * result: in both cases it will act just like a filter.
+     * <p>
+     * The {@code extractKeyFn} is used to extract keys under which to save
+     * in-flight items to the snapshot. If the input to this processor is over
+     * a partitioned edge, you should use the same key. If it's a round-robin
+     * edge, you can use any key, for example {@code Object::hashCode}.
+     *
+     * @param contextFactory the context factory
+     * @param extractKeyFn a function to extract snapshot keys
+     * @param mapAsyncFn a stateless mapping function
+     * @param <C> type of context object
+     * @param <T> type of received item
+     */
+    @Nonnull
+    public static <C, T, K, R> ProcessorSupplier mapUsingContextAsyncP(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedFunction<T, K> extractKeyFn,
+            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<R>> mapAsyncFn
+    ) {
+        return flatMapUsingContextAsyncP(contextFactory, extractKeyFn,
+                (c, t) -> mapAsyncFn.apply(c, t).thenApply(Traversers::singleton));
+    }
+
+    /**
      * Returns a supplier of processors for a vertex that emits the same items
      * it receives, but only those that pass the given predicate. The predicate
      * function receives another parameter, the context object which Jet will
@@ -778,6 +813,35 @@ public final class Processors {
             singletonTraverser.accept(filterFn.test(context, item) ? item : null);
             return singletonTraverser;
         });
+    }
+
+    /**
+     * Asynchronous version of {@link #filterUsingContextP}: the {@code
+     * filterAsyncFn} returns a {@code CompletableFuture<Boolean>} instead of
+     * just a {@code boolean}.
+     * <p>
+     * The function can return a null future, but the future must not return
+     * null {@code Boolean}.
+     * <p>
+     * The {@code extractKeyFn} is used to extract keys under which to save
+     * in-flight items to the snapshot. If the input to this processor is over
+     * a partitioned edge, you should use the same key. If it's a round-robin
+     * edge, you can use any key, for example {@code Object::hashCode}.
+     *
+     * @param contextFactory the context factory
+     * @param extractKeyFn a function to extract snapshot keys
+     * @param filterAsyncFn a stateless predicate to test each received item against
+     * @param <C> type of context object
+     * @param <T> type of received item
+     */
+    @Nonnull
+    public static <C, T, K> ProcessorSupplier filterUsingContextAsyncP(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedFunction<T, K> extractKeyFn,
+            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+    ) {
+        return flatMapUsingContextAsyncP(contextFactory, extractKeyFn,
+                (c, t) -> filterAsyncFn.apply(c, t).thenApply(passed -> passed ? Traversers.singleton(t) : null));
     }
 
     /**
@@ -806,6 +870,39 @@ public final class Processors {
     ) {
         return TransformUsingContextP.<C, T, R>supplier(contextFactory,
                 (singletonTraverser, context, item) -> flatMapFn.apply(context, item));
+    }
+
+    /**
+     * Asynchronous version of {@link #flatMapUsingContextP}: the {@code
+     * flatMapAsyncFn} returns a {@code CompletableFuture<Traverser<R>>}
+     * instead of just a {@code Traverser<R>}.
+     * <p>
+     * The function can return a null future and the future can return a null
+     * traverser: in both cases it will act just like a filter. The traverser
+     * can't return null items - null is a terminator in {@link Traverser}, see
+     * its documentation.
+     * <p>
+     * The {@code extractKeyFn} is used to extract keys under which to save
+     * in-flight items to the snapshot. If the input to this processor is over
+     * a partitioned edge, you should use the same key. If it's a round-robin
+     * edge, you can use any key, for example {@code Object::hashCode}.
+     *
+     * @param contextFactory the context factory
+     * @param extractKeyFn a function to extract snapshot keys
+     * @param flatMapAsyncFn  a stateless function that maps the received item
+     *      to a future returning a traverser over the output items
+     * @param <C> type of context object
+     * @param <T> type of received item
+     */
+    @Nonnull
+    public static <C, T, K, R> ProcessorSupplier flatMapUsingContextAsyncP(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedFunction<? super T, ? extends K> extractKeyFn,
+            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    ) {
+        return contextFactory.isOrderedAsyncResponses()
+                ? AsyncTransformUsingContextOrderedP.supplier(contextFactory, flatMapAsyncFn)
+                : AsyncTransformUsingContextUnorderedP.supplier(contextFactory, flatMapAsyncFn, extractKeyFn);
     }
 
     /**
@@ -840,9 +937,9 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that swallows all its input (if any),
-     * does nothing with it, produces no output and completes immediately. It
-     * also swallows any restored snapshot data.
+     * Returns a supplier of a processor that swallows all its normal input (if
+     * any), does nothing with it, forwards the watermarks, produces no output
+     * and completes immediately. It also swallows any restored snapshot data.
      */
     @Nonnull
     public static DistributedSupplier<Processor> noopP() {
@@ -851,9 +948,21 @@ public final class Processors {
 
     /** A no-operation processor. See {@link #noopP()} */
     private static class NoopP implements Processor {
+        private Outbox outbox;
+
+        @Override
+        public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
+            this.outbox = outbox;
+        }
+
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
             inbox.drain(DistributedConsumer.noop());
+        }
+
+        @Override
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+            return outbox.offer(watermark);
         }
 
         @Override

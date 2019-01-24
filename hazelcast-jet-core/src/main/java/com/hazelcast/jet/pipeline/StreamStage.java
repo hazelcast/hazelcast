@@ -29,6 +29,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedTriFunction;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A stage in a distributed computation {@link Pipeline pipeline} that will
@@ -79,15 +80,33 @@ public interface StreamStage<T> extends GeneralStage<T> {
     );
 
     @Nonnull @Override
+    <C, R> StreamStage<R> mapUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
+    );
+
+    @Nonnull @Override
     <C> StreamStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
     );
 
     @Nonnull @Override
+    <C> StreamStage<T> filterUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
+    );
+
+    @Nonnull @Override
     <C, R> StreamStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<R>> flatMapFn
+    );
+
+    @Nonnull @Override
+    <C, R> StreamStage<R> flatMapUsingContextAsync(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     );
 
     @Override @Nonnull
@@ -107,19 +126,19 @@ public interface StreamStage<T> extends GeneralStage<T> {
     }
 
     @Override @Nonnull
-    default <K, V, R> StreamStage<R> mapUsingIMap(
+    default <K, V, R> StreamStage<R> mapUsingIMapAsync(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends R> mapFn
+            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
     ) {
-        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMap(mapName, mapFn);
+        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMapAsync(mapName, mapFn);
     }
 
     @Override @Nonnull
-    default <K, V, R> StreamStage<R> mapUsingIMap(
+    default <K, V, R> StreamStage<R> mapUsingIMapAsync(
             @Nonnull IMap<K, V> iMap,
-            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends R> mapFn
+            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
     ) {
-        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMap(iMap, mapFn);
+        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMapAsync(iMap, mapFn);
     }
 
     @Nonnull @Override

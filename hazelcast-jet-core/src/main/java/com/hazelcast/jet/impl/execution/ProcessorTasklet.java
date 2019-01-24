@@ -54,7 +54,6 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE_EDGE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_BARRIER;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_DONE_ITEM;
-import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_WATERMARK;
 import static com.hazelcast.jet.impl.execution.ProcessorState.END;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_INBOX;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
@@ -172,9 +171,9 @@ public class ProcessorTasklet implements Tasklet {
                             (LongProbeFunction<ProcessorTasklet>) t -> t.receivedBatches.get(finalI));
 
             InboundEdgeStream instream = instreams.get(finalI);
-            builderWithOrdinal.register(this, "topObservedWm", ProbeLevel.INFO, ProbeUnit.COUNT,
+            builderWithOrdinal.register(this, "topObservedWm", ProbeLevel.INFO, ProbeUnit.MS,
                     (LongProbeFunction<ProcessorTasklet>) t -> instream.topObservedWm());
-            builderWithOrdinal.register(this, "coalescedWm", ProbeLevel.INFO, ProbeUnit.COUNT,
+            builderWithOrdinal.register(this, "coalescedWm", ProbeLevel.INFO, ProbeUnit.MS,
                     (LongProbeFunction<ProcessorTasklet>) t -> instream.coalescedWm());
         }
 
@@ -190,6 +189,8 @@ public class ProcessorTasklet implements Tasklet {
                 (LongProbeFunction<ProcessorTasklet>) t -> t.watermarkCoalescer.topObservedWm());
         probeBuilder.register(this, "coalescedWm", ProbeLevel.INFO, ProbeUnit.MS,
                 (LongProbeFunction<ProcessorTasklet>) t -> t.watermarkCoalescer.coalescedWm());
+        probeBuilder.register(this, "lastForwardedWm", ProbeLevel.INFO, ProbeUnit.MS,
+                (LongProbeFunction<ProcessorTasklet>) t -> t.outbox.lastForwardedWm());
         probeBuilder.register(this, "queuesSize", ProbeLevel.INFO, ProbeUnit.COUNT,
                 (LongProbeFunction<ProcessorTasklet>) t -> t.queuesSize.get());
         probeBuilder.register(this, "queuesCapacity", ProbeLevel.INFO, ProbeUnit.COUNT,
@@ -259,15 +260,9 @@ public class ProcessorTasklet implements Tasklet {
                     }
                     pendingWatermark = new Watermark(wm);
                 }
-                if (pendingWatermark.equals(IDLE_MESSAGE) || processor.tryProcessWatermark(pendingWatermark)) {
-                    state = EMIT_WATERMARK;
-                    stateMachineStep(); // recursion
-                }
-                break;
-
-            case EMIT_WATERMARK:
-                progTracker.notDone();
-                if (outbox.offer(pendingWatermark)) {
+                if (pendingWatermark.equals(IDLE_MESSAGE)
+                        ? outbox.offer(IDLE_MESSAGE)
+                        : processor.tryProcessWatermark(pendingWatermark)) {
                     state = PROCESS_INBOX;
                     pendingWatermark = null;
                     stateMachineStep(); // recursion
@@ -276,8 +271,15 @@ public class ProcessorTasklet implements Tasklet {
 
             case PROCESS_INBOX:
                 progTracker.notDone();
-                if (inbox.isEmpty() && (isSnapshotInbox() || processor.tryProcess())) {
-                    fillInbox();
+                if (inbox.isEmpty()) {
+                    if (isSnapshotInbox() || processor.tryProcess()) {
+                        assert !outbox.hasUnfinishedItem() : isSnapshotInbox()
+                                ? "Unfinished item before fillInbox call"
+                                : "Processor.tryProcess() returned true, but there's unfinished item in the outbox";
+                        fillInbox();
+                    } else {
+                        return;
+                    }
                 }
                 if (!inbox.isEmpty()) {
                     if (isSnapshotInbox()) {
@@ -311,6 +313,8 @@ public class ProcessorTasklet implements Tasklet {
                 progTracker.notDone();
                 if (isSnapshotInbox()
                         ? processor.finishSnapshotRestore() : processor.completeEdge(currInstream.ordinal())) {
+                    assert !outbox.hasUnfinishedItem() :
+                            "outbox has unfinished item after successful completeEdge() or finishSnapshotRestore()";
                     progTracker.madeProgress();
                     state = initialProcessingState();
                 }

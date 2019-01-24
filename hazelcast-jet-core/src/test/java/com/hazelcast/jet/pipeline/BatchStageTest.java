@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
@@ -40,6 +41,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.Util.toCompletableFuture;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -295,7 +297,7 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapUsingIMap() {
+    public void mapUsingIMapAsync() {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
@@ -305,7 +307,8 @@ public class BatchStageTest extends PipelineTestSupport {
         }
 
         // When
-        BatchStage<Entry<Integer, String>> stage = srcStage.mapUsingIMap(map, (m, r) -> entry(r, m.get(r)));
+        BatchStage<Entry<Integer, String>> stage = srcStage.mapUsingIMapAsync(map, (m, r) ->
+                toCompletableFuture(m.getAsync(r)).thenApply(v -> entry(r, v)));
 
         // Then
         stage.drainTo(sink);
@@ -318,7 +321,7 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void mapUsingIMap_keyed() {
+    public void mapUsingIMapAsync_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
@@ -329,7 +332,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<Entry<Integer, String>> stage = srcStage.groupingKey(r -> r)
-                                                           .mapUsingIMap(map, (k, v) -> entry(k, v));
+                                                           .mapUsingIMapAsync(map, Util::entry);
 
         // Then
         stage.drainTo(sink);

@@ -41,6 +41,7 @@ import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
+import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
@@ -195,9 +196,5 @@ public class SlidingWindowP_stage1Test {
 
     private static TimestampedEntry<Long, LongAccumulator> frame(long timestamp, long value) {
         return new TimestampedEntry<>(timestamp, KEY, new LongAccumulator(value));
-    }
-
-    private static Watermark wm(long timestamp) {
-        return new Watermark(timestamp);
     }
 }

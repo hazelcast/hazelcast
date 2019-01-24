@@ -49,6 +49,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -145,7 +146,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {
         assertNotNull(job);
-        assertTrueEventually(() -> assertEquals(expected, job.getStatus()), timeoutSeconds);
+        assertTrueEventually(() ->
+                assertEquals("jobId=" + idToString(job.getId()), expected, job.getStatus()), timeoutSeconds);
     }
 
     public static void assertTrueEventually(RunnableExc runnable) {
@@ -209,5 +211,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 logger.warning("Spawned Runnable failed", e);
             }
         });
+    }
+
+    public static Watermark wm(long timestamp) {
+        return new Watermark(timestamp);
     }
 }

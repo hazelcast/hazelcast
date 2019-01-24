@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
@@ -131,13 +132,13 @@ public class ProcessorTaskletTest_Watermarks {
         instreams.add(instream1);
         outstreams.add(outstream1);
         ProcessorTasklet tasklet = createTasklet();
-        processor.processWatermarkCallCountdown = 3;
+        processor.processWatermarkCallCountdown = 2;
 
         // When
         callUntil(tasklet);
 
         // Then
-        assertEquals(asList("wm(100)-3", "wm(100)-2", "wm(100)-1", wm(100)), outstream1.getBuffer());
+        assertEquals(asList("wm(100)-2", "wm(100)-1", "wm(100)-0", wm(100)), outstream1.getBuffer());
     }
 
     @Test
@@ -283,10 +284,6 @@ public class ProcessorTaskletTest_Watermarks {
         }
     }
 
-    private Watermark wm(long timestamp) {
-        return new Watermark(timestamp);
-    }
-
     private static class ProcessorWithWatermarks implements Processor {
 
         int nullaryProcessCallCountdown;
@@ -314,13 +311,15 @@ public class ProcessorTaskletTest_Watermarks {
 
         @Override
         public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-            if (outbox.offer("wm(" + watermark.timestamp() + ")-" + processWatermarkCallCountdown)) {
+            if (processWatermarkCallCountdown >= 0) {
+                assertTrue(outbox.offer("wm(" + watermark.timestamp() + ")-" + processWatermarkCallCountdown));
                 if (processWatermarkCallCountdown > 0) {
                     processWatermarkCallCountdown--;
+                    return false;
                 }
-                return processWatermarkCallCountdown <= 0;
             }
-            return false;
+            assertTrue(outbox.offer(watermark));
+            return true;
         }
 
         @Override

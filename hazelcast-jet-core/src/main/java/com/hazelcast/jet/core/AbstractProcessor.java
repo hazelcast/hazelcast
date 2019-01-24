@@ -166,7 +166,7 @@ public abstract class AbstractProcessor implements Processor {
      *         {@code false} otherwise.
      */
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        throw new UnsupportedOperationException("Missing implementation");
+        throw new UnsupportedOperationException("Missing implementation in " + getClass());
     }
 
     /**
@@ -267,7 +267,15 @@ public abstract class AbstractProcessor implements Processor {
      * @param value    value of the entry from the snapshot
      */
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        throw new UnsupportedOperationException("Missing implementation");
+        throw new UnsupportedOperationException("Missing implementation in " + getClass());
+    }
+
+    /**
+     * This basic implementation only forwards the passed watermark.
+     */
+    @Override
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        return tryEmit(watermark);
     }
 
 
@@ -350,6 +358,7 @@ public abstract class AbstractProcessor implements Processor {
      * @param traverser traverser over items to emit
      * @return whether the traverser has been exhausted
      */
+    @SuppressWarnings("unchecked")
     protected final <E> boolean emitFromTraverser(@Nonnull int[] ordinals, @Nonnull Traverser<E> traverser) {
         E item;
         if (pendingItem != null) {

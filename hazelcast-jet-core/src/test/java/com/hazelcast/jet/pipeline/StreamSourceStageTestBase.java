@@ -132,7 +132,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
         @Override
         public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
             watermarks.add(watermark.timestamp());
-            return true;
+            return tryEmit(watermark);
         }
     }
 }

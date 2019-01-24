@@ -53,15 +53,19 @@ import com.hazelcast.jet.pipeline.StreamStage;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.util.concurrent.CompletableFuture;
+
 import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.filterUsingPartitionedContextTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.flatMapUsingPartitionedContextAsyncTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.flatMapUsingPartitionedContextTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.mapUsingContextPartitionedTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform.partitionedCustomProcessorTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.customProcessorTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.filterUsingContextTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingContextAsyncTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingContextTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.mapUsingContextTransform;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -182,6 +186,20 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     @Nonnull
     @SuppressWarnings("unchecked")
+    <C, R, RET> RET attachFlatMapUsingContextAsync(
+            @Nonnull String operationName,
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    ) {
+        checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
+        DistributedBiFunction adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingContextAsyncFn(flatMapAsyncFn);
+        return (RET) attach(
+                flatMapUsingContextAsyncTransform(transform, operationName, contextFactory, adaptedFlatMapFn),
+                fnAdapter);
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
     <C, K, R, RET> RET attachMapUsingPartitionedContext(
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn,
@@ -227,6 +245,24 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
         return (RET) attach(
                 flatMapUsingPartitionedContextTransform(
                         transform, contextFactory, adaptedFlatMapFn, adaptedPartitionKeyFn),
+                fnAdapter);
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    <C, K, R, RET> RET attachTransformUsingPartitionedContextAsync(
+            @Nonnull String operationName,
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn,
+            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    ) {
+        checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
+        checkSerializable(partitionKeyFn, "partitionKeyFn");
+        DistributedBiFunction adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingContextAsyncFn(flatMapAsyncFn);
+        DistributedFunction adaptedPartitionKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
+        return (RET) attach(
+                flatMapUsingPartitionedContextAsyncTransform(
+                        transform, operationName, contextFactory, adaptedFlatMapFn, adaptedPartitionKeyFn),
                 fnAdapter);
     }
 

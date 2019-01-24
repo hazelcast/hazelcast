@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
@@ -61,6 +62,12 @@ public final class WriteBufferedP<B, T> implements Processor {
     public void process(int ordinal, @Nonnull Inbox inbox) {
         inbox.drain(item -> onReceiveFn.accept(buffer, (T) item));
         flushFn.accept(buffer);
+    }
+
+    @Override
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        // we're a sink, no need to forward the watermarks
+        return true;
     }
 
     @Override

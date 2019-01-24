@@ -164,10 +164,6 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         assertEquals("wm(101)", sinkList.get(1));
     }
 
-    private Watermark wm(long ts) {
-        return new Watermark(ts);
-    }
-
     private ListSource.Delay delay(long ms) {
         return new ListSource.Delay(ms);
     }

@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static org.junit.Assert.assertEquals;
 
 public class WatermarkCoalescerTest {
@@ -243,10 +244,14 @@ public class WatermarkCoalescerTest {
         assertEquals(IDLE_MESSAGE.timestamp(), wc.checkWmHistory());
     }
 
-    // TODO [viliam] check that single input is really handled the same way as with StandardImpl
     @Test
-    public void test() {
-        wc = new WatermarkCoalescer.StandardImpl(1);
-        System.out.println(wc.observeWm(0, IDLE_MESSAGE.timestamp()));
+    public void test_singleInput() {
+        wc = WatermarkCoalescer.create(1);
+        assertEquals(IDLE_MESSAGE.timestamp(), wc.observeWm(0, IDLE_MESSAGE.timestamp()));
+        assertEquals(10, wc.observeWm(0, 10));
+        assertEquals(11, wc.observeWm(0, 11));
+        assertEquals(IDLE_MESSAGE.timestamp(), wc.observeWm(0, IDLE_MESSAGE.timestamp()));
+        assertEquals(12, wc.observeWm(0, 12));
+        assertEquals(NO_NEW_WM, wc.queueDone(0));
     }
 }

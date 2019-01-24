@@ -121,9 +121,6 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
         }
         if (super.tryProcessWatermark(watermark)) {
             peekedWatermarkLogged = false;
-            if (peekOutput) {
-                logger.info("Output forwarded: " + watermark);
-            }
             return true;
         }
         return false;
@@ -240,6 +237,11 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
                 log("Output to snapshot", (T) entry(key, value));
             }
             return true;
+        }
+
+        @Override
+        public boolean hasUnfinishedItem() {
+            return wrappedOutbox.hasUnfinishedItem();
         }
     }
 }

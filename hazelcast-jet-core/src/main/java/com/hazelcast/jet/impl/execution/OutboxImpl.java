@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.core.Outbox;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.impl.util.Util;
@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.stream.IntStream;
 
@@ -34,7 +35,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
-public class OutboxImpl implements Outbox {
+public class OutboxImpl implements OutboxInternal {
 
     private final OutboundCollector[] outstreams;
     private final ProgressTracker progTracker;
@@ -54,6 +55,7 @@ public class OutboxImpl implements Outbox {
     private int[] unfinishedItemOrdinals;
     private Object unfinishedSnapshotKey;
     private Object unfinishedSnapshotValue;
+    private final AtomicLong lastForwardedWm = new AtomicLong();
 
     private boolean blocked;
 
@@ -120,6 +122,9 @@ public class OutboxImpl implements Outbox {
         assert numRemainingInBatch != -1 : "Outbox.offer() called again after it returned false, without a " +
                 "call to reset(). You probably didn't return from Processor method after Outbox.offer() " +
                 "or AbstractProcessor.tryEmit() returned false";
+        if (item instanceof Watermark) {
+            lastForwardedWm.lazySet(((Watermark) item).timestamp());
+        }
         numRemainingInBatch--;
         boolean done = true;
         if (numRemainingInBatch == -1) {
@@ -205,22 +210,17 @@ public class OutboxImpl implements Outbox {
         return success;
     }
 
+    @Override
     public boolean hasUnfinishedItem() {
         return unfinishedItem != null || unfinishedSnapshotKey != null;
     }
 
-    /**
-     * Blocks the outbox so that it only allows offering of the current
-     * unfinished item. If there's no unfinished item, the outbox will reject
-     * all {@code offer} calls, until {@link #unblock()} is called.
-     */
+    @Override
     public void block() {
         blocked = true;
     }
 
-    /**
-     * Reverses the {@link #block()} call.
-     */
+    @Override
     public void unblock() {
         blocked = false;
     }
@@ -229,11 +229,7 @@ public class OutboxImpl implements Outbox {
         return blocked && !hasUnfinishedItem();
     }
 
-    /**
-     * Resets the outbox so that it is available to receive another batch of
-     * items after any {@code offer()} method previously returned {@code
-     * false}.
-     */
+    @Override
     public void reset() {
         numRemainingInBatch = batchSize;
     }
@@ -247,5 +243,10 @@ public class OutboxImpl implements Outbox {
 
     final boolean offerToEdgesAndSnapshot(Object item) {
         return offerInternal(allEdgesAndSnapshot, item);
+    }
+
+    @Override
+    public long lastForwardedWm() {
+        return lastForwardedWm.get();
     }
 }

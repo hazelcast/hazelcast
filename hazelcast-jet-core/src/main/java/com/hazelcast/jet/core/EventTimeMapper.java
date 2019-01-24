@@ -228,7 +228,7 @@ public class EventTimeMapper<T> {
             if (idleTimeoutNanos > 0 && markIdleAt[i] <= now) {
                 continue;
             }
-            watermarks[i] = wmPolicies[i].getCurrentWatermark();
+            watermarks[i] = Math.max(watermarks[i], wmPolicies[i].getCurrentWatermark());
             topObservedWm = Math.max(topObservedWm, watermarks[i]);
             min = Math.min(min, watermarks[i]);
         }
@@ -313,9 +313,13 @@ public class EventTimeMapper<T> {
      * See {@link #getWatermark(int)}.
      *
      * @param partitionIndex 0-based source partition index.
-     * @param wm Watermark value to restore
+     * @param wm watermark value to restore
      */
     public void restoreWatermark(int partitionIndex, long wm) {
         watermarks[partitionIndex] = wm;
+        lastEmittedWm = Long.MAX_VALUE;
+        for (long watermark : watermarks) {
+            lastEmittedWm = Math.min(watermark, lastEmittedWm);
+        }
     }
 }

@@ -100,12 +100,14 @@ public interface Processor {
      * called again before proceeding to call any other methods. There is at
      * least one item in the inbox when this method is called.
      * <p>
-     * The default implementation does nothing.
+     * The default implementation throws an exception. It is suitable for source
+     * processors.
      *
      * @param ordinal ordinal of the inbound edge
      * @param inbox   the inbox containing the pending items
      */
     default void process(int ordinal, @Nonnull Inbox inbox) {
+        throw new UnsupportedOperationException("Missing implementation in " + getClass());
     }
 
     /**
@@ -115,11 +117,13 @@ public interface Processor {
      * <p>
      * The implementation may choose to process only partially and return
      * {@code false}, in which case it will be called again later with the same
-     * {@code timestamp} before any other processing method is called. When the
-     * method returns {@code true}, the watermark is forwarded to the
+     * {@code timestamp} before any other processing method is called. Before
+     * the method returns {@code true}, it should emit the watermark to the
      * downstream processors.
      * <p>
-     * The default implementation just returns {@code true}.
+     * The default implementation throws an exception. For any non-sink
+     * processor you must provide an implementation that at least forwards the
+     * watermark. A sink processor may simply return {@code true}.
      *
      * <h3>Caution for Jobs With the At-Least-Once Guarantee</h3>
      * Jet propagates the value of the watermark by sending <em>watermark
@@ -135,7 +139,7 @@ public interface Processor {
      *         {@code false} otherwise.
      */
     default boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        return true;
+        throw new UnsupportedOperationException("Missing implementation in " + getClass());
     }
 
     /**
@@ -143,8 +147,13 @@ public interface Processor {
      * of items in the inbox has been exhausted. It can be used to produce
      * output in the absence of input or to do general maintenance work.
      * <p>
-     * If the call returns {@code false}, it will be called again before proceeding
-     * to call any other method. Default implementation returns {@code true}.
+     * If the call returns {@code false}, it will be called again before
+     * proceeding to call any other method. Default implementation returns
+     * {@code true}.
+     * <p>
+     * If this method tried to offer to the outbox and the offer call returned
+     * false, this method must also return false and retry to offer in the
+     * next call.
      */
     default boolean tryProcess() {
         return true;
@@ -154,6 +163,10 @@ public interface Processor {
      * Called after the edge input with the supplied {@code ordinal} is
      * exhausted. If it returns {@code false}, it will be called again before
      * proceeding to call any other method.
+     * <p>
+     * If this method tried to offer to the outbox and the offer call returned
+     * false, this method must also return false and retry the offer in the
+     * next call.
      *
      * @return {@code true} if the processor is now done completing the edge,
      *         {@code false} otherwise.
@@ -230,6 +243,10 @@ public interface Processor {
      * <p>
      * If it returns {@code false}, it will be called again before proceeding
      * to call any other methods.
+     * <p>
+     * If this method tried to offer to the outbox and the offer call returned
+     * false, this method must also return false and retry the offer in the
+     * next call.
      * <p>
      * The default implementation takes no action and returns {@code true}.
      */

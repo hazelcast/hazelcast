@@ -32,6 +32,10 @@ final class JetAssert {
         }
     }
 
+    static void assertFalse(String message, boolean condition) {
+        assertTrue(message, !condition);
+    }
+
     static void assertSame(String message, Object expected, Object actual) {
         if (expected == actual) {
             return;

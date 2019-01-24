@@ -145,6 +145,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         this.isLastStage = isLastStage;
         this.wmFlatMapper = flatMapper(
                 wm -> windowTraverserAndEvictor(wm.timestamp())
+                        .append(wm)
                         .onFirstNull(() -> nextWinToEmit = winPolicy.higherFrameTs(wm.timestamp()))
         );
         this.emptyAcc = aggrOp.createFn().get();

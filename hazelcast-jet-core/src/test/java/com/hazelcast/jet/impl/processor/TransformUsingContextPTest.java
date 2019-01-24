@@ -24,11 +24,14 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.processor.TransformUsingContextP.supplier;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class TransformUsingContextPTest {
 
     @Test

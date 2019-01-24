@@ -263,7 +263,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_emitFromTraverserToAll_then_emittedToAll() {
         // Given
-        Traverser<Object> trav = Traversers.traverseItems(MOCK_ITEM);
+        Traverser<Object> trav = Traversers.singleton(MOCK_ITEM);
 
         // When
         boolean done = p.emitFromTraverser(trav);
@@ -327,7 +327,7 @@ public class AbstractProcessorTest {
     public void when_flatMapperTo1_then_emittedTo1() {
         // Given
         Object output = 42;
-        FlatMapper<Object, Object> m = p.flatMapper(ORDINAL_1, x -> Traversers.traverseItems(output));
+        FlatMapper<Object, Object> m = p.flatMapper(ORDINAL_1, x -> Traversers.singleton(output));
 
         // When
         boolean done = m.tryProcess(MOCK_ITEM);
@@ -341,7 +341,7 @@ public class AbstractProcessorTest {
     public void when_flatMapperToAll_then_emittedToAll() {
         // Given
         Object output = 42;
-        FlatMapper<Object, Object> m = p.flatMapper(x -> Traversers.traverseItems(output));
+        FlatMapper<Object, Object> m = p.flatMapper(x -> Traversers.singleton(output));
 
         // When
         boolean done = m.tryProcess(MOCK_ITEM);

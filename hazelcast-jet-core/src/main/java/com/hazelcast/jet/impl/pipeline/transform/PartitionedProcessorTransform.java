@@ -27,7 +27,10 @@ import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
 
+import java.util.concurrent.CompletableFuture;
+
 import static com.hazelcast.jet.core.processor.Processors.filterUsingContextP;
+import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextAsyncP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingContextP;
 
@@ -82,6 +85,17 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
     ) {
         return new PartitionedProcessorTransform<>("flatMapUsingPartitionedContext",
                 upstream, flatMapUsingContextP(contextFactory, flatMapFn), partitionKeyFn);
+    }
+
+    public static <C, T, K, R> PartitionedProcessorTransform<T, K> flatMapUsingPartitionedContextAsyncTransform(
+            @Nonnull Transform upstream,
+            @Nonnull String operationName,
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn,
+            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+    ) {
+        return new PartitionedProcessorTransform<>(operationName + "UsingPartitionedContextAsync",
+                upstream, flatMapUsingContextAsyncP(contextFactory, partitionKeyFn, flatMapAsyncFn), partitionKeyFn);
     }
 
     @Override

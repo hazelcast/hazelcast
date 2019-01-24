@@ -282,7 +282,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void mapUsingIMap() {
+    public void mapUsingIMapAsync() {
         List<Integer> input = sequence(itemCount);
         addToSrcMapJournal(input);
 
@@ -291,9 +291,9 @@ public class StreamStageTest extends PipelineStreamTestSupport {
             map.put(i, String.valueOf(i));
         }
 
-
         srcStage.withIngestionTimestamps()
-                .mapUsingIMap(map, (m, r) -> entry(r, m.get(r)))
+                .mapUsingIMapAsync(map, (m, r) -> Util.toCompletableFuture(m.getAsync(r))
+                                                      .thenApply(a -> entry(r, a)))
                 .drainTo(sink);
 
         executeAsync();
@@ -305,7 +305,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void mapUsingIMap_keyed() {
+    public void mapUsingIMapAsync_keyed() {
         List<Integer> input = sequence(itemCount);
         addToSrcMapJournal(input);
 
@@ -316,7 +316,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         srcStage.withIngestionTimestamps()
                 .groupingKey(r -> r)
-                .mapUsingIMap(map, (k, v) -> Util.entry(k, v))
+                .mapUsingIMapAsync(map, (k, v) -> Util.entry(k, v))
                 .drainTo(sink);
 
         executeAsync();

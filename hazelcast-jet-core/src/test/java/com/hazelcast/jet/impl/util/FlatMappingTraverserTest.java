@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Traversers.empty;
 import static com.hazelcast.jet.Traversers.traverseStream;
@@ -49,7 +50,7 @@ public class FlatMappingTraverserTest {
         // This test would fail, if the internal FlatMappingTraverser.NULL_TRAVERSER instance
         // would be the same (as per == operator) as the instance returned by Traversers.empty()
         FlatMappingTraverser<Integer, String> trav =
-                new FlatMappingTraverser<>(traverseItems(1, 2, 3), item -> item != 3 ? empty() : traverseItems("a"));
+                new FlatMappingTraverser<>(traverseItems(1, 2, 3), item -> item != 3 ? empty() : singleton("a"));
 
         assertEquals("a", trav.next());
         assertNull(trav.next());

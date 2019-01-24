@@ -34,6 +34,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseArray;
+import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
@@ -375,6 +376,8 @@ public final class TestProcessors {
      */
     public static class MapWatermarksToString extends AbstractProcessor {
 
+        FlatMapper<Watermark, Object> flatMapper = flatMapper(wm -> traverseItems("wm(" + wm.timestamp() + ')', wm));
+
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             return tryEmit(item);
@@ -382,7 +385,7 @@ public final class TestProcessors {
 
         @Override
         public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-            return tryEmit("wm(" + watermark.timestamp() + ')');
+            return flatMapper.tryProcess(watermark);
         }
     }
 

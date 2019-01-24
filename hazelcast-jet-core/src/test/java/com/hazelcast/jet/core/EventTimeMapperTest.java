@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
+import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.core.EventTimeMapper.NO_NATIVE_TIME;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
@@ -159,6 +160,21 @@ public class EventTimeMapperTest {
         assertTraverser(eventTimeMapper.flatMapEvent(ns(1), 10L, 0, 12L), 10L);
     }
 
+    @Test
+    public void when_restoredState_then_wmDoesNotGoBack() {
+        EventTimePolicy<Long> eventTimePolicy = eventTimePolicy(Long::longValue, limitingLag(0), 1, 0, 5);
+        EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+        eventTimeMapper.increasePartitionCount(0L, 1);
+
+        // When
+        eventTimeMapper.restoreWatermark(0, 10);
+
+        // Then
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 9L, 0, NO_NATIVE_TIME), 9L);
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME), 10L);
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 11L, 0, NO_NATIVE_TIME), wm(11), 11L);
+    }
+
     private <T> void assertTraverser(Traverser<T> actual, T ... expected) {
         for (T element : expected) {
             assertEquals(element, actual.next());
@@ -168,9 +184,5 @@ public class EventTimeMapperTest {
 
     private long ns(long ms) {
         return MILLISECONDS.toNanos(ms);
-    }
-
-    public Watermark wm(long time) {
-        return new Watermark(time);
     }
 }

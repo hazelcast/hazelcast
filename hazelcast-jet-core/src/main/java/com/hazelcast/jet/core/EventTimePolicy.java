@@ -123,7 +123,7 @@ public final class EventTimePolicy<T> implements Serializable {
      * @param watermarkThrottlingFrameOffset the frame offset to which we
      *      throttle watermarks, see {@link #watermarkThrottlingFrameOffset()}
      * @param idleTimeoutMillis the timeout after which a partition will be
-     *      marked as <em>idle</em>.
+     *      marked as <em>idle</em>. Use 0 to disable the feature.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
             @Nullable DistributedToLongFunction<? super T> timestampFn,

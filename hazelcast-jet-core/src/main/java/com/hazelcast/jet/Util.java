@@ -19,6 +19,8 @@ package com.hazelcast.jet;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.pipeline.Sources;
@@ -27,6 +29,7 @@ import com.hazelcast.map.journal.EventJournalMapEvent;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 /**
@@ -134,5 +137,28 @@ public final class Util {
         }
         str = str.replaceAll("-", "");
         return Long.parseUnsignedLong(str, 16);
+    }
+
+    /**
+     * Wraps Hazelcast IMDG's {@link ICompletableFuture} into Java's standard
+     * {@link CompletableFuture}.
+     *
+     * @param future the future to wrap
+     * @return a new {@link CompletableFuture} wrapping the given one
+     */
+    public static <T> CompletableFuture<T> toCompletableFuture(ICompletableFuture<T> future) {
+        CompletableFuture<T> f = new CompletableFuture<>();
+        future.andThen(new ExecutionCallback<T>() {
+            @Override
+            public void onResponse(T response) {
+                f.complete(response);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                f.completeExceptionally(t);
+            }
+        });
+        return f;
     }
 }

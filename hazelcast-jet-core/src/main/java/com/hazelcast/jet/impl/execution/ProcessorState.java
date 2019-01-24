@@ -30,12 +30,6 @@ enum ProcessorState {
     PROCESS_WATERMARK,
 
     /**
-     * Waiting to for the outbox to accept the {@link
-     * com.hazelcast.jet.core.Watermark}
-     */
-    EMIT_WATERMARK,
-
-    /**
      * Making calls to {@link Processor#tryProcess()} and {@link
      * Processor#process(int, com.hazelcast.jet.core.Inbox)} until the inbox
      * is empty.

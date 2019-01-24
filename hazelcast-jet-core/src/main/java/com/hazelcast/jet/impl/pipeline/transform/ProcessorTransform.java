@@ -28,7 +28,10 @@ import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
 
+import java.util.concurrent.CompletableFuture;
+
 import static com.hazelcast.jet.core.processor.Processors.filterUsingContextP;
+import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextAsyncP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingContextP;
 
@@ -75,6 +78,19 @@ public class ProcessorTransform extends AbstractTransform {
     ) {
         return new ProcessorTransform("flatMapUsingContext", upstream,
                 flatMapUsingContextP(contextFactory, flatMapFn));
+    }
+
+    public static <C, T, R> ProcessorTransform flatMapUsingContextAsyncTransform(
+            @Nonnull Transform upstream,
+            @Nonnull String operationName,
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    ) {
+        // TODO use better key so that snapshots are local. Currently they will
+        //      be sent to a random member. We keep it this way for simplicity:
+        //      the number of in-flight items is limited (maxAsyncOps)
+        return new ProcessorTransform(operationName + "UsingContextAsync", upstream,
+                flatMapUsingContextAsyncP(contextFactory, Object::hashCode, flatMapAsyncFn));
     }
 
     @Override

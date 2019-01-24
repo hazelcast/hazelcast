@@ -214,8 +214,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
         boolean done = emitFromTraverserToSnapshot(snapshotTraverser);
         if (done) {
-            logFinest(getLogger(), "Saved snapshot. partitions=%s, offsets=%s",
-                    Arrays.toString(partitionIds), Arrays.toString(emitOffsets));
+            logFinest(getLogger(), "Saved snapshot. partitions=%s, offsets=%s, watermark=%d",
+                    Arrays.toString(partitionIds), Arrays.toString(emitOffsets), eventTimeMapper.getWatermark(0));
             snapshotTraverser = null;
         }
         return done;

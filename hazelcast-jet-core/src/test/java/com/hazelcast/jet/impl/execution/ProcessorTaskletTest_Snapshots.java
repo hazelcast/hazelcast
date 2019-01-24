@@ -21,6 +21,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
@@ -250,6 +251,11 @@ public class ProcessorTaskletTest_Snapshots {
                     snapshotQueue.offer(entry(UuidUtil.newUnsecureUUID(), inbox.poll()));
                 }
             }
+        }
+
+        @Override
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+            return outbox.offer(watermark);
         }
 
         @Override

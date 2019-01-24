@@ -74,7 +74,7 @@ public class PeekingWrapperTest {
     private DistributedPredicate<Entry<Integer, Integer>> snapshotShouldLogFn;
     private String testJetEventString;
 
-    @Parameters(name = "toStringFn={0}, shouldLogFn={1}")
+    @Parameters(name = "mode={0}")
     public static Collection<Object> parameters() {
         return asList("defaultFunctions", "customFunctions");
     }
@@ -270,6 +270,15 @@ public class PeekingWrapperTest {
         TestOutbox outbox = new TestOutbox(1, 1);
         peekP.init(outbox, context);
 
+        Watermark wm = new Watermark(3);
+        peekP.tryProcessWatermark(wm);
+        verify(logger).info("Output to ordinal 0: " + wm);
+        verify(logger).info("Output to ordinal 1: " + wm);
+        outbox.queue(0).clear();
+        outbox.queue(1).clear();
+        outbox.reset();
+        verifyZeroInteractions(logger);
+
         peekP.complete();
         verify(logger).info("Output to ordinal 0: " + format(0));
         verify(logger).info("Output to ordinal 1: " + format(0));
@@ -290,14 +299,9 @@ public class PeekingWrapperTest {
         verifyZeroInteractions(logger);
 
         peekP.complete();
-        Watermark wm = new Watermark(2);
+        wm = new Watermark(2);
         verify(logger).info("Output to ordinal 0: " + wm);
         verify(logger).info("Output to ordinal 1: " + wm);
-        verifyZeroInteractions(logger);
-
-        wm = new Watermark(3);
-        peekP.tryProcessWatermark(wm);
-        verify(logger).info("Output forwarded: " + wm);
         outbox.queue(0).clear();
         outbox.queue(1).clear();
         outbox.reset();
@@ -365,6 +369,11 @@ public class PeekingWrapperTest {
             } catch (NoSuchElementException expected) {
             }
         }
+
+        @Override
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+            return true;
+        }
     }
 
     /**
@@ -379,6 +388,11 @@ public class PeekingWrapperTest {
 
             assertNull(inbox.poll());
         }
+
+        @Override
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+            return true;
+        }
     }
 
     /**
@@ -387,6 +401,11 @@ public class PeekingWrapperTest {
      */
     static class TestSourceProcessor extends TestProcessor {
         private int counter;
+
+        @Override
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+            return true;
+        }
 
         @Override
         public boolean complete() {
