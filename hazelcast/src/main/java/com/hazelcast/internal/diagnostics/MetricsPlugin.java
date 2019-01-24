@@ -24,6 +24,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -75,7 +76,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
         probeRenderer.writer = writer;
         // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
         // the same timestamp
-        probeRenderer.timeMillis = System.currentTimeMillis();
+        probeRenderer.timeMillis = currentTimeMillis();
         metricsRegistry.render(probeRenderer);
         probeRenderer.writer = null;
     }

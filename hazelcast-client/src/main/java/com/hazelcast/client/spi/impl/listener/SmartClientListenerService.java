@@ -22,12 +22,14 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.StringUtil.timeToString;
 
 public class SmartClientListenerService extends AbstractClientListenerService  {
@@ -68,7 +70,7 @@ public class SmartClientListenerService extends AbstractClientListenerService  {
 
     private void trySyncConnectToAllMembers() {
         ClientClusterService clientClusterService = client.getClientClusterService();
-        long startMillis = System.currentTimeMillis();
+        long startMillis = currentTimeMillis();
 
         do {
             Member lastFailedMember = null;
@@ -94,7 +96,7 @@ public class SmartClientListenerService extends AbstractClientListenerService  {
     }
 
     private void timeOutOrSleepBeforeNextTry(long startMillis, Member lastFailedMember, Exception lastException) {
-        long nowInMillis = System.currentTimeMillis();
+        long nowInMillis = currentTimeMillis();
         long elapsedMillis = nowInMillis - startMillis;
         boolean timedOut = elapsedMillis > invocationTimeoutMillis;
 

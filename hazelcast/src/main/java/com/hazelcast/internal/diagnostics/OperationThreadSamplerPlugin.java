@@ -24,11 +24,13 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ItemCounter;
 
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -133,7 +135,7 @@ public class OperationThreadSamplerPlugin extends DiagnosticsPlugin {
 
         @Override
         public void run() {
-            long nextRunMillis = System.currentTimeMillis();
+            long nextRunMillis = currentTimeMillis();
 
             while (nodeEngine.isActive()) {
                 LockSupport.parkUntil(nextRunMillis);

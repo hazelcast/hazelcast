@@ -25,6 +25,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -196,7 +198,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
     private class StorageTask implements Runnable {
 
-        private final long started = System.currentTimeMillis();
+        private final long started = currentTimeMillis();
         private final NearCachePreloaderConfig preloaderConfig;
 
         public StorageTask(NearCachePreloaderConfig preloaderConfig) {

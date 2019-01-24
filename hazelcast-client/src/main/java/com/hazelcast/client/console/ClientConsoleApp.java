@@ -69,6 +69,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
@@ -234,11 +235,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleHelp(command);
         } else if (first.startsWith("#") && first.length() > 1) {
             int repeat = Integer.parseInt(first.substring(1));
-            long t0 = Clock.currentTimeMillis();
+            long t0 = currentTimeMillis();
             for (int i = 0; i < repeat; i++) {
                 handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
             }
-            println("ops/s = " + repeat * ONE_THOUSAND / (Clock.currentTimeMillis() - t0));
+            println("ops/s = " + repeat * ONE_THOUSAND / (currentTimeMillis() - t0));
         } else if (first.startsWith("&") && first.length() > 1) {
             final int fork = Integer.parseInt(first.substring(1));
             ExecutorService pool = Executors.newFixedThreadPool(fork);
@@ -446,7 +447,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         int taskCount = Integer.parseInt(args[1]);
         int durationSec = Integer.parseInt(args[2]);
 
-        long startMs = System.currentTimeMillis();
+        long startMs = currentTimeMillis();
 
         IExecutorService executor = hazelcast.getExecutorService(executorNamespace + ' ' + threadCount);
         List<Future> futures = new LinkedList<Future>();
@@ -477,7 +478,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             }
         }
 
-        long durationMs = System.currentTimeMillis() - startMs;
+        long durationMs = currentTimeMillis() - startMs;
         println(format("Executed %s tasks in %s ms", taskCount, durationMs));
     }
 
@@ -659,14 +660,14 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             count = Integer.parseInt(args[1]);
         }
         int successCount = 0;
-        long t0 = Clock.currentTimeMillis();
+        long t0 = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getList().add("obj" + i);
             if (success) {
                 successCount++;
             }
         }
-        long t1 = Clock.currentTimeMillis();
+        long t1 = currentTimeMillis();
         println("Added " + successCount + " objects.");
         println("size = " + list.size() + ", " + successCount * ONE_THOUSAND / (t1 - t0)
                 + " evt/s");
@@ -748,9 +749,9 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         for (int i = 0; i < count; i++) {
             theMap.put("key" + (start + i), value);
         }
-        long t0 = Clock.currentTimeMillis();
+        long t0 = currentTimeMillis();
         getMap().putAll(theMap);
-        long t1 = Clock.currentTimeMillis();
+        long t1 = currentTimeMillis();
         if (t1 - t0 > 1) {
             println("size = " + getMap().size() + ", " + count * ONE_THOUSAND / (t1 - t0)
                     + " evt/s, " + (count * ONE_THOUSAND / (t1 - t0)) * (b * BYTE_TO_BIT) / ONE_KB + " Kbit/s, "
@@ -777,11 +778,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         if (args.length > 2) {
             start = Integer.parseInt(args[2]);
         }
-        long t0 = Clock.currentTimeMillis();
+        long t0 = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             getMap().remove("key" + (start + i));
         }
-        long t1 = Clock.currentTimeMillis();
+        long t1 = currentTimeMillis();
         println("size = " + getMap().size() + ", " + count * ONE_THOUSAND / (t1 - t0) + " evt/s");
     }
 
@@ -1036,14 +1037,14 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             count = Integer.parseInt(args[1]);
         }
         int successCount = 0;
-        long t0 = Clock.currentTimeMillis();
+        long t0 = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getSet().add("obj" + i);
             if (success) {
                 successCount++;
             }
         }
-        long t1 = Clock.currentTimeMillis();
+        long t1 = currentTimeMillis();
         println("Added " + successCount + " objects.");
         println("size = " + getSet().size() + ", " + successCount * ONE_THOUSAND / (t1 - t0)
                 + " evt/s");
@@ -1055,14 +1056,14 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             count = Integer.parseInt(args[1]);
         }
         int successCount = 0;
-        long t0 = Clock.currentTimeMillis();
+        long t0 = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getSet().remove("obj" + i);
             if (success) {
                 successCount++;
             }
         }
-        long t1 = Clock.currentTimeMillis();
+        long t1 = currentTimeMillis();
         println("Removed " + successCount + " objects.");
         println("size = " + getSet().size() + ", " + successCount * ONE_THOUSAND / (t1 - t0)
                 + " evt/s");
@@ -1220,7 +1221,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         if (args.length > 2) {
             value = new byte[Integer.parseInt(args[2])];
         }
-        long t0 = Clock.currentTimeMillis();
+        long t0 = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             if (value == null) {
                 getQueue().offer("obj");
@@ -1228,7 +1229,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 getQueue().offer(value);
             }
         }
-        long t1 = Clock.currentTimeMillis();
+        long t1 = currentTimeMillis();
         print("size = " + getQueue().size() + ", " + count * ONE_THOUSAND / (t1 - t0) + " evt/s");
         if (value == null) {
             println("");

@@ -31,12 +31,14 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.InMemoryFormat.values;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -546,7 +548,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         out.writeLong(ttlEnabled ? expirationPolicy.getTtlMs() : 0);
         out.writeInt(inMemoryFormat.ordinal());
 
-        long now = System.currentTimeMillis();
+        long now = currentTimeMillis();
 
         // we only write the actual content of the ringbuffer. So we don't write empty slots.
         for (long seq = ringbuffer.headSequence(); seq <= ringbuffer.tailSequence(); seq++) {
@@ -586,7 +588,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
             this.expirationPolicy = new RingbufferExpirationPolicy(capacity, ttlMs);
         }
 
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         for (long seq = headSequence; seq <= tailSequence; seq++) {
             if (inMemoryFormat == BINARY) {
                 ringbuffer.set(seq, (E) in.readData());

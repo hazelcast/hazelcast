@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
+import com.hazelcast.util.Clock;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -39,6 +40,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.util.Clock.currentTimeMillis;
 
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
@@ -80,7 +83,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         }
         this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
         this.clientVersionString = "Unknown";
-        this.creationTime = System.currentTimeMillis();
+        this.creationTime = currentTimeMillis();
     }
 
     @Override

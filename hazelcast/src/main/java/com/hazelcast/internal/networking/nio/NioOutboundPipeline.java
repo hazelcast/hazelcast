@@ -39,11 +39,12 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.collection.ArrayUtils.append;
 import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
 import static java.lang.Math.max;
-import static java.lang.System.currentTimeMillis;
+
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 

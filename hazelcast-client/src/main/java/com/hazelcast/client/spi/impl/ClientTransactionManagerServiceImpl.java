@@ -34,6 +34,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.Clock;
 
 import javax.transaction.xa.Xid;
 import java.io.IOException;
@@ -113,7 +114,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
 
     public ClientConnection connect() throws Exception {
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
-        long startTimeMillis = System.currentTimeMillis();
+        long startTimeMillis = currentTimeMillis();
         long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
         ClientConfig clientConfig = client.getClientConfig();
         boolean smartRouting = clientConfig.getNetworkConfig().isSmartRouting();
@@ -129,7 +130,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
                 if (e instanceof HazelcastClientOfflineException) {
                     throw e;
                 }
-                if (System.currentTimeMillis() - startTimeMillis > invocationTimeoutMillis) {
+                if (currentTimeMillis() - startTimeMillis > invocationTimeoutMillis) {
                     throw newOperationTimeoutException(e, invocationTimeoutMillis, startTimeMillis);
                 }
             }

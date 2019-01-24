@@ -18,9 +18,11 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ConcurrencyUtil.setMax;
 
 /**
@@ -257,7 +259,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheRemovals() {
         REMOVALS.incrementAndGet(this);
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(currentTimeMillis());
     }
 
     /**
@@ -267,7 +269,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheRemovals(long number) {
         REMOVALS.addAndGet(this, number);
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(currentTimeMillis());
     }
 
     /**
@@ -275,7 +277,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheExpiries() {
         EXPIRIES.incrementAndGet(this);
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(currentTimeMillis());
     }
 
     /**
@@ -285,7 +287,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheExpiries(long number) {
         EXPIRIES.addAndGet(this, number);
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(currentTimeMillis());
     }
 
     /**
@@ -293,7 +295,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCachePuts() {
         PUTS.incrementAndGet(this);
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(currentTimeMillis());
     }
 
     /**
@@ -303,7 +305,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCachePuts(long number) {
         PUTS.addAndGet(this, number);
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(currentTimeMillis());
     }
 
     /**
@@ -311,7 +313,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheHits() {
         HITS.incrementAndGet(this);
-        setLastAccessTime(System.currentTimeMillis());
+        setLastAccessTime(currentTimeMillis());
     }
 
     /**
@@ -321,7 +323,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheHits(long number) {
         HITS.addAndGet(this, number);
-        setLastAccessTime(System.currentTimeMillis());
+        setLastAccessTime(currentTimeMillis());
     }
 
     /**
@@ -329,7 +331,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheMisses() {
         MISSES.incrementAndGet(this);
-        setLastAccessTime(System.currentTimeMillis());
+        setLastAccessTime(currentTimeMillis());
     }
 
     /**
@@ -339,7 +341,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheMisses(long number) {
         MISSES.addAndGet(this, number);
-        setLastAccessTime(System.currentTimeMillis());
+        setLastAccessTime(currentTimeMillis());
     }
 
     /**
@@ -347,7 +349,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheEvictions() {
         EVICTIONS.incrementAndGet(this);
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(currentTimeMillis());
     }
 
     /**
@@ -357,7 +359,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheEvictions(long number) {
         EVICTIONS.addAndGet(this, number);
-        setLastUpdateTime(System.currentTimeMillis());
+        setLastUpdateTime(currentTimeMillis());
     }
 
     /**

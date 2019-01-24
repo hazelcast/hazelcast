@@ -22,6 +22,7 @@ import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.io.IOException;
@@ -39,9 +40,9 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
-import static java.lang.System.currentTimeMillis;
 
 public class NioThread extends Thread implements OperationHostileThread {
 

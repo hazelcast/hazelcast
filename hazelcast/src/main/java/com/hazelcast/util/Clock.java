@@ -18,13 +18,26 @@ package com.hazelcast.util;
 
 import com.hazelcast.nio.ClassLoaderUtil;
 
+import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.nio.charset.Charset.forName;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 
 /**
  * Abstracts the system clock to simulate different clocks without changing the actual system time.
- *
+ * <p>
  * Can be used to simulate different time zones or to control timing related behavior in Hazelcast.
- *
+ * <p>
  * The time offset can be configured with the property {@value ClockProperties#HAZELCAST_CLOCK_OFFSET}.
  * The clock implementation can be configured with the property {@value ClockProperties#HAZELCAST_CLOCK_IMPL}.
  *
@@ -39,7 +52,9 @@ public final class Clock {
     private Clock() {
     }
 
-    /** Returns the current time in ms for the configured {@link ClockImpl} */
+    /**
+     * Returns the current time in ms for the configured {@link ClockImpl}
+     */
     public static long currentTimeMillis() {
         return CLOCK.currentTimeMillis();
     }
@@ -49,6 +64,9 @@ public final class Clock {
     }
 
     static ClockImpl createClock() {
+        fixClock();
+
+
         String clockImplClassName = System.getProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
         if (clockImplClassName != null) {
             try {
@@ -71,8 +89,55 @@ public final class Clock {
             return new SystemOffsetClock(offset);
         }
 
-        return new SystemClock();
+        return new XenOptimizedClock();
     }
+
+    public static void fixClock(){
+        File file = new File("/sys/devices/system/clocksource/clocksource0/current_clocksource");
+        if(!file.exists()){
+            return;
+        }
+
+
+    }
+
+    public static String fileAsText(File file)throws IOException {
+        FileInputStream stream = null;
+        try {
+            stream = new FileInputStream(file);
+            return toTextFromStream(stream);
+         } finally {
+            closeQuietly(stream);
+        }
+    }
+
+    private static String toTextFromStream(InputStream inputStream) {
+        InputStreamReader streamReader = null;
+        Reader reader = null;
+        try {
+            streamReader = new InputStreamReader(inputStream, forName("UTF-8"));
+            reader = new BufferedReader(streamReader);
+
+            StringBuilder builder = new StringBuilder();
+            char[] buffer = new char[READ_BUFFER_SIZE];
+            int read;
+            while ((read = reader.read(buffer, 0, buffer.length)) > 0) {
+                builder.append(buffer, 0, read);
+            }
+            return builder.toString();
+        } catch (IOException e) {
+            throw new IOException(e);
+        } finally {
+            closeQuietly(reader, streamReader);
+        }
+    }
+
+    public static void closeQuietly(Closeable... closeables) {
+        for (Closeable c : closeables) {
+            closeQuietly(c);
+        }
+    }
+
 
     /**
      * Extend this class if you want to provide your own clock implementation.
@@ -90,6 +155,43 @@ public final class Clock {
         @Override
         protected long currentTimeMillis() {
             return System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * Makes use of nanotime instead of System.currentTimeMillis()
+     *
+     * The problem is that in EC2 using XEN the currentTimeMillis VDSO doesn't
+     * work correctly and therefor a system call is performed to read the time.
+     *
+     * https://heapanalytics.com/blog/engineering/clocksource-aws-ec2-vdso
+     */
+    static final class XenOptimizedClock extends ClockImpl {
+
+        private final long startNanos;
+        private final long startMillis;
+        private final long NANOS_PER_MS = TimeUnit.MILLISECONDS.toNanos(1);
+
+        private XenOptimizedClock() {
+            System.out.println("Using XenOptimizedClock");
+
+            for (; ; ) {
+                long t1 = System.currentTimeMillis();
+                long nanos = System.nanoTime();
+                long t2 = System.currentTimeMillis();
+
+                if (t1 == t2) {
+                    startNanos = nanos;
+                    startMillis = t1;
+                    break;
+                }
+            }
+        }
+
+        @Override
+        protected long currentTimeMillis() {
+            long elapsedNanos = System.nanoTime() - startNanos;
+            return startMillis + elapsedNanos / NANOS_PER_MS;
         }
     }
 

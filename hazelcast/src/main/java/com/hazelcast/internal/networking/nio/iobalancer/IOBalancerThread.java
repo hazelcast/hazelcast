@@ -17,12 +17,13 @@
 package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.Clock;
 
 import java.util.concurrent.BlockingQueue;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
-import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

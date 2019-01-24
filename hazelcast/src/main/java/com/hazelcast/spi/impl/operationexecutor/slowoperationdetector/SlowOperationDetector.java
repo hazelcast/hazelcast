@@ -22,6 +22,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -141,7 +142,7 @@ public final class SlowOperationDetector {
             long lastLogPurge = System.nanoTime();
             while (running) {
                 long nowNanos = System.nanoTime();
-                long nowMillis = System.currentTimeMillis();
+                long nowMillis = Clock.currentTimeMillis();
 
                 scan(nowNanos, nowMillis, genericOperationRunners, genericCurrentOperationData);
                 scan(nowNanos, nowMillis, partitionOperationRunners, partitionCurrentOperationData);

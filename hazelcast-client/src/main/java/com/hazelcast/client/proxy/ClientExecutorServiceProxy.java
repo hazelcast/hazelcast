@@ -84,7 +84,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     };
 
-    private final Random random = new Random(-System.currentTimeMillis());
+    private final Random random = new Random(-Clock.currentTimeMillis());
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
     private volatile long lastSubmitTime;
 

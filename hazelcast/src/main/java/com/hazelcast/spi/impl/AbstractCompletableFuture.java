@@ -21,6 +21,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.CancellationException;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -204,7 +206,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
      */
     @Override
     public V get(long timeout, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
-        final long deadlineTimeMillis = System.currentTimeMillis() + unit.toMillis(timeout);
+        final long deadlineTimeMillis = currentTimeMillis() + unit.toMillis(timeout);
         long millisToWait;
         for (; ; ) {
             Object currentState = this.state;
@@ -219,7 +221,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                 throw new InterruptedException();
             }
 
-            millisToWait = deadlineTimeMillis - System.currentTimeMillis();
+            millisToWait = deadlineTimeMillis - currentTimeMillis();
             if (millisToWait <= 0) {
                 throw new TimeoutException();
             }

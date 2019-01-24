@@ -16,12 +16,15 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.util.Clock;
+
 import java.io.PrintWriter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.LOCALE_INTERNAL;
 import static java.util.Calendar.DAY_OF_MONTH;
@@ -105,7 +108,7 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
 
     @Override
     public void startSection(String sectionName) {
-        startSection(sectionName, System.currentTimeMillis());
+        startSection(sectionName, currentTimeMillis());
     }
 
     public void startSection(String name, long timeMillis) {

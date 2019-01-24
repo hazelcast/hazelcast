@@ -70,6 +70,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateConfiguredTypes;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
@@ -576,7 +577,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
             invoke(request);
             waitCompletionLatch(completionId, null);
             if (statisticsEnabled) {
-                statsHandler.getStatistics().setLastUpdateTime(System.currentTimeMillis());
+                statsHandler.getStatistics().setLastUpdateTime(currentTimeMillis());
                 // we don't support count stats of removing all entries
             }
         } catch (Throwable t) {
@@ -590,7 +591,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         try {
             invoke(request);
             if (statisticsEnabled) {
-                statsHandler.getStatistics().setLastUpdateTime(System.currentTimeMillis());
+                statsHandler.getStatistics().setLastUpdateTime(currentTimeMillis());
                 // we don't support count stats of removing all entries
             }
         } catch (Throwable t) {

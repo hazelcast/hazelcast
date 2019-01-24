@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 
@@ -93,7 +94,7 @@ public class OperationHeartbeatPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
-        long nowMillis = System.currentTimeMillis();
+        long nowMillis = currentTimeMillis();
         for (Map.Entry<Address, AtomicLong> entry : heartbeatPerMember.entrySet()) {
             Address member = entry.getKey();
             long lastHeartbeatMillis = entry.getValue().longValue();

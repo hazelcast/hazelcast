@@ -22,6 +22,7 @@ import com.hazelcast.monitor.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getString;
 import static java.lang.String.format;
@@ -254,7 +255,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
     }
 
     private static long getNowInMillis() {
-        return System.currentTimeMillis();
+        return currentTimeMillis();
     }
 
     @Override

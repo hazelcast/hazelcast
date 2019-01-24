@@ -95,6 +95,7 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -108,6 +109,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.util.Clock.*;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ServiceLoader.classIterator;
 import static java.lang.Thread.currentThread;
@@ -390,8 +393,8 @@ public final class ProxyManager {
     }
 
     private void initializeWithRetry(ClientProxy clientProxy) throws Exception {
-        long startMillis = System.currentTimeMillis();
-        while (System.currentTimeMillis() < startMillis + invocationTimeoutMillis) {
+        long startMillis = currentTimeMillis();
+        while (currentTimeMillis() < startMillis + invocationTimeoutMillis) {
             try {
                 initialize(clientProxy);
                 return;
@@ -413,7 +416,7 @@ public final class ProxyManager {
                 }
             }
         }
-        long elapsedTime = System.currentTimeMillis() - startMillis;
+        long elapsedTime = currentTimeMillis() - startMillis;
         throw new OperationTimeoutException("Initializing  " + clientProxy.getServiceName() + ":"
                 + clientProxy.getName() + " is timed out after " + elapsedTime
                 + " ms. Configured invocation timeout is " + invocationTimeoutMillis + " ms");

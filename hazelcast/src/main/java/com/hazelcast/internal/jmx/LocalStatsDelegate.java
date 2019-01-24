@@ -17,10 +17,13 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
+import com.hazelcast.util.Clock;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.util.Clock.currentTimeMillis;
 
 /**
  * Provides LocalStats for {@link MapMBean}, {@link MultiMapMBean}, {@link QueueMBean}
@@ -42,12 +45,12 @@ public class LocalStatsDelegate<T> {
     }
 
     public T getLocalStats() {
-        long delta = System.currentTimeMillis() - lastUpdated.get();
+        long delta = currentTimeMillis() - lastUpdated.get();
         if (delta > intervalMs) {
             if (inProgress.compareAndSet(false, true)) {
                 try {
                     localStats = supplier.get();
-                    lastUpdated.set(System.currentTimeMillis());
+                    lastUpdated.set(currentTimeMillis());
                 } finally {
                     inProgress.set(false);
                 }

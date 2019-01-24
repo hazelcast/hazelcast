@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.Clock;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -471,7 +472,7 @@ public final class IOUtil {
             if (!file.exists()) {
                 fos = new FileOutputStream(file);
             }
-            if (!file.setLastModified(System.currentTimeMillis())) {
+            if (!file.setLastModified(Clock.currentTimeMillis())) {
                 throw new HazelcastException("Could not touch file " + file.getAbsolutePath());
             }
         } catch (IOException e) {

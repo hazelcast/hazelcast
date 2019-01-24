@@ -82,9 +82,9 @@ import java.util.LinkedList;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static java.lang.System.currentTimeMillis;
 
 /**
  * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be

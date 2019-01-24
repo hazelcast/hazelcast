@@ -20,7 +20,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
 
-import static java.lang.System.currentTimeMillis;
+import static com.hazelcast.util.Clock.currentTimeMillis;
+
 
 public class TcpIpConnectionErrorHandler {
 

@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.StringUtil.timeToString;
@@ -183,7 +184,7 @@ final class ClientCacheHelper {
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
         long invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        long startMillis = System.currentTimeMillis();
+        long startMillis = currentTimeMillis();
         Exception lastException;
         do {
             try {
@@ -209,7 +210,7 @@ final class ClientCacheHelper {
 
     private static void timeOutOrSleepBeforeNextTry(long startMillis, long invocationRetryPauseMillis,
                                                     long invocationTimeoutMillis, Exception lastException) {
-        long nowInMillis = System.currentTimeMillis();
+        long nowInMillis = currentTimeMillis();
         long elapsedMillis = nowInMillis - startMillis;
         boolean timedOut = elapsedMillis > invocationTimeoutMillis;
 

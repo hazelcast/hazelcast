@@ -30,6 +30,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.function.Consumer;
 
 import java.io.EOFException;
@@ -39,6 +40,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.StringUtil.timeToStringFriendly;
 
 /**
@@ -54,7 +56,7 @@ public class ClientConnection implements Connection {
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
-    private final long startTime = System.currentTimeMillis();
+    private final long startTime = currentTimeMillis();
     private final Consumer<ClientMessage> responseHandler;
 
     private volatile Address remoteEndpoint;

@@ -35,10 +35,12 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -363,7 +365,7 @@ public class Statistics {
                 };
 
         void fillMetrics(final StringBuilder stats, final ClientConnection ownerConnection) {
-            stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
+            stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(currentTimeMillis());
             addStat(stats, "enterprise", enterprise);
             addStat(stats, "clientType", ClientType.JAVA.toString());
             addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());

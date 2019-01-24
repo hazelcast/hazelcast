@@ -19,6 +19,8 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
+
 /**
  * Helper class which contains specific statistic calculations per context
  */
@@ -29,7 +31,7 @@ final class CacheStatsHandler {
 
     CacheStatsHandler(SerializationService serializationService) {
         this.serializationService = serializationService;
-        this.statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis());
+        this.statistics = new ClientCacheStatisticsImpl(currentTimeMillis());
     }
 
     ClientCacheStatisticsImpl getStatistics() {

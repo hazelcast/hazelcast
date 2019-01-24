@@ -56,6 +56,7 @@ import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.util.Clock.*;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -249,7 +250,7 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
 
     abstract class FixedRateMonitorTask implements Runnable {
         final long periodMillis;
-        private long expectedNextMillis = System.currentTimeMillis();
+        private long expectedNextMillis = currentTimeMillis();
 
         FixedRateMonitorTask(long periodMillis) {
             this.periodMillis = periodMillis;
@@ -257,7 +258,7 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
 
         @Override
         public void run() {
-            long currentTimeMillis = System.currentTimeMillis();
+            long currentTimeMillis = Clock.currentTimeMillis();
 
             try {
                 if (expectedNextMillis + MAX_DELAY_MILLIS < currentTimeMillis) {
@@ -416,7 +417,7 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
         @Override
         public void run0() {
             heartbeatPacketsReceived.inc();
-            long nowMillis = Clock.currentTimeMillis();
+            long nowMillis = currentTimeMillis();
             updateMemberHeartbeat(nowMillis);
             final OperationControl opControl = serializationService.toObject(payload);
             for (long callId : opControl.runningOperations()) {

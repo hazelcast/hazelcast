@@ -59,6 +59,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -94,7 +95,7 @@ public class ExecutorServiceProxy
     };
 
     private final String name;
-    private final Random random = new Random(-System.currentTimeMillis());
+    private final Random random = new Random(-currentTimeMillis());
     private final int partitionCount;
     private final ILogger logger;
 
@@ -274,7 +275,7 @@ public class ExecutorServiceProxy
     private boolean checkSync() {
         boolean sync = false;
         long last = lastSubmitTime;
-        long now = Clock.currentTimeMillis();
+        long now = currentTimeMillis();
         if (last + SYNC_DELAY_MS < now) {
             CONSECUTIVE_SUBMITS.set(this, 0);
         } else if (CONSECUTIVE_SUBMITS.incrementAndGet(this) % SYNC_FREQUENCY == 0) {

@@ -23,8 +23,10 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.util.Clock;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -103,7 +105,7 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
         ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
         long expectedIntervalMillis = clusterHeartbeatManager.getHeartbeatIntervalMillis();
 
-        long nowMillis = System.currentTimeMillis();
+        long nowMillis = currentTimeMillis();
         for (MemberImpl member : clusterService.getMemberImpls()) {
             long lastHeartbeatMillis = clusterHeartbeatManager.getLastHeartbeatTime(member);
             if (lastHeartbeatMillis == 0L) {

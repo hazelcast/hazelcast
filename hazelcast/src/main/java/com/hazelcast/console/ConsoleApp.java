@@ -68,6 +68,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.memory.MemoryUnit.BYTES;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
@@ -219,11 +220,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             handleHelp(command);
         } else if (first.startsWith("#") && first.length() > 1) {
             int repeat = Integer.parseInt(first.substring(1));
-            long started = Clock.currentTimeMillis();
+            long started = currentTimeMillis();
             for (int i = 0; i < repeat; i++) {
                 handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
             }
-            long elapsedMilliSeconds = Clock.currentTimeMillis() - started;
+            long elapsedMilliSeconds = currentTimeMillis() - started;
             if (elapsedMilliSeconds > 0) {
                 println(String.format("ops/s = %.2f", (double) repeat * 1000 / elapsedMilliSeconds));
             } else {
@@ -434,7 +435,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         int taskCount = Integer.parseInt(args[1]);
         int durationSec = Integer.parseInt(args[2]);
 
-        long startMs = System.currentTimeMillis();
+        long startMs = currentTimeMillis();
 
         IExecutorService executor = hazelcast.getExecutorService(EXECUTOR_NAMESPACE + " " + threadCount);
         List<Future> futures = new LinkedList<Future>();
@@ -465,7 +466,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             }
         }
 
-        long durationMs = System.currentTimeMillis() - startMs;
+        long durationMs = currentTimeMillis() - startMs;
         println(format("Executed %s tasks in %s ms", taskCount, durationMs));
     }
 
@@ -645,14 +646,14 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             count = Integer.parseInt(args[1]);
         }
         int successCount = 0;
-        long started = Clock.currentTimeMillis();
+        long started = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getList().add("obj" + i);
             if (success) {
                 successCount++;
             }
         }
-        long elapsedMillis = Clock.currentTimeMillis() - started;
+        long elapsedMillis = currentTimeMillis() - started;
         println("Added " + successCount + " objects.");
         if (elapsedMillis > 0) {
             println("size = " + list.size() + ", " + MILLISECONDS.toSeconds(successCount / elapsedMillis) + " evt/s");
@@ -743,9 +744,9 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         for (int i = 0; i < count; i++) {
             theMap.put("key" + (start + i), value);
         }
-        long started = Clock.currentTimeMillis();
+        long started = currentTimeMillis();
         getMap().putAll(theMap);
-        long elapsedMillis = Clock.currentTimeMillis() - started;
+        long elapsedMillis = currentTimeMillis() - started;
         if (elapsedMillis > 0) {
             long addedKiloBytes = count * BYTES.toKiloBytes(b);
             println("size = " + getMap().size() + ", " + MILLISECONDS.toSeconds(count / elapsedMillis) + " evt/s, "
@@ -773,11 +774,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         if (args.length > 2) {
             start = Integer.parseInt(args[2]);
         }
-        long started = Clock.currentTimeMillis();
+        long started = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             getMap().remove("key" + (start + i));
         }
-        long elapsedMillis = Clock.currentTimeMillis() - started;
+        long elapsedMillis = currentTimeMillis() - started;
         if (elapsedMillis > 0) {
             println("size = " + getMap().size() + ", " + MILLISECONDS.toSeconds(count / elapsedMillis) + " evt/s");
         }
@@ -1034,14 +1035,14 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             count = Integer.parseInt(args[1]);
         }
         int successCount = 0;
-        long started = Clock.currentTimeMillis();
+        long started = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getSet().add("obj" + i);
             if (success) {
                 successCount++;
             }
         }
-        long elapsedMillis = Clock.currentTimeMillis() - started;
+        long elapsedMillis = currentTimeMillis() - started;
         println("Added " + successCount + " objects.");
         if (elapsedMillis > 0) {
             println("size = " + getSet().size() + ", " + MILLISECONDS.toSeconds(successCount / elapsedMillis) + " evt/s");
@@ -1054,14 +1055,14 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             count = Integer.parseInt(args[1]);
         }
         int successCount = 0;
-        long started = Clock.currentTimeMillis();
+        long started = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getSet().remove("obj" + i);
             if (success) {
                 successCount++;
             }
         }
-        long elapsedMillis = Clock.currentTimeMillis() - started;
+        long elapsedMillis = currentTimeMillis() - started;
         println("Removed " + successCount + " objects.");
         if (elapsedMillis > 0) {
             println("size = " + getSet().size() + ", " + MILLISECONDS.toSeconds(successCount / elapsedMillis) + " evt/s");
@@ -1219,7 +1220,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         if (args.length > 2) {
             value = new byte[Integer.parseInt(args[2])];
         }
-        long started = Clock.currentTimeMillis();
+        long started = currentTimeMillis();
         for (int i = 0; i < count; i++) {
             if (value == null) {
                 getQueue().offer("obj");
@@ -1227,7 +1228,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 getQueue().offer(value);
             }
         }
-        long elapsedMillis = Clock.currentTimeMillis() - started;
+        long elapsedMillis = currentTimeMillis() - started;
         print("size = " + getQueue().size() + ", " + MILLISECONDS.toSeconds(count / elapsedMillis) + " evt/s");
         if (value == null) {
             println("");

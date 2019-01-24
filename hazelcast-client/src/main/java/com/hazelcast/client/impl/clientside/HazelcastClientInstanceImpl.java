@@ -175,10 +175,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.spi.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.spi.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 

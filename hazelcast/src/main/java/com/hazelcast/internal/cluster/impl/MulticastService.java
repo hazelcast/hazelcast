@@ -29,6 +29,7 @@ import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.util.ByteArrayProcessor;
+import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -245,7 +246,7 @@ public final class MulticastService implements Runnable {
                 }
             } catch (Exception e) {
                 if (e instanceof EOFException || e instanceof HazelcastSerializationException) {
-                    long now = System.currentTimeMillis();
+                    long now = Clock.currentTimeMillis();
                     if (now - lastLoggedJoinSerializationFailure > JOIN_SERIALIZATION_ERROR_SUPPRESSION_MILLIS) {
                         lastLoggedJoinSerializationFailure = now;
                         logger.warning("Received a JoinRequest with an incompatible binary-format. "

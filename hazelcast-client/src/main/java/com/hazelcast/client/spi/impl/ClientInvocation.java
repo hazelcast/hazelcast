@@ -34,6 +34,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -92,7 +93,7 @@ public class ClientInvocation implements Runnable {
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-        this.startTimeMillis = System.currentTimeMillis();
+        this.startTimeMillis = currentTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = invocationService.getCallIdSequence();
@@ -229,7 +230,7 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        long timePassed = System.currentTimeMillis() - startTimeMillis;
+        long timePassed = currentTimeMillis() - startTimeMillis;
         if (timePassed > invocationTimeoutMillis) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Exception will not be retried because invocation timed out", exception);
