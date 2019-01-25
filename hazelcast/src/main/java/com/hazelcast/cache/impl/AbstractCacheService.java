@@ -32,6 +32,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.util.InvocationUtil;
@@ -81,7 +82,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
-        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ClusterStateListener {
+        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ClusterStateListener, Offloadable {
 
     private static final String SETUP_REF = "setupRef";
 
@@ -796,5 +797,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         if (expManager != null) {
             expManager.onClusterStateChange(newState);
         }
+    }
+
+    @Override
+    public String getExecutorName() {
+        return OFFLOADABLE_EXECUTOR;
     }
 }

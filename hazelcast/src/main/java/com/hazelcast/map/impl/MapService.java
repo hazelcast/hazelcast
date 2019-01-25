@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
@@ -75,7 +76,7 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
-        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener {
+        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener, Offloadable {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -249,5 +250,10 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     public static ObjectNamespace getObjectNamespace(String mapName) {
         return new DistributedObjectNamespace(SERVICE_NAME, mapName);
+    }
+
+    @Override
+    public String getExecutorName() {
+        return OFFLOADABLE_EXECUTOR;
     }
 }

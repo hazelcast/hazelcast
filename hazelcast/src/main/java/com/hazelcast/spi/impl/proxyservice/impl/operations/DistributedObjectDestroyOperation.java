@@ -16,14 +16,21 @@
 
 package com.hazelcast.spi.impl.proxyservice.impl.operations;
 
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.CallStatus;
+import com.hazelcast.spi.Offload;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.CallStatus.DONE_RESPONSE;
 
 public class DistributedObjectDestroyOperation
         extends Operation implements IdentifiedDataSerializable {
@@ -40,9 +47,65 @@ public class DistributedObjectDestroyOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public CallStatus call() throws Exception {
+        Offloadable offloadable = getOrNullOffloadableService();
+        if (offloadable != null) {
+            return new OffloadedDestroyer(offloadable);
+        } else {
+            destroyLocalDistributedObject();
+            return DONE_RESPONSE;
+        }
+    }
+
+    /**
+     * @return {@link Offloadable} service object if service is implemented
+     * {@link Offloadable} interface, otherwise return null to
+     * indicate service is not an instance of {@link Offloadable}
+     */
+    private Offloadable getOrNullOffloadableService() {
+        RemoteService service = getNodeEngine().getService(serviceName);
+        if (service instanceof Offloadable) {
+            return ((Offloadable) service);
+        } else {
+            return null;
+        }
+    }
+
+    private void destroyLocalDistributedObject() {
         ProxyServiceImpl proxyService = getService();
         proxyService.destroyLocalDistributedObject(serviceName, name, false);
+    }
+
+    /**
+     * Offloads destroy call to not to block {@code GenericOperationThread}.
+     */
+    private final class OffloadedDestroyer extends Offload {
+
+        private final String executorName;
+
+        public OffloadedDestroyer(Offloadable offloadable) {
+            super(DistributedObjectDestroyOperation.this);
+            this.executorName = offloadable.getExecutorName();
+        }
+
+        @Override
+        public void start() {
+            try {
+                executionService.execute(executorName, new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            destroyLocalDistributedObject();
+                            sendResponse(true);
+                        } catch (Throwable throwable) {
+                            sendResponse(throwable);
+                        }
+                    }
+                });
+            } catch (Throwable throwable) {
+                throw ExceptionUtil.rethrow(throwable);
+            }
+        }
     }
 
     @Override
