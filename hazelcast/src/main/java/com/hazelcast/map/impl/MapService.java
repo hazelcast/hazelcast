@@ -75,8 +75,9 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  */
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
-        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener, Offloadable {
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService,
+        StatisticsAwareService<LocalMapStats>, PartitionAwareService, ClientAwareService,
+        QuorumAwareService, NotifiableEventListener, ClusterStateListener, Offloadable {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -134,7 +135,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-            Collection<ServiceNamespace> namespaces) {
+                                                 Collection<ServiceNamespace> namespaces) {
         return migrationAwareService.prepareReplicationOperation(event, namespaces);
     }
 
