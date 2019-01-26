@@ -64,10 +64,7 @@ public final class Clock {
     }
 
     static ClockImpl createClock() {
-        fixClock();
-
-
-        String clockImplClassName = System.getProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
+         String clockImplClassName = System.getProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
         if (clockImplClassName != null) {
             try {
                 return ClassLoaderUtil.newInstance(null, clockImplClassName);
@@ -92,51 +89,6 @@ public final class Clock {
         return new XenOptimizedClock();
     }
 
-    public static void fixClock(){
-        File file = new File("/sys/devices/system/clocksource/clocksource0/current_clocksource");
-        if(!file.exists()){
-            return;
-        }
-
-
-    }
-
-    public static String fileAsText(File file)throws IOException {
-        FileInputStream stream = null;
-        try {
-            stream = new FileInputStream(file);
-            return toTextFromStream(stream);
-         } finally {
-            closeQuietly(stream);
-        }
-    }
-
-    private static String toTextFromStream(InputStream inputStream) {
-        InputStreamReader streamReader = null;
-        Reader reader = null;
-        try {
-            streamReader = new InputStreamReader(inputStream, forName("UTF-8"));
-            reader = new BufferedReader(streamReader);
-
-            StringBuilder builder = new StringBuilder();
-            char[] buffer = new char[READ_BUFFER_SIZE];
-            int read;
-            while ((read = reader.read(buffer, 0, buffer.length)) > 0) {
-                builder.append(buffer, 0, read);
-            }
-            return builder.toString();
-        } catch (IOException e) {
-            throw new IOException(e);
-        } finally {
-            closeQuietly(reader, streamReader);
-        }
-    }
-
-    public static void closeQuietly(Closeable... closeables) {
-        for (Closeable c : closeables) {
-            closeQuietly(c);
-        }
-    }
 
 
     /**

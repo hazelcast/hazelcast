@@ -275,7 +275,7 @@ public class NioThread extends Thread implements OperationHostileThread {
         while (!stop) {
             processTaskQueue();
 
-            int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
+            int selectedKeys = selector.select();
             if (selectedKeys > 0) {
                 processSelectionKeys();
             }
@@ -346,7 +346,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private void processSelectionKeys() {
-        lastSelectTimeMs = currentTimeMillis();
+        //lastSelectTimeMs = currentTimeMillis();
         Iterator<SelectionKey> it = selector.selectedKeys().iterator();
         while (it.hasNext()) {
             SelectionKey sk = it.next();

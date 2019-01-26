@@ -70,7 +70,7 @@ public class ClientInvocation implements Runnable {
     private final Address address;
     private final int partitionId;
     private final Connection connection;
-    private final long startTimeMillis;
+    private  long startTimeMillis;
     private final long retryPauseMillis;
     private final String objectName;
     private volatile ClientConnection sendConnection;
@@ -93,7 +93,7 @@ public class ClientInvocation implements Runnable {
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-        this.startTimeMillis = currentTimeMillis();
+       // this.startTimeMillis = currentTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = invocationService.getCallIdSequence();

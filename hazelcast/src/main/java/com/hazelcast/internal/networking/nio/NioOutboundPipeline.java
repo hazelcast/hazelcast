@@ -104,7 +104,7 @@ public final class NioOutboundPipeline
     }
 
     public long lastWriteTimeMillis() {
-        return lastWriteTime;
+        return System.currentTimeMillis();
     }
 
     @Probe(name = "writeQueuePendingBytes", level = DEBUG)
@@ -270,7 +270,7 @@ public final class NioOutboundPipeline
     }
 
     private void flushToSocket() throws IOException {
-        lastWriteTime = currentTimeMillis();
+        //lastWriteTime = currentTimeMillis();
         int written = socketChannel.write(sendBuffer);
         bytesWritten.inc(written);
         //System.out.println(channel+" bytes written:"+written);

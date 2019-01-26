@@ -119,7 +119,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
      * This field is used to determine how long an invocation has actually been running.
      */
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
+    public final long firstInvocationTimeMillis = 0;//Clock.currentTimeMillis();
 
     /**
      * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
@@ -376,7 +376,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
             // so the invocation has backups and since not all backups have completed, we need to wait
             // (it could be that backups arrive earlier than the response)
 
-            this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
+            //this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
 
             this.backupsAcksExpected = expectedBackups;
 

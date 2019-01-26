@@ -101,7 +101,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     }
 
     public long lastReadTimeMillis() {
-        return lastReadTime;
+        return System.currentTimeMillis();
     }
 
     @Override
@@ -109,7 +109,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         processCount.inc();
         // we are going to set the timestamp even if the channel is going to fail reading. In that case
         // the connection is going to be closed anyway.
-        lastReadTime = currentTimeMillis();
+        //lastReadTime = currentTimeMillis();
 
         int readBytes = socketChannel.read(receiveBuffer);
 
