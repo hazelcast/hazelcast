@@ -37,6 +37,11 @@ class JumpingSystemClock extends Clock.ClockImpl {
     }
 
     @Override
+    protected long approximateTimeMillis() {
+        return currentTimeMillis();
+    }
+
+    @Override
     protected long currentTimeMillis() {
         long now = System.currentTimeMillis();
         if (now >= jumpAfter) {

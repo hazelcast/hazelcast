@@ -20,7 +20,9 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.EmptyStatement;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.EOFException;
@@ -29,9 +31,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.ServerSocket;
@@ -45,11 +49,11 @@ import java.util.zip.Inflater;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
+import static java.nio.charset.Charset.forName;
 
 @PrivateApi
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
 public final class IOUtil {
-
     public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
     public static final byte PRIMITIVE_TYPE_BYTE = 2;
     public static final byte PRIMITIVE_TYPE_SHORT = 3;
@@ -59,8 +63,53 @@ public final class IOUtil {
     public static final byte PRIMITIVE_TYPE_DOUBLE = 7;
     public static final byte PRIMITIVE_TYPE_UTF = 8;
 
+    private static final int READ_BUFFER_SIZE = 8192;
+
     private IOUtil() {
     }
+
+
+    public static String fileAsText(File file) throws IOException {
+        FileInputStream stream = null;
+        try {
+            stream = new FileInputStream(file);
+            return toTextFromStream(stream);
+        } finally {
+            closeQuietly(stream);
+        }
+    }
+
+    public static void closeQuietly(Closeable... closeables) {
+        for (Closeable c : closeables) {
+            try {
+                if (c != null) {
+                    c.close();
+                }
+            } catch (IOException e) {
+                EmptyStatement.ignore(e);
+            }
+        }
+    }
+
+     private static String toTextFromStream(InputStream inputStream) throws IOException {
+        InputStreamReader streamReader = null;
+        Reader reader = null;
+        try {
+            streamReader = new InputStreamReader(inputStream, forName("UTF-8"));
+            reader = new BufferedReader(streamReader);
+
+            StringBuilder builder = new StringBuilder();
+            char[] buffer = new char[READ_BUFFER_SIZE];
+            int read;
+            while ((read = reader.read(buffer, 0, buffer.length)) > 0) {
+                builder.append(buffer, 0, read);
+            }
+            return builder.toString();
+        } finally {
+            closeQuietly(reader, streamReader);
+        }
+    }
+
 
     /**
      * Compacts or clears the buffer depending if bytes are remaining in the byte-buffer.
@@ -162,7 +211,7 @@ public final class IOUtil {
     }
 
     public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, ClassNameFilter classFilter,
-            InputStream in) throws IOException {
+                                                         InputStream in) throws IOException {
         return new ClassLoaderAwareObjectInputStream(classLoader, classFilter, in);
     }
 
@@ -631,7 +680,7 @@ public final class IOUtil {
         private final ClassNameFilter classFilter;
 
         private ClassLoaderAwareObjectInputStream(final ClassLoader classLoader, ClassNameFilter classFilter,
-                final InputStream in) throws IOException {
+                                                  final InputStream in) throws IOException {
             super(in);
             this.classLoader = classLoader;
             this.classFilter = classFilter;

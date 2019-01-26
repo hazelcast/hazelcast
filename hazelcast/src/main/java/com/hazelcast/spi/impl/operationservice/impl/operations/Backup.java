@@ -141,7 +141,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             backupOp.setReplicaIndex(getReplicaIndex());
             backupOp.setCallerUuid(getCallerUuid());
             OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
-            OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
+            OperationAccessor.setInvocationTime(backupOp, Clock.approximateTimeMillis());
             backupOp.setOperationResponseHandler(createEmptyResponseHandler());
         }
     }

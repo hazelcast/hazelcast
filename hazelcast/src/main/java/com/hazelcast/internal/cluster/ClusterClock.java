@@ -16,14 +16,26 @@
 
 package com.hazelcast.internal.cluster;
 
+import com.hazelcast.util.Clock;
+
 public interface ClusterClock {
 
     /**
      * Returns the cluster-time in milliseconds.
      * The cluster-time measures elapsed time since the cluster was created. Comparable to the {@link System#nanoTime()}.
+     *
      * @return the cluster-time (elapsed milliseconds since the cluster was created).
      */
     long getClusterTime();
+
+    /**
+     * Returns the approximate cluster-time in milliseconds.
+     *
+     * For more information see {@link Clock#approximateTimeMillis()}.
+     *
+     * @return the cluster-time (elapsed milliseconds since the cluster was created).
+     */
+    long getApproximateClusterTime();
 
     /**
      * Returns the cluster  up-time in milliseconds.

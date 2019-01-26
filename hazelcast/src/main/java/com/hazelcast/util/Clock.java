@@ -18,13 +18,16 @@ package com.hazelcast.util;
 
 import com.hazelcast.nio.ClassLoaderUtil;
 
+import java.io.File;
+
+import static com.hazelcast.nio.IOUtil.fileAsText;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Abstracts the system clock to simulate different clocks without changing the actual system time.
- *
+ * <p>
  * Can be used to simulate different time zones or to control timing related behavior in Hazelcast.
- *
+ * <p>
  * The time offset can be configured with the property {@value ClockProperties#HAZELCAST_CLOCK_OFFSET}.
  * The clock implementation can be configured with the property {@value ClockProperties#HAZELCAST_CLOCK_IMPL}.
  *
@@ -35,13 +38,24 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 public final class Clock {
 
     private static final ClockImpl CLOCK;
+    // this is an experimental setting. Should not be used for production.
+    private static final boolean XEN_CLOCK_ENABLED
+            = Boolean.parseBoolean(System.getProperty("hazelcast.xenclock", "false"));
+    private static final int XEN_CLOCK_UPDATE_PERIOD_MS
+            = Integer.getInteger("hazelcast.xenclock.updateperiod.millis", 100);
 
     private Clock() {
     }
 
-    /** Returns the current time in ms for the configured {@link ClockImpl} */
+    /**
+     * Returns the current time in ms for the configured {@link ClockImpl}
+     */
     public static long currentTimeMillis() {
         return CLOCK.currentTimeMillis();
+    }
+
+    public static long approximateTimeMillis() {
+        return CLOCK.approximateTimeMillis();
     }
 
     static {
@@ -71,8 +85,13 @@ public final class Clock {
             return new SystemOffsetClock(offset);
         }
 
-        return new SystemClock();
+        if (XEN_CLOCK_ENABLED && XenOptimizedClock.xenClockDetected()) {
+            return new XenOptimizedClock();
+        } else {
+            return new SystemClock();
+        }
     }
+
 
     /**
      * Extend this class if you want to provide your own clock implementation.
@@ -80,6 +99,64 @@ public final class Clock {
     public abstract static class ClockImpl {
 
         protected abstract long currentTimeMillis();
+
+        protected abstract long approximateTimeMillis();
+    }
+
+    /**
+     * Xen optimized clock.
+     */
+    public static class XenOptimizedClock extends ClockImpl {
+
+        private volatile long approximateTimeMillis = System.currentTimeMillis();
+
+        XenOptimizedClock() {
+            new ClockFetchThread().start();
+            System.out.println("Xen clocksource detected");
+        }
+
+        protected long currentTimeMillis() {
+            return System.currentTimeMillis();
+        }
+
+        protected long approximateTimeMillis() {
+            return approximateTimeMillis;
+        }
+
+        private class ClockFetchThread extends Thread {
+            ClockFetchThread() {
+                super("HZ-XenClockUpdater");
+                setDaemon(true);
+            }
+
+            @Override
+            public void run() {
+                while (true) {
+                    approximateTimeMillis = System.currentTimeMillis();
+                    try {
+                        Thread.sleep(XEN_CLOCK_UPDATE_PERIOD_MS);
+                    } catch (InterruptedException e) {
+                        EmptyStatement.ignore(e);
+                    }
+                }
+            }
+        }
+
+        private static boolean xenClockDetected() {
+            File file = new File("/sys/devices/system/clocksource/clocksource0/current_clocksource");
+            if (!file.exists()) {
+                System.out.println("/sys/devices/system/clocksource/clocksource0/current_clocksource does not exist");
+                return false;
+            }
+
+            try {
+                String clock = fileAsText(file);
+                return clock.toLowerCase().contains("xen");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
     }
 
     /**
@@ -89,6 +166,11 @@ public final class Clock {
 
         @Override
         protected long currentTimeMillis() {
+            return System.currentTimeMillis();
+        }
+
+        @Override
+        protected long approximateTimeMillis() {
             return System.currentTimeMillis();
         }
     }
@@ -108,6 +190,11 @@ public final class Clock {
         @Override
         protected long currentTimeMillis() {
             return System.currentTimeMillis() + offset;
+        }
+
+        @Override
+        protected long approximateTimeMillis() {
+            return currentTimeMillis();
         }
     }
 }

@@ -139,7 +139,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     @Override
     public long getClusterTime() {
-        return Clock.currentTimeMillis();
+        return Clock.approximateTimeMillis();
     }
 
     @Override

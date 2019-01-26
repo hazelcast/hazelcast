@@ -44,6 +44,11 @@ public class ClusterClockImpl implements ClusterClock {
         return Clock.currentTimeMillis() + clusterTimeDiff;
     }
 
+    @Override
+    public long getApproximateClusterTime() {
+        return Clock.approximateTimeMillis() + clusterTimeDiff;
+    }
+
     /**
      * Calculate and set the cluster clock diff.
      *

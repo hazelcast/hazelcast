@@ -39,6 +39,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.util.Clock.approximateTimeMillis;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.collection.ArrayUtils.append;
 import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
@@ -269,7 +270,7 @@ public final class NioOutboundPipeline
     }
 
     private void flushToSocket() throws IOException {
-        lastWriteTime = currentTimeMillis();
+        lastWriteTime = approximateTimeMillis();
         int written = socketChannel.write(sendBuffer);
         bytesWritten.inc(written);
         //System.out.println(channel+" bytes written:"+written);

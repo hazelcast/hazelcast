@@ -34,6 +34,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -92,7 +93,7 @@ public class ClientInvocation implements Runnable {
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-        this.startTimeMillis = System.currentTimeMillis();
+        this.startTimeMillis = Clock.approximateTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = invocationService.getCallIdSequence();

@@ -39,6 +39,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.util.Clock.approximateTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
@@ -346,7 +347,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private void processSelectionKeys() {
-        lastSelectTimeMs = currentTimeMillis();
+        lastSelectTimeMs = approximateTimeMillis();
         Iterator<SelectionKey> it = selector.selectedKeys().iterator();
         while (it.hasNext()) {
             SelectionKey sk = it.next();

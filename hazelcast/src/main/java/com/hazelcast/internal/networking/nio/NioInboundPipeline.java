@@ -33,6 +33,7 @@ import java.nio.channels.Selector;
 import java.util.Arrays;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.util.Clock.approximateTimeMillis;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.collection.ArrayUtils.append;
 import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
@@ -108,7 +109,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         processCount.inc();
         // we are going to set the timestamp even if the channel is going to fail reading. In that case
         // the connection is going to be closed anyway.
-        lastReadTime = currentTimeMillis();
+        lastReadTime = approximateTimeMillis();
 
         int readBytes = socketChannel.read(receiveBuffer);
 

@@ -370,7 +370,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         }
 
         ClusterClock clusterClock = nodeEngine.getClusterService().getClusterClock();
-        long now = clusterClock.getClusterTime();
+        long now = clusterClock.getApproximateClusterTime();
         if (expireTime < now) {
             return true;
         }

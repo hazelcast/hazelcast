@@ -78,6 +78,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VO
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.util.Clock.approximateTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
@@ -119,7 +120,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
      * This field is used to determine how long an invocation has actually been running.
      */
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
+    public final long firstInvocationTimeMillis = approximateTimeMillis();
 
     /**
      * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
@@ -376,7 +377,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
             // so the invocation has backups and since not all backups have completed, we need to wait
             // (it could be that backups arrive earlier than the response)
 
-            this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
+            this.pendingResponseReceivedMillis = approximateTimeMillis();
 
             this.backupsAcksExpected = expectedBackups;
 
@@ -500,7 +501,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
 
         // a call is always allowed to execute as long as its own call timeout
         long deadlineMillis = op.getInvocationTime() + callTimeoutMillis;
-        if (deadlineMillis > context.clusterClock.getClusterTime()) {
+        if (deadlineMillis > context.clusterClock.getApproximateClusterTime()) {
             return NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
         }
 
@@ -608,7 +609,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
 
         invokeCount++;
 
-        setInvocationTime(op, context.clusterClock.getClusterTime());
+        setInvocationTime(op, context.clusterClock.getApproximateClusterTime());
 
         // We'll initialize the invocation before registering it. Invocation monitor iterates over
         // registered invocations and it must observe completely initialized invocations.
