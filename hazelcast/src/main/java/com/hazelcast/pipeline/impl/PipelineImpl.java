@@ -30,7 +30,6 @@ public class PipelineImpl<E> implements Pipeline<E> {
         this.semaphore = new Semaphore(size);
     }
 
-
     @Override
     public List<E> results() throws Exception{
         List<E> result = new ArrayList<E>(futures.size());
@@ -44,9 +43,9 @@ public class PipelineImpl<E> implements Pipeline<E> {
     public ICompletableFuture<E> add(ICompletableFuture<E> f) throws InterruptedException {
         semaphore.acquire();
         futures.add(f);
-        f.andThen(new ExecutionCallback() {
+        f.andThen(new ExecutionCallback<E>() {
             @Override
-            public void onResponse(Object response) {
+            public void onResponse(E response) {
                 semaphore.release();
             }
 

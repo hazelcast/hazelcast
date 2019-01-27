@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public interface HazelcastInstance {
 
-    Pipeline newPipeline(int capacity);
+    <E> Pipeline<E> newPipeline(int capacity);
 
     /**
      * Returns the name of this Hazelcast instance.
