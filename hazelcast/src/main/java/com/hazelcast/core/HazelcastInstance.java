@@ -23,6 +23,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.pipeline.Pipeline;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -44,6 +45,8 @@ import java.util.concurrent.ConcurrentMap;
  * @see Hazelcast#newHazelcastInstance(Config config)
  */
 public interface HazelcastInstance {
+
+    Pipeline newPipeline(int capacity);
 
     /**
      * Returns the name of this Hazelcast instance.

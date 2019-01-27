@@ -68,6 +68,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.pipeline.Pipeline;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -171,6 +172,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public Pipeline newPipeline(int capacity) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
