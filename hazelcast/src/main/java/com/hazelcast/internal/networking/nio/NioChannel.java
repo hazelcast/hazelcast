@@ -76,6 +76,21 @@ public final class NioChannel extends AbstractChannel {
     }
 
     @Override
+    public boolean writeAndFlush(OutboundFrame frame) {
+       if(write(frame)){
+           flush();
+           return true;
+       }else{
+           return false;
+       }
+    }
+
+    @Override
+    public void flush() {
+        outboundPipeline.flush();
+    }
+
+    @Override
     public boolean write(OutboundFrame frame) {
         if (isClosed()) {
             return false;

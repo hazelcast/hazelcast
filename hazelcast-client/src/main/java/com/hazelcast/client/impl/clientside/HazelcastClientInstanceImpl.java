@@ -138,7 +138,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.pipeline.Pipeline;
-import com.hazelcast.pipeline.impl.PipelineImpl;
+import com.hazelcast.client.pipeline.PipelineImpl;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -633,7 +633,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public Pipeline newPipeline(int capacity) {
-        return new PipelineImpl(capacity);
+        return new PipelineImpl(capacity, connectionManager);
     }
 
     @Override

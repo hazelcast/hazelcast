@@ -115,8 +115,18 @@ public class AbstractChannelTest {
         }
 
         @Override
+        public boolean writeAndFlush(OutboundFrame frame) {
+            return false;
+        }
+
+        @Override
         public boolean write(OutboundFrame frame) {
             return false;
+        }
+
+        @Override
+        public void flush() {
+
         }
     }
 

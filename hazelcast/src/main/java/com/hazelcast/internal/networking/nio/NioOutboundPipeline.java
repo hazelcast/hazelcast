@@ -140,6 +140,9 @@ public final class NioOutboundPipeline
         } else {
             writeQueue.offer(frame);
         }
+    }
+
+    public void flush() {
         schedule();
     }
 
@@ -377,4 +380,5 @@ public final class NioOutboundPipeline
         addTaskAndWakeup(this);
         return this;
     }
+
 }

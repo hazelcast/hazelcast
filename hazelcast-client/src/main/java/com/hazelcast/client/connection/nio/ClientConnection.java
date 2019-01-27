@@ -20,6 +20,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.metrics.Probe;
@@ -30,6 +31,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.pipeline.impl.FlushThreadLocal;
 import com.hazelcast.util.function.Consumer;
 
 import java.io.EOFException;
@@ -90,9 +92,16 @@ public class ClientConnection implements Connection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
-            return true;
+        if(FlushThreadLocal.flush()){
+            if (channel.writeAndFlush(frame)) {
+                return true;
+            }
+        }else{
+            if (channel.write(frame)) {
+                return true;
+            }
         }
+
 
         if (logger.isFinestEnabled()) {
             logger.finest("Connection is closed, dropping frame -> " + frame);
@@ -291,5 +300,9 @@ public class ClientConnection implements Connection {
 
     public String getConnectedServerVersionString() {
         return connectedServerVersionString;
+    }
+
+    public Channel getChannel() {
+        return channel;
     }
 }

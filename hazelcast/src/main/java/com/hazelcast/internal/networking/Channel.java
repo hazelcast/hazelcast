@@ -251,5 +251,9 @@ public interface Channel extends Closeable {
      * @param frame the frame to write.
      * @return true if the frame was queued; false if rejected.
      */
+    boolean writeAndFlush(OutboundFrame frame);
+
     boolean write(OutboundFrame frame);
+
+    void flush();
 }

@@ -167,7 +167,7 @@ public class TcpIpConnection implements Connection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
+        if (channel.writeAndFlush(frame)) {
             return true;
         }
 
