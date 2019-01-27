@@ -50,6 +50,7 @@ import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.pipeline.Pipeline;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -83,6 +84,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public String getName() {
         return getClient().getName();
+    }
+
+    @Override
+    public Pipeline newPipeline(int capacity) {
+        return getClient().newPipeline(capacity);
     }
 
     @Override

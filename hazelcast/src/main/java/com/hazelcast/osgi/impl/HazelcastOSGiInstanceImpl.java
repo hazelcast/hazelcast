@@ -49,6 +49,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
+import com.hazelcast.pipeline.Pipeline;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -77,6 +78,11 @@ class HazelcastOSGiInstanceImpl
                                      HazelcastOSGiService ownerService) {
         this.delegatedInstance = delegatedInstance;
         this.ownerService = ownerService;
+    }
+
+    @Override
+    public Pipeline newPipeline(int capacity) {
+        return delegatedInstance.newPipeline(capacity);
     }
 
     @Override

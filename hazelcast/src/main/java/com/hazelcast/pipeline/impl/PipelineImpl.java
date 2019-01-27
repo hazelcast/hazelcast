@@ -6,10 +6,13 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.pipeline.Pipeline;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
-public class PipelineImpl implements Pipeline {
+public class PipelineImpl<E> implements Pipeline<E> {
 
     private final static Executor callerRuns = new Executor() {
         @Override
@@ -20,15 +23,27 @@ public class PipelineImpl implements Pipeline {
 
     private final int size;
     private final Semaphore semaphore;
+    private final List<ICompletableFuture<E>> futures = new ArrayList<ICompletableFuture<E>>();
 
     public PipelineImpl(int size){
         this.size = size;
         this.semaphore = new Semaphore(size);
     }
 
+
     @Override
-    public <E> ICompletableFuture<E> add(ICompletableFuture<E> f) throws InterruptedException {
+    public List<E> results() throws Exception{
+        List<E> result = new ArrayList<E>(futures.size());
+        for(ICompletableFuture<E> f: futures){
+            result.add(f.get());
+        }
+        return result;
+    }
+
+    @Override
+    public ICompletableFuture<E> add(ICompletableFuture<E> f) throws InterruptedException {
         semaphore.acquire();
+        futures.add(f);
         f.andThen(new ExecutionCallback() {
             @Override
             public void onResponse(Object response) {
@@ -43,15 +58,4 @@ public class PipelineImpl implements Pipeline {
         return f;
     }
 
-
-
-    public void run()throws Exception{
-        HazelcastInstance hz = null;
-        Pipeline pipeline = hz.newPipeline(1000);
-        IMap map = hz.getMap("foo");
-        for(int k=0;k<100000;k++){
-            pipeline.add(map.getAsync(k));
-        }
-        pipeline.awaitCompletion();
-    }
 }

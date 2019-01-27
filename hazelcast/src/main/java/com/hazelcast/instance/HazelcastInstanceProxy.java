@@ -48,6 +48,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.pipeline.Pipeline;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -86,6 +87,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     protected HazelcastInstanceProxy(HazelcastInstanceImpl original) {
         this.original = original;
         name = original.getName();
+    }
+
+    @Override
+    public Pipeline newPipeline(int capacity) {
+        return getOriginal().newPipeline(capacity);
     }
 
     @Override
