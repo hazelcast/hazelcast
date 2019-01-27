@@ -113,6 +113,25 @@ public final class Extractors {
     }
 
     Getter getGetter(Object targetObject, String attributeName) {
+        if (targetObject instanceof Data) {
+            if (((Data) targetObject).isPortable()) {
+                if (genericPortableGetter == null) {
+                    // will be initialised a couple of times in the worst case
+                    genericPortableGetter = new PortableGetter(ss);
+                }
+                return genericPortableGetter;
+            } else if (((Data) targetObject).isJson()) {
+                if (jsonDataGetter == null) {
+                    // will be initialised a couple of times in the worst case
+                    jsonDataGetter = new JsonDataGetter(ss);
+                }
+                return jsonDataGetter;
+            } else {
+                throw new HazelcastSerializationException("No Data getter found for type " + ((Data) targetObject).getType());
+            }
+        } else if (targetObject instanceof HazelcastJsonValue) {
+            return JsonGetter.INSTANCE;
+        }
         Getter getter = getterCache.getGetter(targetObject.getClass(), attributeName);
         if (getter == null) {
             getter = instantiateGetter(targetObject, attributeName);
@@ -130,27 +149,7 @@ public final class Extractors {
             Object arguments = argumentsParser.parse(extractArgumentsFromAttributeName(attributeName));
             return new ExtractorGetter(ss, valueExtractor, arguments);
         } else {
-            if (targetObject instanceof Data) {
-                if (((Data) targetObject).isPortable()) {
-                    if (genericPortableGetter == null) {
-                        // will be initialised a couple of times in the worst case
-                        genericPortableGetter = new PortableGetter(ss);
-                    }
-                    return genericPortableGetter;
-                } else if (((Data) targetObject).isJson()) {
-                    if (jsonDataGetter == null) {
-                        // will be initialised a couple of times in the worst case
-                        jsonDataGetter = new JsonDataGetter(ss);
-                    }
-                    return jsonDataGetter;
-                } else {
-                    throw new HazelcastSerializationException("No Data getter found for type " + ((Data) targetObject).getType());
-                }
-            } else if (targetObject instanceof HazelcastJsonValue) {
-                return JsonGetter.INSTANCE;
-            } else {
-                return ReflectionHelper.createGetter(targetObject, attributeName);
-            }
+            return ReflectionHelper.createGetter(targetObject, attributeName);
         }
     }
 

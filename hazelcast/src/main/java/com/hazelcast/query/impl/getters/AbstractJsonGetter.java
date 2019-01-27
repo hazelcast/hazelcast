@@ -29,19 +29,31 @@ import com.hazelcast.util.collection.WeightedEvictableList.WeightedItem;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public abstract class AbstractJsonGetter extends Getter {
 
-    private ConcurrentMap<String, JsonQueryContext> contextMap = new ConcurrentHashMap<String, JsonQueryContext>();
+    /**
+     * The number of times this getter will try to use previously observed
+     * patterns. The getter tries most commonly observed patterns first.
+     * If known patterns do not work, then a new pattern is created for
+     * this object.
+     */
+    private static final String PATTERN_TRY_COUNT_PROPERTY = "com.hazelcast.internal.pattern.try.count";
 
-    AbstractJsonGetter() {
-        super(null);
-    }
+    private static final int QUERY_CONTEXT_CACHE_MAX_SIZE = 40;
+    private static final int QUERY_CONTECT_CACHE_CLEANUP_SIZE = 3;
+
+    private final int patternTryCount;
+
+    private JsonGetterContextCache contextCache =
+            new JsonGetterContextCache(QUERY_CONTEXT_CACHE_MAX_SIZE, QUERY_CONTECT_CACHE_CLEANUP_SIZE);
 
     AbstractJsonGetter(Getter parent) {
         super(parent);
+        this.patternTryCount = Integer.parseInt(System.getProperty(PATTERN_TRY_COUNT_PROPERTY, "2"));
+        if (patternTryCount < 0) {
+            throw new IllegalArgumentException("Pattern try count cannot be smaller than 0. Given: " + patternTryCount);
+        }
     }
 
     public static JsonPathCursor getPath(String attributePath) {
@@ -139,17 +151,12 @@ public abstract class AbstractJsonGetter extends Getter {
         JsonSchemaNode schemaNode = (JsonSchemaNode) metadata;
 
         NavigableJsonInputAdapter adapter = annotate(obj);
-        JsonQueryContext queryContext = contextMap.get(attributePath);
-        if (queryContext == null) {
-            queryContext = new JsonQueryContext(attributePath);
-            contextMap.put(attributePath, queryContext);
-        }
-
+        JsonGetterContext queryContext = contextCache.getContext(attributePath);
         List<WeightedItem<JsonPattern>> patternsSnapshot = queryContext.getPatternListSnapshot();
 
         JsonPathCursor pathCursor = queryContext.newJsonPathCursor();
         JsonPattern knownPattern = null;
-        for (int i = 0; i < 2 && i < patternsSnapshot.size(); i++) {
+        for (int i = 0; i < patternTryCount && i < patternsSnapshot.size(); i++) {
             WeightedItem<JsonPattern> patternWeightedItem = patternsSnapshot.get(i);
             knownPattern = patternWeightedItem.getItem();
             JsonValue value = JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor);
@@ -180,6 +187,10 @@ public abstract class AbstractJsonGetter extends Getter {
     @Override
     boolean isCacheable() {
         return false;
+    }
+
+    int getContextCacheSize() {
+        return contextCache.getCacheSize();
     }
 
     protected abstract NavigableJsonInputAdapter annotate(Object object);

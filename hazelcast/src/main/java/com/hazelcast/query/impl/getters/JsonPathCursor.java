@@ -32,9 +32,7 @@ public class JsonPathCursor {
     private static final Charset UTF8_CHARSET = Charset.forName("UTF8");
     private static final int DEFAULT_PATH_ELEMENT_COUNT = 5;
 
-    private List<String> stringList;
-    private List<byte[]> utfList;
-    private List<Boolean> isArrayList;
+    private List<Triple> triples;
 
     private String attributePath;
     private String current;
@@ -44,11 +42,9 @@ public class JsonPathCursor {
     private boolean isAny;
     private int cursor;
 
-    private JsonPathCursor(String originalPath, List<String> stringList, List<byte[]> utfList, List<Boolean> isArrayList) {
+    private JsonPathCursor(String originalPath, List<Triple> triples) {
         this.attributePath = originalPath;
-        this.stringList = stringList;
-        this.utfList = utfList;
-        this.isArrayList = isArrayList;
+        this.triples = triples;
     }
 
     /**
@@ -57,9 +53,7 @@ public class JsonPathCursor {
      */
     JsonPathCursor(JsonPathCursor other) {
         this.attributePath = other.attributePath;
-        this.stringList = other.stringList;
-        this.utfList = other.utfList;
-        this.isArrayList = other.isArrayList;
+        this.triples = other.triples;
     }
 
     /**
@@ -67,9 +61,7 @@ public class JsonPathCursor {
      * @param attributePath
      */
     public static JsonPathCursor createCursor(String attributePath) {
-        ArrayList<String> stringList = new ArrayList<String>(DEFAULT_PATH_ELEMENT_COUNT);
-        ArrayList<byte[]> utfList = new ArrayList<byte[]>(DEFAULT_PATH_ELEMENT_COUNT);
-        ArrayList<Boolean> isArrayList = new ArrayList<Boolean>(DEFAULT_PATH_ELEMENT_COUNT);
+        ArrayList<Triple> triples = new ArrayList<Triple>(DEFAULT_PATH_ELEMENT_COUNT);
         int start = 0;
         int end;
         while (start < attributePath.length()) {
@@ -93,12 +85,12 @@ public class JsonPathCursor {
                 end++;
             }
             String part = attributePath.substring(start, end);
-            stringList.add(part);
-            utfList.add(part.getBytes(UTF8_CHARSET));
-            isArrayList.add(isArray);
+
+            Triple triple = new Triple(part, part.getBytes(UTF8_CHARSET), isArray);
+            triples.add(triple);
             start = end + 1;
         }
-        return new JsonPathCursor(attributePath, stringList, utfList, isArrayList);
+        return new JsonPathCursor(attributePath, triples);
     }
 
     private static IllegalArgumentException createIllegalArgumentException(String attributePath) {
@@ -178,23 +170,40 @@ public class JsonPathCursor {
     }
 
     private void next() {
-        current = null;
-        currentAsUtf8 = null;
-        currentArrayIndex = -1;
-        isAny = false;
-        isArray = false;
-        if (cursor < stringList.size()) {
-            current = stringList.get(cursor);
-            currentAsUtf8 = utfList.get(cursor);
-            isArray = isArrayList.get(cursor);
+        if (cursor < triples.size()) {
+            Triple triple = triples.get(cursor);
+            current = triple.string;
+            currentAsUtf8 = triple.stringAsUtf8;
+            isArray = triple.isArray;
+            currentArrayIndex = -1;
+            isAny = false;
             if (isArray) {
                 if ("any".equals(current)) {
                     isAny = true;
                 } else {
+                    isAny = false;
                     currentArrayIndex = Integer.parseInt(current);
                 }
             }
             cursor++;
+        } else {
+            current = null;
+            currentAsUtf8 = null;
+            currentArrayIndex = -1;
+            isAny = false;
+            isArray = false;
+        }
+    }
+
+    private static final class Triple {
+        private final String string;
+        private final byte[] stringAsUtf8;
+        private final boolean isArray;
+
+        private Triple(String string, byte[] stringAsUtf8, boolean isArray) {
+            this.string = string;
+            this.stringAsUtf8 = stringAsUtf8;
+            this.isArray = isArray;
         }
     }
 }

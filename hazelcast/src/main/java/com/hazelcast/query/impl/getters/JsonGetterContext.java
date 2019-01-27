@@ -22,33 +22,41 @@ import com.hazelcast.util.collection.WeightedEvictableList.WeightedItem;
 
 import java.util.List;
 
-public class JsonQueryContext {
+public class JsonGetterContext {
 
     private static final int PATTERN_CACHE_MAX_SIZE = 20;
-    private static final int PATTERN_CACHE_MAX_VOTES = 400;
+    private static final int PATTERN_CACHE_MAX_VOTES = 20;
 
     private JsonPathCursor pathCursor;
-    private WeightedEvictableList<JsonPattern> patternList;
+    private ThreadLocal<WeightedEvictableList<JsonPattern>> patternListHolder;
 
-    public JsonQueryContext(String attributePath) {
+    public JsonGetterContext(String attributePath) {
         this.pathCursor = JsonPathCursor.createCursor(attributePath);
-        patternList = new WeightedEvictableList<JsonPattern>(PATTERN_CACHE_MAX_SIZE, PATTERN_CACHE_MAX_VOTES);
+        patternListHolder = new ThreadLocal<WeightedEvictableList<JsonPattern>>();
     }
 
     public List<WeightedItem<JsonPattern>> getPatternListSnapshot() {
-        return patternList.getSnapshot();
+        return getPatternList().getList();
     }
 
     public void voteFor(WeightedItem<JsonPattern> item) {
-        patternList.voteFor(item);
+        getPatternList().voteFor(item);
     }
 
     public WeightedItem<JsonPattern> addPattern(JsonPattern pattern) {
-        return patternList.add(pattern);
+        return getPatternList().add(pattern);
     }
 
     public JsonPathCursor newJsonPathCursor() {
         return new JsonPathCursor(pathCursor);
     }
 
+    private WeightedEvictableList<JsonPattern> getPatternList() {
+        WeightedEvictableList<JsonPattern> list = patternListHolder.get();
+        if (list == null) {
+            list = new WeightedEvictableList<JsonPattern>(PATTERN_CACHE_MAX_SIZE, PATTERN_CACHE_MAX_VOTES);
+            patternListHolder.set(list);
+        }
+        return list;
+    }
 }

@@ -20,47 +20,28 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This list keeps the items as long as its size is less than maximum capacity.
  * Once the list size reaches {@code maxSize}, the half of the entries with
  * less weight are evicted.
  *
- * The list is thread-safe. However, its guarantees are rather weak because
- * of performance reasons. The new items are guaranteed to be added to the
- * list as long as there is not a concurrent add operation at the time.
- * When a number of threads concurrently calls {@link #add(Object)}, one
- * of the operations is guaranteed to succeed.
+ * The list is not thread-safe.
  *
- * {@link #voteFor(WeightedItem)} operations are dropped when an "add"
- * operation is active. Otherwise, they run concurrently. When a certain
- * number of {@link #voteFor(WeightedItem)} operations is called, this
- * list re-arranges its items so that the items are in ascending order
- * in terms of their weight. When the items are re-arranged, their weights
- * are reset. Between two re-arrangements, the list items keep insertion
- * order.
- *
- * This list is a copy-on-write list. Therefore, iterators retrieved
- * from snapshots are consistent.
  * @param <T>
  */
 public class WeightedEvictableList<T> {
 
-    private AtomicInteger reorganizationCounter = new AtomicInteger();
-    private volatile boolean expansionInProgress;
-    private Lock expansionLock = new ReentrantLock();
-    private volatile List<WeightedItem<T>> list = Collections.EMPTY_LIST;
+    private List<WeightedItem<T>> list = new ArrayList<WeightedItem<T>>();
 
     private final int maxSize;
     private final int maxVotesBeforeReorganization;
+    private int reorganizationCounter;
+
     private final Comparator<WeightedItem<T>> itemComparator = new Comparator<WeightedItem<T>>() {
         @Override
         public int compare(WeightedItem<T> o1, WeightedItem<T> o2) {
-            return o2.getWeightUnsafe() - o1.getWeightUnsafe();
+            return o2.weight - o1.weight;
         }
     };
 
@@ -78,7 +59,7 @@ public class WeightedEvictableList<T> {
         this.maxVotesBeforeReorganization = maxVotesBeforeReorganization;
     }
 
-    public List<WeightedItem<T>> getSnapshot() {
+    public List<WeightedItem<T>> getList() {
         return list;
     }
 
@@ -88,12 +69,11 @@ public class WeightedEvictableList<T> {
      * @param weightedItem
      */
     public void voteFor(WeightedItem<T> weightedItem) {
-        if (!expansionInProgress) {
-            int reorganizationCount = reorganizationCounter.incrementAndGet();
-            weightedItem.vote();
-            if (reorganizationCount == maxVotesBeforeReorganization) {
-                organize(null);
-            }
+        reorganizationCounter++;
+        weightedItem.vote();
+        if (reorganizationCounter == maxVotesBeforeReorganization) {
+            reorganizationCounter = 0;
+            organizeAndAdd(null);
         }
     }
 
@@ -105,45 +85,27 @@ public class WeightedEvictableList<T> {
      * @return The node that can be used to vote for
      */
     public WeightedItem<T> add(T item) {
-        return organize(item);
+        return organizeAndAdd(item);
     }
 
-    @SuppressWarnings("checkstyle:nestedifdepth")
-    WeightedItem<T> organize(T item) {
-        if (!expansionInProgress) {
-            if (expansionLock.tryLock()) {
-                expansionInProgress = true;
-                List<WeightedItem<T>> originalList = list;
-                List<WeightedItem<T>> copyList = new ArrayList<WeightedItem<T>>(originalList.size() + 1);
-                for (int i = 0; i < originalList.size(); i++) {
-                    if (!originalList.get(i).getItem().equals(item)) {
-                        copyList.add(new WeightedItem<T>(originalList.get(i)));
-                    }
+    WeightedItem<T> organizeAndAdd(T item) {
+        Collections.sort(list, itemComparator);
+        if (list.size() == maxSize) {
+            if (item != null) {
+                for (int i = list.size() - 1; i >= maxSize / 2; i--) {
+                    list.remove(i);
                 }
-                Collections.sort(copyList, itemComparator);
-                WeightedItem<T> returnValue = null;
-                if (item != null) {
-                    if (copyList.size() == maxSize) {
-                        for (int i = copyList.size() - 1; i >= maxSize / 2; i--) {
-                            copyList.remove(i);
-                        }
-                        for (int i = 0; i < maxSize / 2; i++) {
-                            copyList.get(i).weight = 0;
-                        }
-                    }
-                    returnValue = new WeightedItem<T>(item);
-                    copyList.add(returnValue);
+                for (WeightedItem<T> it : list) {
+                    it.weight = 0;
                 }
-
-                this.list = copyList;
-
-                expansionInProgress = false;
-                expansionLock.unlock();
-                reorganizationCounter = new AtomicInteger();
-                return returnValue;
             }
         }
-        return null;
+        WeightedItem<T> returnValue = null;
+        if (item != null) {
+            returnValue = new WeightedItem<T>(item);
+            list.add(returnValue);
+        }
+        return returnValue;
     }
 
     /**
@@ -153,9 +115,7 @@ public class WeightedEvictableList<T> {
     public static class WeightedItem<T> {
 
         final T item;
-        private volatile int weight;
-        private final AtomicIntegerFieldUpdater<WeightedItem> weightUpdater =
-                AtomicIntegerFieldUpdater.newUpdater(WeightedItem.class, "weight");
+        int weight;
 
         WeightedItem(T item) {
             this.item = item;
@@ -168,11 +128,7 @@ public class WeightedEvictableList<T> {
         }
 
         private void vote() {
-            weightUpdater.incrementAndGet(this);
-        }
-
-        int getWeightUnsafe() {
-            return weight;
+            weight++;
         }
 
         /**
