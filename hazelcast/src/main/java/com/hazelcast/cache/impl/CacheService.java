@@ -95,7 +95,7 @@ public class CacheService extends AbstractCacheService {
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-            Collection<ServiceNamespace> namespaces) {
+                                                 Collection<ServiceNamespace> namespaces) {
         assert assertAllKnownNamespaces(namespaces);
 
         CachePartitionSegment segment = segments[event.getPartitionId()];
