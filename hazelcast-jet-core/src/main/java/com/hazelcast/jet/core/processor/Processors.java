@@ -625,12 +625,14 @@ public final class Processors {
     @Nonnull
     public static <K, A, R, OUT> DistributedSupplier<Processor> aggregateToSessionWindowP(
             long sessionTimeout,
+            long earlyResultsPeriod,
             @Nonnull List<DistributedToLongFunction<?>> timestampFns,
             @Nonnull List<DistributedFunction<?, ? extends K>> keyFns,
             @Nonnull AggregateOperation<A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
-        return () -> new SessionWindowP<>(sessionTimeout, timestampFns, keyFns, aggrOp, mapToOutputFn);
+        return () -> new SessionWindowP<>(
+                sessionTimeout, earlyResultsPeriod, timestampFns, keyFns, aggrOp, mapToOutputFn);
     }
 
     /**

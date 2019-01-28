@@ -163,6 +163,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
         PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(),
                 aggregateToSessionWindowP(
                         wDef.sessionTimeout(),
+                        wDef.earlyResultsPeriod(),
                         nCopies(keyFns.size(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
                         keyFns,
                         aggrOp,

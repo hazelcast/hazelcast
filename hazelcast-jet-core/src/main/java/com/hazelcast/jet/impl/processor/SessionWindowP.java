@@ -65,6 +65,7 @@ import static java.lang.Math.min;
 import static java.lang.System.arraycopy;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Session window processor. See {@link
@@ -105,6 +106,11 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Probe
     private AtomicLong totalWindows = new AtomicLong();
 
+    // Fields for early results emission
+    private final long earlyResultsPeriod;
+    private long lastTimeEarlyResultsEmitted;
+    private Traverser<OUT> earlyWinTraverser;
+
     private Traverser snapshotTraverser;
     private long minRestoredCurrentWatermark = Long.MAX_VALUE;
     private boolean inComplete;
@@ -118,6 +124,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     public SessionWindowP(
             long sessionTimeout,
+            long earlyResultsPeriod,
             @Nonnull List<? extends ToLongFunction<?>> timestampFns,
             @Nonnull List<? extends Function<?, ? extends K>> keyFns,
             @Nonnull AggregateOperation<A, R> aggrOp,
@@ -127,6 +134,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
                 "provided for " + aggrOp.arity() + "-arity aggregate operation");
         this.timestampFns = (List<ToLongFunction<Object>>) timestampFns;
         this.keyFns = (List<Function<Object, K>>) keyFns;
+        this.earlyResultsPeriod = earlyResultsPeriod;
         this.aggrOp = aggrOp;
         this.combineFn = requireNonNull(aggrOp.combineFn());
         this.mapToOutputFn = mapToOutputFn;
@@ -137,6 +145,27 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) {
         processingGuarantee = context.processingGuarantee();
+        lastTimeEarlyResultsEmitted = NANOSECONDS.toMillis(System.nanoTime());
+    }
+
+    @Override
+    public boolean tryProcess() {
+        if (earlyResultsPeriod == 0) {
+            return true;
+        }
+        if (earlyWinTraverser != null) {
+            return emitFromTraverser(earlyWinTraverser);
+        }
+        long now = NANOSECONDS.toMillis(System.nanoTime());
+        if (now < lastTimeEarlyResultsEmitted + earlyResultsPeriod) {
+            return true;
+        }
+        lastTimeEarlyResultsEmitted = now;
+        earlyWinTraverser = traverseStream(
+                keyToWindows.entrySet().stream()
+                            .flatMap(e -> earlyWindows(e.getKey(), e.getValue()).stream())
+        ).onFirstNull(() -> earlyWinTraverser = null);
+        return emitFromTraverser(earlyWinTraverser);
     }
 
     @Override
@@ -259,6 +288,20 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     private void addItem(int ordinal, Windows<A> w, K key, long timestamp, Object item) {
         aggrOp.accumulateFn(ordinal).accept(resolveAcc(w, key, timestamp), item);
+    }
+
+    private List<OUT> earlyWindows(K key, Windows<A> w) {
+        if (w == null) {
+            return emptyList();
+        }
+        List<OUT> results = new ArrayList<>();
+        for (int i = 0; i < w.size; i++) {
+            OUT out = mapToOutputFn.apply(w.starts[i], w.ends[i], key, aggrOp.exportFn().apply(w.accs[i]));
+            if (out != null) {
+                results.add(out);
+            }
+        }
+        return results;
     }
 
     private List<OUT> closeWindows(Windows<A> w, K key, long wm) {

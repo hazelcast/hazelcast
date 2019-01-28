@@ -60,6 +60,7 @@ public class SessionWindowPTest {
     public void before() {
         supplier = () -> lastSuppliedProcessor = new SessionWindowP<>(
                 SESSION_TIMEOUT,
+                0L,
                 singletonList((DistributedToLongFunction<Entry<Object, Long>>) Entry::getValue),
                 singletonList(entryKey()),
                 AggregateOperations.counting(),

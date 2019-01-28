@@ -57,6 +57,7 @@ public class SessionWindowP_failoverTest {
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
         p = new SessionWindowP<>(
                 5000,
+                0L,
                 singletonList((DistributedToLongFunction<Entry<?, Long>>) Entry::getValue),
                 singletonList(entryKey()),
                 aggrOp,

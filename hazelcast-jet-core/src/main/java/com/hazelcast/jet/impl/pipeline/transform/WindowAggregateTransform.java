@@ -159,6 +159,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
         PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(),
                 aggregateToSessionWindowP(
                         wDef.sessionTimeout(),
+                        wDef.earlyResultsPeriod(),
                         nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
                         nCopies(aggrOp.arity(), constantKey()),
                         aggrOp,
