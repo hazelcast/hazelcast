@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.VisitablePredicate;
@@ -89,6 +90,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         map.put(101, new Person(null));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testCompositeQueries() {
         check(null, 0, 0, 0, 0);
@@ -105,8 +107,14 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         check("name = '010' and age >= 110 and __key = 10", 1, 2, 5, 0);
         check("name <= '010' and age >= 110 and __key = 10", 1, 2, 6, 0);
         check("age >= 110 and __key = 10 and unindexedAge <= 110", 1, 2, 7, 0);
+
+        map.put(101, new Person(10));
+        check("name = '010' and age = 110", 2, 3, 7, 0);
+        map.removeAll(new SqlPredicate("name = '010' and age = 110"));
+        check("name = '010' and age = 110", 0, 5, 7, 0);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testFirstComponentQuerying() {
         check(null, 0, 0, 0, 0);
@@ -134,6 +142,11 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         check("__key in (-2, 50, 101)", 3, 0, 17, 1);
         check("__key in (-2, 50, -2)", 2, 0, 18, 1);
         check("__key in (50, 50)", 1, 0, 19, 1);
+
+        map.put(101, new Person(102));
+        check("__key >= 50 and height >= 50", 51, 0, 20, 2);
+        map.removeAll(Predicates.equal("__key", 101));
+        check("__key >= 50 and height >= 50", 50, 0, 22, 3);
     }
 
     @Test
@@ -153,6 +166,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         check("height != null", 100, 0, 0, 0);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testNulls() {
         check(null, 0, 0, 0, 0);
@@ -173,6 +187,11 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         check("height = null and __key >= 100 and __key < 102", 2, 1, 3, 5);
         check("height = null and __key > 99 and __key < 102", 2, 1, 3, 6);
         check("height = null and __key > 99 and __key <= 101", 2, 1, 3, 7);
+
+        map.put(50, new Person(null));
+        check("this.name = null and age = null", 5, 2, 3, 7);
+        map.removeAll(new SqlPredicate("this.name = null and age = null"));
+        check("this.name = null and age = null", 0, 4, 3, 7);
     }
 
     protected Config getConfig() {
