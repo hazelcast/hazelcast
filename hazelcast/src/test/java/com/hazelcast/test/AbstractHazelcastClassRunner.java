@@ -22,12 +22,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.compatibility.CompatibilityTestUtils;
+import com.hazelcast.test.starter.ReflectionUtils;
 import org.junit.After;
 import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.internal.runners.statements.RunAfters;
 import org.junit.internal.runners.statements.RunBefores;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.ExpectedExceptionMatcherBuilderAccessor;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -187,15 +190,19 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         List<FrameworkMethod> afters = getTestClass().getAnnotatedMethods(After.class);
         Statement nextStatement = statement;
         List<TestRule> testRules = getTestRules(target);
+        ExpectedException expectedException = null;
         if (!testRules.isEmpty()) {
             for (TestRule rule : testRules) {
                 if (rule instanceof BounceMemberRule) {
                     nextStatement = ((BounceMemberRule) rule).stopBouncing(statement);
                 }
+                if (rule instanceof ExpectedException) {
+                    expectedException = (ExpectedException) rule;
+                }
             }
         }
         if (THREAD_DUMP_ON_FAILURE) {
-            return new ThreadDumpAwareRunAfters(method, nextStatement, afters, target);
+            return new ThreadDumpAwareRunAfters(method, nextStatement, afters, target, expectedException);
         }
         if (afters.isEmpty()) {
             return nextStatement;
@@ -369,12 +376,15 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         private final Statement next;
         private final Object target;
         private final List<FrameworkMethod> afters;
+        private final ExpectedException expectedException;
 
-        ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target) {
+        ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target,
+                                 ExpectedException expectedException) {
             this.method = method;
             this.next = next;
             this.afters = afters;
             this.target = target;
+            this.expectedException = expectedException;
         }
 
         @Override
@@ -383,7 +393,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             try {
                 next.evaluate();
             } catch (Throwable e) {
-                if (!isJUnitAssumeException(e)) {
+                if (!isJUnitAssumeException(e) && !expectsException()) {
                     System.err.println("THREAD DUMP FOR TEST FAILURE: \"" + e.getMessage()
                             + "\" at \"" + method.getName() + "\"\n");
                     try {
@@ -408,6 +418,14 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
         private boolean isJUnitAssumeException(Throwable e) {
             return e instanceof AssumptionViolatedException;
+        }
+
+        private boolean expectsException() throws IllegalAccessException {
+            if (expectedException == null) {
+                return false;
+            }
+            Object exceptionMatcher = ReflectionUtils.getFieldValueReflectively(expectedException, "matcherBuilder");
+            return ExpectedExceptionMatcherBuilderAccessor.expectsThrowable(exceptionMatcher);
         }
     }
 
