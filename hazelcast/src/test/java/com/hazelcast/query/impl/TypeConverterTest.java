@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -348,7 +349,7 @@ public class TypeConverterTest {
 
     @Test
     public void testSQLDateConverter_whenNumberPassed() throws ParseException {
-        SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
         Date date = formatter.parse("12-December-2012");
 
         Long millis = date.getTime();
