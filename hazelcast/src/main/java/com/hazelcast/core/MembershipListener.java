@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,12 @@ import java.util.EventListener;
 
 /**
  * Cluster membership listener.
+ *
+ * The MembershipListener will never be called concurrently and all MembershipListeners will receive the events
+ * in the same order.
+ *
+ * @see InitialMembershipListener
+ * @see Cluster#addMembershipListener(MembershipListener)
  */
 public interface MembershipListener extends EventListener {
 
@@ -33,7 +39,16 @@ public interface MembershipListener extends EventListener {
     /**
      * Invoked when an existing member leaves the cluster.
      *
-     * @param membershipEvent membership event
+     * @param membershipEvent membership event when an existing member leaves the cluster
      */
     void memberRemoved(MembershipEvent membershipEvent);
+
+    /**
+     * Invoked when an attribute of a member was changed.
+     *
+     * @param memberAttributeEvent member attribute event when an attribute of a member was changed
+     * @since 3.2
+     */
+    void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent);
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package com.hazelcast.security;
 
+import com.hazelcast.config.PermissionConfig;
+
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
 import java.security.Permission;
-import java.security.PrivilegedExceptionAction;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -59,20 +61,36 @@ public interface SecurityContext {
     /**
      * Checks whether current {@link Subject} has been granted specified permission or not.
      *
-     * @param permission
+     * @param subject the current subject
+     * @param permission the specified permission for the subject
      * @throws AccessControlException
      */
-    void checkPermission(Permission permission) throws AccessControlException;
+    void checkPermission(Subject subject, Permission permission) throws AccessControlException;
+
 
     /**
-     * Performs privileged work as a particular <code>Subject</code>.
+     * intercepts a request before process if any {@link SecurityInterceptor} configured
      *
-     * @param subject
-     * @param action
-     * @return result returned by the PrivilegedExceptionAction run method.
-     * @throws SecurityException
+     * @param credentials
+     * @param serviceName
+     * @param objectName
+     * @param methodName
+     * @param parameters
+     * @throws AccessControlException
      */
-    <T> T doAsPrivileged(Subject subject, PrivilegedExceptionAction<T> action) throws Exception, SecurityException;
+    void interceptBefore(Credentials credentials, String serviceName, String objectName,
+                         String methodName, Object[] parameters) throws AccessControlException;
+
+    /**
+     * intercepts a request after process if any {@link SecurityInterceptor} configured
+     * Any exception thrown during interception will be ignored
+     *
+     * @param credentials
+     * @param serviceName
+     * @param objectName
+     * @param methodName
+     */
+    void interceptAfter(Credentials credentials, String serviceName, String objectName, String methodName);
 
     /**
      * Creates secure callable that runs in a sandbox.
@@ -88,4 +106,7 @@ public interface SecurityContext {
      * Destroys {@link SecurityContext} and all security elements.
      */
     void destroy();
+
+    void refreshPermissions(Set<PermissionConfig> permissionConfigs);
+
 }

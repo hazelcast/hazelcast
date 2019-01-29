@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Properties;
  * MapLoader classes implementing MapLoaderLifecycleSupport
  * interface will be called by Hazelcast on init and destroy so that
  * implementation can do necessary configuration when initializing and
- * cleanup when destroying.
+ * clean up when destroying.
  */
 public interface MapLoaderLifecycleSupport {
     /**
@@ -31,8 +31,20 @@ public interface MapLoaderLifecycleSupport {
      * this method when the map is first used on the
      * HazelcastInstance. Implementation can
      * initialize required resources for the implementing
-     * mapLoader such as reading a config file and/or creating
-     * database connection.
+     * mapLoader, such as reading a config file and/or creating a
+     * database connection. References to maps, other than the one on which
+     * this {@code MapLoader} is configured, can be obtained from the
+     * {@code hazelcastInstance} in this method's implementation.
+     * <p>
+     * On members joining a cluster, this method is executed during finalization
+     * of the join operation, therefore care should be taken to adhere to the
+     * rules for {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}.
+     * If the implementation executes operations which may wait on locks or otherwise
+     * block (e.g. waiting for network operations), this may result in a time-out and
+     * obstruct the new member from joining the cluster. If blocking operations are
+     * required for initialization of the {@code MapLoader}, consider deferring them
+     * with a lazy initialization scheme.
+     * </p>
      *
      * @param hazelcastInstance HazelcastInstance of this mapLoader.
      * @param properties        Properties set for this mapStore. see MapStoreConfig
@@ -42,9 +54,9 @@ public interface MapLoaderLifecycleSupport {
 
     /**
      * Hazelcast will call this method before shutting down.
-     * This method can be overridden to cleanup the resources
+     * This method can be overridden to clean up the resources
      * held by this map loader implementation, such as closing the
-     * database connections etc.
+     * database connections, etc.
      */
     void destroy();
 }

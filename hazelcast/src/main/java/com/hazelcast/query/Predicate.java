@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,34 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.Serializable;
+import java.util.Map;
 
+/**
+ * Represents a map entry predicate. Implementations of this interface are basic
+ * building blocks for performing queries on map entries.
+ * <p>
+ * Implementations <i>must</i> be thread-safe, since the {@link #apply}
+ * method may be called by multiple threads concurrently.
+ *
+ * @param <K> the type of keys the predicate operates on.
+ * @param <V> the type of values the predicate operates on.
+ */
+@BinaryInterface
 public interface Predicate<K, V> extends Serializable {
-    boolean apply(MapEntry<K, V> mapEntry);
+
+    /**
+     * Applies this predicate to the given map entry.
+     * <p>
+     * Implementations <i>must</i> be thread-safe, since this method may be
+     * called by multiple threads concurrently.
+     *
+     * @param mapEntry the map entry to apply this predicate to.
+     * @return {@code true} if the given map entry matches this predicate,
+     * {@code false} otherwise.
+     */
+    boolean apply(Map.Entry<K, V> mapEntry);
+
 }

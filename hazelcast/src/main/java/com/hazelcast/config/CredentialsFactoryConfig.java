@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,20 +20,21 @@ import com.hazelcast.security.ICredentialsFactory;
 
 import java.util.Properties;
 
+/**
+ * Contains the configuration for Credentials Factory.
+ */
 public class CredentialsFactoryConfig {
 
-    private String className = null;
+    private String className;
 
-    private ICredentialsFactory implementation = null;
+    private ICredentialsFactory implementation;
 
     private Properties properties = new Properties();
 
     public CredentialsFactoryConfig() {
-        super();
     }
 
     public CredentialsFactoryConfig(String className) {
-        super();
         this.className = className;
     }
 
@@ -41,34 +42,70 @@ public class CredentialsFactoryConfig {
         return className;
     }
 
-    public void setClassName(String className) {
+    public CredentialsFactoryConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
     public ICredentialsFactory getImplementation() {
         return implementation;
     }
 
-    public void setImplementation(ICredentialsFactory factoryImpl) {
+    public CredentialsFactoryConfig setImplementation(ICredentialsFactory factoryImpl) {
         this.implementation = factoryImpl;
+        return this;
     }
 
     public Properties getProperties() {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public CredentialsFactoryConfig setProperties(Properties properties) {
         this.properties = properties;
+        return this;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("CredentialsFactoryConfig");
-        sb.append("{className='").append(className).append('\'');
-        sb.append(", implementation=").append(implementation);
-        sb.append(", properties=").append(properties);
-        sb.append('}');
-        return sb.toString();
+        return "CredentialsFactoryConfig{"
+                + "className='" + className + '\''
+                + ", implementation=" + implementation
+                + ", properties=" + properties
+                + '}';
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CredentialsFactoryConfig that = (CredentialsFactoryConfig) o;
+
+        if (className != null
+                ? !className.equals(that.className)
+                : that.className != null) {
+            return false;
+        }
+        if (implementation != null
+                ? !implementation.equals(that.implementation)
+                : that.implementation != null) {
+            return false;
+        }
+        return properties != null
+                ? properties.equals(that.properties)
+                : that.properties == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        return result;
     }
 }

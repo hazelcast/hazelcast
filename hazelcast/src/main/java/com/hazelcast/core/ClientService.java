@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,43 @@ package com.hazelcast.core;
 
 import java.util.Collection;
 
+/**
+ * ClientService allows you to query connected {@link Client}s and
+ * attach/detach {@link ClientListener}s to listen to connection events.
+ * <p>
+ * All the methods are thread-safe.
+ *
+ * @see Client
+ * @see ClientListener
+ */
 public interface ClientService {
 
+    /**
+     * Returns all connected clients to this member.
+     *
+     * @return all connected clients to this member
+     */
     Collection<Client> getConnectedClients();
 
-    void addClientListener(ClientListener clientListener);
+    /**
+     * Adds a ClientListener.
+     *
+     * When a ClientListener is added more than once, it will receive duplicate events.
+     *
+     * @param clientListener the ClientListener to add
+     * @return registration ID which can be used to remove the listener using the {@link #removeClientListener(String)} method
+     * @throws java.lang.NullPointerException if clientListener is {@code null}
+     */
+    String addClientListener(ClientListener clientListener);
 
-    void removeClientListener(ClientListener clientListener);
+    /**
+     * Removes a ClientListener.
+     *
+     * Can safely be called with a non existing ID, or when the ClientListener already is removed.
+     *
+     * @param registrationId ID of the ClientListener registration
+     * @return {@code true} if registration is removed, {@code false} otherwise
+     * @throws java.lang.NullPointerException if registration ID is {@code null}
+     */
+    boolean removeClientListener(String registrationId);
 }

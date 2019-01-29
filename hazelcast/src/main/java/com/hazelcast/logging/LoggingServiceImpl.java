@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.cluster.ClusterManager;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.base.SystemLogService;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,61 +27,78 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+
 public class LoggingServiceImpl implements LoggingService {
-    private final MemberImpl thisMember;
-    private final SystemLogService systemLogService;
-    private final String groupName;
-    private final CopyOnWriteArrayList<LogListenerRegistration> lsListeners
+
+    private final CopyOnWriteArrayList<LogListenerRegistration> listeners
             = new CopyOnWriteArrayList<LogListenerRegistration>();
 
-    private final String thisAddressString;
-
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+
+    private final ConstructorFunction<String, ILogger> loggerConstructor
+            = new ConstructorFunction<String, ILogger>() {
+
+        @Override
+        public ILogger createNew(String key) {
+            return new DefaultLogger(key);
+        }
+    };
+
     private final LoggerFactory loggerFactory;
+    private final String versionMessage;
+
+    private volatile MemberImpl thisMember = new MemberImpl();
+    private volatile String thisAddressString = "[LOCAL] ";
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(SystemLogService systemLogService, String groupName, String loggingType, MemberImpl thisMember) {
-        this.systemLogService = systemLogService;
-        this.groupName = groupName;
-        this.thisMember = thisMember;
+    public LoggingServiceImpl(String groupName, String loggingType, BuildInfo buildInfo) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
-        thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
+        JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
+        versionMessage = "[" + groupName + "] ["
+                + (jetBuildInfo != null ?  jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
     }
 
+    public void setThisMember(MemberImpl thisMember) {
+        this.thisMember = thisMember;
+        this.thisAddressString = "[" + thisMember.getAddress().getHost() + "]:"
+                + thisMember.getAddress().getPort() + " ";
+    }
+
+    @Override
     public ILogger getLogger(String name) {
-        ILogger logger = mapLoggers.get(name);
-        if (logger == null) {
-            ILogger newLogger = new DefaultLogger(name);
-            logger = mapLoggers.putIfAbsent(name, newLogger);
-            if (logger == null) {
-                logger = newLogger;
-            }
-        }
-        return logger;
+        return getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
+    @Override
+    public ILogger getLogger(Class clazz) {
+        return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
+    }
+
+    @Override
     public void addLogListener(Level level, LogListener logListener) {
-        lsListeners.add(new LogListenerRegistration(level, logListener));
+        listeners.add(new LogListenerRegistration(level, logListener));
         if (level.intValue() < minLevel.intValue()) {
             minLevel = level;
         }
     }
 
+    @Override
     public void removeLogListener(LogListener logListener) {
-        lsListeners.remove(new LogListenerRegistration(Level.ALL, logListener));
+        listeners.remove(new LogListenerRegistration(Level.ALL, logListener));
     }
 
     void handleLogEvent(LogEvent logEvent) {
-        for (LogListenerRegistration logListenerRegistration : lsListeners) {
+        for (LogListenerRegistration logListenerRegistration : listeners) {
             if (logEvent.getLogRecord().getLevel().intValue() >= logListenerRegistration.getLevel().intValue()) {
                 logListenerRegistration.getLogListener().log(logEvent);
             }
         }
     }
 
-    class LogListenerRegistration {
-        Level level;
-        LogListener logListener;
+    private static class LogListenerRegistration {
+        final Level level;
+        final LogListener logListener;
 
         LogListenerRegistration(Level level, LogListener logListener) {
             this.level = level;
@@ -98,67 +116,79 @@ public class LoggingServiceImpl implements LoggingService {
         /**
          * True if LogListeners are equal.
          */
+        @Override
         public boolean equals(Object obj) {
-            if (this == obj)
+            if (this == obj) {
                 return true;
-            if (obj == null)
+            }
+            if (obj == null) {
                 return false;
-            if (getClass() != obj.getClass())
+            }
+            if (getClass() != obj.getClass()) {
                 return false;
+            }
             LogListenerRegistration other = (LogListenerRegistration) obj;
             if (logListener == null) {
-                if (other.logListener != null)
+                if (other.logListener != null) {
                     return false;
-            } else if (!logListener.equals(other.logListener))
+                }
+            } else if (!logListener.equals(other.logListener)) {
                 return false;
+            }
             return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return logListener != null ? logListener.hashCode() : 0;
         }
     }
 
-    class DefaultLogger implements ILogger {
+    private class DefaultLogger extends AbstractLogger {
         final String name;
         final ILogger logger;
-        final boolean addToLoggingService;
 
         DefaultLogger(String name) {
             this.name = name;
             this.logger = loggerFactory.getLogger(name);
-            addToLoggingService = (name.equals(ClusterManager.class.getName()));
         }
 
+        @Override
         public void log(Level level, String message) {
             log(level, message, null);
         }
 
+        @Override
         public void log(Level level, String message, Throwable thrown) {
-            if (addToLoggingService) {
-                systemLogService.logNode(message + ((thrown == null) ? "" : ": " + thrown.getMessage()));
-            }
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
-                message = thisAddressString + " [" + groupName + "] " + message;
-                LogRecord logRecord = new LogRecord(level, message);
-                logRecord.setThrown(thrown);
-                logRecord.setLoggerName(name);
-                logRecord.setSourceClassName(name);
-                LogEvent logEvent = new LogEvent(logRecord, groupName, thisMember);
+                String address = thisAddressString;
+                String logMessage = (address != null ? address : "") + versionMessage + message;
                 if (loggable) {
-                    logger.log(logEvent);
+                    logger.log(level, logMessage, thrown);
                 }
-                if (lsListeners.size() > 0) {
+                if (listeners.size() > 0) {
+                    LogRecord logRecord = new LogRecord(level, logMessage);
+                    logRecord.setThrown(thrown);
+                    logRecord.setLoggerName(name);
+                    logRecord.setSourceClassName(name);
+                    LogEvent logEvent = new LogEvent(logRecord, thisMember);
                     handleLogEvent(logEvent);
                 }
             }
         }
 
+        @Override
         public void log(LogEvent logEvent) {
             handleLogEvent(logEvent);
         }
 
+        @Override
         public Level getLevel() {
             return logger.getLevel();
         }
 
+        @Override
         public boolean isLoggable(Level level) {
             return logger.isLoggable(level);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,26 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WanReplicationConfig {
-    String name;
-    List<WanTargetClusterConfig> lsTargetClusterConfigs;
+/**
+ * Configuration for WAN replication. This configuration is referenced from a map or cache to determine the receivers for the
+ * WAN events. Each receiver is defined with a {@link WanPublisherConfig}
+ *
+ * @see MapConfig#setWanReplicationRef
+ * @see CacheConfig#setWanReplicationRef
+ */
+public class WanReplicationConfig implements IdentifiedDataSerializable {
 
-    public List<WanTargetClusterConfig> getTargetClusterConfigs() {
-        return lsTargetClusterConfigs;
-    }
-
-    public WanReplicationConfig addTargetClusterConfig(WanTargetClusterConfig wanTargetClusterConfig) {
-        if (lsTargetClusterConfigs == null) {
-            lsTargetClusterConfigs = new ArrayList<WanTargetClusterConfig>(2);
-        }
-        lsTargetClusterConfigs.add(wanTargetClusterConfig);
-        return this;
-    }
-
-    public void setTargetClusterConfigs(List<WanTargetClusterConfig> list) {
-        lsTargetClusterConfigs = list;
-    }
+    private String name;
+    private WanConsumerConfig wanConsumerConfig;
+    private List<WanPublisherConfig> wanPublisherConfigs = new ArrayList<WanPublisherConfig>(2);
 
     public String getName() {
         return name;
@@ -48,13 +46,78 @@ public class WanReplicationConfig {
         return this;
     }
 
+    public WanConsumerConfig getWanConsumerConfig() {
+        return wanConsumerConfig;
+    }
+
+    public WanReplicationConfig setWanConsumerConfig(WanConsumerConfig wanConsumerConfig) {
+        this.wanConsumerConfig = wanConsumerConfig;
+        return this;
+    }
+
+    public List<WanPublisherConfig> getWanPublisherConfigs() {
+        return wanPublisherConfigs;
+    }
+
+    public void setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
+        if (wanPublisherConfigs != null && !wanPublisherConfigs.isEmpty()) {
+            this.wanPublisherConfigs = wanPublisherConfigs;
+        }
+    }
+
+    public WanReplicationConfig addWanPublisherConfig(WanPublisherConfig wanPublisherConfig) {
+        wanPublisherConfigs.add(wanPublisherConfig);
+        return this;
+    }
+
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("WanReplicationConfig");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", targetClusterConfigs=").append(lsTargetClusterConfigs);
-        sb.append('}');
-        return sb.toString();
+        return "WanReplicationConfig"
+                + "{name='" + name + '\''
+                + ", wanPublisherConfigs=" + wanPublisherConfigs
+                + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.WAN_REPLICATION_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        if (wanConsumerConfig != null) {
+            out.writeBoolean(true);
+            wanConsumerConfig.writeData(out);
+        } else {
+            out.writeBoolean(false);
+        }
+        int publisherCount = wanPublisherConfigs.size();
+        out.writeInt(publisherCount);
+        for (WanPublisherConfig wanPublisherConfig : wanPublisherConfigs) {
+            wanPublisherConfig.writeData(out);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        boolean consumerConfigExists = in.readBoolean();
+        if (consumerConfigExists) {
+            WanConsumerConfig consumerConfig = new WanConsumerConfig();
+            consumerConfig.readData(in);
+            wanConsumerConfig = consumerConfig;
+        }
+        int publisherCount = in.readInt();
+        for (int i = 0; i < publisherCount; i++) {
+            WanPublisherConfig publisherConfig = new WanPublisherConfig();
+            publisherConfig.readData(in);
+            wanPublisherConfigs.add(publisherConfig);
+        }
     }
 }

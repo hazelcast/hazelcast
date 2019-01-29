@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,49 @@
 
 package com.hazelcast.spring.cache;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.core.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"cacheManager-applicationContext-hazelcast.xml"})
-public class TestCacheManager {
-
-    static {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-    }
+@Category(QuickTest.class)
+public class TestCacheManager extends HazelcastTestSupport {
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
     @Autowired
     private IDummyBean bean;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @BeforeClass
     @AfterClass
@@ -53,43 +67,107 @@ public class TestCacheManager {
     }
 
     @Test
-    public void test() {
+    public void testBean_withValue() {
         for (int i = 0; i < 100; i++) {
-            Assert.assertEquals("name:" + i, bean.getName(i));
-            Assert.assertEquals("city:" + i, bean.getCity(i));
+            assertEquals("name:" + i, bean.getName(i));
+            assertEquals("city:" + i, bean.getCity(i));
         }
     }
 
     @Test
-    public void testNull() {
+    public void testBean_withNull() {
         for (int i = 0; i < 100; i++) {
-            Assert.assertNull(bean.getNull());
+            assertNull(bean.getNull());
         }
     }
 
+    @Test
+    public void testBean_withTTL() {
+        String name = bean.getNameWithTTL();
+        assertEquals("ali", name);
+        String nameFromCache = bean.getNameWithTTL();
+        assertEquals("ali", nameFromCache);
+
+        sleepSeconds(3);
+
+        String nameFromCacheAfterTTL = bean.getNameWithTTL();
+        assertNull(nameFromCacheAfterTTL);
+    }
+
+    @Test
+    public void testCacheNames() {
+        // create a test instance, to reproduce the behavior described in the GitHub issue
+        // https://github.com/hazelcast/hazelcast/issues/492
+        final String testMap = "test-map";
+
+        final CountDownLatch distributionSignal = new CountDownLatch(1);
+        instance.addDistributedObjectListener(new DistributedObjectListener() {
+            @Override
+            public void distributedObjectCreated(DistributedObjectEvent event) {
+                DistributedObject distributedObject = event.getDistributedObject();
+                if (distributedObject instanceof IMap) {
+                    IMap<?, ?> map = (IMap) distributedObject;
+                    if (testMap.equals(map.getName())) {
+                        distributionSignal.countDown();
+                    }
+                }
+            }
+
+            @Override
+            public void distributedObjectDestroyed(DistributedObjectEvent event) {
+            }
+        });
+
+        Config config = new Config();
+        config.getNetworkConfig().setPublicAddress("127.0.0.1")
+                .setPort(5101).setPortAutoIncrement(true);
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        join.getAwsConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(true).setMembers(
+                Arrays.asList(
+                        "127.0.0.1"));
+        HazelcastInstance testInstance = Hazelcast.newHazelcastInstance(config);
+        testInstance.getMap(testMap);
+        // be sure that test-map is distributed
+        HazelcastTestSupport.assertOpenEventually(distributionSignal);
+
+        Collection<String> test = cacheManager.getCacheNames();
+        assertContains(test, testMap);
+        testInstance.shutdown();
+    }
 
     public static class DummyBean implements IDummyBean {
 
-        @Cacheable("name")
-        public String getName(int k) {
-            Assert.fail("should not call this method!");
-            return null;
-        }
-
-        @Cacheable("city")
-        public String getCity(int k) {
-            Assert.fail("should not call this method!");
-            return null;
-        }
-
         final AtomicBoolean nullCall = new AtomicBoolean(false);
+        final AtomicBoolean firstCall = new AtomicBoolean(false);
 
-        @Cacheable("null-map")
+        @Override
+        public String getName(int k) {
+            fail("should not call this method!");
+            return null;
+        }
+
+        @Override
+        public String getCity(int k) {
+            fail("should not call this method!");
+            return null;
+        }
+
+        @Override
         public Object getNull() {
             if (nullCall.compareAndSet(false, true)) {
                 return null;
             }
-            Assert.fail("should not call this method!");
+            fail("should not call this method!");
+            return null;
+        }
+
+        @Override
+        public String getNameWithTTL() {
+            if (firstCall.compareAndSet(false, true)) {
+                return "ali";
+            }
             return null;
         }
     }

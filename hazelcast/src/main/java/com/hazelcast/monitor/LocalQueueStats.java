@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,39 +19,91 @@ package com.hazelcast.monitor;
 /**
  * Local queue statistics.
  */
-public interface LocalQueueStats extends LocalInstanceStats<LocalQueueOperationStats> {
+public interface LocalQueueStats extends LocalInstanceStats {
+
     /**
      * Returns the number of owned items in this member.
      *
-     * @return number of owned items.
+     * @return number of owned items in this member.
      */
-    int getOwnedItemCount();
+    long getOwnedItemCount();
 
     /**
      * Returns the number of backup items in this member.
      *
-     * @return number of backup items.
+     * @return number of backup items in this member.
      */
-    int getBackupItemCount();
+    long getBackupItemCount();
 
     /**
-     * Returns the min age of the items in this member.
+     * Returns the minimum age of the items in this member.
      *
-     * @return min age
+     * @return minimum age of the items in this member
      */
     long getMinAge();
 
     /**
-     * Returns the max age of the items in this member.
+     * Returns the maximum age of the items in this member.
      *
-     * @return max age
+     * @return maximum age of the items in this member
      */
     long getMaxAge();
 
     /**
      * Returns the average age of the items in this member.
      *
-     * @return average age
+     * @return average age of the items in this member
      */
-    long getAveAge();
+    long getAvgAge();
+
+    /**
+     * Returns the number of offer/put/add operations.
+     * Offers returning false will be included.
+     * #getRejectedOfferOperationCount can be used
+     * to get the rejected offers.
+     *
+     * @return number of offer/put/add operations
+     */
+    long getOfferOperationCount();
+
+    /**
+     * Returns the number of rejected offers. Offer
+     * can be rejected because of max-size limit
+     * on the queue.
+     *
+     * @return number of rejected offers.
+     */
+    long getRejectedOfferOperationCount();
+
+    /**
+     * Returns the number of poll/take/remove operations.
+     * Polls returning null (empty) will be included.
+     * #getEmptyPollOperationCount can be used to get the
+     * number of polls returned null.
+     *
+     * @return number of poll/take/remove operations.
+     */
+    long getPollOperationCount();
+
+    /**
+     * Returns number of null returning poll operations.
+     * Poll operation might return null, if the queue is empty.
+     *
+     * @return number of null returning poll operations.
+     */
+    long getEmptyPollOperationCount();
+
+    /**
+     * Returns number of other operations
+     *
+     * @return number of other operations
+     */
+    long getOtherOperationsCount();
+
+    /**
+     * Returns number of event operations
+     *
+     * @return number of event operations
+     */
+    long getEventOperationCount();
 }

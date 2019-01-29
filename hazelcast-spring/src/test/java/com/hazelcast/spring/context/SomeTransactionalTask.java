@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 
-/**
- * @leimer 8/14/12
- */
 @SpringAware
 public class SomeTransactionalTask implements Callable<Void>, Serializable {
 
@@ -31,5 +28,4 @@ public class SomeTransactionalTask implements Callable<Void>, Serializable {
     public Void call() throws Exception {
         return null;
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,15 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
+/**
+ * A listener for the {@link com.hazelcast.nio.ConnectionManager} to listen to connections
+ * being added or removed.
+ */
+@PrivateApi
 public interface ConnectionListener {
+
     void connectionAdded(Connection connection);
 
     void connectionRemoved(Connection connection);

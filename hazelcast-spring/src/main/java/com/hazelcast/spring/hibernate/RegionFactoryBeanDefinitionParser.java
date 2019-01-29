@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,65 @@
 
 package com.hazelcast.spring.hibernate;
 
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.util.ExceptionUtil;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
+import org.springframework.beans.factory.xml.ParserContext;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
-public class RegionFactoryBeanDefinitionParser extends CacheBeanDefinitionParserSupport {
+/**
+ * Parser for RegionFactory.
+ * <p>
+ * Sample Spring XML for Hibernate RegionFactory
+ * <pre>
+ * <code>
+ *     &lt;hz:hibernate-region-factory id="regionFactory" instance-ref="instance"/&gt;
+ *     &lt;hz:hibernate-region-factory id="localRegionFactory" instance-ref="instance" mode="LOCAL" /&gt;
+ * </code>
+ * </pre>
+ */
+public class RegionFactoryBeanDefinitionParser extends AbstractBeanDefinitionParser {
+
+    private static final String CACHE_REGION_FACTORY = "com.hazelcast.hibernate.HazelcastCacheRegionFactory";
+    private static final String LOCAL_CACHE_REGION_FACTORY = "com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory";
 
     @Override
-    protected BeanDefinitionBuilder createBeanDefinitionBuilder() {
-        return BeanDefinitionBuilder.rootBeanDefinition(HazelcastCacheRegionFactory.class);
+    protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
+         NamedNodeMap attributes = element.getAttributes();
+        String instanceRefName = "instance";
+        String mode = "DISTRIBUTED";
+        if (attributes != null) {
+            for (int a = 0; a < attributes.getLength(); a++) {
+                 Node att = attributes.item(a);
+                 String name = att.getNodeName();
+                if ("instance-ref".equals(name)) {
+                    instanceRefName = att.getTextContent();
+                } else if ("mode".equals(name)) {
+                    mode = att.getTextContent();
+                }
+            }
+        }
+
+        Class clz = null;
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            if ("DISTRIBUTED".equals(mode)) {
+                clz = ClassLoaderUtil.loadClass(classLoader, CACHE_REGION_FACTORY);
+            } else if ("LOCAL".equals(mode)) {
+                clz = ClassLoaderUtil.loadClass(classLoader, LOCAL_CACHE_REGION_FACTORY);
+            } else {
+                throw new IllegalArgumentException("Unknown Hibernate L2 cache mode: " + mode);
+            }
+        } catch (ClassNotFoundException e) {
+            ExceptionUtil.sneakyThrow(e);
+        }
+
+        BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(clz);
+        builder.addConstructorArgReference(instanceRefName);
+        return builder.getBeanDefinition();
     }
 }

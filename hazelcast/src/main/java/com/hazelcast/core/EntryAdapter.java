@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,60 @@
 package com.hazelcast.core;
 
 /**
- * Adapter for EntryListener.
+ * Adapter for {@link com.hazelcast.map.listener.MapListener}.
  *
  * @param <K> key of the map entry
  * @param <V> value of the map entry.
+ * @see com.hazelcast.map.listener.MapListener
  * @see com.hazelcast.core.EntryListener
  */
 public class EntryAdapter<K, V> implements EntryListener<K, V> {
 
+    @Override
     public void entryAdded(EntryEvent<K, V> event) {
+        onEntryEvent(event);
     }
 
+    @Override
     public void entryRemoved(EntryEvent<K, V> event) {
+        onEntryEvent(event);
     }
 
+    @Override
     public void entryUpdated(EntryEvent<K, V> event) {
+        onEntryEvent(event);
     }
 
+    @Override
     public void entryEvicted(EntryEvent<K, V> event) {
+        onEntryEvent(event);
+    }
+
+    @Override
+    public void mapEvicted(MapEvent event) {
+        onMapEvent(event);
+    }
+
+    @Override
+    public void mapCleared(MapEvent event) {
+        onMapEvent(event);
+    }
+
+    /**
+     * This method is called when an one of the methods of the {@link com.hazelcast.core.EntryListener} is not
+     * overridden. It can be practical if you want to bundle some/all of the methods to a single method.
+     *
+     * @param event the EntryEvent.
+     */
+    public void onEntryEvent(EntryEvent<K, V> event) {
+    }
+
+    /**
+     * This method is called when an one of the methods of the {@link com.hazelcast.core.EntryListener} is not
+     * overridden. It can be practical if you want to bundle some/all of the methods to a single method.
+     *
+     * @param event the MapEvent.
+     */
+    public void onMapEvent(MapEvent event) {
     }
 }

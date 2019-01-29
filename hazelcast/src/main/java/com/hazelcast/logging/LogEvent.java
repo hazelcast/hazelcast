@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,13 @@ import java.util.EventObject;
 import java.util.logging.LogRecord;
 
 public class LogEvent extends EventObject {
-    LogRecord logRecord;
-    Member member;
-    String groupName;
 
-    public LogEvent(LogRecord logRecord, String groupName, Member member) {
+    private final LogRecord logRecord;
+    private final Member member;
+
+    public LogEvent(LogRecord logRecord, Member member) {
         super(member);
         this.logRecord = logRecord;
-        this.groupName = groupName;
         this.member = member;
     }
 
@@ -37,15 +36,7 @@ public class LogEvent extends EventObject {
         return member;
     }
 
-    public void setMember(Member member) {
-        this.member = member;
-    }
-
     public LogRecord getLogRecord() {
         return logRecord;
-    }
-
-    public void setLogRecord(LogRecord logRecord) {
-        this.logRecord = logRecord;
     }
 }

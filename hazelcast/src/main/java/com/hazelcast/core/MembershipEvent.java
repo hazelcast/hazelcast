@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,45 +16,92 @@
 
 package com.hazelcast.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.EventObject;
+import java.util.Set;
+
+import static java.lang.String.format;
 
 /**
- * Membership event fired when a new member is added
- * to the cluster and/or when a member leaves the cluster.
+ * Membership event fired when a new member is added to the cluster and/or when a member leaves the cluster
+ * or when there is a member attribute change via {@link Member#setBooleanAttribute(String, boolean)}
+ * and similar methods.
  *
  * @see MembershipListener
  */
+@SuppressFBWarnings("SE_BAD_FIELD")
 public class MembershipEvent extends EventObject {
+
+    /**
+     * This event type is fired when a new member joins the cluster.
+     */
+    public static final int MEMBER_ADDED = 1;
+
+    /**
+     * This event type is fired if a member left the cluster or was decided to be
+     * unresponsive by other members for a extended time.
+     */
+    public static final int MEMBER_REMOVED = 2;
+
+    /**
+     * This event type is fired if a member attribute has been changed or removed.
+     *
+     * @since 3.2
+     */
+    public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
+
 
     private static final long serialVersionUID = -2010865371829087371L;
 
-    public static final int MEMBER_ADDED = 1;
+    private final Member member;
 
-    public static final int MEMBER_REMOVED = 3;
+    private final int eventType;
 
-    private Member member;
+    private final Set<Member> members;
 
-    private int eventType;
-
-    public MembershipEvent(Cluster cluster, Member member, int eventType) {
+    public MembershipEvent(Cluster cluster, Member member, int eventType, Set<Member> members) {
         super(cluster);
         this.member = member;
         this.eventType = eventType;
+        this.members = members;
+    }
+
+    /**
+     * Returns a consistent view of the the members immediately after this MembershipEvent has been processed. If a
+     * member is removed, the returned set will not include this member. If a member is added, it will include
+     * this member.
+     * <p/>
+     * The problem with calling the {@link com.hazelcast.core.Cluster#getMembers()} method is that the content could already
+     * have changed while processing this event, so it becomes very difficult to write a deterministic algorithm since
+     * you cannot get a deterministic view of the members. This method solves that problem.
+     * <p/>
+     * The set is immutable and ordered. For more information see {@link com.hazelcast.core.Cluster#getMembers()}.
+     *
+     * Warning: If the event is triggered by a member attribute change then {@link #members} is empty.
+     *
+     * @return the members at the moment after this event.
+     */
+    public Set<Member> getMembers() {
+        return members;
     }
 
     /**
      * Returns the cluster of the event.
      *
-     * @return
+     * @return the current cluster instance
      */
     public Cluster getCluster() {
         return (Cluster) getSource();
     }
 
     /**
-     * Returns the membership event type; #MEMBER_ADDED or #MEMBER_REMOVED
+     * Returns the membership event type;
+     * #MEMBER_ADDED
+     * #MEMBER_REMOVED
+     * #MEMBER_ATTRIBUTE_CHANGED
      *
-     * @return the membeship event type
+     * @return the membership event type
      */
     public int getEventType() {
         return eventType;
@@ -63,7 +110,7 @@ public class MembershipEvent extends EventObject {
     /**
      * Returns the removed or added member.
      *
-     * @return member which is removed/added
+     * @return member which is removed or added
      */
     public Member getMember() {
         return member;
@@ -71,7 +118,21 @@ public class MembershipEvent extends EventObject {
 
     @Override
     public String toString() {
-        return "MembershipEvent {" + member + "} "
-                + ((eventType == MEMBER_ADDED) ? "added" : "removed");
+        String type;
+        switch (eventType) {
+            case MEMBER_ADDED:
+                type = "added";
+                break;
+            case MEMBER_REMOVED:
+                type = "removed";
+                break;
+            case MEMBER_ATTRIBUTE_CHANGED:
+                type = "attributed_changes";
+                break;
+            default:
+                throw new IllegalStateException();
+        }
+
+        return format("MembershipEvent {member=%s,type=%s}", member, type);
     }
 }

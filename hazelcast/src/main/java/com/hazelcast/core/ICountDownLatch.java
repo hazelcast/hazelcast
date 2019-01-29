@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,161 +16,123 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.monitor.LocalCountDownLatchStats;
-
 import java.util.concurrent.TimeUnit;
 
 /**
- * ICountDownLatch is a backed-up distributed implementation of
+ * ICountDownLatch is a backed-up distributed alternative to the
  * {@link java.util.concurrent.CountDownLatch java.util.concurrent.CountDownLatch}.
- * <p/>
- * Hazelcast's ICountDownLatch is a cluster-wide synchronization aid
+ * <p>
+ * ICountDownLatch is a cluster-wide synchronization aid
  * that allows one or more threads to wait until a set of operations being
  * performed in other threads completes.
- * <p/>
- * Unlike Java's implementation, Hazelcast's ICountDownLatch count can be re-set
- * after a countdown has finished but not during an active count. This allows the same
- * proxy instance to be reused.
- * <p/>The Hazelcast member that successfully invokes {@link #setCount(int)} becomes
- * the owner of the countdown and is responsible for staying connected to
- * the cluster until the count reaches zero.  If the owner becomes disconnected prior
- * to count reaching zero all awaiting threads will be notified.  This provides a
- * safety mechanism in the distributed environment.
+ * <p>
+ * There are a few differences compared to the {@link ICountDownLatch}:
+ * <ol>
+ * <li>
+ * the ICountDownLatch count can be reset using {@link #trySetCount(int)} after a countdown
+ * has finished but not during an active count. This allows the same latch instance to be reused.
+ * </li>
+ * <li>
+ * There is no await() method to do an unbound wait since this is undesirable in a distributed
+ * application: for example, a cluster can split or the master and
+ * replicas could all die. In most cases, it is best to configure an explicit timeout so you have the ability
+ * to deal with these situations.
+ * </li>
+ * </ol>
+ * Behaviour of {@link ICountDownLatch} under split-brain scenarios should be taken into account when using this
+ * data structure.  During a split, each partitioned cluster will either create a brand new and uninitialised (zero'd)
+ * {@link ICountDownLatch} or it will continue to use the primary or back-up version.  For example
+ * it may be possible for both the back-up and primary to be resident in one cluster partition and for another to
+ * be created as new in another side.  In any of these cases the counter in the respective {@link ICountDownLatch}
+ * may diverge.
+ * <p>
+ * When the split heals, Hazelcast performs a default largest cluster wins resolution or where clusters sizes are equal
+ * a random winner is chosen. This can lead to situations where the {@ICountDown} is left in an unpredictable state,
+ * and a countdown to zero may never be achieved.
+ * <p>
+ * If required, when using {@link ICountDownLatch} as an orchestration mechanism you should assess the state of the
+ * orchestration outcome and the associated countdown actors after a split-brain heal has taken place, and take steps to
+ * re-orchestrate if appropriate.
+ *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ *
  */
-public interface ICountDownLatch extends Instance {
-    /**
-     * Returns the name of this ICountDownLatch instance.
-     *
-     * @return name of this instance
-     */
-    String getName();
+public interface ICountDownLatch extends DistributedObject {
 
     /**
      * Causes the current thread to wait until the latch has counted down to
-     * zero or an exception is thrown.
-     * <p/>
-     * <p>If the current count is zero then this method returns immediately.
-     * <p/>
-     * <p>If the current count is greater than zero then the current
-     * thread becomes disabled for thread scheduling purposes and lies
-     * dormant until one of four things happen:
-     * <ul>
-     * <li>The count reaches zero due to invocations of the
-     * {@link #countDown} method;
-     * <li>This ICountDownLatch instance is destroyed;
-     * <li>The countdown owner becomes disconnected; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread.
-     * </ul>
-     * <p/>If the ICountDownLatch instance is destroyed while waiting then
-     * {@link InstanceDestroyedException} will be thrown.
-     * <p/>If the countdown owner becomes disconnected while waiting then
-     * {@link MemberLeftException} will be thrown.
-     * <p>If the current thread:
-     * <ul>
-     * <li>has its interrupted status set on entry to this method; or
-     * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
-     * </ul>
-     * then {@link InterruptedException} is thrown and the current thread's
-     * interrupted status is cleared.
-     *
-     * @throws InstanceDestroyedException if the instance is destroyed while waiting
-     * @throws MemberLeftException        if the countdown owner becomes disconnected while waiting
-     * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
-     */
-    public void await() throws InstanceDestroyedException, MemberLeftException, InterruptedException;
-
-    /**
-     * Causes the current thread to wait until the latch has counted down to
-     * zero, an exception is thrown, or the specified waiting time elapses.
-     * <p/>
-     * <p>If the current count is zero then this method returns immediately
+     * zero, or an exception is thrown, or the specified waiting time elapses.
+     * <p>
+     * If the current count is zero then this method returns immediately
      * with the value {@code true}.
-     * <p/>
-     * <p>If the current count is greater than zero then the current
+     * <p>
+     * If the current count is greater than zero, then the current
      * thread becomes disabled for thread scheduling purposes and lies
      * dormant until one of five things happen:
      * <ul>
-     * <li>The count reaches zero due to invocations of the
-     * {@link #countDown} method;
-     * <li>This ICountDownLatch instance is destroyed;
-     * <li>The countdown owner becomes disconnected;
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread; or
-     * <li>The specified waiting time elapses.
+     * <li>the count reaches zero due to invocations of the
+     * {@link #countDown} method,
+     * <li>this ICountDownLatch instance is destroyed,
+     * <li>the countdown owner becomes disconnected,
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
+     * the current thread, or
+     * <li>the specified waiting time elapses.
      * </ul>
-     * <p/>
-     * <p>If the count reaches zero then the method returns with the
+     * If the count reaches zero, then the method returns with the
      * value {@code true}.
-     * <p/>
-     * <p/>If the ICountDownLatch instance is destroyed while waiting then
-     * {@link InstanceDestroyedException} will be thrown.
-     * <p/>If the countdown owner becomes disconnected while waiting then
-     * {@link MemberLeftException} will be thrown.
-     * <p>If the current thread:
+     * <p>
+     * If the current thread:
      * <ul>
-     * <li>has its interrupted status set on entry to this method; or
+     * <li>has its interrupted status set on entry to this method, or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
      * </ul>
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
-     * <p>If the specified waiting time elapses then the value {@code false}
+     * <p>
+     * If the specified waiting time elapses then the value {@code false}
      * is returned.  If the time is less than or equal to zero, the method
      * will not wait at all.
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
-     * @return {@code true} if the count reached zero and {@code false}
-     *         if the waiting time elapsed before the count reached zero
-     * @throws InstanceDestroyedException if the instance is destroyed while waiting
-     * @throws MemberLeftException        if the countdown owner becomes disconnected while waiting
-     * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
+     * @return {@code true} if the count reached zero, {@code false}
+     * if the waiting time elapsed before the count reached zero
+     * @throws InterruptedException  if the current thread is interrupted
+     * @throws IllegalStateException if the Hazelcast instance is shutdown while waiting
+     * @throws NullPointerException  if unit is null
      */
-    public boolean await(long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException, InterruptedException;
+    boolean await(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
      * Decrements the count of the latch, releasing all waiting threads if
      * the count reaches zero.
-     * <p/>
-     * If the current count is greater than zero then it is decremented.
+     * <p>
+     * If the current count is greater than zero, then it is decremented.
      * If the new count is zero:
      * <ul>
-     * <li>All waiting threads are re-enabled for thread scheduling purposes; and
+     * <li>All waiting threads are re-enabled for thread scheduling purposes, and
      * <li>Countdown owner is set to {@code null}.
      * </ul>
-     * <p/>
-     * If the current count equals zero then nothing happens.
+     * If the current count equals zero, then nothing happens.
      */
-    public void countDown();
+    void countDown();
 
     /**
-     * Returns whether the current count is greater than zero.
+     * Returns the current count.
      *
-     * @return {@code true} if count is greater than zero
+     * @return the current count
      */
-    public boolean hasCount();
+    int getCount();
 
     /**
-     * Sets the count to the given value if the current count is zero. The calling
-     * cluster member becomes the owner of the countdown and is responsible for
-     * staying connected to the cluster until the count reaches zero.
-     * <p/>If the owner becomes disconnected before the count reaches zero:
-     * <ul>
-     * <li>Count will be set to zero;
-     * <li>Countdown owner will be set to {@code null}; and
-     * <li>All awaiting threads will be thrown a {@link MemberLeftException}.
-     * </ul>
-     * <p/>If count is not zero then this method does nothing and returns {@code false}.
+     * Sets the count to the given value if the current count is zero.
+     * <p>
+     * If count is not zero, then this method does nothing and returns {@code false}.
      *
      * @param count the number of times {@link #countDown} must be invoked
      *              before threads can pass through {@link #await}
-     * @return {@code true} if the new count was set or {@code false} if the current
-     *         count is not zero
+     * @return {@code true} if the new count was set, {@code false} if the current count is not zero
      * @throws IllegalArgumentException if {@code count} is negative
      */
-    public boolean setCount(int count);
-
-    LocalCountDownLatchStats getLocalCountDownLatchStats();
+    boolean trySetCount(int count);
 }

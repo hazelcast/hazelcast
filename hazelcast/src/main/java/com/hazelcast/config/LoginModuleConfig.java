@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,15 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.StringUtil;
+
 import java.util.Properties;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Configuration for Login Module
+ */
 
 public class LoginModuleConfig {
 
@@ -25,22 +33,39 @@ public class LoginModuleConfig {
     private Properties properties = new Properties();
 
     public LoginModuleConfig() {
-        super();
     }
 
     public LoginModuleConfig(String className, LoginModuleUsage usage) {
-        super();
         this.className = className;
         this.usage = usage;
     }
 
+    /**
+     * Usage of Login Module
+     */
     public enum LoginModuleUsage {
-        REQUIRED, REQUISITE, SUFFICIENT, OPTIONAL;
+        /**
+         * Required
+         */
+        REQUIRED,
+        /**
+         * Requisite
+         */
+        REQUISITE,
+        /**
+         * Sufficient
+         */
+        SUFFICIENT,
+        /**
+         * Optimal
+         */
+        OPTIONAL;
 
         public static LoginModuleUsage get(String v) {
             try {
-                return LoginModuleUsage.valueOf(v.toUpperCase());
+                return LoginModuleUsage.valueOf(v.toUpperCase(StringUtil.LOCALE_INTERNAL));
             } catch (Exception ignore) {
+                ignore(ignore);
             }
             return REQUIRED;
         }
@@ -48,6 +73,15 @@ public class LoginModuleConfig {
 
     public String getClassName() {
         return className;
+    }
+
+    @Deprecated
+    /**
+     * @deprecated Not supported, to be removed in 4.0. Use {@link #getClassName()} instead
+     * @since 3.9
+     */
+    public Object getImplementation() {
+        throw new UnsupportedOperationException("Deprecated operation. Use getClassName instead.");
     }
 
     public Properties getProperties() {
@@ -58,26 +92,61 @@ public class LoginModuleConfig {
         return usage;
     }
 
-    public void setClassName(String className) {
+    public LoginModuleConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
-    public void setUsage(LoginModuleUsage usage) {
+    @Deprecated
+    /**
+     * @deprecated Not supported, to be removed in 4.0. User {@link #setClassName(String)} instead
+     * @since 3.9
+     */
+    public LoginModuleConfig setImplementation(Object implementation) {
+        throw new UnsupportedOperationException("Deprecated operation. Use setClassName instead.");
+    }
+
+    public LoginModuleConfig setUsage(LoginModuleUsage usage) {
         this.usage = usage;
+        return this;
     }
 
-    public void setProperties(Properties properties) {
+    public LoginModuleConfig setProperties(Properties properties) {
         this.properties = properties;
+        return this;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("LoginModuleConfig");
-        sb.append("{className='").append(className).append('\'');
-        sb.append(", usage=").append(usage);
-        sb.append(", properties=").append(properties);
-        sb.append('}');
-        return sb.toString();
+        return "LoginModuleConfig{className='" + className + "', usage=" + usage
+                + ", properties=" + properties + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LoginModuleConfig that = (LoginModuleConfig) o;
+
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (usage != that.usage) {
+            return false;
+        }
+        return properties != null ? properties.equals(that.properties) : that.properties == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (usage != null ? usage.hashCode() : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        return result;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,13 @@
 package com.hazelcast.monitor;
 
 /**
- * Local map statistics. As everything is partitioned in Hazelcast,
- * each member owns 1/N (N being the number of members in the cluster)
- * entries of a distributed map. Each member also holds backup entries
- * of another member. LocalMapStats tells you the count of owned and backup
+ * Local map statistics. As {@link com.hazelcast.core.IMap} is a partitioned data structure
+ * in Hazelcast, each member owns a fraction of the total number of entries of a distributed map.
+ * Depending on the {@link com.hazelcast.core.IMap}'s configuration, each member may also hold backup
+ * entries of other members. LocalMapStats provides the count of owned and backup
  * entries besides their size in memory.
- * <p/>
- * When an entry is removed, it is not erased from the map immediately.
- * Hazelcast will mark it as removed and erase it couple of seconds later for
- * correct versioning of backups.
  */
-public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats> {
+public interface LocalMapStats extends LocalInstanceStats {
 
     /**
      * Returns the number of entries owned by this member.
@@ -44,15 +40,11 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
     long getBackupEntryCount();
 
     /**
-     * Returns the number of marked as removed entries in this member.
-     * <p/>
-     * When an entry is removed, it is not erased from the map immediately.
-     * Hazelcast will mark it as removed and erase it couple of seconds later for
-     * correct versioning of backups.
+     * Returns the number of backups per entry.
      *
-     * @return number of entries marked as removed.
+     * @return the number of backups per entry.
      */
-    long getMarkedAsRemovedEntryCount();
+    int getBackupCount();
 
     /**
      * Returns memory cost (number of bytes) of owned entries in this member.
@@ -69,14 +61,6 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
     long getBackupEntryMemoryCost();
 
     /**
-     * Returns memory cost (number of bytes) of marked as
-     * removed entries in this member.
-     *
-     * @return memory cost (number of bytes) of marked as removed entries.
-     */
-    long getMarkedAsRemovedMemoryCost();
-
-    /**
      * Returns the creation time of this map on this member.
      *
      * @return creation time of this map on this member.
@@ -86,37 +70,27 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
     /**
      * Returns the last access (read) time of the locally owned entries.
      *
-     * @return last access time.
+     * @return last access (read) time of the locally owned entries.
      */
     long getLastAccessTime();
 
     /**
      * Returns the last update time of the locally owned entries.
      *
-     * @return last update time.
+     * @return last update time of the locally owned entries.
      */
     long getLastUpdateTime();
 
     /**
-     * Returns the last eviction time of the locally owned entries.
+     * Returns the number of hits (reads) of locally owned entries, including those
+     * which are no longer in the map (for example, may have been evicted).
      *
-     * @return last eviction time.
-     */
-    long getLastEvictionTime();
-
-    /**
-     * Returns the number of hits (reads) of the locally owned entries.
+     * The number of hits may be inaccurate after a partition is migrated to a new
+     * owner member.
      *
-     * @return number of hits (reads).
+     * @return number of hits (reads) of the locally owned entries.
      */
     long getHits();
-
-    /**
-     * Returns the number of misses (get returns null) of the locally owned entries.
-     *
-     * @return number of misses.
-     */
-    long getMisses();
 
     /**
      * Returns the number of currently locked locally owned keys.
@@ -126,18 +100,111 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
     long getLockedEntryCount();
 
     /**
-     * Returns the number of cluster-wide threads waiting
-     * to acquire locks for the locally owned keys.
-     *
-     * @return number of threads waiting for locks.
-     */
-    long getLockWaitCount();
-
-    /**
      * Returns the number of entries that the member owns and are dirty (updated but not persisted yet).
      * dirty entry count is meaningful when there is a persistence defined.
      *
-     * @return
+     * @return the number of dirty entries that the member owns
      */
     long getDirtyEntryCount();
+
+    /**
+     * Returns the number of put operations
+     *
+     * @return number of put operations
+     */
+    long getPutOperationCount();
+
+    /**
+     * Returns the number of get operations
+     *
+     * @return number of get operations
+     */
+    long getGetOperationCount();
+
+    /**
+     * Returns the number of Remove operations
+     *
+     * @return number of remove operations
+     */
+    long getRemoveOperationCount();
+
+    /**
+     * Returns the total latency of put operations. To get the average latency, divide by the number of puts
+     *
+     * @return the total latency of put operations
+     */
+    long getTotalPutLatency();
+
+    /**
+     * Returns the total latency of get operations. To get the average latency, divide by the number of gets
+     *
+     * @return the total latency of get operations
+     */
+    long getTotalGetLatency();
+
+    /**
+     * Returns the total latency of remove operations. To get the average latency, divide by the number of gets
+     *
+     * @return the total latency of remove operations
+     */
+    long getTotalRemoveLatency();
+
+    /**
+     * Returns the maximum latency of put operations.
+     *
+     * @return the maximum latency of put operations
+     */
+    long getMaxPutLatency();
+
+    /**
+     * Returns the maximum latency of get operations.
+     *
+     * @return the maximum latency of get operations
+     */
+    long getMaxGetLatency();
+
+    /**
+     * Returns the maximum latency of remove operations.
+     *
+     * @return the maximum latency of remove operations
+     */
+    long getMaxRemoveLatency();
+
+    /**
+     * Returns the number of Events Received
+     *
+     * @return number of events received
+     */
+    long getEventOperationCount();
+
+    /**
+     * Returns the total number of Other Operations
+     *
+     * @return number of other operations
+     */
+    long getOtherOperationCount();
+
+    /**
+     * Returns the total number of total operations
+     *
+     * @return number of total operations
+     */
+    long total();
+
+    /**
+     * Cost of map & Near Cache & backup in bytes
+     *
+     * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heapcost is zero.
+     *
+     * @return heap cost
+     */
+    long getHeapCost();
+
+    /**
+     * Returns statistics related to the Near Cache.
+     *
+     * @return statistics object for the Near Cache
+     */
+    NearCacheStats getNearCacheStats();
+
 }

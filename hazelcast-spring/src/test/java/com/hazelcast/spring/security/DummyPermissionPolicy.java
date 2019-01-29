@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,33 @@
 
 package com.hazelcast.spring.security;
 
-import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.security.IPermissionPolicy;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.util.Properties;
+import java.util.Set;
 
 public class DummyPermissionPolicy implements IPermissionPolicy {
 
-    public void configure(SecurityConfig securityConfig, Properties properties) {
+    @Override
+    public void configure(Config config, Properties properties) {
     }
 
-    public PermissionCollection getPermissions(Subject subject,
-                                               Class<? extends Permission> type) {
+    @Override
+    public PermissionCollection getPermissions(Subject subject, Class<? extends Permission> type) {
         return null;
     }
 
+    @Override
+    public void refreshPermissions(Set<PermissionConfig> permissionConfigs) {
+
+    }
+
+    @Override
     public void destroy() {
     }
 }

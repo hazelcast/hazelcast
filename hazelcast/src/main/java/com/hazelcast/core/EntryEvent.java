@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import java.util.EventObject;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Map Entry event.
@@ -24,21 +24,13 @@ import java.util.EventObject;
  * @param <K> key of the map entry
  * @param <V> value of the map entry
  * @see com.hazelcast.core.EntryListener
- * @see com.hazelcast.core.IMap#addEntryListener(EntryListener, boolean)
+ * @see com.hazelcast.map.listener.MapListener
+ * @see com.hazelcast.core.IMap#addEntryListener(com.hazelcast.map.listener.MapListener, boolean)
  */
-public class EntryEvent<K, V> extends EventObject {
+@SuppressFBWarnings("SE_BAD_FIELD")
+public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     private static final long serialVersionUID = -2296203982913729851L;
-
-    public static final int TYPE_ADDED = EntryEventType.ADDED.getType();
-
-    public static final int TYPE_REMOVED = EntryEventType.REMOVED.getType();
-
-    public static final int TYPE_UPDATED = EntryEventType.UPDATED.getType();
-
-    public static final int TYPE_EVICTED = EntryEventType.EVICTED.getType();
-
-    protected EntryEventType entryEventType = EntryEventType.ADDED;
 
     protected K key;
 
@@ -46,92 +38,105 @@ public class EntryEvent<K, V> extends EventObject {
 
     protected V value;
 
-    protected Member member;
+    protected V mergingValue;
 
-    protected final String name;
-
-    protected boolean collection;
-
+    /**
+     * Constructs an entry event.
+     *
+     * @param source    The object on which the event initially occurred.
+     * @param member    The interface to the cluster member (node).
+     * @param eventType The event type as an enum {@link EntryEventType} integer.
+     * @param key       The key for this entry event.
+     * @param value     The value of the entry event.
+     * @throws IllegalArgumentException if source is null.
+     */
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
 
+
+    /**
+     * Constructs an entry event.
+     *
+     * @param source    The object on which the Event initially occurred.
+     * @param member    The interface to the cluster member (node).
+     * @param eventType The event type as an enum {@link EntryEventType} integer.
+     * @param key       The key of this entry event.
+     * @param oldValue  The old value of the entry event.
+     * @param value     The value of the entry event.
+     * @throws IllegalArgumentException if source is null.
+     */
     public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value) {
-        super(source);
-        this.name = (String) source;
-        this.member = member;
+        super(source, member, eventType);
         this.key = key;
         this.oldValue = oldValue;
         this.value = value;
-        this.entryEventType = EntryEventType.getByType(eventType);
-    }
-
-    @Override
-    public Object getSource() {
-        return name;
     }
 
     /**
-     * Returns the key of the entry event
+     * Constructs an entry event.
      *
-     * @return the key
+     * @param source       The object on which the Event initially occurred.
+     * @param member       The interface to the cluster member (node).
+     * @param eventType    The event type as an enum {@link EntryEventType} integer.
+     * @param key          The key of this entry event.
+     * @param oldValue     The old value of the entry event.
+     * @param value        The value of the entry event.
+     * @param mergingValue The incoming merging value of the entry event.
+     * @throws IllegalArgumentException if source is null.
+     */
+    public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value, V mergingValue) {
+        super(source, member, eventType);
+        this.key = key;
+        this.oldValue = oldValue;
+        this.value = value;
+        this.mergingValue = mergingValue;
+    }
+
+    /**
+     * Returns the key of the entry event.
+     *
+     * @return the key of the entry event
      */
     public K getKey() {
         return key;
     }
 
     /**
-     * Returns the old value of the entry event
+     * Returns the old value of the entry event.
      *
-     * @return
+     * @return the old value of the entry event.
      */
     public V getOldValue() {
         return this.oldValue;
     }
 
     /**
-     * Returns the value of the entry event
+     * Returns the value of the entry event.
      *
-     * @return
+     * @return the value of the entry event
      */
     public V getValue() {
         return value;
     }
 
     /**
-     * Returns the member fired this event.
+     * Returns the incoming merging value of the entry event.
      *
-     * @return the member fired this event.
+     * @return merge value
      */
-    public Member getMember() {
-        return member;
-    }
-
-    /**
-     * Return the event type
-     *
-     * @return event type
-     */
-    public EntryEventType getEventType() {
-        return entryEventType;
-    }
-
-    /**
-     * Returns the name of the map for this event.
-     *
-     * @return name of the map.
-     */
-    public String getName() {
-        return name.substring(Prefix.MAP.length());
+    public V getMergingValue() {
+        return mergingValue;
     }
 
     @Override
     public String toString() {
-        return "EntryEvent {" + getSource()
-                + "} key=" + getKey()
+        return "EntryEvent{"
+                + super.toString()
+                + ", key=" + getKey()
                 + ", oldValue=" + getOldValue()
                 + ", value=" + getValue()
-                + ", event=" + entryEventType
-                + ", by " + member;
+                + ", mergingValue=" + getMergingValue()
+                + '}';
     }
 }

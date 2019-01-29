@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,18 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
+/**
+ * Map Item event.
+ *
+ * @see com.hazelcast.core.EntryEvent
+ * @see com.hazelcast.core.ICollection#addItemListener(ItemListener, boolean)
+ */
+
 public class ItemEvent<E> extends EventObject {
 
-    private final E item;
+    protected E item;
     private final ItemEventType eventType;
     private final Member member;
-
-    public ItemEvent(String name, int eventType, E item, Member member) {
-        this(name, ItemEventType.getByType(eventType), item, member);
-    }
 
     public ItemEvent(String name, ItemEventType itemEventType, E item, Member member) {
         super(name);
@@ -35,18 +38,28 @@ public class ItemEvent<E> extends EventObject {
         this.member = member;
     }
 
+    /**
+     * Returns the event type.
+     *
+     * @return the event type.
+     */
     public ItemEventType getEventType() {
         return eventType;
     }
 
+    /**
+     * Returns the item related to the event.
+     *
+     * @return the item related to the event.
+     */
     public E getItem() {
         return item;
     }
 
     /**
-     * Returns the member fired this event.
+     * Returns the member that fired this event.
      *
-     * @return the member fired this event.
+     * @return the member that fired this event.
      */
     public Member getMember() {
         return member;
@@ -54,10 +67,10 @@ public class ItemEvent<E> extends EventObject {
 
     @Override
     public String toString() {
-        return "ItemEvent{" +
-                "event=" + eventType +
-                ", item=" + getItem() +
-                ", member=" + getMember() +
-                "} ";
+        return "ItemEvent{"
+                + "event=" + eventType
+                + ", item=" + getItem()
+                + ", member=" + getMember()
+                + "} ";
     }
 }

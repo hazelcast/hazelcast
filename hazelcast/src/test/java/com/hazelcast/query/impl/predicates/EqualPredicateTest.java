@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.query.impl.predicates;
+
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class EqualPredicateTest {
+
+    @Test
+    public void negate_thenReturnNotEqualPredicate() {
+        EqualPredicate equalPredicate = new EqualPredicate("foo", 1);
+        NotEqualPredicate negate = (NotEqualPredicate) equalPredicate.negate();
+
+        assertEquals("foo", negate.attributeName);
+        assertEquals(1, negate.value);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    // should be fixed in 4.0; See: https://github.com/hazelcast/hazelcast/issues/6188
+    public void equal_zeroMinusZero() {
+        // in EqualPredicate
+        assertFalse(new EqualPredicate("this", 0.0).apply(entry(-0.0)));
+        assertFalse(new EqualPredicate("this", 0.0d).apply(entry(-0.0d)));
+        assertFalse(new EqualPredicate("this", 0.0).apply(entry(-0.0d)));
+        assertFalse(new EqualPredicate("this", 0.0d).apply(entry(-0.0)));
+
+        // whereas in Java
+        assertTrue(0.0 == -0.0);
+        assertTrue(0.0d == -0.0d);
+        assertTrue(0.0 == -0.0d);
+        assertTrue(0.0d == -0.0);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    // should be fixed in 4.0; See: https://github.com/hazelcast/hazelcast/issues/6188
+    public void equal_NaN() {
+        // in EqualPredicate
+        assertTrue(new EqualPredicate("this", Double.NaN).apply(entry(Double.NaN)));
+        assertTrue(new EqualPredicate("this", Float.NaN).apply(entry(Float.NaN)));
+        assertTrue(new EqualPredicate("this", Double.NaN).apply(entry(-Double.NaN)));
+        assertTrue(new EqualPredicate("this", Float.NaN).apply(entry(-Float.NaN)));
+        assertTrue(new EqualPredicate("this", Double.NaN).apply(entry(-Float.NaN)));
+        assertTrue(new EqualPredicate("this", Float.NaN).apply(entry(-Double.NaN)));
+
+        // whereas in Java
+        assertFalse(Double.NaN == Double.NaN);
+        assertFalse(Float.NaN == Float.NaN);
+        assertFalse(Double.NaN == -Double.NaN);
+        assertFalse(Float.NaN == -Float.NaN);
+        assertFalse(Double.NaN == -Float.NaN);
+        assertFalse(Float.NaN == -Double.NaN);
+    }
+
+}

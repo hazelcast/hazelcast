@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-2.5.xsd">
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -102,10 +102,32 @@
                         <hz:action>poll</hz:action>
                     </hz:actions>
                 </hz:queue-permission>
+                <hz:cache-permission name="test-cache" principal="dev">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                    <hz:actions>
+                        <hz:action>create</hz:action>
+                        <hz:action>add</hz:action>
+                        <hz:action>read</hz:action>
+                        <hz:action>destroy</hz:action>
+                    </hz:actions>
+                </hz:cache-permission>
+                <hz:config-permission principal="dev">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                </hz:config-permission>
             </hz:client-permissions>
+            <hz:security-interceptors>
+                <hz:interceptor class-name="com.hazelcast.spring.security.DummySecurityInterceptor"
+                                implementation="dummySecurityInterceptor"/>
+            </hz:security-interceptors>
         </hz:security>
     </hz:config>
 
     <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory"/>
     <bean id="dummyPermissionPolicy" class="com.hazelcast.spring.security.DummyPermissionPolicy"/>
+    <bean id="dummySecurityInterceptor" class="com.hazelcast.spring.security.DummySecurityInterceptor"/>
+    <bean id="dummyLoginModule" class="com.hazelcast.spring.security.DummyLoginModule"/>
 </beans>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.nio.MemberSocketInterceptor;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Properties;
 
-/**
- *
- */
 public class DummySocketInterceptor implements MemberSocketInterceptor {
-    public void init(final SocketInterceptorConfig socketInterceptorConfig) {
+
+    @Override
+    public void init(Properties properties) {
     }
 
-    public void onAccept(final Socket acceptedSocket) throws IOException {
+    @Override
+    public void onAccept(Socket acceptedSocket) throws IOException {
     }
 
-    public void onConnect(final Socket connectedSocket) throws IOException {
+    @Override
+    public void onConnect(Socket connectedSocket) throws IOException {
     }
 }

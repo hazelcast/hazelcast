@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,17 @@ package com.hazelcast.spring.cache;
 
 import org.springframework.cache.annotation.Cacheable;
 
-/**
- * @mdogan 4/3/12
- */
 public interface IDummyBean {
 
     @Cacheable("name")
-    String getName(int k);
+    String getName(int index);
 
     @Cacheable("city")
-    String getCity(int k);
+    String getCity(int index);
 
-    @Cacheable("temp")
+    @Cacheable("null-map")
     Object getNull();
+
+    @Cacheable("map-with-ttl")
+    String getNameWithTTL();
 }

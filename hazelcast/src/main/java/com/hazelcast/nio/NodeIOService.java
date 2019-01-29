@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,236 +16,339 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.cluster.AddOrRemoveConnection;
-import com.hazelcast.config.*;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.impl.Processable;
-import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.base.SystemLogService;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.AddressUtil;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.ThreadUtil.createThreadName;
+
+@PrivateApi
 public class NodeIOService implements IOService {
 
-    final Node node;
+    private final Node node;
+    private final NodeEngineImpl nodeEngine;
 
-    public NodeIOService(Node node) {
+    public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
+        this.nodeEngine = nodeEngine;
     }
 
+    @Override
+    public String getHazelcastName() {
+        return node.hazelcastInstance.getName();
+    }
+
+    @Override
+    public LoggingService getLoggingService() {
+        return nodeEngine.getLoggingService();
+    }
+
+    @Override
     public boolean isActive() {
-        return node.isActive();
+        return node.getState() != NodeState.SHUT_DOWN;
     }
 
-    public ILogger getLogger(String name) {
-        return node.getLogger(name);
-    }
-
-    public SystemLogService getSystemLogService() {
-        return node.getSystemLogService();
-    }
-
-    public void onOutOfMemory(OutOfMemoryError oom) {
-//        node.onOutOfMemory(oom);
-        OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
-    }
-
-    public void handleInterruptedException(Thread thread, RuntimeException e) {
-        node.handleInterruptedException(thread, e);
-    }
-
-    public void onIOThreadStart() {
-        ThreadContext.get().setCurrentFactory(node.factory);
-    }
-
+    @Override
     public Address getThisAddress() {
         return node.getThisAddress();
     }
 
+    @Override
     public void onFatalError(Exception e) {
-        getSystemLogService().logConnection(e.getClass().getName() + ": " + e.getMessage());
-        node.shutdown(false, false);
+        String hzName = nodeEngine.getHazelcastInstance().getName();
+        Thread thread = new Thread(createThreadName(hzName, "io.error.shutdown")) {
+            public void run() {
+                node.shutdown(false);
+            }
+        };
+        thread.start();
     }
 
     public SocketInterceptorConfig getSocketInterceptorConfig() {
         return node.getConfig().getNetworkConfig().getSocketInterceptorConfig();
     }
 
+    @Override
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
     }
 
-    public AsymmetricEncryptionConfig getAsymmetricEncryptionConfig() {
-        return node.getConfig().getNetworkConfig().getAsymmetricEncryptionConfig();
-    }
-
+    @Override
     public SSLConfig getSSLConfig() {
         return node.getConfig().getNetworkConfig().getSSLConfig();
     }
 
-    public void handleClientPacket(Packet p) {
-        node.clientHandlerService.handle(p);
+    @Override
+    public ClientEngine getClientEngine() {
+        return node.clientEngine;
     }
 
-    public void handleMemberPacket(Packet p) {
-        node.clusterService.enqueuePacket(p);
-    }
-
+    @Override
     public TextCommandService getTextCommandService() {
         return node.getTextCommandService();
     }
 
+    @Override
     public boolean isMemcacheEnabled() {
-        return node.groupProperties.MEMCACHE_ENABLED.getBoolean();
+        return node.getProperties().getBoolean(GroupProperty.MEMCACHE_ENABLED);
     }
 
+    @Override
     public boolean isRestEnabled() {
-        return node.groupProperties.REST_ENABLED.getBoolean();
+        return node.getProperties().getBoolean(GroupProperty.REST_ENABLED);
     }
 
-    public void removeEndpoint(Address endPoint) {
-        AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
-        addOrRemoveConnection.setNode(node);
-        node.clusterManager.enqueueAndReturn(addOrRemoveConnection);
+    @Override
+    public boolean isHealthcheckEnabled() {
+        return node.getProperties().getBoolean(GroupProperty.HTTP_HEALTHCHECK_ENABLED);
     }
 
-    public String getThreadPrefix() {
-        return node.getThreadPoolNamePrefix("IO");
+    @Override
+    public void removeEndpoint(final Address endPoint) {
+        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
+            @Override
+            public void run() {
+                node.clusterService.suspectAddressIfNotConnected(endPoint);
+            }
+        });
     }
 
-    public ThreadGroup getThreadGroup() {
-        return node.threadGroup;
-    }
+    @Override
+    public void onDisconnect(final Address endpoint, Throwable cause) {
+        if (cause == null) {
+            // connection is closed explicitly. we should not attempt to reconnect
+            return;
+        }
 
-    public void onFailedConnection(Address address) {
-        if (!node.joined()) {
-            node.failedConnection(address);
+        if (node.clusterService.getMember(endpoint) != null) {
+            nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new ReconnectionTask(endpoint));
         }
     }
 
+    @Override
+    public void onSuccessfulConnection(Address address) {
+        if (!node.getClusterService().isJoined()) {
+            node.getJoiner().unblacklist(address);
+        }
+    }
+
+    @Override
+    public void onFailedConnection(final Address address) {
+        ClusterService clusterService = node.clusterService;
+        if (!clusterService.isJoined()) {
+            node.getJoiner().blacklist(address, false);
+        } else {
+            if (clusterService.getMember(address) != null) {
+                nodeEngine.getExecutionService().schedule(ExecutionService.IO_EXECUTOR, new ReconnectionTask(address),
+                        getConnectionMonitorInterval(), TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+
+    @Override
     public void shouldConnectTo(Address address) {
         if (node.getThisAddress().equals(address)) {
             throw new RuntimeException("Connecting to self! " + address);
         }
     }
 
-    public boolean isReuseSocketAddress() {
-        return node.getConfig().getNetworkConfig().isReuseAddress();
+    @Override
+    public boolean isSocketBind() {
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BIND);
     }
 
-    public int getSocketPort() {
-        return node.getConfig().getNetworkConfig().getPort();
-    }
-
+    @Override
     public boolean isSocketBindAny() {
-        return node.groupProperties.SOCKET_CLIENT_BIND_ANY.getBoolean();
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BIND_ANY);
     }
 
-    public boolean isSocketPortAutoIncrement() {
-        return node.getConfig().getNetworkConfig().isPortAutoIncrement();
-    }
-
+    @Override
     public int getSocketReceiveBufferSize() {
-        return this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger();
+        return node.getProperties().getInteger(GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
+    @Override
     public int getSocketSendBufferSize() {
-        return this.node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger();
+        return node.getProperties().getInteger(GroupProperty.SOCKET_SEND_BUFFER_SIZE);
     }
 
-    public int getSocketLingerSeconds() {
-        return this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
+    @Override
+    public boolean useDirectSocketBuffer() {
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_BUFFER_DIRECT);
     }
 
-    public boolean getSocketKeepAlive() {
-        return this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
+    @Override
+    public int getSocketClientReceiveBufferSize() {
+        int clientSendBuffer = node.getProperties().getInteger(GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE);
+        return clientSendBuffer != -1 ? clientSendBuffer : getSocketReceiveBufferSize();
     }
 
-    public boolean getSocketNoDelay() {
-        return this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
+    @Override
+    public int getSocketClientSendBufferSize() {
+        int clientReceiveBuffer = node.getProperties().getInteger(GroupProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE);
+        return clientReceiveBuffer != -1 ? clientReceiveBuffer : getSocketReceiveBufferSize();
     }
 
-    public int getSelectorThreadCount() {
-        return node.groupProperties.IO_THREAD_COUNT.getInteger();
+    @Override
+    public void configureSocket(Socket socket) throws SocketException {
+        if (getSocketLingerSeconds() > 0) {
+            socket.setSoLinger(true, getSocketLingerSeconds());
+        }
+        socket.setKeepAlive(getSocketKeepAlive());
+        socket.setTcpNoDelay(getSocketNoDelay());
+        socket.setReceiveBufferSize(getSocketReceiveBufferSize() * KILO_BYTE);
+        socket.setSendBufferSize(getSocketSendBufferSize() * KILO_BYTE);
     }
 
-    public void disconnectExistingCalls(final Address deadEndpoint) {
-        if (deadEndpoint != null) {
-            node.clusterManager.enqueueAndReturn(new Processable() {
-                public void process() {
-                    node.clusterManager.disconnectExistingCalls(deadEndpoint);
-                }
-            });
+    @Override
+    public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+        if (!isSocketInterceptorEnabled()) {
+            return;
+        }
+
+        MemberSocketInterceptor memberSocketInterceptor = getMemberSocketInterceptor();
+        if (memberSocketInterceptor == null) {
+            return;
+        }
+
+        if (onAccept) {
+            memberSocketInterceptor.onAccept(socket);
+        } else {
+            memberSocketInterceptor.onConnect(socket);
         }
     }
 
-    public boolean isClient() {
-        return false;
+    @Override
+    public boolean isSocketInterceptorEnabled() {
+        final SocketInterceptorConfig socketInterceptorConfig = getSocketInterceptorConfig();
+        return socketInterceptorConfig != null && socketInterceptorConfig.isEnabled();
     }
 
+    private int getSocketLingerSeconds() {
+        return node.getProperties().getSeconds(GroupProperty.SOCKET_LINGER_SECONDS);
+    }
+
+    @Override
+    public int getSocketConnectTimeoutSeconds() {
+        return node.getProperties().getSeconds(GroupProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
+    }
+
+    private boolean getSocketKeepAlive() {
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_KEEP_ALIVE);
+    }
+
+    private boolean getSocketNoDelay() {
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_NO_DELAY);
+    }
+
+    @Override
+    public int getInputSelectorThreadCount() {
+        return node.getProperties().getInteger(GroupProperty.IO_INPUT_THREAD_COUNT);
+    }
+
+    @Override
+    public int getOutputSelectorThreadCount() {
+        return node.getProperties().getInteger(GroupProperty.IO_OUTPUT_THREAD_COUNT);
+    }
+
+    @Override
     public long getConnectionMonitorInterval() {
-        return node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong();
+        return node.getProperties().getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL);
     }
 
+    @Override
     public int getConnectionMonitorMaxFaults() {
-        return node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger();
+        return node.getProperties().getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS);
     }
 
-    public void onShutdown() {
-        try {
-            ThreadContext.get().setCurrentFactory(node.factory);
-            node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
-            // wait a little
-            Thread.sleep(100);
-        } catch (Throwable ignored) {
-        }
+    @Override
+    public int getBalancerIntervalSeconds() {
+        return node.getProperties().getSeconds(GroupProperty.IO_BALANCER_INTERVAL_SECONDS);
     }
 
+    @Override
     public void executeAsync(final Runnable runnable) {
-        node.executorManager.executeNow(runnable);
+        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, runnable);
     }
 
+    @Override
+    public EventService getEventService() {
+        return nodeEngine.getEventService();
+    }
+
+    @Override
+    public InternalSerializationService getSerializationService() {
+        return node.getSerializationService();
+    }
+
+    @Override
+    public ChannelFactory getChannelFactory() {
+        return node.getNodeExtension().getChannelFactory();
+    }
+
+    @Override
+    public MemberSocketInterceptor getMemberSocketInterceptor() {
+        return node.getNodeExtension().getMemberSocketInterceptor();
+    }
+
+    @Override
+    public ChannelInboundHandler createInboundHandler(TcpIpConnection connection) {
+        return node.getNodeExtension().createInboundHandler(connection, this);
+    }
+
+    @Override
+    public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection) {
+        return node.getNodeExtension().createOutboundHandler(connection, this);
+    }
+
+    @Override
     public Collection<Integer> getOutboundPorts() {
         final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        final Collection<String> portDefinitions = networkConfig.getOutboundPortDefinitions() == null
-                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
-        final Set<Integer> ports = networkConfig.getOutboundPorts() == null
-                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+        final Collection<Integer> outboundPorts = networkConfig.getOutboundPorts();
+        final Collection<String> outboundPortDefinitions = networkConfig.getOutboundPortDefinitions();
+        return AddressUtil.getOutboundPorts(outboundPorts, outboundPortDefinitions);
+    }
 
-        if (portDefinitions.isEmpty() && ports.isEmpty()) {
-            return Collections.emptySet(); // means any port
-        }
-        if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
-            return Collections.emptySet(); // means any port
+
+    private class ReconnectionTask implements Runnable {
+        private final Address endpoint;
+
+        ReconnectionTask(Address endpoint) {
+            this.endpoint = endpoint;
         }
 
-        // not checking port ranges...
-        for (String portDef : portDefinitions) {
-            String[] portDefs = portDef.split("[,; ]");
-            for (String def : portDefs) {
-                def = def.trim();
-                final int dashPos = def.indexOf('-');
-                if (dashPos > 0) {
-                    final int start = Integer.parseInt(def.substring(0, dashPos));
-                    final int end = Integer.parseInt(def.substring(dashPos + 1));
-                    for (int port = start; port <= end; port++) {
-                        ports.add(port);
-                    }
-                } else {
-                    ports.add(Integer.parseInt(def));
-                }
+        @Override
+        public void run() {
+            ClusterServiceImpl clusterService = node.clusterService;
+            if (clusterService.getMember(endpoint) != null) {
+                node.connectionManager.getOrConnect(endpoint);
             }
         }
-        if (ports.contains(0)) {
-            return Collections.emptySet(); // means any port
-        }
-        return ports;
     }
 }
 

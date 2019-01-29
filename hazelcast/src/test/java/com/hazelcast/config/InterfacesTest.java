@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,24 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class InterfacesTest {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class InterfacesTest extends HazelcastTestSupport {
 
     final String interfaceA = "127.0.0.1";
     final String interfaceB = "127.0.0.2";
@@ -33,25 +41,25 @@ public class InterfacesTest {
 
     @Test
     public void testIsEnabledByDefault() {
-        Interfaces interfaces = new Interfaces();
+        InterfacesConfig interfaces = new InterfacesConfig();
         assertFalse(interfaces.isEnabled());
     }
 
     @Test
     public void testSetEnabled() {
-        Interfaces interfaces = new Interfaces().setEnabled(true);
+        InterfacesConfig interfaces = new InterfacesConfig().setEnabled(true);
         assertTrue(interfaces.isEnabled());
     }
 
     @Test
     public void testAddInterface() {
-        Interfaces interfaces = new Interfaces().addInterface(interfaceA);
-        assertTrue(interfaces.getInterfaces().contains(interfaceA));
+        InterfacesConfig interfaces = new InterfacesConfig().addInterface(interfaceA);
+        assertContains(interfaces.getInterfaces(), interfaceA);
     }
 
     @Test
     public void testClear() {
-        Interfaces interfaces = new Interfaces()
+        InterfacesConfig interfaces = new InterfacesConfig()
                 .addInterface(interfaceA)
                 .addInterface(interfaceB)
                 .addInterface(interfaceC);
@@ -62,7 +70,7 @@ public class InterfacesTest {
 
     @Test
     public void testGetInterfaceList() {
-        Interfaces interfaces = new Interfaces();
+        InterfacesConfig interfaces = new InterfacesConfig();
         assertNotNull(interfaces.getInterfaces());
     }
 
@@ -72,15 +80,15 @@ public class InterfacesTest {
         interfaceList.add(interfaceA);
         interfaceList.add(interfaceB);
         interfaceList.add(interfaceC);
-        Interfaces interfaces = new Interfaces().setInterfaces(interfaceList);
-        assertTrue(interfaces.getInterfaces().contains(interfaceA));
-        assertTrue(interfaces.getInterfaces().contains(interfaceB));
-        assertTrue(interfaces.getInterfaces().contains(interfaceC));
+        InterfacesConfig interfaces = new InterfacesConfig().setInterfaces(interfaceList);
+        assertContains(interfaces.getInterfaces(), interfaceA);
+        assertContains(interfaces.getInterfaces(), interfaceB);
+        assertContains(interfaces.getInterfaces(), interfaceC);
     }
 
     @Test
     public void shouldNotContainDuplicateInterfaces() {
-        Interfaces interfaces = new Interfaces().addInterface(interfaceA);
+        InterfacesConfig interfaces = new InterfacesConfig().addInterface(interfaceA);
         assertTrue(interfaces.getInterfaces().size() == 1);
         interfaces.addInterface(interfaceA);
         assertTrue(interfaces.getInterfaces().size() == 1);
@@ -88,7 +96,7 @@ public class InterfacesTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void shouldNotBeModifiable() {
-        new Interfaces()
+        new InterfacesConfig()
                 .addInterface(interfaceA)
                 .getInterfaces()
                 .clear();

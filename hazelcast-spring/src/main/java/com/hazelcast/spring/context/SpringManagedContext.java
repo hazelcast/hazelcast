@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,51 +17,55 @@
 package com.hazelcast.spring.context;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.impl.DistributedRunnableAdapter;
+import com.hazelcast.executor.impl.RunnableAdapter;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * @mdogan 4/6/12
+ * {@link ManagedContext} implementation for Hazelcast.
  */
 public class SpringManagedContext implements ManagedContext, ApplicationContextAware {
 
-    private final AtomicInteger idGen = new AtomicInteger();
     private AutowireCapableBeanFactory beanFactory;
 
     public SpringManagedContext() {
-        super();
     }
 
+    @Override
     public Object initialize(Object obj) {
+        Object resultObject = obj;
         if (obj != null) {
-            if (obj instanceof DistributedRunnableAdapter) {
-                DistributedRunnableAdapter adapter = (DistributedRunnableAdapter) obj;
+            if (obj instanceof RunnableAdapter) {
+                RunnableAdapter adapter = (RunnableAdapter) obj;
                 Object runnable = adapter.getRunnable();
                 runnable = initializeIfSpringAwareIsPresent(runnable);
                 adapter.setRunnable((Runnable) runnable);
             } else {
-                obj = initializeIfSpringAwareIsPresent(obj);
+                resultObject = initializeIfSpringAwareIsPresent(obj);
             }
         }
-        return obj;
+        return resultObject;
     }
 
     private Object initializeIfSpringAwareIsPresent(Object obj) {
         Class clazz = obj.getClass();
-        if (clazz.isAnnotationPresent(SpringAware.class)) {
-            final String name = clazz.getName() + "#" + idGen.incrementAndGet();
+        SpringAware s = (SpringAware) clazz.getAnnotation(SpringAware.class);
+        Object resultObject = obj;
+        if (s != null) {
+            String name = s.beanName().trim();
+            if (name.isEmpty()) {
+                name = clazz.getName();
+            }
             beanFactory.autowireBean(obj);
-            obj = beanFactory.initializeBean(obj, name);
+            resultObject = beanFactory.initializeBean(obj, name);
         }
-        return obj;
+        return resultObject;
     }
 
-    public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.beanFactory = applicationContext.getAutowireCapableBeanFactory();
     }
 }

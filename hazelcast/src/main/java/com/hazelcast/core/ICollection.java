@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,39 @@
 
 package com.hazelcast.core;
 
+import java.util.Collection;
+
 /**
- * Concurrent, distributed, partitioned, observable collection.
+ * Concurrent, distributed, partitioned, listenable collection.
  *
  * @param <E> item
  */
-public interface ICollection<E> extends Instance {
+public interface ICollection<E> extends Collection<E>, DistributedObject {
+
     /**
-     * Returns the name of this collection
+     * Returns the name of this collection.
      *
-     * @return name of this collection
+     * @return the name of this collection
      */
     String getName();
 
     /**
-     * Adds an item listener for this collection. Listener will get notified
-     * for all collection add/remove events.
+     * Adds an item listener for this collection.
+     * The listener will be notified for all collection add/remove events.
      *
-     * @param listener     item listener
-     * @param includeValue <tt>true</tt> updated item should be passed
-     *                     to the item listener, <tt>false</tt> otherwise.
+     * @param listener     the item listener
+     * @param includeValue {@code true} if the updated item should be passed
+     *                     to the item listener, {@code false} otherwise
+     * @return returns the registration ID
      */
-    void addItemListener(ItemListener<E> listener, boolean includeValue);
+    String addItemListener(ItemListener<E> listener, boolean includeValue);
 
     /**
      * Removes the specified item listener.
-     * Returns silently if the specified listener is not added before.
+     * Returns silently if the specified listener was not added before.
      *
-     * @param listener item listener for this collection
+     * @param registrationId ID of the listener registration
+     * @return {@code true} if the item listener is removed, {@code false} otherwise
      */
-    void removeItemListener(ItemListener<E> listener);
+    boolean removeItemListener(String registrationId);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,11 @@ public interface MapStoreFactory<K, V> {
 
     /**
      * Produces a MapLoader or a MapStore for the given map name and properties.
+     * This method will be executed as part of a Hazelcast member's post-join operations,
+     * therefore it needs to adhere to the rules for post join operations, as described in
+     * {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}.
      *
-     * @param mapName    name of the map (or other instance) that the produced MapLoader or MapStore will serve
+     * @param mapName    name of the distributed map that the produced MapLoader or MapStore will serve
      * @param properties the properties of the MapStoreConfig for the produced MapLoader or MapStore
      */
     MapLoader<K, V> newMapStore(String mapName, Properties properties);

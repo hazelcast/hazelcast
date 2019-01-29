@@ -1,0 +1,2156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!--
+This is a full example hazelcast.xml that includes all the configuration elements and attributes of Hazelcast.
+To use this, rename it to hazelcast.xml and place it in the directory where you start Hazelcast.
+Please see the schema to learn how to configure Hazelcast at 
+https://hazelcast.com/schema/config/hazelcast-config-3.10.xsd or the Reference Manual at
+https://hazelcast.org/documentation/.
+-->
+<!--suppress XmlDefaultAttributeValue -->
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd">
+
+    <!--
+        You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
+        You can import as many XML files as you want and hence compose your Hazelcast configuration
+        out of those XML files. If you want to use the <import> element, it should be placed at the top of your
+        Hazelcast XML file right after the <hazelcast> element, and it should have the required attribute "resource".
+
+        Below is an example where the configuration files you want to include are located at your
+        Hazelcast working directory:
+        <import resource="your-configuration-file.xml"/>
+
+        Below are examples showing a classpath or filesystem location:
+        <import resource="file:///etc/hazelcast/your-configuration-file-1.xml"/>
+        <import resource="classpath:your-configuration-file-2.xml"/>
+
+        Below is an example showing property placeholders:
+        <import resource="${environment}-your-configuration-file.xml"/>
+
+    -->
+    <import resource="your-configuration-XML-file"/>
+
+    <!--
+        The <config-replacers> allow to use variables (placeholders) within the configuration file and use an external
+        class to retrieve correct values (replacements).
+
+        It can be used for masking sensitive strings such as passwords for instance.
+
+        Format of a variable is:
+        $ PREFIX { STRING_TO_BE_REPLACED }      e.g. $ENC{nnPgTqJCcCQ=:23000:B4y/nlp6M0t3q6YiKImW+w==}
+
+        The PREFIX value depends on the replacer implementation (e.g. "ENC" is used for the EncryptionReplacer)
+        The STRING_TO_BE_REPLACED is the value which is provided to replacer implementation.
+    -->
+    <config-replacers fail-if-value-missing="false">
+        <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
+            <properties>
+                <property name="passwordFile">password.txt</property>
+                <property name="passwordUserProperties">false</property>
+                <property name="cipherAlgorithm">DES</property>
+                <property name="keyLengthBits">64</property>
+                <property name="secretKeyAlgorithm">DES</property>
+                <property name="secretKeyFactoryAlgorithm">PBKDF2WithHmacSHA1</property>
+            </properties>
+        </replacer>
+    </config-replacers>
+
+    <!--
+        Specifies the name and password for a cluster group you create.
+        Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to
+        create a simple security. They are also referenced in the WAN Replication configuration.
+    -->
+    <group>
+        <name>dev</name>
+        <password>dev-pass</password>
+    </group>
+    <!--
+        ===== HAZELCAST LICENSE CONFIGURATION =====
+
+        If you have an Enterprise or Enterprise HD license, you can enter it here.
+        You can also set your license key programmatically; please refer to
+        http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#setting-the-license-key
+    -->
+    <license-key>Your Hazelcast Enterprise or Enterprise HD License Key</license-key>
+    <!--
+        When Hazelcast instances are created, they are put in a global registry with their creation names.
+        <instance-name> elements gives you the ability to get a specific Hazelcast instance from this registry
+        by giving the instance's name.
+    -->
+    <instance-name>hzInstance1</instance-name>
+    <!--
+        ===== HAZELCAST MANAGEMENT CENTER CONFIGURATION =====
+
+        The value for the element <management-center> is the URL where you deploy the Management Center.
+        It has two optional attributes:
+        * enabled:
+        Set to true to be able to use the Management Center. Its default value is false.
+        * update-interval:
+        The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
+        Its default value is 3 seconds. Hazelcast's Open Source edition provides the Management Center with monitoring
+        at most 2 members in your cluster. To use it for more members, you need to have either a Management Center,
+        Hazelcast Enterprise or Hazelcast Enterprise HD license.
+    -->
+    <management-center enabled="true" update-interval="2">http://localhost:8080/hazelcast-mancenter</management-center>
+    <!--
+        The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
+        the Hazelcast modules.
+        You can define the name and value of these properties using the sub-element <property>.
+        You can use <properties> for the following Hazelcast configuration elements:
+        * <discovery-strategy>
+        * <map-store>
+        * <queue-store>
+        * <wan-replication>
+        * <ssl>
+        * <service>
+        * <login-module>
+        * <security-object>
+        * <socket-interceptor>
+    -->
+    <properties>
+        <property name="your-property">Value of the property</property>
+    </properties>
+    <!--
+        ===== HAZELCAST WAN REPLICATION CONFIGURATION =====
+
+        The WAN replication feature is available only in Hazelcast Enterprise.
+        The configuration element's name is <wan-replication>. It has two attributes:
+        * name:
+        Name of your WAN Replication. This name is referenced in IMap or ICache configuration when you add WAN
+        Replication for these data structures (using the element <wan-replication-ref> in the configuration of
+        IMap or ICache). Please see the <map> and <cache> configuration descriptions in this XML.
+
+        The <wan-replication> element has the following sub-elements:
+        * <wan-publisher>:
+        Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
+        Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.replication.WanBatchReplication:
+            Waits until a batch size is reached or a delay time is passed.
+            Please see the `batch.size and batch.max.delay.millis configuration descriptions below.
+        * <wan-consumer>:
+        Name of the custom class implementation that is responsible for incoming WAN events.
+        * "ack.type":
+        Acknowledgment type for each target cluster when the events are replicated. You can set it to the following values:
+        - ACK_ON_RECEIPT:
+            Guarantees that events are received by the target cluster. It does not guarantee that
+            the received event is actually applied, but it is faster.
+        - ACK_ON_OPERATION_COMPLETE:
+            Guarantees that the event is both received and applied by the target cluster.
+            It is more time consuming, but it is the best way if you have strong consistency requirements.
+        * "endpoints":
+        Comma separated list of IP addresses of the target cluster members for which the WAN replication is implemented.
+        * "batch.size":
+        This element is valid when you set <class-name> (the WAN Replication implementation) to
+        `WanBatchReplication`. It changes the maximum size of events that are sent to the target cluster in a
+        single batch. The batch of events is not sent until this size is reached. Its default value is 500.
+        * "batch.max.delay.millis":
+        This element is valid when you set <class-name> (the WAN Replication implementation) to
+        `WanBatchReplication`. If the number of events generated does not reach the "batch.size", they are sent to the
+        target cluster after a certain amount of time is passed. You can set this time in milliseconds using this
+        element. Its default value is 1000 milliseconds.
+        * "response.timeout.millis":
+        After a replication event is sent to the target cluster, the source member waits for a confirmation
+        that says the event has reached the target. If confirmation is not received for a period of
+        `response.timeout.millis`, the event is resent to the target cluster. The default value is 60000 milliseconds.
+        * <queue-capacity>:
+        Size of the queue of events. Its default value is 10000. If you exceed this queue size, then the
+        oldest, not yet replicated updates might get lost. Therefore, if you have a large rate of
+        put/update/remove operations, you should increase <queue-capacity>.
+        * <queue-full-behavior>:
+        Policy to be applied when WAN Replication event queues are full. You can set it to the following values:
+        - DISCARD_AFTER_MUTATION:
+            The new WAN events generated are dropped and not replicated to the target cluster.
+        - THROW_EXCEPTION:
+            The WAN queue size is checked before each supported mutating operation. If one of the queues of the target
+            cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
+        * <aws>:
+            Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
+            - <access-key>:
+                Access key of your account on EC2.
+            - <secret-key>:
+                Secret key of your account on EC2.
+            - <iam-role>:
+                IAM role that binds with your instance.
+            - <region>:
+                The region where your Hazelcast members run. Default value is us-east-1.
+                            It needs to be specified if the region is other than the default one.
+            - <host-header>:
+                The URL that is the entry point for a web service. It is optional.
+            - <security-group-name>:
+                Name of the security group you specified at the EC2 management console.
+                            It is used to narrow the Hazelcast members to be within this group. It is optional.
+            - <tag-key>:
+                To narrow the members in the cloud down to only Hazelcast members, you can set
+                            this to the one you specified in the EC2 console. It is optional.
+            - <tag-value>:
+                To narrow the members in the cloud down to only Hazelcast members, you can set
+                            this to the one you specified in the EC2 console. It is optional.
+        * <discovery-strategies>:
+            Set its "enabled" attribute to true for discovery in various cloud infrastructures.
+            You can define multiple discovery strategies using the <discovery-strategy> sub-element and its properties.
+            Please refer to
+            http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
+            to see the properties you can use.
+            The following is an example for EC2 cloud.
+            <discovery-strategies>
+                <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
+                    <properties>
+                        <property name="access-key">test-access-key</property>
+                        <property name="secret-key">test-secret-key</property>
+                        <property name="region">test-region</property>
+                        <property name="iam-role">test-iam-role</property>
+                        <property name="host-header">ec2.test-host-header</property>
+                        <property name="security-group-name">test-security-group-name</property>
+                        <property name="tag-key">test-tag-key</property>
+                        <property name="tag-value">test-tag-value</property>
+                        <property name="connection-timeout-seconds">10</property>
+                        <property name="hz-port">5702</property>
+                    </properties>
+                </discovery-strategy>
+            </discovery-strategies>
+    -->
+    <wan-replication name="my-wan-cluster-batch">
+        <wan-publisher group-name="nyc">
+            <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
+            <queue-capacity>15000</queue-capacity>
+            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+            <properties>
+                <property name="endpoints">10.3.5.1:5701,10.3.5.2:5701</property>
+                <property name="batch.size">1000</property>
+                <property name="batch.max.delay.millis">2000</property>
+                <property name="response.timeout.millis">60000</property>
+                <property name="ack.type">ACK_ON_OPERATION_COMPLETE</property>
+                <property name="snapshot.enabled">false</property>
+                <property name="group.password">nyc-pass</property>
+            </properties>
+            <!--<aws enabled="false">-->
+            <!--<access-key>my-access-key</access-key>-->
+            <!--<secret-key>my-secret-key</secret-key>-->
+            <!--<iam-role>dummy</iam-role>-->
+            <!--<region>us-west-1</region>-->
+            <!--<host-header>ec2.amazonaws.com</host-header>-->
+            <!--<security-group-name>hazelcast-sg</security-group-name>-->
+            <!--<tag-key>type</tag-key>-->
+            <!--<tag-value>hz-nodes</tag-value>-->
+            <!--</aws>-->
+            <!--<discovery-strategies>-->
+            <!--<discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">-->
+            <!--<properties>-->
+            <!--<property name="provider">google-compute-engine</property>-->
+            <!--<property name="identity">GCE_IDENTITY</property>-->
+            <!--<property name="credential">GCE_CREDENTIAL</property>-->
+            <!--</properties>-->
+            <!--</discovery-strategy>-->
+            <!--</discovery-strategies>-->
+        </wan-publisher>
+    </wan-replication>
+    <!--
+        ===== HAZELCAST NETWORK CONFIGURATION =====
+
+        The configuration to build your Hazelcast's network includes configuration for port, interface, discovery
+        mechanism, SSL, encryption, etc. The configuration element's name is <network>.
+        It has the following sub-elements:
+        * <public address>:
+        This optional element overrides the public address of a member. It is useful when
+        you have a private cloud. Normally, a member selects its socket address as its public address. But behind a NAT,
+        two members may not be able to see/access each other. In this case, you can set their public addresses to their
+        defined addresses on NAT. The value should be given in the format "host IP address:port number".
+        * <port>:
+        Specifies the ports that Hazelcast will use to communicate between cluster members. It is optional and
+        its default value is 5701. It has the following attributes:
+        - port-count:
+            By default, Hazelcast will try 100 ports to bind (i.e. the ports between 5701 and 5801). You can
+            change the port count in such cases as having large instances on a single machine or you are
+            willing to have only a few ports assigned. port-count is optional and its default value is 100.
+        - auto-increment:
+            By default, Hazelcast tries to find a port by automatically incrementing the port numbers. If you
+            don't want this (for example, you want to use a specific port), set auto-increment to false. If it is
+            set to false, the port-count attribute is ignored. auto-increment is optional and its default value is true.
+            Examples:
+            The example below looks for ports between 5701 and 5721, incrementing the ports starting from 5701.
+            <port port-count="20">5701</port>
+            The example below forces Hazelcast to use only the port 5701.
+            <port auto-increment="false">5701</port>
+        * <outbound-ports>:
+        By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation. But security
+        policies/firewalls may require you to restrict outbound ports to be used by Hazelcast-enabled applications.
+        You can specify these ports using <ports> under the element <outbound-ports>. You can give a single
+        port number, comma separated multiple ports or port ranges. See the example below.
+        <outbound-ports>
+            <ports>33000-35000</ports>
+            <ports>37000,37001,37002,37003</ports>
+            <ports>38000,38500-38600</ports>
+        </outbound-ports>
+        * <reuse-address>:
+        If you set this to true, Hazelcast will use the same port when you restart a member right after you
+        shut it down. It is optional and its default value is false.
+        * <join>:
+        This configuration lets you choose a discovery mechanism that Hazelcast will use to form a cluster.
+        Hazelcast can find members by multicast, TCP/IP lists and by various discovery mechanisms provided by different cloud APIs.
+        The following are the elements of <join>:
+        - <multicast>:
+            Set its "enabled" attribute to true for discovery by multicast. It has another attribute
+            ("loopbackModeEnabled") which enables or disables the loopback mode in the multicast discovery
+            mechanism.
+            It has the following sub-elements to fine tune the multicast discovery.
+            - <multicast-group>:
+                Specifies the multicast group IP address when you want to create clusters within
+                the same network. Its default value is 224.2.2.3.
+            - <multicast-port>:
+                Specifies the multicast socket port that the Hazelcast member listens to and
+                sends discovery messages through. Its default value is 54327.
+            - <multicast-time-to-live>:
+                Time-to-live value for multicast packets sent out to control the scope of multicasts.
+            - <multicast-timeout-seconds>:
+                Only when the members are starting up, this timeout (in seconds) specifies the
+                period during which a member waits for a multicast response from another node.
+                For example, if you set it as 60 seconds, each node will wait for 60 seconds until a
+                leader node is selected. Its default value is 2 seconds.
+            - <trusted-interfaces>:
+                Includes IP addresses of trusted members. When a node wants to join to the cluster,
+                its join request will be rejected if it is not a trusted member.
+                You can give an IP addresses range using the wildcard (*) on the last digit of
+                IP address (e.g. 192.168.1.* or 192.168.1.100-110).
+        - <tcp>:
+            Set its "enabled" attribute to true for discovery by TCP/IP. It has the following sub-elements
+            to fine tune the multicast discovery.
+            - <required-member>:
+                IP address of the required member. Cluster will only be formed if the member with this
+                IP address is found.
+            - <member>:
+                IP address(es) of one or more well known members. Once members are connected to these
+                well known ones, all member addresses will be communicated with each other. You can
+                also give comma separated IP addresses using the <members> element.
+            - <connection-timeout-seconds>:
+                Defines the connection timeout. This is the maximum amount of time Hazelcast is going
+                to try to connect to a well known member before giving up. Increasing this value is
+                recommended if you have many IPs listed and the members cannot properly build up the
+                cluster. Its default value is 5.
+        - <aws>:
+            Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
+            - <access-key>:
+                Access key of your account on EC2.
+            - <secret-key>:
+                Secret key of your account on EC2.
+            - <iam-role>:
+                IAM role that binds with your instance.
+            - <region>:
+                The region where your Hazelcast members run. Default value is us-east-1.
+                            It needs to be specified if the region is other than the default one.
+            - <host-header>:
+                The URL that is the entry point for a web service. It is optional.
+            - <security-group-name>:
+                Name of the security group you specified at the EC2 management console.
+                            It is used to narrow the Hazelcast members to be within this group. It is optional.
+            - <tag-key>:
+                To narrow the members in the cloud down to only Hazelcast members, you can set
+                            this to the one you specified in the EC2 console. It is optional.
+            - <tag-value>:
+                To narrow the members in the cloud down to only Hazelcast members, you can set
+                            this to the one you specified in the EC2 console. It is optional.
+        - <discovery-strategies>:
+            Set its "enabled" attribute to true for discovery in various cloud infrastructures. You also need to set the
+            value of "hazelcast.discovery.enabled" property to true. See the description of the <properties> element
+            to learn how to do this.
+            You can define multiple discovery strategies using the <discovery-strategy> sub-element and its
+            properties. Please refer to
+            http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
+            to see the properties you can use.
+            The following is an example for EC2 cloud.
+            <discovery-strategies>
+                <discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
+                <properties>
+                    <property name="provider">aws-ec2</property>
+                    <property name="identity">AWS_IDENTITY</property>
+                    <property name="credential">AWS_CREDENTIAL</property>
+                </properties>
+                </discovery-strategy>
+            </discovery-strategies>
+        * <interfaces>:
+        Specifies which network interfaces Hazelcast should use. You need to set its "enabled" attribute
+        to true to be able to use your defined interfaces. You can define multiple interfaces
+        using its <interface> sub-element. By default, it is disabled.
+        * <ssl>:
+        Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
+        Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement
+        your SSLContextFactory class. Its configuration contains the factory class and SSL properties.
+        By default, it is disabled. The following is an example:
+        <ssl enabled="true">
+            <factory-class-name>
+                com.hazelcast.nio.ssl.BasicSSLContextFactory
+            </factory-class-name>
+            <properties>
+                <property name="keyStore">keyStore</property>
+                <property name="keyStorePassword">keyStorePassword</property>
+                <property name="keyManagerAlgorithm">SunX509</property>
+                <property name="trustManagerAlgorithm">SunX509</property>
+                <property name="protocol">TLS</property>
+                <property name="mutualAuthentication">REQUIRED</property>
+            </properties>
+        </ssl>
+        * <socket-interceptor>:
+        Lets you add custom hooks to join and perform connection procedures (like identity checking using
+        Kerberos, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you
+        should first implement the MemberSocketInterceptor (for members joining to a cluster) or
+        SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you
+        implemented and socket interceptor properties. By default, it is disabled. The following is an example:
+        <socket-interceptor enabled="true">
+            <class-name>
+                com.hazelcast.examples.MySocketInterceptor
+            </class-name>
+            <properties>
+                <property name="kerberos-host">kerb-host-name</property>
+                <property name="kerberos-config-file">kerb.conf</property>
+            </properties>
+        </socket-interceptor>
+        * <symmetric-encryption>:
+        Lets you encrypt the entire socket level communication among all Hazelcast members.
+        This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption
+        properties and the same configuration must be placed to all members. By default, it is disabled.
+        The following is an example:
+        <symmetric-encryption enabled="true">
+            <algorithm>PBEWithMD5AndDES</algorithm>
+            <salt>thesalt</salt>
+            <password>thepass</password>
+            <iteration-count>19</iteration-count>
+        </symmetric-encryption>
+        * <member-address-provider>:
+        IMPORTANT
+        This configuration is not intended to provide addresses of other cluster members with
+        which the hazelcast instance will form a cluster. This is an SPI for advanced use in
+        cases where the DefaultAddressPicker does not pick suitable addresses to bind to
+        and publish to other cluster members. For instance, this could allow easier
+        deployment in some cases when running on Docker, AWS or other cloud environments.
+        That said, if you are just starting with Hazelcast, you will probably want to
+        set the member addresses by using the tcp-ip or multicast configuration
+        or adding a discovery strategy.
+        Member address provider allows to plug in own strategy to customize:
+           1. What address Hazelcast will bind to
+           2. What address Hazelcast will advertise to other members on which they can bind to
+        In most environments you don't need to customize this and the default strategy will work just
+        fine. However in some cloud environments the default strategy does not make the right choice and the
+        member address provider delegates the process of address picking to external code. It has two optional attributes:
+        * enabled:
+        Specifies whether the member address provider SPI is enabled or not. Its default value is false.
+        It has the following sub-elements:
+            - <class-name>:
+                The name of the class implementing the com.hazelcast.spi.MemberAddressProvider interface.
+            - <properties>:
+                The properties that will be provided when constructing the provided MemberAddressProvider. Hazelcast will
+                first try instatiating the provided class by invoking a constructor accepting a single
+                java.util.Properties instance. In the case where there is no such constructor and there are also
+                no properties defined by this configuration, Hazelcast will exceptionally try to use the no-arg
+                constructor.
+    -->
+    <network>
+        <public-address>11.22.33.44:5555</public-address>
+        <port auto-increment="true" port-count="100">5701</port>
+        <outbound-ports>
+            <ports>34500</ports>
+        </outbound-ports>
+        <reuse-address>false</reuse-address>
+        <join>
+            <multicast enabled="true">
+                <multicast-group>224.2.2.3</multicast-group>
+                <multicast-port>54327</multicast-port>
+            </multicast>
+            <tcp-ip enabled="false">
+                <interface>127.0.0.1</interface>
+            </tcp-ip>
+            <aws enabled="false">
+                <access-key>my-access-key</access-key>
+                <secret-key>my-secret-key</secret-key>
+                <iam-role>dummy</iam-role>
+                <region>us-west-1</region>
+                <host-header>ec2.amazonaws.com</host-header>
+                <security-group-name>hazelcast-sg</security-group-name>
+                <tag-key>type</tag-key>
+                <tag-value>hz-nodes</tag-value>
+            </aws>
+            <discovery-strategies>
+                <discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
+                    <properties>
+                        <property name="provider">google-compute-engine</property>
+                        <property name="identity">GCE_IDENTITY</property>
+                        <property name="credential">GCE_CREDENTIAL</property>
+                    </properties>
+                </discovery-strategy>
+            </discovery-strategies>
+        </join>
+        <interfaces enabled="true">
+            <interface>10.10.1.*</interface>
+        </interfaces>
+        <ssl enabled="false"/>
+        <socket-interceptor enabled="false"/>
+        <symmetric-encryption enabled="false">
+            <algorithm>PBEWithMD5AndDES</algorithm>
+            <password>...</password>
+            <salt>...</salt>
+            <iteration-count>7</iteration-count>
+        </symmetric-encryption>
+        <member-address-provider enabled="false">
+            <class-name>com.hazelcast.MemberAddressProviderImpl</class-name>
+            <properties>
+                <property name="prop1">prop1-value</property>
+                <property name="prop2">prop2-value</property>
+            </properties>
+        </member-address-provider>
+        <failure-detector>
+            <icmp enabled="true">
+                <timeout-milliseconds>1000</timeout-milliseconds>
+                <fail-fast-on-startup>true</fail-fast-on-startup>
+                <interval-milliseconds>1000</interval-milliseconds>
+                <max-attempts>2</max-attempts>
+                <parallel-mode>true</parallel-mode>
+                <ttl>255</ttl>
+            </icmp>
+        </failure-detector>
+    </network>
+    <!--
+        ===== PARTITION GROUPING CONFIGURATION =====
+
+        Configuration element's name is <partition-group>. You can enable it and specify the type using
+        the "enabled" and "group-type" attributes. For CUSTOM type, you can define groups using its
+        <member-group> and <interface> sub-elements. You can group the members with one of the following types:
+        * HOST_AWARE:
+        Members sharing the same network interface are grouped together. All members on the same host will be a
+        single partition group.
+        * CUSTOM:
+        You can add different and multiple members to a group.
+        * PER_MEMBER:
+        Each member is a group of its own and primary/backup partitions are distributed
+        randomly (not on the same physical member).
+        * ZONE_AWARE:
+        Backups are created in the other zones. Each zone will be accepted as one partition group.
+        It can be used when you make use of Hazelcast's jclouds or Azure discovery service plugins.
+        * SPI:
+        You can provide your own partition group implementation using the SPI grouping type. Please see
+        Partition Group Configuration section in Hazelcast Reference Manual.
+    -->
+    <partition-group enabled="true" group-type="CUSTOM">
+        <member-group>
+            <interface>10.10.0.*</interface>
+            <interface>10.10.3.*</interface>
+            <interface>10.10.5.*</interface>
+        </member-group>
+        <member-group>
+            <interface>10.10.10.10-100</interface>
+            <interface>10.10.1.*</interface>
+            <interface>10.10.2.*</interface>
+        </member-group>
+    </partition-group>
+    <!--
+        ===== HAZELCAST EXECUTOR SERVICE CONFIGURATION =====
+
+        Configuration element's name is <executor-service>. It has the optional attribute "name" with which you
+        can specify the name of your executor service. Its default value is "default".
+        It has the following sub-elements:
+        * <statistics-enabled>:
+        When you enable it, you can retrieve executor service statistics such as pending operations count,
+        started operations count, completed operations count, and cancelled operations count. Its default
+        value is true.
+        * <pool-size>:
+        The number of executor threads per member for the executor. Its default value is 8.
+        * <queue-capacity>:
+        Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <executor-service name="default">
+        <statistics-enabled>true</statistics-enabled>
+        <pool-size>16</pool-size>
+        <queue-capacity>0</queue-capacity>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </executor-service>
+
+    <!--
+        ===== HAZELCAST DURABLE EXECUTOR SERVICE CONFIGURATION =====
+
+        Configuration element's name is <durable-executor-service>. It has the optional attribute "name" with which you
+        can specify the name of your durable executor service. Its default value is "default".
+        It has the following sub-elements:
+        * <pool-size>:
+        The number of executor threads per member for the executor. Its default value is 16.
+        * <durability>:
+            Durability of the executor. The default value is 1.
+        * <capacity>:
+        Capacity of the executor task per partition. The default value is 100.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <durable-executor-service name="default">
+        <pool-size>16</pool-size>
+        <durability>1</durability>
+        <capacity>100</capacity>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </durable-executor-service>
+
+    <!--
+        ===== HAZELCAST SCHEDULED EXECUTOR SERVICE CONFIGURATION =====
+
+        Configuration element's name is <scheduled-executor-service>. It has the optional attribute "name" with which you
+        can specify the name of your scheduled executor service. Its default value is "default".
+        It has the following sub-elements:
+        * <pool-size>:
+            The number of executor threads per member for the executor. Its default value is 16.
+        * <durability>:
+            Durability of the scheduled executor. The default value is 1.
+        * <capacity>:
+            Capacity of the scheduled executor. The default value is 100.
+            This is the maximum number of tasks for a given scheduled executor on a particular partition.
+        * <quorum-ref>:
+            Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+            as the <quorum>'s name.
+        * <merge-policy>:
+            The default policy is PutIfAbsentMergePolicy with a batch size of 100.
+            This is the policy used when merging entries from sub-clusters (after split-brain recovery).
+    -->
+    <scheduled-executor-service name="default">
+        <pool-size>16</pool-size>
+        <durability>1</durability>
+        <capacity>100</capacity>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </scheduled-executor-service>
+
+    <!--
+    ===== HAZELCAST CARDINALITY ESTIMATOR SERVICE CONFIGURATION =====
+
+    Configuration element's name is <cardinality-estimator-service>. It has the optional attribute "name" with which you
+    can specify the name of your estimator. Its default value is "default".
+    It has the following sub-elements:
+    * <backup-count>:
+       Number of synchronous backups. For example, if 1 is set as the backup-count,
+       then the cardinality estimation will be copied to one other JVM for
+       fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+    * <async-backup-count>:
+        Number of asynchronous backups. For example, if 1 is set as the backup-count,
+       then the cardinality estimation will be copied to one other JVM for
+       fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+    * <quorum-ref>:
+       Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+       as the <quorum>'s name.
+    * <merge-policy>:
+        The default policy is `com.hazelcast.spi.merge.HyperLogLogMergePolicy` with a batch size of 100.
+        This is the policy used when merging estimators from sub-clusters (after split-brain recovery).
+    -->
+    <cardinality-estimator name="default">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="102">PutIfAbsentMergePolicy</merge-policy>
+    </cardinality-estimator>
+
+    <!--
+        ===== HAZELCAST QUEUE CONFIGURATION =====
+
+        Configuration element's name is <queue>. It has the optional attribute "name" with which you
+        can specify the name of your queue. Its default value is "default".
+        It has the following elements:
+        * <statistics-enabled>:
+        When you enable it, you can retrieve queue statistics. Its default value is true.
+        * <max-size>:
+        Maximum size of the queue. When a JVM's local queue size reaches the maximum, all put/offer operations
+        will be blocked until the queue size of the JVM goes below this maximum. Its default value is 0,
+        meaning Integer.MAX_VALUE.
+        * <backup-count>:
+        Number of synchronous backups. Queue is a non-partitioned data structure, so all entries of a Queue
+        resides in one partition. When this parameter is '1', it means there will be 1 backup of that Queue in
+        another member in the cluster. When it is '2', 2 members will have the backup. 0 means there will be no
+        backups. Its default value is 1.
+        * <async-backup-count>:
+        Number of asynchronous backups. Its default value is 0.
+        * <empty-queue-ttl>:
+        Used to purge unused or empty queues. If you define a value (time in seconds) for this element, then
+        your queue will be destroyed if it stays empty or unused for that time.
+        * <item-listeners>:
+        Adds listeners (listener classes) for the queue items using its sub-element <item-listener>. You can
+        also set its attribute "include-value" to true if you want the item event to contain the item values,
+        and you can set its attribute "local" to true if you want to listen to the items on the local member.
+        * <queue-store>:
+        Includes configuration elements and attributes for your queue store implementation. When you want to
+        load/store the distributed queue items from/to a persistent datastore, first implement Hazelcast's
+        QueueStore interface and then configure it using this element. It includes your implemented class name
+        and the following property configurations:
+        - binary:
+            If you do not reach the queue store from an external application, you might prefer to insert the items
+            in binary form. To do so, set this property to true and skip the deserialization step, which is a
+            performance optimization. Its default value is false.
+        - memory-limit:
+            Number of items after which Hazelcast will store items only to datastore. For example,
+            if the memory limit is 1000, then the 1001st item will be put only to datastore.
+            This feature is useful when you want to avoid out-of-memory conditions. If you want to
+            always use memory, you can set it to Integer.MAX_VALUE. Its default value is 1000.
+        - bulk-load:
+            Size of the bulks loaded from QueueStore when the queue is initialized. Its default
+            value is 250.
+        * <quorum-ref>:
+            Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+            as the <quorum>'s name.
+    -->
+    <queue name="default">
+        <statistics-enabled>true</statistics-enabled>
+        <max-size>0</max-size>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <empty-queue-ttl>-1</empty-queue-ttl>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+        <queue-store>
+            <class-name>com.hazelcast.QueueStoreImpl</class-name>
+            <properties>
+                <property name="binary">false</property>
+                <property name="memory-limit">1000</property>
+                <property name="bulk-load">500</property>
+            </properties>
+        </queue-store>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </queue>
+
+    <!--
+        ===== HAZELCAST MAP CONFIGURATION =====
+
+        Configuration element's name is <map>. It has the optional attribute "name" with which you
+        can specify the name of your map. Its default value is "default".
+        It has the following sub-elements:
+        * <in-memory-format>:
+        Specifies in which format data will be stored in your map. Available values are as follows:
+        - BINARY:
+            Data will be stored in serialized binary format. It is the default option.
+        - OBJECT:
+            Data will be stored in deserialized form.
+        - NATIVE:
+            Data will be stored in the map that uses Hazelcast's High-Density Memory Store feature. This
+            option is available only in Hazelcast Enterprise HD.
+        * <statistics-enabled>:
+            When you enable it, you can retrieve map entry statistics such as creation time, expiration time,
+            number of hits, key, value, etc. Its default value is true.
+        * <optimize-queries>:
+        It is deprecated as of Hazelcast 3.6. Use the <cache-deserialized-values> element instead. When
+        <optimize-queries> and <cache-deserialized-values> are used at the same time, Hazelcast will do its
+        best to detect possible conflicts. Conflict detection is done on best-effort basis and you should not
+        rely on it. If true, it increases the speed of query processes in the map. It only works when
+        <in-memory-format> is set to BINARY and performs a pre-caching on the entries queried. Its default
+        value is false.
+        * <cache-deserialized-values>:
+        Controls caching of deserialized values. Caching makes the query evaluation faster, but it costs memory.
+        Available values are as follows:
+        - NEVER: Deserialized values will never be cached.
+        - INDEX-ONLY: Deserialized values will be cached only when they are inserted into an index.
+        - ALWAYS: Deserialized values will always be cached.
+        * <backup-count>:
+            Count of synchronous backups. When this count is 1, a map entry will have its backup on one other node in
+            the cluster. If you set it to 2, then a map entry will have its backup on two other nodes. You can set it
+            to 0 if you do not want your entries to be backed up. The maximum value for the backup count is 6.
+            Its default value is 1.
+        * <async-backup-count>:
+        Number of asynchronous backups. Unlike the synchronous backup process, asynchronous backup process does not
+        block the map operations. Its default value is 0, meaning there will be no asynchronous backups.
+        * <time-to-live-seconds>:
+        Maximum time in seconds for each entry to stay in the map. If it is not 0, entries that are older than
+        this time and not updated for this time are evicted automatically. Valid values are integers between 0 and
+        Integer.MAX VALUE. Its default value is 0, which means infinite. If it is not 0, entries are evicted regardless
+        of the set eviction-policy.
+        * <max-idle-seconds>:
+        Maximum time in seconds for each entry to stay idle in the map. Entries that are idle for more than
+        this time are evicted automatically. An entry is idle if no get, put, EntryProcessor.process or
+        containsKey is called.  Valid values are integers between 0 and Integer.MAX VALUE. Its default value
+        is 0, which means infinite.
+        * <eviction-policy>:
+        Eviction policy configuration. Its default values is NONE. Available values are as follows:
+        - NONE:
+            No items will be evicted and the property max-size will be ignored. You still
+            can combine it with time-to-live-seconds and max-idle-seconds.
+        - LRU: 	Least Recently Used.
+        - LFU: 	Least Frequently Used.
+        * <map-eviction-policy-class-name>:
+        Internal eviction algorithm finds the most appropriate entry to evict from the map by using this policy.
+        * <max-size>:
+        Maximum size of the map depending on the given policy specified by its "policy" attribute. When maximum
+        size is reached, the map is evicted based on the policy defined. Valid values are integers between 0 and
+        Integer.MAX VALUE. Its default value is 0 and its default policy attribute is "PER_NODE". If you want
+        max-size to work, set the <eviction-policy> to a value other than NONE. Available max-size policies are
+        as follows:
+        - PER_NODE:
+            Maximum number of map entries in each cluster member. You cannot set the max-size to a value lower
+            than the partition count (which is 271 by default).
+        - PER_PARTITION:
+            Maximum number of map entries within each partition.
+        - USED_HEAP_SIZE:
+            Maximum used heap size in megabytes per map for each Hazelcast instance. It does not work when
+            <in-memory-format> is set to OBJECT.
+        - USED_HEAP_PERCENTAGE:
+            Maximum used heap size percentage per map for each Hazelcast instance. If, for example, JVM is
+            configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size
+            exceeds 100 MB. It does not work when <in-memory-format> is set to OBJECT.
+        - FREE_HEAP_SIZE:
+            Minimum free heap size in megabytes for each Hazelcast instance.
+        - FREE_HEAP_PERCENTAGE:
+            Minimum free heap size percentage for each Hazelcast instance. If, for example, JVM is configured to
+            have 1000 MB and this value is 10, then the map entries will be evicted when free heap size is below 100 MB.
+        - USED_NATIVE_MEMORY_SIZE:
+            Maximum used native memory size in megabytes per map for each Hazelcast instance. It is available only in
+            Hazelcast Enterprise HD.
+        - USED_NATIVE_MEMORY_PERCENTAGE:
+            Maximum used native memory size percentage per map for each Hazelcast instance. It is available only in
+            Hazelcast Enterprise HD.
+        - FREE_NATIVE_MEMORY_SIZE:
+            Minimum free native memory size in megabytes for each Hazelcast instance. It is available only in
+            Hazelcast Enterprise HD.
+        - FREE_NATIVE_MEMORY_PERCENTAGE:
+            Minimum free native memory size percentage for each Hazelcast instance. It is available only in
+            Hazelcast Enterprise HD.
+        * <eviction-percentage>:
+        When <max-size> is reached, the specified percentage of the map will be evicted. For example, if set to 25,
+        25% of the entries will be evicted. Valid values are integers between 0 and 100. Its default value is 25.
+        * <min-eviction-check-millis>:
+        Specifies the frequency of the eviction process, i.e. minimum time in milliseconds which should elapse before
+        checking whether a partition of the map is evictable or not. Its default value is 100. Setting it to 0 (zero)
+        makes the eviction process run for every put operation.
+        * <merge-policy>:
+        Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
+        split-brain syndrome. Its default values is "com.hazelcast.map.merge.PutIfAbsentMapMergePolicy". Available
+        built-in policies are as follows:
+        - com.hazelcast.map.merge.PassThroughMergePolicy:
+            Entry will be added if there is no existing entry for the key.
+        - com.hazelcast.map.merge.PutIfAbsentMapMergePolicy:
+            Entry will be added if the merging entry does not exist in the cluster.
+        - com.hazelcast.map.merge.HigherHitsMapMergePolicy:
+            Entry with the higher number of hits wins.
+        - com.hazelcast.map.merge.LatestUpdateMapMergePolicy:
+            Entry with the latest update wins.
+        * <read-backup-data>:
+        Used to enable reading from local backup map entries. Its default value is false. It can be used if there is
+        at least 1 sync or async backup.
+        * <hot-restart>:
+        Used to enable Hazelcast's Hot Restart Persistence feature for the map. It is available only in Hazelcast
+        Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
+        sub-element.
+        - <fsync>:
+            Set to true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+        * <map-store>:
+        Configuration options when you want to load/store the map entries from/to a persistent data store such as a
+        relational database. Before configuring <map-store>, you need to implement Hazelcast's MapStore or MapLoader
+        interfaces.
+        It has the following attributes:
+        - enabled:
+            Set to true to enable the map store functionality for your map. Its default value is true.
+        - initial-mode:
+            Sets the initial entry loading mode. Available values are as follows:
+             - LAZY: The loading is asynchronous. It is the default mode.
+             - EAGER: The loading is blocked until all partitions are loaded.
+
+        It has the following sub-elements:
+        - <class-name>:
+            The name of your class implementing MapLoader and/or MapStore interface.
+        - <write-delay-seconds>:
+            Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
+            Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
+        - <write-batch-size>:
+            Used to create batches when writing to map store. In default mode, all map entries will try
+            to be written in one go. To create batches, the minimum meaningful value is 2. For values smaller than 2,
+            it works as in default mode. Its default value is 1.
+        - <write-coalescing>:
+            It is meaningful if you are using write behind in MapStore. When it is set to true,
+            only the latest store operation on a key during the write-delay-seconds will be
+            reflected to MapStore. Its default value is true.
+        - <properties>:
+            While you are implementing MapStore or MapLoader you can define specific properties to be configured.
+            It can be your store's URL, credentials, etc. Please see the example map configuration snippet below.
+        * <near-cache>:
+        Configuration options when you want to use a Near Cache for your map.
+        It has the following attributes:
+        - name: You can give a name for your Near Cache. It is optional and its default value is "default".
+
+        It has the following sub-elements:
+            - <max-size>:
+                Maximum size of the Near Cache. When this is reached, Near Cache is evicted based on the policy defined.
+                Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
+            - <time-to-live-seconds>:
+                Maximum number of seconds for each entry to stay in the Near Cache. Entries that are older than this
+                period are automatically evicted from the Near Cache. Any integer between 0 and Integer.MAX_VALUE.
+                0 means infinite. Its default value is 0.
+            - <max-idle-seconds>:
+                Maximum number of seconds each entry can stay in the Near Cache as untouched (not read). Entries that
+                are not read more than this period are removed from the Near Cache. Any integer between 0 and
+                Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
+            - <eviction-policy>:
+                Eviction policy configuration. Its default values is NONE. Available values are as follows:
+            - NONE:
+                No items will be evicted and the property max-size will be ignored. You still
+                can combine it with time-to-live-seconds and max-idle-seconds.
+            - LRU: 	Least Recently Used.
+            - LFU: 	Least Frequently Used.
+            - <invalidate-on-change>:
+                Specifies whether the cached entries are evicted when the entries are updated or removed. Its default
+                value is true.
+            - <in-memory-format>:
+            Specifies in which format data will be stored in your Near Cache. Note that a map's in-memory format
+            can be different from that of its Near Cache.
+            Available values are as follows:
+            - BINARY:
+                Data will be stored in serialized binary format. It is the default option.
+            - OBJECT:
+                Data will be stored in deserialized form.
+            - NATIVE:
+                Data will be stored in the Near Cache that uses Hazelcast's High-Density Memory Store feature.
+                This option is available only in Hazelcast Enterprise HD. Note that a map and its Near Cache
+                can independently use High-Density Memory Store. For example, while your map does not use
+                High-Density Memory Store, its Near Cache can use it.
+            - <cache-local-entries>:
+                Specifies whether the local entries will be cached. It can be useful when in-memory format for
+                Near Cache is different from that of the map. By default, it is disabled.
+            - <eviction>:
+                Configuration for the eviction when the in-memory format of the Near Cache is NATIVE. It has the
+                following attributes:
+                - size: Maximum size (entry count) of the Near Cache.
+                - max-size-policy: Maximum size policy for eviction of the Near Cache. Available values are as follows:
+                    * ENTRY_COUNT: Maximum entry count per member.
+                     * USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes.
+                     * USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory percentage.
+                     * FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size to trigger cleanup.
+                     * FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory percentage to trigger cleanup.
+                - eviction-policy: See the <eviction-policy> element above.
+        * <wan-replication-ref>:
+        Configuration of the WAN replication for your map.
+        It has the following attributes:
+        - name:
+            Name of the WAN replication configuration specified in the "name" attribute of the
+            <wan-replication> element. See the <wan-replication> element above.
+
+        It has the following sub-elements:
+        - <filters>:
+            Filters to intercept WAN replication events before they are placed to WAN event replication
+            queues by providing a filtering API. Just implement Hazelcast's MapWanEventFilter interface
+            to create your filters. You can define multiple filters and add to the configuration using the
+            <filter> sub-elements within the <filters> element.
+        - <republishing-enabled>:
+            When enabled, an incoming event to a member is forwarded to target cluster of that member. Its
+            default value is true.
+        * <indexes>:
+        You can define indexes for your map using this element's <index> sub-elements. Each <index> has
+        only the boolean "ordered" attribute. For example, if you will have a ranged query for a field of a map
+        entry, then this attribute should be set to true. But if the field has a boolean value, then it should
+        be set to false. Its default value is false.
+        * <attributes>:
+        You can define attributes that may be referenced in predicates, queries and indexes using this element's
+        <attribute> sub-elements. Each <attribute> has only the "extractor" attribute which you should define beforehand
+        by implementing Hazelcast's ValueExtractor class.
+        * <entry-listeners>:
+            Adds listeners (listener classes) for the map entries using the <entry-listener> sub-elements. You can also set its
+            attribute "include-value" to true if you want the entry event to contain the item values, and you can set its attribute
+            "local" to true if you want to listen to the entries on the local member.
+        * <partition-lost-listeners>:
+            Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface.
+        * <quorum-ref>:
+        Adds the quorum for this map which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+     -->
+    <map name="default">
+        <in-memory-format>BINARY</in-memory-format>
+        <statistics-enabled>true</statistics-enabled>
+        <optimize-queries>true</optimize-queries>
+        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <time-to-live-seconds>0</time-to-live-seconds>
+        <max-idle-seconds>0</max-idle-seconds>
+        <eviction-policy>NONE</eviction-policy>
+        <max-size policy="PER_NODE">0</max-size>
+        <eviction-percentage>25</eviction-percentage>
+        <min-eviction-check-millis>100</min-eviction-check-millis>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <read-backup-data>false</read-backup-data>
+        <hot-restart enabled="false">
+            <fsync>false</fsync>
+        </hot-restart>
+        <map-store enabled="true" initial-mode="LAZY">
+            <class-name>com.hazelcast.examples.DummyStore</class-name>
+            <write-delay-seconds>60</write-delay-seconds>
+            <write-batch-size>1000</write-batch-size>
+            <write-coalescing>true</write-coalescing>
+            <properties>
+                <property name="jdbc_url">my.jdbc.com</property>
+            </properties>
+        </map-store>
+        <near-cache>
+            <max-size>5000</max-size>
+            <time-to-live-seconds>0</time-to-live-seconds>
+            <max-idle-seconds>60</max-idle-seconds>
+            <eviction-policy>LRU</eviction-policy>
+            <invalidate-on-change>true</invalidate-on-change>
+            <in-memory-format>BINARY</in-memory-format>
+            <cache-local-entries>false</cache-local-entries>
+            <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+        </near-cache>
+        <wan-replication-ref name="my-wan-cluster-batch">
+            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+            <filters>
+                <filter-impl>com.example.SampleFilter</filter-impl>
+                <filter-impl>com.example.SampleFilter2</filter-impl>
+            </filters>
+            <republishing-enabled>false</republishing-enabled>
+        </wan-replication-ref>
+        <indexes>
+            <index ordered="false">name</index>
+            <index ordered="true">age</index>
+        </indexes>
+        <attributes>
+            <attribute extractor="com.bank.CurrencyExtractor">currency</attribute>
+        </attributes>
+        <entry-listeners>
+            <entry-listener include-value="false" local="false">com.your-package.MyEntryListener</entry-listener>
+        </entry-listeners>
+        <partition-lost-listeners>
+            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
+        </partition-lost-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <!--
+        ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
+
+        Configuration element's name is <query-caches>.
+        You can create your query caches using its  <query-cache> sub-element. Its parent element is <map>,
+        i.e. it should be placed within the <map> configuration. Each <query-cache> has the attribute "name" with which you
+        can specify the name of your query cache.
+        It has the following sub-elements:
+        * <include-value>:
+            Set to true if you want to cache the value too. Its default value is true.
+        * <predicate>:
+            Predicate to filter events which will be applied to the query cache.
+        * <entry-listeners>:
+            Adds listeners (listener classes) for your query cache entries. See <entry-listeners> in the map configuration above.
+        * <in-memory-format>:
+            Type of the data to be stored in your query cache. See <in-memory-format> in the map configuration above.
+        * <populate>:
+            Set to true if you want to enable the initial population of your query cache. Its default value is true.
+        * <coalesce>:
+            Set to true if you want to enable the coalescing of your query cache. Its default value is false.
+        * <delay-seconds>:
+            Minimum time in seconds that an event waits in the member's buffer. Its default value is 0.
+        * <batch-size>:
+            Batch size used to determine the number of events sent in a batch to your query cache. Its default value is 1.
+        * <buffer-size>:
+            Maximum number of events which can be stored in a partition buffer. Its default value is 16.
+        * <eviction>:
+            Configuration for the eviction of your query cache. See <eviction> in the map configuration above.
+        * <indexes>:
+            You can define indexes for your query cache using this element's <index> sub-elements. See <index> in the
+            map configuration above.
+    -->
+        <query-caches>
+            <query-cache name="myContQueryCache">
+                <include-value>true</include-value>
+                <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
+                <entry-listeners>
+                    <entry-listener>...</entry-listener>
+                </entry-listeners>
+                <in-memory-format>BINARY</in-memory-format>
+                <populate>true</populate>
+                <coalesce>false</coalesce>
+                <delay-seconds>3</delay-seconds>
+                <batch-size>2</batch-size>
+                <buffer-size>32</buffer-size>
+                <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+                <indexes>
+                    <index ordered="true">...</index>
+                </indexes>
+            </query-cache>
+        </query-caches>
+    </map>
+
+    <!--
+        ===== HAZELCAST MULTIMAP CONFIGURATION =====
+
+        Configuration element's name is <multimap>. It has the optional attribute "name" with which you
+        can specify the name of your multimap. Its default value is "default".
+        All sub-elements of <multimap> except <value-collection-type> and <binary> have the same meaning as in <map> configuration.
+        You can specify the type of the value collection using <value-collection-type>. Available values are SET and LIST.
+        By default, BINARY in-memory format is used, meaning that the object is stored in a serialized form.
+        You can set the element <binary> to false, then, the OBJECT in-memory format is used.
+        It has also the following sub-elements:
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <multimap name="default">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <binary>true</binary>
+        <value-collection-type>SET</value-collection-type>
+        <entry-listeners>
+            <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+        </entry-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </multimap>
+
+    <!--
+        ===== HAZELCAST REPLICATED MAP CONFIGURATION =====
+
+        Configuration element's name is <replicatedmap>. It has the required attribute "name" with which you
+        can specify the name of your replicated map.
+        It has the following sub-elements:
+        * <in-memory-format>:
+        Specifies in which format data will be stored in your replicated map.
+        Available values are as follows:
+        - BINARY:
+            Data will be stored in serialized binary format. It is the default option.
+        - OBJECT:
+            Data will be stored in deserialized form.
+        * <concurrency-level>:
+            Number of parallel mutexes to minimize contention on keys. Its default value is 32.
+            If higher contention is seen on writes to values inside the replicated map, this value can
+            be adjusted to the needs.
+        * <replication-delay-millis>:
+            Time in milliseconds after a put is executed before the value is replicated
+        to other members. During this time, multiple puts can be operated and cached up to be sent
+        out all at once after the delay. Default value is 100ms. If set to 0, no delay is used and
+        all values are replicated one by one.
+        * <replication-delay-millis>:
+        * <async-fillup>:
+            Specifies whether the replicated map is available for reads before the initial
+        replication is completed. Its default value is true. If false, no Exception will be
+        thrown when the replicated map is not yet ready, but call is blocked until the initial
+        replication is completed.
+        * <statistics-enabled>:
+        When you enable it, you can retrieve replicated map entry statistics such as creation time,
+        expiration time, number of hits, key, value, etc. Its default value is true.
+        * <entry-listeners>:
+            Adds listeners (listener classes) for the replicated map entries using the <entry-listener> sub-elements.
+            You can also set its attribute "include-value" to true if you want the entry event to contain the item values,
+            and you can set its attribute "local" to true if you want to listen to the entries on the local member.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <replicatedmap name="replicatedMap1">
+        <in-memory-format>BINARY</in-memory-format>
+        <concurrency-level>32</concurrency-level>
+        <replication-delay-millis>200</replication-delay-millis>
+        <async-fillup>true</async-fillup>
+        <statistics-enabled>true</statistics-enabled>
+        <entry-listeners>
+            <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+        </entry-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
+    </replicatedmap>
+
+    <!--
+        ===== HAZELCAST CACHE CONFIGURATION =====
+
+        Configuration element's name is <cache>. It has the required attribute "name" with which you
+        can specify the name of your cache.
+        It has the following sub-elements:
+        * <key-type>:
+        Type of the cache entries' keys. The fully qualified class name of the cache key type should be given
+        using its "class-name" attribute.
+        * <value-type>:
+        Type of the cache entries' values. The fully qualified class name of the cache value type should be given
+        using its "class-name" attribute.
+        * <statistics-enabled>:
+            When you enable it, you can retrieve cache entry statistics such as creation time, expiration time,
+            number of hits, key, value, etc. Its default value is false.
+        * <management-enabled>:
+        If set to true, JMX beans are enabled and collected statistics are provided. It doesn't automatically
+        enable statistics collection. Its default value is false.
+        * <read-through>:
+        If set to true, enables read-through behavior of the cache to an underlying configured
+        javax.cache.integration.CacheLoader which is also known as lazy-loading. Its default value is false.
+        * <write-through>:
+        If set to true, enables write-through behavior of the cache to an underlying configured
+        javax.cache.integration.CacheWriter which passes any changed value to the external backend resource. Its default
+        value is false.
+        * <cache-loader-factory>:
+        Fully qualified class name of the javax.cache.configuration.Factory implementation providing a
+        javax.cache.integration.CacheLoader instance to the cache. Provide this class name by using its "class-name"
+        attribute.
+        * <cache-loader>: Name of the cache loader class.
+        * <cache-writer-factory>:
+        Fully qualified class name of the javax.cache.configuration.Factory implementation providing a
+        javax.cache.integration.CacheWriter instance to the cache. Provide this class name using its "class-name"
+        attribute.
+        * <cache-writer>: Name of the cache writer class.
+        * <expiry-policy-factory>:
+        Fully qualified class name of the javax.cache.configuration.Factory implementation providing a
+        javax.cache.expiry.ExpiryPolicy instance to the cache. Provide this class name using its "class-name"
+        attribute.
+        * <cache-entry-listeners>:
+        List of cache entry listeners given by its <cache-entry-listener> sub-element. Each <cache-entry-listener>
+        has the following attributes:
+        - old-value-required:
+            If set to true, previously assigned values for the affected keys will be sent to the
+            javax.cache.event.CacheEntryListener implementation. Setting this attribute to true creates additional
+            traffic. Its default value is false.
+        - synchronous:
+            If set to true, the javax.cache.event.CacheEntryListener implementation will be called in a synchronous
+            manner. Its default value is false.
+        It has the following sub-elements:
+        - cache-entry-listener-factory:
+            Fully qualified class name of the javax.cache.configuration.Factory implementation providing a
+            javax.cache.event.CacheEntryListener instance.
+        - cache-entry-event-filter-factory:
+            Fully qualified class name of the javax.cache.configuration.Factory implementation providing a
+            javax.cache.event.CacheEntryEventFilter instance.
+        * <in-memory-format>:
+            Specifies in which format data will be stored in your cache. Available values are as follows:
+        - BINARY:
+            Data will be stored in serialized binary format. It is the default option.
+        - OBJECT:
+            Data will be stored in deserialized form.
+        - NATIVE:
+            Data will be stored in the cache that uses Hazelcast's High-Density Memory Store feature.
+            This option is available only in Hazelcast Enterprise HD.
+        * <backup-count>:
+        Number of synchronous backups. If it is 1, for example, then all entries of the cache are copied to
+        one other instance as synchronous for fail-safety. Its default value is 1.
+        * <async-backup-count>:
+            Number of asynchronous backups. For example, if it is 1, then all entries of the cache are copied to
+            one other instance as asynchronous for fail-safety. The sum of <backup-count> and <async-backup-count>
+            cannot be larger than 6. Its default value is 0.
+        * <eviction>:
+        Configuration for the eviction of your cache. It has the following attributes:
+        - size: Maximum size (entry count) of the cache.
+        - max-size-policy: Maximum size policy for eviction of the cache. Available values are as follows:
+            * ENTRY_COUNT: Maximum entry count per member.
+            * USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes.
+            * USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory percentage.
+            * FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size to trigger cleanup.
+            * FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory percentage to trigger cleanup.
+        - eviction-policy: See the <eviction-policy> element above.
+        * <wan-replication-ref>:
+        Configuration of the WAN replication for your cache.
+        It has the following attributes:
+        - name:
+            Name of the WAN replication configuration specified in the "name" attribute of the
+            <wan-replication> element. See the <wan-replication> element above.
+
+        It has the following sub-elements:
+        - <merge-policy>:
+            Policy to resolve conflicts that are occurred when target cluster already has the replicated entry key.
+            Available policies are as follows.
+            * com.hazelcast.cache.merge.HigherHitsCacheMergePolicy
+            * com.hazelcast.cache.merge.PassThroughCacheMergePolicy
+        - <filters>:
+            Filters to intercept WAN replication events before they are placed to WAN event replication
+            queues by providing a filtering API. Just implement Hazelcast's CacheWanEventFilter interface
+            to create your filters. You can define multiple filters and add to the configuration using the
+            <filter> sub-elements within the <filters> element.
+        - <republishing-enabled>:
+            When enabled, an incoming event to a member is forwarded to target cluster of that member. Its
+            default value is true.
+        * <quorum-ref>:
+            Adds the quorum for this cache which you configure using the <quorum> element. You should set the
+            <quorum-ref>'s value as the <quorum>'s name.
+        * <partition-lost-listeners>:
+            Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface.
+        * <merge-policy>:
+            The following are the built-in merge policies for cache. You can either use their full class names or constant
+            names (given in parentheses).
+        - com.hazelcast.cache.merge.PassThroughCacheMergePolicy (PASS_THROUGH)
+        - com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy (PUT_IF_ABSENT)
+        - com.hazelcast.cache.merge.HigherHitsCacheMergePolicy (HIGHER_HITS)
+        - com.hazelcast.cache.merge.LatestAccessCacheMergePolicy (LATEST_ACCESS)
+        * <hot-restart>:
+        Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast
+        Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
+        sub-element.
+        - <fsync>:
+            Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+        * <disable-per-entry-invalidation-events>:
+        Disables invalidation events for each entry; but full-flush invalidation events are still enabled.
+        Full-flush invalidation means the invalidation of events for all entries when clear is called.
+        The default value is false.
+    -->
+    <cache name="default">
+        <key-type class-name="java.lang.Object"/>
+        <value-type class-name="java.lang.Object"/>
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+        <read-through>true</read-through>
+        <write-through>true</write-through>
+        <cache-loader-factory
+                class-name="com.example.cache.MyCacheLoaderFactory"/>
+        <cache-writer-factory
+                class-name="com.example.cache.MyCacheWriterFactory"/>
+        <expiry-policy-factory
+                class-name="com.example.cache.MyExpirePolicyFactory"/>
+        <cache-entry-listeners>
+            <cache-entry-listener old-value-required="false" synchronous="false">
+                <cache-entry-listener-factory
+                        class-name="com.example.cache.MyEntryListenerFactory"/>
+                <cache-entry-event-filter-factory
+                        class-name="com.example.cache.MyEntryEventFilterFactory"/>
+            </cache-entry-listener>
+        </cache-entry-listeners>
+        <in-memory-format>NATIVE</in-memory-format>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+        <wan-replication-ref name="my-wan-cluster-batch">
+            <merge-policy>com.hazelcast.cache.merge.PassThroughCacheMergePolicy</merge-policy>
+            <republishing-enabled>true</republishing-enabled>
+            <filters>
+                <filter-impl>com.example.SampleFilter</filter-impl>
+            </filters>
+        </wan-replication-ref>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <partition-lost-listeners>
+            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
+        </partition-lost-listeners>
+        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>
+        <hot-restart enabled="false">
+            <fsync>false</fsync>
+        </hot-restart>
+        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
+    </cache>
+    <!--
+    ===== HAZELCAST EVENT JOURNAL CONFIGURATION =====
+
+    Configuration element's name is <event-journal>.
+    It has the following attributes and sub-elements:
+    * enabled:
+    	Specifies whether the event journal is enabled.
+    * <mapName>:
+    	Map name to which this configuration applies. This attribute's default value is "default".
+    	Configuration for the event journal with name "default" applies to all maps without
+    	configuration for a specific named map. In another words, if you specify the default
+    	event journal config as enabled then all maps which don't have specific event journal
+    	will be also enabled.
+    * <cacheName>:
+    	Cache name to which this configuration applies. This attribute's default value is "default".
+    	Configuration for the event journal with name "default" applies to all caches without
+    	configuration for a specific named cache. In another words, if you specify the default
+    	event journal config as enabled then all caches which don't have specific event journal
+    	will be also enabled.
+    * <capacity>:
+    	The capacity of the event journal. The capacity is the total number of items that the event journal
+    	can hold at any moment. The actual number of items contained in the journal can be lower. Its default value is 10000.
+    	The capacity is shared equally between all partitions.
+    	This is done by assigning each partition {@code getCapacity() / partitionCount}
+    	available slots in the event journal. Because of this, the effective total
+    	capacity may be somewhat lower and you must take into account that the
+    	configured capacity is at least greater than the partition count.
+    * <time-to-live-seconds>:
+    	Sets the time to live in seconds.
+    	Time to live is the time the event journal retains items before removing them from the journal.
+    	The events are removed on journal read and write actions, not while the journal is idle.
+    	Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
+    	events never expire but they can be overwritten when the capacity of the journal is exceeed.
+    	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
+-->
+
+    <event-journal enabled="false">
+        <mapName>default</mapName>
+        <capacity>10000</capacity>
+        <time-to-live-seconds>0</time-to-live-seconds>
+    </event-journal>
+
+    <event-journal enabled="false">
+        <cacheName>default</cacheName>
+        <capacity>10000</capacity>
+        <time-to-live-seconds>0</time-to-live-seconds>
+    </event-journal>
+
+    <!--
+        ===== HAZELCAST LIST CONFIGURATION =====
+
+        Configuration element's name is <list>. It has the optional attribute "name" with which you
+        can specify the name of your list. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <statistics-enabled>:
+        When you enable it, you can retrieve list statistics. Its default value is true.
+        * <max-size>:
+        Maximum size of the list (item count). Its default value is 0, meaning Integer.MAX_VALUE.
+        * <backup-count>:
+        Number of synchronous backups. List is a non-partitioned data structure, so all entries of a
+        List reside in one partition. If it is set to 1, there will be 1 backup of that List in another
+        member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
+        * <async-backup-count>:
+        Number of asynchronous backups. Its default value is 0.
+        * <item-listeners>:
+        Adds listeners (listener classes) for the List items using its sub-element <item-listener>. You can
+        also set its attribute "include-value" to true if you want the item event to contain the item values.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <list name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <max-size>0</max-size>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </list>
+
+    <!--
+        ===== HAZELCAST SET CONFIGURATION =====
+
+        Configuration element's name is <set>. It has the optional attribute "name" with which you
+        can specify the name of your set. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <statistics-enabled>:
+        When you enable it, you can retrieve set statistics. Its default value is true.
+        * <max-size>:
+        Maximum size of the set (item count). Its default value is 0, meaning Integer.MAX_VALUE.
+        * <backup-count>:
+        Number of synchronous backups. Set is a non-partitioned data structure, so all entries of a
+        Set reside in one partition. If it is set to 1, there will be 1 backup of that Set in another
+        member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
+        * <async-backup-count>:
+        Number of asynchronous backups. Its default value is 0.
+        * <item-listeners>:
+        Adds listeners (listener classes) for the Set items using its sub-element <item-listener>. You can
+        also set its attribute "include-value" to true if you want the item event to contain the item values.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <set name="default">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <max-size>10</max-size>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </set>
+
+    <!--
+        ===== HAZELCAST TOPIC CONFIGURATION =====
+
+        Configuration element's name is <topic>. It has the optional attribute "name" with which you
+        can specify the name of your topic. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <global-ordering-enabled>:
+        When it is set to true, all cluster members that listen to a topic will receive the messages in the
+        same order they were published by all members. This way, Hazelcast guarantees that all members will
+        see the in the same order. Its default value is false.
+        * <statistics-enabled>:
+        When you enable it, you can retrieve topic statistics such as total number of published and
+        received messages. Its default value is true.
+        * <message-listeners>:
+        Adds listeners (listener classes) for the Topic messages using its sub-element <message-listener>.
+        * <multi-threading-enabled>:
+        Default is `false`, meaning only one dedicated thread will handle topic messages.
+            When multi-threading is enabled (true), all threads from event thread pool can be used for message handling.
+    -->
+    <topic name="default">
+        <global-ordering-enabled>true</global-ordering-enabled>
+        <statistics-enabled>true</statistics-enabled>
+        <message-listeners>
+            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+        </message-listeners>
+    </topic>
+    <!--
+        ===== HAZELCAST RELIABLE TOPIC CONFIGURATION =====
+
+        Reliable Topic uses the same ITopic interface. The main difference is that it is backed up by
+        Hazelcast Ringbuffer data structure. Reliable Topic messages are stored in the Ringbuffer
+        Configuration element's name is <reliable-topic>. It has the optional attribute "name" with which you
+        can specify the name of your Reliable Topic, which is the same name you give to your Ringbuffer.
+        This attribute's default value is "default".
+        It has the following sub-elements:
+        * <statistics-enabled>:
+        When you enable it, you can retrieve Reliable Topic statistics. Its default value is true.
+        * <read-batch-size>:
+        The maximum number of items to be read in a batch.
+        * <topic-overload-policy>:
+        Policy to handle an overloaded topic. Its default value is BLOCK. Available values are as follows:
+        - DISCARD_OLDEST:
+            A message that has not expired can be overwritten. It does not matter if the retention period is set,
+             the overwrite will just overwrite the message.
+        - DISCARD_NEWEST:
+            Message that was to be published is discarded.
+        - BLOCK:
+            The caller will wait until there is space in the Ringbuffer.
+        - ERROR:
+            The publish call fails immediately.
+        * <message-listeners>:
+        Adds listeners (listener classes) for the Reliable Topic messages using its sub-element <message-listener>.
+    -->
+    <reliable-topic name="default">
+        <statistics-enabled>true</statistics-enabled>
+        <topic-overload-policy>ERROR</topic-overload-policy>
+        <read-batch-size>10</read-batch-size>
+        <message-listeners>
+            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+        </message-listeners>
+    </reliable-topic>
+    <!--
+        ===== HAZELCAST MAPREDUCE JOBTRACKER CONFIGURATION =====
+
+        Configuration element's name is <jobtracker>. It has the required attribute "name" with which you
+        can specify the name of your MapReduce JobTracker. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <max-thread-size>:
+        Maximum thread pool size of the JobTracker. Its default value is 0.
+        * <queue-size>:
+            Maximum number of tasks that can wait to be processed. A value of 0 means number of partitions * 2.
+            Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate
+            chunks might be lost. Its default value is 0.
+        * <retry-count>:
+            Currently not used. Reserved for later use where the framework will automatically try to restart / retry
+            operations from an available saved point.
+        * <chunk-size>:
+            Number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to
+            better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate
+            transmission, but remember that low values mean higher traffic costs. A very high value might cause an
+            OutOfMemoryError to occur if the emitted values do not fit into heap memory before being sent to the reducers.
+            To prevent this, you might want to use a combiner to pre-reduce values on mapping members. Its default
+            value is 1000.
+        * <communicate-stats>:
+            Specifies whether the statistics (for example, statistics about processed entries) are transmitted to
+            the job emitter. This can show progress to a user inside of an UI system, but it produces additional traffic.
+            If not needed, you might want to deactivate this. Its default value is true.
+        * <topology-changed-strategy>:
+            Specifies how the MapReduce framework reacts on topology changes while executing a job. Currently, only
+            CANCEL_RUNNING_OPERATION is fully supported, which throws an exception to the job emitter
+            (will throw a com.hazelcast.mapreduce.TopologyChangedException).
+    -->
+    <jobtracker name="default">
+        <max-thread-size>0</max-thread-size>
+        <queue-size>0</queue-size>
+        <retry-count>0</retry-count>
+        <chunk-size>1000</chunk-size>
+        <communicate-stats>true</communicate-stats>
+        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
+    </jobtracker>
+    <!--
+        ===== HAZELCAST SEMAPHORE CONFIGURATION =====
+
+        Configuration element's name is <semaphore>. It has the required attribute "name" with which you
+        can specify the name of your Semaphore. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <initial-permits>:
+            The thread count to which the concurrent access is limited. For example, if you set
+        it to 3, concurrent access to the object is limited to 3 threads.
+        * <backup-count>:
+            Number of synchronous backups. For example, if it is set to 1, all permits of the semaphore
+            are copied to one other member for fail-safety. Its default value is 1.
+        * <async-backup-count>:
+        Number of asynchronous backups. Its default value is 0.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <semaphore name="default">
+        <initial-permits>0</initial-permits>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </semaphore>
+
+    <!--
+        ===== HAZELCAST COUNT-DOWN-LATCH CONFIGURATION =====
+
+        Configuration element's name is <count-down-latch>. It has the required attribute "name" with which you
+        can specify the name of your CountDownLatch. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <count-down-latch name="default">
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </count-down-latch>
+
+    <!--
+    ===== HAZELCAST LOCK CONFIGURATION =====
+
+    Configuration element's name is <lock>. It has the required attribute "name" with which you
+    can specify the name of your Lock. This attribute's default value is "default".
+    It has the following sub-elements:
+    * <quorum-ref>:
+        Adds the quorum for this lock which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+-->
+
+    <lock name="default">
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </lock>
+
+    <!--
+        ===== HAZELCAST RINGBUFFER CONFIGURATION =====
+
+        Configuration element's name is <ringbuffer>. It has the required attribute "name" with which you
+        can specify the name of your Ringbuffer.
+        It has the following sub-elements:
+        * <capacity>:
+            Number of items in the Ringbuffer. If no <time-to-live-seconds> is set, this value will always
+        be equal to the capacity after the head completes the first loop around the ring. This is
+        because no items are getting retired. Its default value is 10000.
+        * <time-to-live-seconds>:
+        Maximum number of seconds for each entry to stay in the Ringbuffer. Entries that are older than
+        this value and are not updated for this period  are automatically evicted from the Ringbuffer.
+        Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
+        * <backup-count>:
+            Number of synchronous backups. For example, if it is set to 1, then the Ringbuffer items
+            are copied to one other member for fail-safety. Its default value is 1.
+        * <async-backup-count>:
+        Number of asynchronous backups. Its default value is 0.
+        * <in-memory-format>:
+        Specifies in which format data will be stored in your Ringbuffer.
+        Available values are as follows:
+        - BINARY:
+            Data will be stored in serialized binary format. It is the default option.
+        - OBJECT:
+            Data will be stored in deserialized form.
+        * <ringbuffer-store>:
+        Includes the Ringbuffer store factory class name and property configurations. The store format is the same as the
+            in-memory-format for the Ringbuffer.
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <ringbuffer name="default">
+        <capacity>10000</capacity>
+        <time-to-live-seconds>0</time-to-live-seconds>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <in-memory-format>BINARY</in-memory-format>
+        <ringbuffer-store>
+            <class-name>com.hazelcast.RingbufferStoreImpl</class-name>
+            <properties>
+                <property name="prop1">prop1-value</property>
+                <property name="prop2">prop2-value</property>
+            </properties>
+        </ringbuffer-store>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+    </ringbuffer>
+
+    <!--
+        ===== HAZELCAST FLAKE ID GENERATOR CONFIGURATION =====
+        Configuration element's name is <flake-id-generator>. It has the required attribute "name" with which you
+        can specify the name of your Flake ID generator.
+        It has the following sub-elements:
+
+        * <prefetch-count>:
+            Sets how many IDs are pre-fetched on the background when one call to
+            FlakeIdGenerator.newId() is made. Value must be in the range 1..100,000, default
+            is 100.
+
+            This setting pertains only to newId() calls made on the member that configured it.
+
+        * <prefetch-validity-millis>:
+            Sets for how long the pre-fetched IDs can be used. If this time elapses, a new batch of IDs
+            will be fetched. Time unit is milliseconds, default is 600,000 (10 minutes).
+
+            The IDs contain timestamp component, which ensures rough global ordering of IDs. If an
+            ID is assigned to an object that was created much later, it will be much out of order. If you
+            don't care about ordering, set this value to 0.
+
+            This setting pertains only to newId() calls made on the member that configured it.
+
+        * <id-offset>:
+            Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
+            useful when migrating from IdGenerator, default value works for all green-field projects.
+
+            For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
+            100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
+            FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
+            the IDs are much larger. You also need to add a reserve to the offset because the IDs
+            from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
+            274877906944.
+
+            Negative values are allowed to increase the lifespan of the generator, however keep in
+            mind that the generated IDs might also be negative.
+
+        * <node-id-offset>:
+            Sets the offset that will be added to the node ID assigned to cluster member for this generator.
+            Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
+            You create cluster B and for some time both will generate IDs and you want to have them unique.
+            In this case, configure node ID offset for generators on cluster B.
+
+        * <statistics-enabled>:
+            When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
+    -->
+    <flake-id-generator name="default">
+        <prefetch-count>100</prefetch-count>
+        <prefetch-validity-millis>600000</prefetch-validity-millis>
+        <id-offset>0</id-offset>
+        <node-id-offset>0</node-id-offset>
+        <statistics-enabled>true</statistics-enabled>
+    </flake-id-generator>
+
+    <!--
+        ===== HAZELCAST ATOMIC LONG CONFIGURATION =====
+
+        Configuration element's name is <atomic-long>. It has the required attribute "name" with which you
+        can specify the name of your IAtomicLong. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <atomic-long name="default">
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </atomic-long>
+
+    <!--
+        ===== HAZELCAST ATOMIC REFERENCE CONFIGURATION =====
+
+        Configuration element's name is <atomic-reference>. It has the required attribute "name" with which you
+        can specify the name of your IAtomicReference. This attribute's default value is "default".
+        It has the following sub-elements:
+        * <quorum-ref>:
+        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+    -->
+    <atomic-reference name="default">
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </atomic-reference>
+
+    <!--
+        ===== HAZELCAST LISTENER CONFIGURATIONS =====
+
+        Configuration used to register the listeners that you created by implementing Hazelcast's
+        MembershipListener, DistributedObjectListener, MigrationListener and PartitionLostListener interfaces.
+    -->
+    <listeners>
+        <listener>your-package.YourMembershipListener</listener>
+        <listener>your-package.YourDistributedObjectListener</listener>
+        <listener>your-package.YourMigrationListener</listener>
+        <listener>your-package.YourPartitionLostListener</listener>
+    </listeners>
+    <!--
+        ===== HAZELCAST SERIALIZATION CONFIGURATION =====
+
+        Configuration element's name is <serialization>.
+        It has the following sub-elements:
+        * <portable-version>:
+            Version of the portable serialization. Portable version is used to differentiate two
+            of the same classes that have changes such as a new field or a new field type.
+        * <use-native-byte-order>:
+            Set as true if you want to use the native byte order of the underlying platform. Its default value is false.
+        * <byte-order>:
+            Specifies the byte order that the serialization will use. Its default value is BIG_ENDIAN. Available values
+            are BIG_ENDIAN and LITTLE_ENDIAN.
+        * <enable-compression>:
+            Set as true to enable compression when default Java serialization is used. Its default value is false.
+        * <enable-shared-object>:
+            Set as true to enable shared object when default Java serialization is used. Its default value is false.
+        * <allow-unsafe>:
+            Set as true to allow the usage of unsafe. Its default value is false.
+        * <data-serializable-factories>:
+            Lists your class implementations of Hazelcast's DataSerializableFactory using the <data-serializable-factory>
+            sub-elements. Each factory has the required "factory-id" attribute that you should give as the ID of your
+            factory.
+        * <portable-factories>:
+            Lists your class implementations of Hazelcast's PortableFactory using the <portable-factory>
+            sub-elements. Each factory has the required "factory-id" attribute that you should give as the ID of your
+            factory.
+        * <serializers>:
+            Lists the serializers (classes) that you implement using Hazelcast's StreamSerializer, ByteArraySerializer,
+            Global Serializer, etc. Global serializer should be specified using the <global-serializer> sub-element.
+            For others, use the <serializer> sub-element.
+
+            The <serializer> sub-element has two required attributes:
+            - class-name: Full class name of the serializer you implemented.
+            - type-class: Type of your serializer class implementation.
+
+            The <global-serializer> sub-element has an optional boolean "override-java-serialization" attribute. If you set
+            it as true, the Java serialization step will be handled by the global serializer, not by the Java Serializable or
+            Externalizable.
+        * <check-class-def-errors>:
+            If set to true, serialization system will check the class definitions error at the start of serialization process
+            and throw a Serialization Exception with the error definition.
+    -->
+    <serialization>
+        <portable-version>0</portable-version>
+        <use-native-byte-order>false</use-native-byte-order>
+        <byte-order>BIG_ENDIAN</byte-order>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
+            </data-serializable-factory>
+        </data-serializable-factories>
+        <portable-factories>
+            <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
+        </portable-factories>
+        <serializers>
+            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
+            <serializer type-class="com.hazelcast.examples.DummyType"
+                        class-name="com.hazelcast.examples.SerializerFactory"/>
+        </serializers>
+        <check-class-def-errors>true</check-class-def-errors>
+    </serialization>
+    <!--
+        ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
+
+        This feature is available only in Hazelcast Enterprise HD. Configuration element's name is
+        <native-memory>.
+        It has the following attributes:
+        - enabled:
+            Set as true to enable the High-Density Memory Store usage. Its default value is false.
+        - allocator-type:
+            Type of the memory allocator. Its default value is POOLED. Available values are as follows:
+        * STANDARD: Allocates/frees the memory using default OS memory manager.
+        * POOLED: Manages memory blocks in thread local pools.
+
+        It has the following sub-elements:
+        - <size>:
+            Size of the total native memory to allocate. You can give the size using its "value" attribute and the unit
+            using its "unit" attribute. Unit can be bytes, kilobytes, megabytes and gigabytes. Default value is 128 and
+            default unit is MEGABYTES.
+        - <min-block-size>:
+            Minimum size of the blocks in bytes to split and fragment a page block to assign to an allocation request.
+            It is used only by the POOLED memory allocator. The value has to be power of two.  Default value is 16.
+        - <page-size>:
+            Size of the page in bytes to allocate memory as a block. It is used only by the POOLED memory allocator. Its
+            default value is 1 << 22 (about 4 MB).
+        - <metadata-space-percentage>:
+            Percentage of the allocated native memory that is used for the metadata such as indexes, offsets, etc. It is
+            used only by the POOLED memory allocator. Its default value is 12.5.
+    -->
+    <native-memory allocator-type="POOLED" enabled="true">
+        <size unit="MEGABYTES" value="256"/>
+        <min-block-size>32</min-block-size>
+        <page-size>4194304</page-size>
+        <metadata-space-percentage>12.5</metadata-space-percentage>
+    </native-memory>
+    <!--
+        ===== HAZELCAST USER DEFINED SERVICES CONFIGURATION =====
+
+        This part is used to perform configurations after you develop your own data structure or service using
+        Hazelcast's Service Provider Interface (SPI). Configuration element's name is <services>. You can list
+        your services using its <service>.
+        It has the following attribute:
+        * enable-defaults:
+            Set as true if you want to use Hazelcast's services and operations (getMap, putAsync, etc.)
+            in your own service implementation. Its default value is true.
+
+        Each <service> has the following attributes and sub-elements:
+        * enabled:
+            Specifies whether the service is enabled.
+        * <name>:
+            Name of your service to be registered.
+        * <class-name>:
+            Full name of the class that you developed for your service on top of Hazelcast SPI.
+        * <properties>:
+            Lists the properties using its <property> element, with which you can specify the name and value of your
+            custom service properties.
+        * <configuration>:
+            Lists the configuration elements that you defined for your service using Hazelcast's "Config" object.
+    -->
+    <services enable-defaults="false">
+        <service enabled="true">
+            <name>custom-service</name>
+            <class-name>com.hazelcast.examples.MyService</class-name>
+            <properties>
+                <property name="prop1">prop1-value</property>
+                <property name="prop2">prop2-value</property>
+            </properties>
+        </service>
+    </services>
+    <!--
+        ===== HAZELCAST SECURITY CONFIGURATION =====
+
+        This feature is available only in Hazelcast Enterprise. Configuration element's name is <security>.
+        It has the following attributes and sub-elements:
+        * enabled:
+            Set to true to enable Hazelcast's security features.
+        * <member-credentials-factory>:
+            Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials
+            interface.
+        * <member-login-modules>:
+            Specifies the name and properties of your class that you developed by implementing Hazelcast's LoginModule
+            interface. Each login module class can be given by using the <login-module> element. This element has the
+            attribute "usage" that specifies the way you want to use the LoginModule's  behavior during the
+            authentication process for Hazelcast members. Available values for this attribute are REQUIRED, REQUISITE,
+            SUFFICIENT and OPTIONAL.
+        * <client-login-modules>:
+        It has the same purpose as <member-login-modules> explained above. However, instead of Hazelcast members,
+        it is used for Hazelcast native clients.
+        * <client-permission-policy>:
+            Specifies the name and properties of your class that you developed by implementing Hazelcast's
+            IPermissionPolicy interface, which is the default permission policy (com.hazelcast.security.IPermissionPolicy).
+            This policy defines the client authorization specifications.
+        * <client-permissions>:
+            Lists the client permissions that can be accessed by the client permission policy. For each permission, you
+            need to provide the end points and actions to be permitted. Also, the name and principal for each permission
+            should be given using the "name" and "principal" attributes. Please see
+            http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#permissions for all permissions and actions.
+        * <security-interceptor>
+            Specifies the security interceptor class that you developed by implementing Hazelcast's SecurityInterceptor
+            interface to intercept every remote operation executed by a client.
+    -->
+    <security enabled="false">
+        <member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
+            <properties>
+                <property name="property">value</property>
+            </properties>
+        </member-credentials-factory>
+        <member-login-modules>
+            <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                <properties>
+                    <property name="property">value</property>
+                </properties>
+            </login-module>
+        </member-login-modules>
+        <client-login-modules>
+            <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
+                <properties>
+                    <property name="property">value</property>
+                </properties>
+            </login-module>
+            <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
+                <properties>
+                    <property name="property">value</property>
+                </properties>
+            </login-module>
+        </client-login-modules>
+        <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
+            <properties>
+                <property name="property">value</property>
+            </properties>
+        </client-permission-policy>
+        <client-permissions>
+            <all-permissions principal="admin">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+            </all-permissions>
+            <map-permission name="custom" principal="dev">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+                <actions>
+                    <action>create</action>
+                    <action>destroy</action>
+                    <action>put</action>
+                    <action>read</action>
+                </actions>
+            </map-permission>
+        </client-permissions>
+        <security-interceptors>
+            <interceptor class-name="com.your-package.YourSecurityInterceptorImplementation"/>
+        </security-interceptors>
+    </security>
+    <!--
+        ===== HAZELCAST MEMBER ATTRIBUTE CONFIGURATION =====
+
+        You can define member attributes for your Hazelcast members to tag your members according to your
+        business logic requirements. Configuration element's name is <member-attributes>. You can list
+        each member attribute using its <attribute> sub-element. For each <attribute>, you need to provide its
+        name, type and value.
+    -->
+    <member-attributes>
+        <attribute name="CPU_CORE_COUNT" type="int">4</attribute>
+        <attribute name="CPU_CORE_FREQ" type="int">1033</attribute>
+    </member-attributes>
+    <!--
+        ===== HAZELCAST QUORUM CONFIGURATION =====
+
+        Configuration element's name is <quorum>.
+        It has the following attributes:
+        * name:
+            Name of your quorum. This name will be given as the value for <quorum-ref> element in the data structure
+            configuration for which you want to define a quorum. Currently, IMap, TransactionalMap and Cache
+            structures support quorum.
+        * enabled:
+            Specifies whether this quorum is enabled.
+
+        It has the following sub-elements:
+        * <quorum-size>:
+            The minimum number of members required in a cluster for the cluster to remain in an
+        operational state. If the number of members is below the defined minimum at any time,
+        the operations are rejected and the rejected operations return a QuorumException to
+        their callers.
+        * <quorum-type>:
+            Specifies for which operations the quorum will be applied. Available values are
+            READ, WRITE and READ_WRITE.
+        * <quorum-function-class-name>:
+            Name of the class that you develop by implementing Hazelcast's QuorumFunction interface to
+            conclude the absence/presence of your quorum. This function is triggered when any change happens to
+            the member list.
+        * <quorum-listeners>:
+            Provides the list of quorum listeners that you can register to be notified about quorum results.
+            Each listener is specified by <quorum-listener> sub-element. Quorum listeners are local to the member
+            that they are registered, so they receive only events occurred on that local member.
+    -->
+    <quorum name="quorumRuleWithThreeMembers" enabled="true">
+        <quorum-size>3</quorum-size>
+        <quorum-type>READ_WRITE</quorum-type>
+        <quorum-function-class-name>
+            com.your-package.AbsPresMyQuorum
+        </quorum-function-class-name>
+        <quorum-listeners>
+            <quorum-listener>
+                com.your-package.ThreeMemberQuorumListener
+            </quorum-listener>
+        </quorum-listeners>
+    </quorum>
+    <!--
+        ===== HAZELCAST LITE MEMBER CONFIGURATION =====
+
+        Configuration element's name is <lite-member>. When you want to use a Hazelcast member as a lite member,
+        set this element's "enabled" attribute to true in that member's XML configuration. Lite members do not store
+        data and are used mainly to execute tasks and register listeners. They do not have partitions.
+    -->
+    <lite-member enabled="true"/>
+    <!--
+        ===== HAZELCAST HOT RESTART PERSISTENCE CONFIGURATION =====
+
+        This feature is available only in Hazelcast Enterprise HD. Configuration element's name is
+        <hot-restart-persistence>. It has the required attribute "enabled" to specify whether this feature will be enabled
+        on your cluster. This part is the feature's configuration itself and you define the general specifications for
+        the feature. However, note that <map> and <cache> have a sub-element called <hot-restart> with which you should
+        enable its usage on those data structures. Keep in mind that the Hot Restart feature is currently supported for
+        Hazelcast's map and cache data structures.
+        It has the following sub-elements:
+        * <base-dir>:
+            Specifies the directory where the Hot Restart data will be stored. Its default value is hot-restart.
+            You can use the default value, or you can specify another folder.
+            This directory will be created automatically if it does not exist.
+        * <backup-dir>:
+            Specifies the directory where the Hot backup data will be stored. If this element is not defined, hot backup will
+            be disabled. If a directory is defined which does not exist, it will be created on first backup. To avoid clashing data
+            on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will
+            contain all hot restart data. This unique directory is created as a subdirectory of the configured `backup-dir`.
+        * <parallelism>:
+            Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
+            each writing in parallel to its own files. During the Hot Restart procedure, this many
+            IO threads will be reading the files and this many Rebuilder threads will be rebuilding
+            the Hot Restart metadata.
+        * <validation-timeout-seconds>:
+            Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition
+            table on the whole cluster.
+        * <data-load-timeout-seconds>:
+            Data load timeout for the Hot Restart process. All members in the cluster should finish restoring their local data
+            before this timeout period.
+        * <cluster-data-recovery-policy>:
+            Specifies the data recovery policy that will be respected during Hot Restart cluster start. Valid values are;
+            FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails.
+            This is the default value.
+            PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and
+            successfully restored their data. All other members will leave the cluster and force start themselves. If no member
+            restores its data successfully, cluster start fails.
+            PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition
+            table version and successfully restored their data. All other members will leave the cluster and force start themselves.
+            If no member restores its data successfully, cluster start fails.
+    -->
+    <hot-restart-persistence enabled="true">
+        <base-dir>/mnt/hot-restart</base-dir>
+        <backup-dir>/mnt/hot-backup</backup-dir>
+        <validation-timeout-seconds>120</validation-timeout-seconds>
+        <data-load-timeout-seconds>900</data-load-timeout-seconds>
+        <cluster-data-recovery-policy>PARTIAL_RECOVERY_MOST_COMPLETE</cluster-data-recovery-policy>
+    </hot-restart-persistence>
+
+    <!--
+        ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====
+
+        Configuration element's name is <user-code-deployment>. It has the required attribute "enabled" to
+        specify whether this feature will be enabled on your cluster.
+        It has the following sub-elements:
+        * <class-cache-mode>:
+            Controls the local caching behavior for the classes loaded from the remote class repository.
+            Available values are as follows:
+            ETERNAL: Cache the loaded classes locally. This is the default value and suitable when you load long-living objects,
+            such as domain objects stored in a map.
+            OFF: Do not cache the loaded classes locally.
+        * <provider-mode>:
+            Controls how the classes are served to the other cluster members. Available values are as follows:
+            LOCAL_AND_CACHED_CLASSES: Serve classes loaded from both local classpath and from other members.
+            This is the default value.
+            LOCAL_CLASSES_ONLY: Serve classes from the local classpath only. Classes loaded from other members
+            will be used locally, but they are not served to other members.
+            OFF: Never serve classes to other members.
+        * <blacklist-prefixes>:
+            Comma separated name prefixes of classes/packages to be prevented from dynamic class loading.
+            For example, if you set it as "com.foo", remote loading of all classes from the "com.foo" package
+            will be blacklisted, including the classes from all its sub-packages. If you set it as "com.foo.Class",
+            then the "Class" and all classes having the "Class" as prefix in the "com.foo" package will be blacklisted.
+        * <whitelist-prefixes>:
+            Comma separated name prefixes of classes/packages only from which the classes will be loaded. It allows
+            to quickly configure remote loading only for classes from selected packages. It can be used together
+            with blacklisting. For example, you can whitelist the prefix "com.foo" and blacklist the prefix "com.foo.secret".
+        * <provider-filter>:
+            Filter to constraint members to be used for a class loading request when a class is not available
+            locally. The value is in the format "HAS_ATTRIBUTE:foo". When it is set as "HAS_ATTRIBUTE:foo", the class
+            loading request will only be sent to the members which have "foo" as a member attribute.
+    -->
+    <user-code-deployment enabled="true">
+        <class-cache-mode>ETERNAL</class-cache-mode>
+        <provider-mode>LOCAL_CLASSES_ONLY</provider-mode>
+        <blacklist-prefixes>com.foo</blacklist-prefixes>
+        <whitelist-prefixes>com.bar.MyClass</whitelist-prefixes>
+        <provider-filter>HAS_ATTRIBUTE:lite</provider-filter>
+    </user-code-deployment>
+
+
+    <!--
+        ===== HAZELCAST CRDT REPLICATION CONFIGURATION =====
+
+        Configures the replication mechanism for all CRDT implementations.
+        The CRDT states are replicated in rounds (the period is configurable) and in each round the state is replicated
+        up to the configured number of members.
+        It has the following sub-elements:
+        * <max-concurrent-replication-targets>:
+            The maximum number of target members that we replicate the CRDT states to in one period. A higher count
+            will lead to states being disseminated more rapidly at the expense of burst-like behaviour - one update
+            to a CRDT will lead to a sudden burst in the number of replication messages in a short time interval.
+        * <replication-period-millis>:
+            The period between two replications of CRDT states in milliseconds. A lower value will increase the
+            speed at which changes are disseminated to other cluster members at the expense of burst-like behaviour - less
+            updates will be batched together in one replication message and one update to a CRDT may cause a sudden
+            burst of replication messages in a short time interval. The value must be a positive non-null integer.
+    -->
+    <crdt-replication>
+        <max-concurrent-replication-targets>1</max-concurrent-replication-targets>
+        <replication-period-millis>1000</replication-period-millis>
+    </crdt-replication>
+
+    <!--
+    ===== HAZELCAST PN COUNTER CONFIGURATION =====
+
+    Configuration element's name is <pn-counter>. It has the optional attribute "name" with which you
+    can specify the name of your PN counter. Its default value is "default".
+    It has the following sub-elements:
+    * <replica-count>:
+       Number of replicas on which the CRDT state will be kept. The updates are replicated
+       asynchronously between replicas.
+       The number must be greater than 1 and up to 2147483647 (Integer.MAX_VALUE).
+       The default value is 2147483647 (Integer.MAX_VALUE).
+    * <quorum-ref>:
+       Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+       as the <quorum>'s name.
+    * <statistics-enabled>:
+        When you enable it, you can retrieve the PN counter statistics. Its default value is true.
+    -->
+    <pn-counter name="default">
+        <replica-count>2147483647</replica-count>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <statistics-enabled>true</statistics-enabled>
+    </pn-counter>
+
+</hazelcast>

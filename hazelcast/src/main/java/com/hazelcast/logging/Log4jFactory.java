@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,89 +24,79 @@ import java.util.logging.LogRecord;
 
 public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory {
 
+    @Override
     protected ILogger createLogger(String name) {
         final Logger l = Logger.getLogger(name);
         return new Log4jLogger(l);
     }
 
-    class Log4jLogger implements ILogger {
+    static class Log4jLogger extends AbstractLogger {
+
         private final Logger logger;
         private final Level level;
 
-        public Log4jLogger(Logger logger) {
+        Log4jLogger(Logger logger) {
             this.logger = logger;
-            if (logger.getLevel() == org.apache.log4j.Level.DEBUG) {
-                level = Level.FINEST;
-            } else if (logger.getLevel() == org.apache.log4j.Level.INFO) {
-                level = Level.INFO;
-            } else if (logger.getLevel() == org.apache.log4j.Level.WARN) {
-                level = Level.WARNING;
-            } else if (logger.getLevel() == org.apache.log4j.Level.FATAL) {
-                level = Level.SEVERE;
-            } else {
-                level = Level.INFO;
-            }
+            org.apache.log4j.Level log4jLevel = logger.getLevel();
+            this.level = toStandardLevel(log4jLevel);
         }
 
+        @Override
         public void log(Level level, String message) {
-            if (Level.FINEST == level) {
-                logger.debug(message);
-            } else if (Level.SEVERE == level) {
-                logger.fatal(message);
-            } else if (Level.WARNING == level) {
-                logger.warn(message);
-            } else {
-                logger.info(message);
-            }
+            logger.log(toLog4jLevel(level), message);
         }
 
+        @Override
+        public void log(Level level, String message, Throwable thrown) {
+            logger.log(toLog4jLevel(level), message, thrown);
+        }
+
+        @Override
         public Level getLevel() {
             return level;
         }
 
+        @Override
         public boolean isLoggable(Level level) {
-            if (Level.FINEST == level) {
-                return logger.isDebugEnabled();
-            } else if (Level.WARNING == level) {
-                return logger.isEnabledFor(org.apache.log4j.Level.WARN);
-            } else if (Level.SEVERE == level) {
-                return logger.isEnabledFor(org.apache.log4j.Level.FATAL);
-            } else {
-                return logger.isEnabledFor(org.apache.log4j.Level.INFO);
-            }
+            return level != Level.OFF && logger.isEnabledFor(toLog4jLevel(level));
         }
 
-        public void log(Level level, String message, Throwable thrown) {
-            if (Level.FINEST == level) {
-                logger.debug(message, thrown);
-            } else if (Level.WARNING == level) {
-                logger.warn(message, thrown);
-            } else if (Level.SEVERE == level) {
-                logger.fatal(message, thrown);
-            } else {
-                logger.info(message, thrown);
-            }
-        }
-
+        @Override
         public void log(LogEvent logEvent) {
             LogRecord logRecord = logEvent.getLogRecord();
+            Level eventLevel = logRecord.getLevel();
+            if (eventLevel == Level.OFF) {
+                return;
+            }
             String name = logEvent.getLogRecord().getLoggerName();
             org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(name);
-            org.apache.log4j.Level level = null;
-            if (logRecord.getLevel() == Level.FINEST) {
-                level = org.apache.log4j.Level.DEBUG;
-            } else if (logRecord.getLevel() == Level.INFO) {
-                level = org.apache.log4j.Level.INFO;
-            } else if (logRecord.getLevel() == Level.WARNING) {
-                level = org.apache.log4j.Level.WARN;
-            } else if (logRecord.getLevel() == Level.SEVERE) {
-                level = org.apache.log4j.Level.FATAL;
-            } else {
-                level = org.apache.log4j.Level.INFO;
-            }
+            org.apache.log4j.Level level = toLog4jLevel(eventLevel);
             String message = logRecord.getMessage();
             Throwable throwable = logRecord.getThrown();
             logger.callAppenders(new LoggingEvent(name, logger, level, message, throwable));
+        }
+
+        private static org.apache.log4j.Level toLog4jLevel(Level level) {
+            return level == Level.FINEST  ? org.apache.log4j.Level.TRACE
+                 : level == Level.FINE    ? org.apache.log4j.Level.DEBUG
+                 : level == Level.INFO    ? org.apache.log4j.Level.INFO
+                 : level == Level.WARNING ? org.apache.log4j.Level.WARN
+                 : level == Level.SEVERE  ? org.apache.log4j.Level.ERROR
+                 : level == Level.CONFIG  ? org.apache.log4j.Level.INFO
+                 : level == Level.FINER   ? org.apache.log4j.Level.DEBUG
+                 : level == Level.OFF     ? org.apache.log4j.Level.OFF
+                 : org.apache.log4j.Level.INFO;
+        }
+
+        private static Level toStandardLevel(org.apache.log4j.Level log4jLevel) {
+            return log4jLevel == org.apache.log4j.Level.TRACE ? Level.FINEST
+                 : log4jLevel == org.apache.log4j.Level.DEBUG ? Level.FINE
+                 : log4jLevel == org.apache.log4j.Level.INFO  ? Level.INFO
+                 : log4jLevel == org.apache.log4j.Level.WARN  ? Level.WARNING
+                 : log4jLevel == org.apache.log4j.Level.ERROR ? Level.SEVERE
+                 : log4jLevel == org.apache.log4j.Level.FATAL ? Level.SEVERE
+                 : log4jLevel == org.apache.log4j.Level.OFF   ? Level.OFF
+                 : Level.INFO;
         }
     }
 }

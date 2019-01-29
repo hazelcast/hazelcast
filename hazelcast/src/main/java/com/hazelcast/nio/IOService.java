@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,45 +16,44 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.AsymmetricEncryptionConfig;
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.config.SSLConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.base.SystemLogService;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.annotation.PrivateApi;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.Collection;
 
+@PrivateApi
 public interface IOService {
+
+    int KILO_BYTE = 1024;
 
     boolean isActive();
 
-    ILogger getLogger(String name);
+    String getHazelcastName();
 
-    SystemLogService getSystemLogService();
-
-    void onOutOfMemory(OutOfMemoryError oom);
-
-    void handleInterruptedException(Thread thread, RuntimeException e);
-
-    void onIOThreadStart();
+    LoggingService getLoggingService();
 
     Address getThisAddress();
 
     void onFatalError(Exception e);
 
-    SocketInterceptorConfig getSocketInterceptorConfig();
-
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
-
-    AsymmetricEncryptionConfig getAsymmetricEncryptionConfig();
 
     SSLConfig getSSLConfig();
 
-    void handleClientPacket(Packet p);
-
-    void handleMemberPacket(Packet p);
+    ClientEngine getClientEngine();
 
     TextCommandService getTextCommandService();
 
@@ -62,47 +61,76 @@ public interface IOService {
 
     boolean isRestEnabled();
 
+    boolean isHealthcheckEnabled();
+
     void removeEndpoint(Address endpoint);
 
-    String getThreadPrefix();
-
-    ThreadGroup getThreadGroup();
+    void onSuccessfulConnection(Address address);
 
     void onFailedConnection(Address address);
 
     void shouldConnectTo(Address address);
 
-    boolean isReuseSocketAddress();
-
-    int getSocketPort();
+    boolean isSocketBind();
 
     boolean isSocketBindAny();
-
-    boolean isSocketPortAutoIncrement();
 
     int getSocketReceiveBufferSize();
 
     int getSocketSendBufferSize();
 
-    int getSocketLingerSeconds();
+    boolean useDirectSocketBuffer();
 
-    boolean getSocketKeepAlive();
+    /**
+     * Size of receive buffers for connections opened by clients
+     *
+     * @return size in bytes
+     */
+    int getSocketClientReceiveBufferSize();
 
-    boolean getSocketNoDelay();
+    /**
+     * Size of send buffers for connections opened by clients
+     *
+     * @return size in bytes
+     */
+    int getSocketClientSendBufferSize();
 
-    int getSelectorThreadCount();
+    void configureSocket(Socket socket) throws SocketException;
+
+    void interceptSocket(Socket socket, boolean onAccept) throws IOException;
+
+    boolean isSocketInterceptorEnabled();
+
+    int getSocketConnectTimeoutSeconds();
+
+    int getInputSelectorThreadCount();
+
+    int getOutputSelectorThreadCount();
 
     long getConnectionMonitorInterval();
 
     int getConnectionMonitorMaxFaults();
 
-    void disconnectExistingCalls(Address deadEndpoint);
+    /**
+     * @return Time interval between two I/O imbalance checks.
+     */
+    int getBalancerIntervalSeconds();
 
-    boolean isClient();
-
-    void onShutdown();
+    void onDisconnect(Address endpoint, Throwable cause);
 
     void executeAsync(Runnable runnable);
 
+    EventService getEventService();
+
     Collection<Integer> getOutboundPorts();
+
+    InternalSerializationService getSerializationService();
+
+    ChannelFactory getChannelFactory();
+
+    MemberSocketInterceptor getMemberSocketInterceptor();
+
+    ChannelInboundHandler createInboundHandler(TcpIpConnection connection);
+
+    ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection);
 }

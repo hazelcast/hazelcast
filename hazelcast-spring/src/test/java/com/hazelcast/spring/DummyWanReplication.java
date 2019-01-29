@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,36 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.Record;
-import com.hazelcast.impl.wan.WanReplicationEndpoint;
+import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.instance.Node;
+import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationEvent;
 
 public class DummyWanReplication implements WanReplicationEndpoint {
 
-    public void init(Node node, String groupName, String password, String... targets) {
+    @Override
+    public void init(Node node, WanReplicationConfig wanReplicationConfig, WanPublisherConfig wanPublisherConfig) {
     }
 
-    public void recordUpdated(Record record) {
-    }
-
+    @Override
     public void shutdown() {
+    }
+
+    @Override
+    public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
+    }
+
+    @Override
+    public void publishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
+    }
+
+    @Override
+    public void checkWanReplicationQueues() {
+    }
+
+    @Override
+    public void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject) {
     }
 }

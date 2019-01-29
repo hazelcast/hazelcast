@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,28 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalTopicStats extends LocalInstanceStats<LocalTopicOperationStats> {
+public interface LocalTopicStats extends LocalInstanceStats {
+
+    /**
+     * Returns the creation time of this topic on this member
+     *
+     * @return creation time of this topic on this member
+     */
+    long getCreationTime();
+
+    /**
+     * Returns the total number of published messages of this topic on this member
+     *
+     * @return total number of published messages of this topic on this member
+     */
+    long getPublishOperationCount();
+
+    /**
+     * Returns the total number of received messages of this topic on this member
+     *
+     * @return total number of received messages of this topic on this member
+     */
+    long getReceiveOperationCount();
+
 
 }

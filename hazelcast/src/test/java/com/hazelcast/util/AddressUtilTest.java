@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,103 +16,100 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.AddressUtil.Ip4AddressMatcher;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for AddressUtil class.
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class AddressUtilTest {
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
+public class AddressUtilTest extends HazelcastTestSupport {
+
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(AddressUtil.class);
+    }
+
+    @Test
+    public void testMatchAnyInterface() {
+        assertTrue(AddressUtil.matchAnyInterface("10.235.194.23", asList("10.235.194.23", "10.235.193.121")));
+
+        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", null));
+        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", Collections.<String>emptyList()));
+        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", singletonList("10.235.193.*")));
+    }
+
+    @Test
+    public void testMatchInterface() {
+        assertTrue(AddressUtil.matchInterface("fe80::62c5:0:fe05:480a%en0", "fe80::62c5:*:fe05:480a%en0"));
+        assertTrue(AddressUtil.matchInterface("fe80::62c5:aefb:fe05:480a%en1", "fe80::62c5:0-ffff:fe05:480a"));
+    }
+
+    @Test
+    public void testMatchInterface_whenInvalidInterface_thenReturnFalse() {
+        assertFalse(AddressUtil.matchInterface("10.235.194.23", "bar"));
+    }
+
+    @Test
+    public void testMatchAnyDomain() {
+        assertTrue(AddressUtil.matchAnyDomain("hazelcast.com", singletonList("hazelcast.com")));
+
+        assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", null));
+        assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", Collections.<String>emptyList()));
+        assertFalse(AddressUtil.matchAnyDomain("hazelcast.com", singletonList("abc.com")));
+    }
+
+    @Test
+    public void testMatchDomain() {
+        assertTrue(AddressUtil.matchDomain("hazelcast.com", "hazelcast.com"));
+        assertTrue(AddressUtil.matchDomain("hazelcast.com", "*.com"));
+        assertTrue(AddressUtil.matchDomain("jobs.hazelcast.com", "*.hazelcast.com"));
+        assertTrue(AddressUtil.matchDomain("download.hazelcast.org", "*.hazelcast.*"));
+        assertTrue(AddressUtil.matchDomain("download.hazelcast.org", "*.hazelcast.org"));
+
+        assertFalse(AddressUtil.matchDomain("hazelcast.com", "abc.com"));
+        assertFalse(AddressUtil.matchDomain("hazelcast.com", "*.hazelcast.com"));
+        assertFalse(AddressUtil.matchDomain("hazelcast.com", "hazelcast.com.tr"));
+        assertFalse(AddressUtil.matchDomain("hazelcast.com", "*.com.tr"));
+        assertFalse(AddressUtil.matchDomain("www.hazelcast.com", "www.hazelcast.com.tr"));
+    }
 
     @Test
     public void testParsingHostAndPort() {
         AddressHolder addressHolder = AddressUtil.getAddressHolder("[fe80::62c5:*:fe05:480a%en0]:8080");
-        Assert.assertEquals("fe80::62c5:*:fe05:480a", addressHolder.address);
-        Assert.assertEquals(8080, addressHolder.port);
-        Assert.assertEquals("en0", addressHolder.scopeId);
+        assertEquals("fe80::62c5:*:fe05:480a", addressHolder.getAddress());
+        assertEquals(8080, addressHolder.getPort());
+        assertEquals("en0", addressHolder.getScopeId());
 
         addressHolder = AddressUtil.getAddressHolder("[::ffff:192.0.2.128]:5700");
-        Assert.assertEquals("::ffff:192.0.2.128", addressHolder.address);
-        Assert.assertEquals(5700, addressHolder.port);
+        assertEquals("::ffff:192.0.2.128", addressHolder.getAddress());
+        assertEquals(5700, addressHolder.getPort());
 
         addressHolder = AddressUtil.getAddressHolder("192.168.1.1:5700");
-        Assert.assertEquals("192.168.1.1", addressHolder.address);
-        Assert.assertEquals(5700, addressHolder.port);
+        assertEquals("192.168.1.1", addressHolder.getAddress());
+        assertEquals(5700, addressHolder.getPort());
 
         addressHolder = AddressUtil.getAddressHolder("hazelcast.com:80");
-        Assert.assertEquals("hazelcast.com", addressHolder.address);
-        Assert.assertEquals(80, addressHolder.port);
-    }
-
-    @Test
-    public void testAddressMatcher() {
-        AddressMatcher address;
-        address = AddressUtil.getAddressMatcher("fe80::62c5:*:fe05:480a%en0");
-        Assert.assertTrue(address.isIPv6());
-        Assert.assertEquals("fe80:0:0:0:62c5:*:fe05:480a", address.getAddress());
-
-        address = AddressUtil.getAddressMatcher("192.168.1.1");
-        Assert.assertTrue(address instanceof Ip4AddressMatcher);
-        Assert.assertEquals("192.168.1.1", address.getAddress());
-
-        address = AddressUtil.getAddressMatcher("::ffff:192.0.2.128");
-        Assert.assertTrue(address.isIPv4());
-        Assert.assertEquals("192.0.2.128", address.getAddress());
-    }
-
-    @Test
-    public void testAddressMatcherFail() {
-        try {
-            AddressUtil.getAddressMatcher("fe80::62c5:47ff::fe05:480a%en0");
-            Assert.fail();
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof InvalidAddressException);
-        }
-        try {
-            AddressUtil.getAddressMatcher("fe80:62c5:47ff:fe05:480a%en0");
-            Assert.fail();
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof InvalidAddressException);
-        }
-        try {
-            AddressUtil.getAddressMatcher("[fe80:62c5:47ff:fe05:480a%en0");
-            Assert.fail();
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof InvalidAddressException);
-        }
-        try {
-            AddressUtil.getAddressMatcher("::ffff.192.0.2.128");
-            Assert.fail();
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof InvalidAddressException);
-        }
-    }
-
-    @Test
-    public void testAddressMatching() {
-        Assert.assertTrue(AddressUtil.matchInterface("fe80::62c5:0:fe05:480a%en0", "fe80::62c5:*:fe05:480a%en0"));
-        Assert.assertTrue(AddressUtil.matchInterface("fe80::62c5:aefb:fe05:480a%en1", "fe80::62c5:0-ffff:fe05:480a"));
-    }
-
-    @Test
-    public void matchAddress() {
-        assertTrue(AddressUtil.matchAnyInterface("10.235.194.23", Arrays.asList("10.235.194.23", "10.235.193.121")));
-    }
-
-    @Test
-    public void doNotMatchAddress() {
-        assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", Arrays.asList("10.235.193.*")));
+        assertEquals("hazelcast.com", addressHolder.getAddress());
+        assertEquals(80, addressHolder.getPort());
     }
 
     @Test
@@ -148,4 +145,47 @@ public class AddressUtilTest {
         assertFalse(AddressUtil.isIpAddress("fe80::62c5:*:fe05-ffxd:480a"));
     }
 
+    @Test
+    public void testAddressMatcher() {
+        AddressMatcher address;
+        address = AddressUtil.getAddressMatcher("fe80::62c5:*:fe05:480a%en0");
+        assertTrue(address.isIPv6());
+        assertEquals("fe80:0:0:0:62c5:*:fe05:480a", address.getAddress());
+
+        address = AddressUtil.getAddressMatcher("192.168.1.1");
+        assertTrue(address instanceof Ip4AddressMatcher);
+        assertEquals("192.168.1.1", address.getAddress());
+
+        address = AddressUtil.getAddressMatcher("::ffff:192.0.2.128");
+        assertTrue(address.isIPv4());
+        assertEquals("192.0.2.128", address.getAddress());
+    }
+
+    @Test
+    public void testAddressMatcherFail() {
+        try {
+            AddressUtil.getAddressMatcher("fe80::62c5:47ff::fe05:480a%en0");
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof InvalidAddressException);
+        }
+        try {
+            AddressUtil.getAddressMatcher("fe80:62c5:47ff:fe05:480a%en0");
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof InvalidAddressException);
+        }
+        try {
+            AddressUtil.getAddressMatcher("[fe80:62c5:47ff:fe05:480a%en0");
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof InvalidAddressException);
+        }
+        try {
+            AddressUtil.getAddressMatcher("::ffff.192.0.2.128");
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof InvalidAddressException);
+        }
+    }
 }

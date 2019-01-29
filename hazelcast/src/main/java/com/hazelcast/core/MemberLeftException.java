@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,71 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.version.MemberVersion;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.concurrent.ExecutionException;
 
-public class MemberLeftException extends ExecutionException implements DataSerializable {
-    volatile Member member;
+/**
+ * A {@link ExecutionException} thrown when a member left during an invocation or execution.
+ */
+public class MemberLeftException extends ExecutionException implements RetryableException {
+
+    private transient Member member;
 
     public MemberLeftException() {
     }
 
+
+    public MemberLeftException(String message) {
+        super(message);
+    }
+
     public MemberLeftException(Member member) {
+        super(member + " has left cluster!");
         this.member = member;
     }
 
+    public MemberLeftException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Returns the member that left the cluster
+     * @return the member that left the cluster
+     */
     public Member getMember() {
         return member;
     }
 
-    public String getMessage() {
-        return member + " has left cluster!";
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+
+        Address address = member.getAddress();
+        String host = address.getHost();
+        int port = address.getPort();
+
+        out.writeUTF(member.getUuid());
+        out.writeUTF(host);
+        out.writeInt(port);
+        out.writeBoolean(member.isLiteMember());
+        out.writeObject(member.getVersion());
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        member.writeData(out);
-    }
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
 
-    public void readData(DataInput in) throws IOException {
-        Member member = new MemberImpl();
-        member.readData(in);
+        String uuid = in.readUTF();
+        String host = in.readUTF();
+        int port = in.readInt();
+        boolean liteMember = in.readBoolean();
+        MemberVersion version = (MemberVersion) in.readObject();
+
+        member = new MemberImpl(new Address(host, port), version, false, uuid, null, liteMember);
     }
 }

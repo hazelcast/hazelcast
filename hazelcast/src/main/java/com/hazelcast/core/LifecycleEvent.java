@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,50 @@
 
 package com.hazelcast.core;
 
+/**
+ * Lifecycle event fired when HazelcastInstance's state changes.
+ * Events are fired when instance:
+ * <ul>
+ * <li>Starting</li>
+ * <li>Started</li>
+ * <li>Shutting down</li>
+ * <li>Shut down completed</li>
+ * <li>Merging</li>
+ * <li>Merged</li>
+ * </ul>
+ *
+ * @see com.hazelcast.core.LifecycleListener
+ * @see HazelcastInstance#getLifecycleService()
+ */
 public final class LifecycleEvent {
+    /**
+     * lifecycle states
+     */
     public enum LifecycleState {
         STARTING,
         STARTED,
-        RESTARTING,
-        RESTARTED,
-        PAUSING,
-        PAUSED,
-        RESUMING,
-        RESUMED,
         SHUTTING_DOWN,
         SHUTDOWN,
+        /**
+         * Fired on each cluster member just before start of a merge process into another cluster.
+         * This is typically used when a split-brain situation is healed.
+         *
+         */
         MERGING,
+
+        /**
+         * Indicates merge process was successful and data have been merged.
+         *
+         */
         MERGED,
-        CLIENT_CONNECTION_LOST, // The connection to the server is lost by the client
-        CLIENT_CONNECTION_OPENING, //The physical connection to the server is restored but the whole process is not finished yet.
-        CLIENT_CONNECTION_OPENED;  //Client successfully finished all pre operations and is fully operable.
+
+        /**
+         * Indicates merge process failed for some reason.
+         *
+         */
+        MERGE_FAILED,
+        CLIENT_CONNECTED,
+        CLIENT_DISCONNECTED
     }
 
     final LifecycleState state;
@@ -47,14 +74,15 @@ public final class LifecycleEvent {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (!(o instanceof LifecycleEvent)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof LifecycleEvent)) {
+            return false;
+        }
 
-        final LifecycleEvent that = (LifecycleEvent) o;
-
-        if (state != that.state) return false;
-
-        return true;
+        LifecycleEvent that = (LifecycleEvent) o;
+        return state == that.state;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,75 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.logging.Level;
+import java.util.Properties;
 
+
+/**
+ * A {@link Config} which includes functionality for loading itself from a
+ * XML configuration file.
+ */
 public class FileSystemXmlConfig extends Config {
 
-    private final ILogger logger = Logger.getLogger(FileSystemXmlConfig.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(FileSystemXmlConfig.class);
 
-    public FileSystemXmlConfig() {
-    }
-
+    /**
+     * Creates a Config based on a Hazelcast xml file and uses the System.properties to resolve
+     * variables in the XML.
+     *
+     * @param configFilename the path of the Hazelcast xml configuration file
+     * @throws NullPointerException                  if configFilename is {@code null}
+     * @throws FileNotFoundException                 fi the file is not found
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
     public FileSystemXmlConfig(String configFilename) throws FileNotFoundException {
-        this(new File(configFilename));
+        this(configFilename, System.getProperties());
     }
 
+    /**
+     * Creates a Config based on a Hazelcast XML file.
+     *
+     * @param configFilename the path of the Hazelcast XML configuration file
+     * @param properties     the Properties to resolve variables in the XML
+     * @throws FileNotFoundException                 fi the file is not found
+     * @throws NullPointerException                  if configFilename is {@code null}
+     * @throws IllegalArgumentException              if properties is {@code null}
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public FileSystemXmlConfig(String configFilename, Properties properties) throws FileNotFoundException {
+        this(new File(configFilename), properties);
+    }
+
+    /**
+     * Creates a Config based on a Hazelcast xml file and uses the System.properties to resolve
+     * variables in the XML.
+     *
+     * @param configFile the path of the Hazelcast XML configuration file
+     * @throws FileNotFoundException                 if the file doesn't exist
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
     public FileSystemXmlConfig(File configFile) throws FileNotFoundException {
-        super();
-        logger.log(Level.INFO, "Configuring Hazelcast from '" + configFile.getAbsolutePath() + "'.");
+        this(configFile, System.getProperties());
+    }
+
+    /**
+     * Creates a Config based on a Hazelcast XML file.
+     *
+     * @param configFile the path of the Hazelcast xml configuration file
+     * @param properties the Properties to resolve variables in the XML
+     * @throws IllegalArgumentException              if configFile or properties is {@code null}
+     * @throws FileNotFoundException                 if the file doesn't exist
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public FileSystemXmlConfig(File configFile, Properties properties) throws FileNotFoundException {
+        if (configFile == null) {
+            throw new IllegalArgumentException("configFile can't be null");
+        }
+        if (properties == null) {
+            throw new IllegalArgumentException("properties can't be null");
+        }
+
+        LOGGER.info("Configuring Hazelcast from '" + configFile.getAbsolutePath() + "'.");
         InputStream in = new FileInputStream(configFile);
-        new XmlConfigBuilder(in).build(this);
+        new XmlConfigBuilder(in).setProperties(properties).build(this);
     }
 }

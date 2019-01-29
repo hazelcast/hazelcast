@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.serialization;
+
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ManagedContext;
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Supplier;
+
+import java.nio.ByteOrder;
+
+@SuppressWarnings({"checkstyle:methodcount"})
+public interface SerializationServiceBuilder {
+
+    SerializationServiceBuilder setVersion(byte version);
+
+    SerializationServiceBuilder setPortableVersion(int portableVersion);
+
+    SerializationServiceBuilder setClassLoader(ClassLoader classLoader);
+
+    /**
+     * Sets Hazelcast group properties configured for given instance.
+     *
+     * @deprecated This method was added to Hazelcast 3.10.x branch just to allow backporting of deserialization protection
+     *             feature. It's not part of Hazelcast 3.11+ API.
+     */
+    @Deprecated
+    SerializationServiceBuilder setProperties(HazelcastProperties properties);
+
+    SerializationServiceBuilder setConfig(SerializationConfig config);
+
+    SerializationServiceBuilder addDataSerializableFactory(int id, DataSerializableFactory factory);
+
+    SerializationServiceBuilder addPortableFactory(int id, PortableFactory factory);
+
+    SerializationServiceBuilder addClassDefinition(ClassDefinition cd);
+
+    SerializationServiceBuilder setCheckClassDefErrors(boolean checkClassDefErrors);
+
+    SerializationServiceBuilder setManagedContext(ManagedContext managedContext);
+
+    SerializationServiceBuilder setUseNativeByteOrder(boolean useNativeByteOrder);
+
+    SerializationServiceBuilder setByteOrder(ByteOrder byteOrder);
+
+    SerializationServiceBuilder setHazelcastInstance(HazelcastInstance hazelcastInstance);
+
+    SerializationServiceBuilder setEnableCompression(boolean enableCompression);
+
+    SerializationServiceBuilder setEnableSharedObject(boolean enableSharedObject);
+
+    SerializationServiceBuilder setAllowUnsafe(boolean allowUnsafe);
+
+    SerializationServiceBuilder setPartitioningStrategy(PartitioningStrategy partitionStrategy);
+
+    SerializationServiceBuilder setNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier);
+
+    SerializationServiceBuilder setInitialOutputBufferSize(int initialOutputBufferSize);
+
+    <T extends SerializationService> T build();
+}

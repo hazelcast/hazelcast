@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,449 +16,349 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.*;
-import com.hazelcast.impl.base.CallState;
-import com.hazelcast.impl.base.CallStateAware;
-import com.hazelcast.util.ByteUtil;
+import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.spi.annotation.PrivateApi;
 
-import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import static com.hazelcast.nio.PacketIOHelper.HEADER_SIZE;
 
-import static com.hazelcast.nio.IOUtil.toObject;
+/**
+ * A Packet is a piece of data sent over the wire. The Packet is used for member to member communication.
+ *
+ * The Packet extends HeapData instead of wrapping it. From a design point of view this is often
+ * not the preferred solution (prefer composition over inheritance), but in this case that
+ * would mean more object litter.
+ *
+ * Since the Packet isn't used throughout the system, this design choice is visible locally.
+ */
+@PrivateApi
+// Declaration order suppressed due to private static int FLAG_TYPEx declarations
+@SuppressWarnings("checkstyle:declarationorder")
+public final class Packet extends HeapData implements OutboundFrame {
 
-public final class Packet implements SocketWritable, CallStateAware {
+    public static final byte VERSION = 4;
 
-    public static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
 
-    public String name;
+    //             PACKET HEADER FLAGS
+    //
+    // Flags are dispatched against in a cascade:
+    // 1. URGENT (bit 4)
+    // 2. Packet type (bits 0, 2, 5)
+    // 3. Flags specific to a given packet type (bits 1, 6)
 
-    public ClusterOperation operation = ClusterOperation.NONE;
 
-    public final ByteBuffer bbSizes = ByteBuffer.allocate(13);
+    // 1. URGENT flag
 
-    public final ByteBuffer bbHeader = ByteBuffer.allocate(500);
+    /**
+     * Marks the packet as Urgent
+     */
+    public static final int FLAG_URGENT = 1 << 4;
 
-    private DataHolder key = null;
 
-    private DataHolder value = null;
+    // 2. Packet type flags, encode up to 7 packet types.
+    //
+    // When adding a new packet type, DO NOT ADD MORE TYPE FLAGS. Instead rename one of the
+    // Packet.Type.UNDEFINEDx members to represent the new type.
+    //
+    // Historically the first three packet types were encoded as separate, mutually exclusive flags.
+    // These are given below. The enum Packet.Type should be used to encode/decode the type from the
+    // header flags bitfield.
 
-    public Long[] indexes = null;
+    /**
+     * Packet type bit 0. Historically the OPERATION type flag.
+     */
+    private static final int FLAG_TYPE0 = 1 << 0;
+    /**
+     * Packet type bit 1. Historically the EVENT type flag.
+     */
+    private static final int FLAG_TYPE1 = 1 << 2;
+    /**
+     * Packet type bit 2. Historically the BIND type flag.
+     */
+    private static final int FLAG_TYPE2 = 1 << 5;
 
-    public byte[] indexTypes = null;
+    // 3. Type-specific flags. Same bits can be reused within each type
 
-    public long txnId = -1;
+    // 3.a Operation packet flags
 
-    public int threadId = -1;
+    /**
+     * Marks an Operation packet as Response
+     */
+    public static final int FLAG_OP_RESPONSE = 1 << 1;
+    /**
+     * Marks an Operation packet as Operation control (like invocation-heartbeats)
+     */
+    public static final int FLAG_OP_CONTROL = 1 << 6;
 
-    public int lockCount = 0;
 
-    public Address lockAddress = null;
+    // 3.b Jet packet flags
 
-    public long timeout = -1;
+    /**
+     * Marks a Jet packet as Flow control
+     */
+    public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
 
-    public long ttl = -1;
 
-    public int blockId = -1;
+    //            END OF HEADER FLAG SECTION
 
-    public byte responseType = Constants.ResponseTypes.RESPONSE_NONE;
 
-    public long longValue = Long.MIN_VALUE;
+    // char is a 16-bit unsigned integer. Here we use it as a bitfield.
+    private char flags;
 
-    public long version = -1;
-
-    public long callId = -1;
-
-    public Connection conn;
-
-    public int totalSize = 0;
-
-    boolean sizeRead = false;
-
-    int totalWritten = 0;
-
-    public byte redoData = 0; // used for both redo-count and redo-type-code
-
-    public boolean client = false;
-
-    public CallState callState = null;
+    private int partitionId;
+    private transient Connection conn;
 
     public Packet() {
     }
 
-    public CallState getCallState() {
-        return callState;
+    public Packet(byte[] payload) {
+        this(payload, -1);
     }
 
-    private static final Map<String, byte[]> mapStringByteCache = new ConcurrentHashMap<String, byte[]>(1000);
+    public Packet(byte[] payload, int partitionId) {
+        super(payload);
+        this.partitionId = partitionId;
+    }
 
     /**
-     * only ServiceThread should call
+     * Gets the Connection this Packet was send with.
+     *
+     * @return the Connection. Could be null.
      */
-    private static void putString(ByteBuffer bb, String str) {
-        if (str == null) {
-            bb.putInt(0);
-        } else {
-            // this part is not atomic but
-            // it doesn't have to be.
-            byte[] bytes = mapStringByteCache.get(str);
-            if (bytes == null) {
-                bytes = str.getBytes();
-                if (mapStringByteCache.size() >= 10000) {
-                    mapStringByteCache.clear();
-                }
-                mapStringByteCache.put(str, bytes);
-            }
-            bb.putInt(bytes.length);
-            bb.put(bytes);
-        }
+    public Connection getConn() {
+        return conn;
     }
 
-    private static String getString(ByteBuffer bb) {
-        int length = bb.getInt();
-        if (length == 0) return null;
-        byte[] bytes = new byte[length];
-        bb.get(bytes, 0, length);
-        return new String(bytes);
+    /**
+     * Sets the Connection this Packet is send with.
+     * <p/>
+     * This is done on the reading side of the Packet to make it possible to retrieve information about
+     * the sender of the Packet.
+     *
+     * @param conn the connection.
+     * @return {@code this} (for fluent interface)
+     */
+    public Packet setConn(Connection conn) {
+        this.conn = conn;
+        return this;
     }
 
-    protected void writeBoolean(ByteBuffer bb, boolean value) {
-        bb.put((value) ? (byte) 1 : (byte) 0);
+    public Type getPacketType() {
+        return Type.fromFlags(flags);
     }
 
-    protected boolean readBoolean(ByteBuffer bb) {
-        return (bb.get() == (byte) 1);
+    /**
+     * Sets the packet type by updating the packet type bits in the {@code flags} bitfield. Other bits
+     * are unaffected.
+     *
+     * @param type the type to set
+     * @return {@code this} (for fluent interface)
+     */
+    public Packet setPacketType(Packet.Type type) {
+        int nonTypeFlags = flags & (~FLAG_TYPE0 & ~FLAG_TYPE1 & ~FLAG_TYPE2);
+        resetFlagsTo(type.headerEncoding | nonTypeFlags);
+        return this;
     }
 
-    public void onEnqueue() {
-        bbSizes.clear();
-        bbHeader.clear();
-        bbHeader.putShort(operation.getValue());
-        bbHeader.putInt(blockId);
-        bbHeader.putInt(threadId);
-        byte flags = 0;
-        if (lockCount != 0) {
-            flags = ByteUtil.setTrue(flags, 0);
-        }
-        if (timeout != -1) {
-            flags = ByteUtil.setTrue(flags, 1);
-        }
-        if (ttl != -1) {
-            flags = ByteUtil.setTrue(flags, 2);
-        }
-        if (txnId != -1) {
-            flags = ByteUtil.setTrue(flags, 3);
-        }
-        if (longValue != Long.MIN_VALUE) {
-            flags = ByteUtil.setTrue(flags, 4);
-        }
-        if (version != -1) {
-            flags = ByteUtil.setTrue(flags, 5);
-        }
-        if (client) {
-            flags = ByteUtil.setTrue(flags, 6);
-        }
-        if (lockAddress == null) {
-            flags = ByteUtil.setTrue(flags, 7);
-        }
-        bbHeader.put(flags);
-        if (lockCount != 0) {
-            bbHeader.putInt(lockCount);
-        }
-        if (timeout != -1) {
-            bbHeader.putLong(timeout);
-        }
-        if (ttl != -1) {
-            bbHeader.putLong(ttl);
-        }
-        if (txnId != -1) {
-            bbHeader.putLong(txnId);
-        }
-        if (longValue != Long.MIN_VALUE) {
-            bbHeader.putLong(longValue);
-        }
-        if (version != -1) {
-            bbHeader.putLong(version);
-        }
-        if (lockAddress != null) {
-            lockAddress.writeObject(bbHeader);
-        }
-        bbHeader.putLong(callId);
-        bbHeader.put(responseType);
-        putString(bbHeader, name);
-        byte indexCount = (indexes == null) ? 0 : (byte) indexes.length;
-        bbHeader.put(indexCount);
-        for (byte i = 0; i < indexCount; i++) {
-            bbHeader.putLong(indexes[i]);
-            bbHeader.put(indexTypes[i]);
-        }
-        bbHeader.putInt(key == null ? -1 : key.partitionHash);
-        bbHeader.putInt(value == null ? -1 : value.partitionHash);
-        bbHeader.put(redoData); // WARNING: redoData is added by v2.1.3, older versions will not write this field
-        bbHeader.flip();
-        bbSizes.putInt(bbHeader.limit());
-        bbSizes.putInt(key == null ? 0 : key.size);
-        bbSizes.putInt(value == null ? 0 : value.size);
-        bbSizes.put(PACKET_VERSION);
-        bbSizes.flip();
-        totalSize = 0;
-        totalSize += bbSizes.limit();
-        totalSize += bbHeader.limit();
-        totalSize += key == null ? 0 : key.size;
-        totalSize += value == null ? 0 : value.size;
+    /**
+     * Raises all the flags raised in the argument. Does not lower any flags.
+     *
+     * @param flagsToRaise the flags to raise
+     * @return {@code this} (for fluent interface)
+     */
+    public Packet raiseFlags(int flagsToRaise) {
+        flags |= flagsToRaise;
+        return this;
     }
 
-    public void read() {
-        operation = ClusterOperation.create(bbHeader.getShort());
-        blockId = bbHeader.getInt();
-        threadId = bbHeader.getInt();
-        byte flags = bbHeader.get();
-        if (ByteUtil.isTrue(flags, 0)) {
-            lockCount = bbHeader.getInt();
-        }
-        if (ByteUtil.isTrue(flags, 1)) {
-            timeout = bbHeader.getLong();
-        }
-        if (ByteUtil.isTrue(flags, 2)) {
-            ttl = bbHeader.getLong();
-        }
-        if (ByteUtil.isTrue(flags, 3)) {
-            txnId = bbHeader.getLong();
-        }
-        if (ByteUtil.isTrue(flags, 4)) {
-            longValue = bbHeader.getLong();
-        }
-        if (ByteUtil.isTrue(flags, 5)) {
-            version = bbHeader.getLong();
-        }
-        client = ByteUtil.isTrue(flags, 6);
-        boolean lockAddressNull = ByteUtil.isTrue(flags, 7);
-        if (!lockAddressNull) {
-            lockAddress = new Address();
-            lockAddress.readObject(bbHeader);
-        }
-        callId = bbHeader.getLong();
-        responseType = bbHeader.get();
-        name = getString(bbHeader);
-        byte indexCount = bbHeader.get();
-        if (indexCount > 0) {
-            indexes = new Long[indexCount];
-            indexTypes = new byte[indexCount];
-            for (byte i = 0; i < indexCount; i++) {
-                indexes[i] = bbHeader.getLong();
-                indexTypes[i] = bbHeader.get();
-            }
-        }
-        int keyPartitionHash = bbHeader.getInt();
-        int valuePartitionHash = bbHeader.getInt();
-        if (key != null) key.setPartitionHash(keyPartitionHash);
-        if (value != null) value.setPartitionHash(valuePartitionHash);
-
-        if (bbHeader.hasRemaining()) {
-            // WARNING: redoData is added by v2.1.3, older versions will ignore this field
-            redoData = bbHeader.get();
-        }
+    /**
+     * Resets the entire {@code flags} bitfield to the supplied value. This also affects the packet type bits.
+     *
+     * @param flagsToSet the flags. Only the least significant two bytes of the argument are used.
+     * @return {@code this} (for fluent interface)
+     */
+    public Packet resetFlagsTo(int flagsToSet) {
+        flags = (char) flagsToSet;
+        return this;
     }
 
-    public void clearForResponse() {
-        this.name = null;
-        this.key = null;
-        this.value = null;
-        this.blockId = -1;
-        this.timeout = -1;
-        this.ttl = -1;
-        this.txnId = -1;
-        this.threadId = -1;
-        this.lockAddress = null;
-        this.lockCount = 0;
-        this.longValue = Long.MIN_VALUE;
-        this.version = -1;
-        this.indexes = null;
-        this.indexTypes = null;
+    /**
+     * Returns {@code true} if any of the flags supplied in the argument are set.
+     *
+     * @param flagsToCheck the flags to check
+     * @return {@code true} if any of the flags is set, {@code false} otherwise.
+     */
+    public boolean isFlagRaised(int flagsToCheck) {
+        return isFlagRaised(flags, flagsToCheck);
     }
 
-    public void reset() {
-        name = null;
-        operation = ClusterOperation.NONE;
-        threadId = -1;
-        lockCount = 0;
-        lockAddress = null;
-        timeout = -1;
-        ttl = -1;
-        txnId = -1;
-        responseType = Constants.ResponseTypes.RESPONSE_NONE;
-        blockId = -1;
-        longValue = Long.MIN_VALUE;
-        version = -1;
-        callId = -1;
-        client = false;
-        bbSizes.clear();
-        bbHeader.clear();
-        key = null;
-        value = null;
-        conn = null;
-        totalSize = 0;
-        totalWritten = 0;
-        sizeRead = false;
-        indexes = null;
-        indexTypes = null;
-        callState = null;
+    private static boolean isFlagRaised(char flags, int flagsToCheck) {
+        return (flags & flagsToCheck) != 0;
     }
 
-    public void setFromRequest(Request request) {
-        operation = request.operation;
-        name = request.name;
-        setKey(request.key);
-        setValue(request.value);
-        blockId = request.blockId;
-        timeout = request.timeout;
-        ttl = request.ttl;
-        txnId = request.txnId;
-        callId = request.callId;
-        threadId = request.lockThreadId;
-        lockAddress = request.lockAddress;
-        lockCount = request.lockCount;
-        longValue = request.longValue;
-        version = request.version;
-        indexes = request.indexes;
-        indexTypes = request.indexTypes;
-        callState = request.callState;
-        redoData = request.redoCount > Byte.MAX_VALUE
-                    ? Byte.MAX_VALUE : (byte) request.redoCount; // just don't care values greater than 127.
+    /**
+     * @return the complete flags bitfield as a {@code char}.
+     */
+    public char getFlags() {
+        return flags;
+    }
+
+    /**
+     * Returns the partition ID of this packet. If this packet is not for a particular partition, -1 is returned.
+     *
+     * @return the partition ID.
+     */
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    @Override
+    public boolean isUrgent() {
+        return isFlagRaised(FLAG_URGENT);
+    }
+
+    /**
+     * Returns an estimation of the packet, including its payload, in bytes.
+     *
+     * @return the size of the packet.
+     */
+    public int packetSize() {
+        return (payload != null ? totalSize() : 0) + HEADER_SIZE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof Packet)) {
+            return false;
+        }
+
+        Packet packet = (Packet) o;
+        if (!super.equals(packet)) {
+            return false;
+        }
+
+        if (flags != packet.flags) {
+            return false;
+        }
+        return partitionId == packet.partitionId;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) flags;
+        result = 31 * result + partitionId;
+        return result;
     }
 
     @Override
     public String toString() {
-        int keySize = (key == null) ? 0 : key.size();
-        int valueSize = (getValueData() == null) ? 0 : getValueData().size();
-        Object str = null;
-        if (operation == ClusterOperation.REMOTELY_PROCESS) {
-            try {
-                str = toObject(value.toData());
-            } catch (Throwable e) {
-                str = e;
+        final Type type = getPacketType();
+        return "Packet{"
+                + "partitionId=" + partitionId
+                + ", conn=" + conn
+                + ", rawFlags=" + Integer.toBinaryString(flags)
+                + ", isUrgent=" + isUrgent()
+                + ", packetType=" + type.name()
+                + ", typeSpecificFlags=" + type.describeFlags(flags)
+                + '}';
+    }
+
+
+    public enum Type {
+        /**
+         * Represents "missing packet type", consists of all zeros. A zeroed-out packet header would
+         * resolve to this type.
+         * <p>
+         * {@code ordinal = 0}
+         */
+        NULL,
+        /**
+         * The type of an Operation packet.
+         * <p>
+         * {@code ordinal = 1}
+         */
+        OPERATION {
+            @Override
+            public String describeFlags(char flags) {
+                return "[isResponse=" + isFlagRaised(flags, FLAG_OP_RESPONSE)
+                        + ", isOpControl=" + isFlagRaised(flags, FLAG_OP_CONTROL) + ']';
             }
-        }
-        return "Packet [" + operation + "] name=" + name
-                + ", connection=" + conn
-                + ",blockId="
-                + blockId + ", keySize=" + keySize + ", valueSize=" + valueSize
-                + " client=" + client
-                + " obj=" + str
-                + " callId=" + callId;
-    }
-
-    public void flipBuffers() {
-        bbSizes.flip();
-        bbHeader.flip();
-    }
-
-    public final boolean writeToSocketBuffer(ByteBuffer dest) {
-        totalWritten += IOUtil.copyToHeapBuffer(bbSizes, dest);
-        totalWritten += IOUtil.copyToHeapBuffer(bbHeader, dest);
-        if (key != null && key.size() > 0) {
-            totalWritten += IOUtil.copyToHeapBuffer(key.buffer, dest);
-        }
-        if (getValueData() != null && getValueData().size() > 0) {
-            totalWritten += IOUtil.copyToHeapBuffer(value.buffer, dest);
-        }
-        return totalWritten >= totalSize;
-    }
-
-    public final boolean read(ByteBuffer bb) {
-        while (!sizeRead && bb.hasRemaining() && bbSizes.hasRemaining()) {
-            IOUtil.copyToHeapBuffer(bb, bbSizes);
-        }
-        if (!sizeRead && !bbSizes.hasRemaining()) {
-            sizeRead = true;
-            bbSizes.flip();
-            bbHeader.limit(bbSizes.getInt());
-            int keySize = bbSizes.getInt();
-            int valueSize = bbSizes.getInt();
-            if (keySize > 0) key = new DataHolder(keySize);
-            if (valueSize > 0) value = new DataHolder(valueSize);
-            if (bbHeader.limit() == 0) {
-                throw new RuntimeException("read.bbHeader size cannot be 0");
+        },
+        /**
+         * The type of an Event packet.
+         * <p>
+         * {@code ordinal = 2}
+         */
+        EVENT,
+        /**
+         * The type of a Jet packet.
+         * <p>
+         * {@code ordinal = 3}
+         */
+        JET {
+            @Override
+            public String describeFlags(char flags) {
+                return "[isFlowControl=" + isFlagRaised(flags, FLAG_JET_FLOW_CONTROL) + ']';
             }
-            byte packetVersion = bbSizes.get();
-            if (packetVersion != PACKET_VERSION) {
-                String msg = "Packet versions are not the same. Expected " + PACKET_VERSION
-                        + " Found: " + packetVersion;
-                throw new RuntimeException(msg);
-            }
+        },
+        /**
+         * The type of a Bind Message packet.
+         * <p>
+         * {@code ordinal = 4}
+         */
+        BIND,
+        /**
+         * Unused packet type. Available for future use.
+         * <p>
+         * {@code ordinal = 5}
+         */
+        UNDEFINED5,
+        /**
+         * Unused packet type. Available for future use.
+         * <p>
+         * {@code ordinal = 6}
+         */
+        UNDEFINED6,
+        /**
+         * Unused packet type. Available for future use.
+         * <p>
+         * {@code ordinal = 7}
+         */
+        UNDEFINED7;
+
+        final char headerEncoding;
+
+        Type() {
+            headerEncoding = (char) encodeOrdinal();
         }
-        if (sizeRead) {
-            while (bb.hasRemaining() && bbHeader.hasRemaining()) {
-                IOUtil.copyToHeapBuffer(bb, bbHeader);
-            }
-            while (key != null && bb.hasRemaining() && key.shouldRead()) {
-                key.read(bb);
-            }
-            while (getValueData() != null && bb.hasRemaining() && value.shouldRead()) {
-                value.read(bb);
-            }
+
+        public static Type fromFlags(int flags) {
+            return values()[headerDecode(flags)];
         }
-        if (sizeRead && !bbHeader.hasRemaining() && (key == null || !key.shouldRead()) && (value == null || !value.shouldRead())) {
-            sizeRead = false;
-            if (key != null) {
-                key.postRead();
-            }
-            if (value != null) {
-                value.postRead();
-            }
-            return true;
+
+        public String describeFlags(char flags) {
+            return "<NONE>";
         }
-        return false;
-    }
 
-    public void set(String name, ClusterOperation operation, Object objKey, Object objValue) {
-        this.threadId = ThreadContext.get().getThreadId();
-        this.name = name;
-        this.operation = operation;
-        if (objKey != null) {
-            if (objKey instanceof Data) {
-                setKey((Data) objKey);
-            } else {
-                key = new DataHolder(ThreadContext.get().toData(objKey));
-            }
+        @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+        private int encodeOrdinal() {
+            final int ordinal = ordinal();
+            assert ordinal < 8 : "Ordinal out of range for member " + name() + ": " + ordinal;
+            return (ordinal & 0x01)
+                    | (ordinal & 0x02) << 1
+                    | (ordinal & 0x04) << 3;
         }
-        if (objValue != null) {
-            if (objValue instanceof Data) {
-                setValue((Data) objValue);
-            } else {
-                value = new DataHolder(ThreadContext.get().toData(objValue));
-            }
+
+        @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+        private static int headerDecode(int flags) {
+            return (flags & FLAG_TYPE0)
+                    | (flags & FLAG_TYPE1) >> 1
+                    | (flags & FLAG_TYPE2) >> 3;
         }
-    }
-
-    public void setFromConnection(Connection conn) {
-        this.conn = conn;
-        if (lockAddress == null) {
-            lockAddress = conn.getEndPoint();
-        }
-    }
-
-    public DataHolder getKey() {
-        return key;
-    }
-
-    public DataHolder getValue() {
-        return value;
-    }
-
-    public Data getKeyData() {
-        return (key == null) ? null : key.toData();
-    }
-
-    public Data getValueData() {
-        return (value == null) ? null : value.toData();
-    }
-
-    public void setKey(Data key) {
-        this.key = (key == null || key.size() == 0) ? null : new DataHolder(key);
-    }
-
-    public void setValue(Data value) {
-        this.value = (value == null || value.size() == 0) ? null : new DataHolder(value);
     }
 }

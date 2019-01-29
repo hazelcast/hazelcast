@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,89 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-/**
- *
- */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class QueueConfigTest {
+
+    private QueueConfig queueConfig = new QueueConfig();
 
     /**
      * Test method for {@link com.hazelcast.config.QueueConfig#getName()}.
      */
     @Test
     public void testGetName() {
-        QueueConfig queueConfig = new QueueConfig();
         assertNull(null, queueConfig.getName());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.QueueConfig#setName(java.lang.String)}.
-     */
     @Test
     public void testSetName() {
         String name = "a test name";
-        QueueConfig queueConfig = new QueueConfig().setName(name);
+        queueConfig.setName(name);
         assertEquals(name, queueConfig.getName());
-        assertEquals("q:" + name, queueConfig.getBackingMapRef());
-        queueConfig.setBackingMapRef("backingMap");
-        assertEquals("backingMap", queueConfig.getBackingMapRef());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenItsNegative() {
+        queueConfig.setAsyncBackupCount(-1);
+    }
+
+    @Test
+    public void setAsyncBackupCount_whenItsZero() {
+        queueConfig.setAsyncBackupCount(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenTooLarge() {
+        // max allowed is 6
+        queueConfig.setAsyncBackupCount(200);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_whenItsNegative() {
+        queueConfig.setBackupCount(-1);
+    }
+
+    @Test
+    public void setBackupCount_whenItsZero() {
+        queueConfig.setBackupCount(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_tooLarge() {
+        // max allowed is 6
+        queueConfig.setBackupCount(200);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(QueueConfig.class)
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                .withPrefabValues(QueueConfigReadOnly.class,
+                        new QueueConfigReadOnly(new QueueConfig("red")),
+                        new QueueConfigReadOnly(new QueueConfig("black")))
+                .withPrefabValues(QueueStoreConfigReadOnly.class,
+                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
+                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                .verify();
     }
 }

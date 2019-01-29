@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
-/**
- * @mdogan 4/6/12
- */
-
 @Component("someBean")
 @Scope("singleton")
 public class SomeBean {
@@ -35,5 +31,4 @@ public class SomeBean {
     void init() {
         value = System.currentTimeMillis();
     }
-
 }

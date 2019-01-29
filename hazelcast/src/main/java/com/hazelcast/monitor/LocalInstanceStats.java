@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalInstanceStats<T extends LocalInstanceOperationStats> {
+import com.hazelcast.internal.management.JsonSerializable;
+
+public interface LocalInstanceStats extends JsonSerializable {
 
     /**
-     * Returns the operation stats for this member.
-     *
-     * @return operation stats
+     * Fill a stat value with this if it is not available
      */
-    T getOperationStats();
+    long STAT_NOT_AVAILABLE = -99L;
+
+    /** Returns the creation time of this distributed object instance on this member. */
+    long getCreationTime();
 }

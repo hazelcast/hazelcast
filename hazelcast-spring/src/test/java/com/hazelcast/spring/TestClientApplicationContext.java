@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,102 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientAwsConfig;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
+import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
+import com.hazelcast.client.config.ClientIcmpPingConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
+import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.nio.ByteOrder;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static org.junit.Assert.*;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
+@Category(QuickTest.class)
 public class TestClientApplicationContext {
 
-    @Resource (name = "client")
-    private HazelcastClient client;
+    @Resource(name = "client")
+    private HazelcastClientProxy client;
 
-    @Resource (name = "client2")
-    private HazelcastClient client2;
+    @Resource(name = "client2")
+    private HazelcastClientProxy client2;
+
+    @Resource(name = "client3")
+    private HazelcastClientProxy client3;
+
+    @Resource(name = "client4")
+    private HazelcastClientProxy client4;
+
+    @Resource(name = "client5")
+    private HazelcastClientProxy client5;
+
+    @Resource(name = "client6")
+    private HazelcastClientProxy client6;
+
+    @Resource(name = "client7-empty-serialization-config")
+    private HazelcastClientProxy client7;
+
+    @Resource(name = "client8")
+    private HazelcastClientProxy client8;
+
+    @Resource(name = "client9-user-code-deployment-test")
+    private HazelcastClientProxy userCodeDeploymentTestClient;
+
+    @Resource(name = "client10-flakeIdGenerator")
+    private HazelcastClientProxy client10;
+
+    @Resource(name = "client11-icmp-ping")
+    private HazelcastClientProxy icmpPingTestClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -72,8 +143,11 @@ public class TestClientApplicationContext {
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
 
-    @Resource(name = "atomicNumber")
-    private AtomicNumber atomicLong;
+    @Resource(name = "atomicLong")
+    private IAtomicLong atomicLong;
+
+    @Resource(name = "atomicReference")
+    private IAtomicReference atomicReference;
 
     @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
@@ -95,24 +169,99 @@ public class TestClientApplicationContext {
     public void testClient() {
         assertNotNull(client);
         assertNotNull(client2);
+        assertNotNull(client3);
 
         ClientConfig config = client.getClientConfig();
-        assertEquals(3, config.getInitialConnectionAttemptLimit());
-        assertEquals(2, config.getReconnectionAttemptLimit());
-        assertEquals(1000, config.getConnectionTimeout());
-        assertEquals(3000, config.getReConnectionTimeOut());
-        assertFalse(config.isUpdateAutomatic());
-        assertTrue(config.isShuffle());
+        assertEquals("13", config.getProperty("hazelcast.client.retry.count"));
+        assertEquals(3, config.getNetworkConfig().getConnectionAttemptLimit());
+        assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
+        assertEquals(3000, config.getNetworkConfig().getConnectionAttemptPeriod());
 
         ClientConfig config2 = client2.getClientConfig();
-        assertEquals(credentials, config2.getCredentials());
+        assertEquals(credentials, config2.getSecurityConfig().getCredentials());
 
         client.getMap("default").put("Q", "q");
         client2.getMap("default").put("X", "x");
 
-        final IMap<Object, Object> map = instance.getMap("default");
+        IMap<Object, Object> map = instance.getMap("default");
         assertEquals("q", map.get("Q"));
         assertEquals("x", map.get("X"));
+
+        ClientConfig config3 = client3.getClientConfig();
+        SerializationConfig serConf = config3.getSerializationConfig();
+
+        assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
+        assertFalse(serConf.isAllowUnsafe());
+        assertFalse(serConf.isCheckClassDefErrors());
+        assertFalse(serConf.isEnableCompression());
+        assertFalse(serConf.isEnableSharedObject());
+        assertFalse(serConf.isUseNativeByteOrder());
+        assertEquals(10, serConf.getPortableVersion());
+
+        Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
+        assertNotNull(map1);
+        assertTrue(map1.containsKey(1));
+        assertEquals("com.hazelcast.spring.serialization.DummyDataSerializableFactory", map1.get(1));
+
+        Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
+        assertNotNull(portableFactoryClasses);
+        assertTrue(portableFactoryClasses.containsKey(2));
+        assertEquals("com.hazelcast.spring.serialization.DummyPortableFactory", portableFactoryClasses.get(2));
+
+        Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
+        assertNotNull(serializerConfigs);
+
+        SerializerConfig serializerConfig = serializerConfigs.iterator().next();
+        assertNotNull(serializerConfig);
+        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
+        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName());
+
+        List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
+        assertNotNull(proxyFactoryConfigs);
+        ProxyFactoryConfig proxyFactoryConfig = proxyFactoryConfigs.get(0);
+        assertNotNull(proxyFactoryConfig);
+        assertEquals("com.hazelcast.spring.DummyProxyFactory", proxyFactoryConfig.getClassName());
+        assertEquals("MyService", proxyFactoryConfig.getService());
+
+        LoadBalancer loadBalancer = config3.getLoadBalancer();
+        assertNotNull(loadBalancer);
+        assertTrue(loadBalancer instanceof RoundRobinLB);
+
+        NearCacheConfig nearCacheConfig = config3.getNearCacheConfig("default");
+        assertNotNull(nearCacheConfig);
+
+        assertEquals(1, nearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(70, nearCacheConfig.getMaxIdleSeconds());
+        assertEquals(EvictionPolicy.LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(4000, nearCacheConfig.getEvictionConfig().getSize());
+        assertTrue(nearCacheConfig.isInvalidateOnChange());
+        assertFalse(nearCacheConfig.isSerializeKeys());
+        assertEquals(CACHE_ON_UPDATE, nearCacheConfig.getLocalUpdatePolicy());
+    }
+
+    @Test
+    public void testAwsClientConfig() {
+        assertNotNull(client4);
+        ClientConfig config = client4.getClientConfig();
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+
+        ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+        assertFalse(awsConfig.isEnabled());
+        assertTrue(awsConfig.isInsideAws());
+        assertEquals("sample-access-key", awsConfig.getAccessKey());
+        assertEquals("sample-secret-key", awsConfig.getSecretKey());
+        assertEquals("sample-region", awsConfig.getRegion());
+        assertEquals("sample-group", awsConfig.getSecurityGroupName());
+        assertEquals("sample-tag-key", awsConfig.getTagKey());
+        assertEquals("sample-tag-value", awsConfig.getTagValue());
+    }
+
+    @Test
+    public void testUnlimitedConnectionAttempt() {
+        assertNotNull(client5);
+
+        ClientConfig config = client5.getClientConfig();
+        assertEquals(0, config.getNetworkConfig().getConnectionAttemptLimit());
     }
 
     @Test
@@ -127,6 +276,7 @@ public class TestClientApplicationContext {
         assertNotNull(executorService);
         assertNotNull(idGenerator);
         assertNotNull(atomicLong);
+        assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
         assertEquals("map1", map1.getName());
@@ -137,8 +287,129 @@ public class TestClientApplicationContext {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("atomicNumber", atomicLong.getName());
+        assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
+    }
+
+    @Test
+    public void testDefaultSerializationConfig() {
+        ClientConfig config7 = client7.getClientConfig();
+        SerializationConfig serConf = config7.getSerializationConfig();
+
+        assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
+        assertFalse(serConf.isAllowUnsafe());
+        assertTrue(serConf.isCheckClassDefErrors());
+        assertFalse(serConf.isEnableCompression());
+        assertTrue(serConf.isEnableSharedObject());
+        assertFalse(serConf.isUseNativeByteOrder());
+        assertEquals(0, serConf.getPortableVersion());
+    }
+
+    @Test
+    public void testClientNearCacheEvictionPolicies() {
+        ClientConfig config = client3.getClientConfig();
+        assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCacheEviction", config));
+        assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEviction", config));
+        assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEviction", config));
+        assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEviction", config));
+    }
+
+    @Test
+    public void testNearCachePreloader() {
+        NearCachePreloaderConfig preloaderConfig = client3.getClientConfig()
+                .getNearCacheConfig("preloader")
+                .getPreloaderConfig();
+
+        assertTrue(preloaderConfig.isEnabled());
+        assertEquals("/tmp/preloader", preloaderConfig.getDirectory());
+        assertEquals(23, preloaderConfig.getStoreInitialDelaySeconds());
+        assertEquals(42, preloaderConfig.getStoreIntervalSeconds());
+    }
+
+    @Test
+    public void testUserCodeDeploymentConfig() {
+        ClientConfig config = userCodeDeploymentTestClient.getClientConfig();
+        ClientUserCodeDeploymentConfig userCodeDeploymentConfig = config.getUserCodeDeploymentConfig();
+        List<String> classNames = userCodeDeploymentConfig.getClassNames();
+        assertFalse(userCodeDeploymentConfig.isEnabled());
+        assertEquals(2, classNames.size());
+        assertTrue(classNames.contains("SampleClassName1"));
+        assertTrue(classNames.contains("SampleClassName2"));
+        List<String> jarPaths = userCodeDeploymentConfig.getJarPaths();
+        assertEquals(1, jarPaths.size());
+        assertTrue(jarPaths.contains("/User/jar/path/test.jar"));
+    }
+
+    private EvictionPolicy getNearCacheEvictionPolicy(String mapName, ClientConfig clientConfig) {
+        return clientConfig.getNearCacheConfig(mapName).getEvictionConfig().getEvictionPolicy();
+    }
+
+    @Test
+    public void testFullQueryCacheConfig() throws Exception {
+        ClientConfig config = client6.getClientConfig();
+
+        QueryCacheConfig queryCacheConfig = getQueryCacheConfig(config);
+        EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
+
+        assertTrue(entryListenerConfig.isIncludeValue());
+        assertFalse(entryListenerConfig.isLocal());
+
+        assertEquals("com.hazelcast.spring.DummyEntryListener", entryListenerConfig.getClassName());
+        assertFalse(queryCacheConfig.isIncludeValue());
+
+        assertEquals("my-query-cache-1", queryCacheConfig.getName());
+        assertEquals(12, queryCacheConfig.getBatchSize());
+        assertEquals(33, queryCacheConfig.getBufferSize());
+        assertEquals(12, queryCacheConfig.getDelaySeconds());
+        assertEquals(InMemoryFormat.OBJECT, queryCacheConfig.getInMemoryFormat());
+        assertTrue(queryCacheConfig.isCoalesce());
+        assertFalse(queryCacheConfig.isPopulate());
+        assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());
+        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    @Test
+    public void testClientConnectionStrategyConfig() {
+        ClientConnectionStrategyConfig connectionStrategyConfig = client8.getClientConfig().getConnectionStrategyConfig();
+        assertTrue(connectionStrategyConfig.isAsyncStart());
+        assertEquals(ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
+    }
+
+    @Test
+    public void testFlakeIdGeneratorConfig() {
+        Map<String, ClientFlakeIdGeneratorConfig> configMap = client10.getClientConfig().getFlakeIdGeneratorConfigMap();
+        assertEquals(1, configMap.size());
+        ClientFlakeIdGeneratorConfig config = configMap.values().iterator().next();
+        assertEquals("gen1", config.getName());
+        assertEquals(3, config.getPrefetchCount());
+        assertEquals(3000L, config.getPrefetchValidityMillis());
+    }
+
+    @Test
+    public void testClientIcmpConfig() {
+        ClientIcmpPingConfig icmpPingConfig = icmpPingTestClient.getClientConfig()
+                .getNetworkConfig().getClientIcmpPingConfig();
+        assertEquals(false, icmpPingConfig.isEnabled());
+        assertEquals(2000, icmpPingConfig.getTimeoutMilliseconds());
+        assertEquals(3000, icmpPingConfig.getIntervalMilliseconds());
+        assertEquals(50, icmpPingConfig.getTtl());
+        assertEquals(5, icmpPingConfig.getMaxAttempts());
+        assertEquals(false, icmpPingConfig.isEchoFailFastOnStartup());
+    }
+
+    private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {
+        Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs = config.getQueryCacheConfigs();
+        Collection<Map<String, QueryCacheConfig>> values = queryCacheConfigs.values();
+        for (Map<String, QueryCacheConfig> value : values) {
+            Set<Map.Entry<String, QueryCacheConfig>> entries = value.entrySet();
+            for (Map.Entry<String, QueryCacheConfig> entry : entries) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 }

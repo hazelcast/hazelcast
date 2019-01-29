@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,57 +16,194 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
-public class MaxSizeConfig implements DataSerializable {
-    public static final String POLICY_MAP_SIZE_PER_JVM = "map_size_per_jvm";
-    public static final String POLICY_CLUSTER_WIDE_MAP_SIZE = "cluster_wide_map_size";
-    public static final String POLICY_PARTITIONS_WIDE_MAP_SIZE = "partitions_wide_map_size";
-    public static final String POLICY_USED_HEAP_SIZE = "used_heap_size";
-    public static final String POLICY_USED_HEAP_PERCENTAGE = "used_heap_percentage";
-    int size = MapConfig.DEFAULT_MAX_SIZE;
-    String maxSizePolicy = POLICY_CLUSTER_WIDE_MAP_SIZE;
+/**
+ * Configuration for map's capacity.
+ * You can set a limit for number of entries or total memory cost of entries.
+ */
+@BinaryInterface
+public class MaxSizeConfig implements DataSerializable, Serializable {
 
-    public void readData(DataInput in) throws IOException {
-        size = in.readInt();
-        maxSizePolicy = in.readUTF();
+    /**
+     * Default maximum size of map.
+     */
+    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+
+    private MaxSizeConfigReadOnly readOnly;
+
+    private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
+
+    private int size = DEFAULT_MAX_SIZE;
+
+    public MaxSizeConfig() {
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeInt(size);
-        out.writeUTF(maxSizePolicy);
+    public MaxSizeConfig(int size, MaxSizePolicy maxSizePolicy) {
+        setSize(size);
+        this.maxSizePolicy = maxSizePolicy;
     }
 
+    public MaxSizeConfig(MaxSizeConfig config) {
+        this.size = config.size;
+        this.maxSizePolicy = config.maxSizePolicy;
+    }
+
+    /**
+     * Maximum Size Policy
+     */
+    public enum MaxSizePolicy {
+
+        /**
+         * Policy based on maximum number of entries stored per data structure (map, cache etc)
+         * on each Hazelcast instance
+         */
+        PER_NODE,
+        /**
+         * Policy based on maximum number of entries stored per data structure (map, cache etc)
+         * on each partition
+         */
+        PER_PARTITION,
+        /**
+         * Policy based on maximum used JVM heap memory percentage per data structure (map, cache etc)
+         * on each Hazelcast instance
+         */
+        USED_HEAP_PERCENTAGE,
+        /**
+         * Policy based on maximum used JVM heap memory in megabytes per data structure (map, cache etc)
+         * on each Hazelcast instance
+         */
+        USED_HEAP_SIZE,
+        /**
+         * Policy based on minimum free JVM heap memory percentage per JVM
+         */
+        FREE_HEAP_PERCENTAGE,
+        /**
+         * Policy based on minimum free JVM heap memory in megabytes per JVM
+         */
+        FREE_HEAP_SIZE,
+        /**
+         * Policy based on maximum used native memory in megabytes per data structure (map, cache etc)
+         * on each Hazelcast instance
+         */
+        USED_NATIVE_MEMORY_SIZE,
+        /**
+         * Policy based on maximum used native memory percentage per data structure (map, cache etc)
+         * on each Hazelcast instance
+         */
+        USED_NATIVE_MEMORY_PERCENTAGE,
+        /**
+         * Policy based on minimum free native memory in megabytes per Hazelcast instance
+         */
+        FREE_NATIVE_MEMORY_SIZE,
+        /**
+         * Policy based on minimum free native memory percentage per Hazelcast instance
+         */
+        FREE_NATIVE_MEMORY_PERCENTAGE
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
+     */
+    public MaxSizeConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MaxSizeConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    /**
+     * Returns the size of the map.
+     *
+     * @return the size of the map
+     */
     public int getSize() {
         return size;
     }
 
+    /**
+     * Sets the maximum size of the map.
+     *
+     * @param size the maximum size of the map
+     * @return the map MaxSizeConfig
+     */
     public MaxSizeConfig setSize(int size) {
-        if (size == 0) {
-            size = Integer.MAX_VALUE;
+        if (size > 0) {
+            this.size = size;
         }
-        this.size = size;
         return this;
     }
 
-    public String getMaxSizePolicy() {
+    /**
+     * Returns the maximum size policy of the map.
+     *
+     * @return the MaxSizePolicy of the map
+     */
+    public MaxSizePolicy getMaxSizePolicy() {
         return maxSizePolicy;
     }
 
-    public MaxSizeConfig setMaxSizePolicy(String maxSizePolicy) {
+    /**
+     * Ses the maximum size policy of the map.
+     *
+     * @param maxSizePolicy the maximum size policy to set for the map
+     * @return this MaxSizeConfig
+     */
+    public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = maxSizePolicy;
         return this;
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(maxSizePolicy.toString());
+        out.writeInt(size);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
+        size = in.readInt();
+    }
+
+    @Override
     public String toString() {
-        return "MaxSizeConfig{" +
-                "maxSizePolicy='" + maxSizePolicy + '\'' +
-                ", size=" + size +
-                '}';
+        return "MaxSizeConfig{"
+                + "maxSizePolicy='" + maxSizePolicy
+                + '\''
+                + ", size=" + size
+                + '}';
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof MaxSizeConfig)) {
+            return false;
+        }
+
+        MaxSizeConfig that = (MaxSizeConfig) o;
+        if (size != that.size) {
+            return false;
+        }
+        return maxSizePolicy == that.maxSizePolicy;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = maxSizePolicy != null ? maxSizePolicy.hashCode() : 0;
+        result = 31 * result + size;
+        return result;
     }
 }

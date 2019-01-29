@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,45 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.spring.hibernate.CacheProviderBeanDefinitionParser;
 import com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser;
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
+/**
+ * Hazelcast Custom Namespace Definitions.
+ */
 public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
 
+    @Override
     public void init() {
         registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
         registerBeanDefinitionParser("hazelcast", new HazelcastInstanceDefinitionParser());
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
-        registerBeanDefinitionParser("hibernate-cache-provider", new CacheProviderBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
-        final String[] types = {"map", "multiMap",
-                                "queue", "topic", "set", "list",
-                                "executorService", "idGenerator", "atomicNumber",
-                                "countDownLatch", "semaphore", "lock"};
-        for (final String type : types) {
+        registerBeanDefinitionParser("cache-manager", new CacheManagerBeanDefinitionParser());
+        String[] types = {
+                "map",
+                "multiMap",
+                "replicatedMap",
+                "queue",
+                "topic",
+                "set",
+                "list",
+                "executorService",
+                "durableExecutorService",
+                "scheduledExecutorService",
+                "ringbuffer",
+                "cardinalityEstimator",
+                "idGenerator",
+                "flakeIdGenerator",
+                "atomicLong",
+                "atomicReference",
+                "countDownLatch",
+                "semaphore",
+                "lock",
+                "reliableTopic",
+                "PNCounter",
+                };
+        for (String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }
     }

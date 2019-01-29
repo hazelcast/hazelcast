@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,38 +17,55 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
+import com.hazelcast.core.MapStore;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-/**
- * @mdogan 4/3/12
- */
-public class CacheMapLoader implements MapLoader, MapLoaderLifecycleSupport {
+public class CacheMapLoader implements MapStore, MapLoaderLifecycleSupport {
 
     private String type;
 
-    public void init(final HazelcastInstance hazelcastInstance,
-                     final Properties properties, final String mapName) {
+    @Override
+    public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
         type = mapName;
     }
 
+    @Override
     public void destroy() {
     }
 
-    public Object load(final Object key) {
+    @Override
+    public Object load(Object key) {
         return type + ":" + key;
     }
 
-    public Map loadAll(final Collection keys) {
+    @Override
+    public Map loadAll(Collection keys) {
         return null;
     }
 
+    @Override
     public Set loadAllKeys() {
         return null;
+    }
+
+    @Override
+    public void store(Object key, Object value) {
+    }
+
+    @Override
+    public void storeAll(Map map) {
+    }
+
+    @Override
+    public void delete(Object key) {
+    }
+
+    @Override
+    public void deleteAll(Collection keys) {
     }
 }

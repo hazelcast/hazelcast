@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,28 @@
 
 package com.hazelcast.core;
 
-import java.util.concurrent.Future;
-
+/**
+ * ExecutionCallback allows to asynchronously get notified when the execution is completed,
+ * either successfully or with error.
+ *
+ * @see IExecutorService#submit(java.util.concurrent.Callable, ExecutionCallback)
+ * @see IExecutorService#submitToMember(java.util.concurrent.Callable, Member, ExecutionCallback)
+ * @see IExecutorService#submitToKeyOwner(java.util.concurrent.Callable, Object, ExecutionCallback)
+ *
+ * @param <V> value
+ */
 public interface ExecutionCallback<V> {
-    void done(Future<V> future);
+
+    /**
+     * Called when an execution is completed successfully.
+     *
+     * @param response the result of the successful execution
+     */
+    void onResponse(V response);
+
+    /**
+     * Called when an execution is completed with an error.
+     * @param t the exception that is thrown
+     */
+    void onFailure(Throwable t);
 }

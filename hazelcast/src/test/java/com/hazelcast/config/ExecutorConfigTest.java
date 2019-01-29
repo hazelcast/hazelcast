@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,85 +16,53 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ExecutorConfigTest {
 
     @Test
     public void testGetCorePoolSize() {
         ExecutorConfig executorConfig = new ExecutorConfig();
-        assertTrue(executorConfig.getCorePoolSize() == ExecutorConfig.DEFAULT_CORE_POOL_SIZE);
+        assertTrue(executorConfig.getPoolSize() == ExecutorConfig.DEFAULT_POOL_SIZE);
     }
 
     @Test
     public void testSetCorePoolSize() {
-        ExecutorConfig executorConfig = new ExecutorConfig().setCorePoolSize(1234);
-        assertTrue(executorConfig.getCorePoolSize() == 1234);
-    }
-
-    @Test
-    public void testGetMaxPoolsize() {
-        ExecutorConfig executorConfig = new ExecutorConfig();
-        assertTrue(executorConfig.getMaxPoolSize() == ExecutorConfig.DEFAULT_MAX_POOL_SIZE);
-    }
-
-    @Test
-    public void testSetMaxPoolsize() {
-        ExecutorConfig executorConfig = new ExecutorConfig().setMaxPoolSize(1234);
-        assertTrue(executorConfig.getMaxPoolSize() == 1234);
-    }
-
-    @Test
-    public void testGetKeepAliveSeconds() {
-        ExecutorConfig executorConfig = new ExecutorConfig();
-        assertTrue(executorConfig.getKeepAliveSeconds() == ExecutorConfig.DEFAULT_KEEP_ALIVE_SECONDS);
-    }
-
-    @Test
-    public void testSetKeepAliveSeconds() {
-        ExecutorConfig executorConfig = new ExecutorConfig().setKeepAliveSeconds(1234);
-        assertTrue(executorConfig.getKeepAliveSeconds() == 1234);
+        ExecutorConfig executorConfig = new ExecutorConfig().setPoolSize(1234);
+        assertTrue(executorConfig.getPoolSize() == 1234);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldNotAcceptNegativeCorePoolSize() {
-        new ExecutorConfig().setCorePoolSize(-1);
+        new ExecutorConfig().setPoolSize(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldNotAcceptZeroCorePoolSize() {
-        new ExecutorConfig().setCorePoolSize(0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldNotAcceptNegativeMaxPoolSize() {
-        new ExecutorConfig().setMaxPoolSize(-1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldNotAcceptZeroMaxPoolSize() {
-        new ExecutorConfig().setMaxPoolSize(0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldNotAcceptNegativeKeepAliveSeconds() {
-        new ExecutorConfig().setKeepAliveSeconds(-1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldNotAcceptZeroKeepAliveSeconds() {
-        new ExecutorConfig().setKeepAliveSeconds(0);
+        new ExecutorConfig().setPoolSize(0);
     }
 
     @Test
-    public void testSettingCoreAndMaxPoolSize() {
-        ExecutorConfig executorConfig = new ExecutorConfig().setCorePoolSize(1234).setMaxPoolSize(5678);
-        assertEquals(1234, executorConfig.getCorePoolSize());
-        assertEquals(5678, executorConfig.getMaxPoolSize());
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(ExecutorConfig.class)
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .withPrefabValues(ExecutorConfigReadOnly.class,
+                        new ExecutorConfigReadOnly(new ExecutorConfig("red")),
+                        new ExecutorConfigReadOnly(new ExecutorConfig("black")))
+                .verify();
     }
 }

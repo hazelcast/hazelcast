@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,17 @@ package com.hazelcast.core;
 import java.util.Set;
 
 /**
- * Concurrent, Distributed Set
+ * Concurrent, distributed implementation of {@link Set}
  * <p/>
  * <b>This class is <i>not</i> a general-purpose <tt>Set</tt> implementation! While this class implements
  * the <tt>Set</tt> interface, it intentionally violates <tt>Set's</tt> general contract, which mandates the
  * use of the <tt>equals</tt> method when comparing objects. Instead of the equals method this implementation
  * compares the serialized byte version of the objects.</b>
+ *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ *
+ * @param <E>
+ * @see Set
  */
-public interface ISet<E> extends ICollection<E>, Set<E>, Instance {
-
+public interface ISet<E> extends Set<E>, ICollection<E> {
 }

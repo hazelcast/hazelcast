@@ -1,0 +1,264 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.spi.impl.operationservice.impl;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
+
+    //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
+    @Test
+    public void testTimeoutSingleMember() throws InterruptedException {
+        HazelcastInstance hz = createHazelcastInstance();
+        final IQueue<Object> q = hz.getQueue("queue");
+
+        for (int k = 0; k < 1000; k++) {
+            Object response = q.poll(1, TimeUnit.MILLISECONDS);
+            assertNull(response);
+        }
+
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz);
+    }
+
+    //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
+    @Test
+    public void testTimeoutWithMultiMemberCluster() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        final IQueue<Object> q = hz1.getQueue("queue");
+
+        for (int k = 0; k < 1000; k++) {
+            Object response = q.poll(1, TimeUnit.MILLISECONDS);
+            assertNull(response);
+        }
+
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz1);
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz2);
+    }
+
+    @Test
+    public void testSyncOperationTimeoutSingleMember() {
+        testOperationTimeout(1, false);
+    }
+
+    @Test
+    public void testSyncOperationTimeoutMultiMember() {
+        testOperationTimeout(3, false);
+    }
+
+    @Test
+    public void testAsyncOperationTimeoutSingleMember() {
+        testOperationTimeout(1, true);
+    }
+
+    @Test
+    public void testAsyncOperationTimeoutMultiMember() {
+        testOperationTimeout(3, true);
+    }
+
+    private void testOperationTimeout(int memberCount, boolean async) {
+        assertTrue(memberCount > 0);
+        Config config = new Config();
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(memberCount);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        warmUpPartitions(instances);
+
+        final HazelcastInstance hz = instances[memberCount - 1];
+        Node node = TestUtil.getNode(hz);
+        NodeEngine nodeEngine = node.nodeEngine;
+        OperationService operationService = nodeEngine.getOperationService();
+        int partitionId = (int) (Math.random() * node.getPartitionService().getPartitionCount());
+
+        InternalCompletableFuture<Object> future = operationService
+                .invokeOnPartition(null, new TimedOutBackupAwareOperation(), partitionId);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        if (async) {
+            future.andThen(new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object response) {
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    if (t instanceof OperationTimeoutException) {
+                        latch.countDown();
+                    }
+                }
+            });
+        } else {
+            try {
+                future.join();
+                fail("Should throw OperationTimeoutException!");
+            } catch (OperationTimeoutException ignored) {
+                latch.countDown();
+            }
+        }
+
+        assertOpenEventually("Should throw OperationTimeoutException", latch);
+
+        for (HazelcastInstance instance : instances) {
+            OperationServiceImpl_BasicTest.assertNoLitterInOpService(instance);
+        }
+    }
+
+    static class TimedOutBackupAwareOperation extends Operation
+            implements BackupAwareOperation {
+        @Override
+        public void run() throws Exception {
+            LockSupport.parkNanos((long) (Math.random() * 1000 + 10));
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            // required for operation timeout
+            return false;
+        }
+
+        @Override
+        public boolean shouldBackup() {
+            return true;
+        }
+
+        @Override
+        public int getSyncBackupCount() {
+            return 0;
+        }
+
+        @Override
+        public int getAsyncBackupCount() {
+            return 0;
+        }
+
+        @Override
+        public Operation getBackupOperation() {
+            return null;
+        }
+    }
+
+    @Test
+    public void testOperationTimeoutForLongRunningRemoteOperation() throws Exception {
+        int callTimeoutMillis = 6000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMillis);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        // invoke on the "remote" member
+        Address remoteAddress = getNode(hz2).getThisAddress();
+        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
+        ICompletableFuture<Boolean> future = operationService
+                .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), remoteAddress);
+
+        // wait more than operation timeout
+        sleepAtLeastMillis(callTimeoutMillis * 3);
+        assertTrue(future.get());
+    }
+
+    @Test
+    public void testOperationTimeoutForLongRunningLocalOperation() throws Exception {
+        int callTimeoutMillis = 500;
+        Config config = new Config();
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+
+        // invoke on the "local" member
+        Address localAddress = getNode(hz1).getThisAddress();
+        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
+        ICompletableFuture<Boolean> future = operationService
+                .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), localAddress);
+
+        // wait more than operation timeout
+        sleepAtLeastMillis(callTimeoutMillis * 3);
+        assertTrue(future.get());
+    }
+
+    private static class SleepingOperation extends Operation {
+        private long sleepTime;
+
+        public SleepingOperation() {
+        }
+
+        public SleepingOperation(long sleepTime) {
+            this.sleepTime = sleepTime;
+        }
+
+        @Override
+        public void run() throws Exception {
+            sleepAtLeastMillis(sleepTime);
+        }
+
+        @Override
+        public Object getResponse() {
+            return Boolean.TRUE;
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            out.writeLong(sleepTime);
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            sleepTime = in.readLong();
+        }
+    }
+
+}

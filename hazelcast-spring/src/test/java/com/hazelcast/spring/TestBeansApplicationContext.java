@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,34 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"beans-applicationContext-hazelcast.xml"})
-public class TestBeansApplicationContext {
+@Category(QuickTest.class)
+public class TestBeansApplicationContext extends HazelcastTestSupport {
 
     @BeforeClass
     @AfterClass
-    public static void start() {
+    public static void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -43,28 +53,38 @@ public class TestBeansApplicationContext {
     private ApplicationContext context;
 
     @Test
-    public void testLazy() {
-        Assert.assertTrue(Hazelcast.getAllHazelcastInstances().isEmpty());
-        Assert.assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
+    public void testApplicationContext() {
+        assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
 
         context.getBean("map2");
 
-        Assert.assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
-        Assert.assertEquals(1, HazelcastClient.getAllHazelcastClients().size());
+        assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
+        assertEquals(1, HazelcastClient.getAllHazelcastClients().size());
 
         HazelcastInstance hazelcast = Hazelcast.getAllHazelcastInstances().iterator().next();
-        Assert.assertEquals(2, hazelcast.getInstances().size());
+        assertEquals(2, hazelcast.getDistributedObjects().size());
+
+        context.getBean("client");
+        context.getBean("client");
+        assertEquals(3, HazelcastClient.getAllHazelcastClients().size());
+        HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.getAllHazelcastClients().iterator().next();
+        assertNull(client.getClientConfig().getManagedContext());
+
+        HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
+        assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
+        assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());
+        assertNull(instance.getConfig().getManagedContext());
     }
 
     @Test
-    public void testScope() {
-        context.getBean("client");
-        context.getBean("client");
-        Assert.assertEquals(3, HazelcastClient.getAllHazelcastClients().size());
-
+    public void testPlaceHolder() {
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
-        Assert.assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
-        Assert.assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());
+        waitInstanceForSafeState(instance);
+        Config config = instance.getConfig();
+        assertEquals("spring-group", config.getGroupConfig().getName());
+        assertTrue(config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled());
+        assertEquals(6, config.getMapConfig("map1").getBackupCount());
+        assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
+        assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());
     }
-
 }

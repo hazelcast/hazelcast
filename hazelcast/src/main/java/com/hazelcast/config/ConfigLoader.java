@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,17 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class ConfigLoader {
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Provides loading service for a configuration.
+ */
+public final class ConfigLoader {
+
+    private static final String CLASSPATH_PREFIX = "classpath:";
+
+    private ConfigLoader() {
+    }
 
     public static Config load(final String path) throws IOException {
         final URL url = locateConfig(path);
@@ -32,6 +42,9 @@ public class ConfigLoader {
     }
 
     public static URL locateConfig(final String path) {
+        if (path.isEmpty()) {
+            return null;
+        }
         URL url = asFile(path);
         if (url == null) {
             url = asURL(path);
@@ -39,7 +52,21 @@ public class ConfigLoader {
         if (url == null) {
             url = asResource(path);
         }
+        if (url == null) {
+            String extractedPath = extractPathOrNull(path);
+            if (extractedPath == null) {
+                return null;
+            }
+            url = asResource(extractedPath);
+        }
         return url;
+    }
+
+    private static String extractPathOrNull(String path) {
+        if (path.startsWith(CLASSPATH_PREFIX)) {
+            return path.substring(CLASSPATH_PREFIX.length());
+        }
+        return null;
     }
 
     private static URL asFile(final String path) {
@@ -47,7 +74,8 @@ public class ConfigLoader {
         if (file.exists()) {
             try {
                 return file.toURI().toURL();
-            } catch (MalformedURLException e) {
+            } catch (MalformedURLException ignored) {
+                ignore(ignored);
             }
         }
         return null;
@@ -56,12 +84,13 @@ public class ConfigLoader {
     private static URL asURL(final String path) {
         try {
             return new URL(path);
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException ignored) {
+            ignore(ignored);
         }
         return null;
     }
 
-    private static final URL asResource(final String path) {
+    private static URL asResource(final String path) {
         URL url = null;
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if (contextClassLoader != null) {

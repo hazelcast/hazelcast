@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.PermissionConfig;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * IPermissionPolicy is used to determine any {@link Subject}'s
@@ -32,19 +34,27 @@ public interface IPermissionPolicy {
     /**
      * Configures {@link IPermissionPolicy}.
      *
-     * @param securityConfig Hazelcast {@link SecurityConfig}
+     * @param config Hazelcast {@link Config}
      * @param properties
      */
-    void configure(SecurityConfig securityConfig, Properties properties);
+    void configure(Config config, Properties properties);
 
     /**
      * Determines permissions of subject.
      *
-     * @param subject
+     * @param subject the {@link Subject}
      * @param type    of permissions in PermissionCollection
      * @return PermissionCollection containing subject's permissions
      */
     PermissionCollection getPermissions(Subject subject, Class<? extends Permission> type);
+
+    /**
+     * Replaces existing permissions with given set of permissions. Implementation must take into account that
+     * {@code refreshPermissions} may be executed concurrently with {@code getPermissions}.
+     *
+     * @param permissionConfigs the new set of permissions to apply
+     */
+    void refreshPermissions(Set<PermissionConfig> permissionConfigs);
 
     /**
      * Destroys {@link IPermissionPolicy}.

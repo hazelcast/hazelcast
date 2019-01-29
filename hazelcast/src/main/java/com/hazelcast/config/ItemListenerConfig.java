@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,21 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
+import java.io.IOException;
+
+/**
+ * Contains the configuration for an Item Listener.
+ */
 public class ItemListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
 
+    private transient ItemListenerConfigReadOnly readOnly;
+
     public ItemListenerConfig() {
-        super();
     }
 
     public ItemListenerConfig(String className, boolean includeValue) {
@@ -36,6 +44,27 @@ public class ItemListenerConfig extends ListenerConfig {
         this.includeValue = includeValue;
     }
 
+    public ItemListenerConfig(ItemListenerConfig config) {
+        includeValue = config.isIncludeValue();
+        implementation = config.getImplementation();
+        className = config.getClassName();
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
+     */
+    @Override
+    public ItemListenerConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new ItemListenerConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    @Override
     public ItemListener getImplementation() {
         return (ItemListener) implementation;
     }
@@ -45,6 +74,7 @@ public class ItemListenerConfig extends ListenerConfig {
         return this;
     }
 
+    @Override
     public boolean isIncludeValue() {
         return includeValue;
     }
@@ -56,10 +86,51 @@ public class ItemListenerConfig extends ListenerConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ItemListenerConfig");
-        sb.append("{includeValue=").append(includeValue);
-        sb.append('}');
-        return sb.toString();
+        return "ItemListenerConfig{includeValue=" + includeValue + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        ItemListenerConfig that = (ItemListenerConfig) o;
+
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (includeValue ? 1 : 0);
+        return result;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.ITEM_LISTENER_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeBoolean(includeValue);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        includeValue = in.readBoolean();
     }
 }

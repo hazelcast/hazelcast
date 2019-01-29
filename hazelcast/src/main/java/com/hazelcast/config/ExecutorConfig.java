@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,40 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
-public class ExecutorConfig implements DataSerializable {
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
+ */
+public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
 
-    public final static int DEFAULT_CORE_POOL_SIZE = 40;
-    public final static int DEFAULT_MAX_POOL_SIZE = 40;
-    public final static int DEFAULT_KEEP_ALIVE_SECONDS = 300;
+    /**
+     * The number of executor threads per Member for the Executor based on this configuration.
+     */
+    public static final int DEFAULT_POOL_SIZE = 16;
+
+    /**
+     * Capacity of queue.
+     */
+    public static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
     private String name = "default";
 
-    private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
+    private int poolSize = DEFAULT_POOL_SIZE;
 
-    private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
+    private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
 
-    private int keepAliveSeconds = DEFAULT_KEEP_ALIVE_SECONDS;
+    private boolean statisticsEnabled = true;
+
+    private String quorumName;
+
+    private transient ExecutorConfigReadOnly readOnly;
 
     public ExecutorConfig() {
     }
@@ -43,99 +58,213 @@ public class ExecutorConfig implements DataSerializable {
         this.name = name;
     }
 
-    public ExecutorConfig(String name, int corePoolSize, int maxPoolSize, int keepAliveSeconds) {
+    public ExecutorConfig(String name, int poolSize) {
         this.name = name;
-        this.corePoolSize = corePoolSize;
-        this.maxPoolSize = maxPoolSize;
-        this.keepAliveSeconds = keepAliveSeconds;
+        this.poolSize = poolSize;
     }
 
+    public ExecutorConfig(ExecutorConfig config) {
+        this.name = config.name;
+        this.poolSize = config.poolSize;
+        this.queueCapacity = config.queueCapacity;
+        this.statisticsEnabled = config.statisticsEnabled;
+        this.quorumName = config.quorumName;
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
+     */
+    public ExecutorConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new ExecutorConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    /**
+     * Gets the name of the executor task.
+     *
+     * @return the name of the executor task
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the name of the executor task.
+     *
+     * @param name the name of the executor task
+     * @return this executor config instance
+     */
     public ExecutorConfig setName(String name) {
         this.name = name;
         return this;
     }
 
     /**
-     * @return the corePoolSize
+     * Gets the number of executor threads per member for the executor.
+     *
+     * @return the number of executor threads per member for the executor
      */
-    public int getCorePoolSize() {
-        return corePoolSize;
+    public int getPoolSize() {
+        return poolSize;
     }
 
     /**
-     * @param corePoolSize the corePoolSize to set
+     * Sets the number of executor threads per member for the executor.
+     *
+     * @param poolSize the number of executor threads per member for the executor
+     * @return this executor config instance
      */
-    public ExecutorConfig setCorePoolSize(final int corePoolSize) {
-        if (corePoolSize <= 0) {
-            throw new IllegalArgumentException("corePoolSize must be positive");
+    public ExecutorConfig setPoolSize(final int poolSize) {
+        if (poolSize <= 0) {
+            throw new IllegalArgumentException("poolSize must be positive");
         }
-        this.corePoolSize = corePoolSize;
+        this.poolSize = poolSize;
         return this;
     }
 
     /**
-     * @return the maxPoolSize
+     * Gets the queue capacity of the executor task. 0 means {@code Integer.MAX_VALUE}.
+     *
+     * @return Queue capacity of the executor task. 0 means {@code Integer.MAX_VALUE}
      */
-    public int getMaxPoolSize() {
-        return maxPoolSize;
+    public int getQueueCapacity() {
+        return queueCapacity;
     }
 
     /**
-     * @param maxPoolSize the maxPoolSize to set
+     * Sets the queue capacity of the executor task. 0 means {@code Integer.MAX_VALUE}.
+     *
+     * @param queueCapacity Queue capacity of the executor task. 0 means {@code Integer.MAX_VALUE}
+     * @return this executor config instance
      */
-    public ExecutorConfig setMaxPoolSize(final int maxPoolSize) {
-        if (maxPoolSize <= 0) {
-            throw new IllegalArgumentException("maxPoolSize must be positive");
-        }
-        this.maxPoolSize = maxPoolSize;
+    public ExecutorConfig setQueueCapacity(int queueCapacity) {
+        this.queueCapacity = queueCapacity;
         return this;
     }
 
     /**
-     * @return the keepAliveSeconds
+     * Gets if statistics gathering is enabled or disabled on the executor task.
+     *
+     * @return {@code true} if statistics gathering is enabled on the executor task (default), {@code false} otherwise
      */
-    public int getKeepAliveSeconds() {
-        return keepAliveSeconds;
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
     }
 
     /**
-     * @param keepAliveSeconds the keepAliveSeconds to set
+     * Enables or disables statistics gathering on the executor task.
+     *
+     * @param statisticsEnabled {@code true} if statistics gathering is enabled on the executor task, {@code false} otherwise
+     * @return this executor config instance
      */
-    public ExecutorConfig setKeepAliveSeconds(final int keepAliveSeconds) {
-        if (keepAliveSeconds <= 0) {
-            throw new IllegalArgumentException("keepAlice seconds must be positive");
-        }
-        this.keepAliveSeconds = keepAliveSeconds;
+    public ExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
         return this;
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(corePoolSize);
-        out.writeInt(maxPoolSize);
-        out.writeInt(keepAliveSeconds);
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
     }
 
-    public void readData(DataInput in) throws IOException {
-        name = in.readUTF();
-        corePoolSize = in.readInt();
-        maxPoolSize = in.readInt();
-        keepAliveSeconds = in.readInt();
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public ExecutorConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
     }
+
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ExecutorConfig");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", corePoolSize=").append(corePoolSize);
-        sb.append(", maxPoolSize=").append(maxPoolSize);
-        sb.append(", keepAliveSeconds=").append(keepAliveSeconds);
-        sb.append('}');
-        return sb.toString();
+        return "ExecutorConfig{"
+                + "name='" + name + '\''
+                + ", poolSize=" + poolSize
+                + ", queueCapacity=" + queueCapacity
+                + ", quorumName=" + quorumName
+                + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.EXECUTOR_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(poolSize);
+        out.writeInt(queueCapacity);
+        out.writeBoolean(statisticsEnabled);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        poolSize = in.readInt();
+        queueCapacity = in.readInt();
+        statisticsEnabled = in.readBoolean();
+        // RU_COMPAT_3_9
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+        }
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ExecutorConfig)) {
+            return false;
+        }
+
+        ExecutorConfig that = (ExecutorConfig) o;
+
+        if (poolSize != that.poolSize) {
+            return false;
+        }
+        if (queueCapacity != that.queueCapacity) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
+        return name.equals(that.name);
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + poolSize;
+        result = 31 * result + queueCapacity;
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        return result;
     }
 }

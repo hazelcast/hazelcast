@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,35 @@
 
 package com.hazelcast.core;
 
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
-public interface Client {
+/**
+ * The Client interface allows to get information about
+ * a connected client's socket address, type and UUID.
+ *
+ * @see ClientService
+ * @see ClientListener
+ */
+public interface Client extends Endpoint {
 
-    public SocketAddress getSocketAddress();
+    /**
+     * Returns a unique UUID for this client.
+     *
+     * @return a unique UUID for this client
+     */
+    String getUuid();
 
-    public ClientType getClientType();
+    /**
+     * Returns the socket address of this client.
+     *
+     * @return the socket address of this client
+     */
+    InetSocketAddress getSocketAddress();
+
+    /**
+     * Returns the type of this client.
+     *
+     * @return the type of this client
+     */
+    ClientType getClientType();
 }

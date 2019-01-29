@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.config;
+
+import com.hazelcast.config.EventJournalConfig.EventJournalConfigReadOnly;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class EventJournalConfigTest {
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyClass_setCacheName_throwsException() {
+        getReadOnlyConfig().setCacheName("cache-other");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyClass_setCapacity_throwsException() {
+        getReadOnlyConfig().setCapacity(27);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyClass_setEnabled_throwsException() {
+        getReadOnlyConfig().setEnabled(false);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyClass_setMapName_throwsException() {
+        getReadOnlyConfig().setMapName("map-other");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyClass_setTTL_throwsException() {
+        getReadOnlyConfig().setTimeToLiveSeconds(20);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(EventJournalConfig.class)
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
+    }
+
+    private EventJournalConfigReadOnly getReadOnlyConfig() {
+        EventJournalConfig config = new EventJournalConfig();
+        config.setEnabled(true).setCacheName("cache").setMapName("map").setCapacity(33).setTimeToLiveSeconds(15);
+        return new EventJournalConfigReadOnly(config);
+    }
+}

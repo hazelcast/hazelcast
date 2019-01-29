@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,72 +16,140 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.util.ByteUtil;
+import com.hazelcast.util.StringUtil;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 
-public class NetworkConfig implements DataSerializable {
+/**
+ * Contains configuration for Network.
+ */
+@SuppressWarnings("checkstyle:methodcount")
+public class NetworkConfig {
 
+    /**
+     * Default value of port number.
+     */
     public static final int DEFAULT_PORT = 5701;
+
+    private static final int PORT_MAX = 0xFFFF;
+
+    private static final int PORT_AUTO_INCREMENT = 100;
 
     private int port = DEFAULT_PORT;
 
+    private int portCount = PORT_AUTO_INCREMENT;
+
     private boolean portAutoIncrement = true;
 
-    private boolean reuseAddress = false;
+    private boolean reuseAddress;
 
-    private String publicAddress = null;
+    private String publicAddress;
 
     private Collection<String> outboundPortDefinitions;
 
     private Collection<Integer> outboundPorts;
 
-    private Interfaces interfaces = new Interfaces();
+    private InterfacesConfig interfaces = new InterfacesConfig();
 
-    private Join join = new Join();
+    private JoinConfig join = new JoinConfig();
 
-    private SymmetricEncryptionConfig symmetricEncryptionConfig = null;
+    private SymmetricEncryptionConfig symmetricEncryptionConfig;
 
-    private AsymmetricEncryptionConfig asymmetricEncryptionConfig = null;
+    private SocketInterceptorConfig socketInterceptorConfig;
 
-    private SocketInterceptorConfig socketInterceptorConfig = null;
+    private SSLConfig sslConfig;
 
-    private SSLConfig sslConfig = null;
+    private MemberAddressProviderConfig memberAddressProviderConfig = new MemberAddressProviderConfig();
+
+    private IcmpFailureDetectorConfig icmpFailureDetectorConfig;
 
     public NetworkConfig() {
-        String os = System.getProperty("os.name").toLowerCase();
-        reuseAddress = (os.indexOf("win") == -1);
+        String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
+        reuseAddress = (!os.contains("win"));
     }
 
     /**
-     * @return the port
+     * Returns the port the Hazelcast member will try to bind on.
+     * A port number of 0 will let the system pick up an ephemeral port.
+     *
+     * @return the port the Hazelcast member will try to bind on
+     * @see #setPort(int)
      */
     public int getPort() {
         return port;
     }
 
     /**
-     * @param port the port to set
+     * Sets the port the Hazelcast member will try to bind on.
+     *
+     * A valid port value is between 0 and 65535.
+     * A port number of 0 will let the system pick up an ephemeral port.
+     *
+     * @param port the port the Hazelcast member will try to bind on
+     * @return NetworkConfig the updated NetworkConfig
+     * @see #getPort()
+     * @see #setPortAutoIncrement(boolean) for more information
      */
     public NetworkConfig setPort(int port) {
+        if (port < 0 || port > PORT_MAX) {
+            throw new IllegalArgumentException("Port out of range: " + port + ". Allowed range [0,65535]");
+        }
         this.port = port;
         return this;
     }
 
     /**
+     * Returns the maximum number of ports allowed to try to bind on.
+     *
+     * @return the maximum number of ports allowed to try to bind on
+     * @see #setPortCount(int)
+     * @see #setPortAutoIncrement(boolean) for more information
+     */
+    public int getPortCount() {
+        return portCount;
+    }
+
+    /**
+     * The maximum number of ports allowed to use.
+     *
+     * @param portCount the maximum number of ports allowed to use
+     * @see #setPortAutoIncrement(boolean) for more information
+     */
+    public void setPortCount(int portCount) {
+        if (portCount < 1) {
+            throw new IllegalArgumentException("port count can't be smaller than 0");
+        }
+        this.portCount = portCount;
+    }
+
+    /**
+     * Checks if a Hazelcast member is allowed find a free port by incrementing the port number when it encounters
+     * an occupied port.
+     *
      * @return the portAutoIncrement
+     * @see #setPortAutoIncrement(boolean)
      */
     public boolean isPortAutoIncrement() {
         return portAutoIncrement;
     }
 
     /**
+     * Sets if a Hazelcast member is allowed to find a free port by incrementing the port number when it encounters
+     * an occupied port.
+     * <p>
+     * If you explicitly want to control the port a Hazelcast member is going to use, you probably want to set
+     * portAutoincrement to false. In this case, the Hazelcast member is going to try the port {@link #setPort(int)}
+     * and if the port is not free, the member will not start and throw an exception.
+     * <p>
+     * If this value is set to true, Hazelcast will start at the port specified by {@link #setPort(int)} and will try
+     * until it finds a free port, or until it runs out of ports to try {@link #setPortCount(int)}.
+     *
      * @param portAutoIncrement the portAutoIncrement to set
+     * @return the updated NetworkConfig
+     * @see #isPortAutoIncrement()
+     * @see #setPortCount(int)
+     * @see #setPort(int)
      */
     public NetworkConfig setPortAutoIncrement(boolean portAutoIncrement) {
         this.portAutoIncrement = portAutoIncrement;
@@ -92,6 +160,22 @@ public class NetworkConfig implements DataSerializable {
         return reuseAddress;
     }
 
+    /**
+     * Sets the reuse address.
+     * <p>
+     * When should setReuseAddress(true) be used?
+     * <p>
+     * When the member is shutdown, the server socket port will be in TIME_WAIT state for the next 2 minutes or so. If you
+     * start the member right after shutting it down, you may not be able to bind to the same port because it is in TIME_WAIT
+     * state. if you set reuseAddress=true then TIME_WAIT will be ignored and you will be able to bind to the same port again.
+     * <p>
+     * This property should not be set to true on the Windows platform: see
+     * <ol>
+     * <li>http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6421091</li>
+     * <li>http://www.hsc.fr/ressources/articles/win_net_srv/multiple_bindings.html</li>
+     * </ol>
+     * By default, if the OS is Windows then reuseAddress will be false.
+     */
     public NetworkConfig setReuseAddress(boolean reuseAddress) {
         this.reuseAddress = reuseAddress;
         return this;
@@ -134,130 +218,161 @@ public class NetworkConfig implements DataSerializable {
     /**
      * @return the interfaces
      */
-    public Interfaces getInterfaces() {
+    public InterfacesConfig getInterfaces() {
         return interfaces;
     }
 
     /**
      * @param interfaces the interfaces to set
      */
-    public NetworkConfig setInterfaces(final Interfaces interfaces) {
+    public NetworkConfig setInterfaces(final InterfacesConfig interfaces) {
         this.interfaces = interfaces;
         return this;
     }
 
     /**
+     * Returns the {@link JoinConfig}.
+     *
      * @return the join
      */
-    public Join getJoin() {
+    public JoinConfig getJoin() {
         return join;
     }
 
     /**
      * @param join the join to set
      */
-    public NetworkConfig setJoin(final Join join) {
+    public NetworkConfig setJoin(final JoinConfig join) {
         this.join = join;
         return this;
     }
-    
-    public String getPublicAddress() {
-		return publicAddress;
-	}
-    
-    public void setPublicAddress(String publicAddress) {
-		this.publicAddress = publicAddress;
-	}
 
+    public String getPublicAddress() {
+        return publicAddress;
+    }
+
+    /**
+     * Overrides the public address of a member.
+     * Behind a NAT, two endpoints may not be able to see/access each other.
+     * If both nodes set their public addresses to their defined addresses on NAT, then that way
+     * they can communicate with each other.
+     * It should be set in the format “host IP address:port number”.
+     */
+    public NetworkConfig setPublicAddress(String publicAddress) {
+        this.publicAddress = publicAddress;
+        return this;
+    }
+
+    /**
+     * Gets the {@link SocketInterceptorConfig}. The value can be {@code null} if no socket interception is needed.
+     *
+     * @return the SocketInterceptorConfig
+     * @see #setSocketInterceptorConfig(SocketInterceptorConfig)
+     */
+    public SocketInterceptorConfig getSocketInterceptorConfig() {
+        return socketInterceptorConfig;
+    }
+
+    /**
+     * Sets the {@link SocketInterceptorConfig}. The value can be {@code null} if no socket interception is needed.
+     *
+     * @param socketInterceptorConfig the SocketInterceptorConfig to set
+     * @return the updated NetworkConfig
+     */
     public NetworkConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
         this.socketInterceptorConfig = socketInterceptorConfig;
         return this;
     }
 
-    public SocketInterceptorConfig getSocketInterceptorConfig() {
-        return socketInterceptorConfig;
-    }
-
+    /**
+     * Gets the {@link SymmetricEncryptionConfig}. The value can be {@code null} which means that no symmetric encryption should
+     * be used.
+     *
+     * @return the SymmetricEncryptionConfig
+     */
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
 
+    /**
+     * Sets the {@link SymmetricEncryptionConfig}. The value can be {@code null} if no symmetric encryption should be used.
+     *
+     * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
+     * @return the updated NetworkConfig
+     * @see #getSymmetricEncryptionConfig()
+     */
     public NetworkConfig setSymmetricEncryptionConfig(final SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
         return this;
     }
 
-    public AsymmetricEncryptionConfig getAsymmetricEncryptionConfig() {
-        return asymmetricEncryptionConfig;
-    }
-
-    public NetworkConfig setAsymmetricEncryptionConfig(final AsymmetricEncryptionConfig asymmetricEncryptionConfig) {
-        this.asymmetricEncryptionConfig = asymmetricEncryptionConfig;
-        return this;
-    }
-
+    /**
+     * Returns the current {@link SSLConfig}. It is possible that null is returned if no SSLConfig has been set.
+     *
+     * @return the SSLConfig
+     * @see #setSSLConfig(SSLConfig)
+     */
     public SSLConfig getSSLConfig() {
         return sslConfig;
     }
 
+    /**
+     * Sets the {@link SSLConfig}. null value indicates that no SSLConfig should be used.
+     *
+     * @param sslConfig the SSLConfig
+     * @return the updated NetworkConfig
+     * @see #getSSLConfig()
+     */
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
         this.sslConfig = sslConfig;
         return this;
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeInt(port);
-        interfaces.writeData(out);
-        join.writeData(out);
-        boolean hasSymmetricEncryptionConfig = symmetricEncryptionConfig != null;
-        boolean hasAsymmetricEncryptionConfig = asymmetricEncryptionConfig != null;
-        out.writeByte(ByteUtil.toByte(portAutoIncrement, reuseAddress,
-                hasSymmetricEncryptionConfig, hasAsymmetricEncryptionConfig));
-        if (hasSymmetricEncryptionConfig) {
-            symmetricEncryptionConfig.writeData(out);
-        }
-        if (hasAsymmetricEncryptionConfig) {
-            asymmetricEncryptionConfig.writeData(out);
-        }
+    public MemberAddressProviderConfig getMemberAddressProviderConfig() {
+        return memberAddressProviderConfig;
     }
 
-    public void readData(DataInput in) throws IOException {
-        port = in.readInt();
-        interfaces = new Interfaces();
-        interfaces.readData(in);
-        join = new Join();
-        join.readData(in);
-        boolean[] b = ByteUtil.fromByte(in.readByte());
-        portAutoIncrement = b[0];
-        reuseAddress = b[1];
-        boolean hasSymmetricEncryptionConfig = b[2];
-        boolean hasAsymmetricEncryptionConfig = b[3];
-        if (hasSymmetricEncryptionConfig) {
-            symmetricEncryptionConfig = new SymmetricEncryptionConfig();
-            symmetricEncryptionConfig.readData(in);
-        }
-        if (hasAsymmetricEncryptionConfig) {
-            asymmetricEncryptionConfig = new AsymmetricEncryptionConfig();
-            asymmetricEncryptionConfig.readData(in);
-        }
+    public NetworkConfig setMemberAddressProviderConfig(MemberAddressProviderConfig memberAddressProviderConfig) {
+        this.memberAddressProviderConfig = memberAddressProviderConfig;
+        return this;
+    }
+
+    /**
+     * Sets the {@link IcmpFailureDetectorConfig}. The value can be {@code null} if this detector isn't needed.
+     *
+     * @param icmpFailureDetectorConfig the IcmpFailureDetectorConfig to set
+     * @return the updated NetworkConfig
+     * @see #getIcmpFailureDetectorConfig()
+     */
+    public NetworkConfig setIcmpFailureDetectorConfig(final IcmpFailureDetectorConfig icmpFailureDetectorConfig) {
+        this.icmpFailureDetectorConfig = icmpFailureDetectorConfig;
+        return this;
+    }
+
+    /**
+     * Returns the current {@link IcmpFailureDetectorConfig}. It is possible that null is returned if no
+     * IcmpFailureDetectorConfig has been set.
+     *
+     * @return the IcmpFailureDetectorConfig
+     * @see #setIcmpFailureDetectorConfig(IcmpFailureDetectorConfig)
+     */
+    public IcmpFailureDetectorConfig getIcmpFailureDetectorConfig() {
+        return icmpFailureDetectorConfig;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("NetworkConfig {");
-        sb.append("publicAddress='").append(publicAddress).append('\'');
-        sb.append(", port=").append(port);
-        sb.append(", portAutoIncrement=").append(portAutoIncrement);
-        sb.append(", join=").append(join);
-        sb.append(", interfaces=").append(interfaces);
-        sb.append(", sslConfig=").append(sslConfig);
-        sb.append(", socketInterceptorConfig=").append(socketInterceptorConfig);
-        sb.append(", symmetricEncryptionConfig=").append(symmetricEncryptionConfig);
-        sb.append(", asymmetricEncryptionConfig=").append(asymmetricEncryptionConfig);
-        sb.append('}');
-        return sb.toString();
+        return "NetworkConfig{"
+                + "publicAddress='" + publicAddress + '\''
+                + ", port=" + port
+                + ", portCount=" + portCount
+                + ", portAutoIncrement=" + portAutoIncrement
+                + ", join=" + join
+                + ", interfaces=" + interfaces
+                + ", sslConfig=" + sslConfig
+                + ", socketInterceptorConfig=" + socketInterceptorConfig
+                + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
+                + ", icmpFailureDetectorConfig=" + icmpFailureDetectorConfig
+                + '}';
     }
-
-
 }

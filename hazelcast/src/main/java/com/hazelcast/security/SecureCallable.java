@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.cluster.NodeAware;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.spi.NodeAware;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
@@ -25,7 +25,6 @@ import java.util.concurrent.Callable;
 /**
  * A secure callable that runs in a sandbox.
  */
-public interface SecureCallable<V> extends Callable<V>, Serializable,
-        HazelcastInstanceAware, NodeAware {
+public interface SecureCallable<V> extends Callable<V>, Serializable, HazelcastInstanceAware, NodeAware {
 
 }

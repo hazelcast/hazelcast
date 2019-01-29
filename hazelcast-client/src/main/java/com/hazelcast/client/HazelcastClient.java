@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,353 +16,136 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.ListenerManager;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.*;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.logging.LoggingService;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientConnectionManagerFactory;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OutOfMemoryHandler;
 
-import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 /**
- * Hazelcast Client enables you to do all Hazelcast operations without
- * being a member of the cluster. It connects to one of the
- * cluster members and delegates all cluster wide operations to it.
- * When the connected cluster member dies, client will
- * automatically switch to another live member.
+ * The HazelcastClient is comparable to the {@link com.hazelcast.core.Hazelcast} class and provides the ability
+ * the create and manage Hazelcast clients. Hazelcast clients are {@link HazelcastInstance} implementations, so
+ * in most cases most of the code is unaware of talking to a cluster member or a client.
+ * <p/>
+ * <h1>Smart vs dumb clients</h1>
+ * Hazelcast Client enables you to do all Hazelcast operations without being a member of the cluster. Clients can be:
+ * <ol>
+ * <li>smart: this means that they immediately can send an operation like map.get(key) to the member that owns that
+ * specific key.
+ * </li>
+ * <li>
+ * dumb: it will connect to a random member in the cluster and send requests to this member. This member then needs
+ * to send the request to the correct member.
+ * </li>
+ * </ol>
+ * For more information see {@link com.hazelcast.client.config.ClientNetworkConfig#setSmartRouting(boolean)}.
+ * <p/>
+ * <h1>High availability</h1>
+ * When the connected cluster member dies, client will automatically switch to another live member.
  */
-public class HazelcastClient implements HazelcastInstance {
+public final class HazelcastClient {
 
-    private final static AtomicInteger clientIdCounter = new AtomicInteger();
-
-    private final static List<HazelcastClient> lsClients = new CopyOnWriteArrayList<HazelcastClient>();
-
-    final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
-
-    final ListenerManager listenerManager;
-    final OutRunnable out;
-    final InRunnable in;
-    final ConnectionManager connectionManager;
-    final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
-    final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
-    final ClusterClientProxy clusterClientProxy;
-    final PartitionClientProxy partitionClientProxy;
-    final LifecycleServiceClientImpl lifecycleService;
-    final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-
-    final int id;
-
-    private final ClientConfig config;
-
-    private final AtomicBoolean active = new AtomicBoolean(true);
-
-    private HazelcastClient(ClientConfig config) {
-        if (config.getAddressList().size() == 0) {
-            config.addAddress("localhost");
+    private static final HazelcastClientFactory HAZELCAST_CLIENT_FACTORY = new HazelcastClientFactory() {
+        @Override
+        public HazelcastClientInstanceImpl createHazelcastInstanceClient(ClientConfig config,
+                                                                         ClientConnectionManagerFactory factory) {
+            return new HazelcastClientInstanceImpl(config, factory, null);
         }
-        if (config.getCredentials() == null) {
-            config.setCredentials(new UsernamePasswordCredentials(config.getGroupConfig().getName(),
-                    config.getGroupConfig().getPassword()));
+
+        @Override
+        public HazelcastClientProxy createProxy(HazelcastClientInstanceImpl client) {
+            return new HazelcastClientProxy(client);
         }
-        this.config = config;
-        this.id = clientIdCounter.incrementAndGet();
-        lifecycleService = new LifecycleServiceClientImpl(this);
-        lifecycleService.fireLifecycleEvent(STARTING);
-        //empty check
-        connectionManager = new ConnectionManager(this, config, lifecycleService);
-        connectionManager.setBinder(new DefaultClientBinder(this));
-        out = new OutRunnable(this, calls, new PacketWriter());
-        in = new InRunnable(this, out, calls, new PacketReader());
-        listenerManager = new ListenerManager(this);
-        try {
-            final Connection c = connectionManager.getInitConnection();
-            if (c == null) {
-                connectionManager.shutdown();
-                lifecycleService.destroy();
-                throw new IllegalStateException("Unable to connect to cluster");
-            }
-        } catch (IOException e) {
-            connectionManager.shutdown();
-            lifecycleService.destroy();
-            throw new ClusterClientException(e.getMessage(), e);
-        }
-        final String prefix = "hz.client." + this.id + ".";
-        new Thread(out, prefix + "OutThread").start();
-        new Thread(in, prefix + "InThread").start();
-        new Thread(listenerManager, prefix + "Listener").start();
-        clusterClientProxy = new ClusterClientProxy(this);
-        partitionClientProxy = new PartitionClientProxy(this);
-        if (config.isUpdateAutomatic()) {
-            this.getCluster().addMembershipListener(connectionManager);
-            connectionManager.updateMembers();
-        }
-        lifecycleService.fireLifecycleEvent(STARTED);
-        connectionManager.scheduleHeartbeatTimerTask();
-        lsClients.add(HazelcastClient.this);
+    };
+
+    private HazelcastClient() {
     }
 
-    GroupConfig groupConfig() {
-        return config.getGroupConfig();
+    public static HazelcastInstance newHazelcastClient() {
+        return HazelcastClientManager.newHazelcastClient(HAZELCAST_CLIENT_FACTORY);
     }
 
-    public InRunnable getInRunnable() {
-        return in;
-    }
-
-    public OutRunnable getOutRunnable() {
-        return out;
-    }
-
-    ListenerManager getListenerManager() {
-        return listenerManager;
+    public static HazelcastInstance newHazelcastClient(ClientConfig config) {
+        return HazelcastClientManager.newHazelcastClient(config, HAZELCAST_CLIENT_FACTORY);
     }
 
     /**
-     * @param config
-     * @return
+     * Returns an existing HazelcastClient with instanceName.
+     *
+     * @param instanceName Name of the HazelcastInstance (client) which can be retrieved by {@link HazelcastInstance#getName()}
+     * @return HazelcastInstance
      */
-
-    public static HazelcastClient newHazelcastClient(ClientConfig config) {
-        if (config == null)
-            config = new ClientConfig();
-        return new HazelcastClient(config);
+    public static HazelcastInstance getHazelcastClientByName(String instanceName) {
+        return HazelcastClientManager.getHazelcastClientByName(instanceName);
     }
 
-    public Config getConfig() {
-        throw new UnsupportedOperationException();
+    /**
+     * Gets an immutable collection of all client HazelcastInstances created in this JVM.
+     * <p/>
+     * In managed environments such as Java EE or OSGi Hazelcast can be loaded by multiple classloaders. Typically you will get
+     * at least one classloader per every application deployed. In these cases only the client HazelcastInstances created
+     * by the same application will be seen, and instances created by different applications are invisible.
+     * <p/>
+     * The returned collection is a snapshot of the client HazelcastInstances. So changes to the client HazelcastInstances
+     * will not be visible in this collection.
+     *
+     * @return the collection of client HazelcastInstances
+     */
+    public static Collection<HazelcastInstance> getAllHazelcastClients() {
+        return HazelcastClientManager.getAllHazelcastClients();
     }
 
-    public PartitionService getPartitionService() {
-        return partitionClientProxy;
-    }
-
-    public ClientService getClientService() {
-        return null;
-    }
-
-    public LoggingService getLoggingService() {
-        throw new UnsupportedOperationException();
-    }
-
-    public <K, V> IMap<K, V> getMap(String name) {
-        return (IMap<K, V>) getClientProxy(Prefix.MAP + name);
-    }
-
-    public <K, V, E> Object getClientProxy(Object o) {
-        Object proxy = mapProxies.get(o);
-        if (proxy == null) {
-            synchronized (mapProxies) {
-                proxy = mapProxies.get(o);
-                if (proxy == null) {
-                    if (o instanceof String) {
-                        String name = (String) o;
-                        if (name.startsWith(Prefix.MAP)) {
-                            proxy = new MapClientProxy<K, V>(this, name);
-                        } else if (name.startsWith(Prefix.AS_LIST)) {
-                            proxy = new ListClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.SET)) {
-                            proxy = new SetClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.QUEUE)) {
-                            proxy = new QueueClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.TOPIC)) {
-                            proxy = new TopicClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
-                            proxy = new AtomicNumberClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
-                            proxy = new CountDownLatchClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.IDGEN)) {
-                            proxy = new IdGeneratorClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.MULTIMAP)) {
-                            proxy = new MultiMapClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.SEMAPHORE)) {
-                            proxy = new SemaphoreClientProxy(this, name);
-                        } else {
-                            proxy = new LockClientProxy(o, this);
-                        }
-                    } else {
-                        proxy = new LockClientProxy(o, this);
-                    }
-                    mapProxies.put(o, proxy);
-                }
-            }
-        }
-        return mapProxies.get(o);
-    }
-
-    public com.hazelcast.core.Transaction getTransaction() {
-        ClientThreadContext trc = ClientThreadContext.get();
-        TransactionClientProxy proxy = (TransactionClientProxy) trc.getTransaction(this);
-        return proxy;
-    }
-
-    public ConnectionManager getConnectionManager() {
-        return connectionManager;
-    }
-
-    public void addInstanceListener(InstanceListener instanceListener) {
-        clusterClientProxy.addInstanceListener(instanceListener);
-    }
-
-    public Cluster getCluster() {
-        return clusterClientProxy;
-    }
-
-    public ExecutorService getExecutorService() {
-        return getExecutorService("default");
-    }
-
-    public ExecutorService getExecutorService(String name) {
-        if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
-//        name = Prefix.EXECUTOR_SERVICE + name;
-        ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
-        if (executorServiceProxy == null) {
-            executorServiceProxy = new ExecutorServiceClientProxy(this, name);
-            ExecutorServiceClientProxy old = mapExecutors.putIfAbsent(name, executorServiceProxy);
-            if (old != null) {
-                executorServiceProxy = old;
-            }
-        }
-        return executorServiceProxy;
-    }
-
-    public IdGenerator getIdGenerator(String name) {
-        return (IdGenerator) getClientProxy(Prefix.IDGEN + name);
-    }
-
-    public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getClientProxy(Prefix.ATOMIC_NUMBER + name);
-    }
-
-    public ICountDownLatch getCountDownLatch(String name) {
-        return (ICountDownLatch) getClientProxy(Prefix.COUNT_DOWN_LATCH + name);
-    }
-
-    public ISemaphore getSemaphore(String name) {
-        return (ISemaphore) getClientProxy(Prefix.SEMAPHORE + name);
-    }
-
-    public Collection<Instance> getInstances() {
-        return clusterClientProxy.getInstances();
-    }
-
-    public <E> IList<E> getList(String name) {
-        return (IList<E>) getClientProxy(Prefix.AS_LIST + name);
-    }
-
-    public ILock getLock(Object obj) {
-        return new LockClientProxy(obj, this);
-    }
-
-    public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getClientProxy(Prefix.MULTIMAP + name);
-    }
-
-    public String getName() {
-        return config.getGroupConfig().getName();
-    }
-
-    public <E> IQueue<E> getQueue(String name) {
-        return (IQueue<E>) getClientProxy(Prefix.QUEUE + name);
-    }
-
-    public <E> ISet<E> getSet(String name) {
-        return (ISet<E>) getClientProxy(Prefix.SET + name);
-    }
-
-    public <E> ITopic<E> getTopic(String name) {
-        return (ITopic) getClientProxy(Prefix.TOPIC + name);
-    }
-
-    public void removeInstanceListener(InstanceListener instanceListener) {
-        clusterClientProxy.removeInstanceListener(instanceListener);
-    }
-
+    /**
+     * Shuts down all the client HazelcastInstance created in this JVM.
+     * <p/>
+     * To be more precise it shuts down the HazelcastInstances loaded using the same classloader this HazelcastClient has been
+     * loaded with.
+     * <p/>
+     * This method is mostly used for testing purposes.
+     *
+     * @see #getAllHazelcastClients()
+     */
     public static void shutdownAll() {
-        for (HazelcastClient hazelcastClient : lsClients) {
-            try {
-                hazelcastClient.shutdown();
-            } catch (Exception ignored) {
-            }
-        }
-        lsClients.clear();
+        HazelcastClientManager.shutdownAll();
     }
 
-    public static Collection<HazelcastClient> getAllHazelcastClients() {
-        return Collections.unmodifiableCollection(lsClients);
+    /**
+     * Shutdown the provided client and remove it from the managed list
+     *
+     * @param instance the hazelcast client instance
+     */
+    public static void shutdown(HazelcastInstance instance) {
+        HazelcastClientManager.shutdown(instance);
     }
 
-    public void shutdown() {
-        lifecycleService.shutdown();
+    /**
+     * Shutdown the provided client and remove it from the managed list
+     *
+     * @param instanceName the hazelcast client instance name
+     */
+    public static void shutdown(String instanceName) {
+        HazelcastClientManager.shutdown(instanceName);
     }
 
-    void doShutdown() {
-        if (active.compareAndSet(true, false)) {
-            logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
-            connectionManager.shutdown();
-            out.shutdown();
-            in.shutdown();
-            listenerManager.shutdown();
-            ClientThreadContext.shutdown();
-            lsClients.remove(HazelcastClient.this);
-        }
-    }
-
-    public boolean isActive() {
-        return active.get();
-    }
-
-    protected void destroy(String proxyName) {
-        mapProxies.remove(proxyName);
-    }
-
-    public void restart() {
-        lifecycleService.restart();
-    }
-
-    public LifecycleService getLifecycleService() {
-        return lifecycleService;
-    }
-
-    static void runAsyncAndWait(final Runnable runnable) {
-        callAsyncAndWait(new Callable<Boolean>() {
-            public Boolean call() throws Exception {
-                runnable.run();
-                return true;
-            }
-        });
-    }
-
-    static <V> V callAsyncAndWait(final Callable<V> callable) {
-        final ExecutorService es = Executors.newSingleThreadExecutor();
-        try {
-            Future<V> future = es.submit(callable);
-            try {
-                return future.get();
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                return null;
-            }
-        } finally {
-            es.shutdown();
-        }
-    }
-
-    public ClientConfig getClientConfig() {
-        return config;
+    /**
+     * Sets <tt>OutOfMemoryHandler</tt> to be used when an <tt>OutOfMemoryError</tt>
+     * is caught by Hazelcast Client threads.
+     * <p/>
+     * <p>
+     * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called although JVM throws
+     * <tt>OutOfMemoryError</tt>.
+     * Because error may be thrown from an external (user thread) thread
+     * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
+     * </p>
+     *
+     * @param outOfMemoryHandler set when an <tt>OutOfMemoryError</tt> is caught by HazelcastClient threads
+     * @see OutOfMemoryError
+     * @see OutOfMemoryHandler
+     */
+    public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
+        HazelcastClientManager.setOutOfMemoryHandler(outOfMemoryHandler);
     }
 }

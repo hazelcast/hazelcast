@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>2.5.1-SNAPSHOT</version>
+        <version>3.10.7</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -31,174 +31,172 @@
 
     <repositories>
         <repository>
-            <id>jboss</id>
-            <url>http://repository.jboss.org/maven2/</url>
+            <id>snapshot-repository</id>
+            <name>Maven2 Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
     </repositories>
 
+    <properties>
+        <!-- needed for CheckStyle -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>${maven.antrun.plugin.version}</version>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <index>true</index>
+                        <compress>true</compress>
+                        <manifest>
+                            <addClasspath>false</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>package</phase>
-                        <configuration>
-                            <tasks>
-                                <property name="jar.name" value="hazelcast-all-${project.parent.version}.jar"/>
-                                <delete file="target/${jar.name}" failonerror="false"/>
-                                <jar jarfile="target/${jar.name}" manifest="src/main/resources/META-INF/MANIFEST.MF">
-                                    <fileset dir="../hazelcast/target/classes/"/>
-                                    <fileset dir="../hazelcast-client/target/classes/"/>
-                                    <fileset dir="../hazelcast-hibernate/target/classes/"/>
-                                    <fileset dir="../hazelcast-spring/target/classes/"/>
-                                    <fileset dir="../hazelcast-cloud/target/classes/"/>
-                                    <fileset dir="../hazelcast-wm/target/classes/"/>
-                                    <manifest>
-                                        <attribute name="Built-By" value="Hazelcast.com"/>
-                                        <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
-                                    </manifest>
-                                </jar>
-                            </tasks>
-                        </configuration>
+                        <id>shade-artifacts</id>
                         <goals>
-                            <goal>run</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <shadedArtifactId>hazelcast-all</shadedArtifactId>
+                            <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
+                            <minimizeJar>false</minimizeJar>
+                            <createSourcesJar>true</createSourcesJar>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.hazelcast:*:*</include>
+                                    <include>com.eclipsesource.minimal-json:*:*</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>com.hazelcast:hazelcast-all:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.eclipsesource.json</pattern>
+                                    <shadedPattern>com.hazelcast.com.eclipsesource.json</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <transformers>
+                                <transformer
+                                        implementation="com.hazelcast.buildutils.HazelcastManifestTransformer">
+                                    <mainClass>${hazelcast.serverMainClass}</mainClass>
+                                    <overrideInstructions>
+                                        <Import-Package>
+                                            sun.misc;resolution:=optional,
+                                            org.hibernate.*;resolution:=optional,
+                                            org.springframework.*;resolution:=optional,
+                                            javax.servlet.*;resolution:=optional,
+                                            javax.security.*;resolution:=optional,
+                                            javax.crypto.*;resolution:=optional,
+                                            sun.misc;resolution:=optional
+                                            org.slf4j.*;resolution:=optional,
+                                            org.apache.log4j.*;resolution:=optional,
+                                            org.apache.logging.log4j;resolution:=optional,
+                                            org.apache.logging.log4j.*;resolution:=optional,
+                                            org.apache.commons.logging;resolution:=optional,
+                                            javax.script.*;resolution:=optional,
+                                            org.jclouds.*;resolution:=optional,
+                                        </Import-Package>
+                                    </overrideInstructions>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.hazelcast</groupId>
+                        <artifactId>hazelcast-build-utils</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven.javadoc.plugin.version}</version>
+                <configuration combine.self="override"/>
             </plugin>
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>release</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>${maven.source.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>${maven.antrun.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>all-javadoc</id>
-                                <phase>compile</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <tasks>
-                                        <javadoc destdir="target/apidocs" author="true" version="true" use="true"
-                                                 windowtitle="Hazelcast API">
-                                            <fileset dir="../hazelcast/src/main/java/" defaultexcludes="true">
-                                                <include name="**/nio/DataSerializable*"/>
-                                                <include name="**/core/**"/>
-                                                <include name="**/monitor/**"/>
-                                                <include name="**/merge/**"/>
-                                                <include name="**/config/**"/>
-                                                <include name="**/jmx/**"/>
-                                                <include name="**/query/**"/>
-                                                <include name="**/partition/**"/>
-                                                <exclude name="**/*.html"/>
-                                            </fileset>
-                                            <fileset dir="../hazelcast-client/src/main/java/" defaultexcludes="true">
-                                                <include name="**/HazelcastClient.java"/>
-                                                <exclude name="**/*.html"/>
-                                            </fileset>
-                                            <fileset dir="../hazelcast-spring/src/main/java/" defaultexcludes="true">
-                                                <include name="**/*.java"/>
-                                                <exclude name="**/*.html"/>
-                                            </fileset>
-                                            <doctitle>
-                                                <![CDATA[<h1>Hazelcast</h1>]]>
-                                            </doctitle>
-                                            <bottom>
-                                                <![CDATA[<i>Copyright &#2.0; 2008-2011 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
-                                            <link href="http://download.oracle.com/javase/1.5.0/docs/api/"/>
-                                            <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
-                                        </javadoc>
-                                        <jar jarfile="target/hazelcast-all-${project.parent.version}-javadoc.jar">
-                                            <fileset dir="target/apidocs"/>
-                                        </jar>
-                                    </tasks>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven.gpg.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <dependencies>
+        <!-- Make sure that the core module is the first dependency! -->
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
+            <version>${project.version}</version>
         </dependency>
+        <!-- Make sure that the core module is the first dependency! -->
+
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-hibernate</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
+            <artifactId>hazelcast-aws</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-hibernate3</artifactId>
+            <version>3.8.1</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-spring</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-cloud</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
+            <version>3.8.1</version>
         </dependency>
-    </dependencies>
 
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.utils</artifactId>
+            <version>${felix.utils.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
 </project>
