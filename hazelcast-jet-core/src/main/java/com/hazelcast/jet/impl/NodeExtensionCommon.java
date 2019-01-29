@@ -21,6 +21,7 @@ import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
@@ -94,5 +95,9 @@ class NodeExtensionCommon {
 
     private String serializationVersionMessage() {
         return "Configured Hazelcast Serialization version: " + node.getBuildInfo().getSerializationVersion();
+    }
+
+    void handlePacket(Packet packet) {
+        jetService.handlePacket(packet);
     }
 }

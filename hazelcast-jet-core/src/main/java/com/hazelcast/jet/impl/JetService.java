@@ -40,7 +40,6 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -55,8 +54,7 @@ import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class JetService
-        implements ManagedService, ConfigurableService<JetConfig>, Consumer<Packet>, MembershipAwareService,
-        LiveOperationsTracker {
+        implements ManagedService, ConfigurableService<JetConfig>, MembershipAwareService, LiveOperationsTracker {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
@@ -228,8 +226,7 @@ public class JetService
         return getJobExecutionService().getClassLoader(getJobConfig(jobId), jobId);
     }
 
-    @Override
-    public void accept(Packet packet) {
+    void handlePacket(Packet packet) {
         try {
             networking.handle(packet);
         } catch (IOException e) {

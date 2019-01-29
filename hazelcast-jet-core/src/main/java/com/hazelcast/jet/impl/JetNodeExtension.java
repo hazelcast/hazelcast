@@ -19,8 +19,10 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
 
-public class JetNodeExtension extends DefaultNodeExtension {
+public class JetNodeExtension extends DefaultNodeExtension implements JetPacketConsumer {
     private final NodeExtensionCommon extCommon;
 
     public JetNodeExtension(Node node) {
@@ -49,5 +51,10 @@ public class JetNodeExtension extends DefaultNodeExtension {
     @Override
     public void printNodeInfo() {
         extCommon.printNodeInfo(systemLogger, "");
+    }
+
+    @Override
+    public void accept(Packet packet) {
+        extCommon.handlePacket(packet);
     }
 }
