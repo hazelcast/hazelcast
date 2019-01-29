@@ -55,7 +55,7 @@ public class OutboxImpl implements OutboxInternal {
     private int[] unfinishedItemOrdinals;
     private Object unfinishedSnapshotKey;
     private Object unfinishedSnapshotValue;
-    private final AtomicLong lastForwardedWm = new AtomicLong();
+    private final AtomicLong lastForwardedWm = new AtomicLong(Long.MIN_VALUE);
 
     private boolean blocked;
 

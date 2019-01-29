@@ -110,10 +110,14 @@ public class MetricsConfig {
 
     /**
      * Returns the number of seconds the metrics will be retained on the
-     * instance. By default metrics are retained for 5 seconds (that is for one
-     * snapshot of metrics values). More retention means more heap memory but
-     * allows for longer client hiccups without losing a value (for example to
-     * restart Management Center).
+     * instance. By default, metrics are retained for 5 seconds (that is for
+     * one collection of metrics values, if default {@linkplain
+     * #setCollectionIntervalSeconds(int) collection interval} is used). More
+     * retention means more heap memory, but allows for longer client hiccups
+     * without losing a value (for example to restart the Management Center).
+     * <p>
+     * This setting applies only to Jet Management Center metrics API. It
+     * doesn't affect how metrics are exposed through JMX.
      */
     @Nonnull
     public MetricsConfig setRetentionSeconds(int retentionSeconds) {
