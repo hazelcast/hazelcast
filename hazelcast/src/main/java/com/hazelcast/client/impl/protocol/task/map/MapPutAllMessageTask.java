@@ -37,7 +37,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 public class MapPutAllMessageTask
         extends AbstractMapPartitionMessageTask<MapPutAllCodec.RequestParameters> {
 
-    private long startTimeNanos;
+    private volatile long startTimeNanos;
 
     public MapPutAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

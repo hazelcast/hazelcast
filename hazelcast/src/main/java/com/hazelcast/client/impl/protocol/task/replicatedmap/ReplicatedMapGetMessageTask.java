@@ -32,7 +32,7 @@ import java.security.Permission;
 public class ReplicatedMapGetMessageTask
         extends AbstractPartitionMessageTask<ReplicatedMapGetCodec.RequestParameters> {
 
-    private long startTimeNanos;
+    private volatile long startTimeNanos;
 
     public ReplicatedMapGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -34,7 +34,7 @@ import java.security.Permission;
 public class MapGetAllMessageTask
         extends AbstractPartitionMessageTask<MapGetAllCodec.RequestParameters> {
 
-    private long startTimeNanos;
+    private volatile long startTimeNanos;
 
     public MapGetAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
