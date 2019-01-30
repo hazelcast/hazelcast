@@ -20,10 +20,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.query.impl.predicates.ILikePredicate;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -178,11 +176,6 @@ public class GenericPredicatesTest extends HazelcastTestSupport {
         @Override
         public Comparable getAttributeValue(String attributeName) throws QueryException {
             return (Comparable) getValue();
-        }
-
-        @Override
-        public AttributeType getAttributeType(String attributeName) {
-            return ReflectionHelper.getAttributeType(getValue().getClass());
         }
     }
 
