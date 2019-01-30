@@ -46,7 +46,8 @@ import static java.lang.System.currentTimeMillis;
 public class NioThread extends Thread implements OperationHostileThread {
 
     // WARNING: This value has significant effect on idle CPU usage!
-    private static final int SELECT_WAIT_TIME_MILLIS = 5000;
+    private static final int SELECT_WAIT_TIME_MILLIS
+            = Integer.getInteger("hazelcast.io.select.wait.time.millis", 5000);
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
     // When we detect Selector.select returning prematurely
     // for more than SELECT_IDLE_COUNT_THRESHOLD then we rebuild the selector
