@@ -70,6 +70,12 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
         this.discoveryStrategyFactory = discoveryStrategyFactory;
     }
 
+    public DiscoveryStrategyConfig(DiscoveryStrategyConfig config) {
+        className = config.className;
+        discoveryStrategyFactory = config.discoveryStrategyFactory;
+        properties = new HashMap<String, Comparable>(config.properties);
+    }
+
     public String getClassName() {
         return className;
     }

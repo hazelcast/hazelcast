@@ -30,6 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -45,6 +47,21 @@ public class ClientConfigTest {
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void testCopyConstructor_withFullyConfiguredClientConfig() throws IOException {
+        URL schemaResource = ClientConfigTest.class.getClassLoader().getResource("hazelcast-client-full.xml");
+        ClientConfig expected = new XmlClientConfigBuilder(schemaResource).build();
+        ClientConfig actual = new ClientConfig(expected);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testCopyConstructor_withDefaultClientConfig() {
+        ClientConfig expected = new ClientConfig();
+        ClientConfig actual = new ClientConfig(expected);
+        assertEquals(expected, actual);
     }
 
     @Test

@@ -42,6 +42,12 @@ public class ProxyFactoryConfig {
         this.factoryImpl = factoryImpl;
     }
 
+    public ProxyFactoryConfig(ProxyFactoryConfig factoryConfig) {
+        service = factoryConfig.service;
+        className = factoryConfig.className;
+        factoryImpl = factoryConfig.factoryImpl;
+    }
+
     /**
      * @return class name of proxy factory
      */

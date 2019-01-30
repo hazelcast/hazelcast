@@ -24,6 +24,14 @@ public class ClientCloudConfig {
     private String discoveryToken;
     private boolean enabled;
 
+    public ClientCloudConfig() {
+    }
+
+    public ClientCloudConfig(ClientCloudConfig cloudConfig) {
+        discoveryToken = cloudConfig.discoveryToken;
+        enabled = cloudConfig.enabled;
+    }
+
     /**
      * hazelcast.cloud discoveryToken of your cluster
      *
@@ -56,5 +64,29 @@ public class ClientCloudConfig {
     public ClientCloudConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClientCloudConfig that = (ClientCloudConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        return discoveryToken != null ? discoveryToken.equals(that.discoveryToken) : that.discoveryToken == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = discoveryToken != null ? discoveryToken.hashCode() : 0;
+        result = 31 * result + (enabled ? 1 : 0);
+        return result;
     }
 }

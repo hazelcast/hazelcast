@@ -34,6 +34,13 @@ public class SerializerConfig {
     public SerializerConfig() {
     }
 
+    public SerializerConfig(SerializerConfig serializerConfig) {
+        className = serializerConfig.className;
+        implementation = serializerConfig.implementation;
+        typeClass = serializerConfig.typeClass;
+        typeClassName = serializerConfig.typeClassName;
+    }
+
     /**
      * Returns the class name of the serializer implementation.
      *

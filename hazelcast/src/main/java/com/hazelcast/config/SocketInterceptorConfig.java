@@ -27,6 +27,17 @@ public class SocketInterceptorConfig {
     private Object implementation;
     private Properties properties = new Properties();
 
+    public SocketInterceptorConfig() {
+    }
+
+    public SocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
+        enabled = socketInterceptorConfig.enabled;
+        className = socketInterceptorConfig.className;
+        implementation = socketInterceptorConfig.implementation;
+        properties = new Properties();
+        properties.putAll(socketInterceptorConfig.properties);
+    }
+
     /**
      * Returns the name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class.
      *

@@ -40,6 +40,10 @@ public class AwsConfig
         super("aws");
     }
 
+    public AwsConfig(AwsConfig awsConfig) {
+        super(awsConfig);
+    }
+
     /**
      * Gets the access key to access AWS. Returns null if no access key is configured.
      *

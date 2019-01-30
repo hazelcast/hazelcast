@@ -34,6 +34,15 @@ public class ClientSecurityConfig {
     private String credentialsClassname;
     private CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig();
 
+    public ClientSecurityConfig() {
+    }
+
+    public ClientSecurityConfig(ClientSecurityConfig securityConfig) {
+        credentials = securityConfig.credentials;
+        credentialsClassname = securityConfig.credentialsClassname;
+        credentialsFactoryConfig = new CredentialsFactoryConfig(securityConfig.credentialsFactoryConfig);
+    }
+
     public Credentials getCredentials() {
         return credentials;
     }
@@ -83,5 +92,36 @@ public class ClientSecurityConfig {
     public ClientSecurityConfig setCredentialsFactoryConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
         this.credentialsFactoryConfig = credentialsFactoryConfig;
         return this;
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClientSecurityConfig that = (ClientSecurityConfig) o;
+
+        if (credentials != null ? !credentials.equals(that.credentials) : that.credentials != null) {
+            return false;
+        }
+        if (credentialsClassname != null
+                ? !credentialsClassname.equals(that.credentialsClassname) : that.credentialsClassname != null) {
+            return false;
+        }
+        return credentialsFactoryConfig != null
+                ? credentialsFactoryConfig.equals(that.credentialsFactoryConfig) : that.credentialsFactoryConfig == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = credentials != null ? credentials.hashCode() : 0;
+        result = 31 * result + (credentialsClassname != null ? credentialsClassname.hashCode() : 0);
+        result = 31 * result + (credentialsFactoryConfig != null ? credentialsFactoryConfig.hashCode() : 0);
+        return result;
     }
 }

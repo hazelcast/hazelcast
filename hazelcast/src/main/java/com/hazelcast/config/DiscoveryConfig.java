@@ -38,7 +38,6 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
     private DiscoveryServiceProvider discoveryServiceProvider;
     private NodeFilter nodeFilter;
     private String nodeFilterClass;
-
     private DiscoveryConfig readonly;
 
     public DiscoveryConfig() {
@@ -50,6 +49,14 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         this.nodeFilter = nodeFilter;
         this.nodeFilterClass = nodeFilterClass;
         this.discoveryStrategyConfigs.addAll(discoveryStrategyConfigs);
+    }
+
+    public DiscoveryConfig(DiscoveryConfig discoveryConfig) {
+        discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(discoveryConfig.discoveryStrategyConfigs);
+        discoveryServiceProvider = discoveryConfig.discoveryServiceProvider;
+        nodeFilter = discoveryConfig.nodeFilter;
+        nodeFilterClass = discoveryConfig.nodeFilterClass;
+        readonly = discoveryConfig.readonly;
     }
 
     /**

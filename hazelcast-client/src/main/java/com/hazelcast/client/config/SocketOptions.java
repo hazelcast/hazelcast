@@ -47,6 +47,17 @@ public class SocketOptions {
 
     private int bufferSizeInKB = DEFAULT_BUFFER_SIZE_IN_KB;
 
+    public SocketOptions() {
+    }
+
+    public SocketOptions(SocketOptions socketOptions) {
+        tcpNoDelay = socketOptions.tcpNoDelay;
+        keepAlive = socketOptions.keepAlive;
+        reuseAddress = socketOptions.reuseAddress;
+        lingerSeconds = socketOptions.lingerSeconds;
+        bufferSizeInKB = socketOptions.bufferSizeInKB;
+    }
+
     /**
      * TCP_NODELAY socket option
      *
@@ -109,6 +120,7 @@ public class SocketOptions {
 
     /**
      * Gets SO_LINGER with the specified linger time in seconds
+     *
      * @return lingerSeconds value in seconds
      */
     public int getLingerSeconds() {
@@ -131,6 +143,7 @@ public class SocketOptions {
 
     /**
      * Gets the SO_SNDBUF and SO_RCVBUF option value
+     *
      * @return bufferSize KB value
      */
     public int getBufferSize() {
@@ -148,4 +161,40 @@ public class SocketOptions {
         return this;
     }
 
+    @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SocketOptions that = (SocketOptions) o;
+
+        if (tcpNoDelay != that.tcpNoDelay) {
+            return false;
+        }
+        if (keepAlive != that.keepAlive) {
+            return false;
+        }
+        if (reuseAddress != that.reuseAddress) {
+            return false;
+        }
+        if (lingerSeconds != that.lingerSeconds) {
+            return false;
+        }
+        return bufferSizeInKB == that.bufferSizeInKB;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (tcpNoDelay ? 1 : 0);
+        result = 31 * result + (keepAlive ? 1 : 0);
+        result = 31 * result + (reuseAddress ? 1 : 0);
+        result = 31 * result + lingerSeconds;
+        result = 31 * result + bufferSizeInKB;
+        return result;
+    }
 }
