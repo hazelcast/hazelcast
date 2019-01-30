@@ -337,6 +337,9 @@ public class MembershipManager {
 
         clusterHeartbeatManager.heartbeat();
         clusterService.printMemberList();
+
+        //async call
+        node.getNodeExtension().scheduleClusterVersionAutoUpgrade();
     }
 
     private MemberImpl createNewMemberImplIfChanged(MemberInfo newMemberInfo, MemberImpl member) {
@@ -1173,6 +1176,9 @@ public class MembershipManager {
         }
     }
 
+    /**
+     * This task is only created on master node.
+     */
     private class DecideNewMembersViewTask implements Runnable {
         final MemberMap localMemberMap;
         final Set<Member> membersToAsk;

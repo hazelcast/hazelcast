@@ -59,8 +59,8 @@ import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
@@ -178,6 +178,7 @@ public class DefaultNodeExtension implements NodeExtension {
         return null;
     }
 
+    @Override
     public InternalSerializationService createSerializationService() {
         InternalSerializationService ss;
         try {
@@ -484,6 +485,11 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void sendPhoneHome() {
         phoneHome.check(node);
+    }
+
+    @Override
+    public void scheduleClusterVersionAutoUpgrade() {
+        // NOP
     }
 
     protected void createAndSetPhoneHome() {
