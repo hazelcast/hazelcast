@@ -26,6 +26,7 @@ import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.datastructures.atomicref.proxy.RaftAtomicRefProxy;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
+import com.hazelcast.cp.internal.raftop.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -239,7 +240,7 @@ public class RaftAtomicRefBasicTest extends HazelcastRaftTestSupport {
 
         final CPGroupId groupId = getGroupId(atomicRef);
         final RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
-        invocationManager.triggerDestroy(groupId).get();
+        invocationManager.invoke(getRaftService(instances[0]).getMetadataGroupId(), new TriggerDestroyRaftGroupOp(groupId)).get();
 
         assertTrueEventually(new AssertTask() {
             @Override

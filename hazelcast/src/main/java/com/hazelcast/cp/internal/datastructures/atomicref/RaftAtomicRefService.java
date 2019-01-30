@@ -147,7 +147,7 @@ public class RaftAtomicRefService implements RaftManagedService, RaftRemoteServi
         }
         RaftAtomicRef atomicRef = atomicRefs.get(key);
         if (atomicRef == null) {
-            atomicRef = new RaftAtomicRef(groupId, groupId.name());
+            atomicRef = new RaftAtomicRef(groupId, name);
             atomicRefs.put(key, atomicRef);
         }
         return atomicRef;

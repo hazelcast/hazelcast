@@ -495,7 +495,10 @@ public class RaftSessionAwareSemaphoreBasicTest extends HazelcastRaftTestSupport
         try {
             semaphore.release(1);
             fail();
-        } catch (SessionExpiredException expected) {
+        } catch (IllegalStateException expected) {
+            if (expected.getCause() != null) {
+                assertInstanceOf(SessionExpiredException.class, expected.getCause());
+            }
         }
     }
 

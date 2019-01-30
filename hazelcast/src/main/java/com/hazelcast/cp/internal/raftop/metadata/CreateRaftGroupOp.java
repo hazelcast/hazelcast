@@ -16,18 +16,15 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
+import com.hazelcast.cp.internal.CPMemberInfo;
+import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
+import com.hazelcast.cp.internal.MetadataRaftGroupManager;
+import com.hazelcast.cp.internal.RaftInvocationManager;
+import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
+import com.hazelcast.cp.internal.exception.CannotCreateRaftGroupException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.CPMemberInfo;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftInvocationManager;
-import com.hazelcast.cp.internal.MetadataRaftGroupManager;
-import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
-import com.hazelcast.cp.internal.exception.CannotCreateRaftGroupException;
-import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,7 +46,8 @@ import java.util.Collection;
  * <p/>
  * This operation is committed to the Metadata group.
  */
-public class CreateRaftGroupOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
+public class CreateRaftGroupOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
+                                                                      IdentifiedDataSerializable {
 
     private String groupName;
     private Collection<CPMemberInfo> members;
@@ -63,20 +61,13 @@ public class CreateRaftGroupOp extends RaftOp implements IndeterminateOperationS
     }
 
     @Override
-    public Object run(CPGroupId groupId, long commitIndex) {
-        RaftService service = getService();
-        MetadataRaftGroupManager metadataManager = service.getMetadataGroupManager();
-        return metadataManager.createRaftGroup(groupName, members, commitIndex);
+    public Object run(MetadataRaftGroupManager metadataGroupManager, long commitIndex) {
+        return metadataGroupManager.createRaftGroup(groupName, members, commitIndex);
     }
 
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
-    }
-
-    @Override
-    public String getServiceName() {
-        return RaftService.SERVICE_NAME;
     }
 
     @Override

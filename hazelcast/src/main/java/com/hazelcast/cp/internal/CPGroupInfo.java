@@ -93,10 +93,6 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
         return members.contains(member);
     }
 
-    public boolean containsInitialMember(CPMemberInfo member) {
-        return initialMembers.contains(member);
-    }
-
     public int memberCount() {
         return members.size();
     }

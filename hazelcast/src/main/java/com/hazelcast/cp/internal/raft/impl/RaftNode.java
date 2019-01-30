@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.raft.impl;
 import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.raft.MembershipChangeType;
+import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.exception.MismatchingGroupMembersCommitIndexException;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
@@ -160,10 +160,10 @@ public interface RaftNode {
      * then the returned future is notified with a related exception.
      *
      * @param member member to add or remove
-     * @param change type of membership change
+     * @param mode   type of membership change
      * @return future to get notified about result of the membership change
      */
-    ICompletableFuture replicateMembershipChange(Endpoint member, MembershipChangeType change);
+    ICompletableFuture replicateMembershipChange(Endpoint member, MembershipChangeMode mode);
 
     /**
      * Replicates the membership change to the Raft group, if expected members
@@ -173,11 +173,11 @@ public interface RaftNode {
      * For more info see {@link #replicate(Object)}.
      *
      * @param member                  member to add or remove
-     * @param change                  type of membership change
+     * @param mode                    type of membership change
      * @param groupMembersCommitIndex expected members commit index
      * @return future to get notified about result of the membership change
      */
-    ICompletableFuture replicateMembershipChange(Endpoint member, MembershipChangeType change, long groupMembersCommitIndex);
+    ICompletableFuture replicateMembershipChange(Endpoint member, MembershipChangeMode mode, long groupMembersCommitIndex);
 
     /**
      * Executes the given operation on Raft group depending

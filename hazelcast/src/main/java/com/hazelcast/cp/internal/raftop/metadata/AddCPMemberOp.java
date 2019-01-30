@@ -16,13 +16,12 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
-import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.MetadataRaftGroupManager;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
+import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -35,7 +34,7 @@ import java.io.IOException;
  * Fails with {@link IllegalArgumentException} if the member to be added
  * is already a CP member that is currently being removed.
  */
-public class AddCPMemberOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
+public class AddCPMemberOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
 
     private CPMemberInfo member;
 
@@ -47,22 +46,17 @@ public class AddCPMemberOp extends RaftOp implements IndeterminateOperationState
     }
 
     @Override
-    public Object run(CPGroupId groupId, long commitIndex) {
-        RaftService service = getService();
-        MetadataRaftGroupManager metadataGroupManager = service.getMetadataGroupManager();
-        assert metadataGroupManager.getMetadataGroupId().equals(groupId);
-        metadataGroupManager.addActiveMember(member);
-        return null;
+    public Object run(MetadataRaftGroupManager metadataGroupManager, long commitIndex) {
+        if (metadataGroupManager.addMember(commitIndex, member)) {
+            return null;
+        }
+
+        return PostponedResponse.INSTANCE;
     }
 
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
-    }
-
-    @Override
-    public String getServiceName() {
-        return RaftService.SERVICE_NAME;
     }
 
     @Override

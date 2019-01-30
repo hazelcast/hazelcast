@@ -285,37 +285,37 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse getCPGroupIds() throws IOException {
-        String url = address + "cp-subsystem/cp-groups";
+        String url = address + "cp-subsystem/groups";
         return doGet(url);
     }
 
     public ConnectionResponse getCPGroupByName(String name) throws IOException {
-        String url = address + "cp-subsystem/cp-groups/" + name;
+        String url = address + "cp-subsystem/groups/" + name;
         return doGet(url);
     }
 
     public ConnectionResponse getLocalCPMember() throws IOException {
-        String url = address + "cp-subsystem/cp-members/local";
+        String url = address + "cp-subsystem/members/local";
         return doGet(url);
     }
 
     public ConnectionResponse getCPMembers() throws IOException {
-        String url = address + "cp-subsystem/cp-members";
+        String url = address + "cp-subsystem/members";
         return doGet(url);
     }
 
     public ConnectionResponse forceDestroyCPGroup(String cpGroupName, String groupName, String groupPassword) throws IOException {
-        String url = address + "cp-subsystem/cp-groups/" + cpGroupName + "/remove";
+        String url = address + "cp-subsystem/groups/" + cpGroupName + "/remove";
         return doPost(url, groupName, groupPassword);
     }
 
     public ConnectionResponse removeCPMember(String cpMemberUid, String groupName, String groupPassword) throws IOException {
-        String url = address + "cp-subsystem/cp-members/" + cpMemberUid + "/remove";
+        String url = address + "cp-subsystem/members/" + cpMemberUid + "/remove";
         return doPost(url, groupName, groupPassword);
     }
 
     public ConnectionResponse promoteCPMember(String groupName, String groupPassword) throws IOException {
-        String url = address + "cp-subsystem/cp-members";
+        String url = address + "cp-subsystem/members";
         return doPost(url, groupName, groupPassword);
     }
 
@@ -325,13 +325,13 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse getCPSessions(String groupName) throws IOException {
-        String url = address + "cp-subsystem/cp-groups/" + groupName + "/cp-sessions";
+        String url = address + "cp-subsystem/groups/" + groupName + "/sessions";
         return doGet(url);
     }
 
     public ConnectionResponse forceCloseCPSession(String cpGroupName, long sessionId, String groupName, String groupPassword)
             throws IOException {
-        String url = address + "cp-subsystem/cp-groups/" + cpGroupName + "/cp-sessions/" + sessionId + "/remove";
+        String url = address + "cp-subsystem/groups/" + cpGroupName + "/sessions/" + sessionId + "/remove";
         return doPost(url, groupName, groupPassword);
     }
 

@@ -147,7 +147,7 @@ public class RaftAtomicLongService implements RaftManagedService, RaftRemoteServ
         }
         RaftAtomicLong atomicLong = atomicLongs.get(key);
         if (atomicLong == null) {
-            atomicLong = new RaftAtomicLong(groupId, groupId.name());
+            atomicLong = new RaftAtomicLong(groupId, name);
             atomicLongs.put(key, atomicLong);
         }
         return atomicLong;

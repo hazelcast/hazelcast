@@ -18,20 +18,21 @@ package com.hazelcast.cp.internal.operation;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.exception.NotLeaderException;
+import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.RaftNodeAware;
+import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
+import com.hazelcast.cp.internal.RaftSystemOperation;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
+import com.hazelcast.cp.internal.raft.impl.RaftNode;
+import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.cp.internal.raft.QueryPolicy;
-import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.exception.NotLeaderException;
-import com.hazelcast.cp.exception.CPGroupDestroyedException;
-import com.hazelcast.cp.internal.raft.impl.RaftNode;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftSystemOperation;
-import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -69,8 +70,12 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             if (service.isRaftGroupDestroyed(groupId)) {
                 sendResponse(new CPGroupDestroyedException(groupId));
             } else {
-                sendResponse(new NotLeaderException(groupId, service.getLocalMember(), null));
+                sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
             }
+            return;
+        } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
+            service.stepDownRaftNode(groupId);
+            sendResponse(new NotLeaderException(groupId, service.getLocalCPMember(), null));
             return;
         }
 

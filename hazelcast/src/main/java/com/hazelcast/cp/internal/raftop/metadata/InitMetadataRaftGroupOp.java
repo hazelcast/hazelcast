@@ -16,16 +16,14 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
+import com.hazelcast.cp.internal.CPMemberInfo;
+import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
+import com.hazelcast.cp.internal.MetadataRaftGroupManager;
+import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
+import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.CPMemberInfo;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.MetadataRaftGroupManager;
-import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
-import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,38 +35,34 @@ import java.util.List;
  * the same list. Fails with {@link IllegalArgumentException} if a CP member
  * commits a different list.
  */
-public class InitializeMetadataRaftGroupOp extends RaftOp implements IndeterminateOperationStateAware,
-                                                                     IdentifiedDataSerializable {
+public class InitMetadataRaftGroupOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
+                                                                            IdentifiedDataSerializable {
 
-    private List<CPMemberInfo> initialMembers;
-    private int metadataMembersCount;
+    private CPMemberInfo callerCPMember;
+    private List<CPMemberInfo> discoveredCPMembers;
     private long groupIdSeed;
 
-    public InitializeMetadataRaftGroupOp() {
+    public InitMetadataRaftGroupOp() {
     }
 
-    public InitializeMetadataRaftGroupOp(List<CPMemberInfo> initialMembers, int metadataMembersCount, long groupIdSeed) {
-        this.initialMembers = initialMembers;
-        this.metadataMembersCount = metadataMembersCount;
+    public InitMetadataRaftGroupOp(CPMemberInfo callerCPMember, List<CPMemberInfo> discoveredCPMembers, long groupIdSeed) {
+        this.callerCPMember = callerCPMember;
+        this.discoveredCPMembers = discoveredCPMembers;
         this.groupIdSeed = groupIdSeed;
     }
 
     @Override
-    public Object run(CPGroupId groupId, long commitIndex) {
-        RaftService service = getService();
-        MetadataRaftGroupManager metadataManager = service.getMetadataGroupManager();
-        metadataManager.initializeMetadataRaftGroup(initialMembers, metadataMembersCount, groupIdSeed);
-        return null;
+    public Object run(MetadataRaftGroupManager metadataGroupManager, long commitIndex) {
+        if (metadataGroupManager.initMetadataGroup(commitIndex, callerCPMember, discoveredCPMembers, groupIdSeed)) {
+            return null;
+        }
+
+        return PostponedResponse.INSTANCE;
     }
 
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
-    }
-
-    @Override
-    public String getServiceName() {
-        return RaftService.SERVICE_NAME;
     }
 
     @Override
@@ -78,35 +72,35 @@ public class InitializeMetadataRaftGroupOp extends RaftOp implements Indetermina
 
     @Override
     public int getId() {
-        return RaftServiceDataSerializerHook.INITIALIZE_METADATA_RAFT_GROUP_OP;
+        return RaftServiceDataSerializerHook.INIT_METADATA_RAFT_GROUP_OP;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(initialMembers.size());
-        for (CPMemberInfo member : initialMembers) {
+        out.writeObject(callerCPMember);
+        out.writeInt(discoveredCPMembers.size());
+        for (CPMemberInfo member : discoveredCPMembers) {
             out.writeObject(member);
         }
-        out.writeInt(metadataMembersCount);
         out.writeLong(groupIdSeed);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        callerCPMember = in.readObject();
         int len = in.readInt();
-        initialMembers = new ArrayList<CPMemberInfo>(len);
+        discoveredCPMembers = new ArrayList<CPMemberInfo>(len);
         for (int i = 0; i < len; i++) {
             CPMemberInfo member = in.readObject();
-            initialMembers.add(member);
+            discoveredCPMembers.add(member);
         }
-        metadataMembersCount = in.readInt();
         groupIdSeed = in.readLong();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
-        sb.append("members=").append(initialMembers)
-          .append(", metadataMemberCount=").append(metadataMembersCount)
+        sb.append(", callerCPMember=").append(callerCPMember)
+          .append(", discoveredCPMembers=").append(discoveredCPMembers)
           .append(", groupIdSeed=").append(groupIdSeed);
     }
 }

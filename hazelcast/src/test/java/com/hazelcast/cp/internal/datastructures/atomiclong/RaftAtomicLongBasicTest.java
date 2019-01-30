@@ -28,6 +28,7 @@ import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.datastructures.atomiclong.proxy.RaftAtomicLongProxy;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
+import com.hazelcast.cp.internal.raftop.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -225,10 +226,15 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
     public void testLocalGet_withAnyLocalPolicy() {
         atomicLong.set(3);
 
-        RaftAtomicLongProxy atomicLongProxy = (RaftAtomicLongProxy) atomicLong;
-        long v = atomicLongProxy.localGet(QueryPolicy.ANY_LOCAL);
-
-        assertEquals(3, v);
+        // I may not be the leader...
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                RaftAtomicLongProxy atomicLongProxy = (RaftAtomicLongProxy) atomicLong;
+                final long v = atomicLongProxy.localGet(QueryPolicy.ANY_LOCAL);
+                assertEquals(3, v);
+            }
+        });
     }
 
     @Test
@@ -263,7 +269,7 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
 
         final CPGroupId groupId = getGroupId(atomicLong);
         final RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
-        invocationManager.triggerDestroy(groupId).get();
+        invocationManager.invoke(getRaftService(instances[0]).getMetadataGroupId(), new TriggerDestroyRaftGroupOp(groupId)).get();
 
         assertTrueEventually(new AssertTask() {
             @Override

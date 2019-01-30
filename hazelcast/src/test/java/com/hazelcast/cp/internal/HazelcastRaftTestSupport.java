@@ -219,7 +219,7 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
     }
 
     public static CPGroupInfo getRaftGroupLocally(HazelcastInstance instance, CPGroupId groupId) {
-        return getRaftService(instance).getMetadataGroupManager().getRaftGroup(groupId);
+        return getRaftService(instance).getMetadataGroupManager().getGroup(groupId);
     }
 
     public static CPGroupId getMetadataGroupId(HazelcastInstance instance) {

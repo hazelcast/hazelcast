@@ -148,7 +148,11 @@ public interface HazelcastInstance {
      *
      * @param key key of the lock instance
      * @return distributed lock instance for the specified key.
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getLock(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     ILock getLock(String key);
 
     /**
@@ -297,7 +301,11 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link IAtomicLong} proxy
      * @return IAtomicLong proxy for the given name
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getAtomicLong(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     IAtomicLong getAtomicLong(String name);
 
     /**
@@ -306,7 +314,11 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link IAtomicReference} proxy
      * @return {@link IAtomicReference} proxy for the given name
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getAtomicReference(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     <E> IAtomicReference<E> getAtomicReference(String name);
 
     /**
@@ -315,7 +327,11 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link ICountDownLatch} proxy
      * @return {@link ICountDownLatch} proxy for the given name
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getCountDownLatch(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     ICountDownLatch getCountDownLatch(String name);
 
     /**
@@ -324,7 +340,11 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link ISemaphore} proxy
      * @return {@link ISemaphore} proxy for the given name
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getSemaphore(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     ISemaphore getSemaphore(String name);
 
     /**

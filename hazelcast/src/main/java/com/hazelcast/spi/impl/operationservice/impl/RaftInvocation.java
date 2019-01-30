@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.IndeterminateOperationState;
+import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cp.CPGroupId;
@@ -30,6 +31,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext.MemberCursor;
 
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
@@ -53,7 +55,7 @@ public class RaftInvocation extends Invocation<CPMember> {
         this.raftInvocationContext = raftInvocationContext;
         this.groupId = groupId;
 
-        int partitionId = context.partitionService.getPartitionId(groupId);
+        int partitionId = context.partitionService.getPartitionId(groupId.id());
         op.setPartitionId(partitionId);
     }
 
@@ -88,6 +90,16 @@ public class RaftInvocation extends Invocation<CPMember> {
     }
 
     @Override
+    void notifyError(Object error) {
+        if (error instanceof Throwable
+                && ((Throwable) error).getCause() instanceof LocalMemberResetException) {
+            // Raft does not care about split-brain merge.
+            return;
+        }
+        super.notifyError(error);
+    }
+
+    @Override
     protected ExceptionAction onException(Throwable t) {
         raftInvocationContext.updateKnownLeaderOnFailure(groupId, t);
 
@@ -115,6 +127,11 @@ public class RaftInvocation extends Invocation<CPMember> {
                 || cause instanceof MemberLeftException
                 || cause instanceof CallerNotMemberException
                 || cause instanceof TargetNotMemberException;
+    }
+
+    @Override
+    boolean skipTimeoutDetection() {
+        return false;
     }
 
     private CPMember getTargetEndpoint() {

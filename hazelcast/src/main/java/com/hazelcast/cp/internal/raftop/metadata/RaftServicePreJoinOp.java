@@ -16,19 +16,21 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
+import com.hazelcast.cp.internal.MetadataRaftGroupManager;
+import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 /**
- * If the CP sub-system discovery process is completed, new Hazelcast nodes
+ * If the CP subsystem discovery process is completed, new Hazelcast nodes
  * skip the discovery step.
  * <p/>
  * Please note that this operation is not a {@link RaftOp},
@@ -38,18 +40,23 @@ public class RaftServicePreJoinOp extends Operation implements IdentifiedDataSer
 
     private boolean discoveryCompleted;
 
+    private RaftGroupId metadataGroupId;
+
     public RaftServicePreJoinOp() {
     }
 
-    public RaftServicePreJoinOp(boolean discoveryCompleted) {
+    public RaftServicePreJoinOp(boolean discoveryCompleted, RaftGroupId metadataGroupId) {
         this.discoveryCompleted = discoveryCompleted;
+        this.metadataGroupId = metadataGroupId;
     }
 
     @Override
     public void run() {
         RaftService service = getService();
+        MetadataRaftGroupManager metadataGroupManager = service.getMetadataGroupManager();
+        metadataGroupManager.handleMetadataGroupId(metadataGroupId);
         if (discoveryCompleted) {
-            service.getMetadataGroupManager().disableDiscovery();
+            metadataGroupManager.disableDiscovery();
         }
     }
 
@@ -77,16 +84,18 @@ public class RaftServicePreJoinOp extends Operation implements IdentifiedDataSer
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(discoveryCompleted);
+        out.writeObject(metadataGroupId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         discoveryCompleted = in.readBoolean();
+        metadataGroupId = in.readObject();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
-        sb.append(", discoveryCompleted=").append(discoveryCompleted);
+        sb.append(", discoveryCompleted=").append(discoveryCompleted).append(", metadataGroupId=").append(metadataGroupId);
     }
 }

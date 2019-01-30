@@ -46,7 +46,7 @@ public class CPSemaphoreConfig {
      * If a permit holder fails, its permits must be released manually.
      * When JDK compatibility is disabled, a {@link HazelcastInstance} must
      * acquire permits before releasing them and it cannot release a permit
-     * that it has mot acquired. It means, you can acquire a permit
+     * that it has not acquired. It means, you can acquire a permit
      * from one thread and release it from another thread using the same
      * {@link HazelcastInstance}, but not different instances of
      * {@link HazelcastInstance}. In this mode, acquired permits are

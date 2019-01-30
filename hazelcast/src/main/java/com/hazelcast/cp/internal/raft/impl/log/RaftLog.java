@@ -16,10 +16,11 @@
 
 package com.hazelcast.cp.internal.raft.impl.log;
 
+import com.hazelcast.ringbuffer.impl.ArrayRingbuffer;
+import com.hazelcast.ringbuffer.impl.Ringbuffer;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.Collections.reverse;
 
 /**
  * {@code RaftLog} keeps and maintains Raft log entries and snapshot. Entries
@@ -46,9 +47,16 @@ public class RaftLog {
      * <p/>
      * Important: Log entry indices start from 1, not 0.
      */
-    private final ArrayList<LogEntry> logs = new ArrayList<LogEntry>();
+    private final Ringbuffer<LogEntry> logs;
 
+    /**
+     * Latest snapshot entry. Initially snapshot is empty.
+     */
     private SnapshotEntry snapshot = new SnapshotEntry();
+
+    public RaftLog(int capacity) {
+        logs = new ArrayRingbuffer<LogEntry>(capacity);
+    }
 
     /**
      * Returns the last entry index in the Raft log,
@@ -74,7 +82,18 @@ public class RaftLog {
      * if no logs are available.
      */
     public LogEntry lastLogOrSnapshotEntry() {
-        return logs.size() > 0 ? logs.get(logs.size() - 1) : snapshot;
+        return !logs.isEmpty() ? logs.read(logs.tailSequence()) : snapshot;
+    }
+
+    /**
+     * Returns true if the log contains an entry at {@code entryIndex},
+     * false otherwise.
+     * <p>
+     * Important: Log entry indices start from 1, not 0.
+     */
+    public boolean containsLogEntry(long entryIndex) {
+        long sequence = toSequence(entryIndex);
+        return sequence >= logs.headSequence() && sequence <= logs.tailSequence();
     }
 
     /**
@@ -89,11 +108,13 @@ public class RaftLog {
         if (entryIndex < 1) {
             throw new IllegalArgumentException("Illegal index: " + entryIndex + ". Index starts from 1.");
         }
-        if (entryIndex > lastLogOrSnapshotIndex() || snapshotIndex() >= entryIndex) {
+        if (!containsLogEntry(entryIndex)) {
             return null;
         }
 
-        return logs.get(toArrayIndex(entryIndex));
+        LogEntry logEntry = logs.read(toSequence(entryIndex));
+        assert logEntry.index() == entryIndex : "Expected: " + entryIndex + ", Entry: " + logEntry;
+        return logEntry;
     }
 
     /**
@@ -113,14 +134,20 @@ public class RaftLog {
             throw new IllegalArgumentException("Illegal index: " + entryIndex + ", last log index: " + lastLogOrSnapshotIndex());
         }
 
-        List<LogEntry> truncated = new ArrayList<LogEntry>();
-        for (int i = logs.size() - 1, j = toArrayIndex(entryIndex); i >= j; i--) {
-            truncated.add(logs.remove(i));
-        }
+        long startSequence = toSequence(entryIndex);
+        assert startSequence >= logs.headSequence() : "Entry index: " + entryIndex + ", Head Seq: " + logs.headSequence();
 
-        reverse(truncated);
+        List<LogEntry> truncated = new ArrayList<LogEntry>();
+        for (long ix = startSequence; ix <= logs.tailSequence(); ix++) {
+            truncated.add(logs.read(ix));
+        }
+        logs.setTailSequence(startSequence - 1);
 
         return truncated;
+    }
+
+    public boolean checkAvailableCapacity(int requestedCapacity) {
+        return (logs.getCapacity() - logs.size()) >= requestedCapacity;
     }
 
     /**
@@ -135,6 +162,11 @@ public class RaftLog {
     public void appendEntries(LogEntry... newEntries) {
         int lastTerm = lastLogOrSnapshotTerm();
         long lastIndex = lastLogOrSnapshotIndex();
+
+        if (!checkAvailableCapacity(newEntries.length)) {
+            throw new IllegalStateException("Not enough capacity! Capacity: " + logs.getCapacity()
+                    + ", Size: " + logs.size() + ", New entries: " + newEntries.length);
+        }
 
         for (LogEntry entry : newEntries) {
             if (entry.term() < lastTerm) {
@@ -168,9 +200,8 @@ public class RaftLog {
             throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", to entry index: "
                     + toEntryIndex);
         }
-        if (fromEntryIndex <= snapshotIndex()) {
-            throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", snapshot index: "
-                    + snapshotIndex());
+        if (!containsLogEntry(fromEntryIndex)) {
+            throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex);
         }
         if (fromEntryIndex > lastLogOrSnapshotIndex()) {
             throw new IllegalArgumentException("Illegal from entry index: " + fromEntryIndex + ", last log index: "
@@ -181,7 +212,14 @@ public class RaftLog {
                     + lastLogOrSnapshotIndex());
         }
 
-        return logs.subList(toArrayIndex(fromEntryIndex), toArrayIndex(toEntryIndex + 1)).toArray(new LogEntry[0]);
+        assert ((int) (toEntryIndex - fromEntryIndex)) >= 0 : "Int overflow! From: " + fromEntryIndex + ", to: " + toEntryIndex;
+        LogEntry[] entries = new LogEntry[(int) (toEntryIndex - fromEntryIndex + 1)];
+        long offset = toSequence(fromEntryIndex);
+
+        for (int i = 0; i < entries.length; i++) {
+            entries[i] = logs.read(offset + i);
+        }
+        return entries;
     }
 
     /**
@@ -193,28 +231,30 @@ public class RaftLog {
      * @throws IllegalArgumentException if the snapshot's index is smaller than
      *                                  or equal to current snapshot index
      */
-    public List<LogEntry> setSnapshot(SnapshotEntry snapshot) {
+    public int setSnapshot(SnapshotEntry snapshot) {
+        return setSnapshot(snapshot, snapshot.index());
+    }
+
+    public int setSnapshot(SnapshotEntry snapshot, long truncateUpToIndex) {
         if (snapshot.index() <= snapshotIndex()) {
             throw new IllegalArgumentException("Illegal index: " + snapshot.index() + ", current snapshot index: "
                     + snapshotIndex());
         }
 
-        List<LogEntry> truncated = new ArrayList<LogEntry>();
-        reverse(logs);
-        for (int i = logs.size() - 1; i >= 0; i--) {
-            LogEntry logEntry = logs.get(i);
-            if (logEntry.index() > snapshot.index()) {
-                break;
-            }
+        long newHeadSeq = toSequence(truncateUpToIndex) + 1;
+        long newTailSeq = Math.max(logs.tailSequence(), newHeadSeq - 1);
 
-            logs.remove(i);
+        long prevSize = logs.size();
+        // Set truncated slots to null to reduce memory usage.
+        // Otherwise this has no effect on correctness.
+        for (long seq = logs.headSequence(); seq < newHeadSeq; seq++) {
+            logs.set(seq, null);
         }
-
-        reverse(logs);
+        logs.setHeadSequence(newHeadSeq);
+        logs.setTailSequence(newTailSeq);
 
         this.snapshot = snapshot;
-
-        return truncated;
+        return (int) (prevSize - logs.size());
     }
 
     /**
@@ -231,7 +271,7 @@ public class RaftLog {
         return snapshot;
     }
 
-    private int toArrayIndex(long entryIndex) {
-        return (int) (entryIndex - snapshotIndex()) - 1;
+    private long toSequence(long entryIndex) {
+        return entryIndex - 1;
     }
 }

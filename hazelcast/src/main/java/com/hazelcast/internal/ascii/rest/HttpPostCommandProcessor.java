@@ -627,7 +627,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
     }
 
-    private void handlePromoteToCPMember(final HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handlePromoteToCPMember(final HttpPostCommand command) {
         if (getCpSubsystem().getLocalCPMember() != null) {
             command.send200();
             textCommandService.sendResponse(command);
@@ -644,6 +644,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
                                              @Override
                                              public void onFailure(Throwable t) {
+                                                 logger.warning("Error while promoting CP member.", t);
                                                  command.send500();
                                                  textCommandService.sendResponse(command);
                                              }
@@ -653,7 +654,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleRemoveCPMember(final HttpPostCommand command) {
         String uri = command.getURI();
         String prefix = URI_CP_MEMBERS_URL + "/";
-        String cpMemberUid = uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim();
+        final String cpMemberUid = uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim();
         getCpSubsystem().getCPSubsystemManagementService()
                         .removeCPMember(cpMemberUid)
                         .andThen(new ExecutionCallback<Void>() {
@@ -665,6 +666,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
                             @Override
                             public void onFailure(Throwable t) {
+                                logger.warning("Error while removing CP member " + cpMemberUid, t);
                                 if (peel(t) instanceof IllegalArgumentException) {
                                     command.send400();
                                 } else {
@@ -703,7 +705,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String suffix = URI_CP_SESSIONS_SUFFIX + "/";
         int i = uri.indexOf(suffix);
         String groupName = uri.substring(prefix.length(), i).trim();
-        long sessionId = Long.parseLong(uri.substring(i + suffix.length(), uri.indexOf('/', i + suffix.length())));
+        final long sessionId = Long.parseLong(uri.substring(i + suffix.length(), uri.indexOf('/', i + suffix.length())));
 
         getCpSubsystem().getCPSessionManagementService()
                         .forceCloseSession(groupName, sessionId)
@@ -720,6 +722,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
                             @Override
                             public void onFailure(Throwable t) {
+                                logger.warning("Error while closing CP session", t);
                                 command.send500();
                                 textCommandService.sendResponse(command);
                             }
@@ -729,7 +732,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleForceDestroyCPGroup(final HttpPostCommand command) {
         String uri = command.getURI();
         String prefix = URI_CP_GROUPS_URL + "/";
-        String groupName = uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim();
+        final String groupName = uri.substring(prefix.length(), uri.indexOf('/', prefix.length())).trim();
         if (METADATA_CP_GROUP_NAME.equals(groupName)) {
             command.send400();
             textCommandService.sendResponse(command);
@@ -747,6 +750,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
                             @Override
                             public void onFailure(Throwable t) {
+                                logger.warning("Error while destroying CP group " + groupName, t);
                                 if (peel(t) instanceof IllegalArgumentException) {
                                     command.send400();
                                 } else {
@@ -771,6 +775,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
                                 @Override
                                 public void onFailure(Throwable t) {
+                                    logger.warning("Error while resetting CP subsystem", t);
                                     command.send500();
                                     textCommandService.sendResponse(command);
                                 }

@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.internal.raftop.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -68,18 +69,18 @@ public class RaftInvocationManagerTest extends HazelcastRaftTestSupport {
         int nodeCount = 3;
         instances = newInstances(nodeCount);
 
-        final RaftInvocationManager invocationService = getRaftInvocationManager(instances[0]);
-        final CPGroupId groupId = invocationService.createRaftGroup("test", nodeCount).get();
+        final RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
+        final CPGroupId groupId = invocationManager.createRaftGroup("test", nodeCount).get();
 
-        invocationService.invoke(groupId, new RaftTestApplyOp("val")).get();
+        invocationManager.invoke(groupId, new RaftTestApplyOp("val")).get();
 
-        invocationService.triggerDestroy(groupId).get();
+        invocationManager.invoke(getRaftService(instances[0]).getMetadataGroupId(), new TriggerDestroyRaftGroupOp(groupId)).get();
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 try {
-                    invocationService.invoke(groupId, new RaftTestApplyOp("val")).get();
+                    invocationManager.invoke(groupId, new RaftTestApplyOp("val")).get();
                     fail();
                 } catch (ExecutionException e) {
                     assertInstanceOf(CPGroupDestroyedException.class, e.getCause());

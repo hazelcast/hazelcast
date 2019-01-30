@@ -280,8 +280,12 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     private void completeFutures(CPGroupId groupId, Collection<Long> indices, Object result) {
         if (!indices.isEmpty()) {
             RaftNodeImpl raftNode = (RaftNodeImpl) raftService.getRaftNode(groupId);
-            for (Long index : indices) {
-                raftNode.completeFuture(index, result);
+            if (raftNode != null) {
+                for (Long index : indices) {
+                    raftNode.completeFuture(index, result);
+                }
+            } else {
+                logger.severe("RaftNode not found for " + groupId + " to notify commit indices " + indices + " with " + result);
             }
         }
     }

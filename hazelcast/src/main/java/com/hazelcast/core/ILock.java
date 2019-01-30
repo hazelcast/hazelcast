@@ -58,7 +58,11 @@ import java.util.concurrent.locks.Lock;
  * completely eliminate it.
  *
  * @see Lock
+ * @see com.hazelcast.cp.lock.FencedLock
+ * @deprecated Please use {@link com.hazelcast.cp.lock.FencedLock} instead.
+ * This interface will be removed in Hazelcast 4.0.
  */
+@Deprecated
 public interface ILock extends Lock, DistributedObject {
 
     /**

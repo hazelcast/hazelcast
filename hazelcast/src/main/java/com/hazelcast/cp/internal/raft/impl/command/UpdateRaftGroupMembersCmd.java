@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.raft.impl.command;
 
 import com.hazelcast.core.Endpoint;
-import com.hazelcast.cp.internal.raft.MembershipChangeType;
+import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,19 +32,19 @@ import java.util.LinkedHashSet;
  * A {@code RaftGroupCmd} to update members of an existing Raft group.
  * This command is generated as a result of member add or remove request.
  */
-public class ApplyRaftGroupMembersCmd extends RaftGroupCmd implements IdentifiedDataSerializable {
+public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements IdentifiedDataSerializable {
 
     private Collection<Endpoint> members;
     private Endpoint member;
-    private MembershipChangeType changeType;
+    private MembershipChangeMode mode;
 
-    public ApplyRaftGroupMembersCmd() {
+    public UpdateRaftGroupMembersCmd() {
     }
 
-    public ApplyRaftGroupMembersCmd(Collection<Endpoint> members, Endpoint member, MembershipChangeType changeType) {
+    public UpdateRaftGroupMembersCmd(Collection<Endpoint> members, Endpoint member, MembershipChangeMode mode) {
         this.members = members;
         this.member = member;
-        this.changeType = changeType;
+        this.mode = mode;
     }
 
     public Collection<Endpoint> getMembers() {
@@ -55,8 +55,8 @@ public class ApplyRaftGroupMembersCmd extends RaftGroupCmd implements Identified
         return member;
     }
 
-    public MembershipChangeType getChangeType() {
-        return changeType;
+    public MembershipChangeMode getMode() {
+        return mode;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class ApplyRaftGroupMembersCmd extends RaftGroupCmd implements Identified
 
     @Override
     public int getId() {
-        return RaftDataSerializerHook.APPLY_RAFT_GROUP_MEMBERS_COMMAND;
+        return RaftDataSerializerHook.UPDATE_RAFT_GROUP_MEMBERS_COMMAND;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class ApplyRaftGroupMembersCmd extends RaftGroupCmd implements Identified
             out.writeObject(member);
         }
         out.writeObject(member);
-        out.writeUTF(changeType.name());
+        out.writeUTF(mode.name());
     }
 
     @Override
@@ -89,11 +89,11 @@ public class ApplyRaftGroupMembersCmd extends RaftGroupCmd implements Identified
         }
         this.members = members;
         this.member = in.readObject();
-        this.changeType = MembershipChangeType.valueOf(in.readUTF());
+        this.mode = MembershipChangeMode.valueOf(in.readUTF());
     }
 
     @Override
     public String toString() {
-        return "ApplyRaftGroupMembersCmd{" + "members=" + members + ", member=" + member + ", changeType=" + changeType + '}';
+        return "ChangeRaftGroupMembersCmd{" + "members=" + members + ", member=" + member + ", mode=" + mode + '}';
     }
 }

@@ -29,12 +29,12 @@ public enum RaftNodeStatus {
 
     /**
      * During membership changes, node statuses become
-     * {@code CHANGING_MEMBERSHIP} and they apply requested change once
+     * {@code UPDATING_GROUP_MEMBER_LIST} and they apply requested change once
      * the entry is appended to the log. Once log is committed, if the related
      * node is the being removed from group, status becomes
      * {@link #STEPPED_DOWN}, otherwise {@link #ACTIVE}.
      */
-    CHANGING_MEMBERSHIP,
+    UPDATING_GROUP_MEMBER_LIST,
 
     /**
      * When a node is removed from the cluster after a membership change is

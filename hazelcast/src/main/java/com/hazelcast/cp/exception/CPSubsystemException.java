@@ -42,6 +42,11 @@ public class CPSubsystemException extends HazelcastException {
         this.leader = leader;
     }
 
+    public CPSubsystemException(String message, Endpoint leader, Throwable cause) {
+        super(message, cause);
+        this.leader = leader;
+    }
+
     /**
      * Returns the leader endpoint of related CP group, if known/available
      * by the time this exception is thrown.

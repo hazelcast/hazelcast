@@ -624,8 +624,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
                     }
                 });
 
-                latch.await(60, SECONDS);
-
+                assertOpenEventually(latch);
                 assertTrue(verified[0]);
             }
         });
@@ -634,7 +633,12 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
                 Collections.<Tuple2<String, UUID>>singletonList(lockWaitTimeoutKeyRef[0]));
         invocationManager.invoke(groupId, op).join();
 
-        assertTrue(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty());
+            }
+        });
 
         releaseLatch.countDown();
 

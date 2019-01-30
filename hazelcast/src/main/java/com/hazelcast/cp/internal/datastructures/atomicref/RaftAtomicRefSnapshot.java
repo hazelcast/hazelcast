@@ -93,4 +93,9 @@ public class RaftAtomicRefSnapshot implements IdentifiedDataSerializable {
             destroyed.add(name);
         }
     }
+
+    @Override
+    public String toString() {
+        return "RaftAtomicRefSnapshot{" + "refs=" + refs + ", destroyed=" + destroyed + '}';
+    }
 }

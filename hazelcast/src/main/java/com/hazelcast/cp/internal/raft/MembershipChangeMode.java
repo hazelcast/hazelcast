@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.exception;
-
-import com.hazelcast.cp.exception.CPSubsystemException;
-import com.hazelcast.spi.exception.RetryableException;
+package com.hazelcast.cp.internal.raft;
 
 /**
- * Thrown when all CP members have not committed their CP member list
- * and initialization of the Metadata Raft group is not done yet.
- * Handled and retried internally.
+ * Defines type of a membership change.
  */
-public class MetadataRaftGroupNotInitializedException extends CPSubsystemException
-        implements RetryableException {
-    private static final long serialVersionUID = -587586143908312910L;
+public enum MembershipChangeMode {
 
-    public MetadataRaftGroupNotInitializedException() {
-        super(null);
-    }
+    /**
+     * Denotes that the given member will be added to the Raft group
+     */
+    ADD,
+
+    /**
+     * Denotes that the given member will be removed from the Raft group
+     */
+    REMOVE
 }

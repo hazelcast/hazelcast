@@ -155,7 +155,7 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
         checkPositive(permits, "Permits must be positive!");
         long sessionId = getSession();
         if (sessionId == NO_SESSION_ID) {
-            throw new IllegalStateException("No valid session!");
+            throw newIllegalStateException(null);
         }
 
         long threadId = getThreadId();
@@ -165,7 +165,7 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
             invocationManager.invoke(groupId, op).join();
         } catch (SessionExpiredException e) {
             invalidateSession(sessionId);
-            throw e;
+            throw newIllegalStateException(e);
         } finally {
             releaseSession(sessionId, permits);
         }
@@ -202,7 +202,7 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
         }
         long sessionId = acquireSession();
         if (sessionId == NO_SESSION_ID) {
-            throw new IllegalStateException("No valid session!");
+            throw newIllegalStateException(null);
         }
 
         long threadId = getThreadId();
@@ -212,7 +212,7 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
             invocationManager.invoke(groupId, op).join();
         } catch (SessionExpiredException e) {
             invalidateSession(sessionId);
-            throw e;
+            throw newIllegalStateException(e);
         } finally {
             releaseSession(sessionId);
         }
@@ -226,7 +226,7 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
         }
         long sessionId = acquireSession();
         if (sessionId == NO_SESSION_ID) {
-            throw new IllegalStateException("No valid session!");
+            throw newIllegalStateException(null);
         }
 
         long threadId = getThreadId();
@@ -236,10 +236,14 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
             invocationManager.invoke(groupId, op).join();
         } catch (SessionExpiredException e) {
             invalidateSession(sessionId);
-            throw e;
+            throw newIllegalStateException(e);
         } finally {
             releaseSession(sessionId);
         }
+    }
+
+    private IllegalStateException newIllegalStateException(SessionExpiredException e) {
+        return new IllegalStateException("No valid session!", e);
     }
 
     @Override

@@ -16,15 +16,16 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.exception.CPSubsystemException;
+import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;
-import com.hazelcast.cp.exception.NotLeaderException;
-import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.util.SimpleCompletableFuture;
+import com.hazelcast.logging.ILogger;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
@@ -51,26 +52,31 @@ public class QueryTask implements Runnable {
 
     @Override
     public void run() {
-        if (!verifyOperation()) {
-            return;
-        }
+        try {
+            if (!verifyOperation()) {
+                return;
+            }
 
-        if (!verifyRaftNodeStatus()) {
-            return;
-        }
+            if (!verifyRaftNodeStatus()) {
+                return;
+            }
 
-        switch (queryPolicy) {
-            case LEADER_LOCAL:
-                handleLeaderLocalRead();
-                break;
-            case ANY_LOCAL:
-                handleAnyLocalRead();
-                break;
-            case LINEARIZABLE:
-                new ReplicateTask(raftNode, operation, resultFuture).run();
-                break;
-            default:
-                resultFuture.setResult(new IllegalArgumentException("Invalid query policy: " + queryPolicy));
+            switch (queryPolicy) {
+                case LEADER_LOCAL:
+                    handleLeaderLocalRead();
+                    break;
+                case ANY_LOCAL:
+                    handleAnyLocalRead();
+                    break;
+                case LINEARIZABLE:
+                    new ReplicateTask(raftNode, operation, resultFuture).run();
+                    break;
+                default:
+                    resultFuture.setResult(new IllegalArgumentException("Invalid query policy: " + queryPolicy));
+            }
+        } catch (Throwable t) {
+            logger.severe(queryPolicy + " query failed", t);
+            resultFuture.setResult(new CPSubsystemException("Internal failure", raftNode.getLeader(), t));
         }
     }
 

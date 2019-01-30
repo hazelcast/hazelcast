@@ -16,12 +16,8 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
-import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.MetadataRaftGroupManager;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,38 +26,22 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * When a CP member is shutting down gracefully, or a crashed CP member is
- * removed from the CP sub-system via
- * {@link RaftService#removeCPMember(String)}, this operation is
- * committed to the Metadata Raft group.
+ * Returns the list of pending membership changes that will be orchestrated by
+ * the leader node of the Metadata group.
+ * <p/>
+ * This operation is committed to the Metadata group.
  */
-public class TriggerRemoveCPMemberOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
-
-    private CPMemberInfo member;
-
-    public TriggerRemoveCPMemberOp() {
-    }
-
-    public TriggerRemoveCPMemberOp(CPMemberInfo member) {
-        this.member = member;
-    }
+public class GetMembershipChangeScheduleOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
+                                                                                  IdentifiedDataSerializable {
 
     @Override
-    public Object run(CPGroupId groupId, long commitIndex) {
-        RaftService service = getService();
-        MetadataRaftGroupManager metadataManager = service.getMetadataGroupManager();
-        metadataManager.triggerRemoveMember(member);
-        return null;
+    public Object run(MetadataRaftGroupManager metadataGroupManager, long commitIndex) {
+        return metadataGroupManager.getMembershipChangeSchedule();
     }
 
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
-    }
-
-    @Override
-    public String getServiceName() {
-        return RaftService.SERVICE_NAME;
     }
 
     @Override
@@ -71,21 +51,14 @@ public class TriggerRemoveCPMemberOp extends RaftOp implements IndeterminateOper
 
     @Override
     public int getId() {
-        return RaftServiceDataSerializerHook.TRIGGER_REMOVE_CP_MEMBER_OP;
+        return RaftServiceDataSerializerHook.GET_MEMBERSHIP_CHANGE_SCHEDULE_OP;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(member);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        member = in.readObject();
-    }
-
-    @Override
-    protected void toString(StringBuilder sb) {
-        sb.append(", member=").append(member);
     }
 }

@@ -24,24 +24,17 @@ import java.util.Map;
 
 /**
  * Mutable state maintained by the leader of the Raft group. Leader keeps
- * two indices for each server:
- * <ul>
- * <li>{@code nextIndex}: index of the next log entry to send to that server
- * (initialized to leader's {@code lastLogIndex + 1})</li>
- * <li>{@code matchIndex}: index of highest log entry known to be replicated
- * on server (initialized to 0, increases monotonically)</li>
- * </ul>
+ * a {@link FollowerState} object for each follower.
+ *
+ * @see FollowerState
  */
 public class LeaderState {
 
-    private final Map<Endpoint, Long> nextIndices = new HashMap<Endpoint, Long>();
-
-    private final Map<Endpoint, Long> matchIndices = new HashMap<Endpoint, Long>();
+    private final Map<Endpoint, FollowerState> followerStates = new HashMap<Endpoint, FollowerState>();
 
     LeaderState(Collection<Endpoint> remoteMembers, long lastLogIndex) {
         for (Endpoint follower : remoteMembers) {
-            nextIndices.put(follower, lastLogIndex + 1);
-            matchIndices.put(follower, 0L);
+            followerStates.put(follower, new FollowerState(0L, lastLogIndex + 1));
         }
     }
 
@@ -51,64 +44,40 @@ public class LeaderState {
      * and {@code matchIndex} to 0.
      */
     public void add(Endpoint follower, long lastLogIndex) {
-        assertNotFollower(nextIndices, follower);
-        nextIndices.put(follower, lastLogIndex + 1);
-        matchIndices.put(follower, 0L);
+        assert !followerStates.containsKey(follower) : "Already known follower " + follower;
+        followerStates.put(follower, new FollowerState(0L, lastLogIndex + 1));
     }
 
     /**
      * Removes a follower from leader maintained state.
      */
     public void remove(Endpoint follower) {
-        assertFollower(nextIndices, follower);
-        nextIndices.remove(follower);
-        matchIndices.remove(follower);
+        FollowerState removed = followerStates.remove(follower);
+        assert removed != null : "Unknown follower " + follower;
     }
 
     /**
-     * Sets {@code nextIndex} for a known follower.
+     * Returns an array of match indices for all followers.
+     * Additionally an empty slot is added at the end of indices array for leader itself.
      */
-    public void setNextIndex(Endpoint follower, long index) {
-        assertFollower(nextIndices, follower);
-        assert index > 0 : "Invalid next index: " + index;
-        nextIndices.put(follower, index);
+    public long[] matchIndices() {
+        // Leader index is appended at the end of array in AppendSuccessResponseHandlerTask
+        // That's why we add one more empty slot.
+        long[] indices = new long[followerStates.size() + 1];
+        int ix = 0;
+        for (FollowerState state : followerStates.values()) {
+            indices[ix++] = state.matchIndex();
+        }
+        return indices;
     }
 
-    /**
-     * Sets {@code matchIndex} for a known follower.
-     */
-    public void setMatchIndex(Endpoint follower, long index) {
-        assertFollower(matchIndices, follower);
-        assert index >= 0 : "Invalid match index: " + index;
-        matchIndices.put(follower, index);
+    public FollowerState getFollowerState(Endpoint follower) {
+        FollowerState followerState = followerStates.get(follower);
+        assert followerState != null : "Unknown follower " + follower;
+        return followerState;
     }
 
-    public Collection<Long> matchIndices() {
-        return matchIndices.values();
+    public Map<Endpoint, FollowerState> getFollowerStates() {
+        return followerStates;
     }
-
-    /**
-     * Returns the {@code nextIndex} for a known follower.
-     */
-    public long getNextIndex(Endpoint follower) {
-        assertFollower(nextIndices, follower);
-        return nextIndices.get(follower);
-    }
-
-    /**
-     * Returns the {@code matchIndex} for a known follower.
-     */
-    public long getMatchIndex(Endpoint follower) {
-        assertFollower(matchIndices, follower);
-        return matchIndices.get(follower);
-    }
-
-    private void assertFollower(Map<Endpoint, Long> indices, Endpoint follower) {
-        assert indices.containsKey(follower) : "Unknown follower " + follower;
-    }
-
-    private void assertNotFollower(Map<Endpoint, Long> indices, Endpoint follower) {
-        assert !indices.containsKey(follower) : "Already known follower " + follower;
-    }
-
 }

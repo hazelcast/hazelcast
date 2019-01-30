@@ -42,7 +42,11 @@ public abstract class RaftNodeStatusAwareTask implements Runnable {
             return;
         }
 
-        innerRun();
+        try {
+            innerRun();
+        } catch (Throwable e) {
+            logger.severe(e);
+        }
     }
 
     protected abstract void innerRun();

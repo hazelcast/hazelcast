@@ -16,10 +16,8 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
-import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.MetadataRaftGroupManager;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,25 +30,21 @@ import java.io.IOException;
  * <p/>
  * This operation is committed to the Metadata group.
  */
-public class GetActiveRaftGroupIdsOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
+public class GetActiveRaftGroupIdsOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
+                                                                            IdentifiedDataSerializable {
 
     public GetActiveRaftGroupIdsOp() {
     }
 
     @Override
-    public Object run(CPGroupId groupId, long commitIndex) {
-        RaftService service = getService();
-        return service.getMetadataGroupManager().getActiveGroupIds();
+    public Object run(MetadataRaftGroupManager metadataGroupManager, long commitIndex) {
+        metadataGroupManager.checkMetadataGroupInitSuccessful();
+        return metadataGroupManager.getActiveGroupIds();
     }
 
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
-    }
-
-    @Override
-    public String getServiceName() {
-        return RaftService.SERVICE_NAME;
     }
 
     @Override

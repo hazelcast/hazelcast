@@ -54,6 +54,16 @@ public class RaftAlgorithmConfig {
     public static final int DEFAULT_UNCOMMITTED_ENTRY_COUNT_TO_REJECT_NEW_APPENDS = 100;
 
     /**
+     * Default max number of missed heartbeats to trigger a new leader election.
+     */
+    public static final int DEFAULT_MAX_MISSED_LEADER_HEARTBEAT_COUNT = 5;
+
+    /**
+     * Default append request backoff timeout in millis.
+     */
+    public static final long DEFAULT_APPEND_REQUEST_BACKOFF_TIMEOUT_IN_MILLIS = 100;
+
+    /**
      * Leader election timeout in milliseconds. If a candidate cannot win
      * majority of the votes in time, a new election round is initiated.
      */
@@ -63,6 +73,11 @@ public class RaftAlgorithmConfig {
      * Period for leader to send heartbeat messages to its followers
      */
     private long leaderHeartbeatPeriodInMillis = DEFAULT_LEADER_HEARTBEAT_PERIOD_IN_MILLIS;
+
+    /**
+     * Max number of missed leader heartbeats to trigger a new leader election
+     */
+    private int maxMissedLeaderHeartbeatCount = DEFAULT_MAX_MISSED_LEADER_HEARTBEAT_COUNT;
 
     /**
      * Max entry count that can be sent in a single batch of
@@ -77,10 +92,17 @@ public class RaftAlgorithmConfig {
     private int commitIndexAdvanceCountToSnapshot = DEFAULT_COMMIT_INDEX_ADVANCE_COUNT_TO_SNAPSHOT;
 
     /**
-     * Max number of allowed uncommitted entries before
-     * temporarily rejecting new append requests
+     * Max number of uncommitted entries in the leader's Raft log before
+     * temporarily rejecting new requests of callers.
      */
     private int uncommittedEntryCountToRejectNewAppends = DEFAULT_UNCOMMITTED_ENTRY_COUNT_TO_REJECT_NEW_APPENDS;
+
+    /**
+     * Timeout for append request backoff in millis. After the leader sends
+     * an append request to a follower, it will not send a subsequent append
+     * request until the responds to the former request or this timeout occurs.
+     */
+    private long appendRequestBackoffTimeoutInMillis = DEFAULT_APPEND_REQUEST_BACKOFF_TIMEOUT_IN_MILLIS;
 
     public RaftAlgorithmConfig() {
     }
@@ -91,6 +113,8 @@ public class RaftAlgorithmConfig {
         this.appendRequestMaxEntryCount = config.appendRequestMaxEntryCount;
         this.commitIndexAdvanceCountToSnapshot = config.commitIndexAdvanceCountToSnapshot;
         this.uncommittedEntryCountToRejectNewAppends = config.uncommittedEntryCountToRejectNewAppends;
+        this.maxMissedLeaderHeartbeatCount = config.maxMissedLeaderHeartbeatCount;
+        this.appendRequestBackoffTimeoutInMillis = config.appendRequestBackoffTimeoutInMillis;
     }
 
     public long getLeaderElectionTimeoutInMillis() {
@@ -148,4 +172,23 @@ public class RaftAlgorithmConfig {
         return this;
     }
 
+    public int getMaxMissedLeaderHeartbeatCount() {
+        return maxMissedLeaderHeartbeatCount;
+    }
+
+    public RaftAlgorithmConfig setMaxMissedLeaderHeartbeatCount(int maxMissedLeaderHeartbeatCount) {
+        checkPositive(maxMissedLeaderHeartbeatCount, "max missed leader heartbeat count must be positive!");
+        this.maxMissedLeaderHeartbeatCount = maxMissedLeaderHeartbeatCount;
+        return this;
+    }
+
+    public long getAppendRequestBackoffTimeoutInMillis() {
+        return appendRequestBackoffTimeoutInMillis;
+    }
+
+    public RaftAlgorithmConfig setAppendRequestBackoffTimeoutInMillis(long appendRequestBackoffTimeoutInMillis) {
+        checkPositive(appendRequestBackoffTimeoutInMillis, "append request backoff timeout must be positive!");
+        this.appendRequestBackoffTimeoutInMillis = appendRequestBackoffTimeoutInMillis;
+        return this;
+    }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.raftop.metadata;
+package com.hazelcast.cp.internal.raftop;
 
 import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.CPGroupId;

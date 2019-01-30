@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.cp.CPSubsystem;
 
 /**
@@ -64,6 +65,13 @@ import com.hazelcast.cp.CPSubsystem;
  * failures and network partitions. It is CP with respect to the CAP principle.
  * If a network partition occurs, it remains available on at most one side
  * of the partition.
+ * <p>
+ * The CP IAtomicLong impl does not offer exactly-once / effectively-once
+ * execution semantics. It goes with at-least-once execution semantics
+ * by default and can cause an API call to be committed multiple times
+ * in case of CP member failures. It can be tuned to offer at-most-once
+ * execution semantics. Please see
+ * {@link CPSubsystemConfig#setFailOnIndeterminateOperationState(boolean)}
  *
  * @see IAtomicReference
  */

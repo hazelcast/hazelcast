@@ -100,7 +100,7 @@ public class RaftState {
      * Raft log entries; each entry contains command for state machine,
      * and term when entry was received by leader (first index is 1)
      */
-    private RaftLog log = new RaftLog();
+    private final RaftLog log;
 
     /**
      * State maintained by the leader, null if this node is not the leader
@@ -120,13 +120,14 @@ public class RaftState {
      */
     private CandidateState candidateState;
 
-    public RaftState(CPGroupId groupId, Endpoint localEndpoint, Collection<Endpoint> endpoints) {
+    public RaftState(CPGroupId groupId, Endpoint localEndpoint, Collection<Endpoint> endpoints, int logCapacity) {
         this.groupId = groupId;
         this.localEndpoint = localEndpoint;
         this.initialMembers = unmodifiableSet(new LinkedHashSet<Endpoint>(endpoints));
         RaftGroupMembers groupMembers = new RaftGroupMembers(0, endpoints, localEndpoint);
         this.committedGroupMembers = groupMembers;
         this.lastGroupMembers = groupMembers;
+        this.log = new RaftLog(logCapacity);
     }
 
     public String name() {
@@ -434,12 +435,11 @@ public class RaftState {
      * and {@link #lastGroupMembers} are overwritten and they become the same.
      */
     public void restoreGroupMembers(long logIndex, Collection<Endpoint> members) {
-        assert committedGroupMembers == lastGroupMembers
-                : "Cannot restore group members to: " + members + " at log index: " + logIndex + " because last group members: "
-                + lastGroupMembers + " is different than committed group members: " + committedGroupMembers;
         assert lastGroupMembers.index() <= logIndex
                 : "Cannot restore group members to: " + members + " at log index: " + logIndex + " because last group members: "
                 + lastGroupMembers + " has a bigger log index.";
+
+        // there is no leader state to clean up
 
         RaftGroupMembers groupMembers = new RaftGroupMembers(logIndex, members, localEndpoint);
         this.committedGroupMembers = groupMembers;

@@ -16,18 +16,21 @@
 
 package com.hazelcast.cp.internal.raft.impl.task;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
+import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.NotLeaderException;
-import com.hazelcast.cp.exception.CPGroupDestroyedException;
+import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
-import com.hazelcast.cp.internal.raft.impl.command.ApplyRaftGroupMembersCmd;
+import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
+import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.util.SimpleCompletableFuture;
+import com.hazelcast.logging.ILogger;
 
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.UPDATING_GROUP_MEMBER_LIST;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
 
 /**
@@ -58,32 +61,44 @@ public class ReplicateTask implements Runnable {
 
     @Override
     public void run() {
-        if (!verifyRaftNodeStatus()) {
-            return;
+        try {
+            if (!verifyRaftNodeStatus()) {
+                return;
+            }
+
+            RaftState state = raftNode.state();
+            if (state.role() != LEADER) {
+                resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
+                return;
+            }
+
+            if (!raftNode.canReplicateNewEntry(operation)) {
+                resultFuture.setResult(new CannotReplicateException(raftNode.getLocalMember()));
+                return;
+            }
+
+            if (logger.isFineEnabled()) {
+                logger.fine("Replicating: " + operation + " in term: " + state.term());
+            }
+
+            RaftLog log = state.log();
+
+            if (!log.checkAvailableCapacity(1)) {
+                resultFuture.setResult(new IllegalStateException("Not enough capacity in RaftLog!"));
+                return;
+            }
+
+            long newEntryLogIndex = log.lastLogOrSnapshotIndex() + 1;
+            raftNode.registerFuture(newEntryLogIndex, resultFuture);
+            log.appendEntries(new LogEntry(state.term(), newEntryLogIndex, operation));
+
+            preApplyRaftGroupCmd(newEntryLogIndex, operation);
+
+            raftNode.broadcastAppendRequest();
+        } catch (Throwable t) {
+            logger.severe(operation + " could not be replicated to leader: " + raftNode.getLocalMember(), t);
+            resultFuture.setResult(new CPSubsystemException("Internal failure", raftNode.getLeader(), t));
         }
-
-        RaftState state = raftNode.state();
-        if (state.role() != LEADER) {
-            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
-            return;
-        }
-
-        if (!raftNode.canReplicateNewEntry(operation)) {
-            resultFuture.setResult(new CannotReplicateException(raftNode.getLocalMember()));
-            return;
-        }
-
-        if (logger.isFineEnabled()) {
-            logger.fine("Replicating: " + operation + " in term: " + state.term());
-        }
-
-        long newEntryLogIndex = state.log().lastLogOrSnapshotIndex() + 1;
-        raftNode.registerFuture(newEntryLogIndex, resultFuture);
-        state.log().appendEntries(new LogEntry(state.term(), newEntryLogIndex, operation));
-
-        handleRaftGroupCmd(newEntryLogIndex, operation);
-
-        raftNode.broadcastAppendRequest();
     }
 
     private boolean verifyRaftNodeStatus() {
@@ -100,13 +115,14 @@ public class ReplicateTask implements Runnable {
         return true;
     }
 
-    private void handleRaftGroupCmd(long logIndex, Object operation) {
+    private void preApplyRaftGroupCmd(long logIndex, Object operation) {
         if (operation instanceof DestroyRaftGroupCmd) {
             raftNode.setStatus(RaftNodeStatus.TERMINATING);
-        } else if (operation instanceof ApplyRaftGroupMembersCmd) {
-            raftNode.setStatus(RaftNodeStatus.CHANGING_MEMBERSHIP);
-            ApplyRaftGroupMembersCmd op = (ApplyRaftGroupMembersCmd) operation;
+        } else if (operation instanceof UpdateRaftGroupMembersCmd) {
+            raftNode.setStatus(UPDATING_GROUP_MEMBER_LIST);
+            UpdateRaftGroupMembersCmd op = (UpdateRaftGroupMembersCmd) operation;
             raftNode.updateGroupMembers(logIndex, op.getMembers());
+            // TODO following suggestions are optimizations. No rush for impl'ing them...
             // TODO update quorum match indices...
             // TODO if the Raft group shrinks, we can move the commit index forward...
         }

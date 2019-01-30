@@ -71,14 +71,16 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     private final NodeEngineImpl nodeEngine;
     private final CPGroupId groupId;
+    private final CPMember localCPMember;
     private final InternalOperationService operationService;
     private final TaskScheduler taskScheduler;
     private final int partitionId;
     private final int threadId;
 
-    NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId) {
+    NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, CPMember localCPMember) {
         this.nodeEngine = nodeEngine;
         this.groupId = groupId;
+        this.localCPMember = localCPMember;
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.operationService = operationService;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);
@@ -205,7 +207,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     @Override
     public void restoreSnapshot(Object op, long commitIndex) {
-        ILogger logger = nodeEngine.getLogger(this.getClass());
+        ILogger logger = nodeEngine.getLogger(getClass());
         List<RestoreSnapshotOp> snapshotOps = (List<RestoreSnapshotOp>) op;
         for (RestoreSnapshotOp snapshotOp : snapshotOps) {
             Object result = runOperation(snapshotOp, commitIndex);
@@ -217,6 +219,14 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     private boolean send(AsyncRaftOp operation, Endpoint target) {
         CPMember targetMember = (CPMember) target;
+        if (localCPMember.getAddress().equals(targetMember.getAddress())) {
+            if (localCPMember.getUuid().equals(target.getUuid())) {
+                throw new IllegalStateException("Cannot send " + operation + " to "
+                        + target + " because it's same with the local CP member!");
+            }
+            return false;
+        }
+
         operation.setTargetMember(targetMember).setPartitionId(partitionId);
         return operationService.send(operation, targetMember.getAddress());
     }

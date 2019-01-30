@@ -81,9 +81,14 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
         return RaftDataSerializerHook.SNAPSHOT_ENTRY;
     }
 
+    public String toString(boolean detailed) {
+        return "SnapshotEntry{" + "term=" + term() + ", index=" + index()
+                + (detailed ? ", operation=" + operation() : "")
+                + ", groupMembersLogIndex=" + groupMembersLogIndex + ", groupMembers=" + groupMembers + '}';
+    }
+
     @Override
     public String toString() {
-        return "SnapshotEntry{" + "term=" + term() + ", index=" + index() + ", operation=" + operation()
-                + ", groupMembersLogIndex=" + groupMembersLogIndex + ", groupMembers=" + groupMembers + '}';
+        return toString(false);
     }
 }

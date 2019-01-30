@@ -4637,6 +4637,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="max-missed-leader-heartbeat-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="5">
+                <xs:annotation>
+                    <xs:documentation>
+                        Max number of missed leader heartbeats to trigger a new leader election
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="append-request-max-entry-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="50">
                 <xs:annotation>
                     <xs:documentation>
@@ -4656,10 +4663,22 @@
                         default="100">
                 <xs:annotation>
                     <xs:documentation>
-                        Max number of allowed uncommitted entries before temporarily rejecting new append requests
+                        Max number of uncommitted entries in the leader's Raft log before
+                        temporarily rejecting new requests of callers.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="append-request-backoff-timeout-in-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"
+                        default="100">
+                <xs:annotation>
+                    <xs:documentation>
+                        Timeout for append request backoff in millis. After the leader sends
+                        an append request to a follower, it will not send a subsequent append
+                        request until the responds to the former request or this timeout occurs.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
         </xs:all>
     </xs:complexType>
 

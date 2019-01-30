@@ -1439,10 +1439,12 @@ public class ConfigXmlGenerator {
         gen.open("raft-algorithm")
            .node("leader-election-timeout-in-millis", raftAlgorithmConfig.getLeaderElectionTimeoutInMillis())
            .node("leader-heartbeat-period-in-millis", raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis())
+           .node("max-missed-leader-heartbeat-count", raftAlgorithmConfig.getMaxMissedLeaderHeartbeatCount())
            .node("append-request-max-entry-count", raftAlgorithmConfig.getAppendRequestMaxEntryCount())
            .node("commit-index-advance-count-to-snapshot", raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot())
            .node("uncommitted-entry-count-to-reject-new-appends",
                    raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends())
+           .node("append-request-backoff-timeout-in-millis", raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis())
            .close();
 
         gen.open("semaphores");

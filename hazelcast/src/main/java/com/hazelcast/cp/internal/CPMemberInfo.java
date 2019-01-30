@@ -29,6 +29,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.util.UUID;
+
+import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
  * {@code CPMember} represents a member in Raft group.
@@ -38,24 +42,25 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
     private static final long serialVersionUID = 5628148969327743953L;
 
-    private transient String uuid;
+    private transient UUID uuid;
+    private transient String uuidString;
     private transient Address address;
 
     public CPMemberInfo() {
     }
 
-    public CPMemberInfo(String id, Address address) {
-        this.uuid = id;
+    public CPMemberInfo(UUID uuid, Address address) {
+        this.uuid = uuid;
+        this.uuidString = uuid.toString();
         this.address = address;
     }
 
     public CPMemberInfo(Member member) {
-        this.uuid = member.getUuid();
-        this.address = member.getAddress();
+        this(UUID.fromString(member.getUuid()), member.getAddress());
     }
 
     public String getUuid() {
-        return uuid;
+        return uuidString;
     }
 
     @Override
@@ -73,14 +78,15 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
-        out.writeUTF(uuid);
+        writeUUID(out, uuid);
         out.writeUTF(address.getHost());
         out.writeInt(address.getPort());
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-        uuid = in.readUTF();
+        uuid = readUUID(in);
+        uuidString = uuid.toString();
         String host = in.readUTF();
         int port = in.readInt();
         address = new Address(host, port);
@@ -88,13 +94,14 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        writeUUID(out, uuid);
         out.writeObject(address);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = readUUID(in);
+        uuidString = uuid.toString();
         address = in.readObject();
     }
 
@@ -135,6 +142,6 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
 
     @Override
     public String toString() {
-        return "CPMember{" + "uuid=" + uuid + ", address=" + address + '}';
+        return "CPMember{" + "uuid=" + uuidString + ", address=" + address + '}';
     }
 }

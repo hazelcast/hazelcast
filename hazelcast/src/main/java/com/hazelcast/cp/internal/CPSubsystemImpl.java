@@ -84,7 +84,7 @@ public class CPSubsystemImpl implements CPSubsystem {
             throw new HazelcastException("CP Subsystem is not enabled!");
         }
         RaftService service = instance.node.getNodeEngine().getService(RaftService.SERVICE_NAME);
-        return service.getLocalMember();
+        return service.getLocalCPMember();
     }
 
     @Override

@@ -20,7 +20,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.cp.internal.raft.MembershipChangeType;
+import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
@@ -40,25 +40,25 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
 
     private long membersCommitIndex;
     private CPMemberInfo member;
-    private MembershipChangeType changeType;
+    private MembershipChangeMode membershipChangeMode;
 
     public ChangeRaftGroupMembershipOp() {
     }
 
     public ChangeRaftGroupMembershipOp(CPGroupId groupId, long membersCommitIndex, CPMemberInfo member,
-                                       MembershipChangeType changeType) {
+                                       MembershipChangeMode membershipChangeMode) {
         super(groupId);
         this.membersCommitIndex = membersCommitIndex;
         this.member = member;
-        this.changeType = changeType;
+        this.membershipChangeMode = membershipChangeMode;
     }
 
     @Override
     ICompletableFuture replicate(RaftNode raftNode) {
         if (membersCommitIndex == NAN_MEMBERS_COMMIT_INDEX) {
-            return raftNode.replicateMembershipChange(member, changeType);
+            return raftNode.replicateMembershipChange(member, membershipChangeMode);
         } else {
-            return raftNode.replicateMembershipChange(member, changeType, membersCommitIndex);
+            return raftNode.replicateMembershipChange(member, membershipChangeMode, membersCommitIndex);
         }
     }
 
@@ -87,7 +87,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
         super.writeInternal(out);
         out.writeLong(membersCommitIndex);
         out.writeObject(member);
-        out.writeUTF(changeType.toString());
+        out.writeUTF(membershipChangeMode.toString());
     }
 
     @Override
@@ -95,7 +95,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
         super.readInternal(in);
         membersCommitIndex = in.readLong();
         member = in.readObject();
-        changeType = MembershipChangeType.valueOf(in.readUTF());
+        membershipChangeMode = MembershipChangeMode.valueOf(in.readUTF());
     }
 
     @Override
@@ -103,6 +103,6 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
         super.toString(sb);
         sb.append(", membersCommitIndex=").append(membersCommitIndex)
           .append(", member=").append(member)
-          .append(", changeType=").append(changeType);
+          .append(", membershipChangeMode=").append(membershipChangeMode);
     }
 }

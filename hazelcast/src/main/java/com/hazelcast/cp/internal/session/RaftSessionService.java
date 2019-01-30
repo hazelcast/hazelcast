@@ -301,8 +301,6 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
                 logger.fine("Sessions: " + expired + " are expired in " + groupId);
             }
 
-            logger.fine("Sessions: " + expired + " are expired in " + groupId);
-
             notifyServices(groupId, expired);
         }
     }

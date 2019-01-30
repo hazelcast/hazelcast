@@ -36,7 +36,7 @@ public class MismatchingGroupMembersCommitIndexException extends CPSubsystemExce
     private final Collection<Endpoint> members;
 
     public MismatchingGroupMembersCommitIndexException(long commitIndex, Collection<Endpoint> members) {
-        super(null);
+        super("commit index: " + commitIndex + " members: " + members, null);
         this.commitIndex = commitIndex;
         this.members = members;
     }

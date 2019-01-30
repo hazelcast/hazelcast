@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.exception;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * Thrown while a CP member is requested to be removed from the CP sub-system
+ * Thrown while a CP member is requested to be removed from the CP subsystem
  * while there is an ongoing process for another member. This exception will
  * be handled internally and will not be exposed to the user.
  */

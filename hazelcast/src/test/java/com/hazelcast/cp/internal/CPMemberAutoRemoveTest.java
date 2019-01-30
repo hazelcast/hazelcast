@@ -18,11 +18,13 @@ package com.hazelcast.cp.internal;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,8 +33,10 @@ import java.util.Collection;
 
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -45,9 +49,7 @@ public class CPMemberAutoRemoveTest extends HazelcastRaftTestSupport {
         missingRaftMemberRemovalSeconds = 10;
         final HazelcastInstance[] instances = newInstances(3, 3, 0);
 
-        waitUntilCPDiscoveryCompleted(instances);
-
-        final CPMemberInfo terminatedMember = getRaftService(instances[2]).getLocalMember();
+        final CPMemberInfo terminatedMember = (CPMemberInfo) instances[2].getCPSubsystem().getLocalCPMember();
         instances[2].getLifecycleService().terminate();
 
         assertTrueEventually(new AssertTask() {
@@ -55,8 +57,8 @@ public class CPMemberAutoRemoveTest extends HazelcastRaftTestSupport {
             public void run() {
                 Collection<CPMemberInfo> activeMembers = getRaftService(instances[0]).getMetadataGroupManager()
                                                                                      .getActiveMembers();
-                assertFalse(activeMembers.contains(terminatedMember));
-                assertTrue(getRaftService(instances[0]).getMissingMembers().isEmpty());
+                assertThat(activeMembers, not(hasItem(terminatedMember)));
+                assertThat(getRaftService(instances[0]).getMissingMembers(), Matchers.<CPMemberInfo>empty());
             }
         });
     }
@@ -66,11 +68,18 @@ public class CPMemberAutoRemoveTest extends HazelcastRaftTestSupport {
         missingRaftMemberRemovalSeconds = 300;
         final HazelcastInstance[] instances = newInstances(3, 3, 0);
 
-        waitUntilCPDiscoveryCompleted(instances);
+        final CPMember cpMember0 = instances[0].getCPSubsystem().getLocalCPMember();
+        final CPMember cpMember1 = instances[1].getCPSubsystem().getLocalCPMember();
+        final CPMember cpMember2 = instances[2].getCPSubsystem().getLocalCPMember();
 
-        final CPMemberInfo cpMember0 = getRaftService(instances[0]).getLocalMember();
-        final CPMemberInfo cpMember1 = getRaftService(instances[1]).getLocalMember();
-        final CPMemberInfo cpMember2 = getRaftService(instances[2]).getLocalMember();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (HazelcastInstance instance : instances) {
+                    assertEquals(3, getRaftService(instance).getMetadataGroupManager().getActiveMembers().size());
+                }
+            }
+        });
 
         blockCommunicationBetween(instances[1], instances[2]);
         blockCommunicationBetween(instances[0], instances[2]);
@@ -84,12 +93,12 @@ public class CPMemberAutoRemoveTest extends HazelcastRaftTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(getRaftService(instances[0]).getMissingMembers().contains(cpMember2));
-                assertTrue(getRaftService(instances[1]).getMissingMembers().contains(cpMember2));
-                assertTrue(getRaftService(instances[2]).getMissingMembers().contains(cpMember0));
-                assertTrue(getRaftService(instances[2]).getMissingMembers().contains(cpMember1));
+                assertThat(getRaftService(instances[0]).getMissingMembers(), hasItem((CPMemberInfo) cpMember2));
+                assertThat(getRaftService(instances[1]).getMissingMembers(), hasItem((CPMemberInfo) cpMember2));
+                assertThat(getRaftService(instances[2]).getMissingMembers(), hasItem((CPMemberInfo) cpMember0));
+                assertThat(getRaftService(instances[2]).getMissingMembers(), hasItem((CPMemberInfo) cpMember1));
             }
-        }, 20);
+        });
 
         unblockCommunicationBetween(instances[1], instances[2]);
         unblockCommunicationBetween(instances[0], instances[2]);
@@ -99,9 +108,9 @@ public class CPMemberAutoRemoveTest extends HazelcastRaftTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(getRaftService(instances[0]).getMissingMembers().isEmpty());
-                assertTrue(getRaftService(instances[1]).getMissingMembers().isEmpty());
-                assertTrue(getRaftService(instances[2]).getMissingMembers().isEmpty());
+                assertThat(getRaftService(instances[0]).getMissingMembers(), Matchers.<CPMemberInfo>empty());
+                assertThat(getRaftService(instances[1]).getMissingMembers(), Matchers.<CPMemberInfo>empty());
+                assertThat(getRaftService(instances[2]).getMissingMembers(), Matchers.<CPMemberInfo>empty());
             }
         });
     }

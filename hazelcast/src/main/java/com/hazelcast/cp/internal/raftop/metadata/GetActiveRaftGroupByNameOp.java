@@ -16,10 +16,8 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
-import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.MetadataRaftGroupManager;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,7 +28,8 @@ import java.io.IOException;
 /**
  * Returns an active CP group by its name
  */
-public class GetActiveRaftGroupByNameOp extends RaftOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {
+public class GetActiveRaftGroupByNameOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,
+                                                                               IdentifiedDataSerializable {
 
     private String groupName;
 
@@ -42,14 +41,9 @@ public class GetActiveRaftGroupByNameOp extends RaftOp implements IndeterminateO
     }
 
     @Override
-    public Object run(CPGroupId groupId, long commitIndex) throws Exception {
-        RaftService service = getNodeEngine().getService(RaftService.SERVICE_NAME);
-        return service.getMetadataGroupManager().getActiveRaftGroup(groupName);
-    }
-
-    @Override
-    protected String getServiceName() {
-        return RaftService.SERVICE_NAME;
+    public Object run(MetadataRaftGroupManager metadataGroupManager, long commitIndex) throws Exception {
+        metadataGroupManager.checkMetadataGroupInitSuccessful();
+        return metadataGroupManager.getActiveGroup(groupName);
     }
 
     @Override

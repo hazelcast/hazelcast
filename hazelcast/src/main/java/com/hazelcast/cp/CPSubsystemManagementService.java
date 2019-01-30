@@ -40,9 +40,9 @@ import java.util.Collection;
  * offers APIs for dynamic management of CP members.
  * <p>
  * The CP subsystem relies on Hazelcast's failure detectors to test
- * reachability of CP members. To be able to remove a CP member from
- * the CP subsystem, it must be declared as unreachable by Hazelcast's failure
- * detector, and removed from Hazelcast's member list.
+ * reachability of CP members. Before removing a CP member from
+ * the CP subsystem, please make sure that it is declared as unreachable by
+ * Hazelcast's failure detector and removed from Hazelcast's member list.
  * <p>
  * CP member additions and removals are internally handled by performing
  * a single membership change at a time. When multiple CP members are shutting
@@ -74,12 +74,12 @@ import java.util.Collection;
  * issues are resolved. If it is known to be crashed or communication issues
  * cannot be resolved in a short time, it can be preferable to remove this CP
  * member from the CP subsystem, hence from all its CP groups. In this case,
- * unreachable CP member should be terminated to prevent any accidental
+ * the unreachable CP member should be terminated to prevent any accidental
  * communication with the rest of the CP subsystem.
  * <p>
  * When majority of a CP group is lost for any reason, that CP group cannot
  * make progress anymore. Even a new CP member cannot join to this CP group,
- * because member additions also go through the Raft consensus algorithm.
+ * because all membership changes also go through the Raft consensus algorithm.
  * For this reason, the only option is to force-destroy the CP group via the
  * {@link #forceDestroyCPGroup(String)} API. When this API is used, the CP
  * group is terminated non-gracefully, without the Raft algorithm mechanics.
@@ -138,15 +138,11 @@ public interface CPSubsystemManagementService {
      * <p>
      * This method is idempotent. It has no effect if the given CP group is
      * already destroyed.
-     *
-     * @return a Future representing pending completion of the operation
      */
     ICompletableFuture<Void> forceDestroyCPGroup(String groupName);
 
     /**
      * Returns the current list of CP members
-     *
-     * @return the current list of CP members
      */
     ICompletableFuture<Collection<CPMember>> getCPMembers();
 
@@ -158,13 +154,26 @@ public interface CPSubsystemManagementService {
      * method will have no effect. When the current member is promoted to CP
      * member, its member UUID is assigned as CP member UUID.
      * <p>
+     * Once the returned {@code Future} object is completed, the promoted CP
+     * member has been added to the CP groups that have missing members, i.e.,
+     * whose size is smaller than {@link CPSubsystemConfig#getGroupSize()}.
+     * <p>
      * If the local member is currently being removed from
-     * the active CP members list, then the returning Future object
+     * the active CP members list, then the returned {@code Future} object
      * will throw {@link IllegalArgumentException}.
+     * <p>
+     * If there is an ongoing membership change in the CP subsystem when this
+     * method is invoked, then the returned {@code Future} object throws
+     * {@link IllegalStateException}
+     * <p>
+     * If the CP subsystem initial discovery process has not completed when
+     * this method is invoked, then the returned {@code Future} object throws
+     * {@link IllegalStateException}
      *
-     * @return a Future representing pending completion of the operation
      * @throws IllegalArgumentException If the local member is currently being
      *         removed from the active CP members list
+     * @throws IllegalStateException If there is an ongoing membership change
+     *         in the CP subsystem
      */
     ICompletableFuture<Void> promoteToCPMember();
 
@@ -175,23 +184,21 @@ public interface CPSubsystemManagementService {
      * Otherwise, CP groups which the removed CP member is a member of will
      * shrink and their majority values will be recalculated.
      * <p>
-     * This method can be invoked only from the Hazelcast master member.
-     * <p>
-     * This method is idempotent.
-     * If the given member is not in the active CP members list,
-     * then this method will have no effect.
+     * Before removing a CP member from the CP subsystem, please make sure that
+     * it is declared as unreachable by Hazelcast's failure detector and removed
+     * from Hazelcast's member list. The behaviour is undefined when a running
+     * CP member is removed from the CP subsystem.
      *
-     * @return a Future representing pending completion of the operation
-     * @throws IllegalStateException When member removal initiated by
-     *         a non-master member or the given member is still member of
-     *         the Hazelcast cluster or another CP member is being removed
-     *         from the CP sub-system
+     * @throws IllegalStateException When another CP member is being removed
+     *         from the CP subsystem
+     * @throws IllegalArgumentException if the given CP member is already
+     *         removed from the CP member list
      */
     ICompletableFuture<Void> removeCPMember(String cpMemberUuid);
 
     /**
-     * Wipes & resets the whole CP subsystem and initializes it as if the Hazelcast
-     * cluster is starting up initially.
+     * Wipes & resets the whole CP subsystem and initializes it
+     * as if the Hazelcast cluster is starting up initially.
      * This method must be used only when the Metadata CP group loses
      * its majority and cannot make progress anymore.
      * <p>
@@ -200,9 +207,22 @@ public interface CPSubsystemManagementService {
      * <p>
      * This method can be invoked only from the Hazelcast master member.
      * <p>
+     * This method must not be called while there are membership changes
+     * in the cluster. Before calling this method, please make sure that
+     * there is no new member joining and all existing Hazelcast members
+     * have seen the same member list.
+     * <p>
      * <strong>Use with caution:
-     * This method is NOT idempotent and multiple invocations
-     * can break the whole system!</strong>
+     * This method is NOT idempotent and multiple invocations can break
+     * the whole system! After calling this API, you must observe the system
+     * to see if the restart process is successfully completed or failed
+     * before making another call.</strong>
+     *
+     * @throws IllegalStateException When this method is called on
+     *         a Hazelcast member that is not the Hazelcast cluster master
+     * @throws IllegalStateException if current member count of the cluster
+     *         is smaller than {@link CPSubsystemConfig#getCPMemberCount()}
+     *
      */
     ICompletableFuture<Void> restart();
 

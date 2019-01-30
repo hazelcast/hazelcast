@@ -465,8 +465,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
      * @return {@code true} if there is a timeout detected, {@code false} otherwise.
      */
     boolean detectAndHandleTimeout(long heartbeatTimeoutMillis) {
-        // skip if local and not BackupAwareOperation
-        if (!(remote || op instanceof BackupAwareOperation)) {
+        if (skipTimeoutDetection())  {
             return false;
         }
 
@@ -478,6 +477,11 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         } else {
             return false;
         }
+    }
+
+    boolean skipTimeoutDetection() {
+        // skip if local and not BackupAwareOperation
+        return !(remote || op instanceof BackupAwareOperation);
     }
 
     HeartbeatTimeout detectTimeout(long heartbeatTimeoutMillis) {

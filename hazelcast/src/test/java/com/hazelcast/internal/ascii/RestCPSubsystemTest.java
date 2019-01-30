@@ -402,19 +402,6 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_removeExistingCPMember() throws IOException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        Hazelcast.newHazelcastInstance(config);
-
-        ConnectionResponse response = new HTTPCommunicator(instance1).removeCPMember(instance2.getCPSubsystem()
-                                                                                              .getLocalCPMember()
-                                                                                              .getUuid(), groupName, groupPassword);
-
-        assertEquals(400, response.responseCode);
-    }
-
-    @Test
     public void test_removeCPMemberFromNonMaster() throws IOException {
         Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
@@ -425,7 +412,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
         ConnectionResponse response = new HTTPCommunicator(instance3).removeCPMember(crashedCPMember.getUuid(), groupName, groupPassword);
 
-        assertEquals(500, response.responseCode);
+        assertEquals(200, response.responseCode);
     }
 
     @Test

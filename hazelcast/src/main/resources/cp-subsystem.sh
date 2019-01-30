@@ -4,31 +4,30 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
    	echo "Sends CP subsystem management operations to a Hazelcast instance."
    	echo "Parameters: "
    	echo "	-o, --operation	            : Operation to be called."
-    echo "	-c, --cp-group       	    : Name of the CP group. Must be provided for 'get-cp-group', 'force-destroy-cp-group', 'get-cp-sessions', 'force-close-cp-session'."
-    echo "	-m, --cp-member      	    : UUID of the CP member. Must be provided for 'remove-cp-member'."
-    echo "	-s, --cp-session-id 	    : CP Session ID. Must be provided for 'force-close-cp-session'."
+    echo "	-c, --group       	        : Name of the CP group. Must be provided for 'get-group', 'force-destroy-group', 'get-sessions', 'force-close-session'."
+    echo "	-m, --member      	        : UUID of the CP member. Must be provided for 'remove-member'."
+    echo "	-s, --session-id 	        : CP Session ID. Must be provided for 'force-close-session'."
     echo "	-a, --address  	            : Defines which ip address hazelcast is running. Default value is '127.0.0.1'."
    	echo "	-p, --port  	            : Defines which port hazelcast is running. Default value is '5701'."
    	echo "	-g, --groupname             : Defines groupname of the cluster. Default value is 'dev'."
    	echo "	-P, --password              : Defines password of the cluster. Default value is 'dev-pass'."
    	echo "Operations: "
    	echo "	- 'get-local-member' returns the local CP member information from the accessed Hazelcast member."
-   	echo "	- 'get-cp-groups' returns the list of active CP groups."
-   	echo "	- 'get-cp-group' expects a CP group name (-c or --cp-group) and returns a its details."
-   	echo "	- 'force-destroy-cp-group' destroys a CP group (-c or --cp-group) non-gracefully."
+   	echo "	- 'get-groups' returns the list of active CP groups."
+   	echo "	- 'get-group' expects a CP group name (-c or --group) and returns a its details."
+   	echo "	- 'force-destroy-group' destroys a CP group (-c or --group) non-gracefully."
    	echo "	   It must be called only when a CP group loses its majority."
    	echo "	   All CP data structure proxies created before the force-destroy step will fail."
    	echo "	   If you create a new proxy for a CP data structure that is mapped to the destroyed CP group, the CP group will be initialized from scratch."
    	echo "     Please note that you cannot force-destroy the METADATA CP group. If you lose majority of the METADATA CP group, you have to restart the CP subsystem."
-   	echo "	- 'get-cp-members' returns the list of active CP members in the cluster."
+   	echo "	- 'get-members' returns the list of active CP members in the cluster."
    	echo "	   Please note that even if a CP member has left the cluster, it is not automatically removed from the active CP member list immediately."
-   	echo "	- 'remove-cp-member' removes the given CP member (-m) from the active CP member list."
+   	echo "	- 'remove-member' removes the given CP member (-m) from the active CP member list."
    	echo "	   The removed member will be removed from the CP groups as well."
    	echo "	   Before removing a CP member, please make sure that the missing member is actually crashed, not partitioned away."
-   	echo "	   You can call this API only on the Hazelcast master member (i.e., the first member in the Hazelcast cluster member list) and the member to be removed must not be present in the member list."
-   	echo "	- 'promote-to-cp-member' promotes the contacted Hazelcast member to the CP member role."
-   	echo "	- 'get-cp-sessions' returns the list of CP sessions created in the requested CP group (-c)."
-   	echo "	- 'force-close-cp-session' closes the given CP session (-s) on the given CP group (-c)."
+   	echo "	- 'promote-member' promotes the contacted Hazelcast member to the CP member role."
+   	echo "	- 'get-sessions' returns the list of CP sessions created in the requested CP group (-c)."
+   	echo "	- 'force-close-session' closes the given CP session (-s) on the given CP group (-c)."
    	echo "	   Once the CP session is closed, all CP resources (locks, semaphore permits, etc.) will be released."
    	echo "	   Before force-closing a CP session, please make sure that owner endpoint of the CP session is crashed and will not show up."
    	echo "	- 'restart' wipes out all CP subsystem state and restarts it from scratch."
@@ -55,15 +54,15 @@ case "$key" in
     OPERATION="$2"
     shift # past argument
     ;;
-    -c|--cp-group)
+    -c|--group)
     CP_GROUP_NAME="$2"
     shift # past argument
     ;;
-    -m|--cp-member)
+    -m|--member)
     CP_MEMBER_UID="$2"
     shift # past argument
     ;;
-    -s|--cp-session-id)
+    -s|--session-id)
     CP_SESSION_ID="$2"
     shift # past argument
     ;;
@@ -90,8 +89,8 @@ done
 
 
 if [[ -z "$OPERATION" ]]; then
- 	echo "No operation is defined, running script with default operation: 'get-local-cp-member'."
- 	OPERATION="get-local-cp-member"
+ 	echo "No operation is defined, running script with default operation: 'get-local-member'."
+ 	OPERATION="get-local-member"
 fi
 
 
@@ -117,9 +116,9 @@ fi
 
 command -v curl >/dev/null 2>&1 || { echo >&2 "Cluster state script requires curl but it's not installed. Aborting."; exit -1; }
 
-if [[ "$OPERATION" = "get-local-cp-member" ]]; then
+if [[ "$OPERATION" = "get-local-member" ]]; then
     echo "Getting local CP member information on ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-members/local"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/members/local"
  	response=$(curl -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -137,9 +136,9 @@ if [[ "$OPERATION" = "get-local-cp-member" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-if [[ "$OPERATION" = "get-cp-groups" ]]; then
+if [[ "$OPERATION" = "get-groups" ]]; then
     echo "Getting CP group IDs on ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-groups"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/groups"
  	response=$(curl -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -153,14 +152,14 @@ if [[ "$OPERATION" = "get-cp-groups" ]]; then
     exit 6
 fi
 
-if [[ "$OPERATION" = "get-cp-group" ]]; then
+if [[ "$OPERATION" = "get-group" ]]; then
     if [[ -z "$CP_GROUP_NAME" ]]; then
         echo "No CP group name is defined! You must provide a CP group name with -c\nMissing argument!"
         exit ${MISSING_ARGUMENT_RETURN_VALUE}
     fi
 
     echo "Getting CP group: ${CP_GROUP_NAME} on ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-groups/${CP_GROUP_NAME}"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/groups/${CP_GROUP_NAME}"
  	response=$(curl -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -178,9 +177,9 @@ if [[ "$OPERATION" = "get-cp-group" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-if [[ "$OPERATION" = "get-cp-members" ]]; then
+if [[ "$OPERATION" = "get-members" ]]; then
     echo "Getting CP members on ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-members"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/members"
  	response=$(curl -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -194,14 +193,14 @@ if [[ "$OPERATION" = "get-cp-members" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-if [[ "$OPERATION" = "get-cp-sessions" ]]; then
+if [[ "$OPERATION" = "get-sessions" ]]; then
     if [[ -z "$CP_GROUP_NAME" ]]; then
         echo "No CP group name is defined! You must provide a CP group name with -c\nMissing argument!"
         exit ${MISSING_ARGUMENT_RETURN_VALUE}
     fi
 
     echo "Getting CP sessions in CP group: ${CP_GROUP_NAME} on ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-groups/${CP_GROUP_NAME}/cp-sessions"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/groups/${CP_GROUP_NAME}/sessions"
  	response=$(curl -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -219,14 +218,14 @@ if [[ "$OPERATION" = "get-cp-sessions" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-if [[ "$OPERATION" = "force-destroy-cp-group" ]]; then
+if [[ "$OPERATION" = "force-destroy-group" ]]; then
     if [[ -z "$CP_GROUP_NAME" ]]; then
         echo "No CP group name is defined! You must provide a CP group name with -c\nMissing argument!"
         exit ${MISSING_ARGUMENT_RETURN_VALUE}
     fi
 
     echo "Force-destroying CP group: ${CP_GROUP_NAME} on ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-groups/${CP_GROUP_NAME}/remove"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/groups/${CP_GROUP_NAME}/remove"
  	response=$(curl -X POST --data "${GROUPNAME}&${PASSWORD}" -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -248,9 +247,9 @@ if [[ "$OPERATION" = "force-destroy-cp-group" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-if [[ "$OPERATION" = "promote-to-cp-member" ]]; then
+if [[ "$OPERATION" = "promote-member" ]]; then
     echo "Promoting to CP member on ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-members"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/members"
  	response=$(curl -X POST --data "${GROUPNAME}&${PASSWORD}" -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -268,14 +267,14 @@ if [[ "$OPERATION" = "promote-to-cp-member" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-if [[ "$OPERATION" = "remove-cp-member" ]]; then
+if [[ "$OPERATION" = "remove-member" ]]; then
     if [[ -z "$CP_MEMBER_UID" ]]; then
         echo "No CP member is defined! You must provide a CP member UUID with -m\nMissing argument!"
         exit ${MISSING_ARGUMENT_RETURN_VALUE}
     fi
 
     echo "Removing CP member: ${CP_MEMBER_UID} on ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-members/${CP_MEMBER_UID}/remove"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/members/${CP_MEMBER_UID}/remove"
  	response=$(curl -X POST --data "${GROUPNAME}&${PASSWORD}" -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -297,7 +296,7 @@ if [[ "$OPERATION" = "remove-cp-member" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-if [[ "$OPERATION" = "force-close-cp-session" ]]; then
+if [[ "$OPERATION" = "force-close-session" ]]; then
     if [[ -z "$CP_GROUP_NAME" ]]; then
         echo "No CP group name is defined! You must provide a CP group name with -c\nMissing argument!"
         exit ${MISSING_ARGUMENT_RETURN_VALUE}
@@ -309,7 +308,7 @@ if [[ "$OPERATION" = "force-close-cp-session" ]]; then
     fi
 
     echo "Closing CP session: ${CP_SESSION_ID} in CP group: ${CP_GROUP_NAME} ${ADDRESS}:${PORT}."
-	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/cp-groups/${CP_GROUP_NAME}/cp-sessions/${CP_SESSION_ID}/remove"
+	request="http://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem/groups/${CP_GROUP_NAME}/sessions/${CP_SESSION_ID}/remove"
  	response=$(curl -X POST --data "${GROUPNAME}&${PASSWORD}" -w "\n%{http_code}" --silent "${request}");
     json=$(echo "$response" | head -n 1)
     status_code=$(echo "$response" | tail -n1)
@@ -351,5 +350,5 @@ if [[ "$OPERATION" = "restart" ]]; then
     exit ${INTERNAL_ERROR_RETURN_VALUE}
 fi
 
-echo "Not a valid CP subsystem operation! Operations: 'get-local-cp-member' | 'get-cp-groups' || 'get-cp-group' || 'force-destroy-cp-group' || 'get-cp-members' || 'remove-cp-member' || 'promote-to-cp-member' || 'get-cp-sessions' || 'force-close-cp-session' || 'restart'"
+echo "Not a valid CP subsystem operation! Operations: 'get-local-member' | 'get-groups' || 'get-group' || 'force-destroy-group' || 'get-members' || 'remove-member' || 'promote-member' || 'get-sessions' || 'force-close-session' || 'restart'"
 exit ${INVALID_ARGUMENT_RETURN_VALUE}

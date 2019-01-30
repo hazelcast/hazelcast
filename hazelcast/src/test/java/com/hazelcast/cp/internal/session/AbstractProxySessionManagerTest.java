@@ -65,13 +65,18 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
     @Test
     public void acquireSession_createsNewSession_whenSessionNotExists() {
         AbstractProxySessionManager sessionManager = getSessionManager();
-        long sessionId = sessionManager.acquireSession(groupId);
+        final long sessionId = sessionManager.acquireSession(groupId);
         assertNotEquals(NO_SESSION_ID, sessionId);
         assertEquals(sessionId, sessionManager.getSession(groupId));
         assertEquals(1, sessionManager.getSessionAcquireCount(groupId, sessionId));
 
-        SessionAccessor sessionAccessor = getSessionAccessor();
-        assertTrue(sessionAccessor.isActive(groupId, sessionId));
+        final SessionAccessor sessionAccessor = getSessionAccessor();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(sessionAccessor.isActive(groupId, sessionId));
+            }
+        });
     }
 
     @Test

@@ -33,7 +33,10 @@ import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -47,7 +50,7 @@ public class RaftLogTest {
 
     @Before
     public void setUp() throws Exception {
-        log = new RaftLog();
+        log = new RaftLog(100);
     }
 
     @Test
@@ -449,12 +452,22 @@ public class RaftLogTest {
                 };
         log.appendEntries(entries);
 
-        log.setSnapshot(new SnapshotEntry(1, 3, null, 0, Collections.<Endpoint>emptySet()));
+        int truncated = log.setSnapshot(new SnapshotEntry(1, 3, null, 0, Collections.<Endpoint>emptySet()));
+        assertEquals(3, truncated);
+
+        for (int i = 1; i <= 3 ; i++) {
+            assertFalse(log.containsLogEntry(i));
+            assertNull(log.getLogEntry(i));
+        }
+        for (int i = 4; i <= 5 ; i++) {
+            assertTrue(log.containsLogEntry(i));
+            assertNotNull(log.getLogEntry(i));
+        }
 
         LogEntry lastLogEntry = log.lastLogOrSnapshotEntry();
         assertEquals(5, lastLogEntry.index());
         assertEquals(1, lastLogEntry.term());
-        assertTrue(lastLogEntry == log.getLogEntry(lastLogEntry.index()));
+        assertSame(lastLogEntry, log.getLogEntry(lastLogEntry.index()));
         assertEquals(log.lastLogOrSnapshotIndex(), 5);
         assertEquals(log.lastLogOrSnapshotTerm(), 1);
         assertEquals(log.snapshotIndex(), 3);
@@ -475,14 +488,33 @@ public class RaftLogTest {
                 };
         log.appendEntries(entries);
 
-        log.setSnapshot(new SnapshotEntry(1, 2, null, 0, Collections.<Endpoint>emptySet()));
+        int truncated = log.setSnapshot(new SnapshotEntry(1, 2, null, 0, Collections.<Endpoint>emptySet()));
+        assertEquals(2, truncated);
+
+        for (int i = 1; i <= 2 ; i++) {
+            assertFalse(log.containsLogEntry(i));
+            assertNull(log.getLogEntry(i));
+        }
+        for (int i = 3; i <= 5 ; i++) {
+            assertTrue(log.containsLogEntry(i));
+            assertNotNull(log.getLogEntry(i));
+        }
+
         Object snapshot = new Object();
-        log.setSnapshot(new SnapshotEntry(1, 4, snapshot, 0, Collections.<Endpoint>emptySet()));
+        truncated = log.setSnapshot(new SnapshotEntry(1, 4, snapshot, 0, Collections.<Endpoint>emptySet()));
+        assertEquals(2, truncated);
+
+        for (int i = 1; i <= 4 ; i++) {
+            assertFalse(log.containsLogEntry(i));
+            assertNull(log.getLogEntry(i));
+        }
+        assertTrue(log.containsLogEntry(5));
+        assertNotNull(log.getLogEntry(5));
 
         LogEntry lastLogEntry = log.lastLogOrSnapshotEntry();
         assertEquals(5, lastLogEntry.index());
         assertEquals(1, lastLogEntry.term());
-        assertTrue(lastLogEntry == log.getLogEntry(lastLogEntry.index()));
+        assertSame(lastLogEntry, log.getLogEntry(lastLogEntry.index()));
         assertEquals(log.lastLogOrSnapshotIndex(), 5);
         assertEquals(log.lastLogOrSnapshotTerm(), 1);
         assertEquals(log.snapshotIndex(), 4);

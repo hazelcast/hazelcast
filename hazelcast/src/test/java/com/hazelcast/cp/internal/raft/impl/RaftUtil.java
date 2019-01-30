@@ -105,24 +105,12 @@ public class RaftUtil {
         return readRaftState(node, task);
     }
 
-    public static long getNextIndex(final RaftNodeImpl leader, final Endpoint follower) {
-        Callable<Long> task = new Callable<Long>() {
-            @Override
-            public Long call() {
-                LeaderState leaderState = leader.state().leaderState();
-                return leaderState.getNextIndex(follower);
-            }
-        };
-
-        return readRaftState(leader, task);
-    }
-
     public static long getMatchIndex(final RaftNodeImpl leader, final Endpoint follower) {
         Callable<Long> task = new Callable<Long>() {
             @Override
             public Long call() {
                 LeaderState leaderState = leader.state().leaderState();
-                return leaderState.getMatchIndex(follower);
+                return leaderState.getFollowerState(follower).matchIndex();
             }
         };
 

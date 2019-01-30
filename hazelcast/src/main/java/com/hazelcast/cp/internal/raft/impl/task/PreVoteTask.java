@@ -35,8 +35,11 @@ import java.util.Collection;
  */
 public class PreVoteTask extends RaftNodeStatusAwareTask implements Runnable {
 
-    public PreVoteTask(RaftNodeImpl raftNode) {
+    private int term;
+
+    public PreVoteTask(RaftNodeImpl raftNode, int term) {
         super(raftNode);
+        this.term = term;
     }
 
     @Override
@@ -44,7 +47,10 @@ public class PreVoteTask extends RaftNodeStatusAwareTask implements Runnable {
         RaftState state = raftNode.state();
 
         if (state.leader() != null) {
-            logger.info("No new pre-vote phase, we already have a LEADER: " + state.leader());
+            logger.fine("No new pre-vote phase, we already have a LEADER: " + state.leader());
+            return;
+        } else if (state.term() != term) {
+            logger.fine("No new pre-vote phase for term= " + term + " because of new term: " + state.term());
             return;
         }
 
@@ -73,6 +79,6 @@ public class PreVoteTask extends RaftNodeStatusAwareTask implements Runnable {
     }
 
     private void schedulePreVoteTimeout() {
-        raftNode.schedule(new PreVoteTimeoutTask(raftNode), raftNode.getLeaderElectionTimeoutInMillis());
+        raftNode.schedule(new PreVoteTimeoutTask(raftNode, term), raftNode.getLeaderElectionTimeoutInMillis());
     }
 }

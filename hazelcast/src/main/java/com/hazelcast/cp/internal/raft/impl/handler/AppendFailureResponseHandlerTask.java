@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.raft.impl.handler;
 import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
+import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 
@@ -76,8 +77,13 @@ public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTas
 
     private boolean updateNextIndex(RaftState state) {
         LeaderState leaderState = state.leaderState();
-        long nextIndex = leaderState.getNextIndex(resp.follower());
-        long matchIndex = leaderState.getMatchIndex(resp.follower());
+        FollowerState followerState = leaderState.getFollowerState(resp.follower());
+
+        // Received a response for the last append request. Resetting the flag...
+        followerState.resetAppendRequestBackoff();
+
+        long nextIndex = followerState.nextIndex();
+        long matchIndex = followerState.matchIndex();
 
         if (resp.expectedNextIndex() == nextIndex) {
             // this is the response of the request I have sent for this nextIndex
@@ -91,7 +97,7 @@ public class AppendFailureResponseHandlerTask extends AbstractResponseHandlerTas
             if (logger.isFineEnabled()) {
                 logger.fine("Updating next index: " + nextIndex + " for follower: " + resp.follower());
             }
-            leaderState.setNextIndex(resp.follower(), nextIndex);
+            followerState.nextIndex(nextIndex);
             return true;
         }
 

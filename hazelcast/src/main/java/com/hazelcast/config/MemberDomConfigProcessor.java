@@ -2929,15 +2929,19 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
             if ("leader-election-timeout-in-millis".equals(nodeName)) {
-                raftAlgorithmConfig.setLeaderElectionTimeoutInMillis(Integer.parseInt(value));
+                raftAlgorithmConfig.setLeaderElectionTimeoutInMillis(Long.parseLong(value));
             } else if ("leader-heartbeat-period-in-millis".equals(nodeName)) {
-                raftAlgorithmConfig.setLeaderHeartbeatPeriodInMillis(Integer.parseInt(value));
+                raftAlgorithmConfig.setLeaderHeartbeatPeriodInMillis(Long.parseLong(value));
+            } else if ("max-missed-leader-heartbeat-count".equals(nodeName)) {
+                raftAlgorithmConfig.setMaxMissedLeaderHeartbeatCount(Integer.parseInt(value));
             } else if ("append-request-max-entry-count".equals(nodeName)) {
                 raftAlgorithmConfig.setAppendRequestMaxEntryCount(Integer.parseInt(value));
             } else if ("commit-index-advance-count-to-snapshot".equals(nodeName)) {
                 raftAlgorithmConfig.setCommitIndexAdvanceCountToSnapshot(Integer.parseInt(value));
             } else if ("uncommitted-entry-count-to-reject-new-appends".equals(nodeName)) {
                 raftAlgorithmConfig.setUncommittedEntryCountToRejectNewAppends(Integer.parseInt(value));
+            } else if ("append-request-backoff-timeout-in-millis".equals(nodeName)) {
+                raftAlgorithmConfig.setAppendRequestBackoffTimeoutInMillis(Long.parseLong(value));
             }
         }
     }

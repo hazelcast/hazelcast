@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
-import com.hazelcast.cp.internal.raft.impl.command.ApplyRaftGroupMembersCmd;
+import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
@@ -52,7 +52,7 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
     public static final int SNAPSHOT_ENTRY = 9;
     public static final int INSTALL_SNAPSHOT = 10;
     public static final int DESTROY_RAFT_GROUP_COMMAND = 11;
-    public static final int APPLY_RAFT_GROUP_MEMBERS_COMMAND = 12;
+    public static final int UPDATE_RAFT_GROUP_MEMBERS_COMMAND = 12;
 
     @Override
     public int getFactoryId() {
@@ -87,8 +87,8 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
                         return new InstallSnapshot();
                     case DESTROY_RAFT_GROUP_COMMAND:
                         return new DestroyRaftGroupCmd();
-                    case APPLY_RAFT_GROUP_MEMBERS_COMMAND:
-                        return new ApplyRaftGroupMembersCmd();
+                    case UPDATE_RAFT_GROUP_MEMBERS_COMMAND:
+                        return new UpdateRaftGroupMembersCmd();
                     default:
                         throw new IllegalArgumentException("Undefined type: " + typeId);
                 }

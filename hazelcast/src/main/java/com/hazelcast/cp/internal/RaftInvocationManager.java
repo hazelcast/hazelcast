@@ -25,12 +25,11 @@ import com.hazelcast.cp.internal.operation.ChangeRaftGroupMembershipOp;
 import com.hazelcast.cp.internal.operation.DefaultRaftReplicateOp;
 import com.hazelcast.cp.internal.operation.DestroyRaftGroupOp;
 import com.hazelcast.cp.internal.operation.RaftQueryOp;
-import com.hazelcast.cp.internal.raft.MembershipChangeType;
+import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raft.impl.util.SimpleCompletableFuture;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
-import com.hazelcast.cp.internal.raftop.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -47,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
@@ -128,7 +128,7 @@ public class RaftInvocationManager {
 
             @Override
             public void onFailure(Throwable t) {
-                resultFuture.setResult(t);
+                resultFuture.setResult(new ExecutionException(t));
             }
         });
     }
@@ -146,7 +146,7 @@ public class RaftInvocationManager {
 
             @Override
             public void onFailure(Throwable t) {
-                if (t.getCause() instanceof CannotCreateRaftGroupException) {
+                if (t instanceof CannotCreateRaftGroupException) {
                     logger.fine("Could not create CP group: " + groupName + " with members: " + members,
                             t.getCause());
                     invokeGetMembersToCreateRaftGroup(groupName, groupSize, resultFuture);
@@ -158,16 +158,10 @@ public class RaftInvocationManager {
         });
     }
 
-    // TODO [basri] this operation should be here or somewhere else?
-    public InternalCompletableFuture<CPGroupId> triggerDestroy(CPGroupId groupId) {
-        checkCPSubsystemEnabled();
-        return invoke(raftService.getMetadataGroupId(), new TriggerDestroyRaftGroupOp(groupId));
-    }
-
     <T> InternalCompletableFuture<T> changeMembership(CPGroupId groupId, long membersCommitIndex,
-                                                      CPMemberInfo member, MembershipChangeType changeType) {
+                                                      CPMemberInfo member, MembershipChangeMode membershipChangeMode) {
         checkCPSubsystemEnabled();
-        Operation operation = new ChangeRaftGroupMembershipOp(groupId, membersCommitIndex, member, changeType);
+        Operation operation = new ChangeRaftGroupMembershipOp(groupId, membersCommitIndex, member, membershipChangeMode);
         Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext, groupId,
                 operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
         return invocation.invoke();

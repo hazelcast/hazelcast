@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.operationservice.impl;
+package com.hazelcast.cp.internal.exception;
 
-import com.hazelcast.cp.CPMember;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.exception.RetryableException;
 
 /**
- * Iterates over Raft members
+ * Thrown when all CP members have not committed their CP member list
+ * and initialization of the Metadata Raft group is not completed yet.
+ * Handled and retried internally.
  */
-class MemberCursor {
-    private final CPMember[] members;
-    private int index = -1;
+public class MetadataRaftGroupInitInProgressException extends HazelcastException implements RetryableException {
+    private static final long serialVersionUID = -587586143908312910L;
 
-    MemberCursor(CPMember[] members) {
-        this.members = members;
-    }
-
-    boolean advance() {
-        return ++index < members.length;
-    }
-
-    CPMember get() {
-        return members[index];
-    }
 }

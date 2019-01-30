@@ -153,7 +153,7 @@ class RaftSessionAwareSemaphoreProxy extends ClientProxy implements ISemaphore {
         checkPositive(permits, "Permits must be positive!");
         long sessionId = sessionManager.getSession(groupId);
         if (sessionId == NO_SESSION_ID) {
-            throw new IllegalStateException("No valid session!");
+            throw newIllegalStateException(null);
         }
 
         long threadId = getThreadId();
@@ -165,7 +165,7 @@ class RaftSessionAwareSemaphoreProxy extends ClientProxy implements ISemaphore {
             new ClientInvocation(client, request, objectName).invoke().join();
         } catch (SessionExpiredException e) {
             sessionManager.invalidateSession(this.groupId, sessionId);
-            throw e;
+            throw newIllegalStateException(e);
         } finally {
             sessionManager.releaseSession(this.groupId, sessionId, permits);
         }
@@ -207,7 +207,7 @@ class RaftSessionAwareSemaphoreProxy extends ClientProxy implements ISemaphore {
 
         long sessionId = sessionManager.acquireSession(groupId);
         if (sessionId == NO_SESSION_ID) {
-            throw new IllegalStateException("No valid session!");
+            throw newIllegalStateException(null);
         }
 
         long threadId = getThreadId();
@@ -219,7 +219,7 @@ class RaftSessionAwareSemaphoreProxy extends ClientProxy implements ISemaphore {
             new ClientInvocation(getClient(), request, objectName).invoke().join();
         } catch (SessionExpiredException e) {
             sessionManager.invalidateSession(this.groupId, sessionId);
-            throw e;
+            throw newIllegalStateException(e);
         } finally {
             sessionManager.releaseSession(this.groupId, sessionId);
         }
@@ -234,7 +234,7 @@ class RaftSessionAwareSemaphoreProxy extends ClientProxy implements ISemaphore {
 
         long sessionId = sessionManager.acquireSession(groupId);
         if (sessionId == NO_SESSION_ID) {
-            throw new IllegalStateException("No valid session!");
+            throw newIllegalStateException(null);
         }
 
         long threadId = getThreadId();
@@ -246,10 +246,14 @@ class RaftSessionAwareSemaphoreProxy extends ClientProxy implements ISemaphore {
             new ClientInvocation(getClient(), request, objectName).invoke().join();
         } catch (SessionExpiredException e) {
             sessionManager.invalidateSession(this.groupId, sessionId);
-            throw e;
+            throw newIllegalStateException(e);
         } finally {
             sessionManager.releaseSession(this.groupId, sessionId);
         }
+    }
+
+    private IllegalStateException newIllegalStateException(SessionExpiredException e) {
+        return new IllegalStateException("No valid session!", e);
     }
 
     @Override

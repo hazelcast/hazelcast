@@ -34,6 +34,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.LeaderDemotedException;
+import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.exception.StaleAppendRequestException;
 import com.hazelcast.cp.lock.exception.LockAcquireLimitExceededException;
 import com.hazelcast.cp.lock.exception.LockOwnershipLostException;
@@ -214,9 +215,8 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.CANNOT_REPLICATE_EXCEPTION, CannotReplicateException.class);
         register(ClientProtocolErrorCodes.LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class);
         register(ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class);
+        register(ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION, NotLeaderException.class);
     }
-
-
 
     public ClientMessage createExceptionMessage(Throwable throwable) {
         int errorCode = getErrorCode(throwable);

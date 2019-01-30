@@ -27,8 +27,11 @@ import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
  */
 public class PreVoteTimeoutTask extends RaftNodeStatusAwareTask implements Runnable {
 
-    PreVoteTimeoutTask(RaftNodeImpl raftNode) {
+    private int term;
+
+    PreVoteTimeoutTask(RaftNodeImpl raftNode, int term) {
         super(raftNode);
+        this.term = term;
     }
 
     @Override
@@ -36,7 +39,7 @@ public class PreVoteTimeoutTask extends RaftNodeStatusAwareTask implements Runna
         if (raftNode.state().role() != FOLLOWER) {
             return;
         }
-        logger.info("Pre-vote for term: " + raftNode.state().term() + " has timed out!");
-        new PreVoteTask(raftNode).run();
+        logger.fine("Pre-vote for term: " + raftNode.state().term() + " has timed out!");
+        new PreVoteTask(raftNode, term).run();
     }
 }
