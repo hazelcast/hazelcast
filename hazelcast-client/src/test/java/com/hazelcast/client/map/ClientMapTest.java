@@ -298,6 +298,25 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
+    public void testAsyncPutWithMaxIdle() throws Exception {
+        IMap<String, String> map = createMap();
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<String> future = map.putAsync("key", "value1", 0, TimeUnit.SECONDS, 3, TimeUnit.SECONDS);
+        assertNull(future.get());
+        assertEquals("value1", map.get("key"));
+
+        assertOpenEventually(latch);
+        assertNull(map.get("key"));
+    }
+
+    @Test
     public void testAsyncSet() throws Exception {
         IMap<String, String> map = createMap();
         fillMap(map);
@@ -317,6 +336,24 @@ public class ClientMapTest extends HazelcastTestSupport {
         }, true);
 
         Future<Void> future = map.setAsync("key", "value1", 3, TimeUnit.SECONDS);
+        future.get();
+        assertEquals("value1", map.get("key"));
+
+        assertOpenEventually(latch);
+        assertNull(map.get("key"));
+    }
+
+    @Test
+    public void testAsyncSetWithMaxIdle() throws Exception {
+        IMap<String, String> map = createMap();
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<Void> future = map.setAsync("key", "value1", 0, TimeUnit.SECONDS, 3, TimeUnit.SECONDS);
         future.get();
         assertEquals("value1", map.get("key"));
 
