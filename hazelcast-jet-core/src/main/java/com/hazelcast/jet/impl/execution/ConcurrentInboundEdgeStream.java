@@ -33,6 +33,7 @@ import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
  * {@link InboundEdgeStream} implemented in terms of a {@link ConcurrentConveyor}.
@@ -123,7 +124,9 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 boolean forwarded = maybeEmitWm(watermarkCoalescer.observeWm(queueIndex, wmTimestamp), dest);
                 if (logger.isFinestEnabled()) {
                     logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
-                            + (forwarded ? ", forwarded" : ", not forwarded"));
+                            + (forwarded ? ", forwarded=" : ", not forwarded")
+                            + ", coalescedWm=" + toLocalTime(watermarkCoalescer.coalescedWm())
+                            + ", topObservedWm=" + toLocalTime(topObservedWm()));
                 }
                 if (forwarded) {
                     return MADE_PROGRESS;
