@@ -32,6 +32,8 @@ import java.security.Permission;
 public class ReplicatedMapGetMessageTask
         extends AbstractPartitionMessageTask<ReplicatedMapGetCodec.RequestParameters> {
 
+    private volatile long startTimeNanos;
+
     public ReplicatedMapGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -44,6 +46,21 @@ public class ReplicatedMapGetMessageTask
     @Override
     protected ReplicatedMapGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return ReplicatedMapGetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected void beforeProcess() {
+        startTimeNanos = System.nanoTime();
+    }
+
+    @Override
+    protected void beforeResponse() {
+        long latencyNanos = System.nanoTime() - startTimeNanos;
+        ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
+
+        if (replicatedMapService.getReplicatedMapConfig(parameters.name).isStatisticsEnabled()) {
+            replicatedMapService.getLocalMapStatsImpl(parameters.name).incrementGets(latencyNanos);
+        }
     }
 
     @Override
