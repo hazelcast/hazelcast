@@ -307,6 +307,19 @@ public class ExportSnapshotTest extends JetTestSupport {
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job2.getStatus()), 1);
     }
 
+    @Test
+    public void test_nonSnapshottedJob_exportSnapshotAndRestart() {
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new NoOutputSourceP());
+        JetInstance instance = createJetMember();
+        JetInstance client = fromClient ? createJetClient() : instance;
+        Job job = client.newJob(dag);
+        assertJobStatusEventually(job, RUNNING);
+        job.exportSnapshot("state");
+        job.restart();
+        assertJobStatusEventually(job, RUNNING);
+    }
+
     private static Set<String> getExportedStateNames(JetInstance instance) {
         return instance.getJobStateSnapshots().stream()
                 .map(JobStateSnapshot::name)

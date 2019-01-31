@@ -108,7 +108,6 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
 
     public SnapshotStats ongoingSnapshotDone(long numBytes, long numKeys, long numChunks, @Nullable String failureText) {
         lastSnapshotFailure = failureText;
-        exportedSnapshotMapName = null;
         SnapshotStats res = new SnapshotStats(
                 ongoingSnapshotId, ongoingSnapshotStartTime, Clock.currentTimeMillis(), numBytes, numKeys, numChunks
         );
@@ -118,6 +117,7 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
             snapshotId = ongoingSnapshotId;
             snapshotStats = res;
         }
+        exportedSnapshotMapName = null;
         ongoingSnapshotStartTime = Long.MIN_VALUE;
         return res;
     }
