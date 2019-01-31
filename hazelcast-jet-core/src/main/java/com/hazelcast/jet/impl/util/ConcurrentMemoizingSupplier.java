@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.util;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 /**
@@ -25,15 +27,15 @@ import java.util.function.Supplier;
  * <p>
  * The provided {@code Supplier} must return a non-null value.
  */
-final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
+public final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
     private final Supplier<T> onceSupplier;
     private volatile T remembered;
 
-    ConcurrentMemoizingSupplier(Supplier<T> onceSupplier) {
+    public ConcurrentMemoizingSupplier(Supplier<T> onceSupplier) {
         this.onceSupplier = onceSupplier;
     }
 
-    @Override
+    @Override @Nonnull
     public T get() {
         // The common path will use a single volatile load
         T loadResult = remembered;
@@ -51,5 +53,13 @@ final class ConcurrentMemoizingSupplier<T> implements Supplier<T> {
             }
             return remembered;
         }
+    }
+
+    /**
+     * Get the remembered value. Returns {@code null} if value was never asked for
+     */
+    @Nullable
+    public T remembered() {
+        return remembered;
     }
 }

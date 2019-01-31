@@ -30,7 +30,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.AbstractJetInstance;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -42,7 +42,6 @@ import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.jar.JarFile;
 
 /**
@@ -101,8 +100,8 @@ public final class JetBootstrap {
     private static String snapshotName;
     private static String jobName;
 
-    private static final Supplier<JetBootstrap> SUPPLIER =
-            Util.memoizeConcurrent(() -> new JetBootstrap(Jet.newJetClient(config)));
+    private static final ConcurrentMemoizingSupplier<JetBootstrap> SUPPLIER =
+            new ConcurrentMemoizingSupplier<>(() -> new JetBootstrap(Jet.newJetClient(config)));
 
     private final JetInstance instance;
 
@@ -144,6 +143,11 @@ public final class JetBootstrap {
             String[] jobArgs = args.toArray(new String[0]);
             // upcast args to Object so it's passed as a single array-typed argument
             main.invoke(null, (Object) jobArgs);
+        } finally {
+            JetBootstrap remembered = SUPPLIER.remembered();
+            if (remembered != null) {
+                remembered.instance.shutdown();
+            }
         }
     }
 
@@ -153,7 +157,8 @@ public final class JetBootstrap {
     }
 
     /**
-     * Returns the bootstrapped {@code JetInstance}.
+     * Returns the bootstrapped {@code JetInstance}. The instance will be
+     * automatically shut down once the {@code main()} method of the JAR returns.
      */
     public static JetInstance getInstance() {
         return SUPPLIER.get().instance;
