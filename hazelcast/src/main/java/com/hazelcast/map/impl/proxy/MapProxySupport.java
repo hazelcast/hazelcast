@@ -41,6 +41,7 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -644,7 +645,12 @@ abstract class MapProxySupport<K, V>
         containsKeyOperation.setServiceName(SERVICE_NAME);
         try {
             Future future = operationService.invokeOnPartition(SERVICE_NAME, containsKeyOperation, partitionId);
-            return (Boolean) toObject(future.get());
+            Object object = future.get();
+            if (statisticsEnabled) {
+                LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+                localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
+            }
+            return (Boolean) toObject(object);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -1001,6 +1007,11 @@ abstract class MapProxySupport<K, V>
 
             if (clearedCount > 0) {
                 publishMapEvent(clearedCount, CLEAR_ALL);
+            }
+
+            if (statisticsEnabled) {
+                LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+                localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
             }
         } catch (Throwable t) {
             throw rethrow(t);

@@ -19,6 +19,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.Connection;
@@ -41,6 +43,16 @@ public class MapContainsKeyMessageTask
                 .createContainsKeyOperation(parameters.name, parameters.key);
         operation.setThreadId(parameters.threadId);
         return operation;
+    }
+
+    @Override
+    protected void afterResponse() {
+        final MapService mapService = getService(MapService.SERVICE_NAME);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            LocalMapStatsProvider localMapStatsProvider = mapService.getMapServiceContext().getLocalMapStatsProvider();
+            localMapStatsProvider.getLocalMapStatsImpl(parameters.name).incrementOtherOperations();
+        }
     }
 
     @Override
