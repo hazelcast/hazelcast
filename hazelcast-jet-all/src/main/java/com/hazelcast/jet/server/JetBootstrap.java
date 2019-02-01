@@ -64,9 +64,9 @@ import java.util.jar.JarFile;
  * Main-Class} in {@code MANIFEST.MF}.
  * </li><li>
  * Run your JAR, but instead of {@code java -jar jetjob.jar} use {@code
- * jet-submit.sh jetjob.jar}. The script is found in the Jet distribution
+ * jet.sh submit jetjob.jar}. The script is found in the Jet distribution
  * zipfile, in the {@code bin} directory. On Windows use {@code
- * jet-submit.bat}.
+ * jet.bat}.
  * </li><li>
  * The Jet client will be configured from {@code hazelcast-client.xml}
  * found in the {@code config} directory in Jet's distribution directory
@@ -89,7 +89,7 @@ import java.util.jar.JarFile;
  * <p>
  * After building the JAR, submit the job:
  * <pre>
- * $ jet-submit.sh jetjob.jar
+ * $ jet.sh submit jetjob.jar
  * </pre>
  */
 public final class JetBootstrap {
