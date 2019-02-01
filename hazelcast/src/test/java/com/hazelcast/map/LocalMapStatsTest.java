@@ -43,10 +43,10 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class LocalMapStatsTest extends HazelcastTestSupport {
 
-    private static final int OPERATION_COUNT = 10;
-    private static final int DEFAULT_PARTITION_COUNT = Integer.valueOf(PARTITION_COUNT.getDefaultValue());
+    static final int OPERATION_COUNT = 10;
+    static final int DEFAULT_PARTITION_COUNT = Integer.valueOf(PARTITION_COUNT.getDefaultValue());
 
-    private HazelcastInstance instance;
+    HazelcastInstance instance;
     private String mapName = "mapName";
 
     @Before
