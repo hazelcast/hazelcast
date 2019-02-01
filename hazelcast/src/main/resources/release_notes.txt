@@ -7,6 +7,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 * Fixed an issue where `InitialMembershipEvent` was being fired with empty member list, when client async start is enabled. [#14364]
 * Fixed an issue where the `invokeOnPartitionsAsync()` method was not returning a value when the `memberPartitions` is empty. [#14266]
 * Removed a misleading	exception on the member side when the Java client is disconnected via the method `hazelcast.shutdown()`. [#14244]
+* Fixed an issue where the `getOperationCount` statistics were not updated as expected when performing get operations from the Java client. [#14143]
 * Difference between the clocks of target and source clusters had a potential to completely block the WAN communication which may cause the WAN queues to be filled up. This has been fixed by ignoring the call timeout check for WAN operations. [#13301]
 
 2. Behavioral Changes
