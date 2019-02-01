@@ -103,6 +103,7 @@ class ClusterMergeTask implements Runnable {
         // reset node and membership state from now on this node won't be joined and won't have a master address
         node.reset();
         node.getClusterService().reset();
+        node.getNodeExtension().getInternalHotRestartService().resetService(true);
         // stop the connection-manager:
         // - all socket connections will be closed
         // - connection listening thread will stop

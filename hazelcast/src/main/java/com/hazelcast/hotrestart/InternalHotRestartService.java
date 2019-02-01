@@ -89,10 +89,19 @@ public interface InternalHotRestartService {
     ClusterHotRestartStatusDTO getCurrentClusterHotRestartStatus();
 
     /**
-     * Resets local hot restart data and gets a new UUID, if the local node hasn't completed the start process and
-     * it is excluded in cluster start.
+     * Resets local service data, removes hot restart directories and recreates them.
+     *
+     * @param isAfterJoin true if this is called after node joins the cluster, false otherwise
      */
-    void resetHotRestartData();
+    void resetService(boolean isAfterJoin);
+
+    /**
+     * Executes force-start process, resets local hot restart data and member gets a new UUID.
+     * <p>
+     * If the local node has already completed the start process or it isn't excluded in cluster start,
+     * this method fails with an exception.
+     */
+    void forceStartBeforeJoin();
 
     /**
      * Waits until partition replicas (primaries and backups) get in sync.

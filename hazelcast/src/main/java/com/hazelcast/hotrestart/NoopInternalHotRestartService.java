@@ -68,7 +68,11 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
-    public void resetHotRestartData() {
+    public void resetService(boolean isAfterJoin) {
+    }
+
+    @Override
+    public void forceStartBeforeJoin() {
     }
 
     @Override
