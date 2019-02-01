@@ -19,6 +19,7 @@ package com.hazelcast.jet.kafka.impl;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -50,7 +51,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         }
     };
 
-    WriteKafkaP(KafkaProducer<K, V> producer, Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn) {
+    private WriteKafkaP(KafkaProducer<K, V> producer, Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn) {
         this.producer = producer;
         this.toRecordFn = toRecordFn;
     }
@@ -74,6 +75,11 @@ public final class WriteKafkaP<T, K, V> implements Processor {
             // will stay so, unless they change API.
             producer.send(toRecordFn.apply((T) item), callback);
         });
+    }
+
+    @Override
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        return true;
     }
 
     @Override
