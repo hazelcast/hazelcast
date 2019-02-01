@@ -428,9 +428,13 @@ public class JetCommandLine implements Callable<Void> {
     }
 
     private void configureLogging() throws IOException {
-        println("Verbose mode is on, setting logging level to INFO");
         StartServer.configureLogging();
-        LogManager.getLogManager().getLogger("").setLevel(verbosity.isVerbose ? Level.INFO : Level.WARNING);
+        Level logLevel = Level.WARNING;
+        if (verbosity.isVerbose) {
+            println("Verbose mode is on, setting logging level to INFO");
+            logLevel = Level.INFO;
+        }
+        LogManager.getLogManager().getLogger("").setLevel(logLevel);
     }
 
     private static Job getJob(JetInstance jet, String nameOrId) {
