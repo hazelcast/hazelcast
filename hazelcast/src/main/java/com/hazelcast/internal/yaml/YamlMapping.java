@@ -31,6 +31,21 @@ public interface YamlMapping extends YamlCollection {
     YamlNode child(String name);
 
     /**
+     * Returns the children as {@link YamlNameNodePair}s
+     * <p/>
+     * This method may have {@code null} values as the {@code childNode}
+     * in the returned pairs if the node's values is explicitly defined
+     * as {@code !!null} in the YAML document.
+     * <p/>
+     * The difference from the {@link #children()} children method is
+     * that {@link #children()} does not return {@code null} children
+     * nodes, while {@link #childrenPairs()} does.
+     *
+     * @return an {@link Iterable} pair of node names and node instances
+     */
+    Iterable<YamlNameNodePair> childrenPairs();
+
+    /**
      * Gets a child mapping node by its name
      *
      * @param name the name of the child node

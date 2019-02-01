@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
+import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.XmlConfigImportVariableReplacementTest.IdentityReplacer;
-import com.hazelcast.config.XmlConfigImportVariableReplacementTest.TestReplacer;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;

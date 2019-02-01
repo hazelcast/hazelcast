@@ -16,27 +16,23 @@
 
 package com.hazelcast.internal.yaml;
 
-public abstract class AbstractYamlNode implements MutableYamlNode {
-    private final YamlNode parent;
-    private String nodeName;
+/**
+ * Mutable interface of {@link YamlMapping}
+ */
+public interface MutableYamlMapping extends YamlMapping, MutableYamlNode {
 
-    AbstractYamlNode(YamlNode parent, String nodeName) {
-        this.parent = parent;
-        this.nodeName = nodeName;
-    }
+    /**
+     * Adds a new child node to the mapping with the provided name
+     *
+     * @param name The name of the new child
+     * @param node The child node
+     */
+    void addChild(String name, YamlNode node);
 
-    @Override
-    public String nodeName() {
-        return nodeName != null ? nodeName : UNNAMED_NODE;
-    }
-
-    @Override
-    public void setNodeName(String nodeName) {
-        this.nodeName = nodeName;
-    }
-
-    @Override
-    public YamlNode parent() {
-        return parent;
-    }
+    /**
+     * Removes a child with the given name if exists
+     *
+     * @param name The name of the child to remove
+     */
+    void removeChild(String name);
 }

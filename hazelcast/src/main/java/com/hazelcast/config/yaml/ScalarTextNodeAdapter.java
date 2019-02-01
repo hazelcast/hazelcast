@@ -16,6 +16,7 @@
 
 package com.hazelcast.config.yaml;
 
+import com.hazelcast.internal.yaml.MutableYamlScalar;
 import com.hazelcast.internal.yaml.YamlScalar;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -27,7 +28,7 @@ import org.w3c.dom.UserDataHandler;
 import static com.hazelcast.config.yaml.EmptyNodeList.emptyNodeList;
 
 class ScalarTextNodeAdapter implements Node {
-    private final YamlScalar scalar;
+    private YamlScalar scalar;
 
     ScalarTextNodeAdapter(YamlScalar scalar) {
         this.scalar = scalar;
@@ -40,12 +41,17 @@ class ScalarTextNodeAdapter implements Node {
 
     @Override
     public String getNodeValue() throws DOMException {
-        return scalar.nodeValue().toString();
+        Object nodeValue = scalar.nodeValue();
+        return nodeValue != null ? nodeValue.toString() : null;
     }
 
     @Override
     public void setNodeValue(String nodeValue) throws DOMException {
-        throw new UnsupportedOperationException();
+        if (scalar instanceof MutableYamlScalar) {
+            ((MutableYamlScalar) scalar).setValue(nodeValue);
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override

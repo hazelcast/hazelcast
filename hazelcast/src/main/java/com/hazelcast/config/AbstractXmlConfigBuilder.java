@@ -205,10 +205,7 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
             }
         }
 
-        // Use all the replacers on the XML content
-        for (ConfigReplacer replacer : replacers) {
-            traverseChildrenAndReplaceVariables(root, replacer, failFast);
-        }
+        ConfigReplacerHelper.traverseChildrenAndReplaceVariables(root, replacers, failFast);
     }
 
     private ConfigReplacer createReplacer(Node node) throws Exception {
@@ -224,58 +221,4 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
         replacer.init(properties);
         return replacer;
     }
-
-    private void traverseChildrenAndReplaceVariables(Node root, ConfigReplacer replacer, boolean failFast) {
-        NamedNodeMap attributes = root.getAttributes();
-        if (attributes != null) {
-            for (int k = 0; k < attributes.getLength(); k++) {
-                Node attribute = attributes.item(k);
-                replaceVariables(attribute, replacer, failFast);
-            }
-        }
-        if (root.getNodeValue() != null) {
-            replaceVariables(root, replacer, failFast);
-        }
-        final NodeList childNodes = root.getChildNodes();
-        for (int k = 0; k < childNodes.getLength(); k++) {
-            Node child = childNodes.item(k);
-            traverseChildrenAndReplaceVariables(child, replacer, failFast);
-        }
-    }
-
-    private void replaceVariables(Node node, ConfigReplacer replacer, boolean failFast) {
-        String value = node.getNodeValue();
-        StringBuilder sb = new StringBuilder(value);
-        String replacerPrefix = "$" + replacer.getPrefix() + "{";
-        int endIndex = -1;
-        int startIndex = sb.indexOf(replacerPrefix);
-        while (startIndex > -1) {
-            endIndex = sb.indexOf("}", startIndex);
-            if (endIndex == -1) {
-                LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' for prefix " + replacerPrefix
-                        + " on node: " + node.getLocalName());
-                break;
-            }
-
-            String variable = sb.substring(startIndex + replacerPrefix.length(), endIndex);
-            String variableReplacement = replacer.getReplacement(variable);
-            if (variableReplacement != null) {
-                sb.replace(startIndex, endIndex + 1, variableReplacement);
-                endIndex = startIndex + variableReplacement.length();
-            } else {
-                handleMissingVariable(sb.substring(startIndex, endIndex + 1), node.getLocalName(), failFast);
-            }
-            startIndex = sb.indexOf(replacerPrefix, endIndex);
-        }
-        node.setNodeValue(sb.toString());
-    }
-
-    private void handleMissingVariable(String variable, String nodeName, boolean failFast) throws ConfigurationException {
-        String message = format("Could not find a replacement for '%s' on node '%s'", variable, nodeName);
-        if (failFast) {
-            throw new ConfigurationException(message);
-        }
-        LOGGER.warning(message);
-    }
-
 }
