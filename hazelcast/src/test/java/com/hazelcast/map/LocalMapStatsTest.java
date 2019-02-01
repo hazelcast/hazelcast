@@ -340,7 +340,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         }
 
         LocalMapStats stats = geMapStats();
-        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
