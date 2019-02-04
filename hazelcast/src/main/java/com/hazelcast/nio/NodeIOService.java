@@ -18,7 +18,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
@@ -34,8 +33,6 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
@@ -44,7 +41,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -52,12 +48,12 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkAndLogPropertyDeprecated;
+import static com.hazelcast.internal.config.ConfigValidator.ensurePropertyNotConfigured;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 
 @PrivateApi
 public class NodeIOService implements IOService {
-
-    private static final ILogger LOGGER = Logger.getLogger(NodeIOService.class);
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -84,11 +80,11 @@ public class NodeIOService implements IOService {
             ensurePropertyNotConfigured(properties, GroupProperty.HTTP_HEALTHCHECK_ENABLED);
         } else {
             restApiConfig = new RestApiConfig();
-            if (checkDeprecatedProperty(properties, GroupProperty.REST_ENABLED)) {
+            if (checkAndLogPropertyDeprecated(properties, GroupProperty.REST_ENABLED)) {
                 restApiConfig.setEnabled(true);
                 restApiConfig.enableAllGroups();
             }
-            if (checkDeprecatedProperty(properties, GroupProperty.HTTP_HEALTHCHECK_ENABLED)) {
+            if (checkAndLogPropertyDeprecated(properties, GroupProperty.HTTP_HEALTHCHECK_ENABLED)) {
                 restApiConfig.setEnabled(true);
                 restApiConfig.enableGroups(RestEndpointGroup.HEALTH_CHECK);
             }
@@ -104,30 +100,11 @@ public class NodeIOService implements IOService {
             ensurePropertyNotConfigured(properties, GroupProperty.MEMCACHE_ENABLED);
         } else {
             memcacheProtocolConfig = new MemcacheProtocolConfig();
-            if (checkDeprecatedProperty(properties, GroupProperty.MEMCACHE_ENABLED)) {
+            if (checkAndLogPropertyDeprecated(properties, GroupProperty.MEMCACHE_ENABLED)) {
                 memcacheProtocolConfig.setEnabled(true);
             }
         }
         return memcacheProtocolConfig;
-    }
-
-    private static void ensurePropertyNotConfigured(HazelcastProperties properties, HazelcastProperty hazelcastProperty)
-            throws ConfigurationException {
-        if (properties.containsKey(hazelcastProperty)) {
-            throw new ConfigurationException("Service start failed. The legacy property " + hazelcastProperty.getName()
-                    + " is provided together with new Config object. "
-                    + "Remove the property from your configuration to fix this issue.");
-        }
-    }
-
-    private static boolean checkDeprecatedProperty(HazelcastProperties properties, HazelcastProperty hazelcastProperty)
-            throws ConfigurationException {
-        if (properties.containsKey(hazelcastProperty)) {
-            LOGGER.warning("Property " + hazelcastProperty.getName()
-                    + " is deprecated. Use configuration object/element instead.");
-            return properties.getBoolean(hazelcastProperty);
-        }
-        return false;
     }
 
     @Override

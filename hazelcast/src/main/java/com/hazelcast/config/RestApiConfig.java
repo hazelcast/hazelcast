@@ -19,9 +19,9 @@ package com.hazelcast.config;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class allows to control which parts of Hazelcast REST API will be enabled. There are 2 levels of control:
@@ -34,8 +34,7 @@ public class RestApiConfig {
 
     private boolean enabled;
 
-    private final Set<RestEndpointGroup> enabledGroups = Collections
-            .newSetFromMap(new ConcurrentHashMap<RestEndpointGroup, Boolean>());
+    private final Set<RestEndpointGroup> enabledGroups = Collections.synchronizedSet(EnumSet.noneOf(RestEndpointGroup.class));
 
     public RestApiConfig() {
         for (RestEndpointGroup eg : RestEndpointGroup.values()) {
