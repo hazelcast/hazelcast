@@ -125,4 +125,11 @@ public interface MapEventPublisher {
      * Returns {@code true} if there is at least one listener registered for the specified {@code mapName}.
      */
     boolean hasEventListener(String mapName);
+
+    /**
+     * @return {@code true} when {@link
+     * MapEventPublisherImpl#LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES}
+     * set {@code true}, else return {@code false}
+     */
+    boolean usesNaturalFiltering();
 }
