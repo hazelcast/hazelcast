@@ -41,7 +41,7 @@
         <client.protocol.version>1.8.0-1</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <jdk.version>1.6</jdk.version>
+        <jdk.version>6</jdk.version>
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -1086,20 +1086,9 @@
             <activation>
                 <jdk>[1.8,)</jdk>
             </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>${maven.compiler.plugin.version}</version>
-                        <configuration>
-                            <source>1.8</source>
-                            <target>1.8</target>
-                            <encoding>${project.build.sourceEncoding}</encoding>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <jdk.version>8</jdk.version>
+            </properties>
         </profile>
 
         <profile>
@@ -1107,7 +1096,8 @@
             Profile for execution of test suite only on JDKs prior to 1.8.
             Not suitable for building Hazelcast.
             Sample usage:
-            1. Build JDK 6 artifacts using JDK8:
+            1. Build JDK 6 artifacts using JDK8
+               (notice the "-" after -P option that deactivates profile jdk-8):
                $ mvn -P-jdk-8 -DskipTests -T1C clean install
 
             2. Switch to JDK 6 or 7 and execute the test suite:

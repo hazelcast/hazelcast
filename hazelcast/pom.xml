@@ -71,6 +71,9 @@
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
                 <version>${maven.animal.sniffer.plugin.version}</version>
                 <configuration>
+                    <annotations>
+                        <annotation>com.hazelcast.internal.RequiresJdk8</annotation>
+                    </annotations>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
                         <artifactId>java16</artifactId>
