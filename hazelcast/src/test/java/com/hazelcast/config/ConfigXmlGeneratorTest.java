@@ -276,7 +276,7 @@ public class ConfigXmlGeneratorTest {
                 .setDataLoadTimeoutSeconds(130)
                 .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
                 .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
-                .setParallelism(5);
+                .setParallelism(5).setAutoRemoveStaleData(false);
 
         HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
 

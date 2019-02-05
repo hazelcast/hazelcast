@@ -1318,6 +1318,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
         assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
+        assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
     }
 
     @Test

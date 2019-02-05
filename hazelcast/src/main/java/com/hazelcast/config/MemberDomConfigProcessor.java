@@ -285,22 +285,26 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String validationTimeoutName = "validation-timeout-seconds";
         String dataLoadTimeoutName = "data-load-timeout-seconds";
         String clusterDataRecoveryPolicyName = "cluster-data-recovery-policy";
+        String autoRemoveStaleDataName = "auto-remove-stale-data";
 
         for (Node n : childElements(hrRoot)) {
             String name = cleanNodeName(n);
+            String value = getTextContent(n);
             if ("base-dir".equals(name)) {
-                hrConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+                hrConfig.setBaseDir(new File(value).getAbsoluteFile());
             } else if ("backup-dir".equals(name)) {
-                hrConfig.setBackupDir(new File(getTextContent(n)).getAbsoluteFile());
+                hrConfig.setBackupDir(new File(value).getAbsoluteFile());
             } else if (parallelismName.equals(name)) {
-                hrConfig.setParallelism(getIntegerValue(parallelismName, getTextContent(n)));
+                hrConfig.setParallelism(getIntegerValue(parallelismName, value));
             } else if (validationTimeoutName.equals(name)) {
-                hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, getTextContent(n)));
+                hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, value));
             } else if (dataLoadTimeoutName.equals(name)) {
-                hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
+                hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, value));
             } else if (clusterDataRecoveryPolicyName.equals(name)) {
                 hrConfig.setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy
-                        .valueOf(upperCaseInternal(getTextContent(n))));
+                        .valueOf(upperCaseInternal(value)));
+            } else if (autoRemoveStaleDataName.equals(name)) {
+                hrConfig.setAutoRemoveStaleData(getBooleanValue(value));
             }
         }
         config.setHotRestartPersistenceConfig(hrConfig);
