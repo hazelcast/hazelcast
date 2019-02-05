@@ -42,6 +42,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -52,6 +53,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
@@ -171,6 +173,26 @@ public class DynamicConfigurationAwareConfig extends Config {
         this.isStaticFirst = !properties.getBoolean(SEARCH_DYNAMIC_CONFIG_FIRST);
         this.dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), null);
         this.configSearcher = initConfigSearcher();
+    }
+
+    @Override
+    public RestApiConfig getRestApiConfig() {
+        return staticConfig.getRestApiConfig();
+    }
+
+    @Override
+    public Config setRestApiConfig(RestApiConfig restApiConfig) {
+        return staticConfig.setRestApiConfig(restApiConfig);
+    }
+
+    @Override
+    public MemcacheProtocolConfig getMemcacheProtocolConfig() {
+        return staticConfig.getMemcacheProtocolConfig();
+    }
+
+    @Override
+    public Config setMemcacheProtocolConfig(MemcacheProtocolConfig memcacheProtocolConfig) {
+        return staticConfig.setMemcacheProtocolConfig(memcacheProtocolConfig);
     }
 
     @Override

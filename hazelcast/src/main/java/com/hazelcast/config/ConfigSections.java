@@ -67,7 +67,10 @@ enum ConfigSections {
     RELIABLE_ID_GENERATOR("reliable-id-generator", true),
     FLAKE_ID_GENERATOR("flake-id-generator", true),
     CRDT_REPLICATION("crdt-replication", false),
-    PN_COUNTER("pn-counter", true);
+    PN_COUNTER("pn-counter", true),
+    REST_API("rest-api", false),
+    MEMCACHE_PROTOCOL("memcache-protocol", false),
+    ;
 
     final String name;
     final boolean multipleOccurrence;

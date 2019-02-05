@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -49,11 +50,12 @@ public class NodeIOServiceTest extends HazelcastTestSupport {
     public void setUp() {
         Node mockNode = mock(Node.class);
         NodeEngineImpl mockNodeEngine = mock(NodeEngineImpl.class);
-        ioService = new NodeIOService(mockNode, mockNodeEngine);
-
         Config config = new Config();
+        HazelcastProperties properties = new HazelcastProperties(config);
         networkConfig = config.getNetworkConfig();
         when(mockNode.getConfig()).thenReturn(config);
+        when(mockNode.getProperties()).thenReturn(properties);
+        ioService = new NodeIOService(mockNode, mockNodeEngine);
     }
 
     @Test

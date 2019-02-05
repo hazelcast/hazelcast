@@ -161,6 +161,10 @@ public class Config {
 
     private CRDTReplicationConfig crdtReplicationConfig = new CRDTReplicationConfig();
 
+    private MemcacheProtocolConfig memcacheProtocolConfig;
+
+    private RestApiConfig restApiConfig;
+
     private String licenseKey;
 
     private boolean liteMember;
@@ -3441,6 +3445,24 @@ public class Config {
         return this;
     }
 
+    public RestApiConfig getRestApiConfig() {
+        return restApiConfig;
+    }
+
+    public Config setRestApiConfig(RestApiConfig restApiConfig) {
+        this.restApiConfig = restApiConfig;
+        return this;
+    }
+
+    public MemcacheProtocolConfig getMemcacheProtocolConfig() {
+        return memcacheProtocolConfig;
+    }
+
+    public Config setMemcacheProtocolConfig(MemcacheProtocolConfig memcacheProtocolConfig) {
+        this.memcacheProtocolConfig = memcacheProtocolConfig;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "Config{"
@@ -3467,6 +3489,8 @@ public class Config {
                 + ", securityConfig=" + securityConfig
                 + ", liteMember=" + liteMember
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
+                + ", restApiConfig=" + restApiConfig
+                + ", memcacheProtocolConfig=" + memcacheProtocolConfig
                 + '}';
     }
 }

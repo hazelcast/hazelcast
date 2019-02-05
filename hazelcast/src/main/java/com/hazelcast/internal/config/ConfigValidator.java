@@ -22,6 +22,7 @@ import com.hazelcast.config.AbstractBasicConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
@@ -42,6 +43,8 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.EnumSet;
 
@@ -384,5 +387,35 @@ public final class ConfigValidator {
         if (!isClient && nearCacheConfig.getPreloaderConfig().isEnabled()) {
             throw new IllegalArgumentException("The Near Cache pre-loader is just available on Hazelcast clients!");
         }
+    }
+
+    /**
+     * Throws {@link ConfigurationException} if given group property is defined within Hazelcast properties.
+     *
+     * @param properties Group properties
+     * @param hazelcastProperty property to be checked
+     * @throws ConfigurationException
+     */
+    public static void ensurePropertyNotConfigured(HazelcastProperties properties, HazelcastProperty hazelcastProperty)
+            throws ConfigurationException {
+        if (properties.containsKey(hazelcastProperty)) {
+            throw new ConfigurationException("Service start failed. The legacy property " + hazelcastProperty.getName()
+                    + " is provided together with new Config object. "
+                    + "Remove the property from your configuration to fix this issue.");
+        }
+    }
+
+    /**
+     * Checks if given group property is defined within given Hazelcast properties. Logs a warning when the property is defied.
+     *
+     * @return {@code true} when the property is defined
+     */
+    public static boolean checkAndLogPropertyDeprecated(HazelcastProperties properties, HazelcastProperty hazelcastProperty) {
+        if (properties.containsKey(hazelcastProperty)) {
+            LOGGER.warning(
+                    "Property " + hazelcastProperty.getName() + " is deprecated. Use configuration object/element instead.");
+            return properties.getBoolean(hazelcastProperty);
+        }
+        return false;
     }
 }

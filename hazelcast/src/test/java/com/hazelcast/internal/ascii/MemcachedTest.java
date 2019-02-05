@@ -55,8 +55,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-// intentionally not in ParallelTest category,
-// test is starting standalone HazelcastInstances.
 public class MemcachedTest extends HazelcastTestSupport {
 
     private Config config = new Config();

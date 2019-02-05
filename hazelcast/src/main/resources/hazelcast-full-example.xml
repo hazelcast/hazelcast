@@ -2425,4 +2425,41 @@
         <statistics-enabled>true</statistics-enabled>
     </pn-counter>
 
+    <!--
+    ===== HAZELCAST REST API CONFIGURATION =====
+
+    Configures Hazelcast HTTP REST API.
+    The <rest-api/> element has a global enabled switch, which controls the entrypoint to HTTP REST API. If it's disabled
+    then no text protocol is available.
+    Once the global switch is enabled there is an optional second level of control - REST endpoint groups. They are configured 
+    by element <endpoint-group/>. 
+    Groups and their defaults:
+    * CLUSTER_READ - enabled
+      Group of operations for retrieving cluster state and its version.
+    * CLUSTER_WRITE - disabled
+      Operations which changes cluster or node state or their configurations.
+    * HEALTH_CHECK - disabled
+      Group of endpoints for HTTP health checking.
+    * HOT_RESTART - disabled
+      Group of HTTP REST APIs related to Hot Restart feature.
+    * WAN - disabled
+      Group of HTTP REST APIs related to WAN Replication feature.
+    * DATA - disabled
+      Group of HTTP REST APIs for data manipulation in the cluster (e.g. IMap and IQueue operations).
+    -->
+    <rest-api enabled="false">
+        <endpoint-group name="CLUSTER_READ" enabled="true"/>
+        <endpoint-group name="CLUSTER_WRITE" enabled="false"/>
+        <endpoint-group name="HEALTH_CHECK" enabled="false"/>
+        <endpoint-group name="HOT_RESTART" enabled="false"/>
+        <endpoint-group name="WAN" enabled="false"/>
+        <endpoint-group name="DATA" enabled="false"/>
+    </rest-api>
+
+    <!--
+    ===== HAZELCAST MEMCACHE PROTOCOL CONFIGURATION =====
+
+    Allows to configure Memcache text protocol support in Hazelcast.
+    -->
+    <memcache-protocol enabled="false"/>
 </hazelcast>

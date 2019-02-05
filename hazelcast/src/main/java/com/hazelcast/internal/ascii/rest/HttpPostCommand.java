@@ -79,25 +79,30 @@ public class HttpPostCommand extends HttpCommand {
     }
 
     private boolean doActualRead(ByteBuffer cb) {
-        if (readyToReadData) {
-            if (chunked && (data == null || !data.hasRemaining())) {
-
+        setReadyToReadData(cb);
+        if (!readyToReadData) {
+            return false;
+        }
+        if (!isSpaceForData()) {
+            if (chunked) {
                 if (data != null && cb.hasRemaining()) {
                     readCRLFOrPositionChunkSize(cb);
                 }
-
-                boolean done = readChunkSize(cb);
-                if (done) {
+                if (readChunkSize(cb)) {
                     return true;
                 }
+            } else {
+                return true;
             }
-
+        }
+        if (data != null) {
             IOUtil.copyToHeapBuffer(cb, data);
         }
+        return !chunked && !isSpaceForData();
+    }
 
-        setReadyToReadData(cb);
-
-        return !chunked && ((data != null) && !data.hasRemaining());
+    private boolean isSpaceForData() {
+        return data != null && data.hasRemaining();
     }
 
     private void setReadyToReadData(ByteBuffer cb) {

@@ -17,6 +17,8 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.config.MemcacheProtocolConfig;
+import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -51,6 +53,15 @@ public interface IOService {
     void onFatalError(Exception e);
 
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
+
+    /**
+     * Returns initialized {@link RestApiConfig} for the node.
+     */
+    RestApiConfig getRestApiConfig();
+    /**
+     * Returns initialized {@link MemcacheProtocolConfig} for the node.
+     */
+    MemcacheProtocolConfig getMemcacheProtocolConfig();
 
     SSLConfig getSSLConfig();
 

@@ -60,6 +60,9 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String LEGACY_URI_MANCENTER_WAN_CLEAR_QUEUES = "/hazelcast/rest/mancenter/clearWanQueues";
     public static final String LEGACY_URI_ADD_WAN_CONFIG = "/hazelcast/rest/wan/addWanConfig";
 
+    // License info
+    public static final String URI_LICENSE_INFO = "/hazelcast/rest/license";
+
     protected HttpCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
     }

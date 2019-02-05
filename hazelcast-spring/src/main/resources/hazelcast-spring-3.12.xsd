@@ -28,7 +28,7 @@
         <xs:complexType>
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
-                    <xs:sequence>
+                    <xs:choice minOccurs="0" maxOccurs="unbounded">
                         <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
@@ -37,6 +37,8 @@
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="rest-api" type="rest-api" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
@@ -1752,7 +1754,7 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
-                    </xs:sequence>
+                    </xs:choice>
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>
@@ -2880,6 +2882,32 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="memcache-protocol">
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="rest-api">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="endpoint-group" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:attribute name="name" type="endpoint-group-name" use="required"/>
+                    <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+    </xs:complexType>
+    <xs:simpleType name="endpoint-group-name">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="CLUSTER_READ"/>
+            <xs:enumeration value="CLUSTER_WRITE"/>
+            <xs:enumeration value="HEALTH_CHECK"/>
+            <xs:enumeration value="HOT_RESTART"/>
+            <xs:enumeration value="WAN"/>
+            <xs:enumeration value="DATA"/>
+            <xs:enumeration value="MEMCACHE"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="partition-group">
         <xs:sequence>
