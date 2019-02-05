@@ -16,10 +16,13 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 /**
  * Contains configuration for Security
  */
@@ -42,6 +45,8 @@ public class SecurityConfig {
     private Set<PermissionConfig> clientPermissionConfigs = new HashSet<PermissionConfig>();
 
     private boolean clientBlockUnmappedActions = DEFAULT_CLIENT_BLOCK_UNMAPPED_ACTIONS;
+
+    private OnJoinPermissionOperationName onJoinPermissionOperation = OnJoinPermissionOperationName.RECEIVE;
 
     public SecurityConfig addSecurityInterceptorConfig(SecurityInterceptorConfig interceptorConfig) {
         securityInterceptorConfigs.add(interceptorConfig);
@@ -125,6 +130,16 @@ public class SecurityConfig {
         return this;
     }
 
+    public OnJoinPermissionOperationName getOnJoinPermissionOperation() {
+        return onJoinPermissionOperation;
+    }
+
+    public SecurityConfig setOnJoinPermissionOperation(OnJoinPermissionOperationName onJoinPermissionOperation) {
+        this.onJoinPermissionOperation = checkNotNull(onJoinPermissionOperation,
+                "Existing " + OnJoinPermissionOperationName.class.getSimpleName() + " value has to be provided.");
+        return this;
+    }
+
     /**
      * @return a boolean flag indicating whether actions, submitted as tasks in an Executor from clients
      * and have no permission mappings, are blocked or allowed.
@@ -170,6 +185,7 @@ public class SecurityConfig {
                 + ", clientPolicyConfig=" + clientPolicyConfig
                 + ", clientPermissionConfigs=" + clientPermissionConfigs
                 + ", clientBlockUnmappedActions=" + clientBlockUnmappedActions
+                + ", onJoinPermissionOperation=" + onJoinPermissionOperation
                 + '}';
     }
 
@@ -216,6 +232,9 @@ public class SecurityConfig {
                 : that.clientPolicyConfig != null) {
             return false;
         }
+        if (onJoinPermissionOperation != that.onJoinPermissionOperation) {
+            return false;
+        }
         return clientPermissionConfigs != null
                 ? clientPermissionConfigs.equals(that.clientPermissionConfigs)
                 : that.clientPermissionConfigs == null;
@@ -232,6 +251,7 @@ public class SecurityConfig {
         result = 31 * result + (clientPolicyConfig != null ? clientPolicyConfig.hashCode() : 0);
         result = 31 * result + (clientPermissionConfigs != null ? clientPermissionConfigs.hashCode() : 0);
         result = 31 * result + (clientBlockUnmappedActions ? 1 : 0);
+        result = 31 * result + onJoinPermissionOperation.ordinal();
         return result;
     }
 }

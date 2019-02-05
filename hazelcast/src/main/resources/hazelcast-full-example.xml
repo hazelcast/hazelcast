@@ -2153,7 +2153,7 @@
                 <property name="property">value</property>
             </properties>
         </client-permission-policy>
-        <client-permissions>
+        <client-permissions on-join-operation="RECEIVE">
             <all-permissions principal="admin">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>

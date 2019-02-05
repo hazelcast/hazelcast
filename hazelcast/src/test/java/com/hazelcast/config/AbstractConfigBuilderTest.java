@@ -392,6 +392,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapEvictionPolicyIsSelected_whenEvictionPolicySet();
 
     @Test
+    public abstract void testOnJoinPermissionOperation();
+
+    @Test
     public abstract void testCachePermission();
 
     @Test

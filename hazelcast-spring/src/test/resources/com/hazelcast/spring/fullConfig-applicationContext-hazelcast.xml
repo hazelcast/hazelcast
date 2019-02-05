@@ -637,7 +637,7 @@
                 <hz:size unit="MEGABYTES" value="256"/>
             </hz:native-memory>
             <hz:security>
-                <hz:client-permissions>
+                <hz:client-permissions on-join-operation="SEND">
                     <hz:pn-counter-permission name="pnCounterPermission">
                         <hz:actions>
                             <hz:action>create</hz:action>
