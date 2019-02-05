@@ -35,6 +35,7 @@ import static java.util.Collections.emptyList;
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
 
     private final Function<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;
+    private boolean isAssignedToStage;
     private final boolean emitsWatermarks;
 
     @Nullable
@@ -51,6 +52,13 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
         this.metaSupplierFn = metaSupplierFn;
         this.emitsWatermarks = emitsWatermarks;
         this.supportsNativeTimestamps = supportsNativeTimestamps;
+    }
+
+    public void onAssignToStage() {
+        if (isAssignedToStage) {
+            throw new IllegalStateException("Sink " + name() + " was already assigned to a sink stage");
+        }
+        isAssignedToStage = true;
     }
 
     @Override

@@ -40,6 +40,7 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static com.hazelcast.projection.Projections.singleAttribute;
 import static com.hazelcast.query.TruePredicate.truePredicate;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -422,5 +423,25 @@ public class SourcesTest extends PipelineTestSupport {
         // now, only new line should be picked up
         int nodeCount = jet().getCluster().getMembers().size();
         assertTrueEventually(() -> assertEquals(nodeCount, sinkList.size()));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void when_batchSourceUsedTwice_then_throwException() {
+        // Given
+        BatchSource<Entry<Object, Object>> source = Sources.map(srcName);
+        p.drawFrom(source);
+
+        // When-Then
+        p.drawFrom(source);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void when_streamSourceUsedTwice_then_throwException() {
+        // Given
+        StreamSource<Entry<Object, Object>> source = Sources.mapJournal(srcName, START_FROM_CURRENT);
+        p.drawFrom(source);
+
+        // When-Then
+        p.drawFrom(source);
     }
 }

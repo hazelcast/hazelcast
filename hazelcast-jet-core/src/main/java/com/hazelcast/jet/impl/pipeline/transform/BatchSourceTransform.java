@@ -27,6 +27,7 @@ import static java.util.Collections.emptyList;
 public class BatchSourceTransform<T> extends AbstractTransform implements BatchSource<T> {
     @Nonnull
     public final ProcessorMetaSupplier metaSupplier;
+    private boolean isAssignedToStage;
 
     public BatchSourceTransform(
             @Nonnull String name,
@@ -34,6 +35,13 @@ public class BatchSourceTransform<T> extends AbstractTransform implements BatchS
     ) {
         super(name, emptyList());
         this.metaSupplier = metaSupplier;
+    }
+
+    public void onAssignToStage() {
+        if (isAssignedToStage) {
+            throw new IllegalStateException("Sink " + name() + " was already assigned to a sink stage");
+        }
+        isAssignedToStage = true;
     }
 
     @Override
