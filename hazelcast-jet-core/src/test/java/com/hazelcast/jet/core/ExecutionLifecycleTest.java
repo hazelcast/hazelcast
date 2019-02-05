@@ -454,8 +454,9 @@ public class ExecutionLifecycleTest extends TestInClusterSupport {
         dag.newVertex("faulty", (ProcessorMetaSupplier) addresses -> address -> new NotDeserializableProcessorSupplier());
 
         // Then
-        expectedException.expect(HazelcastSerializationException.class);
-        expectedException.expectMessage("fake.Class");
+        // we can't assert the exception class. Sometimes the HazelcastSerializationException is wrapped
+        // in JetException and sometimes it's not, depending on whether the job managed to write JobResult or not.
+        expectedException.expectMessage("java.lang.ClassNotFoundException: fake.Class");
 
         // When
         executeAndPeel(instance.newJob(dag));
