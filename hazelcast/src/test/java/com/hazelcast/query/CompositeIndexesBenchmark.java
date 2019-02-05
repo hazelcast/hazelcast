@@ -17,6 +17,7 @@
 package com.hazelcast.query;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
@@ -51,18 +52,19 @@ public class CompositeIndexesBenchmark {
     @Setup
     public void setup() {
         Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig("map");
 
-        config.getMapConfig("map").addMapIndexConfig(new MapIndexConfig("f1", false));
-        config.getMapConfig("map").addMapIndexConfig(new MapIndexConfig("f2", false));
-        config.getMapConfig("map").addMapIndexConfig(new MapIndexConfig("f3, f4", false));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("f1", false));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("f2", false));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("f3, f4", false));
 
-        config.getMapConfig("map").addMapIndexConfig(new MapIndexConfig("f5", false));
-        config.getMapConfig("map").addMapIndexConfig(new MapIndexConfig("f6", true));
-        config.getMapConfig("map").addMapIndexConfig(new MapIndexConfig("f7, f8", true));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("f5", false));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("f6", true));
+        mapConfig.addMapIndexConfig(new MapIndexConfig("f7, f8", true));
 
-        map = Hazelcast.newHazelcastInstance(config).getMap("map");
+        this.map = Hazelcast.newHazelcastInstance(config).getMap("map");
         for (int i = 0; i < 100000; ++i) {
-            map.put(i, new Pojo(0, i, 0, i, 0, i % 100, 0, i % 100));
+            this.map.put(i, new Pojo(0, i, 0, i, 0, i % 100, 0, i % 100));
         }
     }
 
