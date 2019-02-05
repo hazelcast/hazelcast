@@ -222,6 +222,11 @@ public final class TestOutbox implements OutboxInternal {
     }
 
     @Override
+    public long lastForwardedWmLatency() {
+        return outbox.lastForwardedWmLatency();
+    }
+
+    @Override
     public String toString() {
         return Arrays.toString(buckets);
     }

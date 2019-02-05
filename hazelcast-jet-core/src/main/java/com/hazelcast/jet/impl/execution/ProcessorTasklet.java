@@ -191,6 +191,8 @@ public class ProcessorTasklet implements Tasklet {
                 (LongProbeFunction<ProcessorTasklet>) t -> t.watermarkCoalescer.coalescedWm());
         probeBuilder.register(this, "lastForwardedWm", ProbeLevel.INFO, ProbeUnit.MS,
                 (LongProbeFunction<ProcessorTasklet>) t -> t.outbox.lastForwardedWm());
+        probeBuilder.register(this, "lastForwardedWmLatency", ProbeLevel.INFO, ProbeUnit.MS,
+                (LongProbeFunction<ProcessorTasklet>) t -> t.outbox.lastForwardedWmLatency());
         probeBuilder.register(this, "queuesSize", ProbeLevel.INFO, ProbeUnit.COUNT,
                 (LongProbeFunction<ProcessorTasklet>) t -> t.queuesSize.get());
         probeBuilder.register(this, "queuesCapacity", ProbeLevel.INFO, ProbeUnit.COUNT,

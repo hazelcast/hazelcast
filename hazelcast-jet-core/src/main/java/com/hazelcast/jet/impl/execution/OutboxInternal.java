@@ -40,10 +40,18 @@ public interface OutboxInternal extends Outbox {
     void unblock();
 
     /**
-     * Returns the watermark value
+     * Returns the timestamp of the last forwarded watermark.
      * <p>
      * If there was no watermark added, it returns {@code Long.MIN_VALUE}. Can
      * be called from a concurrent thread.
      */
     long lastForwardedWm();
+
+    /**
+     * Returns the latency to real time of the last forwarded watermark.
+     * <p>
+     * If there was no watermark added, it returns {@code Long.MIN_VALUE}. Can
+     * be called from a concurrent thread.
+     */
+    long lastForwardedWmLatency();
 }

@@ -81,6 +81,10 @@ public class Planner {
                                                  .filter(frameSize -> frameSize > 0)
                                                  .mapToLong(i -> i)
                                                  .toArray());
+        if (frameSizeGcd == 0) {
+            // even if there are no window aggregations, we want the watermarks for latency debugging
+            frameSizeGcd = MAXIMUM_WATERMARK_GAP;
+        }
         if (frameSizeGcd > MAXIMUM_WATERMARK_GAP) {
             frameSizeGcd = Util.gcd(frameSizeGcd, MAXIMUM_WATERMARK_GAP);
         }

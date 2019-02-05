@@ -56,6 +56,7 @@ public class OutboxImpl implements OutboxInternal {
     private Object unfinishedSnapshotKey;
     private Object unfinishedSnapshotValue;
     private final AtomicLong lastForwardedWm = new AtomicLong(Long.MIN_VALUE);
+    private final AtomicLong lastForwardedWmLatency = new AtomicLong(Long.MIN_VALUE);
 
     private boolean blocked;
 
@@ -124,6 +125,7 @@ public class OutboxImpl implements OutboxInternal {
                 "or AbstractProcessor.tryEmit() returned false";
         if (item instanceof Watermark) {
             lastForwardedWm.lazySet(((Watermark) item).timestamp());
+            lastForwardedWmLatency.lazySet(System.currentTimeMillis() - ((Watermark) item).timestamp());
         }
         numRemainingInBatch--;
         boolean done = true;
@@ -248,5 +250,10 @@ public class OutboxImpl implements OutboxInternal {
     @Override
     public long lastForwardedWm() {
         return lastForwardedWm.get();
+    }
+
+    @Override
+    public long lastForwardedWmLatency() {
+        return lastForwardedWmLatency.get();
     }
 }
