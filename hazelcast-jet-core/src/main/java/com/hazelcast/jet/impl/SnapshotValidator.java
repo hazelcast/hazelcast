@@ -49,7 +49,7 @@ final class SnapshotValidator {
                     && ((SnapshotDataKey) e.getKey()).snapshotId() == snapshotId);
             if (validationRecord.numChunks() != filteredCount) {
                 throw new JetException("State for " + jobIdString + " in '" + map.getName() + "' corrupted: it should " +
-                        "have " + validationRecord.numChunks() + " entries, but has " + (map.size() - 1) + " entries");
+                        "have " + validationRecord.numChunks() + " entries, but has " + (map.size() - 1));
             }
         }
         if (snapshotId != NO_SNAPSHOT && snapshotId != validationRecord.snapshotId()) {

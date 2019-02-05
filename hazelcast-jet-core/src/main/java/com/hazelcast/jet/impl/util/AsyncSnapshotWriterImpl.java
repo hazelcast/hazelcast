@@ -49,7 +49,7 @@ import java.util.function.Supplier;
 
 public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
-    private static final int DEFAULT_CHUNK_SIZE = 128 * 1024;
+    public static final int DEFAULT_CHUNK_SIZE = 128 * 1024;
 
     final int usableChunkSize; // this includes the serialization header for byte[], but not the terminator
     final byte[] serializedByteArrayHeader = new byte[3 * Bits.INT_SIZE_IN_BYTES];
@@ -146,6 +146,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         if (length > usableChunkSize) {
             return putAsyncToMap(partitionId, () -> {
                 byte[] data = new byte[serializedByteArrayHeader.length + length + valueTerminator.length];
+                totalKeys++;
                 int offset = 0;
                 System.arraycopy(serializedByteArrayHeader, 0, data, offset, serializedByteArrayHeader.length);
                 offset += serializedByteArrayHeader.length - Bits.INT_SIZE_IN_BYTES;
@@ -157,7 +158,9 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
                 offset += entry.getKey().totalSize() - HeapData.TYPE_OFFSET;
 
                 copyWithoutHeader(entry.getValue(), data, offset);
-                System.arraycopy(valueTerminator, 0, data, length, valueTerminator.length);
+                offset += entry.getValue().totalSize() - HeapData.TYPE_OFFSET;
+
+                System.arraycopy(valueTerminator, 0, data, offset, valueTerminator.length);
 
                 return new HeapData(data);
             });
@@ -203,8 +206,6 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         buffer.write(valueTerminator, 0, valueTerminator.length);
         final byte[] data = buffer.toByteArray();
         updateSerializedBytesLength(data);
-        totalPayloadBytes += buffer.size;
-        totalChunks++;
         buffer.reset();
         buffer.write(serializedByteArrayHeader, 0, serializedByteArrayHeader.length);
         return new HeapData(data);
@@ -227,9 +228,12 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         }
         try {
             // we put a Data instance to the map directly to avoid the serialization of the byte array
+            Data data = dataSupplier.get();
+            totalPayloadBytes += data.dataSize();
+            totalChunks++;
             ICompletableFuture<Object> future = currentMap.putAsync(
                     new SnapshotDataKey(partitionKeys[partitionId], currentSnapshotId, vertexName, partitionSequence),
-                    dataSupplier.get());
+                    data);
             partitionSequence += memberCount;
             future.andThen(callback);
             numActiveFlushes.incrementAndGet();

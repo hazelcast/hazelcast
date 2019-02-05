@@ -30,6 +30,8 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.CustomByteArrayOutputStream;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
+import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataValueTerminator;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -46,6 +48,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
@@ -171,14 +174,27 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     }
 
     @Test
-    public void when_singleLargeEntry_then_flushedImmediately() {
+    public void when_singleLargeEntry_then_flushedImmediatelyAndDeserializesCorrectly() throws IOException {
         // When
-        Entry<Data, Data> entry = entry(serialize("k"), serialize(generate(() -> "a").limit(128).collect(joining())));
+        String key = "k";
+        String value = generate(() -> "a").limit(128).collect(joining());
+        Entry<Data, Data> entry = entry(serialize(key), serialize(value));
         assertTrue("entry not longer than usable chunk size", serializedLength(entry) > writer.usableChunkSize);
         assertTrue(writer.offer(entry));
 
         // Then
-        assertTargetMapEntry("k", 0, serializedLength(entry));
+        assertTargetMapEntry(key, 0, serializedLength(entry));
+        assertEquals(1, writer.getTotalChunks());
+        assertEquals(1, writer.getTotalKeys());
+
+        // Then2 - try to deserialize the entry
+        int partitionKey = writer.partitionKey(partitionService.getPartitionId(key));
+        byte[] data = map.get(new SnapshotDataKey(partitionKey, 1, "vertex", 0));
+        assertEquals(data.length + Bits.INT_SIZE_IN_BYTES, writer.getTotalPayloadBytes());
+        BufferObjectDataInput in = serializationService.createObjectDataInput(data);
+        assertEquals(key, in.readObject());
+        assertEquals(value, in.readObject());
+        assertEquals(SnapshotDataValueTerminator.INSTANCE, in.readObject());
     }
 
     @Test

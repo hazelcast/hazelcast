@@ -54,7 +54,7 @@ public class SnapshotValidationRecord implements IdentifiedDataSerializable {
         return snapshotId;
     }
 
-    long numChunks() {
+    public long numChunks() {
         return numChunks;
     }
 
