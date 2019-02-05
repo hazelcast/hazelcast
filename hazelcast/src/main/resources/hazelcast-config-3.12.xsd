@@ -2790,6 +2790,7 @@
             <xs:element name="user-code-deployment-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
         </xs:choice>
+        <xs:attribute name="on-join-operation" type="permission-on-join-operation" use="optional" default="RECEIVE"/>
     </xs:complexType>
     <xs:complexType name="base-permission">
         <xs:sequence>
@@ -4399,4 +4400,11 @@
             </xs:element>
         </xs:choice>
     </xs:complexType>
+    <xs:simpleType name="permission-on-join-operation">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="RECEIVE"/>
+            <xs:enumeration value="SEND"/>
+            <xs:enumeration value="NONE"/>
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

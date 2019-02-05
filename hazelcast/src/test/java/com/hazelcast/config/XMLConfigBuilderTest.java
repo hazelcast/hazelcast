@@ -67,6 +67,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -2951,6 +2952,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testOnJoinPermissionOperation() {
+        for (OnJoinPermissionOperationName onJoinOp : OnJoinPermissionOperationName.values()) {
+            String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
+                    + "  <client-permissions on-join-operation='" + onJoinOp.name() + "'/>"
+                    + SECURITY_END_TAG + HAZELCAST_END_TAG;
+            Config config = buildConfig(xml);
+            assertSame(onJoinOp, config.getSecurityConfig().getOnJoinPermissionOperation());
+        }
+    }
+
+    @Override
+    @Test
     public void testCachePermission() {
         String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
                 + "  <client-permissions>"
@@ -2961,6 +2974,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + SECURITY_END_TAG + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
+        assertSame("Receive is expected to be default on-join-operation", OnJoinPermissionOperationName.RECEIVE,
+                config.getSecurityConfig().getOnJoinPermissionOperation());
         PermissionConfig expected = new PermissionConfig(CACHE, "/hz/cachemanager1/cache1", "dev");
         expected.addAction("create").addAction("destroy").addAction("add").addAction("remove");
         assertPermissionConfig(expected, config);

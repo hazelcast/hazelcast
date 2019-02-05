@@ -769,6 +769,7 @@ hazelcast:
       properties:
         property: value
     client-permissions:
+      on-join-operation: SEND
       all:
         principal: admin
         endpoints:

@@ -60,6 +60,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -3067,6 +3068,20 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         PermissionConfig expected = new PermissionConfig(CACHE, "/hz/cachemanager1/cache1", "dev");
         expected.addAction("create").addAction("destroy").addAction("add").addAction("remove");
         assertPermissionConfig(expected, config);
+    }
+
+    @Override
+    @Test
+    public void testOnJoinPermissionOperation() {
+        for (OnJoinPermissionOperationName onJoinOp : OnJoinPermissionOperationName.values()) {
+            String yaml = ""
+                    + "hazelcast:\n"
+                    + "  security:\n"
+                    + "    client-permissions:\n"
+                    + "      on-join-operation: " + onJoinOp.name();
+            Config config = buildConfig(yaml);
+            assertSame(onJoinOp, config.getSecurityConfig().getOnJoinPermissionOperation());
+        }
     }
 
     @Override

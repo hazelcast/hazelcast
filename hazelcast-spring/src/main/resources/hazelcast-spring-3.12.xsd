@@ -3038,6 +3038,7 @@
                                     maxOccurs="unbounded"/>
                         <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
+                    <xs:attribute name="on-join-operation" type="permission-on-join-operation" use="optional" default="RECEIVE"/>
                 </xs:complexType>
             </xs:element>
             <xs:element name="security-interceptors" type="interceptors" minOccurs="0" maxOccurs="1"/>
@@ -3054,6 +3055,13 @@
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:string" default="false"/>
     </xs:complexType>
+    <xs:simpleType name="permission-on-join-operation">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="RECEIVE"/>
+            <xs:enumeration value="SEND"/>
+            <xs:enumeration value="NONE"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="interceptors">
         <xs:sequence>

@@ -75,6 +75,7 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -1912,6 +1913,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleSecurityPermissions(Node node, BeanDefinitionBuilder securityConfigBuilder) {
             Set<BeanDefinition> permissions = new ManagedSet<BeanDefinition>();
+            NamedNodeMap attributes = node.getAttributes();
+            Node onJoinOpAttribute = attributes.getNamedItem("on-join-operation");
+            if (onJoinOpAttribute != null) {
+                String onJoinOp = getTextContent(onJoinOpAttribute);
+                OnJoinPermissionOperationName onJoinPermissionOperation = OnJoinPermissionOperationName
+                        .valueOf(upperCaseInternal(onJoinOp));
+                securityConfigBuilder.addPropertyValue("onJoinPermissionOperation", onJoinPermissionOperation);
+            }
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 PermissionType type = PermissionType.getType(nodeName);

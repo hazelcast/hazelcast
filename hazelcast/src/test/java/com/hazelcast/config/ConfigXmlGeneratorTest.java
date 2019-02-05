@@ -298,6 +298,7 @@ public class ConfigXmlGeneratorTest {
 
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
+          .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
           .setClientBlockUnmappedActions(false)
           .setClientLoginModuleConfigs(Arrays.asList(
                   new LoginModuleConfig()

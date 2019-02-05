@@ -295,15 +295,16 @@ public class ConfigXmlGenerator {
             gen.close();
         }
 
-        appendSecurityPermissions(gen, "client-permissions", c.getClientPermissionConfigs());
+        appendSecurityPermissions(gen, "client-permissions", c.getClientPermissionConfigs(),
+                "on-join-operation", c.getOnJoinPermissionOperation());
         gen.close();
     }
 
-    private static void appendSecurityPermissions(XmlGenerator gen, String tag, Set<PermissionConfig> cpc) {
+    private static void appendSecurityPermissions(XmlGenerator gen, String tag, Set<PermissionConfig> cpc, Object... attributes) {
         final List<PermissionConfig.PermissionType> clusterPermTypes = asList(ALL, CONFIG, TRANSACTION);
 
         if (!cpc.isEmpty()) {
-            gen.open(tag);
+            gen.open(tag, attributes);
             for (PermissionConfig p : cpc) {
                 if (clusterPermTypes.contains(p.getType())) {
                     gen.open(p.getType().getNodeName(), "principal", p.getPrincipal());

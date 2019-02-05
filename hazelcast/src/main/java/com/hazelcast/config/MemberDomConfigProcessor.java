@@ -2722,6 +2722,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleSecurityPermissions(Node node) {
+        String onJoinOp = getAttribute(node, "on-join-operation");
+        if (onJoinOp != null) {
+            OnJoinPermissionOperationName onJoinPermissionOperation = OnJoinPermissionOperationName
+                    .valueOf(upperCaseInternal(onJoinOp));
+            config.getSecurityConfig().setOnJoinPermissionOperation(onJoinPermissionOperation);
+        }
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             PermissionConfig.PermissionType type;

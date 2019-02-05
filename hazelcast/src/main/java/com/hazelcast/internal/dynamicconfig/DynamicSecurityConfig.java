@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.LoginModuleConfig;
+import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionPolicyConfig;
 import com.hazelcast.config.SecurityConfig;
@@ -156,6 +157,16 @@ public class DynamicSecurityConfig extends SecurityConfig {
 
     @Override
     public SecurityConfig setMemberCredentialsConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public OnJoinPermissionOperationName getOnJoinPermissionOperation() {
+        return staticSecurityConfig.getOnJoinPermissionOperation();
+    }
+
+    @Override
+    public SecurityConfig setOnJoinPermissionOperation(OnJoinPermissionOperationName onJoinPermissionOperation) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
