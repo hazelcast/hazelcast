@@ -2,7 +2,11 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ==== 3.11.2 ====
 
-1. Fixes
+1. Enhancements 
+
+* Introduced a new system property (`hazelcast.security.permissions.operation.on-join`) that allows to choose whether a new member joining to a cluster will apply the client permissions stored in its own configuration, or will use the ones defined in the cluster. See the Permissions section.
+
+2. Fixes
 
 * Fixed an issue where `InitialMembershipEvent` was being fired with empty member list, when client async start is enabled. [#14364]
 * Fixed an issue where the `invokeOnPartitionsAsync()` method was not returning a value when the `memberPartitions` is empty. [#14266]
@@ -10,7 +14,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 * Fixed an issue where the `getOperationCount` statistics were not updated as expected when performing get operations from the Java client. [#14143]
 * Difference between the clocks of target and source clusters had a potential to completely block the WAN communication which may cause the WAN queues to be filled up. This has been fixed by ignoring the call timeout check for WAN operations. [#13301]
 
-2. Behavioral Changes
+3. Behavioral Changes
 
 * If you have multiple Hazelcast members on a single machine and you are using unisocket clients, we recommend you to set explicit ports for each member. Then you should provide those ports in your client configuration when you give the member addresses. Otherwise, all the load coming from your clients may go through a single member.
 
