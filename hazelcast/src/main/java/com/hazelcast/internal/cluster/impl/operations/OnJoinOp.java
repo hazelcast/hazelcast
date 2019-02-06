@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.config.OnJoinPermissionOperation;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
+import static com.hazelcast.spi.properties.GroupProperty.ON_JOIN_PERMISSIONS_OPERATION;
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -72,7 +75,13 @@ public class OnJoinOp
     @Override
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
+            OnJoinPermissionOperation onJoinOp = getNodeEngine().getProperties().getEnum(ON_JOIN_PERMISSIONS_OPERATION,
+                    OnJoinPermissionOperation.class);
+            boolean runPermissionUpdates = onJoinOp == OnJoinPermissionOperation.RECEIVE;
             for (Operation op : operations) {
+                if ((op instanceof UpdatePermissionConfigOperation) && !runPermissionUpdates) {
+                    continue;
+                }
                 try {
                     // not running via OperationService since we don't want any restrictions like cluster state check etc.
                     op.beforeRun();
