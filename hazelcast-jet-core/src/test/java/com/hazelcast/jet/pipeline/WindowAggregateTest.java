@@ -26,8 +26,8 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.QuadFunction;
+import com.hazelcast.jet.function.TriFunction;
 import org.junit.Test;
 
 import java.util.List;
@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
 import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperationBuilder;
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -139,19 +140,31 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
     @Test
     public void tumblingWindow() {
+        testTumblingWindow(0L);
+    }
+
+    @Test
+    public void tumblingWindow_withEarlyResults() {
+        maxLag = 32 * itemCount;
+        testTumblingWindow(200L);
+    }
+
+    private void testTumblingWindow(long earlyResultsPeriod) {
         // Given
         List<Integer> input = sequence(itemCount);
         DistributedBiFunction<Long, Long, String> formatFn =
                 (timestamp, item) -> String.format("(%03d, %03d)", timestamp, item);
 
         addToSrcMapJournal(input);
-        addToSrcMapJournal(closingItems);
+        if (earlyResultsPeriod == 0) {
+            addToSrcMapJournal(closingItems);
+        }
 
         // When
         final int winSize = 4;
         StreamStage<String> aggregated = srcStage
                 .withTimestamps(i -> i, maxLag)
-                .window(tumbling(winSize))
+                .window(tumbling(winSize).setEarlyResultsPeriod(earlyResultsPeriod))
                 .aggregate(summingLong(i -> i), (start, end, sum) -> formatFn.apply(end, sum));
 
         // Then
@@ -159,32 +172,45 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         jet().newJob(p);
 
         Function<Integer, Long> expectedWindowSum = start -> winSize * (2L * start + winSize - 1) / 2;
-        List<String> expected = input
+        Stream<String> expectedStream = input
                 .stream()
                 .map(i -> i - i % winSize)
                 .distinct()
-                .map(start -> formatFn.apply((long) start + winSize, expectedWindowSum.apply(start)))
-                .collect(toList());
-        Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
+                .map(start -> formatFn.apply((long) start + winSize, expectedWindowSum.apply(start)));
+        boolean ignoreDuplicates = earlyResultsPeriod != 0;
+        String expectedString = streamToString(expectedStream, ignoreDuplicates);
+        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+                10);
     }
 
     @Test
     public void slidingWindow() {
+        testSlidingWindow(0L);
+    }
+
+    @Test
+    public void slidingWindow_withEarlyResults() {
+        maxLag = 32 * itemCount;
+        testSlidingWindow(200L);
+    }
+
+    private void testSlidingWindow(long earlyResultsPeriod) {
         // Given
         List<Integer> input = sequence(itemCount);
         DistributedBiFunction<Long, Long, String> formatFn =
                 (timestamp, item) -> String.format("(%03d, %03d)", timestamp, item);
 
         addToSrcMapJournal(input);
-        addToSrcMapJournal(closingItems);
+        if (earlyResultsPeriod == 0) {
+            addToSrcMapJournal(closingItems);
+        }
 
         // When
         final int winSize = 4;
         final int slideBy = 2;
         StreamStage<String> aggregated = srcStage
                 .withTimestamps(i -> i, maxLag)
-                .window(sliding(winSize, slideBy))
+                .window(sliding(winSize, slideBy).setEarlyResultsPeriod(earlyResultsPeriod))
                 .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START ? null
                         : formatFn.apply(end, sum));
 
@@ -209,13 +235,25 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                         : formatFn.apply((long) start + winSize,
                                 expectedWindowSum.apply(start, min(start + winSize, itemCount))))
                 .filter(Objects::nonNull);
-        List<String> expected = concat(headOfStream, restOfStream).collect(toList());
-        Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
+        Stream<String> expectedStream = concat(headOfStream, restOfStream);
+        boolean ignoreDuplicates = earlyResultsPeriod != 0;
+        String expectedString = streamToString(expectedStream, ignoreDuplicates);
+        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+                10);
     }
 
     @Test
     public void sessionWindow() {
+        testSessionWindow(0L);
+    }
+
+    @Test
+    public void sessionWindow_withPartialResults() {
+        maxLag = 32 * itemCount;
+        testSessionWindow(200L);
+    }
+
+    private void testSessionWindow(long earlyResultsPeriod) {
         // Given
         final int sessionLength = 4;
         final int sessionTimeout = 2;
@@ -226,13 +264,16 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 (timestamp, item) -> String.format("(%03d, %03d)", timestamp, item);
 
         addToSrcMapJournal(input);
-        addToSrcMapJournal(closingItems);
+        if (earlyResultsPeriod == 0) {
+            addToSrcMapJournal(closingItems);
+        }
 
         // When
         StreamStage<String> aggregated = srcStage
                 .withTimestamps(i -> i, maxLag)
-                .window(session(sessionTimeout))
-                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START ? null
+                .window(session(sessionTimeout).setEarlyResultsPeriod(earlyResultsPeriod))
+                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START
+                        ? null
                         : formatFn.apply(start, sum));
 
         // Then
@@ -240,15 +281,52 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         jet().newJob(p);
 
         Function<Integer, Long> expectedWindowSum = start -> sessionLength * (2 * start + sessionLength - 1) / 2L;
-        Map<String, Integer> expectedBag = toBag(input
-                .stream()
-                .map(i -> i - i % (sessionLength + sessionTimeout))
-                .distinct()
-                .map(start -> start == FILTERED_OUT_WINDOW_START ? null
-                        : formatFn.apply((long) start, expectedWindowSum.apply(start)))
-                .filter(Objects::nonNull)
-                .collect(toList()));
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
+        Stream<String> expectedStream = input.stream()
+                                             .map(i -> i - i % (sessionLength + sessionTimeout))
+                                             .distinct()
+                                             .map(start -> start == FILTERED_OUT_WINDOW_START ? null
+                                                     : formatFn.apply((long) start, expectedWindowSum.apply(start)))
+                                             .filter(Objects::nonNull);
+        boolean ignoreDuplicates = earlyResultsPeriod != 0;
+        String expectedString = streamToString(expectedStream, ignoreDuplicates);
+        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+                10);
+    }
+
+    @Test
+    public void when_tumblingWinWithEarlyResults_then_emitRepeatedly() {
+        assertEarlyResultsEmittedRepeatedly(tumbling(10));
+    }
+
+    @Test
+    public void when_sessionWinWithEarlyResults_then_emitRepeatedly() {
+        assertEarlyResultsEmittedRepeatedly(session(9));
+    }
+
+    private void assertEarlyResultsEmittedRepeatedly(WindowDefinition wDef) {
+        // Given
+        StreamSource<String> source = SourceBuilder
+                .timestampedStream("events", x -> new LongAccumulator())
+                .<String>fillBufferFn((emittedCount, buf) -> {
+                    if (emittedCount.get() == 1) {
+                        return;
+                    }
+                    emittedCount.set(1);
+                    buf.add("a", 1);
+                })
+                .build();
+        Pipeline p = Pipeline.create();
+        StreamStage<String> srcStage = p.drawFrom(source).withNativeTimestamps(0);
+
+        // When
+        StageWithWindow<String> stage = srcStage.window(wDef.setEarlyResultsPeriod(100));
+
+        // Then
+        stage.aggregate(counting()).drainTo(Sinks.list(sinkList));
+        jet().newJob(p);
+        assertTrueEventually(() -> assertGreaterOrEquals("sinkList.size()", sinkList.size(), 10));
+        TimestampedItem expected = new TimestampedItem<>(10, 1L);
+        sinkList.forEach(it -> assertEquals(expected, it));
     }
 
     @Test

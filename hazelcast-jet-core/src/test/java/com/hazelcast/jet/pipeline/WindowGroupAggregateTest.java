@@ -104,17 +104,29 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
     @Test
     public void tumblingWindow() {
+        testTumblingWindow(0L);
+    }
+
+    @Test
+    public void tumblingWindow_withEarlyResults() {
+        maxLag = 32 * itemCount;
+        testTumblingWindow(200L);
+    }
+
+    private void testTumblingWindow(long earlyResultsPeriod) {
         // Given
         WindowTestFixture fx = new WindowTestFixture();
         addToSrcMapJournal(fx.input);
-        addToSrcMapJournal(closingItems);
+        if (earlyResultsPeriod == 0) {
+            addToSrcMapJournal(closingItems);
+        }
 
         // When
         final int winSize = 4;
         DistributedTriFunction<Long, String, String, String> formatFn = fx.formatFn;
         StreamStage<String> aggregated = fx.stage0()
                 .groupingKey(Entry::getKey)
-                .window(tumbling(winSize))
+                .window(tumbling(winSize).setEarlyResultsPeriod(earlyResultsPeriod))
                 .aggregate(summingLong(Entry::getValue),
                         (start, end, key, sum) -> formatFn.apply(end, key, sum.toString()));
 
@@ -123,7 +135,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         jet().newJob(p);
 
         Function<Integer, Long> expectedWindowSum = start -> winSize * (2L * start + winSize - 1) / 2;
-        Map<String, Integer> expectedBag = toBag(fx.input
+        Stream<String> expectedStream = fx.input
                 .stream()
                 .map(i -> i - i % winSize)
                 .distinct()
@@ -132,24 +144,38 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                     long sum = expectedWindowSum.apply(start);
                     return Stream.of(formatFn.apply(winEnd, "a", String.valueOf(sum)),
                             formatFn.apply(winEnd, "b", String.valueOf(sum)));
-                })
-                .collect(toList()));
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
+                });
+        boolean ignoreDuplicates = earlyResultsPeriod != 0;
+        String expectedString = streamToString(expectedStream, ignoreDuplicates);
+        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+                10);
     }
 
     @Test
     public void slidingWindow() {
+        testSlidingWindow(0L);
+    }
+
+    @Test
+    public void slidingWindow_withEarlyResults() {
+        maxLag = 32 * itemCount;
+        testSlidingWindow(200L);
+    }
+
+    private void testSlidingWindow(long earlyResultsPeriod) {
         // Given
         WindowTestFixture fx = new WindowTestFixture();
         addToSrcMapJournal(fx.input);
-        addToSrcMapJournal(closingItems);
+        if (earlyResultsPeriod == 0) {
+            addToSrcMapJournal(closingItems);
+        }
 
         // When
         final int winSize = 4;
         final int slideBy = 2;
         DistributedTriFunction<Long, String, String, String> formatFn = fx.formatFn;
         StreamStage<String> aggregated = fx.stage0()
-                .window(sliding(winSize, slideBy))
+                .window(sliding(winSize, slideBy).setEarlyResultsPeriod(earlyResultsPeriod))
                 .groupingKey(Entry::getKey)
                 .aggregate(summingLong(Entry::getValue), (start, end, key, sum) ->
                         // filter out one of the windows - this is to test map-to-null behavior
@@ -186,9 +212,11 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                                 String.valueOf(expectedWindowSum.apply(start, min(start + winSize, itemCount))));
                 })
                 .filter(Objects::nonNull);
-        List<String> expected = concat(headOfStream, restOfStream).collect(toList());
-        Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
+        Stream<String> expectedStream = concat(headOfStream, restOfStream);
+        boolean ignoreDuplicates = earlyResultsPeriod != 0;
+        String expectedString = streamToString(expectedStream, ignoreDuplicates);
+        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+                10);
     }
 
     @Test
@@ -225,6 +253,16 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
     @Test
     public void sessionWindow() {
+        testSessionWindow(0L);
+    }
+
+    @Test
+    public void sessionWindow_withEarlyResults() {
+        maxLag = 32 * itemCount;
+        testSessionWindow(200L);
+    }
+
+    private void testSessionWindow(long earlyResultsPeriod) {
         // Given
         WindowTestFixture fx = new WindowTestFixture();
         final int sessionLength = 4;
@@ -234,12 +272,14 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 .map(ts -> ts + (ts / sessionLength) * sessionTimeout)
                 .collect(toList());
         addToSrcMapJournal(input);
-        addToSrcMapJournal(closingItems);
+        if (earlyResultsPeriod == 0) {
+            addToSrcMapJournal(closingItems);
+        }
 
         // When
         DistributedTriFunction<Long, String, String, String> formatFn = fx.formatFn;
         StreamStage<String> aggregated = fx.stage0()
-                .window(session(sessionTimeout))
+                .window(session(sessionTimeout).setEarlyResultsPeriod(earlyResultsPeriod))
                 .groupingKey(Entry::getKey)
                 .aggregate(summingLong(Entry::getValue), (start, end, key, sum) ->
                         // filter out one of the windows - this is to test map-to-null behavior
@@ -249,7 +289,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         aggregated.drainTo(sink);
         jet().newJob(p);
 
-        List<String> expected = input
+        Stream<String> expectedStream = input
                 .stream()
                 .map(i -> (long) i - i % (sessionLength + sessionTimeout))
                 .distinct()
@@ -259,10 +299,11 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                             : Stream.of(formatFn.apply(start, "a", String.valueOf(sum)),
                                     formatFn.apply(start, "b", String.valueOf(sum)));
                 })
-                .filter(Objects::nonNull)
-                .collect(toList());
-        Map<String, Integer> expectedBag = toBag(expected);
-        assertTrueEventually(() -> assertEquals(expectedBag, sinkToBag()), 10);
+                .filter(Objects::nonNull);
+        boolean ignoreDuplicates = earlyResultsPeriod != 0;
+        String expectedString = streamToString(expectedStream, ignoreDuplicates);
+        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+                10);
     }
 
     @Test

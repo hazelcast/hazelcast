@@ -24,11 +24,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.mapEventNewValue;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Collections.nCopies;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
@@ -79,5 +81,14 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
 
     Job executeAsync() {
         return jet().newJob(p);
+    }
+
+    static String streamToString(Stream<?> stream, boolean ignoreDuplicates) {
+        if (ignoreDuplicates) {
+            stream = stream.distinct();
+        }
+        return stream.map(Object::toString)
+                     .sorted()
+                     .collect(joining("\n"));
     }
 }
