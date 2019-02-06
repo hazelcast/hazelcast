@@ -79,14 +79,19 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         String lockName = "lock";
         HazelcastInstance i1 = instances[0];
         HazelcastInstance i2 = instances[1];
-        ILock l1 = i1.getLock(lockName);
+        final ILock l1 = i1.getLock(lockName);
         ILock l2 = i2.getLock(lockName);
         l2.lock();
         assertTrue(l1.isLocked());
         assertTrue(l2.isLocked());
 
         i2.shutdown();
-        assertFalse(l1.isLocked());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse(l1.isLocked());
+            }
+        });
     }
 
     private void testShutDownNodeWhenOtherWaitingOnLock(boolean localKey) throws InterruptedException {
