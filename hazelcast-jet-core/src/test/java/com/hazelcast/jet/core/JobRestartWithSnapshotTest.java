@@ -186,6 +186,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                     singletonList(t1 -> ((Entry<Integer, Integer>) t1).getValue()),
                     TimestampKind.EVENT,
                     wDef,
+                    0L,
                     aggrOp,
                     TimestampedEntry::fromWindowResult));
 

@@ -106,6 +106,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                             singletonList(timestampFn),
                             TimestampKind.EVENT,
                             wDef,
+                            0L,
                             counting,
                             TimestampedEntry::fromWindowResult));
             dag

@@ -51,6 +51,7 @@ public class SlidingWindowP_CoGroupTest {
                 asList(t -> 1L, t -> 1L),
                 TimestampKind.FRAME,
                 tumblingWinPolicy(1),
+                0L,
                 aggregateOperation2(toList(), toList()),
                 TimestampedEntry::fromWindowResult);
 

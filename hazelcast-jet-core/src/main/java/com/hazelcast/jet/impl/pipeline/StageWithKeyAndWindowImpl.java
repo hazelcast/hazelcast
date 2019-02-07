@@ -60,7 +60,6 @@ public class StageWithKeyAndWindowImpl<T, K>
         return wDef;
     }
 
-    @Nonnull @Override
     public <R, OUT> StreamStage<OUT> aggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn

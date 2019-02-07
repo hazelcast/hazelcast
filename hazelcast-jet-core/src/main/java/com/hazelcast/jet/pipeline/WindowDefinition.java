@@ -51,6 +51,40 @@ public interface WindowDefinition {
     WindowKind kind();
 
     /**
+     * Returns the {@linkplain #setEarlyResultsPeriod early results period} for
+     * this window definition. A return value of zero means that the stage
+     * won't emit early window results.
+     */
+    long earlyResultsPeriod();
+
+    /**
+     * Sets the period in milliseconds at which the windowed aggregation
+     * stage will emit partial results of all the windows that contain some
+     * data, but the watermark hasn't yet advanced enough to close them and
+     * emit the final results.
+     * <p>
+     * Consider this example: we're collecting a 1-minute tumbling window of
+     * stock exchange data. The results we're getting pertain to the minute
+     * that just elapsed, but we'd also like to detect any sudden changes
+     * within the running minute. We can set the early results period to
+     * 1000 ms and get an update every second for the window that's currently
+     * being filled with data.
+     * <p>
+     * Note that, for a sliding window, there will be many incomplete windows
+     * that contain some data and you'll get the early results for all of them.
+     * Similarly, if you configure a high-enough {@code maxLag} for the event
+     * timestamps, there can be more than one tumbling/session window with
+     * early results.
+     * <p>
+     * The default value is zero, which means "don't emit early results".
+     *
+     * @param earlyResultPeriod the period in milliseconds from one start of the emission of early
+     *                          results to the next one
+     * @return {@code this}
+     */
+    WindowDefinition setEarlyResultsPeriod(long earlyResultPeriod);
+
+    /**
      * Returns this window definition downcast to the type determined through
      * type inference at the call site. It will be an unchecked downcast and
      * may fail at runtime with a {@code ClassCastException}.
@@ -133,7 +167,7 @@ public interface WindowDefinition {
      *                       successive timestamps included in a window.
      */
     @Nonnull
-    static SessionWindowDef session(long sessionTimeout) {
-        return new SessionWindowDef(sessionTimeout);
+    static SessionWindowDefinition session(long sessionTimeout) {
+        return new SessionWindowDefinition(sessionTimeout);
     }
 }

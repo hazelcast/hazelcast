@@ -94,8 +94,8 @@ public class SlidingWindowP_changeWindowSizeTest {
                 singletonList(new TimestampedEntry(4, "key", 5L)));
     }
 
-    private void test(SlidingWindowPolicy policy1, SlidingWindowPolicy policy2,
-                      @Nullable List expectedOutboxAfterRestore) throws Exception {
+    private static void test(SlidingWindowPolicy policy1, SlidingWindowPolicy policy2,
+                             @Nullable List expectedOutboxAfterRestore) throws Exception {
         SlidingWindowP p = createProcessor(policy1);
         TestOutbox outbox = new TestOutbox(new int[]{1024}, 1024);
         p.init(outbox, new TestProcessorContext());
@@ -125,11 +125,12 @@ public class SlidingWindowP_changeWindowSizeTest {
         assertTrue("slidingWindow not empty", p.slidingWindow == null || p.slidingWindow.isEmpty());
     }
 
-    private SlidingWindowP createProcessor(SlidingWindowPolicy winPolicy) {
+    private static SlidingWindowP createProcessor(SlidingWindowPolicy winPolicy) {
         return new SlidingWindowP<>(
                 singletonList((Integer t) -> "key"),
                 singletonList((Integer t) -> winPolicy.higherFrameTs(t)),
                 winPolicy,
+                0L,
                 summingLong((Integer t) -> t),
                 TimestampedEntry::fromWindowResult,
                 true);

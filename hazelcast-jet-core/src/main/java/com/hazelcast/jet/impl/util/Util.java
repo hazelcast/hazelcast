@@ -417,7 +417,7 @@ public final class Util {
         if (item instanceof JetEvent) {
             JetEvent event = (JetEvent) item;
             logger.info(
-                    String.format("Event dropped, late by %dms. currentWatermark=%s, eventTime=%s, event=%s",
+                    String.format("Event dropped, late by %d ms. currentWatermark=%s, eventTime=%s, event=%s",
                             currentWm - event.timestamp(), toLocalTime(currentWm), toLocalTime(event.timestamp()),
                             event.payload()
                     ));

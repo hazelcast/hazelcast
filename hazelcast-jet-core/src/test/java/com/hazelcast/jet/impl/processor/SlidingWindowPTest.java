@@ -90,7 +90,7 @@ public class SlidingWindowPTest {
 
     @Before
     public void before() {
-        SlidingWindowPolicy windowDef = slidingWinPolicy(4, 1);
+        SlidingWindowPolicy winPolicy = slidingWinPolicy(4, 1);
 
         AggregateOperation1<Entry<?, Long>, LongAccumulator, Long> operation = AggregateOperation
                 .withCreate(LongAccumulator::new)
@@ -106,10 +106,11 @@ public class SlidingWindowPTest {
                         singletonList(keyFn),
                         singletonList(timestampFn),
                         TimestampKind.EVENT,
-                        windowDef,
+                        winPolicy,
+                        0L,
                         operation,
                         TimestampedEntry::fromWindowResult)
-                : combineToSlidingWindowP(windowDef, operation, TimestampedEntry::fromWindowResult);
+                : combineToSlidingWindowP(winPolicy, operation, TimestampedEntry::fromWindowResult);
 
         // new supplier to save the last supplied instance
         supplier = () -> lastSuppliedProcessor = (SlidingWindowP) procSupplier.get();

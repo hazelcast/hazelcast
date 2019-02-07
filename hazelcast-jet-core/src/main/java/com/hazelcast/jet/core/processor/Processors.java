@@ -422,10 +422,12 @@ public final class Processors {
             @Nonnull List<DistributedToLongFunction<?>> timestampFns,
             @Nonnull TimestampKind timestampKind,
             @Nonnull SlidingWindowPolicy winPolicy,
+            long earlyResultsPeriod,
             @Nonnull AggregateOperation<A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
-        return aggregateByKeyAndWindowP(keyFns, timestampFns, timestampKind, winPolicy, aggrOp, mapToOutputFn, true);
+        return aggregateByKeyAndWindowP(
+                keyFns, timestampFns, timestampKind, winPolicy, earlyResultsPeriod, aggrOp, mapToOutputFn, true);
     }
 
     /**
@@ -474,6 +476,7 @@ public final class Processors {
                 timestampFns,
                 timestampKind,
                 winPolicy.toTumblingByFrame(),
+                0L,
                 aggrOp.withIdentityFinish(),
                 TimestampedEntry::fromWindowResult,
                 false
@@ -527,6 +530,7 @@ public final class Processors {
                 singletonList(timestampFn),
                 TimestampKind.FRAME,
                 winPolicy,
+                0L,
                 aggrOp.withCombiningAccumulateFn(TimestampedEntry<Object, A>::getValue),
                 mapToOutputFn,
                 true
@@ -556,6 +560,7 @@ public final class Processors {
             @Nonnull List<DistributedToLongFunction<?>> timestampFns,
             @Nonnull TimestampKind timestampKind,
             @Nonnull SlidingWindowPolicy winPolicy,
+            long earlyResultsPeriod,
             @Nonnull AggregateOperation<A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn,
             boolean isLastStage
@@ -566,6 +571,7 @@ public final class Processors {
                             .map(f -> toFrameTimestampFn(f, timestampKind, winPolicy))
                             .collect(toList()),
                 winPolicy,
+                earlyResultsPeriod,
                 aggrOp,
                 mapToOutputFn,
                 isLastStage);

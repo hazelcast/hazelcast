@@ -75,7 +75,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     public void addToDag(Planner p) {
         if (wDef.kind() == SESSION) {
             addSessionWindow(p, wDef.downcast());
-        } else if (aggrOp.combineFn() == null) {
+        } else if (aggrOp.combineFn() == null || wDef.earlyResultsPeriod() > 0) {
             // We don't use single-stage even when optimizing for memory because the
             // single-stage setup doesn't save memory with just one global key.
             addSlidingWindowSingleStage(p, wDef.downcast());
@@ -103,6 +103,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
                         nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
                         TimestampKind.EVENT,
                         wDef.toSlidingWindowPolicy(),
+                        wDef.earlyResultsPeriod(),
                         aggrOp,
                         mapToOutputFn.toKeyedWindowResultFn()
                 ));
@@ -155,7 +156,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     //             ---------------------------
     //            | aggregateToSessionWindowP | local parallelism = 1
     //             ---------------------------
-    private void addSessionWindow(Planner p, SessionWindowDef wDef) {
+    private void addSessionWindow(Planner p, SessionWindowDefinition wDef) {
         PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(),
                 aggregateToSessionWindowP(
                         wDef.sessionTimeout(),

@@ -61,6 +61,7 @@ public class SlidingWindowP_failoverTest {
                 singletonList(entryKey()),
                 singletonList((DistributedToLongFunction<Entry<?, Long>>) Entry::getValue),
                 wDef,
+                0L,
                 aggrOp,
                 TimestampedEntry::fromWindowResult,
                 true);

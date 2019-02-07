@@ -66,7 +66,6 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     @Nonnull @Override
-    @SuppressWarnings("unchecked")
     public <R, OUT> StreamStage<OUT> aggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
             @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
@@ -77,7 +76,6 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     // This method was extracted in order to capture the wildcard parameter A.
-    @SuppressWarnings("unchecked")
     private <A, R, OUT> StreamStage<OUT> attachAggregate(
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
             @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
@@ -93,7 +91,6 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     @Nonnull @Override
-    @SuppressWarnings("unchecked")
     public <T1, R, OUT> StreamStage<OUT> aggregate2(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, ?, R> aggrOp,
@@ -106,7 +103,6 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     // This method was extracted in order to capture the wildcard parameter A.
-    @SuppressWarnings("unchecked")
     private <T1, A, R, OUT> StreamStage<OUT> attachAggregate2(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
@@ -123,7 +119,6 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     @Nonnull @Override
-    @SuppressWarnings("unchecked")
     public <T1, T2, R, OUT> StreamStage<OUT> aggregate3(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull StreamStage<T2> stage2,
@@ -140,7 +135,6 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     // This method was extracted in order to capture the wildcard parameter A.
-    @SuppressWarnings("unchecked")
     private <T1, T2, A, R, OUT> StreamStage<OUT> attachAggregate3(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull StreamStage<T2> stage2,
