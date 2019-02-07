@@ -685,8 +685,6 @@ public class ClusterJoinManager {
                 String message = "There's already an existing member " + member + " with the same UUID. "
                         + target + " is not allowed to join.";
                 logger.warning(message);
-                OperationService operationService = nodeEngine.getOperationService();
-                operationService.send(new BeforeJoinCheckFailureOp(message), target);
             } else {
                 sendMasterAnswer(target);
             }

@@ -55,6 +55,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -676,6 +677,46 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, null);
 
         assertClusterSize(1, hz1);
+    }
+
+    @Test
+    public void memberJoinsEventually_whenMemberRestartedWithSameUuid_butMasterDoesNotNoticeItsLeave() throws Exception {
+        Config configMaster = new Config();
+        // Needed only on master to prevent accepting stale join requests.
+        // See ClusterJoinManager#checkRecentlyJoinedMemberUuidBeforeJoin(target, uuid)
+        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
+        final HazelcastInstance hz2 = factory.newHazelcastInstance();
+        final HazelcastInstance hz3 = factory.newHazelcastInstance();
+        assertClusterSizeEventually(3, hz2, hz3);
+
+        final MemberImpl member3 = getNode(hz3).getLocalMember();
+
+        // A new member is restarted with member3's UUID.
+        // Then after some time, member3 is terminated.
+        // This is to emulate the case, member3 is restarted with preserving its UUID (using hot-restart),
+        // but master does not realize its leave in time.
+        // When master realizes, member3 is terminated,
+        // new member should eventually join the cluster.
+        Future<HazelcastInstance> future = spawn(new Callable<HazelcastInstance>() {
+            @Override
+            public HazelcastInstance call() {
+                NodeContext nodeContext = new StaticMemberNodeContext(factory, member3.getUuid(), factory.nextAddress());
+                return newHazelcastInstance(initOrCreateConfig(new Config()), "test-instance", nodeContext);
+            }
+        });
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                sleepSeconds(5);
+                hz3.getLifecycleService().terminate();
+            }
+        });
+
+        HazelcastInstance hz4 = future.get();
+        assertClusterSize(3, hz1, hz4);
+        assertClusterSizeEventually(3, hz2);
     }
 
     // On a joining member assert that no operations are executed before pre join operations execution is completed.
