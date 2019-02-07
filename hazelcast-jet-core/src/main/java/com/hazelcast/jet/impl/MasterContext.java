@@ -490,7 +490,6 @@ public class MasterContext {
             executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, jobId, executionId,
                     jobConfig(), jobExecutionRecord.ongoingSnapshotId());
         } catch (Exception e) {
-            logger.severe("Exception creating execution plan for " + jobIdString(), e);
             finalizeJob(e);
             return;
         } finally {
@@ -981,7 +980,7 @@ public class MasterContext {
                     jobIdString(), elapsed, failure));
             return false;
         }
-        logger.warning(String.format("Execution of %s failed after %,d ms", jobIdString(), elapsed), failure);
+        logger.severe(String.format("Execution of %s failed after %,d ms", jobIdString(), elapsed), failure);
         return false;
     }
 

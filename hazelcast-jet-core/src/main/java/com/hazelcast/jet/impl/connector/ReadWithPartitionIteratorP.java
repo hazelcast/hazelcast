@@ -23,6 +23,9 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.Node;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -31,6 +34,8 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.MigrationWatcher;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
@@ -43,6 +48,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -69,11 +75,14 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
     private static final int FETCH_SIZE = 16384;
 
     private final Traverser<T> outputTraverser;
+    private final BooleanSupplier migrationWatcher;
 
     ReadWithPartitionIteratorP(
             Function<? super Integer, ? extends Iterator<T>> partitionToIterator,
-            List<Integer> partitions
+            List<Integer> partitions,
+            BooleanSupplier migrationWatcher
     ) {
+        this.migrationWatcher = migrationWatcher;
         final CircularListCursor<Iterator<T>> iteratorCursor = new CircularListCursor<>(
                 partitions.stream().map(partitionToIterator).collect(toList())
         );
@@ -89,6 +98,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                     }
                 }
                 iteratorCursor.remove();
+                checkMigration();
             } while (iteratorCursor.advance());
             return null;
         };
@@ -159,18 +169,26 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
+        checkMigration();
         return emitFromTraverser(outputTraverser);
+    }
+
+    private void checkMigration() {
+        if (migrationWatcher.getAsBoolean()) {
+            throw new RestartableException("Partition migration detected");
+        }
     }
 
     private static <T> List<Processor> getProcessors(
             int count,
             List<Integer> ownedPartitions,
-            Function<? super Integer, ? extends Iterator<T>> partitionToIterator
+            Function<? super Integer, ? extends Iterator<T>> partitionToIterator,
+            BooleanSupplier migrationWatcher
     ) {
         return processorToPartitions(count, ownedPartitions)
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
-                        ? new ReadWithPartitionIteratorP<>(partitionToIterator, partitions)
+                        ? new ReadWithPartitionIteratorP<>(partitionToIterator, partitions, migrationWatcher)
                         : Processors.noopP().get()
                 )
                 .collect(toList());
@@ -234,6 +252,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
         private transient HazelcastInstance client;
         private transient Function<? super Integer, ? extends Iterator<T>> partitionToIterator;
+        private transient MigrationWatcher migrationWatcher;
 
         RemoteClusterProcessorSupplier(
             List<Integer> ownedPartitions,
@@ -248,11 +267,15 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         @Override
         public void init(@Nonnull Context context) {
             client = newHazelcastClient(asClientConfig(clientXml));
+            migrationWatcher = new MigrationWatcher(client);
             partitionToIterator = iteratorSupplier.apply(client);
         }
 
         @Override
         public void close(Throwable error) {
+            if (migrationWatcher != null) {
+                migrationWatcher.deregister();
+            }
             if (client != null) {
                 client.shutdown();
             }
@@ -260,7 +283,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return getProcessors(count, ownedPartitions, partitionToIterator);
+            return getProcessors(count, ownedPartitions, partitionToIterator, migrationWatcher.createWatcher());
         }
     }
 
@@ -307,6 +330,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                 iteratorSupplier;
 
         private transient Function<Integer, Iterator<T>> partitionToIterator;
+        private BooleanSupplier migrationWatcher;
 
         LocalClusterProcessorSupplier(
             List<Integer> ownedPartitions,
@@ -319,11 +343,14 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         @Override
         public void init(@Nonnull Context context) {
             partitionToIterator = iteratorSupplier.apply(context.jetInstance().getHazelcastInstance());
+            Node node = ((HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance()).node;
+            JetService jetService = node.nodeEngine.getService(JetService.SERVICE_NAME);
+            migrationWatcher = jetService.getSharedMigrationWatcher().createWatcher();
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return getProcessors(count, ownedPartitions, partitionToIterator);
+            return getProcessors(count, ownedPartitions, partitionToIterator, migrationWatcher);
         }
 
     }

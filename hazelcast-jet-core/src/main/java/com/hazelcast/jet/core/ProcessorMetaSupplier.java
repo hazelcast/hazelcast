@@ -272,8 +272,8 @@ public interface ProcessorMetaSupplier extends Serializable {
             public void init(@Nonnull Context context) {
                 if (context.localParallelism() != 1) {
                     throw new IllegalArgumentException(
-                            "Non-distributed vertex had parallelism of " + context.localParallelism()
-                                    + ", should be 1");
+                            "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
+                                    + "supports only total parallelism of 1. Local parallelism should be 1.");
                 }
                 String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
                 ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()

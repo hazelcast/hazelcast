@@ -67,6 +67,10 @@ public class JetService
     private final AtomicReference<CompletableFuture> shutdownFuture = new AtomicReference<>();
     private final Thread shutdownHookThread;
 
+    // We share the migration watcher for local member because there's a deadlock possible when many
+    // vertices registered/deregistered their own watchers.
+    private final MigrationWatcher sharedMigrationWatcher;
+
     private JetConfig config;
     private JetInstance jetInstance;
     private Networking networking;
@@ -84,6 +88,7 @@ public class JetService
         this.logger = nodeEngine.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
         this.shutdownHookThread = shutdownHookThread(nodeEngine);
+        sharedMigrationWatcher = new MigrationWatcher(nodeEngine.getHazelcastInstance());
     }
 
     @Override
@@ -119,8 +124,6 @@ public class JetService
 
         logger.info("Setting number of cooperative threads and default parallelism to "
                 + config.getInstanceConfig().getCooperativeThreadCount());
-
-
     }
 
     /**
@@ -278,6 +281,10 @@ public class JetService
             }
         }
         return keys;
+    }
+
+    public MigrationWatcher getSharedMigrationWatcher() {
+        return sharedMigrationWatcher;
     }
 
     private Thread shutdownHookThread(NodeEngine nodeEngine) {
