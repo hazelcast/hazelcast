@@ -22,6 +22,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
  * Configuration of User Code Deployment.
  * When enabled client sends configured classes to cluster.
@@ -32,8 +34,19 @@ import java.util.List;
 public class ClientUserCodeDeploymentConfig {
 
     private boolean enabled;
-    private final List<String> classNames = new ArrayList<String>();
-    private final List<String> jarPaths = new ArrayList<String>();
+    private final List<String> classNames;
+    private final List<String> jarPaths;
+
+    public ClientUserCodeDeploymentConfig() {
+        classNames = new ArrayList<String>();
+        jarPaths = new ArrayList<String>();
+    }
+
+    public ClientUserCodeDeploymentConfig(ClientUserCodeDeploymentConfig userCodeDeploymentConfig) {
+        enabled = userCodeDeploymentConfig.enabled;
+        classNames = new ArrayList<String>(userCodeDeploymentConfig.classNames);
+        jarPaths = new ArrayList<String>(userCodeDeploymentConfig.jarPaths);
+    }
 
     /**
      * @return {{@code true}} when User Code Deployment is enabled
@@ -70,6 +83,7 @@ public class ClientUserCodeDeploymentConfig {
      * @return this for chaining
      */
     public ClientUserCodeDeploymentConfig setClassNames(List<String> classNames) {
+        isNotNull(classNames, "classNames");
         this.classNames.clear();
         this.classNames.addAll(classNames);
         return this;
@@ -85,6 +99,7 @@ public class ClientUserCodeDeploymentConfig {
      * @return this for chaining
      */
     public ClientUserCodeDeploymentConfig setJarPaths(List<String> jarPaths) {
+        isNotNull(jarPaths, "jarPaths");
         this.jarPaths.clear();
         this.jarPaths.addAll(jarPaths);
         return this;
@@ -131,4 +146,31 @@ public class ClientUserCodeDeploymentConfig {
         return this;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClientUserCodeDeploymentConfig that = (ClientUserCodeDeploymentConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (!classNames.equals(that.classNames)) {
+            return false;
+        }
+        return jarPaths.equals(that.jarPaths);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + classNames.hashCode();
+        result = 31 * result + jarPaths.hashCode();
+        return result;
+    }
 }

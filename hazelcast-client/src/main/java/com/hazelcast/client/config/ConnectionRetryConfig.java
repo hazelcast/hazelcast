@@ -32,6 +32,18 @@ public class ConnectionRetryConfig {
     private double jitter = JITTER;
     private boolean enabled;
 
+    public ConnectionRetryConfig() {
+    }
+
+    public ConnectionRetryConfig(ConnectionRetryConfig connectionRetryConfig) {
+        initialBackoffMillis = connectionRetryConfig.initialBackoffMillis;
+        maxBackoffMillis = connectionRetryConfig.maxBackoffMillis;
+        multiplier = connectionRetryConfig.multiplier;
+        failOnMaxBackoff = connectionRetryConfig.failOnMaxBackoff;
+        jitter = connectionRetryConfig.jitter;
+        enabled = connectionRetryConfig.enabled;
+    }
+
     /**
      * how long to wait after the first failure before retrying
      *
@@ -158,5 +170,50 @@ public class ConnectionRetryConfig {
     public ConnectionRetryConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ConnectionRetryConfig that = (ConnectionRetryConfig) o;
+
+        if (initialBackoffMillis != that.initialBackoffMillis) {
+            return false;
+        }
+        if (maxBackoffMillis != that.maxBackoffMillis) {
+            return false;
+        }
+        if (Double.compare(that.multiplier, multiplier) != 0) {
+            return false;
+        }
+        if (failOnMaxBackoff != that.failOnMaxBackoff) {
+            return false;
+        }
+        if (Double.compare(that.jitter, jitter) != 0) {
+            return false;
+        }
+        return enabled == that.enabled;
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = initialBackoffMillis;
+        result = 31 * result + maxBackoffMillis;
+        temp = Double.doubleToLongBits(multiplier);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + (failOnMaxBackoff ? 1 : 0);
+        temp = Double.doubleToLongBits(jitter);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + (enabled ? 1 : 0);
+        return result;
     }
 }

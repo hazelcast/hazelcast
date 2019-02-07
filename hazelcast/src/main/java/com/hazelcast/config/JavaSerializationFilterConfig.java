@@ -25,6 +25,15 @@ public class JavaSerializationFilterConfig {
     private volatile ClassFilter whitelist;
     private volatile boolean defaultsDisabled;
 
+    public JavaSerializationFilterConfig() {
+    }
+
+    public JavaSerializationFilterConfig(JavaSerializationFilterConfig javaSerializationFilterConfig) {
+        blacklist = new ClassFilter(javaSerializationFilterConfig.blacklist);
+        whitelist = new ClassFilter(javaSerializationFilterConfig.whitelist);
+        defaultsDisabled = javaSerializationFilterConfig.defaultsDisabled;
+    }
+
     public ClassFilter getBlacklist() {
         if (blacklist == null) {
             blacklist = new ClassFilter();

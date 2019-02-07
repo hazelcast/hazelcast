@@ -187,4 +187,37 @@ public class ClientReliableTopicConfig {
                 + ", readBatchSize=" + readBatchSize
                 + '}';
     }
+
+    @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClientReliableTopicConfig that = (ClientReliableTopicConfig) o;
+
+        if (readBatchSize != that.readBatchSize) {
+            return false;
+        }
+        if (executor != null ? !executor.equals(that.executor) : that.executor != null) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        return topicOverloadPolicy == that.topicOverloadPolicy;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = executor != null ? executor.hashCode() : 0;
+        result = 31 * result + readBatchSize;
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (topicOverloadPolicy != null ? topicOverloadPolicy.hashCode() : 0);
+        return result;
+    }
 }

@@ -38,10 +38,19 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
     private final String tag;
     private boolean enabled;
     private boolean usePublicIp;
-    private final Map<String, String> properties = new HashMap<String, String>();
+    private final Map<String, String> properties;
 
     protected AliasedDiscoveryConfig(String tag) {
         this.tag = tag;
+        properties = new HashMap<String, String>();
+    }
+
+    public AliasedDiscoveryConfig(AliasedDiscoveryConfig aliasedDiscoveryConfig) {
+        tag = aliasedDiscoveryConfig.tag;
+        enabled = aliasedDiscoveryConfig.enabled;
+        usePublicIp = aliasedDiscoveryConfig.usePublicIp;
+        properties = new HashMap<String, String>();
+        properties.putAll(aliasedDiscoveryConfig.properties);
     }
 
     /**

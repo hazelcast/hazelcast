@@ -38,6 +38,13 @@ public class CredentialsFactoryConfig {
         this.className = className;
     }
 
+    public CredentialsFactoryConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
+        className = credentialsFactoryConfig.className;
+        implementation = credentialsFactoryConfig.implementation;
+        properties = new Properties();
+        properties.putAll(credentialsFactoryConfig.properties);
+    }
+
     public String getClassName() {
         return className;
     }

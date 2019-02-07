@@ -26,9 +26,16 @@ import com.hazelcast.nio.ObjectDataOutput;
  * @deprecated Use {@link AwsConfig} instead.
  */
 @Deprecated
-public class ClientAwsConfig
-        extends AwsConfig {
+public class ClientAwsConfig extends AwsConfig {
     private static final String INSIDE_AWS_PROPERTY = "inside-aws";
+
+    public ClientAwsConfig() {
+        super();
+    }
+
+    public ClientAwsConfig(ClientAwsConfig awsConfig) {
+        super(awsConfig);
+    }
 
     /**
      * If client is inside aws, it will use private ip addresses directly,

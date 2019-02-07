@@ -81,6 +81,18 @@ public class ClientIcmpPingConfig {
      */
     private boolean enabled;
 
+    public ClientIcmpPingConfig() {
+    }
+
+    public ClientIcmpPingConfig(ClientIcmpPingConfig config) {
+        timeoutMilliseconds = config.timeoutMilliseconds;
+        intervalMilliseconds = config.intervalMilliseconds;
+        echoFailFastOnStartup = config.echoFailFastOnStartup;
+        ttl = config.ttl;
+        maxAttempts = config.maxAttempts;
+        enabled = config.enabled;
+    }
+
     public int getTimeoutMilliseconds() {
         return timeoutMilliseconds;
     }
@@ -133,5 +145,46 @@ public class ClientIcmpPingConfig {
     public ClientIcmpPingConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClientIcmpPingConfig that = (ClientIcmpPingConfig) o;
+
+        if (timeoutMilliseconds != that.timeoutMilliseconds) {
+            return false;
+        }
+        if (intervalMilliseconds != that.intervalMilliseconds) {
+            return false;
+        }
+        if (echoFailFastOnStartup != that.echoFailFastOnStartup) {
+            return false;
+        }
+        if (ttl != that.ttl) {
+            return false;
+        }
+        if (maxAttempts != that.maxAttempts) {
+            return false;
+        }
+        return enabled == that.enabled;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = timeoutMilliseconds;
+        result = 31 * result + intervalMilliseconds;
+        result = 31 * result + (echoFailFastOnStartup ? 1 : 0);
+        result = 31 * result + ttl;
+        result = 31 * result + maxAttempts;
+        result = 31 * result + (enabled ? 1 : 0);
+        return result;
     }
 }

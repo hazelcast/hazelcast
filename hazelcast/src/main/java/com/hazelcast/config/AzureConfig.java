@@ -25,6 +25,10 @@ public class AzureConfig
         super("azure");
     }
 
+    public AzureConfig(AzureConfig azureConfig) {
+        super(azureConfig);
+    }
+
     @Override
     public int getId() {
         return ConfigDataSerializerHook.AZURE_CONFIG;

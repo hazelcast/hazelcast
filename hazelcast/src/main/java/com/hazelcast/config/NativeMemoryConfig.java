@@ -65,6 +65,18 @@ public class NativeMemoryConfig {
     private int pageSize = DEFAULT_PAGE_SIZE;
     private float metadataSpacePercentage = DEFAULT_METADATA_SPACE_PERCENTAGE;
 
+    public NativeMemoryConfig() {
+    }
+
+    public NativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
+        enabled = nativeMemoryConfig.enabled;
+        size = nativeMemoryConfig.size;
+        allocatorType = nativeMemoryConfig.allocatorType;
+        minBlockSize = nativeMemoryConfig.minBlockSize;
+        pageSize = nativeMemoryConfig.pageSize;
+        metadataSpacePercentage = nativeMemoryConfig.metadataSpacePercentage;
+    }
+
     /**
      * Returns size of the native memory region.
      */

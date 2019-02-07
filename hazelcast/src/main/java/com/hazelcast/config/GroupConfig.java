@@ -67,6 +67,16 @@ public final class GroupConfig {
     }
 
     /**
+     * Copy constructor
+     *
+     * @param groupConfig to copy
+     */
+    public GroupConfig(GroupConfig groupConfig) {
+        name = groupConfig.name;
+        password = groupConfig.password;
+    }
+
+    /**
      * Gets the group name of the group.
      *
      * @return the name of the group
@@ -92,7 +102,7 @@ public final class GroupConfig {
      *
      * @return the password of the group
      * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
-     *             {@link SecurityConfig security} is enabled (Enterprise edition only).
+     * {@link SecurityConfig security} is enabled (Enterprise edition only).
      */
     @Deprecated
     public String getPassword() {
@@ -106,7 +116,7 @@ public final class GroupConfig {
      * @return the updated GroupConfig
      * @throws IllegalArgumentException if password is {@code null}
      * @deprecated since 3.11, password check is removed. Passwords are only checked in default LoginModule when Hazelcast
-     *             {@link SecurityConfig security} is enabled (Enterprise edition only).
+     * {@link SecurityConfig security} is enabled (Enterprise edition only).
      */
     @Deprecated
     public GroupConfig setPassword(final String password) {
