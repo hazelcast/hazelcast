@@ -42,6 +42,7 @@ public class DefaultKubernetesClientTest {
     private static final String KUBERNETES_MASTER_IP = "localhost";
 
     private static final String TOKEN = "sample-token";
+    private static final String CA_CERTIFICATE = "sample-ca-certificate";
     private static final String NAMESPACE = "sample-namespace";
 
     private static final String SAMPLE_ADDRESS_1 = "192.168.0.25";
@@ -62,7 +63,7 @@ public class DefaultKubernetesClientTest {
     @Before
     public void setUp() {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        kubernetesClient = new DefaultKubernetesClient(kubernetesMasterUrl, TOKEN);
+        kubernetesClient = new DefaultKubernetesClient(kubernetesMasterUrl, TOKEN, CA_CERTIFICATE);
     }
 
     @Test
@@ -167,6 +168,20 @@ public class DefaultKubernetesClientTest {
     @Test(expected = KubernetesClientException.class)
     public void malformedResponse() {
         // given
+        stubFor(get(urlEqualTo(String.format("/api/v1/namespaces/%s/pods", NAMESPACE)))
+                .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
+                .willReturn(aResponse().withStatus(200).withBody(malformedBody())));
+
+        // when
+        kubernetesClient.endpoints(NAMESPACE);
+    }
+
+    @Test(expected = KubernetesClientException.class)
+    public void nullToken() {
+        // given
+        String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
+        KubernetesClient kubernetesClient = new DefaultKubernetesClient(kubernetesMasterUrl, TOKEN, null);
+
         stubFor(get(urlEqualTo(String.format("/api/v1/namespaces/%s/pods", NAMESPACE)))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", TOKEN)))
                 .willReturn(aResponse().withStatus(200).withBody(malformedBody())));

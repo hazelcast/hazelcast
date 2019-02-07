@@ -41,6 +41,7 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
 
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
     private static final String API_TOKEN = "token";
+    private static final String CA_CERTIFICATE = "ca-certificate";
 
     @Mock
     DiscoveryNode discoveryNode;
@@ -73,6 +74,7 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
     public void createDiscoveryStrategy() {
         HashMap<String, Comparable> properties = new HashMap<String, Comparable>();
         properties.put(KubernetesProperties.KUBERNETES_API_TOKEN.key(), API_TOKEN);
+        properties.put(KubernetesProperties.KUBERNETES_CA_CERTIFICATE.key(), CA_CERTIFICATE);
         properties.put(String.valueOf(KubernetesProperties.SERVICE_PORT), 333);
         HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
         DiscoveryStrategy strategy = factory.newDiscoveryStrategy(discoveryNode, LOGGER, properties);

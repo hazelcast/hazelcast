@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
+import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_CA_CERTIFICATE;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
 import static com.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
@@ -77,6 +78,10 @@ final class HazelcastKubernetesDiscoveryStrategy
         if (apiToken == null) {
             apiToken = readAccountToken();
         }
+        String caCertificate = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_CA_CERTIFICATE, null);
+        if (caCertificate == null) {
+            caCertificate = readCaCertificate();
+        }
 
         logger.info("Kubernetes Discovery properties: { "
                 + "service-dns: " + serviceDns + ", "
@@ -89,8 +94,7 @@ final class HazelcastKubernetesDiscoveryStrategy
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
                 + "kubernetes-master: " + kubernetesMaster + "}");
 
-        client = buildKubernetesClient(apiToken, kubernetesMaster);
-        EndpointResolver endpointResolver;
+        client = buildKubernetesClient(kubernetesMaster, apiToken, caCertificate);
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns, port, serviceDnsTimeout);
         } else {
@@ -98,7 +102,6 @@ final class HazelcastKubernetesDiscoveryStrategy
                     namespace, resolveNotReadyAddresses, client);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
-        this.endpointResolver = endpointResolver;
     }
 
     private String getNamespaceOrDefault() {
@@ -236,16 +239,18 @@ final class HazelcastKubernetesDiscoveryStrategy
         }
     }
 
-    private KubernetesClient buildKubernetesClient(String token, String kubernetesMaster) {
-        if (StringUtil.isNullOrEmpty(token)) {
-            token = readAccountToken();
-        }
-        return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, token));
+    private KubernetesClient buildKubernetesClient(String kubernetesMaster, String accessToken, String caCertificate) {
+        return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, accessToken, caCertificate));
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     private static String readAccountToken() {
         return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    }
+
+    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
+    private static String readCaCertificate() {
+        return readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
     }
 
     protected static String readFileContents(String tokenFile) {

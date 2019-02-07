@@ -21,15 +21,12 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.nio.IOUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -64,10 +61,12 @@ class DefaultKubernetesClient
 
     private final String kubernetesMaster;
     private final String apiToken;
+    private final String caCertificate;
 
-    DefaultKubernetesClient(String kubernetesMaster, String apiToken) {
+    DefaultKubernetesClient(String kubernetesMaster, String apiToken, String caCertificate) {
         this.kubernetesMaster = kubernetesMaster;
         this.apiToken = apiToken;
+        this.caCertificate = caCertificate;
     }
 
     @Override
@@ -275,7 +274,7 @@ class DefaultKubernetesClient
     /**
      * Builds SSL Socket Factory with the public CA Certificate from Kubernetes Master.
      */
-    private static SSLSocketFactory buildSslSocketFactory() {
+    private SSLSocketFactory buildSslSocketFactory() {
         try {
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
@@ -294,23 +293,18 @@ class DefaultKubernetesClient
     }
 
     /**
-     * Generates CA Certificate from the default CA Cert file (which always exists in the Kubernetes POD).
+     * Generates CA Certificate from the default CA Cert file or from the externally provided "ca-certificate" property.
      */
-    private static Certificate generateCertificate()
+    private Certificate generateCertificate()
             throws IOException, CertificateException {
         InputStream caInput = null;
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            caInput = new BufferedInputStream(new FileInputStream(new File(caCertPath())));
+            caInput = new ByteArrayInputStream(caCertificate.getBytes("UTF-8"));
             return cf.generateCertificate(caInput);
         } finally {
             IOUtil.closeResource(caInput);
         }
-    }
-
-    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private static String caCertPath() {
-        return "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
     }
 
 }

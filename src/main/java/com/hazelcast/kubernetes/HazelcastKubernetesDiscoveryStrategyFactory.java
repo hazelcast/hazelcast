@@ -46,6 +46,7 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
                 KubernetesProperties.RESOLVE_NOT_READY_ADDRESSES,
                 KubernetesProperties.KUBERNETES_MASTER_URL,
                 KubernetesProperties.KUBERNETES_API_TOKEN,
+                KubernetesProperties.KUBERNETES_CA_CERTIFICATE,
                 KubernetesProperties.SERVICE_PORT));
     }
 

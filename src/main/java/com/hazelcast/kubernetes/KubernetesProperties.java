@@ -105,6 +105,13 @@ public final class KubernetesProperties {
     public static final PropertyDefinition KUBERNETES_API_TOKEN = property("api-token", STRING);
 
     /**
+     * Configuration key: <tt>ca-certificate</tt>
+     * CA Authority certificate from Kubernetes Master, defaults to reading the certificate from the auto-injected file at:
+     * <tt>/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</tt>
+     */
+    public static final PropertyDefinition KUBERNETES_CA_CERTIFICATE = property("ca-certificate", STRING);
+
+    /**
      * <p>Configuration key: <tt>service-port</tt></p>
      * If specified with a value greater than 0, its value defines the endpoint port of the service (overriding the default).
      */
