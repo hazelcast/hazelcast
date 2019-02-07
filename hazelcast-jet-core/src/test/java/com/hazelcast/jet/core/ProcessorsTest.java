@@ -29,6 +29,8 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseItems;
@@ -38,15 +40,19 @@ import static com.hazelcast.jet.core.processor.Processors.aggregateByKeyP;
 import static com.hazelcast.jet.core.processor.Processors.combineByKeyP;
 import static com.hazelcast.jet.core.processor.Processors.combineP;
 import static com.hazelcast.jet.core.processor.Processors.filterP;
+import static com.hazelcast.jet.core.processor.Processors.filterUsingContextAsyncP;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
+import static com.hazelcast.jet.core.processor.Processors.mapUsingContextAsyncP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -71,6 +77,24 @@ public class ProcessorsTest {
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 3, 6));
+    }
+
+    @Test
+    public void mapUsingContextAsync() {
+        TestSupport
+                .verifyProcessor(mapUsingContextAsyncP(
+                        ContextFactory.withCreateFn(context -> new AtomicInteger())
+                                      .withDestroyFn(context -> assertEquals(6, context.get())),
+                        t -> "k",
+                        (AtomicInteger context, Integer item) -> supplyAsync(() -> {
+                            sleepMillis(100);
+                            context.addAndGet(item);
+                            return item;
+                        })))
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .input(asList(1, 2, 3))
+                .expectOutput(asList(1, 2, 3));
     }
 
     @Test
@@ -100,6 +124,21 @@ public class ProcessorsTest {
     }
 
     @Test
+    public void filteringWithMapUsingContextAsync() {
+        TestSupport
+                .verifyProcessor(mapUsingContextAsyncP(
+                        ContextFactory.withCreateFn(context -> new int[] {2})
+                                      .withDestroyFn(context -> assertEquals(2, context[0])),
+                        t -> "k",
+                        (int[] context, Integer item) ->
+                                supplyAsync(() -> item % context[0] != 0 ? item : null)))
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .input(asList(1, 2, 3))
+                .expectOutput(asList(1, 3));
+    }
+
+    @Test
     public void filter() {
         TestSupport
                 .verifyProcessor(filterP(o -> o.equals(1)))
@@ -124,6 +163,23 @@ public class ProcessorsTest {
                 .input(asList(1, 2, 1, 2))
                 .disableSnapshots()
                 .expectOutput(asList(1, 2, 2));
+    }
+
+    @Test
+    public void filterUsingContextAsync() {
+        TestSupport
+                .verifyProcessor(filterUsingContextAsyncP(
+                        ContextFactory.withCreateFn(context -> new AtomicInteger())
+                                      .withDestroyFn(context -> assertEquals(4, context.get())),
+                        t -> "k",
+                        (AtomicInteger context, Integer item) -> CompletableFuture.supplyAsync(() -> {
+                            context.incrementAndGet();
+                            return item > 1;
+                        })))
+                .input(asList(1, 2, 1, 2))
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(asList(2, 2));
     }
 
     @Test
