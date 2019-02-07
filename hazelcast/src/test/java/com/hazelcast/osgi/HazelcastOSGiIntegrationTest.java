@@ -60,6 +60,13 @@ public class HazelcastOSGiIntegrationTest {
         System.setProperty(MAVEN_REPOSITORIES_PROP, MAVEN_REPOSITORIES);
 
         String url = "reference:file:" + PathUtils.getBaseDir() + "/target/classes";
+
+        // Jenkins may add '@' to workspace directory path, Pax Exam interprets
+        // '@' as options separator, unknown options are silently ignored.
+        // Basically, everything that goes after the first '@' is removed from
+        // the path, so we need to escape '@' to keep the path intact.
+        url = url.replaceAll("@", "%40");
+
         // modify url for Windows environment
         url = url.replace("\\", "/");
         UrlProvisionOption hzBundle = bundle(url);
