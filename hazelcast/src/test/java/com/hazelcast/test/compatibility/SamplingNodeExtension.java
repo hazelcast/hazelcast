@@ -28,8 +28,8 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
@@ -257,5 +257,10 @@ public class SamplingNodeExtension implements NodeExtension {
 
     @Override
     public void sendPhoneHome() {
+    }
+
+    @Override
+    public void scheduleClusterVersionAutoUpgrade() {
+        nodeExtension.scheduleClusterVersionAutoUpgrade();
     }
 }

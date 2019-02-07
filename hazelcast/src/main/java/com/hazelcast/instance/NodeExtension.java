@@ -323,4 +323,10 @@ public interface NodeExtension {
      * Send PhoneHome ping from OS or EE instance to PhoneHome application
      */
     void sendPhoneHome();
+
+    /**
+     * Cluster version auto upgrade is done asynchronously. Every call of this
+     * method creates and schedules a new auto upgrade task.
+     */
+    void scheduleClusterVersionAutoUpgrade();
 }

@@ -89,40 +89,28 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     static final String EXECUTOR_NAME = "hz:cluster";
     static final String MEMBERSHIP_EVENT_EXECUTOR_NAME = "hz:cluster:event";
+    static final String VERSION_AUTO_UPGRADE_EXECUTOR_NAME = "hz:cluster:version:auto:upgrade";
 
     private static final int DEFAULT_MERGE_RUN_DELAY_MILLIS = 100;
     private static final int CLUSTER_EXECUTOR_QUEUE_CAPACITY = 1000;
     private static final long CLUSTER_SHUTDOWN_SLEEP_DURATION_IN_MILLIS = 1000;
     private static final boolean ASSERTION_ENABLED = ClusterServiceImpl.class.desiredAssertionStatus();
 
-    private final ReentrantLock lock = new ReentrantLock();
-
+    private final boolean useLegacyMemberListFormat;
     private final Node node;
-
-    private final NodeEngineImpl nodeEngine;
-
     private final ILogger logger;
-
+    private final NodeEngineImpl nodeEngine;
     private final ClusterClockImpl clusterClock;
-
     private final MembershipManager membershipManager;
-
-    private final ClusterStateManager clusterStateManager;
-
     private final ClusterJoinManager clusterJoinManager;
-
+    private final ClusterStateManager clusterStateManager;
     private final ClusterHeartbeatManager clusterHeartbeatManager;
-
+    private final ReentrantLock lock = new ReentrantLock();
     private final AtomicBoolean joined = new AtomicBoolean(false);
 
-    private final boolean useLegacyMemberListFormat;
-
-    private volatile MemberImpl localMember;
-
-    private volatile Address masterAddress;
-
     private volatile String clusterId;
-
+    private volatile Address masterAddress;
+    private volatile MemberImpl localMember;
 
     public ClusterServiceImpl(Node node, MemberImpl localMember) {
         this.node = node;
@@ -142,6 +130,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         node.connectionManager.addConnectionListener(this);
         //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
         nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
+        nodeEngine.getExecutionService().register(VERSION_AUTO_UPGRADE_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
         registerMetrics();
     }
 
@@ -530,7 +519,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
      * depending on Hot Restart is enabled or not) is a known missing member or not.
      *
      * @param address Address of the missing member
-     * @param uuid Uuid of the missing member
+     * @param uuid    Uuid of the missing member
      * @return true if it's a known missing member, false otherwise
      */
     public boolean isMissingMember(Address address, String uuid) {
@@ -867,9 +856,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void changeClusterVersion(Version version) {
+        MemberMap memberMap = membershipManager.getMemberMap();
+        changeClusterVersion(version, memberMap);
+    }
+
+    public void changeClusterVersion(Version version, MemberMap memberMap) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(ClusterStateChange.from(version), membershipManager.getMemberMap(),
-                partitionStateVersion, false);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(version), memberMap, partitionStateVersion, false);
     }
 
     @Override
