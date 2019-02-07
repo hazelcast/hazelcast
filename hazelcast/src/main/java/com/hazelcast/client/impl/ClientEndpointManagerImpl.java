@@ -90,10 +90,8 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         } else {
             totalRegistrations.inc();
             ClientEvent event = new ClientEvent(endpoint.getUuid(),
-                    ClientEventType.CONNECTED,
-                    endpoint.getSocketAddress(),
-                    endpoint.getClientType(),
-                    endpoint.getName(), endpoint.getAttributes());
+                    ClientEventType.CONNECTED, endpoint.getSocketAddress(), endpoint.getClientType(), endpoint.getName(),
+                    endpoint.getLabels());
             sendClientEvent(event);
             return true;
         }
@@ -118,10 +116,8 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         }
 
         ClientEvent event = new ClientEvent(endpoint.getUuid(),
-                ClientEventType.DISCONNECTED,
-                endpoint.getSocketAddress(),
-                endpoint.getClientType(),
-                endpoint.getName(), endpoint.getAttributes());
+                ClientEventType.DISCONNECTED, endpoint.getSocketAddress(), endpoint.getClientType(), endpoint.getName(),
+                endpoint.getLabels());
         sendClientEvent(event);
     }
 

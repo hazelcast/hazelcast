@@ -23,15 +23,15 @@ import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
-import com.hazelcast.client.config.ClientSecurityConfig;
-import com.hazelcast.client.config.ConnectionRetryConfig;
-import com.hazelcast.client.config.ClientReliableTopicConfig;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientReliableTopicConfig;
+import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
+import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -76,6 +76,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -131,7 +132,7 @@ public class TestClientApplicationContext {
     @Resource(name = "client15-credentials-factory")
     private HazelcastClientProxy credentialsFactory;
 
-    @Resource(name = "client16-name-and-attributes")
+    @Resource(name = "client16-name-and-labels")
     private HazelcastClientProxy namedClient;
 
     @Resource(name = "instance")
@@ -482,9 +483,9 @@ public class TestClientApplicationContext {
     }
 
     @Test
-    public void testAttributesConfig() {
-        Map<String, String> attributes = namedClient.getClientConfig().getAttributes();
-        assertEquals(1, attributes.size());
-        assertEquals("bar", attributes.get("foo"));
+    public void testLabelsConfig() {
+        Set<String> labels = namedClient.getClientConfig().getLabels();
+        assertEquals(1, labels.size());
+        assertContains(labels, "foo");
     }
 }

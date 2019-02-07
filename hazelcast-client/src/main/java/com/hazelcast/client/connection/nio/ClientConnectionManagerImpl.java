@@ -67,7 +67,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -113,7 +113,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ClientConnectionStrategy connectionStrategy;
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
-    private final Map<String, String> attributes;
+    private final Set<String> labels;
     private final int outboundPortCount;
     private volatile Credentials lastCredentials;
     private volatile ClientPrincipal principal;
@@ -122,7 +122,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                                        AddressProvider addressProvider) {
         this.allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
         this.client = client;
-        this.attributes = Collections.unmodifiableMap(client.getClientConfig().getAttributes());
+        this.labels = Collections.unmodifiableSet(client.getClientConfig().getLabels());
         this.addressTranslator = addressTranslator;
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
@@ -617,14 +617,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
                 return ClientAuthenticationCodec
                         .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
-                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                                attributes.entrySet());
+                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
             } else {
                 Data data = ss.toData(credentials);
-                return ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
-                        asOwner, ClientTypes.JAVA, serializationVersion,
-                        BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
-                        attributes.entrySet());
+                return ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, asOwner, ClientTypes.JAVA,
+                        serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
             }
         }
 

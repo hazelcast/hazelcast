@@ -350,16 +350,16 @@
         </hz:security>
     </hz:client>
 
-    <hz:client id="client16-name-and-attributes">
+    <hz:client id="client16-name-and-labels">
         <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
         <hz:network connection-attempt-limit="0">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
         <hz:instance-name>clientName</hz:instance-name>
-        <hz:attributes>
-            <hz:attribute name="foo">bar</hz:attribute>
-        </hz:attributes>
+        <hz:labels>
+            <hz:label>foo</hz:label>
+        </hz:labels>
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">

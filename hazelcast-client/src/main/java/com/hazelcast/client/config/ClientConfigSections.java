@@ -38,10 +38,8 @@ enum ClientConfigSections {
     LICENSE_KEY("license-key", false),
     INSTANCE_NAME("instance-name", false),
     CONNECTION_STRATEGY("connection-strategy", false),
-    USER_CODE_DEPLOYMENT("user-code-deployment", false),
-    FLAKE_ID_GENERATOR("flake-id-generator", true),
-    RELIABLE_TOPIC("reliable-topic", true),
-    ATTRIBUTES("client-attributes", false);
+    USER_CODE_DEPLOYMENT("user-code-deployment", false), FLAKE_ID_GENERATOR("flake-id-generator", true), RELIABLE_TOPIC(
+            "reliable-topic", true), LABELS("client-labels", false);
 
     final String name;
     final boolean multipleOccurrence;

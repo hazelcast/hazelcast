@@ -94,12 +94,12 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void attributes() {
-        clientConfig.setAttribute("foo", "bar");
+    public void labels() {
+        clientConfig.addLabel("foo");
         ClientConfig actual = newConfigViaGenerator();
-        Map<String, String> attributes = actual.getAttributes();
-        assertEquals(1, attributes.size());
-        assertEquals("bar", attributes.get("foo"));
+        Set<String> labels = actual.getLabels();
+        assertEquals(1, labels.size());
+        assertContains(labels, "foo");
     }
 
     @Test

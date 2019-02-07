@@ -1515,11 +1515,11 @@ public class ConfigXmlGenerator {
             return this;
         }
 
-        public XmlGenerator appendAttributes(Map<String, String> attributes) {
-            if (!attributes.isEmpty()) {
-                open("client-attributes");
-                for (Entry<String, String> entry : attributes.entrySet()) {
-                    node("attribute", entry.getValue(), "name", entry.getKey());
+        public XmlGenerator appendLabels(Set<String> labels) {
+            if (!labels.isEmpty()) {
+                open("client-labels");
+                for (String label : labels) {
+                    node("label", label);
                 }
                 close();
             }

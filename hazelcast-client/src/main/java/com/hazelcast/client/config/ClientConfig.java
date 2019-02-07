@@ -35,11 +35,13 @@ import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.function.BiConsumer;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -105,7 +107,7 @@ public class ClientConfig {
     private ClientConnectionStrategyConfig connectionStrategyConfig = new ClientConnectionStrategyConfig();
     private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
     private final Map<String, ClientFlakeIdGeneratorConfig> flakeIdGeneratorConfigMap;
-    private final Map<String, String> attributes;
+    private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
 
     public ClientConfig() {
@@ -115,9 +117,8 @@ public class ClientConfig {
         proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
         flakeIdGeneratorConfigMap = new ConcurrentHashMap<String, ClientFlakeIdGeneratorConfig>();
         queryCacheConfigs = new ConcurrentHashMap<String, Map<String, QueryCacheConfig>>();
-        attributes = new ConcurrentHashMap<String, String>();
+        labels = new HashSet<String>();
         userContext = new ConcurrentHashMap<String, Object>();
-
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
@@ -168,7 +169,7 @@ public class ClientConfig {
         for (Entry<String, ClientFlakeIdGeneratorConfig> entry : config.flakeIdGeneratorConfigMap.entrySet()) {
             flakeIdGeneratorConfigMap.put(entry.getKey(), new ClientFlakeIdGeneratorConfig(entry.getValue()));
         }
-        attributes = new ConcurrentHashMap<String, String>(config.attributes);
+        labels = new HashSet<String>(config.labels);
         userContext = new ConcurrentHashMap<String, Object>(config.userContext);
     }
 
@@ -1014,39 +1015,20 @@ public class ClientConfig {
         return lookupByPattern(configPatternMatcher, queryCacheConfigsForMap, cacheName);
     }
 
-
     /**
-     * Sets attribute to client to be used on the server side.
-     * Attributes can be accessed from {@link com.hazelcast.core.Client}
+     * Adds a label for this client available
      *
-     * @param key   the key of the attribute
-     * @param value the value of the attribute
-     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * @param label The label to be added.
      */
-    public ClientConfig setAttribute(String key, String value) {
-        attributes.put(key, value);
-        return this;
+    public void addLabel(String label) {
+        labels.add(label);
     }
 
     /**
-     * @return attributes of this client
+     * @return all the labels assigned to this client
      */
-    public Map<String, String> getAttributes() {
-        return attributes;
-    }
-
-    /**
-     * Sets attributes to client to be used on the server side.
-     * Attributes can be accessed from {@link com.hazelcast.core.Client}
-     *
-     * @param attributes
-     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-     */
-    public ClientConfig setAttributes(Map<String, String> attributes) {
-        Preconditions.isNotNull(attributes, "attributes");
-        this.attributes.clear();
-        this.attributes.putAll(attributes);
-        return this;
+    public Set<String> getLabels() {
+        return labels;
     }
 
     public ClientConfig setUserContext(ConcurrentMap<String, Object> userContext) {
@@ -1137,7 +1119,7 @@ public class ClientConfig {
         if (!flakeIdGeneratorConfigMap.equals(that.flakeIdGeneratorConfigMap)) {
             return false;
         }
-        if (!attributes.equals(that.attributes)) {
+        if (!labels.equals(that.labels)) {
             return false;
         }
         return userContext.equals(that.userContext);
@@ -1167,7 +1149,7 @@ public class ClientConfig {
         result = 31 * result + connectionStrategyConfig.hashCode();
         result = 31 * result + userCodeDeploymentConfig.hashCode();
         result = 31 * result + flakeIdGeneratorConfigMap.hashCode();
-        result = 31 * result + attributes.hashCode();
+        result = 31 * result + labels.hashCode();
         result = 31 * result + userContext.hashCode();
         return result;
     }

@@ -33,18 +33,20 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static com.hazelcast.test.HazelcastTestSupport.assertNotContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientAttributeTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private final String key = "attributeKey";
-    private final String value = "attributeValue";
-    private final String nonExistingKey = "nonExistingKey";
+    private final String label = "attributeValue";
+    private final String nonExistingLabel = "nonExistingLabel";
 
     @After
     public void cleanup() {
@@ -52,29 +54,29 @@ public class ClientAttributeTest {
     }
 
     @Test
-    public void test_clientAttribute_overClientConfig() {
+    public void test_clientLabel_overClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
 
-        clientConfig.setAttribute(key, value);
-        assertEquals(value, clientConfig.getAttributes().get(key));
-        assertEquals(1, clientConfig.getAttributes().size());
-        assertNull(clientConfig.getAttributes().get(nonExistingKey));
+        clientConfig.addLabel(label);
+        assertTrue(clientConfig.getLabels().contains(label));
+        assertEquals(1, clientConfig.getLabels().size());
+        assertFalse(clientConfig.getLabels().contains(nonExistingLabel));
     }
 
     @Test
-    public void test_clientAttribute_overGetConnectedClients() {
+    public void test_clientLabel_overGetConnectedClients() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setAttribute(key, value);
+        clientConfig.addLabel(label);
         hazelcastFactory.newHazelcastClient(clientConfig);
 
         Collection<Client> connectedClients = instance.getClientService().getConnectedClients();
         Client client = connectedClients.iterator().next();
 
-        assertEquals(1, client.getAttributes().size());
-        assertEquals(value, client.getAttributes().get(key));
-        assertNull(value, client.getAttributes().get(nonExistingKey));
+        assertEquals(1, client.getLabels().size());
+        assertContains(client.getLabels(), label);
+        assertNotContains(client.getLabels(), nonExistingLabel);
     }
 
     @Test
@@ -97,15 +99,15 @@ public class ClientAttributeTest {
         });
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setAttribute(key, value);
+        clientConfig.addLabel(label);
         hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertOpenEventually(clientConnected);
         Client client = clientRef.get();
 
-        assertEquals(1, client.getAttributes().size());
-        assertEquals(value, client.getAttributes().get(key));
-        assertNull(value, client.getAttributes().get(nonExistingKey));
+        assertEquals(1, client.getLabels().size());
+        assertContains(client.getLabels(), label);
+        assertNotContains(client.getLabels(), nonExistingLabel);
     }
 
     @Test
@@ -128,28 +130,28 @@ public class ClientAttributeTest {
         });
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setAttribute(key, value);
+        clientConfig.addLabel(label);
         HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
         clientInstance.shutdown();
 
         assertOpenEventually(clientDisconnected);
         Client client = clientRef.get();
 
-        assertEquals(1, client.getAttributes().size());
-        assertEquals(value, client.getAttributes().get(key));
-        assertNull(value, client.getAttributes().get(nonExistingKey));
+        assertEquals(1, client.getLabels().size());
+        assertContains(client.getLabels(), label);
+        assertNotContains(client.getLabels(), nonExistingLabel);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_modifyClientAttributes_overGetConnectedClients() {
+    public void test_modifyClientLabels_overGetConnectedClients() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setAttribute(key, value);
+        clientConfig.addLabel(label);
         hazelcastFactory.newHazelcastClient(clientConfig);
 
         Collection<Client> connectedClients = instance.getClientService().getConnectedClients();
         Client client = connectedClients.iterator().next();
-        client.getAttributes().put(key, value);
+        client.getLabels().add(label);
     }
 }
