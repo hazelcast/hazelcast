@@ -129,7 +129,8 @@ public class JobCoordinationService {
      * Starts the job if it is not already started or completed. Returns a future
      * which represents the result of the job.
      */
-    public void submitJob(long jobId, Data dag, JobConfig config) {
+    public void submitJob(long jobId, Data dag, Data serializedConfig) {
+        JobConfig config = nodeEngine.getSerializationService().toObject(serializedConfig);
         assertIsMaster("Cannot submit job " + idToString(jobId) + " from non-master node");
         checkOperationalState();
 

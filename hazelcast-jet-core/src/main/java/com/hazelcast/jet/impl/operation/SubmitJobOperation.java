@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -28,13 +27,14 @@ import java.io.IOException;
 
 public class SubmitJobOperation extends AbstractJobOperation {
 
+    // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
     private Data dag;
-    private JobConfig config;
+    private Data config;
 
     public SubmitJobOperation() {
     }
 
-    public SubmitJobOperation(long jobId, Data dag, JobConfig config) {
+    public SubmitJobOperation(long jobId, Data dag, Data config) {
         super(jobId);
         this.dag = dag;
         this.config = config;
@@ -56,14 +56,14 @@ public class SubmitJobOperation extends AbstractJobOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeData(dag);
-        out.writeObject(config);
+        out.writeData(config);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         dag = in.readData();
-        config = in.readObject();
+        config = in.readData();
     }
 
 }

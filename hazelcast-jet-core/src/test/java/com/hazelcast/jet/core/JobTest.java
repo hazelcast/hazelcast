@@ -561,6 +561,24 @@ public class JobTest extends JetTestSupport {
     }
 
     @Test
+    public void when_jobConfigChanged_then_doesNotAffectSubmittedJob() {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
+        JobConfig config = new JobConfig()
+                .setName("job1");
+
+        Job job1 = instance1.newJob(dag, config);
+        assertJobStatusEventually(job1, RUNNING);
+
+        // When
+        config.setName("job2");
+
+        // Then
+        Job job2 = instance1.newJob(dag, config);
+        assertJobStatusEventually(job2, RUNNING);
+    }
+
+    @Test
     public void when_jobsAreCompleted_then_theyAreQueriedByName() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));

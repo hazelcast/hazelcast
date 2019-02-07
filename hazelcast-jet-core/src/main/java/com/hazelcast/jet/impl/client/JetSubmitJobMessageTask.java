@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
@@ -32,8 +31,7 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
 
     @Override
     protected Operation prepareOperation() {
-        JobConfig jobConfig = nodeEngine.getSerializationService().toObject(parameters.jobConfig);
-        return new SubmitJobOperation(parameters.jobId, parameters.dag, jobConfig);
+        return new SubmitJobOperation(parameters.jobId, parameters.dag, parameters.jobConfig);
     }
 
     @Override

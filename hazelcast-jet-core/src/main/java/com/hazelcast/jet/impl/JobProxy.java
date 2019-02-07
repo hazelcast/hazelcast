@@ -66,7 +66,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Override
     protected ICompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), dag, config));
+        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config)));
     }
 
     @Override
