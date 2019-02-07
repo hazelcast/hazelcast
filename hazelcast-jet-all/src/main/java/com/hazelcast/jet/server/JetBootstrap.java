@@ -212,8 +212,12 @@ public final class JetBootstrap {
             if (jarName != null) {
                 config.addJar(jarName);
             }
-            config.setInitialSnapshotName(snapshotName);
-            config.setName(jobName);
+            if (snapshotName != null) {
+                config.setInitialSnapshotName(snapshotName);
+            }
+            if (jobName != null) {
+                config.setName(jobName);
+            }
             return config;
         }
 
