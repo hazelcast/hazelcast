@@ -126,7 +126,8 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         DistributedTriFunction<Long, String, String, String> formatFn = fx.formatFn;
         StreamStage<String> aggregated = fx.stage0()
                 .groupingKey(Entry::getKey)
-                .window(tumbling(winSize).setEarlyResultsPeriod(earlyResultsPeriod))
+                .window(tumbling(winSize)
+                        .setEarlyResultsPeriod(earlyResultsPeriod))
                 .aggregate(summingLong(Entry::getValue),
                         (start, end, key, sum) -> formatFn.apply(end, key, sum.toString()));
 
@@ -175,7 +176,8 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         final int slideBy = 2;
         DistributedTriFunction<Long, String, String, String> formatFn = fx.formatFn;
         StreamStage<String> aggregated = fx.stage0()
-                .window(sliding(winSize, slideBy).setEarlyResultsPeriod(earlyResultsPeriod))
+                .window(sliding(winSize, slideBy)
+                        .setEarlyResultsPeriod(earlyResultsPeriod))
                 .groupingKey(Entry::getKey)
                 .aggregate(summingLong(Entry::getValue), (start, end, key, sum) ->
                         // filter out one of the windows - this is to test map-to-null behavior
@@ -279,7 +281,8 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         // When
         DistributedTriFunction<Long, String, String, String> formatFn = fx.formatFn;
         StreamStage<String> aggregated = fx.stage0()
-                .window(session(sessionTimeout).setEarlyResultsPeriod(earlyResultsPeriod))
+                .window(session(sessionTimeout)
+                        .setEarlyResultsPeriod(earlyResultsPeriod))
                 .groupingKey(Entry::getKey)
                 .aggregate(summingLong(Entry::getValue), (start, end, key, sum) ->
                         // filter out one of the windows - this is to test map-to-null behavior

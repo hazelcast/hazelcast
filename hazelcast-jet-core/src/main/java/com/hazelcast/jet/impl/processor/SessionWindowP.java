@@ -51,6 +51,7 @@ import java.util.function.Function;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -161,10 +162,9 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             return true;
         }
         lastTimeEarlyResultsEmitted = now;
-        earlyWinTraverser = traverseStream(
-                keyToWindows.entrySet().stream()
-                            .flatMap(e -> earlyWindows(e.getKey(), e.getValue()).stream())
-        ).onFirstNull(() -> earlyWinTraverser = null);
+        earlyWinTraverser = traverseIterable(keyToWindows.entrySet())
+                .flatMap(e -> earlyWindows(e.getKey(), e.getValue()))
+                .onFirstNull(() -> earlyWinTraverser = null);
         return emitFromTraverser(earlyWinTraverser);
     }
 
@@ -290,18 +290,22 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         aggrOp.accumulateFn(ordinal).accept(resolveAcc(w, key, timestamp), item);
     }
 
-    private List<OUT> earlyWindows(K key, Windows<A> w) {
-        if (w == null) {
-            return emptyList();
-        }
-        List<OUT> results = new ArrayList<>();
-        for (int i = 0; i < w.size; i++) {
-            OUT out = mapToOutputFn.apply(w.starts[i], w.ends[i], key, aggrOp.exportFn().apply(w.accs[i]));
-            if (out != null) {
-                results.add(out);
+    private Traverser<OUT> earlyWindows(K key, Windows<A> w) {
+        return new Traverser<OUT>() {
+            private int i;
+
+            @Override
+            public OUT next() {
+                while (i < w.size) {
+                    OUT out = mapToOutputFn.apply(w.starts[i], w.ends[i], key, aggrOp.exportFn().apply(w.accs[i]));
+                    i++;
+                    if (out != null) {
+                        return out;
+                    }
+                }
+                return null;
             }
-        }
-        return results;
+        };
     }
 
     private List<OUT> closeWindows(Windows<A> w, K key, long wm) {

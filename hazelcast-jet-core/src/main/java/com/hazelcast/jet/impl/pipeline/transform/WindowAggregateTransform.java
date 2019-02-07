@@ -38,6 +38,7 @@ import static com.hazelcast.jet.core.processor.Processors.aggregateToSessionWind
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.function.DistributedFunctions.constantKey;
+import static com.hazelcast.jet.impl.pipeline.transform.AbstractTransform.Optimization.MEMORY;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
 import static java.util.Collections.nCopies;
@@ -75,9 +76,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     public void addToDag(Planner p) {
         if (wDef.kind() == SESSION) {
             addSessionWindow(p, wDef.downcast());
-        } else if (aggrOp.combineFn() == null || wDef.earlyResultsPeriod() > 0) {
-            // We don't use single-stage even when optimizing for memory because the
-            // single-stage setup doesn't save memory with just one global key.
+        } else if (aggrOp.combineFn() == null || wDef.earlyResultsPeriod() > 0 || getOptimization() == MEMORY) {
             addSlidingWindowSingleStage(p, wDef.downcast());
         } else {
             addSlidingWindowTwoStage(p, wDef.downcast());

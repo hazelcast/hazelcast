@@ -164,7 +164,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         final int winSize = 4;
         StreamStage<String> aggregated = srcStage
                 .withTimestamps(i -> i, maxLag)
-                .window(tumbling(winSize).setEarlyResultsPeriod(earlyResultsPeriod))
+                .window(tumbling(winSize)
+                        .setEarlyResultsPeriod(earlyResultsPeriod))
                 .aggregate(summingLong(i -> i), (start, end, sum) -> formatFn.apply(end, sum));
 
         // Then
@@ -210,7 +211,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         final int slideBy = 2;
         StreamStage<String> aggregated = srcStage
                 .withTimestamps(i -> i, maxLag)
-                .window(sliding(winSize, slideBy).setEarlyResultsPeriod(earlyResultsPeriod))
+                .window(sliding(winSize, slideBy)
+                        .setEarlyResultsPeriod(earlyResultsPeriod))
                 .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START ? null
                         : formatFn.apply(end, sum));
 
@@ -248,7 +250,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void sessionWindow_withPartialResults() {
+    public void sessionWindow_withEarlyResults() {
         maxLag = 32 * itemCount;
         testSessionWindow(200L);
     }
@@ -271,7 +273,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         // When
         StreamStage<String> aggregated = srcStage
                 .withTimestamps(i -> i, maxLag)
-                .window(session(sessionTimeout).setEarlyResultsPeriod(earlyResultsPeriod))
+                .window(session(sessionTimeout)
+                        .setEarlyResultsPeriod(earlyResultsPeriod))
                 .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START
                         ? null
                         : formatFn.apply(start, sum));
