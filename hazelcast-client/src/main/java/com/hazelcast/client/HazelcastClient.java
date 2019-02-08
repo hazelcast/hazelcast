@@ -18,6 +18,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.config.XmlClientConfigLocator;
+import com.hazelcast.client.config.YamlClientConfigBuilder;
+import com.hazelcast.client.config.YamlClientConfigLocator;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -68,7 +71,33 @@ public final class HazelcastClient {
     }
 
     public static HazelcastInstance newHazelcastClient() {
-        return newHazelcastClient(new XmlClientConfigBuilder().build());
+        ClientConfig config;
+        XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
+        YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
+
+        if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading XML config if provided in system property
+            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
+
+        } else if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading YAML config if provided in system property
+            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
+
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
+
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
+
+        } else {
+            // 5. Loading the default XML configuration file
+            xmlConfigLocator.locateDefault();
+            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
+        }
+
+        return newHazelcastClient(config);
     }
 
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {

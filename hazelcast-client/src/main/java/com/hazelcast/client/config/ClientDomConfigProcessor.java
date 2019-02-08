@@ -74,14 +74,19 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientDomConfigProcessor.class);
 
-    private final ClientConfig clientConfig;
+    protected final ClientConfig clientConfig;
 
-    private final QueryCacheConfigBuilderHelper queryCacheConfigBuilderHelper;
+    protected final QueryCacheConfigBuilderHelper queryCacheConfigBuilderHelper;
 
     ClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig) {
+        this(domLevel3, clientConfig, new QueryCacheXmlConfigBuilderHelper(domLevel3));
+    }
+
+    ClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig, QueryCacheConfigBuilderHelper
+            queryCacheConfigBuilderHelper) {
         super(domLevel3);
         this.clientConfig = clientConfig;
-        queryCacheConfigBuilderHelper = new QueryCacheConfigBuilderHelper(domLevel3);
+        this.queryCacheConfigBuilderHelper = queryCacheConfigBuilderHelper;
     }
 
     @Override
@@ -91,14 +96,14 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             if (occurrenceSet.contains(nodeName)) {
                 throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration");
             }
-            handleXmlNode(node, nodeName);
+            handleNode(node, nodeName);
             if (!canOccurMultipleTimes(nodeName)) {
                 occurrenceSet.add(nodeName);
             }
         }
     }
 
-    private void handleXmlNode(Node node, String nodeName) {
+    private void handleNode(Node node, String nodeName) {
         if (SECURITY.isEqual(nodeName)) {
             handleSecurity(node);
         } else if (PROXY_FACTORIES.isEqual(nodeName)) {
@@ -204,21 +209,25 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         userCodeDeploymentConfig.setEnabled(enabled);
 
         for (Node child : childElements(node)) {
-            String childNodeName = cleanNodeName(child);
-            if ("classnames".equals(childNodeName)) {
-                for (Node classNameNode : childElements(child)) {
-                    userCodeDeploymentConfig.addClass(getTextContent(classNameNode));
-                }
-            } else if ("jarpaths".equals(childNodeName)) {
-                for (Node jarPathNode : childElements(child)) {
-                    userCodeDeploymentConfig.addJar(getTextContent(jarPathNode));
-                }
-            } else {
-                throw new InvalidConfigurationException("User code deployement can either be className or jarPath. "
-                        + childNodeName + " is invalid");
-            }
+            handleUserCodeDeploymentNode(userCodeDeploymentConfig, child);
         }
         clientConfig.setUserCodeDeploymentConfig(userCodeDeploymentConfig);
+    }
+
+    protected void handleUserCodeDeploymentNode(ClientUserCodeDeploymentConfig userCodeDeploymentConfig, Node child) {
+        String childNodeName = cleanNodeName(child);
+        if ("classnames".equals(childNodeName)) {
+            for (Node classNameNode : childElements(child)) {
+                userCodeDeploymentConfig.addClass(getTextContent(classNameNode));
+            }
+        } else if ("jarpaths".equals(childNodeName)) {
+            for (Node jarPathNode : childElements(child)) {
+                userCodeDeploymentConfig.addJar(getTextContent(jarPathNode));
+            }
+        } else {
+            throw new InvalidConfigurationException("User code deployement can either be className or jarPath. "
+                    + childNodeName + " is invalid");
+        }
     }
 
     private void handleExecutorPoolSize(Node node) {
@@ -226,8 +235,12 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         clientConfig.setExecutorPoolSize(poolSize);
     }
 
-    private void handleNearCache(Node node) {
-        String name = getAttribute(node, "name");
+    protected void handleNearCache(Node node) {
+        handleNearCacheNode(node);
+    }
+
+    protected void handleNearCacheNode(Node node) {
+        String name = getName(node);
         NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
         Boolean serializeKeys = null;
         for (Node child : childElements(node)) {
@@ -267,8 +280,16 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         clientConfig.addNearCacheConfig(nearCacheConfig);
     }
 
-    private void handleFlakeIdGenerator(Node node) {
-        String name = getAttribute(node, "name");
+    protected String getName(Node node) {
+        return getAttribute(node, "name");
+    }
+
+    protected void handleFlakeIdGenerator(Node node) {
+        handleFlakeIdGeneratorNode(node);
+    }
+
+    protected void handleFlakeIdGeneratorNode(Node node) {
+        String name = getName(node);
         ClientFlakeIdGeneratorConfig config = new ClientFlakeIdGeneratorConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
@@ -282,8 +303,12 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         clientConfig.addFlakeIdGeneratorConfig(config);
     }
 
-    private void handleReliableTopic(Node node) {
-        String name = getAttribute(node, "name");
+    protected void handleReliableTopic(Node node) {
+        handleReliableTopicNode(node);
+    }
+
+    protected void handleReliableTopicNode(Node node) {
+        String name = getName(node);
         ClientReliableTopicConfig config = new ClientReliableTopicConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
@@ -426,7 +451,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         clientNetworkConfig.setClientIcmpPingConfig(icmpPingConfig);
     }
 
-    private void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {
+    protected void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {
         DiscoveryConfig discoveryConfig = clientNetworkConfig.getDiscoveryConfig();
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
@@ -438,7 +463,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
+    protected void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
         NamedNodeMap atts = node.getAttributes();
         Node att = atts.getNamedItem("class");
         if (att != null) {
@@ -446,7 +471,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleDiscoveryStrategy(Node node, DiscoveryConfig discoveryConfig) {
+    protected void handleDiscoveryStrategy(Node node, DiscoveryConfig discoveryConfig) {
         NamedNodeMap atts = node.getAttributes();
 
         boolean enabled = false;
@@ -533,7 +558,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         clientNetworkConfig.setSocketOptions(socketOptions);
     }
 
-    private void handleClusterMembers(Node node, ClientNetworkConfig clientNetworkConfig) {
+    protected void handleClusterMembers(Node node, ClientNetworkConfig clientNetworkConfig) {
         for (Node child : childElements(node)) {
             if ("address".equals(cleanNodeName(child))) {
                 clientNetworkConfig.addAddress(getTextContent(child));
@@ -541,7 +566,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleListeners(Node node) {
+    protected void handleListeners(Node node) {
         for (Node child : childElements(node)) {
             if ("listener".equals(cleanNodeName(child))) {
                 String className = getTextContent(child);
@@ -569,14 +594,18 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleProxyFactories(Node node) {
         for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if ("proxy-factory".equals(nodeName)) {
-                handleProxyFactory(child);
-            }
+            handleProxyFactoryNode(child);
         }
     }
 
-    private void handleProxyFactory(Node node) {
+    protected void handleProxyFactoryNode(Node child) {
+        String nodeName = cleanNodeName(child);
+        if ("proxy-factory".equals(nodeName)) {
+            handleProxyFactory(child);
+        }
+    }
+
+    protected void handleProxyFactory(Node node) {
         String service = getAttribute(node, "service");
         String className = getAttribute(node, "class-name");
 
@@ -618,7 +647,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleOutboundPorts(Node child, ClientNetworkConfig clientNetworkConfig) {
+    protected void handleOutboundPorts(Node child, ClientNetworkConfig clientNetworkConfig) {
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
             if ("ports".equals(nodeName)) {

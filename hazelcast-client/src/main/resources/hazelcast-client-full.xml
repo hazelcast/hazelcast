@@ -209,6 +209,9 @@
                 <class>example.Foo</class>
                 <package>com.acme.app</package>
                 <package>com.acme.app.subpkg</package>
+                <prefix>java</prefix>
+                <prefix>[</prefix>
+                <prefix>com.</prefix>
             </whitelist>
         </java-serialization-filter>
     </serialization>
