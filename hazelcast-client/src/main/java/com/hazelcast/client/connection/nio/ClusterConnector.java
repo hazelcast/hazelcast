@@ -124,7 +124,9 @@ class ClusterConnector {
     }
 
     void setOwnerConnectionAddress(Address ownerConnectionAddress) {
-        this.previousOwnerConnectionAddress = this.ownerConnectionAddress;
+        if (this.ownerConnectionAddress != null) {
+            this.previousOwnerConnectionAddress = this.ownerConnectionAddress;
+        }
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 

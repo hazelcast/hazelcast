@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.util.AddressHelper;
-import com.hazelcast.client.util.ClientStateListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
@@ -112,14 +111,33 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     @Test
-    public void testConnectWithDNSHostnames() throws InterruptedException {
+    public void testConnectionCountAfterOwnerReconnect_memberHostname_clientIp() {
+        testConnectionCountAfterOwnerReconnect("localhost", "127.0.0.1");
+    }
+
+    @Test
+    public void testConnectionCountAfterOwnerReconnect_memberHostname_clientHostname() {
+        testConnectionCountAfterOwnerReconnect("localhost", "localhost");
+    }
+
+    @Test
+    public void testConnectionCountAfterOwnerReconnect_memberIp_clientIp() {
+        testConnectionCountAfterOwnerReconnect("127.0.0.1", "127.0.0.1");
+    }
+
+    @Test
+    public void testConnectionCountAfterOwnerReconnect_memberIp_clientHostname() {
+        testConnectionCountAfterOwnerReconnect("127.0.0.1", "localhost");
+    }
+
+    private void testConnectionCountAfterOwnerReconnect(String memberAddress, String clientAddress) {
         Config config = new Config();
-        config.getNetworkConfig().setPublicAddress("localhost");
+        config.getNetworkConfig().setPublicAddress(memberAddress);
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress("localhost").setConnectionAttemptLimit(Integer.MAX_VALUE);
-        ClientStateListener clientStateListener = new ClientStateListener(clientConfig);
+        clientConfig.getNetworkConfig().addAddress(clientAddress).setConnectionAttemptLimit(Integer.MAX_VALUE);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         final ClientConnectionManager connectionManager = clientInstanceImpl.getConnectionManager();
@@ -128,8 +146,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(2, connectionManager.getActiveConnections().size());
             }
         });
@@ -158,16 +175,35 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     @Test
-    public void testListenersWhenDNSHostnamesAreUsed() {
+    public void testListenersAfterOwnerDisconnect_memberHostname_clientIp() {
+        testListenersAfterOwnerDisconnect("localhost", "127.0.0.1");
+    }
+
+    @Test
+    public void testListenersAfterOwnerDisconnect_memberHostname_clientHostname() {
+        testListenersAfterOwnerDisconnect("localhost", "localhost");
+    }
+
+    @Test
+    public void testListenersAfterOwnerDisconnect_memberIp_clientIp() {
+        testListenersAfterOwnerDisconnect("127.0.0.1", "127.0.0.1");
+    }
+
+    @Test
+    public void testListenersAfterOwnerDisconnect_memberIp_clientHostname() {
+        testListenersAfterOwnerDisconnect("127.0.0.1", "localhost");
+    }
+
+    private void testListenersAfterOwnerDisconnect(String memberAddress, String clientAddress) {
         Config config = new Config();
-        int heartBeatSeconds = 5;
-        config.getNetworkConfig().setPublicAddress("localhost");
+        int heartBeatSeconds = 6;
+        config.getNetworkConfig().setPublicAddress(memberAddress);
         config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), Integer.toString(heartBeatSeconds));
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-        networkConfig.addAddress("localhost");
+        networkConfig.addAddress(clientAddress);
         networkConfig.setConnectionAttemptLimit(Integer.MAX_VALUE);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final IMap<Integer, Integer> map = client.getMap("test");
@@ -185,7 +221,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
                 int size = clientInstanceImpl.getConnectionManager().getActiveConnections().size();
                 assertEquals(2, size);
@@ -199,8 +235,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 map.put(1, 2);
                 assertNotEquals(0, eventCount.get());
             }
