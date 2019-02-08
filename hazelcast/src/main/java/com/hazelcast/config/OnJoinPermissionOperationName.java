@@ -19,7 +19,7 @@ package com.hazelcast.config;
 /**
  * Enum of operation names for handling client permissions when the member is joining into the cluster.
  */
-public enum OnJoinPermissionOperation {
+public enum OnJoinPermissionOperationName {
 
     /**
      * Operation which replaces locally configured permissions by the ones received from cluster.
