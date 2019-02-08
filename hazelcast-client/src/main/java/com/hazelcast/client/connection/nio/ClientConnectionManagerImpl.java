@@ -101,6 +101,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final SocketInterceptor socketInterceptor;
     private final ClientExecutionService executionService;
     private final AddressTranslator addressTranslator;
+    private final InetSocketAddressCache inetSocketAddressCache = new InetSocketAddressCache();
     private final ConcurrentMap<InetSocketAddress, ClientConnection> activeConnections
             = new ConcurrentHashMap<InetSocketAddress, ClientConnection>();
     private final ConcurrentMap<InetSocketAddress, AuthenticationFuture> connectionsInProgress =
@@ -279,7 +280,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (target == null) {
             return null;
         }
-        return activeConnections.get(toInetSocketAddress(target));
+        return activeConnections.get(inetSocketAddressCache.get(target));
     }
 
     @Override
@@ -303,7 +304,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new IllegalStateException("Address can not be null");
         }
 
-        ClientConnection connection = activeConnections.get(toInetSocketAddress(target));
+        ClientConnection connection = activeConnections.get(inetSocketAddressCache.get(target));
 
         if (connection != null) {
             if (!asOwner) {
@@ -376,20 +377,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         AuthenticationFuture future = new AuthenticationFuture();
-        AuthenticationFuture oldFuture = connectionsInProgress.putIfAbsent(toInetSocketAddress(target), future);
+        AuthenticationFuture oldFuture = connectionsInProgress.putIfAbsent(inetSocketAddressCache.get(target), future);
         if (oldFuture == null) {
             executionService.execute(new InitConnectionTask(target, asOwner, future));
             return future;
         }
         return oldFuture;
-    }
-
-    private InetSocketAddress toInetSocketAddress(Address target) {
-        try {
-            return target.getInetSocketAddress();
-        } catch (UnknownHostException e) {
-            throw rethrow(e);
-        }
     }
 
     @Override
@@ -469,7 +462,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             bindSocketToPort(socket);
 
             Channel channel = networking.register(socketChannel, true);
-            channel.connect(remoteAddress.getInetSocketAddress(), connectionTimeoutMillis);
+            channel.connect(inetSocketAddressCache.get(remoteAddress), connectionTimeoutMillis);
 
             ClientConnection connection
                     = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
@@ -488,10 +481,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     void onClose(Connection connection) {
-        removeFromActiveConnections(connection);
+        removeFromActiveConnections((ClientConnection) connection);
     }
 
-    private void removeFromActiveConnections(Connection connection) {
+    private void removeFromActiveConnections(ClientConnection connection) {
         Address endpoint = connection.getEndPoint();
 
         if (endpoint == null) {
@@ -501,9 +494,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             return;
         }
-        if (activeConnections.remove(toInetSocketAddress(endpoint), connection)) {
+        if (activeConnections.remove(inetSocketAddressCache.get(endpoint), connection)) {
             logger.info("Removed connection to endpoint: " + endpoint + ", connection: " + connection);
-            fireConnectionRemovedEvent((ClientConnection) connection);
+            fireConnectionRemovedEvent(connection);
         } else {
             if (logger.isFinestEnabled()) {
                 logger.finest("Destroying a connection, but there is no mapping " + endpoint + " -> " + connection
@@ -587,7 +580,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             } catch (Exception e) {
                 logger.finest(e);
                 future.onFailure(e);
-                connectionsInProgress.remove(toInetSocketAddress(target));
+                connectionsInProgress.remove(inetSocketAddressCache.get(target));
                 return;
             }
 
@@ -596,7 +589,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             } catch (Exception e) {
                 future.onFailure(e);
                 connection.close("Failed to authenticate connection", e);
-                connectionsInProgress.remove(toInetSocketAddress(target));
+                connectionsInProgress.remove(inetSocketAddressCache.get(target));
             }
         }
 
@@ -639,7 +632,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         private ClientConnection getConnection() throws IOException {
-            ClientConnection connection = activeConnections.get(toInetSocketAddress(target));
+            ClientConnection connection = activeConnections.get(inetSocketAddressCache.get(target));
             if (connection != null) {
                 return connection;
             }
@@ -707,7 +700,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         private void onAuthenticated() {
-            ClientConnection oldConnection = activeConnections.put(toInetSocketAddress(connection.getEndPoint()), connection);
+            ClientConnection oldConnection = activeConnections.put(inetSocketAddressCache.get(target), connection);
             if (oldConnection == null) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Authentication succeeded for " + connection
@@ -721,7 +714,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 assert connection.equals(oldConnection);
             }
 
-            connectionsInProgress.remove(toInetSocketAddress(target));
+            connectionsInProgress.remove(inetSocketAddressCache.get(target));
             logger.info("Authenticated with server " + connection.getEndPoint() + ", server version:" + connection
                     .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());
 
@@ -747,8 +740,30 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 logger.finest("Authentication of " + connection + " failed.", cause);
             }
             connection.close(null, cause);
-            connectionsInProgress.remove(toInetSocketAddress(target));
+            connectionsInProgress.remove(inetSocketAddressCache.get(target));
             future.onFailure(cause);
+        }
+    }
+
+    private static class InetSocketAddressCache {
+
+        private final ConcurrentMap<Address, InetSocketAddress> cache = new ConcurrentHashMap<Address, InetSocketAddress>();
+
+        private InetSocketAddress get(Address target) {
+            try {
+                InetSocketAddress resolvedAddress = cache.get(target);
+                if (resolvedAddress != null) {
+                    return resolvedAddress;
+                }
+                InetSocketAddress newResolvedAddress = new InetSocketAddress(target.getInetAddress(), target.getPort());
+                InetSocketAddress prevAddress = cache.putIfAbsent(target, newResolvedAddress);
+                if (prevAddress != null) {
+                    return prevAddress;
+                }
+                return newResolvedAddress;
+            } catch (UnknownHostException e) {
+                throw rethrow(e);
+            }
         }
     }
 }

@@ -118,7 +118,9 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
             // (see PartitionWideEntryWithPredicateOperationFactory.createFactoryOnRunner).
 
             operationFactory = new OperationFactoryWrapper(operationFactory, endpoint.getUuid());
-            operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, singletonList(partitionId), this);
+            ICompletableFuture<Map<Integer, Object>> future =
+                    operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, singletonList(partitionId));
+            future.andThen(this);
         }
     }
 
