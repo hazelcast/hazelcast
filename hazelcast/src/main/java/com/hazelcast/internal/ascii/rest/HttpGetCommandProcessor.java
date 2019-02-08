@@ -29,6 +29,8 @@ import com.hazelcast.util.StringUtil;
 import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200_WITH_NO_CONTENT;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_503;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
@@ -55,6 +57,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 handleQueue(command, uri);
             } else if (uri.startsWith(URI_CLUSTER)) {
                 handleCluster(command);
+            } else if (uri.startsWith(URI_HEALTH_READY)) {
+                handleHealthReady(command);
             } else if (uri.startsWith(URI_HEALTH_URL)) {
                 handleHealthcheck(command, uri);
             } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
@@ -73,6 +77,17 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         textCommandService.sendResponse(command);
     }
 
+    private void handleHealthReady(HttpGetCommand command) {
+        Node node = textCommandService.getNode();
+
+        if (node.isRunning()
+                && node.getNodeExtension().isStartCompleted()) {
+            command.setResponse(RES_200_WITH_NO_CONTENT);
+        } else {
+            command.setResponse(RES_503);
+        }
+    }
+
     private void handleHealthcheck(HttpGetCommand command, String uri) {
         Node node = textCommandService.getNode();
         NodeState nodeState = node.getState();
@@ -89,7 +104,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         String healthParameter = uri.substring(URI_HEALTH_URL.length());
         if (healthParameter.equals(HEALTH_PATH_PARAM_NODE_STATE)) {
             if (NodeState.SHUT_DOWN.equals(nodeState)) {
-                command.setResponse(HttpCommand.RES_503);
+                command.setResponse(RES_503);
             } else {
                 command.setResponse(null, stringToBytes(nodeState.toString()));
             }
@@ -99,7 +114,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             if (clusterSafe) {
                 command.send200();
             } else {
-                command.setResponse(HttpCommand.RES_503);
+                command.setResponse(RES_503);
             }
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_MIGRATION_QUEUE_SIZE)) {
             command.setResponse(null, stringToBytes(Long.toString(migrationQueueSize)));
@@ -134,10 +149,11 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     /**
      * Sets the HTTP response to a string containing basic cluster information:
      * <ul>
-     *     <li>Member list</li>
-     *     <li>Client connection count</li>
-     *     <li>Connection count</li>
+     * <li>Member list</li>
+     * <li>Client connection count</li>
+     * <li>Connection count</li>
      * </ul>
+     *
      * @param command the HTTP request
      */
     private void handleCluster(HttpGetCommand command) {

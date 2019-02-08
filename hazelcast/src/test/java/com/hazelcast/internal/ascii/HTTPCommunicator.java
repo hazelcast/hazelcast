@@ -121,6 +121,12 @@ public class HTTPCommunicator {
         return doGet(url).response;
     }
 
+    public int getHealthReadyResponseCode() throws IOException {
+        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
+        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_READY;
+        return doGet(url).responseCode;
+    }
+
     public String getClusterInfo() throws IOException {
         String url = address + "cluster";
         return doGet(url).response;

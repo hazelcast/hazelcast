@@ -35,6 +35,8 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final String HEADER_EXPECT_100 = "expect: 100";
     public static final String HEADER_CUSTOM_PREFIX = "Hazelcast-";
     public static final byte[] RES_200 = stringToBytes("HTTP/1.1 200 OK\r\n");
+    // used to respond get requests with no content
+    public static final byte[] RES_200_WITH_NO_CONTENT = stringToBytes("HTTP/1.1 200 OK\nContent-Length: 0\n\n");
     public static final byte[] RES_400 = stringToBytes("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n");
     public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n");
     public static final byte[] RES_404 = stringToBytes("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
@@ -93,7 +95,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public void send200() {
         setResponse(null, null);
     }
-
 
     /**
      * HTTP/1.0 200 OK

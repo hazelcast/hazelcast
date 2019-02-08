@@ -27,6 +27,7 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_MANCENTER_CHANGE_URL = URI_MANCENTER_BASE_URL + "/changeurl";
     public static final String URI_UPDATE_PERMISSIONS = URI_MANCENTER_BASE_URL + "/security/permissions";
     public static final String URI_HEALTH_URL = "/hazelcast/health";
+    public static final String URI_HEALTH_READY = URI_HEALTH_URL + "/ready";
 
     // Cluster
     public static final String URI_CLUSTER = "/hazelcast/rest/cluster";
@@ -34,13 +35,13 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_CLUSTER_STATE_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/state";
     public static final String URI_CHANGE_CLUSTER_STATE_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/changeState";
     public static final String URI_CLUSTER_VERSION_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/version";
-    public static final String URI_SHUTDOWN_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/clusterShutdown";
+    public static final String URI_SHUTDOWN_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/clusterShutdown";
     public static final String URI_SHUTDOWN_NODE_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/memberShutdown";
     public static final String URI_CLUSTER_NODES_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/nodes";
 
     // Hot restart
-    public static final String URI_FORCESTART_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/forceStart";
-    public static final String URI_PARTIALSTART_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/partialStart";
+    public static final String URI_FORCESTART_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/forceStart";
+    public static final String URI_PARTIALSTART_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/partialStart";
     public static final String URI_HOT_RESTART_BACKUP_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/hotBackup";
     public static final String URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL
             = URI_CLUSTER_MANAGEMENT_BASE_URL + "/hotBackupInterrupt";

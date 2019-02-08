@@ -350,4 +350,14 @@ public class RestClusterTest {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         assertEquals(HttpURLConnection.HTTP_NOT_FOUND, communicator.headRequestToGarbageClusterHealthURI().responseCode);
     }
+
+    @Test
+    public void http_get_returns_response_code_200_when_member_is_ready_to_use() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        int healthReadyResponseCode = communicator.getHealthReadyResponseCode();
+        System.err.println("healthReadyResponseCode = " + healthReadyResponseCode);
+        assertEquals(HttpURLConnection.HTTP_OK, healthReadyResponseCode);
+    }
 }
