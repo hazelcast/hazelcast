@@ -647,7 +647,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz1, hz4);
         assertClusterSize(4, hz2);
 
-        hz3 = newHazelcastInstance(initOrCreateConfig(new Config()), "test-instance", new StaticMemberNodeContext(factory, member3));
+        hz3 = newHazelcastInstance(initOrCreateConfig(new Config()), randomName(), new StaticMemberNodeContext(factory, member3));
 
         assertClusterSizeEventually(4, hz1, hz4);
 
@@ -702,7 +702,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             @Override
             public HazelcastInstance call() {
                 NodeContext nodeContext = new StaticMemberNodeContext(factory, member3.getUuid(), factory.nextAddress());
-                return newHazelcastInstance(initOrCreateConfig(new Config()), "test-instance", nodeContext);
+                return newHazelcastInstance(initOrCreateConfig(new Config()), randomName(), nodeContext);
             }
         });
 
