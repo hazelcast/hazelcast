@@ -353,11 +353,10 @@ public class RestClusterTest {
 
     @Test
     public void http_get_returns_response_code_200_when_member_is_ready_to_use() throws Exception {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance instance = factory.newHazelcastInstance(createConfigWithRestEnabled());
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
         int healthReadyResponseCode = communicator.getHealthReadyResponseCode();
-        System.err.println("healthReadyResponseCode = " + healthReadyResponseCode);
         assertEquals(HttpURLConnection.HTTP_OK, healthReadyResponseCode);
     }
 }
