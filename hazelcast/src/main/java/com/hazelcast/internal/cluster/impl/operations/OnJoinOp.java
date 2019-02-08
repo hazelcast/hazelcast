@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.config.OnJoinPermissionOperation;
+import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
 import com.hazelcast.nio.Address;
@@ -75,9 +75,9 @@ public class OnJoinOp
     @Override
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
-            OnJoinPermissionOperation onJoinOp = getNodeEngine().getProperties().getEnum(ON_JOIN_PERMISSIONS_OPERATION,
-                    OnJoinPermissionOperation.class);
-            boolean runPermissionUpdates = onJoinOp == OnJoinPermissionOperation.RECEIVE;
+            OnJoinPermissionOperationName onJoinOp = getNodeEngine().getProperties().getEnum(ON_JOIN_PERMISSIONS_OPERATION,
+                    OnJoinPermissionOperationName.class);
+            boolean runPermissionUpdates = onJoinOp == OnJoinPermissionOperationName.RECEIVE;
             for (Operation op : operations) {
                 if ((op instanceof UpdatePermissionConfigOperation) && !runPermissionUpdates) {
                     continue;

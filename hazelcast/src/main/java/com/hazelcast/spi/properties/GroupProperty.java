@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.properties;
 
-import com.hazelcast.config.OnJoinPermissionOperation;
+import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
@@ -31,7 +31,7 @@ import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.InvocationBuilder;
 
-import static com.hazelcast.config.OnJoinPermissionOperation.RECEIVE;
+import static com.hazelcast.config.OnJoinPermissionOperationName.RECEIVE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -1038,7 +1038,7 @@ public final class GroupProperty {
      * Operation names for handling client permissions when the member is joining into the cluster. Allowed values:
      * {@code "RECEIVE"} (default), {@code "SEND"}, {@code "NONE"}.
      *
-     * @see OnJoinPermissionOperation
+     * @see OnJoinPermissionOperationName
      * @deprecated This property is only available in Hazelcast 3.11.z patch stream (starting 3.11.2). Use
      *             {@code SecurityConfig.setOnJoinPermissionOperation(...)} instead in Hazelcast 3.12 and newer.
      */
