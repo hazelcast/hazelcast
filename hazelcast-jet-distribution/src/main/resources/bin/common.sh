@@ -29,6 +29,15 @@ if [ "x$MAX_HEAP_SIZE" != "x" ]; then
 	JAVA_OPTS="$JAVA_OPTS -Xmx${MAX_HEAP_SIZE}"
 fi
 
+## add classpath and java opts entries comes from docker image if defined
+if [ "x$CLASSPATH_DEFAULT" != "x" ]; then
+    CLASSPATH="${CLASSPATH_DEFAULT}:${CLASSPATH}"
+fi
+
+if [ "x$JAVA_OPTS_DEFAULT" != "x" ]; then
+    JAVA_OPTS="${JAVA_OPTS_DEFAULT} ${JAVA_OPTS}"
+fi
+
 CLASSPATH="$JET_HOME/lib/${hazelcast.jet.artifact}-${project.version}.jar:$CLASSPATH"
 JAVA_OPTS="$JAVA_OPTS -Dhazelcast.config=$JET_HOME/config/hazelcast.xml \
 -Dhazelcast.client.config=$JET_HOME/config/hazelcast-client.xml \
