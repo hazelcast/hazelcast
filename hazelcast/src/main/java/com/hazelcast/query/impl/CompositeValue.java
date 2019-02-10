@@ -105,6 +105,8 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
      */
     public static final ComparableIdentifiedDataSerializable POSITIVE_INFINITY = new PositiveInfinity();
 
+    private static final int BYTE_MASK = 0xFF;
+
     private Comparable[] components;
 
     /**
@@ -195,7 +197,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(components.length);
+        out.writeByte(components.length);
         for (Comparable component : components) {
             out.writeObject(component);
         }
@@ -203,7 +205,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        int length = in.readInt();
+        int length = in.readByte() & BYTE_MASK;
         components = new Comparable[length];
         for (int i = 0; i < length; ++i) {
             components[i] = in.readObject();

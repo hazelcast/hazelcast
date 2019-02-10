@@ -32,6 +32,8 @@ public final class PredicateUtils {
 
     private static final int EXPECTED_AVERAGE_COMPONENT_NAME_LENGTH = 16;
 
+    private static final int MAX_INDEX_COMPONENTS = 255;
+
     private static final Pattern THIS_PATTERN = Pattern.compile("^this\\.");
 
     private static final Pattern COMMA_PATTERN = Pattern.compile("\\s*,\\s*");
@@ -106,6 +108,8 @@ public final class PredicateUtils {
      *                                  components.
      * @throws IllegalArgumentException if the given index name contains
      *                                  duplicate components.
+     * @throws IllegalArgumentException if the given index name has more than
+     *                                  255 components.
      * @see #constructCanonicalCompositeIndexName
      */
     public static String[] parseCompositeIndexComponents(String name) {
@@ -113,6 +117,10 @@ public final class PredicateUtils {
 
         if (components.length == 1) {
             return null;
+        }
+
+        if (components.length > MAX_INDEX_COMPONENTS) {
+            throw new IllegalArgumentException("Too many composite index attributes: " + name);
         }
 
         Set<String> seenComponents = new HashSet<String>();
