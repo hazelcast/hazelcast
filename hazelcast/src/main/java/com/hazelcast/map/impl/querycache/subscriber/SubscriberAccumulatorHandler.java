@@ -57,6 +57,15 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
         this.evictAllRemovedCountHolders = initRemovedCountHolders(partitionCount);
     }
 
+    @Override
+    public void reset() {
+        queryCache.clear();
+        for (int i = 0; i < partitionCount; i++) {
+            clearAllRemovedCountHolders.set(i, new ConcurrentLinkedQueue<Integer>());
+            evictAllRemovedCountHolders.set(i, new ConcurrentLinkedQueue<Integer>());
+        }
+    }
+
     private static AtomicReferenceArray<Queue<Integer>> initRemovedCountHolders(int partitionCount) {
         AtomicReferenceArray<Queue<Integer>> removedCountHolders
                 = new AtomicReferenceArray<Queue<Integer>>(partitionCount + 1);

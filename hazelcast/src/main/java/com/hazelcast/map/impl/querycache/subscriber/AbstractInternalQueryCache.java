@@ -63,7 +63,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     /**
      * ID of registered listener on publisher side.
      */
-    protected String publisherListenerId;
+    protected volatile String publisherListenerId;
 
     public AbstractInternalQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
                                       IMap delegate, QueryCacheContext context) {
@@ -91,6 +91,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     public QueryCacheContext getContext() {
         return context;
+    }
+
+    @Override
+    public String getPublisherListenerId() {
+        return publisherListenerId;
     }
 
     @Override

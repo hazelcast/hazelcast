@@ -88,7 +88,6 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
-import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEndToEndConstructor;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
 import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
 import com.hazelcast.client.spi.ClientContext;
@@ -1642,7 +1641,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
         return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
-                new ClientQueryCacheEndToEndConstructor(request));
+                subscriberContext.newEndToEndConstructor(request));
     }
 
     @Override

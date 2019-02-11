@@ -61,6 +61,12 @@ class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheEventDat
         poll(handler, info.getDelaySeconds(), SECONDS);
     }
 
+    @Override
+    public void reset() {
+        index.clear();
+        super.reset();
+    }
+
     private void setSequence(QueryCacheEventData eventData) {
         Data dataKey = eventData.getDataKey();
         Long sequence = index.get(dataKey);

@@ -31,7 +31,13 @@ public interface AccumulatorHandler<T> {
      * Handles element.
      *
      * @param element     the element to be processed.
-     * @param lastElement {@code true} if this is the last element got from the {@code Accumulator}, otherwise {@code false}.
+     * @param lastElement {@code true} if this is the last element
+     *                    got from the {@code Accumulator}, otherwise {@code false}.
      */
     void handle(T element, boolean lastElement);
+
+    /**
+     * Resets this handler to its initial state.
+     */
+    void reset();
 }

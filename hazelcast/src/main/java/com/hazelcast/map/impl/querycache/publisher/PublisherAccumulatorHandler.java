@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +47,7 @@ public class PublisherAccumulatorHandler implements AccumulatorHandler<Sequenced
 
     private final QueryCacheContext context;
     private final AccumulatorProcessor<Sequenced> processor;
+
     private Queue<QueryCacheEventData> eventCollection;
 
     public PublisherAccumulatorHandler(QueryCacheContext context, AccumulatorProcessor<Sequenced> processor) {
@@ -66,6 +68,15 @@ public class PublisherAccumulatorHandler implements AccumulatorHandler<Sequenced
         }
     }
 
+    @Override
+    public void reset() {
+        if (eventCollection == null) {
+            return;
+        }
+
+        eventCollection.clear();
+    }
+
     private void process() {
         Queue<QueryCacheEventData> eventCollection = this.eventCollection;
         if (eventCollection.isEmpty()) {
@@ -79,7 +90,7 @@ public class PublisherAccumulatorHandler implements AccumulatorHandler<Sequenced
         }
     }
 
-    private void sendInBatches(Queue<QueryCacheEventData> events) {
+    private void sendInBatches(@Nonnull Queue<QueryCacheEventData> events) {
         Map<Integer, List<QueryCacheEventData>> partitionToEventDataMap = createPartitionToEventDataMap(events);
         sendToSubscriber(partitionToEventDataMap);
     }

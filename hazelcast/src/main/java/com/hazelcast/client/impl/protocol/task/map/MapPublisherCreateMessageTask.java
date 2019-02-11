@@ -73,7 +73,7 @@ public class MapPublisherCreateMessageTask
         for (MemberImpl member : members) {
             Predicate predicate = serializationService.toObject(parameters.predicate);
             AccumulatorInfo accumulatorInfo =
-                    AccumulatorInfo.createAccumulatorInfo(parameters.mapName, parameters.cacheName, predicate,
+                    AccumulatorInfo.toAccumulatorInfo(parameters.mapName, parameters.cacheName, predicate,
                             parameters.batchSize, parameters.bufferSize, parameters.delaySeconds,
                             false, parameters.populate, parameters.coalesce);
 

@@ -41,10 +41,10 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
 
     @Override
     public void createPublisherAccumulator(AccumulatorInfo info) throws Exception {
-        ClientMessage request = createClientMessage(info);
+        ClientMessage publisherCreateMessage = newPublisherCreateMessage(info);
 
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
-        ClientMessage response = (ClientMessage) invokerWrapper.invoke(request);
+        ClientMessage response = (ClientMessage) invokerWrapper.invoke(publisherCreateMessage);
 
         prepopulate(queryCache, response, info.isIncludeValue());
 
@@ -54,7 +54,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         }
     }
 
-    private ClientMessage createClientMessage(AccumulatorInfo info) {
+    private ClientMessage newPublisherCreateMessage(AccumulatorInfo info) {
         Data dataPredicate = context.getSerializationService().toData(info.getPredicate());
 
         if (info.isIncludeValue()) {

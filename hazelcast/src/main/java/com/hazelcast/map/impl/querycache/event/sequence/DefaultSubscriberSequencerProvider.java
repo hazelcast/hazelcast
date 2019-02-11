@@ -63,6 +63,13 @@ public class DefaultSubscriberSequencerProvider implements SubscriberSequencerPr
         sequence.reset();
     }
 
+    @Override
+    public void resetAll() {
+        for (PartitionSequencer partitionSequencer : partitionSequences.values()) {
+            partitionSequencer.reset();
+        }
+    }
+
     private PartitionSequencer getOrCreateSequence(int partitionId) {
         return getOrPutIfAbsent(partitionSequences, partitionId, PARTITION_SEQUENCER_CONSTRUCTOR);
     }

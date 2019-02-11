@@ -79,6 +79,11 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
+    public String getPublisherListenerId() {
+        return null;
+    }
+
+    @Override
     public String getCacheId() {
         return null;
     }
@@ -91,6 +96,11 @@ public final class NullQueryCache implements InternalQueryCache {
     @Override
     public Extractors getExtractors() {
         return null;
+    }
+
+    @Override
+    public void recreate() {
+
     }
 
     @Override
