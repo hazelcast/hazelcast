@@ -76,10 +76,7 @@ public class TruePredicate<K, V> implements IdentifiedDataSerializable, Predicat
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof TruePredicate)) {
-            return false;
-        }
-        return true;
+        return o instanceof TruePredicate;
     }
 
     @Override

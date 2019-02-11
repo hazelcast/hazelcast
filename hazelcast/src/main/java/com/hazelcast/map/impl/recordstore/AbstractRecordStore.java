@@ -45,7 +45,6 @@ import java.util.Collection;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
 
-
 /**
  * Contains record store common parts.
  */
@@ -159,26 +158,25 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected void saveIndex(Record record, Object oldValue) {
         Data dataKey = record.getKey();
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.hasIndex()) {
+        if (indexes.haveAtLeastOneIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
-            indexes.saveEntryIndex(queryableEntry, oldValue, Index.OperationSource.USER);
+            indexes.putEntry(queryableEntry, oldValue, Index.OperationSource.USER);
         }
     }
 
-
     protected void removeIndex(Record record) {
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.hasIndex()) {
+        if (indexes.haveAtLeastOneIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntryIndex(key, value, Index.OperationSource.USER);
+            indexes.removeEntry(key, value, Index.OperationSource.USER);
         }
     }
 
     protected void removeIndex(Collection<Record> records) {
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (!indexes.hasIndex()) {
+        if (!indexes.haveAtLeastOneIndex()) {
             return;
         }
 

@@ -84,8 +84,8 @@ public class IndexTest {
 
     static final short FACTORY_ID = 1;
 
-    final InternalSerializationService ss = new DefaultSerializationServiceBuilder()
-            .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+    final InternalSerializationService ss =
+            new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
     private PartitioningStrategy partitionStrategy = new DefaultPartitioningStrategy();
 
@@ -107,11 +107,11 @@ public class IndexTest {
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
-        is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+        is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         assertNotNull(is.getIndex("favoriteCity"));
         Record record = recordFactory.newRecord(value);
         ((AbstractRecord) record).setKey(key);
-        is.removeEntryIndex(key, Records.getValueOrCachedValue(record, ss), Index.OperationSource.USER);
+        is.removeEntry(key, Records.getValueOrCachedValue(record, ss), Index.OperationSource.USER);
         assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
     }
 
@@ -121,10 +121,10 @@ public class IndexTest {
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
-        is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+        is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
 
         Data newValue = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.KRAKOW));
-        is.saveEntryIndex(new QueryEntry(ss, key, newValue, newExtractor()), value, Index.OperationSource.USER);
+        is.putEntry(new QueryEntry(ss, key, newValue, newExtractor()), value, Index.OperationSource.USER);
 
         assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
         assertEquals(1, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.KRAKOW).size());
@@ -143,7 +143,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
         assertEquals(1000, dIndex.getRecords(-10.34d).size());
         assertEquals(1, strIndex.getRecords("joe23").size());
@@ -154,7 +154,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 11.34d, "joe"));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
 
         assertEquals(0, dIndex.getRecords(-10.34d).size());
@@ -168,23 +168,24 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, -1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
-        assertEquals(0, dIndex.getSubRecordsBetween(1d, 1001d).size());
-        assertEquals(1000, dIndex.getSubRecordsBetween(-1d, -1001d).size());
+        assertEquals(0, dIndex.getRecords(1d, true, 1001d, true).size());
+        assertEquals(1000, dIndex.getRecords(-1001d, true, -1d, true).size());
+        assertEquals(0, dIndex.getRecords(-1d, true, -1001d, true).size());
         clearIndexes(dIndex, boolIndex, strIndex);
 
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
-        assertEquals(1000, dIndex.getSubRecordsBetween(1d, 1001d).size());
-        assertEquals(0, dIndex.getSubRecordsBetween(-1d, -1001d).size());
-        assertEquals(400, dIndex.getSubRecords(ComparisonType.GREATER, 600d).size());
-        assertEquals(401, dIndex.getSubRecords(ComparisonType.GREATER_EQUAL, 600d).size());
-        assertEquals(9, dIndex.getSubRecords(ComparisonType.LESSER, 10d).size());
-        assertEquals(10, dIndex.getSubRecords(ComparisonType.LESSER_EQUAL, 10d).size());
+        assertEquals(1000, dIndex.getRecords(1d, true, 1001d, true).size());
+        assertEquals(0, dIndex.getRecords(-1d, true, -1001d, true).size());
+        assertEquals(400, dIndex.getRecords(Comparison.GREATER, 600d).size());
+        assertEquals(401, dIndex.getRecords(Comparison.GREATER_OR_EQUAL, 600d).size());
+        assertEquals(9, dIndex.getRecords(Comparison.LESS, 10d).size());
+        assertEquals(10, dIndex.getRecords(Comparison.LESS_OR_EQUAL, 10d).size());
         assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", 1d), new EqualPredicate("bool", "false"))).size());
         assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", 1), new EqualPredicate("bool", Boolean.FALSE))).size());
         assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", "1"), new EqualPredicate("bool", false))).size());
@@ -203,21 +204,21 @@ public class IndexTest {
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
-        is.saveEntryIndex(new QueryEntry(ss, key1, value, newExtractor()), null, Index.OperationSource.USER);
+        is.putEntry(new QueryEntry(ss, key1, value, newExtractor()), null, Index.OperationSource.USER);
 
         value = ss.toData(new MainPortable(false, 2, null));
         Data key2 = ss.toData(1);
-        is.saveEntryIndex(new QueryEntry(ss, key2, value, newExtractor()), null, Index.OperationSource.USER);
+        is.putEntry(new QueryEntry(ss, key2, value, newExtractor()), null, Index.OperationSource.USER);
 
 
         for (int i = 2; i < 1000; i++) {
             Data key = ss.toData(i);
             value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
 
         assertEquals(2, strIndex.getRecords((Comparable) null).size());
-        assertEquals(998, strIndex.getSubRecords(ComparisonType.NOT_EQUAL, null).size());
+        assertEquals(998, strIndex.getRecords(Comparison.NOT_EQUAL, null).size());
     }
 
     private class TestPortableFactory implements PortableFactory {
@@ -470,32 +471,33 @@ public class IndexTest {
     }
 
     private void testIt(boolean ordered) {
-        IndexImpl index = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, newExtractor(),
-                copyBehavior, PerIndexStats.EMPTY);
+        IndexImpl index =
+                new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), null, ordered, ss, newExtractor(), copyBehavior,
+                        PerIndexStats.EMPTY);
         assertEquals(0, index.getRecords(0L).size());
-        assertEquals(0, index.getSubRecordsBetween(0L, 1000L).size());
+        assertEquals(0, index.getRecords(0L, true, 1000L, true).size());
         QueryRecord record5 = newRecord(5L, 55L);
-        index.saveEntryIndex(record5, null, Index.OperationSource.USER);
+        index.putEntry(record5, null, Index.OperationSource.USER);
         assertEquals(Collections.<QueryableEntry>singleton(record5), index.getRecords(55L));
 
         QueryRecord record6 = newRecord(6L, 66L);
-        index.saveEntryIndex(record6, null, Index.OperationSource.USER);
+        index.putEntry(record6, null, Index.OperationSource.USER);
 
         assertEquals(Collections.<QueryableEntry>singleton(record6), index.getRecords(66L));
 
         QueryRecord newRecord5 = newRecord(5L, 555L);
-        index.saveEntryIndex(newRecord5, record5.getValue(), Index.OperationSource.USER);
+        index.putEntry(newRecord5, record5.getValue(), Index.OperationSource.USER);
         record5 = newRecord5;
 
         assertEquals(0, index.getRecords(55L).size());
         assertEquals(Collections.<QueryableEntry>singleton(record5), index.getRecords(555L));
 
         assertEquals(1, index.getRecords(555L).size());
-        assertEquals(2, index.getSubRecordsBetween(55L, 555L).size());
-        assertEquals(2, index.getSubRecordsBetween(66L, 555L).size());
-        assertEquals(1, index.getSubRecordsBetween(555L, 555L).size());
+        assertEquals(2, index.getRecords(55L, true, 555L, true).size());
+        assertEquals(2, index.getRecords(66L, true, 555L, true).size());
+        assertEquals(1, index.getRecords(555L, true, 555L, true).size());
         QueryRecord record50 = newRecord(50L, 555L);
-        index.saveEntryIndex(record50, null, Index.OperationSource.USER);
+        index.putEntry(record50, null, Index.OperationSource.USER);
         assertEquals(new HashSet<QueryableEntry>(asList(record5, record50)), index.getRecords(555L));
 
         Map<Data, QueryableEntry> records = getRecordMap(index, 555L);
@@ -504,24 +506,23 @@ public class IndexTest {
         assertEquals(record5, records.get(record5.getKeyData()));
         assertEquals(record50, records.get(record50.getKeyData()));
         assertEquals(2, index.getRecords(555L).size());
-        assertEquals(3, index.getSubRecordsBetween(55L, 555L).size());
-        assertEquals(3, index.getSubRecordsBetween(66L, 555L).size());
-        assertEquals(2, index.getSubRecordsBetween(555L, 555L).size());
-        assertEquals(0, index.getSubRecords(ComparisonType.LESSER, 66L).size());
-        assertEquals(1, index.getSubRecords(ComparisonType.LESSER_EQUAL, 66L).size());
-        assertEquals(1, index.getSubRecords(ComparisonType.LESSER_EQUAL, 67L).size());
-        assertEquals(2, index.getSubRecords(ComparisonType.GREATER, 66L).size());
-        assertEquals(3, index.getSubRecords(ComparisonType.GREATER_EQUAL, 66L).size());
-        assertEquals(3, index.getSubRecords(ComparisonType.GREATER_EQUAL, 61L).size());
-        assertEquals(3, index.getSubRecords(ComparisonType.NOT_EQUAL, 61L).size());
-        assertEquals(2, index.getSubRecords(ComparisonType.NOT_EQUAL, 66L).size());
-        assertEquals(1, index.getSubRecords(ComparisonType.NOT_EQUAL, 555L).size());
+        assertEquals(3, index.getRecords(55L, true, 555L, true).size());
+        assertEquals(3, index.getRecords(66L, true, 555L, true).size());
+        assertEquals(2, index.getRecords(555L, true, 555L, true).size());
+        assertEquals(0, index.getRecords(Comparison.LESS, 66L).size());
+        assertEquals(1, index.getRecords(Comparison.LESS_OR_EQUAL, 66L).size());
+        assertEquals(1, index.getRecords(Comparison.LESS_OR_EQUAL, 67L).size());
+        assertEquals(2, index.getRecords(Comparison.GREATER, 66L).size());
+        assertEquals(3, index.getRecords(Comparison.GREATER_OR_EQUAL, 66L).size());
+        assertEquals(3, index.getRecords(Comparison.GREATER_OR_EQUAL, 61L).size());
+        assertEquals(3, index.getRecords(Comparison.NOT_EQUAL, 61L).size());
+        assertEquals(2, index.getRecords(Comparison.NOT_EQUAL, 66L).size());
+        assertEquals(1, index.getRecords(Comparison.NOT_EQUAL, 555L).size());
         assertEquals(3, index.getRecords(new Comparable[]{66L, 555L, 34234L}).size());
         assertEquals(2, index.getRecords(new Comparable[]{555L, 34234L}).size());
 
         Record recordToRemove = record5.toRecord();
-        index.removeEntryIndex(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss),
-                Index.OperationSource.USER);
+        index.removeEntry(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
 
         assertEquals(Collections.<QueryableEntry>singleton(record50), index.getRecords(555L));
 
@@ -530,40 +531,38 @@ public class IndexTest {
         assertNull(records.get(5L));
         assertEquals(record50, records.get(toData(50L)));
         assertEquals(1, index.getRecords(555L).size());
-        assertEquals(2, index.getSubRecordsBetween(55L, 555L).size());
-        assertEquals(2, index.getSubRecordsBetween(66L, 555L).size());
-        assertEquals(1, index.getSubRecordsBetween(555L, 555L).size());
-        assertEquals(0, index.getSubRecords(ComparisonType.LESSER, 66L).size());
-        assertEquals(1, index.getSubRecords(ComparisonType.LESSER_EQUAL, 66L).size());
-        assertEquals(1, index.getSubRecords(ComparisonType.LESSER_EQUAL, 67L).size());
-        assertEquals(1, index.getSubRecords(ComparisonType.GREATER, 66L).size());
-        assertEquals(2, index.getSubRecords(ComparisonType.GREATER_EQUAL, 66L).size());
-        assertEquals(2, index.getSubRecords(ComparisonType.GREATER_EQUAL, 61L).size());
+        assertEquals(2, index.getRecords(55L, true, 555L, true).size());
+        assertEquals(2, index.getRecords(66L, true, 555L, true).size());
+        assertEquals(1, index.getRecords(555L, true, 555L, true).size());
+        assertEquals(0, index.getRecords(Comparison.LESS, 66L).size());
+        assertEquals(1, index.getRecords(Comparison.LESS_OR_EQUAL, 66L).size());
+        assertEquals(1, index.getRecords(Comparison.LESS_OR_EQUAL, 67L).size());
+        assertEquals(1, index.getRecords(Comparison.GREATER, 66L).size());
+        assertEquals(2, index.getRecords(Comparison.GREATER_OR_EQUAL, 66L).size());
+        assertEquals(2, index.getRecords(Comparison.GREATER_OR_EQUAL, 61L).size());
 
         recordToRemove = record50.toRecord();
-        index.removeEntryIndex(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss),
-                Index.OperationSource.USER);
+        index.removeEntry(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
 
         assertEquals(0, index.getRecords(555L).size());
 
         records = getRecordMap(index, 555L);
         assertNull(records);
         assertEquals(0, index.getRecords(555L).size());
-        assertEquals(1, index.getSubRecordsBetween(55L, 555L).size());
-        assertEquals(1, index.getSubRecordsBetween(66L, 555L).size());
-        assertEquals(0, index.getSubRecordsBetween(555L, 555L).size());
+        assertEquals(1, index.getRecords(55L, true, 555L, true).size());
+        assertEquals(1, index.getRecords(66L, true, 555L, true).size());
+        assertEquals(0, index.getRecords(555L, true, 555L, true).size());
 
         recordToRemove = record6.toRecord();
-        index.removeEntryIndex(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss),
-                Index.OperationSource.USER);
+        index.removeEntry(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss), Index.OperationSource.USER);
 
         assertEquals(0, index.getRecords(66L).size());
 
         assertNull(getRecordMap(index, 66L));
         assertEquals(0, index.getRecords(555L).size());
-        assertEquals(0, index.getSubRecordsBetween(55L, 555L).size());
-        assertEquals(0, index.getSubRecordsBetween(66L, 555L).size());
-        assertEquals(0, index.getSubRecordsBetween(555L, 555L).size());
+        assertEquals(0, index.getRecords(55L, true, 555L, true).size());
+        assertEquals(0, index.getRecords(66L, true, 555L, true).size());
+        assertEquals(0, index.getRecords(555L, true, 555L, true).size());
     }
 
     private Map<Data, QueryableEntry> getRecordMap(IndexImpl index, Comparable indexValue) {

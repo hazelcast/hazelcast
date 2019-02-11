@@ -26,6 +26,9 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.query.impl.SkipIndexPredicate;
+import com.hazelcast.query.impl.predicates.BoundedRangePredicate;
+import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
+import com.hazelcast.query.impl.predicates.CompositeRangePredicate;
 import com.hazelcast.spi.AbstractLocalOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -340,6 +343,16 @@ public class DataSerializableConventionsTest {
         whiteList.add(PermissionCollection.class);
         whiteList.add(WanMapEntryView.class);
         whiteList.add(SkipIndexPredicate.class);
+        whiteList.add(BoundedRangePredicate.class);
+        whiteList.add(CompositeRangePredicate.class);
+        whiteList.add(CompositeEqualPredicate.class);
+        try {
+            // these can't be accessed through the meta class since they are private
+            whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.CompositeIndexVisitor$Output"));
+            whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.RangeVisitor$Ranges"));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         return whiteList;
     }
 }

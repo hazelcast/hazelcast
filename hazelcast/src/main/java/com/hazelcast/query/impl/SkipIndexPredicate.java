@@ -16,19 +16,20 @@
 
 package com.hazelcast.query.impl;
 
-
 import com.hazelcast.query.Predicate;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Map;
 
 /**
  * The {@link SkipIndexPredicate} is a predicate that prevents
  * an index from being used on the wrapped predicate.
- *
+ * <p>
  * It isn't exposed as user API; it will only be created when
  * making use of index suppression option in the
  * {@link com.hazelcast.query.SqlPredicate}
- *
+ * <p>
  * SkipIndexPredicate also isn't send over the wire; so we don't
  * need to worry about backward compatibility in future releases.
  */
@@ -44,6 +45,7 @@ public class SkipIndexPredicate implements Predicate {
         return target;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean apply(Map.Entry mapEntry) {
         return target.apply(mapEntry);
@@ -53,4 +55,9 @@ public class SkipIndexPredicate implements Predicate {
     public String toString() {
         return "SkipIndex(" + target + ')';
     }
+
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        throw new UnsupportedOperationException("can't be serialized");
+    }
+
 }

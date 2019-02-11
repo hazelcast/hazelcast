@@ -439,7 +439,7 @@ public class MapContainer {
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
-        return getIndexes(partitionId).hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+        return getIndexes(partitionId).haveAtLeastOneIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 
     public ObjectNamespace getObjectNamespace() {
@@ -450,12 +450,12 @@ public class MapContainer {
         Map<String, Boolean> definitions = new HashMap<String, Boolean>();
         if (isGlobalIndexEnabled()) {
             for (Index index : globalIndexes.getIndexes()) {
-                definitions.put(index.getAttributeName(), index.isOrdered());
+                definitions.put(index.getName(), index.isOrdered());
             }
         } else {
             for (PartitionContainer container : mapServiceContext.getPartitionContainers()) {
                 for (Index index : container.getIndexes(name).getIndexes()) {
-                    definitions.put(index.getAttributeName(), index.isOrdered());
+                    definitions.put(index.getName(), index.isOrdered());
                 }
             }
         }

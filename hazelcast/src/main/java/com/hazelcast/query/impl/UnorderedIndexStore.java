@@ -25,20 +25,21 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
+
 /**
  * Store indexes out of turn.
  */
-public class UnsortedIndexStore extends BaseIndexStore {
+public class UnorderedIndexStore extends BaseIndexStore {
 
-    private volatile Map<Data, QueryableEntry> recordsWithNullValue;
-
-    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap
-            = new ConcurrentHashMap<Comparable, Map<Data, QueryableEntry>>(1000);
-
+    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap =
+            new ConcurrentHashMap<Comparable, Map<Data, QueryableEntry>>(1000);
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
 
-    public UnsortedIndexStore(IndexCopyBehavior copyOn) {
+    private volatile Map<Data, QueryableEntry> recordsWithNullValue;
+
+    public UnorderedIndexStore(IndexCopyBehavior copyOn) {
         super(copyOn);
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
@@ -52,13 +53,13 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    Object newIndexInternal(Comparable newValue, QueryableEntry record) {
-        return addFunctor.invoke(newValue, record);
+    Object insertInternal(Comparable value, QueryableEntry record) {
+        return addFunctor.invoke(value, record);
     }
 
     @Override
-    Object removeIndexInternal(Comparable oldValue, Data recordKey) {
-        return removeFunctor.invoke(oldValue, recordKey);
+    Object removeInternal(Comparable value, Data recordKey) {
+        return removeFunctor.invoke(value, recordKey);
     }
 
     @Override
@@ -73,86 +74,10 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            Comparable paramFrom = from;
-            Comparable paramTo = to;
-            int trend = paramFrom.compareTo(paramTo);
-            if (trend == 0) {
-                Map<Data, QueryableEntry> records = recordMap.get(paramFrom);
-                if (records != null) {
-                    copyToMultiResultSet(results, records);
-                }
-                return results;
-            }
-            if (trend < 0) {
-                Comparable oldFrom = paramFrom;
-                paramFrom = to;
-                paramTo = oldFrom;
-            }
-            for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
-                Comparable value = recordMapEntry.getKey();
-                if (value.compareTo(paramFrom) <= 0 && value.compareTo(paramTo) >= 0) {
-                    Map<Data, QueryableEntry> records = recordMapEntry.getValue();
-                    if (records != null) {
-                        copyToMultiResultSet(results, records);
-                    }
-                }
-            }
-            return results;
-        } finally {
-            releaseReadLock();
-        }
-    }
-
-    @Override
-    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
-                Comparable value = recordMapEntry.getKey();
-                boolean valid;
-                int result = searchedValue.compareTo(value);
-                switch (comparisonType) {
-                    case LESSER:
-                        valid = result > 0;
-                        break;
-                    case LESSER_EQUAL:
-                        valid = result >= 0;
-                        break;
-                    case GREATER:
-                        valid = result < 0;
-                        break;
-                    case GREATER_EQUAL:
-                        valid = result <= 0;
-                        break;
-                    case NOT_EQUAL:
-                        valid = result != 0;
-                        break;
-                    default:
-                        throw new IllegalStateException("Unrecognized comparisonType: " + comparisonType);
-                }
-                if (valid) {
-                    Map<Data, QueryableEntry> records = recordMapEntry.getValue();
-                    if (records != null) {
-                        copyToMultiResultSet(results, records);
-                    }
-                }
-            }
-            return results;
-        } finally {
-            releaseReadLock();
-        }
-    }
-
-    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
-            if (value instanceof IndexImpl.NullObject) {
+            if (value == NULL) {
                 return toSingleResultSet(recordsWithNullValue);
             } else {
                 return toSingleResultSet(recordMap.get(value));
@@ -169,13 +94,90 @@ public class UnsortedIndexStore extends BaseIndexStore {
             MultiResultSet results = createMultiResultSet();
             for (Comparable value : values) {
                 Map<Data, QueryableEntry> records;
-                if (value instanceof IndexImpl.NullObject) {
+                if (value == NULL) {
                     records = recordsWithNullValue;
                 } else {
                     records = recordMap.get(value);
                 }
                 if (records != null) {
                     copyToMultiResultSet(results, records);
+                }
+            }
+            return results;
+        } finally {
+            releaseReadLock();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
+        takeReadLock();
+        try {
+            MultiResultSet results = createMultiResultSet();
+            for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
+                Comparable indexedValue = recordMapEntry.getKey();
+                boolean valid;
+                int result = value.compareTo(indexedValue);
+                switch (comparison) {
+                    case LESS:
+                        valid = result > 0;
+                        break;
+                    case LESS_OR_EQUAL:
+                        valid = result >= 0;
+                        break;
+                    case GREATER:
+                        valid = result < 0;
+                        break;
+                    case GREATER_OR_EQUAL:
+                        valid = result <= 0;
+                        break;
+                    case NOT_EQUAL:
+                        valid = result != 0;
+                        break;
+                    default:
+                        throw new IllegalStateException("Unrecognized comparison: " + comparison);
+                }
+                if (valid) {
+                    Map<Data, QueryableEntry> records = recordMapEntry.getValue();
+                    if (records != null) {
+                        copyToMultiResultSet(results, records);
+                    }
+                }
+            }
+            return results;
+        } finally {
+            releaseReadLock();
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "checkstyle:npathcomplexity"})
+    @Override
+    public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
+        takeReadLock();
+        try {
+            MultiResultSet results = createMultiResultSet();
+            if (from.compareTo(to) == 0) {
+                if (!fromInclusive || !toInclusive) {
+                    return results;
+                }
+
+                Map<Data, QueryableEntry> records = recordMap.get(from);
+                if (records != null) {
+                    copyToMultiResultSet(results, records);
+                }
+                return results;
+            }
+
+            int fromBound = fromInclusive ? 0 : +1;
+            int toBound = toInclusive ? 0 : -1;
+            for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
+                Comparable value = recordMapEntry.getKey();
+                if (value.compareTo(from) >= fromBound && value.compareTo(to) <= toBound) {
+                    Map<Data, QueryableEntry> records = recordMapEntry.getValue();
+                    if (records != null) {
+                        copyToMultiResultSet(results, records);
+                    }
                 }
             }
             return results;
@@ -191,19 +193,21 @@ public class UnsortedIndexStore extends BaseIndexStore {
      * @see IndexCopyBehavior
      */
     private class AddFunctor implements IndexFunctor<Comparable, QueryableEntry> {
+
         @Override
-        public Object invoke(Comparable attribute, QueryableEntry entry) {
-            if (attribute instanceof IndexImpl.NullObject) {
+        public Object invoke(Comparable value, QueryableEntry entry) {
+            if (value == NULL) {
                 return recordsWithNullValue.put(entry.getKeyData(), entry);
             } else {
-                Map<Data, QueryableEntry> records = recordMap.get(attribute);
+                Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records == null) {
                     records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
-                    recordMap.put(attribute, records);
+                    recordMap.put(value, records);
                 }
                 return records.put(entry.getKeyData(), entry);
             }
         }
+
     }
 
     /**
@@ -213,15 +217,16 @@ public class UnsortedIndexStore extends BaseIndexStore {
      * @see IndexCopyBehavior
      */
     private class CopyOnWriteAddFunctor implements IndexFunctor<Comparable, QueryableEntry> {
+
         @Override
-        public Object invoke(Comparable attribute, QueryableEntry entry) {
+        public Object invoke(Comparable value, QueryableEntry entry) {
             Object oldValue;
-            if (attribute instanceof IndexImpl.NullObject) {
+            if (value == NULL) {
                 HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
                 oldValue = copy.put(entry.getKeyData(), entry);
                 recordsWithNullValue = copy;
             } else {
-                Map<Data, QueryableEntry> records = recordMap.get(attribute);
+                Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records == null) {
                     records = new HashMap<Data, QueryableEntry>();
                 }
@@ -229,11 +234,12 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 records = new HashMap<Data, QueryableEntry>(records);
                 oldValue = records.put(entry.getKeyData(), entry);
 
-                recordMap.put(attribute, records);
+                recordMap.put(value, records);
             }
 
             return oldValue;
         }
+
     }
 
     /**
@@ -243,17 +249,18 @@ public class UnsortedIndexStore extends BaseIndexStore {
      * @see IndexCopyBehavior
      */
     private class RemoveFunctor implements IndexFunctor<Comparable, Data> {
+
         @Override
-        public Object invoke(Comparable attribute, Data indexKey) {
+        public Object invoke(Comparable value, Data indexKey) {
             Object oldValue;
-            if (attribute instanceof IndexImpl.NullObject) {
+            if (value == NULL) {
                 oldValue = recordsWithNullValue.remove(indexKey);
             } else {
-                Map<Data, QueryableEntry> records = recordMap.get(attribute);
+                Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records != null) {
                     oldValue = records.remove(indexKey);
                     if (records.size() == 0) {
-                        recordMap.remove(attribute);
+                        recordMap.remove(value);
                     }
                 } else {
                     oldValue = null;
@@ -262,6 +269,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
 
             return oldValue;
         }
+
     }
 
     /**
@@ -271,23 +279,24 @@ public class UnsortedIndexStore extends BaseIndexStore {
      * @see IndexCopyBehavior
      */
     private class CopyOnWriteRemoveFunctor implements IndexFunctor<Comparable, Data> {
+
         @Override
-        public Object invoke(Comparable attribute, Data indexKey) {
+        public Object invoke(Comparable value, Data indexKey) {
             Object oldValue;
-            if (attribute instanceof IndexImpl.NullObject) {
+            if (value == NULL) {
                 HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
                 oldValue = copy.remove(indexKey);
                 recordsWithNullValue = copy;
             } else {
-                Map<Data, QueryableEntry> records = recordMap.get(attribute);
+                Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records != null) {
                     records = new HashMap<Data, QueryableEntry>(records);
                     oldValue = records.remove(indexKey);
 
                     if (records.isEmpty()) {
-                        recordMap.remove(attribute);
+                        recordMap.remove(value);
                     } else {
-                        recordMap.put(attribute, records);
+                        recordMap.put(value, records);
                     }
                 } else {
                     oldValue = null;
@@ -296,12 +305,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
 
             return oldValue;
         }
+
     }
 
-    @Override
-    public String toString() {
-        return "UnsortedIndexStore{"
-                + "recordMap=" + recordMap.size()
-                + '}';
-    }
 }

@@ -15,28 +15,21 @@
  */
 
 package com.hazelcast.query.impl;
+
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 /**
- * Type of Comparison
+ * Defines a contract of objects that are simultaneously {@link Comparable} and
+ * {@link IdentifiedDataSerializable}.
+ * <p>
+ * This contract basically allows to avoid a leakage of the internal
+ * implementation details to the outside world if a class is required to be
+ * {@link Comparable} by some of its consumers and {@link
+ * IdentifiedDataSerializable} by the others.
+ * <p>
+ * See {@link AbstractIndex#NULL} and {@link CompositeValue#NEGATIVE_INFINITY}
+ * for examples.
  */
-public enum ComparisonType {
-    /**
-     * Not equal
-     */
-    NOT_EQUAL,
-    /**
-     * Lesser
-     */
-    LESSER,
-    /**
-     * Greater
-     */
-    GREATER,
-    /**
-     * Lesser Equal
-     */
-    LESSER_EQUAL,
-    /**
-     * Grater Equal
-     */
-    GREATER_EQUAL
+public interface ComparableIdentifiedDataSerializable extends Comparable, IdentifiedDataSerializable {
+
 }

@@ -45,14 +45,14 @@ public class IndexImplTest {
     public void setUp() {
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
         Extractors mockExtractors = Extractors.newBuilder(mockSerializationService).build();
-        index = new IndexImpl(ATTRIBUTE_NAME, false, mockSerializationService, mockExtractors, IndexCopyBehavior.COPY_ON_READ,
-                PerIndexStats.EMPTY);
+        index = new IndexImpl(ATTRIBUTE_NAME, null, false, mockSerializationService, mockExtractors,
+                IndexCopyBehavior.COPY_ON_READ, PerIndexStats.EMPTY);
     }
 
     @Test
     public void saveEntryIndex_doNotDeserializeKey() {
         QueryableEntry entry = createMockQueryableEntry();
-        index.saveEntryIndex(entry, null, Index.OperationSource.USER);
+        index.putEntry(entry, null, Index.OperationSource.USER);
         verify(entry, never()).getKey();
     }
 

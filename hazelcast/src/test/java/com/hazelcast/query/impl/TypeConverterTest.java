@@ -33,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -57,7 +58,7 @@ public class TypeConverterTest {
                 return value;
             }
         };
-        assertEquals(IndexImpl.NULL, converter.convert(null));
+        assertEquals(NULL, converter.convert(null));
     }
 
     @Test

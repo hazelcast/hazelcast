@@ -24,6 +24,8 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
+
 public final class TypeConverters {
 
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
@@ -54,7 +56,7 @@ public final class TypeConverters {
 
         public final Comparable convert(Comparable value) {
             if (value == null) {
-                return IndexImpl.NULL;
+                return NULL;
             }
             return convertInternal(value);
         }

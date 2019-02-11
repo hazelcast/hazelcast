@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -29,11 +28,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
+
 /**
  * Equal Predicate
  */
 @BinaryInterface
-public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
+public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate, RangePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -53,13 +54,13 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
         return index.getRecords(value);
     }
 
     protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
         if (attributeValue == null) {
-            return value == null || value == IndexImpl.NULL;
+            return isNull(value);
         }
         value = convert(attributeValue, value);
         attributeValue = (Comparable) convertEnumValue(attributeValue);
@@ -76,21 +77,6 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         value = in.readObject();
-    }
-
-    @Override
-    public String toString() {
-        return attributeName + "=" + value;
-    }
-
-    @Override
-    public Predicate negate() {
-        return new NotEqualPredicate(attributeName, value);
-    }
-
-    @Override
-    public int getId() {
-        return PredicateDataSerializerHook.EQUAL_PREDICATE;
     }
 
     @Override
@@ -124,4 +110,45 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
         result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return attributeName + "=" + value;
+    }
+
+    @Override
+    public Predicate negate() {
+        return new NotEqualPredicate(attributeName, value);
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.EQUAL_PREDICATE;
+    }
+
+    @Override
+    public String getAttribute() {
+        return attributeName;
+    }
+
+    @Override
+    public Comparable getFrom() {
+        return value;
+    }
+
+    @Override
+    public boolean isFromInclusive() {
+        return true;
+    }
+
+    @Override
+    public Comparable getTo() {
+        return value;
+    }
+
+    @Override
+    public boolean isToInclusive() {
+        return true;
+    }
+
 }

@@ -63,11 +63,11 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     protected abstract Object getTargetObject(boolean key);
 
     TypeConverter getConverter(String attributeName) {
-        Object attribute = getAttributeValue(attributeName);
-        if (attribute == null) {
+        Object attributeValue = getAttributeValue(attributeName);
+        if (attributeValue == null) {
             return NULL_CONVERTER;
         } else {
-            AttributeType attributeType = extractAttributeType(attribute);
+            AttributeType attributeType = extractAttributeType(attributeValue);
             return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
         }
     }

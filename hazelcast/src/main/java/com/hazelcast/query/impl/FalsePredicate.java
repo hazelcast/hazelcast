@@ -44,7 +44,7 @@ public class FalsePredicate<K, V> implements IdentifiedDataSerializable, Predica
 
     private static final long serialVersionUID = 1L;
 
-     @Override
+    @Override
     public boolean apply(Map.Entry<K, V> mapEntry) {
         return false;
     }
@@ -84,10 +84,7 @@ public class FalsePredicate<K, V> implements IdentifiedDataSerializable, Predica
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof FalsePredicate)) {
-            return false;
-        }
-        return true;
+        return o instanceof FalsePredicate;
     }
 
     @Override

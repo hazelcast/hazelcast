@@ -196,7 +196,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            if (!indexes.hasIndex() || indexes.isGlobal()) {
+            if (!indexes.haveAtLeastOneIndex() || indexes.isGlobal()) {
                 // no indexes to work with
                 continue;
             }
@@ -261,7 +261,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            if (!indexes.hasIndex()) {
+            if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;
             }
@@ -282,7 +282,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-                    indexes.saveEntryIndex(queryEntry, null, Index.OperationSource.SYSTEM);
+                    indexes.putEntry(queryEntry, null, Index.OperationSource.SYSTEM);
                 }
             }
             Indexes.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
@@ -305,7 +305,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
-            if (!indexes.hasIndex()) {
+            if (!indexes.haveAtLeastOneIndex()) {
                 // no indexes to work with
                 continue;
             }
@@ -317,7 +317,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 final Data key = record.getKey();
 
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
-                indexes.removeEntryIndex(key, value, Index.OperationSource.SYSTEM);
+                indexes.removeEntry(key, value, Index.OperationSource.SYSTEM);
             }
             Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
         }

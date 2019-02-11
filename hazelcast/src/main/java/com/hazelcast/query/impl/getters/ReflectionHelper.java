@@ -18,7 +18,6 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
@@ -32,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
 import static com.hazelcast.query.impl.getters.NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
 import static com.hazelcast.query.impl.getters.SuffixModifierUtils.getModifierSuffix;
@@ -90,7 +90,7 @@ public final class ReflectionHelper {
     }
 
     public static Getter createGetter(Object obj, String attribute) {
-        if (obj == null || obj == IndexImpl.NULL) {
+        if (obj == null || obj == NULL) {
             return NULL_GETTER;
         }
 

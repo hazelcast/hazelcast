@@ -72,7 +72,7 @@ public class InPredicate extends AbstractIndexAwarePredicate {
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
         if (index != null) {
             return index.getRecords(values);
         } else {
@@ -150,4 +150,5 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         result = 31 * result + (Arrays.hashCode(values));
         return result;
     }
+
 }
