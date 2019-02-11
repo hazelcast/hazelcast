@@ -45,4 +45,9 @@ public class MemberMinimalPartitionService implements MinimalPartitionService {
     public int getPartitionCount() {
         return partitionService.getPartitionCount();
     }
+
+    @Override
+    public boolean isPartitionOwner(int partitionId) {
+        return partitionService.isPartitionOwner(partitionId);
+    }
 }

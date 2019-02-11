@@ -145,10 +145,15 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
     }
 
     protected boolean containsKeyInternal(Object key) {
+        ClientInvocationFuture future = invokeContainsKey(key);
+        ClientMessage result = future.join();
+        return CacheContainsKeyCodec.decodeResponse(result).response;
+    }
+
+    protected ClientInvocationFuture invokeContainsKey(Object key) {
         Data keyData = toData(key);
         ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
-        ClientMessage result = invoke(request, keyData);
-        return CacheContainsKeyCodec.decodeResponse(result).response;
+        return invokeAsync(request, keyData);
     }
 
     @Override

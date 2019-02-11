@@ -1107,10 +1107,8 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
-                for (int i = 0; i < 1000; i++) {
-                    assertNull("Near Cache should be empty", nearCache.get(i));
-                }
+                NearCache<Integer, Integer> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
+                assertEquals(0, nearCache.size());
             }
         });
     }
@@ -1119,13 +1117,15 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     public void receives_one_clearEvent_after_mapLoadAll_call_from_member() {
         // configure map-store
         Config config = newConfig();
+        SimpleMapStore simpleMapStore = new SimpleMapStore();
         config.getMapConfig("default").getMapStoreConfig()
                 .setEnabled(true)
-                .setImplementation(new SimpleMapStore());
+                .setImplementation(simpleMapStore);
 
         // populate Near Cache
         final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig(), 2);
         populateMap(clientMap, 1000);
+        assert simpleMapStore.store.size() == 1000;
         populateNearCache(clientMap, 1000);
 
         // create a new client to send events
@@ -1136,10 +1136,8 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
-                for (int i = 0; i < 1000; i++) {
-                    assertNull("Near Cache should be empty", nearCache.get(i));
-                }
+                NearCache<Integer, Integer> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
+                assertEquals(0, nearCache.size());
             }
         });
     }

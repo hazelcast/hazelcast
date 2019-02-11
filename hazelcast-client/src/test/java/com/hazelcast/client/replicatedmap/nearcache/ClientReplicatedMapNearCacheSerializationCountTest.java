@@ -93,16 +93,33 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {GET, newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null, null},
-                {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY, true},
+                {GET,
+                        newInt(1, 1, 1), //keySerializationCounts
+                        newInt(0, 0, 0), //keyDeserializationCounts
+                        newInt(1, 1, 0), //valueSerializationCounts
+                        newInt(0, 1, 1), //valueDeserializationCounts
+                        BINARY, BINARY, true},
                 {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY, false},
-                {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, true},
+                {GET,
+                        newInt(1, 1, 1),
+                        newInt(0, 0, 0),
+                        newInt(1, 0, 0),
+                        newInt(0, 1, 0), BINARY, OBJECT, true},
                 {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, false},
 
                 // FIXME: we should not serialize the value twice
                 {GET, newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null, null},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 2, 0), newInt(1, 1, 1), OBJECT, BINARY, true},
+                {GET,
+                        newInt(1, 1, 1),
+                        newInt(1, 1, 0),
+                        newInt(1, 2, 0),
+                        newInt(1, 1, 1), OBJECT, BINARY, true},
                 {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 2, 0), newInt(1, 1, 1), OBJECT, BINARY, false},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, true},
+                {GET,
+                        newInt(1, 1, 1),
+                        newInt(1, 1, 0),
+                        newInt(1, 1, 0),
+                        newInt(1, 1, 0), OBJECT, OBJECT, true},
                 {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, false},
         });
     }

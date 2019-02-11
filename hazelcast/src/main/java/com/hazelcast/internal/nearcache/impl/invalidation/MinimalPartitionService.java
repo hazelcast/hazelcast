@@ -45,4 +45,6 @@ public interface MinimalPartitionService {
      * @return the number of partitions
      */
     int getPartitionCount();
+
+    boolean isPartitionOwner(int partitionId);
 }

@@ -24,17 +24,17 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
-    private List<Data> keys = new ArrayList<Data>();
+    private Collection<Data> keys = new ArrayList<Data>();
 
     public MapGetAllOperationFactory() {
     }
 
-    public MapGetAllOperationFactory(String name, List<Data> keys) {
+    public MapGetAllOperationFactory(String name, Collection<Data> keys) {
         this.name = name;
         this.keys = keys;
     }

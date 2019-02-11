@@ -748,6 +748,32 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             }
         }
 
+        public V apply(K key, int hash, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            lock();
+            try {
+                V oldValue = get(key, hash);
+                V newValue = remappingFunction.apply(key, oldValue);
+
+                if (oldValue != null) {
+                    if (newValue != null) {
+                        putInternal(key, hash, newValue, null, false);
+                        return newValue;
+                    } else {
+                        removeInternal(key, hash, oldValue, false);
+                        return null;
+                    }
+                } else {
+                    if (newValue != null) {
+                        putInternal(key, hash, newValue, null, false);
+                        return newValue;
+                    } else {
+                        return null;
+                    }
+                }
+            } finally {
+                unlock();
+            }
+        }
 
         V merge(K key, V value, int hash, IBiFunction<? super V, ? super V, ? extends V> remappingFunction) {
             lock();
@@ -1445,6 +1471,35 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
 
         return segmentFor(hash).applyIfPresent(key, hash, remappingFunction);
+    }
+
+
+    /**
+     * <pre>
+     *     {@code
+     *       V oldValue = map.get(key);
+     *       V newValue = remappingFunction.apply(key, oldValue);
+     *       if (oldValue != null ) {
+     *          if (newValue != null)
+     *             map.put(key, newValue);
+     *          else
+     *             map.remove(key);
+     *       } else {
+     *          if (newValue != null)
+     *             map.put(key, newValue);
+     *          else
+     *             return null;
+     *       }
+     *      }
+     * </pre>
+     */
+    @Override
+    public V apply(K key, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key);
+        checkNotNull(remappingFunction);
+
+        int hash = hashOf(key);
+        return segmentFor(hash).apply(key, hash, remappingFunction);
     }
 
     /**

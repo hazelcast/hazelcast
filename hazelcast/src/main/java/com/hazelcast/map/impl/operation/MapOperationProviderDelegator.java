@@ -27,6 +27,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -233,7 +234,7 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
-    public OperationFactory createGetAllOperationFactory(String name, List<Data> keys) {
+    public OperationFactory createGetAllOperationFactory(String name, Collection<Data> keys) {
         return getDelegate().createGetAllOperationFactory(name, keys);
     }
 

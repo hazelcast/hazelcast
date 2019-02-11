@@ -26,6 +26,7 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
@@ -37,6 +38,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
+import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
@@ -48,6 +50,7 @@ import com.hazelcast.memory.DefaultMemoryStats;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -178,7 +181,44 @@ public class DefaultClientExtension implements ClientExtension {
         ClientExecutionService es = client.getClientExecutionService();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         HazelcastProperties properties = client.getProperties();
+        ClientMinimalPartitionService partitionService
+                = new ClientMinimalPartitionService(client.getClientPartitionService());
 
-        return new DefaultNearCacheManager(ss, es, classLoader, properties);
+        return new DefaultNearCacheManager(ss, partitionService, null,
+                es.getUserExecutor(),
+                es, classLoader, properties);
+    }
+
+    /**
+     * Client side implementation of {@link MinimalPartitionService}
+     */
+    // TODO: use one instance, this is duplicate.
+    private static class ClientMinimalPartitionService implements MinimalPartitionService {
+
+        private final ClientPartitionService partitionService;
+
+        public ClientMinimalPartitionService(ClientPartitionService partitionService) {
+            this.partitionService = partitionService;
+        }
+
+        @Override
+        public int getPartitionId(Data key) {
+            return partitionService.getPartitionId(key);
+        }
+
+        @Override
+        public int getPartitionId(Object key) {
+            return partitionService.getPartitionId(key);
+        }
+
+        @Override
+        public int getPartitionCount() {
+            return partitionService.getPartitionCount();
+        }
+
+        @Override
+        public boolean isPartitionOwner(int partitionId) {
+            return false;
+        }
     }
 }

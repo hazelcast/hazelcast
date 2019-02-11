@@ -20,7 +20,10 @@ import com.hazelcast.internal.nearcache.NearCacheRecord;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
+import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
  * Abstract implementation of {@link NearCacheRecord} with value and expiration time as internal state.
@@ -29,44 +32,50 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  */
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
-    // primitive long typed fields:
-    // "creationTime", "expirationTime" and "accessTime", "recordState", "sequence"
-    public static final int NUMBER_OF_LONG_FIELD_TYPES = 5;
-    // primitive int typed fields: "accessHit"
-    public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 1;
-
+    // "creationTime", "expirationTime" and "accessTime", "sequence"
+    public static final int NUMBER_OF_LONG_FIELD_TYPES = 4;
+    // "accessHit", "partitionId"
+    public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 2;
     private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> ACCESS_HIT =
-            AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "accessHit");
+            newUpdater(AbstractNearCacheRecord.class, "accessHit");
 
-    private static final AtomicLongFieldUpdater<AbstractNearCacheRecord> RECORD_STATE =
-            AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "recordState");
+    private static final AtomicReferenceFieldUpdater<AbstractNearCacheRecord, Object> STATE =
+            newUpdater(AbstractNearCacheRecord.class, Object.class, "state");
 
-    protected long creationTime = TIME_NOT_SET;
+    protected long creationTime;
 
     protected volatile int partitionId;
-    protected volatile long sequence;
-    protected volatile UUID uuid;
-
-    protected volatile V value;
-    protected volatile long expirationTime = TIME_NOT_SET;
-    protected volatile long accessTime = TIME_NOT_SET;
-    protected volatile long recordState = READ_PERMITTED;
     protected volatile int accessHit;
+    protected volatile long sequence;
+    protected volatile long expirationTime;
+    protected volatile long accessTime = TIME_NOT_SET;
+    protected volatile UUID uuid;
+    protected volatile Object state;
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
-        this.value = value;
+        this.state = value;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
     }
 
     @Override
-    public V getValue() {
-        return value;
+    public void setState(Object newState) {
+        state = newState;
     }
 
     @Override
-    public void setValue(V value) {
-        this.value = value;
+    public void casState(Object expect, Object update) {
+        STATE.compareAndSet(this, expect, update);
+    }
+
+    @Override
+    public Object getState() {
+        return state;
+    }
+
+    @Override
+    public V getValue() {
+        return ((V) state);
     }
 
     @Override
@@ -138,16 +147,6 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     }
 
     @Override
-    public long getRecordState() {
-        return recordState;
-    }
-
-    @Override
-    public boolean casRecordState(long expect, long update) {
-        return RECORD_STATE.compareAndSet(this, expect, update);
-    }
-
-    @Override
     public int getPartitionId() {
         return partitionId;
     }
@@ -174,7 +173,7 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public boolean hasSameUuid(UUID thatUuid) {
-        return uuid != null && thatUuid != null && uuid.equals(thatUuid);
+        return uuid != null && uuid.equals(thatUuid);
     }
 
     @Override
@@ -185,7 +184,6 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
                 + ", expirationTime=" + expirationTime
                 + ", accessTime=" + accessTime
                 + ", accessHit=" + accessHit
-                + ", recordState=" + recordState
-                + ", value=" + value;
+                + ", value=" + state;
     }
 }

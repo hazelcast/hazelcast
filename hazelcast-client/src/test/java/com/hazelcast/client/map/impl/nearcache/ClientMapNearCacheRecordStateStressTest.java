@@ -23,10 +23,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.util.function.Supplier;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,8 +42,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
-import static com.hazelcast.map.impl.nearcache.MapNearCacheRecordStateStressTest.assertNearCacheRecordStates;
 import static com.hazelcast.util.RandomPicker.getInt;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
@@ -142,8 +145,13 @@ public class ClientMapNearCacheRecordStateStressTest extends HazelcastTestSuppor
     private static void assertFinalRecordStateIsReadPermitted(IMap clientMap) {
         NearCachedClientMapProxy proxy = (NearCachedClientMapProxy) clientMap;
         DefaultNearCache nearCache = (DefaultNearCache) proxy.getNearCache().unwrap(DefaultNearCache.class);
-
-        assertNearCacheRecordStates(nearCache, KEY_SPACE);
+        NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
+        for (int i = 0; i < KEY_SPACE; i++) {
+            NearCacheRecord record = nearCacheRecordStore.getRecord(i);
+            if (record != null) {
+                assertFalse(record.getState() instanceof Supplier);
+            }
+        }
     }
 
     private class Put extends Thread {

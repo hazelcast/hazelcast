@@ -16,11 +16,15 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.properties.HazelcastProperty;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * {@link NearCache} is the contract point to store keys and values in underlying
@@ -72,23 +76,21 @@ public interface NearCache<K, V> extends InitializingObject {
      */
     String getName();
 
-    /**
-     * Gets the value associated with the given {@code key}.
-     *
-     * @param key the key of the requested value
-     * @return the value associated with the given {@code key}
-     */
+    boolean containsKey(K key);
+
     V get(K key);
 
-    /**
-     * Puts (associates) a value with the given {@code key}.
-     *
-     * @param key       the key of the value will be stored
-     * @param keyData   the key as {@link Data} of the value will be stored
-     * @param value     the value will be stored
-     * @param valueData the value as {@link Data} of the value will be stored
-     */
-    void put(K key, Data keyData, V value, Data valueData);
+    V get(K key, Object param);
+
+    Object getCached(K key);
+
+    ICompletableFuture getAsync(K key);
+
+    ICompletableFuture getAsync(K key, Object param);
+
+    void getAll(Collection<K> ncKeys, Map result, long startTimeNanos);
+
+    void getAll(Collection<K> keys, Data param, Map result, final long startTimeNanos);
 
     /**
      * Removes the value associated with the given {@code key}
@@ -96,7 +98,7 @@ public interface NearCache<K, V> extends InitializingObject {
      *
      * @param key the key of the value will be invalidated
      */
-    void invalidate(K key);
+    void invalidate(Object key);
 
     /**
      * Removes all stored values.
@@ -163,30 +165,4 @@ public interface NearCache<K, V> extends InitializingObject {
      * @throws IllegalArgumentException if no implementation found for the supplied clazz type.
      */
     <T> T unwrap(Class<T> clazz);
-
-    /**
-     * Tries to reserve supplied key for update. <p> If one thread takes
-     * reservation, only that thread can update the key.
-     *
-     * @param key     key to be reserved for update
-     * @param keyData key to be reserved for update as {@link Data}
-     * @return reservation ID if reservation succeeds, else returns {@link
-     * NearCacheRecord#NOT_RESERVED}
-     */
-    long tryReserveForUpdate(K key, Data keyData);
-
-    /**
-     * Tries to update reserved key with supplied value. If update
-     * happens, value is published. Publishing means making the value
-     * readable to all threads. If update fails, record is not updated.
-     *
-     * @param key           reserved key for update
-     * @param value         value to be associated with reserved key
-     * @param reservationId ID for this reservation
-     * @param deserialize   eagerly deserialize
-     *                      returning value
-     * @return associated value if deserialize is {@code
-     * true} and update succeeds, otherwise returns null
-     */
-    V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
 }

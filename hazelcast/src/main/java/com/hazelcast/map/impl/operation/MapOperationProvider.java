@@ -27,6 +27,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -149,7 +150,7 @@ public interface MapOperationProvider {
 
     OperationFactory createLoadAllOperationFactory(String name, List<Data> keys, boolean replaceExistingValues);
 
-    OperationFactory createGetAllOperationFactory(String name, List<Data> keys);
+    OperationFactory createGetAllOperationFactory(String name, Collection<Data> keys);
 
     OperationFactory createMapSizeOperationFactory(String name);
 

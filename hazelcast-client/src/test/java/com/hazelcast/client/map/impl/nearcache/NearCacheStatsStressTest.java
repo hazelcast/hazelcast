@@ -25,7 +25,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -40,7 +39,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -113,11 +111,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         public void run() {
             while (!stop.get()) {
                 Object key = getInt(KEY_SPACE);
-                Data keyData = ss.toData(key);
-                long reservationId = nearCache.tryReserveForUpdate(key, keyData);
-                if (reservationId != NOT_RESERVED) {
-                    nearCache.tryPublishReserved(key, keyData, reservationId, false);
-                }
+                nearCache.get(key);
             }
         }
     }

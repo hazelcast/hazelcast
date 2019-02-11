@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyCodec;
@@ -38,15 +39,20 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.nearcache.impl.NearCacheDataFetcher;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
@@ -54,6 +60,7 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.IterationType;
 
@@ -66,10 +73,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
-import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.sort;
@@ -81,13 +84,20 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @param <K> key type
  * @param <V> value type
  */
-public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements ReplicatedMap<K, V> {
+public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements ReplicatedMap<K, V>, NearCacheDataFetcher<V> {
 
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    private static final ClientMessageDecoder GET_RESPONSE_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) ReplicatedMapGetCodec.decodeResponse(clientMessage).response;
+        }
+    };
 
     private int targetPartitionId;
 
+    private volatile boolean serializeKeys;
     private volatile NearCache<K, V> nearCache;
     private volatile String invalidationListenerId;
 
@@ -106,7 +116,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private void initNearCache() {
         NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
+            serializeKeys = nearCacheConfig.isSerializeKeys();
             nearCache = getContext().getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
+            ((DefaultNearCache) nearCache).setNearCacheDataFetcher(this);
             if (nearCacheConfig.isInvalidateOnChange()) {
                 registerInvalidationListener();
             }
@@ -126,21 +138,35 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
+    public V get(Object userKey) {
+        K key = validateKey(userKey);
+        Object value = nearCache != null
+                ? nearCache.get(key)
+                : getWithoutNearCaching(userKey, null, -1);
+        return toObject(value);
+    }
+
+    @Override
     public V put(K key, V value, long ttl, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        Object ncKey = toNearCacheKey(key);
 
         try {
+            Data keyData = toData(ncKey);
             Data valueData = toData(value);
-            Data keyData = toData(key);
             ClientMessage request = ReplicatedMapPutCodec.encodeRequest(name, keyData, valueData, timeUnit.toMillis(ttl));
             ClientMessage response = invoke(request, keyData);
             ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
 
             return toObject(result.response);
         } finally {
-            invalidate(key);
+            invalidate(ncKey);
         }
+    }
+
+    private Object toNearCacheKey(Object key) {
+        return serializeKeys ? toData(key) : key;
     }
 
     @Override
@@ -180,31 +206,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public V get(Object userKey) {
-        K key = validateKey(userKey);
-
-        V cachedValue = getCachedValue(key);
-        if (cachedValue != NOT_CACHED) {
-            return cachedValue;
-        }
-
-        try {
-            Data keyData = toData(key);
-            long reservationId = tryReserveForUpdate(key, keyData);
-            ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
-            ClientMessage response = invoke(request, keyData);
-
-            ReplicatedMapGetCodec.ResponseParameters result = ReplicatedMapGetCodec.decodeResponse(response);
-            V value = toObject(result.response);
-            tryPublishReserved(key, value, reservationId);
-            return value;
-        } catch (Throwable t) {
-            invalidate(key);
-            throw rethrow(t);
-        }
-    }
-
-    @Override
     public V put(K key, V value) {
         return put(key, value, 0, MILLISECONDS);
     }
@@ -212,22 +213,23 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public V remove(Object userKey) {
         K key = validateKey(userKey);
+        Object ncKey = toNearCacheKey(key);
 
         try {
-            Data keyData = toData(key);
+            Data keyData = toData(ncKey);
             ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(name, keyData);
             ClientMessage response = invoke(request, keyData);
             ReplicatedMapRemoveCodec.ResponseParameters result = ReplicatedMapRemoveCodec.decodeResponse(response);
             return toObject(result.response);
         } finally {
-            invalidate(key);
+            invalidate(ncKey);
         }
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
+        List<Entry<Data, Data>> dataEntries = new ArrayList<Entry<Data, Data>>(map.size());
         try {
-            List<Entry<Data, Data>> dataEntries = new ArrayList<Entry<Data, Data>>(map.size());
             for (Entry<? extends K, ? extends V> entry : map.entrySet()) {
                 Data keyData = toData(entry.getKey());
                 Data valueData = toData(entry.getValue());
@@ -239,8 +241,14 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             invoke(request);
         } finally {
             if (nearCache != null) {
-                for (K key : map.keySet()) {
-                    invalidate(key);
+                if (serializeKeys) {
+                    for (Entry<Data, Data> dataEntry : dataEntries) {
+                        invalidate(dataEntry.getKey());
+                    }
+                } else {
+                    for (K key : map.keySet()) {
+                        invalidate(key);
+                    }
                 }
             }
         }
@@ -447,6 +455,46 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return resultSet;
     }
 
+    @Override
+    public InternalCompletableFuture invokeGetOperation(Data keyData, Data param, boolean asyncGet, long startTimeNanos) {
+        ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
+        ClientInvocationFuture invocationFuture = invokeAsync(request, keyData);
+        return new ClientDelegatingFuture(invocationFuture, getSerializationService(), GET_RESPONSE_DECODER);
+    }
+
+    @Override
+    public V getWithoutNearCaching(Object key, Object param, long startTimeNanos) {
+        Data dataKey = toData(key);
+        ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, dataKey);
+        ClientMessage clientMessage = invokeAsync(request, dataKey).join();
+        return toObject(GET_RESPONSE_DECODER.decodeClientMessage(clientMessage));
+    }
+
+    @Override
+    public InternalCompletableFuture invokeGetAllOperation(Collection<Data> dataKeys, Data param, long startTimeNanos) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ICompletableFuture getAsyncWithoutNearCaching(Object key, Object param, long startTimeNanos) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> invokeContainsKeyOperation(Object key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isStatsEnabled() {
+        return false;
+    }
+
+    @Override
+    public void interceptAfterGet(String name, V val) {
+        // NOP
+    }
+
     private EventHandler<ClientMessage> createHandler(EntryListener<K, V> listener) {
         return new ReplicatedMapEventHandler(listener);
     }
@@ -505,39 +553,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return checkNotNull((K) key, NULL_KEY_IS_NOT_ALLOWED);
     }
 
-    @SuppressWarnings("unchecked")
-    private V getCachedValue(K key) {
-        if (nearCache == null) {
-            return (V) NOT_CACHED;
-        }
-
-        V value = nearCache.get(key);
-        if (value == null) {
-            return (V) NOT_CACHED;
-        }
-        if (value == CACHED_AS_NULL) {
-            return null;
-        }
-        return toObject(value);
-    }
-
-    private void tryPublishReserved(K key, V value, long reservationId) {
-        if (nearCache == null) {
-            return;
-        }
-        if (reservationId != NOT_RESERVED) {
-            nearCache.tryPublishReserved(key, value, reservationId, false);
-        }
-    }
-
-    private long tryReserveForUpdate(K key, Data keyData) {
-        if (nearCache == null) {
-            return NOT_RESERVED;
-        }
-        return nearCache.tryReserveForUpdate(key, keyData);
-    }
-
-    private void invalidate(K key) {
+    private void invalidate(Object key) {
         if (nearCache == null) {
             return;
         }

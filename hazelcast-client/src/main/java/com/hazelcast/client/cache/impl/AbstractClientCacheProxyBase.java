@@ -215,6 +215,11 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
         }
     }
 
+    protected ClientInvocationFuture invokeAsync(ClientMessage clientMessage) {
+        ClientInvocation invocation = new ClientInvocation(getClient(), clientMessage, getName());
+        return invocation.invoke();
+    }
+
     protected ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
         try {
             int partitionId = getContext().getPartitionService().getPartitionId(keyData);

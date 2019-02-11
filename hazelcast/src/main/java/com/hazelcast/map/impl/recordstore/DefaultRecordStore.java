@@ -547,8 +547,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public MapEntries getAll(Set<Data> keys, Address
-            callerAddress) {
+    public MapEntries getAll(Set<Data> keys, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 

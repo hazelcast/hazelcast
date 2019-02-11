@@ -413,6 +413,7 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
+            Thread.dumpStack();
             writer.writeBoolean("b", executeEqualsAndHashCode);
             KEY_SERIALIZE_COUNT.incrementAndGet();
             KEY_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key serialization (executeEqualsAndHashCode: "
@@ -448,6 +449,13 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 return super.hashCode();
             }
             return 1;
+        }
+
+        @Override
+        public String toString() {
+            return "KeySerializationCountingData{"
+                    + "hash=" + hashCode()
+                    + '}';
         }
     }
 

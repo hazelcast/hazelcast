@@ -23,7 +23,6 @@ import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchInvalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
-import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
@@ -42,6 +41,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
@@ -55,18 +55,18 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
 
     protected final int partitionCount;
     protected final NodeEngine nodeEngine;
-    protected final MapServiceContext mapServiceContext;
-    protected final MinimalPartitionService partitionService;
     protected final Invalidator invalidator;
     protected final RepairingTask repairingTask;
+    protected final MapServiceContext mapServiceContext;
 
     public MapNearCacheManager(MapServiceContext mapServiceContext) {
         super(mapServiceContext.getNodeEngine().getSerializationService(),
+                new MemberMinimalPartitionService(mapServiceContext.getNodeEngine().getPartitionService()),
+                null, mapServiceContext.getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR),
                 mapServiceContext.getNodeEngine().getExecutionService().getGlobalTaskScheduler(),
                 null, mapServiceContext.getNodeEngine().getProperties());
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.mapServiceContext = mapServiceContext;
-        this.partitionService = new MemberMinimalPartitionService(nodeEngine.getPartitionService());
         this.partitionCount = partitionService.getPartitionCount();
         this.invalidator = createInvalidator();
         this.repairingTask = createRepairingInvalidationTask();

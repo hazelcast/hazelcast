@@ -16,10 +16,13 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.util.concurrent.Executor;
 
 /**
  * Generic implementation of {@link InternalCompletableFuture}. Requires only
@@ -30,6 +33,10 @@ public class SimpleCompletableFuture<T> extends AbstractCompletableFuture<T>
 
     public SimpleCompletableFuture(NodeEngine nodeEngine) {
         super(nodeEngine, nodeEngine.getLogger(SimpleCompletableFuture.class));
+    }
+
+    public SimpleCompletableFuture(Executor defaultExecutor, ILogger logger) {
+        super(defaultExecutor, logger);
     }
 
     @Override

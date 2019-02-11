@@ -78,6 +78,7 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -91,11 +92,14 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MutableLong;
+import com.hazelcast.util.executor.CompletedFuture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -104,6 +108,7 @@ import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,6 +121,7 @@ import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCE
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
+import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -183,23 +189,24 @@ abstract class MapProxySupport<K, V>
     private static final HazelcastProperty MAP_PUT_ALL_INITIAL_SIZE_FACTOR
             = new HazelcastProperty("hazelcast.map.put.all.initial.size.factor", 0);
 
-    protected final String name;
-    protected final LocalMapStatsImpl localMapStats;
-    protected final LockProxySupport lockSupport;
-    protected final PartitioningStrategy partitionStrategy;
-    protected final MapServiceContext mapServiceContext;
-    protected final IPartitionService partitionService;
-    protected final Address thisAddress;
-    protected final OperationService operationService;
-    protected final SerializationService serializationService;
+    protected final int putAllBatchSize;
+    protected final float putAllInitialSizeFactor;
+    protected final boolean readBackupData;
     protected final boolean statisticsEnabled;
+    protected final String name;
+    protected final Address thisAddress;
     protected final MapConfig mapConfig;
+    protected final LockProxySupport lockSupport;
+    protected final LocalMapStatsImpl localMapStats;
+    protected final ExecutionService executionService;
+    protected final OperationService operationService;
+    protected final IPartitionService partitionService;
+    protected final MapServiceContext mapServiceContext;
+    protected final PartitioningStrategy partitionStrategy;
+    protected final SerializationService ss;
 
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
-
-    private final int putAllBatchSize;
-    private final float putAllInitialSizeFactor;
 
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(nodeEngine, service);
@@ -217,10 +224,11 @@ abstract class MapProxySupport<K, V>
                 LockServiceImpl.getMaxLeaseTimeInMillis(properties));
         this.operationProvider = mapServiceContext.getMapOperationProvider(mapConfig);
         this.operationService = nodeEngine.getOperationService();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.ss = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapConfig.isStatisticsEnabled();
-
+        this.readBackupData = mapConfig.isReadBackupData();
+        this.executionService = mapServiceContext.getNodeEngine().getExecutionService();
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
     }
@@ -341,17 +349,184 @@ abstract class MapProxySupport<K, V>
     }
 
     protected Object getInternal(Object key) {
+        long startTimeNanos = statisticsEnabled ? System.nanoTime() : -1;
+
         // TODO: action for read-backup true is not well tested
-        Data keyData = toDataWithStrategy(key);
-        if (mapConfig.isReadBackupData()) {
-            Object fromBackup = readBackupDataOrNull(keyData);
+        Data keyData = null;
+        if (readBackupData) {
+            keyData = toDataWithStrategy(key);
+            Object fromBackup = getFromBackup(keyData);
             if (fromBackup != null) {
                 return fromBackup;
             }
         }
+
+        return get0(key, keyData, startTimeNanos);
+    }
+
+    protected Map<K, V> getAllInternal(Set<K> keys) {
+        long startTimeNanos = statisticsEnabled ? System.nanoTime() : -1;
+
+        Map<K, V> result = createHashMap(keys.size());
+
+        if (readBackupData) {
+            for (K key : keys) {
+                Data keyData = toDataWithStrategy(key);
+                Object fromBackup = getFromBackup(keyData);
+                if (fromBackup != null) {
+                    result.put(key, (V) toObject(fromBackup));
+                }
+            }
+        }
+
+        getAll0(keys, result, startTimeNanos);
+        return result;
+    }
+
+    protected void populateResultMapWith(Map<Integer, Object> responses, Map<K, V> result) {
+        Collection<Object> values = responses.values();
+        if (CollectionUtil.isEmpty(values)) {
+            return;
+        }
+
+        for (Object response : values) {
+            MapEntries entries = toObject(response);
+            for (int i = 0; i < entries.size(); i++) {
+                Data dataKey = entries.getKey(i);
+                Object key = toObject(dataKey);
+                V value = toObject(entries.getValue(i));
+                result.put((K) key, value);
+            }
+        }
+    }
+
+    protected InternalCompletableFuture<Map<Integer, Object>> invokeGetAllOperation(Collection<Data> dataKeys,
+                                                                                    long startTimeNanos) {
+        Collection<Integer> partitions = getPartitionsForKeys(dataKeys);
+        try {
+            OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, dataKeys);
+            InternalCompletableFuture<Map<Integer, Object>> future = (InternalCompletableFuture<Map<Integer, Object>>)
+                    operationService.invokeOnPartitionsAsync(SERVICE_NAME, operationFactory, partitions);
+
+            if (statisticsEnabled) {
+                localMapStats.incrementGetLatencyNanos(dataKeys.size(), System.nanoTime() - startTimeNanos);
+            }
+            return future;
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    protected Object get0(Object key, Data keyData, long startTimeNanos) {
+        return (invokeGetOperation(toDataWithStrategy(key), false, startTimeNanos)).join();
+    }
+
+    protected ICompletableFuture getAsync0(Object key, Data keyData, final long startTimeNanos) {
+        return invokeGetOperation(toDataWithStrategy(key), true, startTimeNanos);
+    }
+
+    protected void getAll0(Collection<K> keys, Map<K, V> result, long startTimeNanos) {
+        Collection<Data> dataKeys = dataKeysToFetch(keys, result);
+        if (CollectionUtil.isEmpty(dataKeys)) {
+            return;
+        }
+        Map<Integer, Object> response = invokeGetAllOperation(dataKeys, startTimeNanos).join();
+        populateResultMapWith(response, result);
+    }
+
+    protected Object containsKey0(Object key) {
+        Object result = (invokeContainsKeyOperation(key)).join();
+        if (statisticsEnabled) {
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
+        }
+        return result;
+    }
+
+    @Nullable
+    protected Collection<Data> dataKeysToFetch(Collection<K> keys, Map<K, V> result) {
+        Collection<Data> dataKeys = null;
+
+        for (K key : keys) {
+            if (result.containsKey(key)) {
+                // we did already find matching value and stores in result map.
+                continue;
+            }
+            // check if key was ever serialized before.
+            Data dataKey = toDataWithStrategy(key);
+            if (dataKeys == null) {
+                dataKeys = new LinkedList<Data>();
+            }
+
+            dataKeys.add(dataKey);
+        }
+        return dataKeys;
+    }
+
+    @Nullable
+    private Object getFromBackup(Data keyData) {
+        Object fromBackup = readBackupDataOrNull(keyData);
+        if (fromBackup != null) {
+            return fromBackup;
+        }
+        return null;
+    }
+
+    @Nullable
+    private InternalCompletableFuture getFromBackupAsync(Data keyData) {
+        Object fromBackup = readBackupDataOrNull(keyData);
+        if (fromBackup != null) {
+            return new CompletedFuture<Data>(ss, fromBackup, executionService.getExecutor(ASYNC_EXECUTOR));
+        }
+        return null;
+    }
+
+    protected InternalCompletableFuture invokeGetOperation(Data keyData, boolean asyncGet, final long startTimeNanos) {
         MapOperation operation = operationProvider.createGetOperation(name, keyData);
         operation.setThreadId(getThreadId());
-        return invokeOperation(keyData, operation);
+
+        int partitionId = partitionService.getPartitionId(keyData);
+        operation.setThreadId(getThreadId());
+
+        InternalCompletableFuture future = operationService
+                .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                .setResultDeserialized(false)
+                .invoke();
+
+        if (statisticsEnabled) {
+            if (asyncGet) {
+                future.andThen(new ExecutionCallback() {
+                    @Override
+                    public void onResponse(Object response) {
+                        localMapStats.incrementGetLatencyNanos(System.nanoTime() - startTimeNanos);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+
+                    }
+                });
+            } else {
+                localMapStats.incrementGetLatencyNanos(System.nanoTime() - startTimeNanos);
+            }
+        }
+        return future;
+    }
+
+    protected InternalCompletableFuture<Data> getAsyncInternal(Object key) {
+        final long startTimeNanos = statisticsEnabled ? System.nanoTime() : -1;
+
+        Data keyData = null;
+
+        if (readBackupData) {
+            keyData = toDataWithStrategy(key);
+            InternalCompletableFuture future = getFromBackupAsync(keyData);
+            if (future != null) {
+                return future;
+            }
+        }
+
+        return ((InternalCompletableFuture) getAsync0(key, keyData, startTimeNanos));
     }
 
     private Data readBackupDataOrNull(Data key) {
@@ -366,28 +541,6 @@ abstract class MapProxySupport<K, V>
             return null;
         }
         return recordStore.readBackupData(key);
-    }
-
-    protected InternalCompletableFuture<Data> getAsyncInternal(Object key) {
-        Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(keyData);
-
-        MapOperation operation = operationProvider.createGetOperation(name, keyData);
-        try {
-            long startTimeNanos = System.nanoTime();
-            InternalCompletableFuture<Data> future = operationService
-                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setResultDeserialized(false)
-                    .invoke();
-
-            if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos));
-            }
-
-            return future;
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
     }
 
     protected Data putInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
@@ -424,29 +577,22 @@ abstract class MapProxySupport<K, V>
     }
 
     private Object invokeOperation(Data key, MapOperation operation) {
+        long startTimeNanos = statisticsEnabled ? System.nanoTime() : -1;
+
         int partitionId = partitionService.getPartitionId(key);
         operation.setThreadId(getThreadId());
-        try {
-            Object result;
-            if (statisticsEnabled) {
-                long startTimeNanos = System.nanoTime();
-                Future future = operationService
-                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false)
-                        .invoke();
-                result = future.get();
-                mapServiceContext.incrementOperationStats(startTimeNanos, localMapStats, name, operation);
-            } else {
-                Future future = operationService
-                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false)
-                        .invoke();
-                result = future.get();
-            }
-            return result;
-        } catch (Throwable t) {
-            throw rethrow(t);
+
+        InternalCompletableFuture future = operationService
+                .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                .setResultDeserialized(false)
+                .invoke();
+
+        Object result = future.join();
+
+        if (statisticsEnabled) {
+            mapServiceContext.incrementOperationStats(startTimeNanos, localMapStats, name, operation);
         }
+        return result;
     }
 
     protected InternalCompletableFuture<Data> putAsyncInternal(Object key, Data value, long ttl, TimeUnit ttlUnit,
@@ -630,7 +776,7 @@ abstract class MapProxySupport<K, V>
             throw new UnsupportedOperationException("Modifying TTL is available when cluster version is 3.11 or higher");
         }
         long ttlInMillis = timeUnit.toMillis(ttl);
-        Data keyData = serializationService.toData(key);
+        Data keyData = ss.toData(key);
         MapOperation operation = operationProvider.createSetTtlOperation(name, keyData, ttlInMillis);
         return (Boolean) invokeOperation(keyData, operation);
     }
@@ -642,7 +788,8 @@ abstract class MapProxySupport<K, V>
         operation.setThreadId(getThreadId());
         try {
             long startTimeNanos = System.nanoTime();
-            InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            InternalCompletableFuture<Data> future
+                    = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
                 future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos));
@@ -654,23 +801,20 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected boolean containsKeyInternal(Object key) {
+    protected InternalCompletableFuture<Boolean> invokeContainsKeyOperation(Object key) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
-        MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, keyData);
+        MapOperation containsKeyOperation
+                = operationProvider.createContainsKeyOperation(name, keyData);
         containsKeyOperation.setThreadId(getThreadId());
         containsKeyOperation.setServiceName(SERVICE_NAME);
-        try {
-            Future future = operationService.invokeOnPartition(SERVICE_NAME, containsKeyOperation, partitionId);
-            Object object = future.get();
-            if (statisticsEnabled) {
-                LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-                localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
-            }
-            return (Boolean) toObject(object);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return operationService.invokeOnPartition(SERVICE_NAME,
+                containsKeyOperation, partitionId);
+    }
+
+    protected boolean containsKeyInternal(Object key) {
+        Object result = containsKey0(key);
+        return (Boolean) toObject(result);
     }
 
     public void waitUntilLoaded() {
@@ -780,33 +924,6 @@ abstract class MapProxySupport<K, V>
             return true;
         } catch (Throwable t) {
             throw rethrow(t);
-        }
-    }
-
-    protected void getAllInternal(Set<K> keys, List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-        if (dataKeys.isEmpty()) {
-            toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
-        }
-        Collection<Integer> partitions = getPartitionsForKeys(dataKeys);
-        Map<Integer, Object> responses;
-        try {
-            OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, dataKeys);
-            long startTimeNanos = System.nanoTime();
-
-            responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
-            for (Object response : responses.values()) {
-                MapEntries entries = toObject(response);
-                for (int i = 0; i < entries.size(); i++) {
-                    resultingKeyValuePairs.add(entries.getKey(i));
-                    resultingKeyValuePairs.add(entries.getValue(i));
-                }
-            }
-            localMapStats.incrementGetLatencyNanos(dataKeys.size(), System.nanoTime() - startTimeNanos);
-        } catch (Exception e) {
-            throw rethrow(e);
         }
     }
 
@@ -1158,7 +1275,7 @@ abstract class MapProxySupport<K, V>
                     result = createHashMap(response.size());
                     for (Object object : response.values()) {
                         MapEntries mapEntries = (MapEntries) object;
-                        mapEntries.putAllToMap(serializationService, result);
+                        mapEntries.putAllToMap(ss, result);
                     }
                 } catch (Throwable e) {
                     resultFuture.setResult(e);
@@ -1231,15 +1348,15 @@ abstract class MapProxySupport<K, V>
     }
 
     protected <T> T toObject(Object object) {
-        return serializationService.toObject(object);
+        return ss.toObject(object);
     }
 
     protected Data toDataWithStrategy(Object object) {
-        return serializationService.toData(object, partitionStrategy);
+        return ss.toData(object, partitionStrategy);
     }
 
     protected Data toData(Object object, PartitioningStrategy partitioningStrategy) {
-        return serializationService.toData(object, partitioningStrategy);
+        return ss.toData(object, partitioningStrategy);
     }
 
     @Override

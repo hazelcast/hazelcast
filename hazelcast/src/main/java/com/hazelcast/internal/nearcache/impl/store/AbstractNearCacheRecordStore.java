@@ -20,37 +20,35 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.IFunction;
+import com.hazelcast.core.IBiFunction;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
+import com.hazelcast.internal.nearcache.FutureSupplier;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
+import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.function.Supplier;
 
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import javax.annotation.Nullable;
+import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
-import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.RESERVED;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.UPDATE_STARTED;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * Abstract implementation of {@link NearCacheRecordStore} and {@link EvictionListener}.
@@ -66,9 +64,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         NCRM extends SampleableNearCacheRecordMap<KS, R>>
         implements NearCacheRecordStore<K, V>, EvictionListener<KS, R> {
 
-    protected static final AtomicLongFieldUpdater<AbstractNearCacheRecordStore> RESERVATION_ID
-            = newUpdater(AbstractNearCacheRecordStore.class, "reservationId");
-
     /**
      * If Unsafe is available, Object array index scale (every index represents a reference)
      * can be assumed as reference size.
@@ -80,39 +75,60 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected static final long REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
     protected static final long MILLI_SECONDS_IN_A_SECOND = 1000;
 
-    protected final long timeToLiveMillis;
     protected final long maxIdleMillis;
+    protected final long timeToLiveMillis;
+    protected final boolean serializeKeys;
     protected final boolean evictionDisabled;
+    protected final boolean cacheLocalEntries;
+    protected final boolean cacheNullValues;
+    protected final Executor executor;
+    protected final SerializationService ss;
     protected final ClassLoader classLoader;
-    protected final InMemoryFormat inMemoryFormat;
+    protected final InMemoryFormat valueInMemoryFormat;
     protected final NearCacheConfig nearCacheConfig;
     protected final NearCacheStatsImpl nearCacheStats;
-    protected final SerializationService serializationService;
+    protected final MinimalPartitionService partitionService;
+    protected final PartitioningStrategy partitioningStrategy;
+    protected final Context context = new Context();
 
     protected NCRM records;
     protected EvictionChecker evictionChecker;
     protected SamplingEvictionStrategy<KS, R, NCRM> evictionStrategy;
     protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
 
-    protected volatile long reservationId;
     protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
 
-    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
+    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig,
+                                        SerializationService ss,
+                                        MinimalPartitionService partitionService,
+                                        PartitioningStrategy partitioningStrategy,
+                                        Executor executor,
                                         ClassLoader classLoader) {
-        this(nearCacheConfig, new NearCacheStatsImpl(), serializationService, classLoader);
+        this(nearCacheConfig, new NearCacheStatsImpl(),
+                ss, partitionService, partitioningStrategy, executor, classLoader);
     }
 
     // extended in EE
     protected AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheStatsImpl nearCacheStats,
-                                           SerializationService serializationService, ClassLoader classLoader) {
+                                           SerializationService ss,
+                                           MinimalPartitionService partitionService,
+                                           PartitioningStrategy partitioningStrategy,
+                                           Executor executor,
+                                           ClassLoader classLoader) {
         this.nearCacheConfig = nearCacheConfig;
-        this.inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        this.valueInMemoryFormat = nearCacheConfig.getInMemoryFormat();
         this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
+        this.serializeKeys = nearCacheConfig.isSerializeKeys();
+        this.cacheLocalEntries = nearCacheConfig.isCacheLocalEntries();
+        this.cacheNullValues = true;
         this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
-        this.serializationService = serializationService;
+        this.ss = ss;
         this.classLoader = classLoader;
         this.nearCacheStats = nearCacheStats;
         this.evictionDisabled = nearCacheConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.NONE;
+        this.partitionService = partitionService;
+        this.partitioningStrategy = partitioningStrategy;
+        this.executor = executor;
     }
 
     @Override
@@ -145,19 +161,14 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract R createRecord(V value);
 
-    protected abstract void updateRecordValue(R record, V value);
-
-    protected abstract R getOrCreateToReserve(K key, Data keyData);
-
-    protected abstract V updateAndGetReserved(K key, V value, long reservationId, boolean deserialize);
+    protected abstract V toRecordValue(Object value);
 
     protected abstract R putRecord(K key, R record);
 
-    protected abstract boolean containsRecordKey(K key);
-
     protected void checkAvailable() {
         if (!isAvailable()) {
-            throw new IllegalStateException(nearCacheConfig.getName() + " named Near Cache record store is not available");
+            throw new IllegalStateException(nearCacheConfig.getName()
+                    + " named Near Cache record store is not available");
         }
     }
 
@@ -166,55 +177,25 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     protected Data toData(Object obj) {
-        return serializationService.toData(obj);
+        return ss.toData(obj);
     }
 
     protected V toValue(Object obj) {
-        return serializationService.toObject(obj);
+        return ss.toObject(obj);
     }
 
     protected long getTotalStorageMemoryCost(K key, R record) {
         return getKeyStorageMemoryCost(key) + getRecordStorageMemoryCost(record);
     }
 
-    protected boolean isRecordExpired(R record) {
+    protected boolean isExpired(R record) {
         long now = Clock.currentTimeMillis();
         if (record.isExpiredAt(now)) {
+            nearCacheStats.incrementExpirations();
             return true;
         } else {
             return record.isIdleAt(maxIdleMillis, now);
         }
-    }
-
-    protected V recordToValue(R record) {
-        if (record.getValue() == null) {
-            return (V) CACHED_AS_NULL;
-        }
-        return toValue(record.getValue());
-    }
-
-    @SuppressWarnings("unused")
-    protected void onGet(K key, V value, R record) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onGetError(K key, V value, R record, Throwable error) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onPut(K key, V value, R record, R oldRecord) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onPutError(K key, V value, R record, R oldRecord, Throwable error) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onRemove(K key, R record, boolean removed) {
-    }
-
-    @SuppressWarnings("unused")
-    protected void onRemoveError(K key, R record, boolean removed, Throwable error) {
     }
 
     @SuppressWarnings("unused")
@@ -230,69 +211,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             nearCacheStats.incrementEvictions();
         }
         nearCacheStats.decrementOwnedEntryCount();
-    }
-
-    @Override
-    public V get(K key) {
-        checkAvailable();
-
-        R record = null;
-        V value = null;
-        try {
-            record = getRecord(key);
-            if (record != null) {
-                if (record.getRecordState() != READ_PERMITTED) {
-                    return null;
-                }
-                if (staleReadDetector.isStaleRead(key, record)) {
-                    invalidate(key);
-                    nearCacheStats.incrementMisses();
-                    return null;
-                }
-                if (isRecordExpired(record)) {
-                    invalidate(key);
-                    onExpire(key, record);
-                    return null;
-                }
-
-                onRecordAccess(record);
-                nearCacheStats.incrementHits();
-                value = recordToValue(record);
-                onGet(key, value, record);
-                return value;
-            } else {
-                nearCacheStats.incrementMisses();
-                return null;
-            }
-        } catch (Throwable error) {
-            onGetError(key, value, record, error);
-            throw rethrow(error);
-        }
-    }
-
-    @Override
-    public void put(K key, Data keyData, V value, Data valueData) {
-        checkAvailable();
-        // if there is no eviction configured we return if the Near Cache is full and it's a new key
-        // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
-            return;
-        }
-
-        R record = null;
-        R oldRecord = null;
-        try {
-            record = createRecord((V) selectInMemoryFormatFriendlyValue(inMemoryFormat, value, valueData));
-            onRecordCreate(key, keyData, record);
-            oldRecord = putRecord(key, record);
-            if (oldRecord == null) {
-                nearCacheStats.incrementOwnedEntryCount();
-            }
-            onPut(key, value, record, oldRecord);
-        } catch (Throwable error) {
-            onPutError(key, value, record, oldRecord, error);
-            throw rethrow(error);
-        }
     }
 
     private static Object selectInMemoryFormatFriendlyValue(InMemoryFormat inMemoryFormat,
@@ -353,7 +271,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
 
     protected boolean canUpdateStats(R record) {
-        return record != null && record.getRecordState() == READ_PERMITTED;
+        return record != null && !(record.getState() instanceof FutureSupplier);
     }
 
     @Override
@@ -397,97 +315,122 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    @Override
-    public long tryReserveForUpdate(K key, Data keyData) {
-        checkAvailable();
-        // if there is no eviction configured we return if the Near Cache is full and it's a new key
-        // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
-            return NOT_RESERVED;
-        }
-
-        R reservedRecord = getOrCreateToReserve(key, keyData);
-        long reservationId = nextReservationId();
-        if (reservedRecord.casRecordState(RESERVED, reservationId)) {
-            return reservationId;
-        } else {
-            return NOT_RESERVED;
-        }
-    }
-
-    @Override
-    public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
-        checkAvailable();
-        return updateAndGetReserved(key, value, reservationId, deserialize);
-    }
-
     // only used for testing purposes
     public StaleReadDetector getStaleReadDetector() {
         return staleReadDetector;
     }
 
-    protected void onRecordCreate(K key, Data keyData, R record) {
-        record.setCreationTime(Clock.currentTimeMillis());
-        initInvalidationMetaData(record, key, keyData);
-    }
+    public final class Context implements NearCacheContext<K, R> {
 
-    protected R updateReservedRecordInternal(K key, V value, R reservedRecord, long reservationId) {
-        if (!reservedRecord.casRecordState(reservationId, UPDATE_STARTED)) {
-            return reservedRecord;
+        public void updateRecordState(R record, Object ncKey,
+                                      @Nullable Object dataValue,
+                                      @Nullable Object objectValue, FutureSupplier supplier) {
+            assert record != null;
+            assert ncKey != null;
+
+            Object newState = selectInMemoryFormatFriendlyValue(valueInMemoryFormat, dataValue, objectValue);
+            record.casState(supplier, toRecordValue(newState));
+            nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost((K) ncKey, record));
+            nearCacheStats.incrementOwnedEntryCount();
         }
 
-        updateRecordValue(reservedRecord, value);
-        reservedRecord.casRecordState(UPDATE_STARTED, READ_PERMITTED);
+        public Object toNearCacheKey(Data dataKey, Object objectKey) {
+            assert !(objectKey instanceof Data);
+            return serializeKeys ? dataKey : objectKey;
+        }
 
-        nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
-        nearCacheStats.incrementOwnedEntryCount();
-        return reservedRecord;
+        // TODO return cacheLocalEntries || clusterService.getLocalMember().isLiteMember() || !isOwn(keyData);
+        public boolean cachingAllowedFor(Data keyData, Object response) {
+            return cacheLocalEntries
+                    || !isOwn(keyData)
+                    || (cacheNullValues && response == null);
+        }
+
+        private boolean isOwn(Data key) {
+            int partitionId = partitionService.getPartitionId(key);
+            return partitionService.isPartitionOwner(partitionId);
+        }
+
+        public void removeRecord(K ncKey) {
+            records.remove(ncKey);
+        }
+
+        public boolean serializeKeys() {
+            return serializeKeys;
+        }
     }
 
-    private void onRecordAccess(R record) {
-        record.setAccessTime(Clock.currentTimeMillis());
-        record.incrementAccessHit();
-    }
-
-    private void initInvalidationMetaData(R record, K key, Data keyData) {
+    protected void initInvalidationMetaData(R record, int partitionId) {
         if (staleReadDetector == ALWAYS_FRESH) {
             // means invalidation event creation is disabled for this Near Cache
             return;
         }
 
-        int partitionId = staleReadDetector.getPartitionId(keyData == null ? toData(key) : keyData);
         MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
         record.setPartitionId(partitionId);
         record.setInvalidationSequence(metaDataContainer.getSequence());
         record.setUuid(metaDataContainer.getUuid());
     }
 
-    private long nextReservationId() {
-        return RESERVATION_ID.incrementAndGet(this);
+    protected void updateInvalidationStats(K key, R record) {
+        if (canUpdateStats(record)) {
+            nearCacheStats.decrementOwnedEntryCount();
+            nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+            nearCacheStats.incrementInvalidations();
+        }
     }
 
-    @SerializableByConvention
-    @SuppressWarnings("WeakerAccess")
-    protected class ReserveForUpdateFunction implements IFunction<K, R> {
+    protected class GetOrCreateWithSupplier implements IBiFunction<K, R, R> {
 
-        private final Data keyData;
+        private final Supplier<ICompletableFuture> supplier;
 
-        public ReserveForUpdateFunction(Data keyData) {
-            this.keyData = keyData;
+        public GetOrCreateWithSupplier(Supplier<ICompletableFuture> supplier) {
+            this.supplier = supplier;
+            ((FutureSupplier) supplier).setContext(context);
         }
 
         @Override
-        public R apply(K key) {
-            R record = null;
-            try {
-                record = createRecord(null);
-                onRecordCreate(key, keyData, record);
-                record.casRecordState(READ_PERMITTED, RESERVED);
-            } catch (Throwable throwable) {
-                onPutError(key, null, record, null, throwable);
-                throw rethrow(throwable);
+        public R apply(K ncKey, R record) {
+            if (record != null) {
+                record = removeIfStaleOrExpired(ncKey, record);
             }
+
+            if (record == null) {
+                record = createRecordWithSupplier(ncKey, supplier);
+            }
+
             return record;
         }
+    }
+
+    protected R removeIfStaleOrExpired(K ncKey, R record) {
+        if (staleReadDetector.isStaleRead(record) || isExpired(record)) {
+            nearCacheStats.incrementMisses();
+            nearCacheStats.incrementInvalidationRequests();
+            updateInvalidationStats(ncKey, record);
+
+            records.remove(ncKey);
+            return null;
+        }
+
+        return record;
+    }
+
+    private R createRecordWithSupplier(K ncKey, Supplier<ICompletableFuture> supplier) {
+        R record = createRecord(null);
+        record.setState(supplier);
+        ((FutureSupplier) supplier).supplyValueFor(ncKey, record);
+        Data dataKey = ((FutureSupplier) supplier).getDataKey(ncKey);
+        initInvalidationMetaData(record, partitionService.getPartitionId(dataKey));
+        return record;
+    }
+
+    private boolean cachingAllowedFor(Data keyData) {
+        return cacheLocalEntries || !isOwn(keyData);
+    }
+
+    private boolean isOwn(Data key) {
+        int partitionId = partitionService.getPartitionId(key);
+        return partitionService.isPartitionOwner(partitionId);
     }
 }

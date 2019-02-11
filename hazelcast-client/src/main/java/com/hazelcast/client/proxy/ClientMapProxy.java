@@ -114,7 +114,9 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -150,9 +152,11 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.collection.InflatableSet;
@@ -166,6 +170,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -192,7 +199,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @param <K> key
  * @param <V> value
  */
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:methodcount"})
 public class ClientMapProxy<K, V> extends ClientProxy
         implements IMap<K, V>, EventJournalReader<EventJournalMapEvent<K, V>> {
 
@@ -208,6 +215,20 @@ public class ClientMapProxy<K, V> extends ClientProxy
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
             return (T) MapGetCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder CONTAINS_KEY_RESPONSE_DECODER = new ClientMessageDecoder() {
+        @Override
+        public Boolean decodeClientMessage(ClientMessage clientMessage) {
+            return MapContainsKeyCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder GET_ALL_RESPONSE_DECODER = new ClientMessageDecoder() {
+        @Override
+        public List<Entry<Data, Data>> decodeClientMessage(ClientMessage clientMessage) {
+            return MapGetAllCodec.decodeResponse(clientMessage).response;
         }
     };
 
@@ -302,17 +323,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public boolean containsValue(Object value) {
-        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-
-        Data valueData = toData(value);
-        ClientMessage request = MapContainsValueCodec.encodeRequest(name, valueData);
-        ClientMessage response = invoke(request);
-        MapContainsValueCodec.ResponseParameters resultParameters = MapContainsValueCodec.decodeResponse(response);
-        return resultParameters.response;
-    }
-
-    @Override
     public V get(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -320,10 +330,92 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     protected Object getInternal(Object key) {
-        Data keyData = toData(key);
-        ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
-        ClientMessage response = invoke(request, keyData);
+        InternalCompletableFuture future = invokeGetOperation(key);
+        ClientMessage response;
+        try {
+            response = (ClientMessage) future.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
         MapGetCodec.ResponseParameters resultParameters = MapGetCodec.decodeResponse(response);
+        return resultParameters.response;
+    }
+
+    protected InternalCompletableFuture invokeGetOperation(Object key) {
+        Data keyData = toData(key);
+        ClientMessage clientMessage = MapGetCodec.encodeRequest(name, keyData, getThreadId());
+        return invokeAsync(clientMessage, keyData);
+    }
+
+    protected InternalCompletableFuture invokeGetOperation2(Object key) {
+        Data keyData = toData(key);
+        ClientMessage clientMessage = MapGetCodec.encodeRequest(name, keyData, getThreadId());
+        ClientInvocationFuture future = invokeAsync(clientMessage, keyData);
+        return new ClientDelegatingFuture<V>(future, getSerializationService(), GET_ASYNC_RESPONSE_DECODER, false);
+    }
+
+    protected InternalCompletableFuture<Boolean> invokeContainsKeyOperation(Object key) {
+        Data keyData = toData(key);
+        ClientMessage message = MapContainsKeyCodec.encodeRequest(name, keyData, getThreadId());
+        ClientInvocationFuture future = invokeAsync(message, keyData);
+        return new ClientDelegatingFuture<Boolean>(future, getSerializationService(), CONTAINS_KEY_RESPONSE_DECODER);
+    }
+
+    protected InternalCompletableFuture invokeGetAllOperation(Collection<Data> dataKeys) {
+        ClientContext context = getContext();
+        final int partitionCount = context.getPartitionService().getPartitionCount();
+        Map<Integer, List<Data>> partitionToKeyData = createHashMap(partitionCount);
+        fillPartitionToKeyData(dataKeys, partitionToKeyData, null, null);
+
+        ExecutorService executor = context.getExecutionService().getUserExecutor();
+        ILogger logger = context.getLoggingService().getLogger(SimpleCompletableFuture.class);
+        final SimpleCompletableFuture<Map<Integer, Object>> future
+                = new SimpleCompletableFuture<Map<Integer, Object>>(executor, logger);
+        final ConcurrentMap<Integer, Object> resultsByPartitionId = new ConcurrentHashMap<Integer, Object>();
+
+        final int expectedOperationCount = partitionToKeyData.size();
+        for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
+            final int partitionId = entry.getKey();
+            List<Data> keyList = entry.getValue();
+
+            if (!keyList.isEmpty()) {
+                ClientInvocationFuture invocationFuture = invokeAsync(MapGetAllCodec.encodeRequest(name, keyList), partitionId);
+                invocationFuture.andThen(new ExecutionCallback<ClientMessage>() {
+
+                    private void handle(Object response, String methodName) {
+                        Object result = resultsByPartitionId.putIfAbsent(partitionId, response);
+                        assert result == null : "Duplicate " + methodName + " call";
+
+                        if (resultsByPartitionId.size() == expectedOperationCount) {
+                            future.complete(resultsByPartitionId);
+                        }
+                    }
+
+                    @Override
+                    public void onResponse(ClientMessage response) {
+                        handle(GET_ALL_RESPONSE_DECODER.decodeClientMessage(response),
+                                "onResponse");
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        handle(throwable, "onFailure");
+                    }
+
+                });
+            }
+        }
+        return future;
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        Data valueData = toData(value);
+        ClientMessage request = MapContainsValueCodec.encodeRequest(name, valueData);
+        ClientMessage response = invoke(request);
+        MapContainsValueCodec.ResponseParameters resultParameters = MapContainsValueCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
@@ -411,15 +503,15 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public ICompletableFuture<V> getAsync(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return new ClientDelegatingFuture<V>(getAsyncInternal(key),
-                getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
+        return getAsyncInternal(key);
     }
 
-    protected ClientInvocationFuture getAsyncInternal(Object key) {
+    protected ICompletableFuture<V> getAsyncInternal(Object key) {
         try {
             Data keyData = toData(key);
             ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
-            return invokeOnKeyOwner(request, keyData);
+            return new ClientDelegatingFuture<V>(invokeOnKeyOwner(request, keyData),
+                    getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1186,31 +1278,22 @@ public class ClientMapProxy<K, V> extends ClientProxy
             return emptyMap();
         }
 
-        int keysSize = keys.size();
-        Map<Integer, List<Data>> partitionToKeyData = new HashMap<Integer, List<Data>>();
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
-        getAllInternal(keys, partitionToKeyData, resultingKeyValuePairs);
-
-        Map<K, V> result = createHashMap(keysSize);
-        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
-            K key = toObject(resultingKeyValuePairs.get(i++));
-            V value = toObject(resultingKeyValuePairs.get(i++));
-            result.put(key, value);
-        }
+        Map<K, V> result = createHashMap(keys.size());
+        getAllInternal(keys, result);
         return result;
     }
 
-    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, List<Object> resultingKeyValuePairs) {
-        if (partitionToKeyData.isEmpty()) {
-            fillPartitionToKeyData(keys, partitionToKeyData, null, null);
-        }
+    protected void getAllInternal(Set<K> keys, Map result) {
+        Map<Integer, List<Data>> partitionToKeyData = new HashMap<Integer, List<Data>>();
+        fillPartitionToKeyData(keys, partitionToKeyData, null, null);
+
         List<Future<ClientMessage>> futures = new ArrayList<Future<ClientMessage>>(partitionToKeyData.size());
         for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
             List<Data> keyList = entry.getValue();
+
             if (!keyList.isEmpty()) {
-                ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
-                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
+                futures.add(invokeAsync(MapGetAllCodec.encodeRequest(name, keyList), partitionId));
             }
         }
 
@@ -1219,8 +1302,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 ClientMessage response = future.get();
                 MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
                 for (Entry<Data, Data> entry : resultParameters.response) {
-                    resultingKeyValuePairs.add(entry.getKey());
-                    resultingKeyValuePairs.add(entry.getValue());
+                    result.put(toObject(entry.getKey()), toObject(entry.getValue()));
                 }
             } catch (Exception e) {
                 throw rethrow(e);
@@ -1228,10 +1310,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
-    protected void fillPartitionToKeyData(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<Object, Data> keyMap,
+
+    protected void fillPartitionToKeyData(Collection keys, Map<Integer, List<Data>> partitionToKeyData, Map<Object, Data> keyMap,
                                           Map<Data, Object> reverseKeyMap) {
         ClientPartitionService partitionService = getContext().getPartitionService();
-        for (K key : keys) {
+        for (Object key : keys) {
             Data keyData = toData(key);
             int partitionId = partitionService.getPartitionId(keyData);
             List<Data> keyList = partitionToKeyData.get(partitionId);

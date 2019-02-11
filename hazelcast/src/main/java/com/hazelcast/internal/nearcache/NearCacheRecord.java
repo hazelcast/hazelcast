@@ -34,17 +34,15 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
 
     int TIME_NOT_SET = -1;
 
-    long NOT_RESERVED = -1;
-    long RESERVED = -2;
-    long UPDATE_STARTED = -3;
-    long READ_PERMITTED = -4;
+    void setState(Object update);
 
-    /**
-     * Sets the value of this {@link NearCacheRecord}.
-     *
-     * @param value the value for this {@link NearCacheRecord}
-     */
-    void setValue(V value);
+    void casState(Object expect, Object update);
+
+    // state cannot be:
+    // 1. INITIAL_STATE
+    // 2. BaseValueSupplier
+    // 3. A value including null.
+    Object getState();
 
     /**
      * Sets the creation time of this {@link Evictable} in milliseconds.
@@ -86,19 +84,6 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      * @return {@code true} if exceeds max idle seconds, otherwise {@code false}
      */
     boolean isIdleAt(long maxIdleMilliSeconds, long now);
-
-    /**
-     * @return current state of this record.
-     */
-    long getRecordState();
-
-    /**
-     * @param expect expected value
-     * @param update updated value
-     * @return {@code true} if successful. False return indicates that
-     * the actual value was not equal to the expected value.
-     */
-    boolean casRecordState(long expect, long update);
 
     /**
      * @return the partition ID of this record

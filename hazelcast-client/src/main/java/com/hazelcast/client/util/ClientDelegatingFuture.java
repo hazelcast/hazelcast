@@ -53,7 +53,8 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
                                   SerializationService serializationService,
-                                  ClientMessageDecoder clientMessageDecoder, V defaultValue, boolean deserializeResponse) {
+                                  ClientMessageDecoder clientMessageDecoder, V defaultValue,
+                                  boolean deserializeResponse) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
         this.clientMessageDecoder = clientMessageDecoder;
@@ -142,7 +143,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
         Object decodedResponse = decodeResponse(clientMessage);
         if (deserialize) {
-            return serializationService.toObject(decodedResponse);
+           return serializationService.toObject(decodedResponse);
         }
         return decodedResponse;
     }

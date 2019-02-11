@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.Address;
@@ -41,6 +42,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * <p>
  * Allows the client to proxy operations through member nodes.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class ClientProxy implements DistributedObject {
 
     protected final String name;
@@ -217,6 +219,17 @@ public abstract class ClientProxy implements DistributedObject {
     protected <T> T invoke(ClientMessage clientMessage, Object key) {
         final int partitionId = getContext().getPartitionService().getPartitionId(key);
         return invokeOnPartition(clientMessage, partitionId);
+    }
+
+    protected ClientInvocationFuture invokeAsync(ClientMessage clientMessage, Object key) {
+        int partitionId = getContext().getPartitionService().getPartitionId(key);
+        ClientInvocation invocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
+        return invocation.invoke();
+    }
+
+    protected ClientInvocationFuture invokeAsync(ClientMessage clientMessage, int partitionId) {
+        ClientInvocation invocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
+        return invocation.invoke();
     }
 
     protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId) {

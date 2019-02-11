@@ -27,7 +27,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 
 import static com.hazelcast.util.SetUtil.createHashSet;
@@ -40,13 +40,13 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
      */
     private static final double SIZING_FUDGE_FACTOR = 1.3;
 
-    private List<Data> keys = new ArrayList<Data>();
+    private Collection<Data> keys = new ArrayList<Data>();
     private MapEntries entries;
 
     public GetAllOperation() {
     }
 
-    public GetAllOperation(String name, List<Data> keys) {
+    public GetAllOperation(String name, Collection<Data> keys) {
         super(name);
         this.keys = keys;
     }

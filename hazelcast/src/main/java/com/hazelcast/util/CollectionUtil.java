@@ -132,6 +132,23 @@ public final class CollectionUtil {
         }
     }
 
+    public static <C> Collection<Data> objectToDataCollection(Collection<C> objectCollection,
+                                                              SerializationService serializationService, String errorMessage) {
+        Collection<Data> dataCollection = Collections.EMPTY_LIST;
+
+        for (C item : objectCollection) {
+            checkNotNull(item, errorMessage);
+
+            if (dataCollection == Collections.EMPTY_LIST) {
+                dataCollection = new ArrayList<Data>(objectCollection.size());
+            }
+
+            dataCollection.add(serializationService.toData(item));
+        }
+
+        return dataCollection;
+    }
+
     /**
      * Converts a {@link Collection<Integer>} to a primitive {@code int[]} array.
      *
@@ -181,7 +198,9 @@ public final class CollectionUtil {
         return result;
     }
 
-    /** Returns an empty Collection if argument is null. **/
+    /**
+     * Returns an empty Collection if argument is null.
+     **/
     public static <T> Collection<T> nullToEmpty(Collection<T> collection) {
         return collection == null ? Collections.<T>emptyList() : collection;
     }

@@ -175,7 +175,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return NOT_CACHED;
         }
 
-        Object value = nearCache.get(nearCacheKey);
+        Object value = nearCache.getCached(nearCacheKey);
         if (value == null) {
             return NOT_CACHED;
         }

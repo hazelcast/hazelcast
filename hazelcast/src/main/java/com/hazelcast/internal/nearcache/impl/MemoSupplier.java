@@ -14,22 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache.impl.record;
+package com.hazelcast.internal.nearcache.impl;
 
-/**
- * Implementation of {@link com.hazelcast.internal.nearcache.NearCacheRecord} to store
- * any object type except {@link com.hazelcast.nio.serialization.Data}.
- *
- * @param <V> type of object instances to store.
- */
-public class NearCacheObjectRecord<V> extends AbstractNearCacheRecord<V> {
+import com.hazelcast.util.function.Supplier;
 
-    public NearCacheObjectRecord(V value, long creationTime, long expiryTime) {
-        super(value, creationTime, expiryTime);
+public abstract class MemoSupplier<T> implements Supplier<T> {
+    private volatile T value;
+
+    @Override
+    public final T get() {
+        if (value == null) {
+            synchronized (this) {
+                if (value == null) {
+                    T t = supply();
+                    value = t;
+                    return t;
+                }
+            }
+        }
+        return value;
     }
+
+    protected abstract T supply();
 
     @Override
     public String toString() {
-        return "NearCacheObjectRecord{" + super.toString() + '}';
+        return "MemoSupplier{"
+                + ", value=" + value
+                + '}';
     }
 }

@@ -313,7 +313,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
 
     public static class SimpleMapStore<K, V> extends MapStoreAdapter<K, V> {
 
-        private final Map<K, V> store = new ConcurrentHashMap<K, V>();
+        public final Map<K, V> store = new ConcurrentHashMap<K, V>();
 
         private boolean loadAllKeys = true;
 

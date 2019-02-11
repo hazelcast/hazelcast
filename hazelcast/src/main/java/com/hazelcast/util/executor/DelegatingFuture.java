@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * threads.
  * </li>
  * </ol>
+ *
  * @param <V>
  */
 public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
@@ -54,8 +55,8 @@ public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
         }
     };
 
+    protected final InternalSerializationService serializationService;
     private final InternalCompletableFuture future;
-    private final InternalSerializationService serializationService;
     private final Object result;
     private volatile Object deserializedValue = VOID;
 
@@ -72,7 +73,8 @@ public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
      *                             value of that future, the result will be returned by the DelegatingFuture. A null
      *                             value means that the value of the underlying future should be used.
      */
-    public DelegatingFuture(InternalCompletableFuture future, SerializationService serializationService, V result) {
+    public DelegatingFuture(InternalCompletableFuture future,
+                            SerializationService serializationService, V result) {
         this.future = future;
         this.serializationService = (InternalSerializationService) serializationService;
         this.result = result;
@@ -88,7 +90,7 @@ public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
         return resolve(future.get(timeout, unit));
     }
 
-    private V resolve(Object object) {
+    protected V resolve(Object object) {
         // if there is an explicit value set, we use that
         if (result != null) {
             return (V) result;

@@ -38,9 +38,9 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
     static final int DEFAULT_RECORD_COUNT = 100;
     static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
 
-    private List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
-    private SerializationService ss = new DefaultSerializationServiceBuilder()
+    protected SerializationService ss = new DefaultSerializationServiceBuilder()
             .setVersion(InternalSerializationService.VERSION_1).build();
+    private List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
 
     @After
     public final void shutdownExecutorServices() {
@@ -60,10 +60,10 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         NearCacheRecordStore<K, V> recordStore;
         switch (inMemoryFormat) {
             case BINARY:
-                recordStore = new NearCacheDataRecordStore<K, V>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
+                recordStore = new NearCacheDataRecordStore<K, V>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null, null, null, null);
                 break;
             case OBJECT:
-                recordStore = new NearCacheObjectRecordStore<K, V>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
+                recordStore = new NearCacheObjectRecordStore<K, V>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null, null, null, null);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);

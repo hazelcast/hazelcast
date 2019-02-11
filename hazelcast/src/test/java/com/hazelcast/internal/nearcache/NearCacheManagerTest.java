@@ -30,7 +30,9 @@ public class NearCacheManagerTest extends NearCacheManagerTestSupport {
 
     @Override
     protected NearCacheManager createNearCacheManager() {
-        return new DefaultNearCacheManager(ss, executionService.getGlobalTaskScheduler(),
+        return new DefaultNearCacheManager(ss,
+                null, null, null,
+                executionService.getGlobalTaskScheduler(),
                 null, properties);
     }
 

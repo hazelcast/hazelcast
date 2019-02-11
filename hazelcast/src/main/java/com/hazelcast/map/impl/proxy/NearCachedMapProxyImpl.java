@@ -22,6 +22,8 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.nearcache.impl.NearCacheDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
@@ -34,25 +36,16 @@ import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.executor.CompletedFuture;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
-import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * A server-side {@code IMap} implementation which is fronted by a Near Cache.
@@ -60,16 +53,16 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * @param <K> the key type for this {@code IMap} proxy.
  * @param <V> the value type for this {@code IMap} proxy.
  */
-public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
+public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> implements NearCacheDataFetcher<V> {
 
-    private final ClusterService clusterService;
+    private final boolean serializeKeys;
     private final boolean cacheLocalEntries;
     private final boolean invalidateOnChange;
-    private final boolean serializeKeys;
+    private final ClusterService clusterService;
 
-    private MapNearCacheManager mapNearCacheManager;
-    private NearCache<Object, Object> nearCache;
+    private NearCache<K, V> nearCache;
     private RepairingHandler repairingHandler;
+    private MapNearCacheManager mapNearCacheManager;
 
     private volatile String invalidationListenerId;
 
@@ -84,7 +77,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         serializeKeys = nearCacheConfig.isSerializeKeys();
     }
 
-    public NearCache<Object, Object> getNearCache() {
+    public NearCache<K, V> getNearCache() {
         return nearCache;
     }
 
@@ -94,72 +87,40 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
         mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         nearCache = mapNearCacheManager.getOrCreateNearCache(name, mapConfig.getNearCacheConfig());
+        nearCache.unwrap(DefaultNearCache.class).setNearCacheDataFetcher(this);
         if (invalidateOnChange) {
             registerInvalidationListener();
         }
     }
 
-    // this operation returns the value as Data, except when it's retrieved from Near Cache with in-memory-format OBJECT
     @Override
-    @SuppressWarnings("unchecked")
-    protected V getInternal(Object key) {
-        key = toNearCacheKeyWithStrategy(key);
-        V value = (V) getCachedValue(key, true);
-        if (value != NOT_CACHED) {
-            return value;
-        }
-
-        try {
-            Data keyData = toDataWithStrategy(key);
-            long reservationId = tryReserveForUpdate(key, keyData);
-            value = (V) super.getInternal(keyData);
-            if (reservationId != NOT_RESERVED) {
-                value = (V) tryPublishReserved(key, value, reservationId);
-            }
-            return value;
-        } catch (Throwable throwable) {
-            invalidateNearCache(key);
-            throw rethrow(throwable);
-        }
+    protected Object containsKey0(Object key) {
+        return nearCache.containsKey((K) key);
     }
 
     @Override
-    protected InternalCompletableFuture<Data> getAsyncInternal(Object key) {
-        final Object ncKey = toNearCacheKeyWithStrategy(key);
-        Object value = getCachedValue(ncKey, false);
-        if (value != NOT_CACHED) {
-            ExecutionService executionService = getNodeEngine().getExecutionService();
-            return new CompletedFuture<Data>(serializationService, value, executionService.getExecutor(ASYNC_EXECUTOR));
-        }
-
-        final Data keyData = toDataWithStrategy(key);
-        final long reservationId = tryReserveForUpdate(ncKey, keyData);
-        InternalCompletableFuture<Data> future;
-        try {
-            future = super.getAsyncInternal(keyData);
-        } catch (Throwable t) {
-            invalidateNearCache(ncKey);
-            throw rethrow(t);
-        }
-
-        if (reservationId != NOT_RESERVED) {
-            future.andThen(new ExecutionCallback<Data>() {
-                @Override
-                public void onResponse(Data value) {
-                    nearCache.tryPublishReserved(ncKey, value, reservationId, false);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    invalidateNearCache(ncKey);
-                }
-            });
-        }
-        return future;
+    protected Object get0(Object key, @Nullable final Data keyData, final long startTimeNanos) {
+        return nearCache.get((K) key);
     }
 
     @Override
-    protected Data putInternal(Object key, Data value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
+    protected ICompletableFuture getAsync0(Object key, @Nullable final Data keyData, final long startTimeNanos) {
+        return nearCache.getAsync((K) key);
+    }
+
+    @Override
+    protected void getAll0(Collection<K> keys, Map<K, V> result, final long startTimeNanos) {
+        nearCache.getAll(keys, result, startTimeNanos);
+    }
+
+    @Override
+    public void interceptAfterGet(String name, V val) {
+        mapServiceContext.interceptAfterGet(name, val);
+    }
+
+    @Override
+    protected Data putInternal(Object key, Data value, long ttl,
+                               TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         key = toNearCacheKeyWithStrategy(key);
         try {
             return super.putInternal(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
@@ -374,112 +335,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected boolean containsKeyInternal(Object key) {
-        key = toNearCacheKeyWithStrategy(key);
-        Object cachedValue = getCachedValue(key, false);
-        if (cachedValue != NOT_CACHED) {
-            return cachedValue != null;
-        }
-        return super.containsKeyInternal(key);
-    }
-
-    @Override
-    protected void getAllInternal(Set<K> keys, List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
-        if (serializeKeys) {
-            toDataKeysWithReservations(keys, dataKeys, null, null);
-        }
-        Collection<?> ncKeys = serializeKeys ? dataKeys : new LinkedList<K>(keys);
-
-        populateResultFromNearCache(ncKeys, resultingKeyValuePairs);
-        if (ncKeys.isEmpty()) {
-            return;
-        }
-
-        Map<Object, Long> reservations = createHashMap(ncKeys.size());
-        Map<Data, Object> reverseKeyMap = null;
-        if (!serializeKeys) {
-            reverseKeyMap = createHashMap(ncKeys.size());
-            toDataKeysWithReservations(ncKeys, dataKeys, reservations, reverseKeyMap);
-        } else {
-            //noinspection unchecked
-            createNearCacheReservations((Collection<Data>) ncKeys, reservations);
-        }
-
-        try {
-            int currentSize = resultingKeyValuePairs.size();
-            super.getAllInternal(keys, dataKeys, resultingKeyValuePairs);
-            populateResultFromRemote(currentSize, resultingKeyValuePairs, reservations, reverseKeyMap);
-        } finally {
-            releaseReservedKeys(reservations);
-        }
-    }
-
-    private void toDataKeysWithReservations(Collection<?> keys, Collection<Data> dataKeys, Map<Object, Long> reservations,
-                                            Map<Data, Object> reverseKeyMap) {
-        for (Object key : keys) {
-            Data keyData = toDataWithStrategy(key);
-            dataKeys.add(keyData);
-            if (reservations != null) {
-                long reservationId = tryReserveForUpdate(key, keyData);
-                if (reservationId != NOT_RESERVED) {
-                    reservations.put(key, reservationId);
-                }
-            }
-            if (reverseKeyMap != null) {
-                reverseKeyMap.put(keyData, key);
-            }
-        }
-    }
-
-    private void populateResultFromNearCache(Collection keys, List<Object> resultingKeyValuePairs) {
-        Iterator iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            Object key = iterator.next();
-            Object value = getCachedValue(key, true);
-            if (value != null && value != NOT_CACHED) {
-                resultingKeyValuePairs.add(key);
-                resultingKeyValuePairs.add(value);
-                iterator.remove();
-            }
-        }
-    }
-
-    private void createNearCacheReservations(Collection<Data> dataKeys, Map<Object, Long> reservations) {
-        for (Data key : dataKeys) {
-            long reservationId = tryReserveForUpdate(key, key);
-            if (reservationId != NOT_RESERVED) {
-                reservations.put(key, reservationId);
-            }
-        }
-    }
-
-    private void populateResultFromRemote(int currentSize, List<Object> resultingKeyValuePairs, Map<Object, Long> reservations,
-                                          Map<Data, Object> reverseKeyMap) {
-        for (int i = currentSize; i < resultingKeyValuePairs.size(); i += 2) {
-            Data keyData = (Data) resultingKeyValuePairs.get(i);
-            Data valueData = (Data) resultingKeyValuePairs.get(i + 1);
-
-            Object ncKey = serializeKeys ? keyData : reverseKeyMap.get(keyData);
-            if (!serializeKeys) {
-                resultingKeyValuePairs.set(i, ncKey);
-            }
-
-            Long reservationId = reservations.get(ncKey);
-            if (reservationId != null) {
-                Object cachedValue = tryPublishReserved(ncKey, valueData, reservationId);
-                resultingKeyValuePairs.set(i + 1, cachedValue);
-                reservations.remove(ncKey);
-            }
-        }
-    }
-
-    private void releaseReservedKeys(Map<Object, Long> reservationResults) {
-        for (Object key : reservationResults.keySet()) {
-            invalidateNearCache(key);
-        }
-    }
-
-    @Override
     protected void invokePutAllOperationFactory(long size, int[] partitions, MapEntries[] entries) throws Exception {
         try {
             super.invokePutAllOperationFactory(size, partitions, entries);
@@ -570,38 +425,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
     }
 
-    protected void invalidateNearCache(Object key) {
-        if (key == null) {
+    protected void invalidateNearCache(Object ncKey) {
+        if (ncKey == null) {
             return;
         }
-        nearCache.invalidate(key);
-    }
-
-    private Object tryPublishReserved(Object key, Object value, long reservationId) {
-        assert value != NOT_CACHED;
-
-        // `value` is cached even if it's null
-        Object cachedValue = nearCache.tryPublishReserved(key, value, reservationId, true);
-        return cachedValue != null ? cachedValue : value;
-    }
-
-    private Object getCachedValue(Object key, boolean deserializeValue) {
-        Object value = nearCache.get(key);
-        if (value == null) {
-            return NOT_CACHED;
-        }
-        if (value == CACHED_AS_NULL) {
-            return null;
-        }
-        mapServiceContext.interceptAfterGet(name, value);
-        return deserializeValue ? toObject(value) : value;
-    }
-
-    private long tryReserveForUpdate(Object key, Data keyData) {
-        if (!cachingAllowedFor(keyData)) {
-            return NOT_RESERVED;
-        }
-        return nearCache.tryReserveForUpdate(key, keyData);
+        nearCache.invalidate((K) ncKey);
     }
 
     private boolean cachingAllowedFor(Data keyData) {
@@ -613,8 +441,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return partitionService.isPartitionOwner(partitionId);
     }
 
-    private Object toNearCacheKeyWithStrategy(Object key) {
-        return serializeKeys ? serializationService.toData(key, partitionStrategy) : key;
+    private Object toNearCacheKeyWithStrategy(@Nonnull Object key) {
+        return serializeKeys ? ss.toData(key, partitionStrategy) : key;
     }
 
     public String addNearCacheInvalidationListener(InvalidationListener listener) {
@@ -627,6 +455,38 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     private void registerInvalidationListener() {
         repairingHandler = mapNearCacheManager.newRepairingHandler(name, nearCache);
         invalidationListenerId = addNearCacheInvalidationListener(new NearCacheInvalidationListener());
+    }
+
+    @Override
+    public V getWithoutNearCaching(Object toDataWithStrategy, Object param, long startTimeNanos) {
+        return (V) toObject(super.getInternal(toDataWithStrategy));
+    }
+
+    @Override
+    public ICompletableFuture getAsyncWithoutNearCaching(Object key, Object param, long startTimeNanos) {
+        return super.getAsyncInternal(toObject(key));
+    }
+
+    @Override
+    public InternalCompletableFuture invokeGetOperation(Data keyData, Data param,
+                                                        boolean asyncGet, long startTimeNanos) {
+        return super.invokeGetOperation(keyData, asyncGet, startTimeNanos);
+    }
+
+    @Override
+    public InternalCompletableFuture invokeGetAllOperation(Collection<Data> dataKeys, Data param,
+                                                           long startTimeNanos) {
+        return super.invokeGetAllOperation(dataKeys, startTimeNanos);
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> invokeContainsKeyOperation(Object key) {
+        return super.invokeContainsKeyOperation(key);
+    }
+
+    @Override
+    public boolean isStatsEnabled() {
+        return statisticsEnabled;
     }
 
     private final class NearCacheInvalidationListener implements InvalidationListener {

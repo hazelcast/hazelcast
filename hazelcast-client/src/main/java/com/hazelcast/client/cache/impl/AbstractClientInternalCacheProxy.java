@@ -47,6 +47,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -407,7 +408,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         addCallback(delegatingFuture, callback);
     }
 
-    protected static <T> void addCallback(ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+    protected static <T> void addCallback(InternalCompletableFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
         if (callback == null) {
             return;
         }

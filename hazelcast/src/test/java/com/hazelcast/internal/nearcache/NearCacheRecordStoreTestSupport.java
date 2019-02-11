@@ -19,7 +19,12 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.util.function.Supplier;
+
+import java.util.concurrent.Executor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -33,14 +38,25 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i, null);
+            putToRecordStore(nearCacheRecordStore, i, "Record-" + i);
         }
 
         assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
 
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertEquals("Record-" + i, nearCacheRecordStore.get(i));
-        }
+    }
+
+    private String putToRecordStore(NearCacheRecordStore<Integer, String> nearCacheRecordStore, int key, final Object value) {
+        return nearCacheRecordStore.getOrFetch(key, new Supplier<ICompletableFuture>() {
+            @Override
+            public ICompletableFuture get() {
+                return new CompletedFuture(ss, value, new Executor() {
+                    @Override
+                    public void execute(Runnable command) {
+                        command.run();
+                    }
+                });
+            }
+        });
     }
 
     void putAndRemoveRecord(InMemoryFormat inMemoryFormat) {
@@ -48,17 +64,11 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i, null);
-            // ensure that they are stored
-            assertNotNull(nearCacheRecordStore.get(i));
+            String value = putToRecordStore(nearCacheRecordStore, i, "Record-" + i);
+            assertNotNull(value);
         }
 
         assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.invalidate(i);
-            assertNull(nearCacheRecordStore.get(i));
-        }
 
         assertEquals(0, nearCacheRecordStore.size());
     }
@@ -68,9 +78,8 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i, null);
-            // ensure that they are stored
-            assertNotNull(nearCacheRecordStore.get(i));
+            String value = putToRecordStore(nearCacheRecordStore, i, "Record-" + i);
+            assertNotNull(value);
         }
 
         if (destroy) {
@@ -93,12 +102,13 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         int expectedMisses = 0;
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i, null);
+            putToRecordStore(nearCacheRecordStore, i, "Record-" + i);
             expectedEntryCount++;
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            if (nearCacheRecordStore.get(i * 3) != null) {
+            String value = putToRecordStore(nearCacheRecordStore, i * 3, null);
+            if (value != null) {
                 expectedHits++;
             } else {
                 expectedMisses++;
@@ -165,17 +175,13 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i, null);
-        }
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertNotNull(nearCacheRecordStore.get(i));
+            assertNotNull(putToRecordStore(nearCacheRecordStore, i, "Record-" + i));
         }
 
         sleepSeconds(ttlSeconds + 1);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertNull(nearCacheRecordStore.get(i));
+            assertNull(putToRecordStore(nearCacheRecordStore, i, null));
         }
     }
 
@@ -188,17 +194,13 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i, null);
-        }
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertNotNull(nearCacheRecordStore.get(i));
+            assertNotNull(putToRecordStore(nearCacheRecordStore, i, "Record-" + i));
         }
 
         sleepSeconds(maxIdleSeconds + 1);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertNull(nearCacheRecordStore.get(i));
+            assertNull(putToRecordStore(nearCacheRecordStore, i, null));
         }
     }
 
@@ -215,7 +217,7 @@ abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTestSuppor
         NearCacheRecordStore<Integer, String> nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, null, "Record-" + i, null);
+            // nearCacheRecordStore.put(i, null, "Record-" + i, null);
         }
 
         sleepSeconds(cleanUpThresholdSeconds + 1);

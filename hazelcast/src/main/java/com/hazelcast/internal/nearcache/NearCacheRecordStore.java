@@ -16,11 +16,15 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.util.function.Supplier;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * {@link NearCacheRecordStore} is the contract point to store keys and values as
@@ -31,49 +35,17 @@ import com.hazelcast.spi.InitializingObject;
  */
 public interface NearCacheRecordStore<K, V> extends InitializingObject {
 
-    /**
-     * Gets the value associated with the given {@code key}.
-     *
-     * @param key the key from which to get the associated value.
-     * @return the value associated with the given {@code key}.
-     */
+    boolean cacheFullButEvictionDisabled(K ncKey);
+
     V get(K key);
 
-    /**
-     * Puts (associates) a value with the given {@code key}.
-     *
-     * @param key       the key to which the given value will be associated.
-     * @param keyData   the key as {@link Data} to which the given value will be associated.
-     * @param value     the value that will be associated with the key.
-     * @param valueData
-     */
-    void put(K key, Data keyData, V value, Data valueData);
+    void getAll(Collection<K> ncKeys, Map result);
 
-    /**
-     * Tries to reserve supplied key for update. <p> If one thread takes
-     * reservation, only that thread can update the key.
-     *
-     * @param key     key to be reserved for update
-     * @param keyData key to be reserved for update as {@link Data}
-     * @return reservation ID if reservation succeeds, else returns {@link
-     * NearCacheRecord#NOT_RESERVED}
-     */
-    long tryReserveForUpdate(K key, Data keyData);
+    V getOrFetch(K ncKey, Supplier<ICompletableFuture> supplier);
 
-    /**
-     * Tries to update reserved key with supplied value. If update
-     * happens, value is published. Publishing means making the value
-     * readable to all threads. If update fails, record is not updated.
-     *
-     * @param key           reserved key for update
-     * @param value         value to be associated with reserved key
-     * @param reservationId ID for this reservation
-     * @param deserialize   eagerly deserialize
-     *                      returning value
-     * @return associated value if deserialize is {@code
-     * true} and update succeeds, otherwise returns null
-     */
-    V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
+    ICompletableFuture getOrFetchAsync(K ncKey, Supplier<ICompletableFuture> supplier);
+
+    void getAllOrFetch(Collection<K> ncKeys, Supplier<ICompletableFuture> supplier, Map result);
 
     /**
      * Removes the value associated with the given {@code key}

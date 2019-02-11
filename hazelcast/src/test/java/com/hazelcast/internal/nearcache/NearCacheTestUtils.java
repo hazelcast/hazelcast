@@ -28,7 +28,6 @@ import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.MethodAvailableMatcher;
-import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
@@ -51,7 +50,6 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.String.format;
@@ -158,9 +156,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static Object getNearCacheKey(NearCacheTestContext<?, ?, ?, ?> context, Object key) {
         boolean serializeKeys = context.nearCacheConfig.isSerializeKeys();
-        boolean isReplicatedMap = context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter;
-        // the ReplicatedMap already uses keys by-reference
-        return (serializeKeys && !isReplicatedMap) ? context.serializationService.toData(key) : key;
+        return serializeKeys ? context.serializationService.toData(key) : key;
     }
 
     /**
@@ -296,8 +292,6 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static void assertNearCacheRecord(NearCacheRecord record, int key, InMemoryFormat inMemoryFormat) {
         assertNotNull(format("NearCacheRecord for key %d could not be found", key), record);
-        assertEquals(format("RecordState of NearCacheRecord for key %d should be READ_PERMITTED (%s)", key, record),
-                READ_PERMITTED, record.getRecordState());
 
         Class<? extends NearCacheRecord> recordClass = record.getClass();
         Class<?> recordValueClass = record.getValue().getClass();

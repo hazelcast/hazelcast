@@ -17,9 +17,13 @@
 package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
+
+import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_INTEGER_FIELD_TYPES;
@@ -38,8 +42,12 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     public NearCacheDataRecordStore(String name,
                                     NearCacheConfig nearCacheConfig,
                                     SerializationService serializationService,
+                                    MinimalPartitionService partitionService,
+                                    PartitioningStrategy partitioningStrategy,
+                                    Executor executor,
                                     ClassLoader classLoader) {
-        super(name, nearCacheConfig, serializationService, classLoader);
+        super(name, nearCacheConfig, serializationService, partitionService,
+                partitioningStrategy, executor, classLoader);
     }
 
     @Override
@@ -89,7 +97,7 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     }
 
     @Override
-    protected void updateRecordValue(NearCacheDataRecord record, V value) {
-        record.setValue(toData(value));
+    protected V toRecordValue(Object value) {
+        return (V) toData(value);
     }
 }

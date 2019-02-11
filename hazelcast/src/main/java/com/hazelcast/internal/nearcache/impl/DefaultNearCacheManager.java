@@ -18,9 +18,11 @@ package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -32,6 +34,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -39,10 +42,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class DefaultNearCacheManager implements NearCacheManager {
 
+    protected final Executor executor;
     protected final TaskScheduler scheduler;
     protected final ClassLoader classLoader;
     protected final HazelcastProperties properties;
+    protected final MinimalPartitionService partitionService;
     protected final SerializationService serializationService;
+    protected final PartitioningStrategy partitioningStrategy;
 
     private final Object mutex = new Object();
     private final Queue<ScheduledFuture> preloadTaskFutures = new ConcurrentLinkedQueue<ScheduledFuture>();
@@ -50,8 +56,13 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
     private volatile ScheduledFuture storageTaskFuture;
 
-    public DefaultNearCacheManager(SerializationService ss, TaskScheduler es,
-                                   ClassLoader classLoader, HazelcastProperties properties) {
+    public DefaultNearCacheManager(SerializationService ss,
+                                   MinimalPartitionService partitionService,
+                                   PartitioningStrategy partitioningStrategy,
+                                   Executor executor,
+                                   TaskScheduler es,
+                                   ClassLoader classLoader,
+                                   HazelcastProperties properties) {
         assert ss != null;
         assert es != null;
 
@@ -59,6 +70,9 @@ public class DefaultNearCacheManager implements NearCacheManager {
         this.scheduler = es;
         this.classLoader = classLoader;
         this.properties = properties;
+        this.partitionService = partitionService;
+        this.partitioningStrategy = partitioningStrategy;
+        this.executor = executor;
     }
 
     @Override
@@ -82,7 +96,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
             synchronized (mutex) {
                 nearCache = nearCacheMap.get(name);
                 if (nearCache == null) {
-                    nearCache = createNearCache(name, nearCacheConfig);
+                    nearCache = createNearCache(name, nearCacheConfig, partitioningStrategy);
                     nearCache.initialize();
 
                     nearCacheMap.put(name, nearCache);
@@ -98,9 +112,16 @@ public class DefaultNearCacheManager implements NearCacheManager {
         return nearCache;
     }
 
-    protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig) {
-        return new DefaultNearCache<K, V>(name, nearCacheConfig, serializationService,
-                scheduler, classLoader, properties);
+    protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig,
+                                                     PartitioningStrategy partitioningStrategy) {
+        return new DefaultNearCache(name, nearCacheConfig,
+                serializationService,
+                partitionService,
+                partitioningStrategy,
+                executor,
+                scheduler,
+                classLoader,
+                properties);
     }
 
     @Override
@@ -219,17 +240,12 @@ public class DefaultNearCacheManager implements NearCacheManager {
             if (nearCacheStats.getLastPersistenceTime() == 0) {
                 // check initial delay seconds for first persistence
                 long runningSeconds = MILLISECONDS.toSeconds(now - started);
-                if (runningSeconds < preloaderConfig.getStoreInitialDelaySeconds()) {
-                    return false;
-                }
+                return runningSeconds >= preloaderConfig.getStoreInitialDelaySeconds();
             } else {
                 // check interval seconds for all other persistences
                 long elapsedSeconds = MILLISECONDS.toSeconds(now - nearCacheStats.getLastPersistenceTime());
-                if (elapsedSeconds < preloaderConfig.getStoreIntervalSeconds()) {
-                    return false;
-                }
+                return elapsedSeconds >= preloaderConfig.getStoreIntervalSeconds();
             }
-            return true;
         }
     }
 

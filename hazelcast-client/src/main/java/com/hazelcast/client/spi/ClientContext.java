@@ -154,6 +154,11 @@ public class ClientContext {
         public int getPartitionCount() {
             return partitionService.getPartitionCount();
         }
+
+        @Override
+        public boolean isPartitionOwner(int partitionId) {
+            return false;
+        }
     }
 
     public HazelcastInstance getHazelcastInstance() {

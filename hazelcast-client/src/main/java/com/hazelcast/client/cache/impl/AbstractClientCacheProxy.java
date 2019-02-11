@@ -19,6 +19,7 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
 import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
@@ -26,14 +27,12 @@ import com.hazelcast.client.impl.protocol.codec.CacheSetExpiryPolicyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.FutureUtil;
 
 import javax.cache.CacheException;
@@ -41,7 +40,6 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,6 +70,18 @@ import static java.util.Collections.emptyMap;
 @SuppressWarnings("checkstyle:npathcomplexity")
 abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCacheProxy<K, V> {
 
+    protected static final ClientMessageDecoder CACHE_CONTAINS_KEY_DECODER = new ClientMessageDecoder() {
+        @Override
+        public Boolean decodeClientMessage(ClientMessage clientMessage) {
+            return CacheContainsKeyCodec.decodeResponse(clientMessage).response;
+        }
+    };
+    protected static final ClientMessageDecoder CACHE_GET_ALL_RESPONSE_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) CacheGetAllCodec.decodeResponse(clientMessage).response;
+        }
+    };
     @SuppressWarnings("unchecked")
     private static final ClientMessageDecoder CACHE_GET_RESPONSE_DECODER = new ClientMessageDecoder() {
         @Override
@@ -109,27 +119,28 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         ensureOpen();
         validateNotNull(key);
 
-        ExecutionCallback<V> callback = !statisticsEnabled ? null : statsHandler.<V>newOnGetCallback(startNanos);
-        return getAsyncInternal(key, expiryPolicy, callback);
+        ExecutionCallback<V> statsCallback = !statisticsEnabled ? null : statsHandler.<V>newOnGetCallback(startNanos);
+        return getAsyncInternal(key, expiryPolicy, statsCallback);
     }
 
-    protected InternalCompletableFuture<V> getAsyncInternal(Object key, ExpiryPolicy expiryPolicy,
-                                                            ExecutionCallback<V> callback) {
+    protected ICompletableFuture<V> getAsyncInternal(Object key, ExpiryPolicy expiryPolicy,
+                                                     ExecutionCallback<V> statsCallback) {
         Data dataKey = toData(key);
         ClientDelegatingFuture<V> future = getInternal(dataKey, expiryPolicy, true);
-        addCallback(future, callback);
+        addCallback(future, statsCallback);
         return future;
     }
 
-    private ClientDelegatingFuture<V> getInternal(Object key, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
+    protected ClientDelegatingFuture<V> getInternal(Object key, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
         Data keyData = toData(key);
         Data expiryPolicyData = toData(expiryPolicy);
 
-        ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
-        int partitionId = getContext().getPartitionService().getPartitionId(keyData);
+        return invokeCacheGet(keyData, expiryPolicyData, deserializeResponse);
+    }
 
-        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, name, partitionId);
-        ClientInvocationFuture future = clientInvocation.invoke();
+    protected ClientDelegatingFuture<V> invokeCacheGet(Data keyData, Data expiryPolicyData, boolean deserializeResponse) {
+        ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
+        ClientInvocationFuture future = invokeAsync(request, keyData);
         return newDelegatingFuture(future, CACHE_GET_RESPONSE_DECODER, deserializeResponse);
     }
 
@@ -224,39 +235,32 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             return emptyMap();
         }
 
-        int keysSize = keys.size();
-        List<Data> dataKeys = new LinkedList<Data>();
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
-        getAllInternal(keys, dataKeys, expiryPolicy, resultingKeyValuePairs, startNanos);
+        Map<K, V> result = createHashMap(keys.size());
+        getAllInternal(keys, expiryPolicy, result, startNanos);
 
-        Map<K, V> result = createHashMap(keysSize);
-        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
-            K key = toObject(resultingKeyValuePairs.get(i++));
-            V value = toObject(resultingKeyValuePairs.get(i++));
-            result.put(key, value);
-        }
         return result;
+
     }
 
-    protected void getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys, ExpiryPolicy expiryPolicy,
-                                  List<Object> resultingKeyValuePairs, long startNanos) {
-        if (dataKeys.isEmpty()) {
-            objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
-        }
-        Data expiryPolicyData = toData(expiryPolicy);
+    protected void getAllInternal(Set<? extends K> keys, ExpiryPolicy expiryPolicy, Map result, long startNanos) {
+        Collection<Data> dataKeys = objectToDataCollection(keys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
+        Data dataExpiryPolicy = toData(expiryPolicy);
 
-        ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, dataKeys, expiryPolicyData);
-        ClientMessage responseMessage = invoke(request);
-
-        List<Map.Entry<Data, Data>> response = CacheGetAllCodec.decodeResponse(responseMessage).response;
+        ClientInvocationFuture future = invokeGetAll(dataKeys, dataExpiryPolicy);
+        ClientMessage clientMessage = future.join();
+        List<Map.Entry<Data, Data>> response = CACHE_GET_ALL_RESPONSE_DECODER.decodeClientMessage(clientMessage);
         for (Map.Entry<Data, Data> entry : response) {
-            resultingKeyValuePairs.add(entry.getKey());
-            resultingKeyValuePairs.add(entry.getValue());
+            result.put(toObject(entry.getKey()), toObject(entry.getValue()));
         }
 
         if (statisticsEnabled) {
             statsHandler.onBatchGet(startNanos, response.size());
         }
+    }
+
+    protected ClientInvocationFuture invokeGetAll(Collection<Data> dataKeys, Data dataExpiryPolicy) {
+        ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, dataKeys, dataExpiryPolicy);
+        return invokeAsync(request);
     }
 
     @Override
@@ -349,7 +353,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     private List<Data>[] groupKeysToPartitions(Set<? extends K> keys, Set<Data> serializedKeys) {
         List<Data>[] keysByPartition = new List[partitionCount];
         ClientPartitionService partitionService = getContext().getPartitionService();
-        for (K key: keys) {
+        for (K key : keys) {
             Data keyData = getSerializationService().toData(key);
 
             if (serializedKeys != null) {

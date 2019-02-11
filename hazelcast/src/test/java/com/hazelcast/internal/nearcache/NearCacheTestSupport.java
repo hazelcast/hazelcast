@@ -19,24 +19,25 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.util.function.Supplier;
 import org.junit.Before;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.internal.nearcache.NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -110,7 +111,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         // show that NearCache delegates put call to wrapped NearCacheRecordStore
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String value = "Record-" + i;
-            nearCache.put(i, null, value, null);
+            //nearCache.put(i, null, value, null);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnPut);
             assertEquals(value, managedNearCacheRecordStore.latestValueOnPut);
         }
@@ -228,7 +229,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         ManagedNearCacheRecordStore managedNearCacheRecordStore = createManagedNearCacheRecordStore();
         NearCache<Integer, String> nearCache = createNearCache(DEFAULT_NEAR_CACHE_NAME, managedNearCacheRecordStore);
 
-        nearCache.put(1, null, "1", null);
+        //nearCache.put(1, null, "1", null);
 
         // show that NearCache checks eviction from specified NearCacheRecordStore
         assertTrue(managedNearCacheRecordStore.doEvictionIfRequiredCalled);
@@ -237,7 +238,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
     protected class ManagedNearCacheRecordStore implements NearCacheRecordStore<Integer, String> {
 
         protected final NearCacheStats nearCacheStats = new NearCacheStatsImpl();
-        protected final Object selectedCandidateToSave = new Object();
 
         protected Map<Integer, String> expectedKeyValueMappings;
         protected Integer latestKeyOnGet;
@@ -250,7 +250,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         protected volatile boolean clearCalled;
         protected volatile boolean destroyCalled;
-        protected volatile boolean selectToSaveCalled;
         protected volatile boolean doEvictionIfRequiredCalled;
         protected volatile boolean doExpirationCalled;
 
@@ -265,29 +264,8 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public String get(Integer key) {
-            if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near Cache is already destroyed");
-            }
-            String value = expectedKeyValueMappings.get(key);
-            latestKeyOnGet = key;
-            latestValueOnGet = value;
-            return value;
-        }
-
-        @Override
         public NearCacheRecord getRecord(Integer key) {
             return null;
-        }
-
-        @Override
-        public void put(Integer key, Data keyData, String value, Data valueData) {
-            if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near Cache is already destroyed");
-            }
-            expectedKeyValueMappings.put(key, value);
-            latestKeyOnPut = key;
-            latestValueOnPut = value;
         }
 
         @Override
@@ -363,13 +341,33 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public long tryReserveForUpdate(Integer key, Data keyData) {
-            return NOT_RESERVED;
+        public boolean cacheFullButEvictionDisabled(Integer ncKey) {
+            return false;
         }
 
         @Override
-        public String tryPublishReserved(Integer key, String value, long reservationId, boolean deserialize) {
+        public String get(Integer key) {
             return null;
+        }
+
+        @Override
+        public void getAll(Collection<Integer> ncKeys, Map result) {
+
+        }
+
+        @Override
+        public String getOrFetch(Integer ncKey, Supplier<ICompletableFuture> supplier) {
+            return null;
+        }
+
+        @Override
+        public ICompletableFuture getOrFetchAsync(Integer ncKey, Supplier<ICompletableFuture> supplier) {
+            return null;
+        }
+
+        @Override
+        public void getAllOrFetch(Collection<Integer> ncKeys, Supplier<ICompletableFuture> supplier, Map result) {
+
         }
     }
 }
