@@ -54,7 +54,7 @@ public class JsonSchemaHelperNullTest extends AbstractJsonSchemaTest {
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    private static final String SIMPLE_ARRAY = Json.array(1, 2, 3, 4).toString();
+    private static final String SIMPLE_ARRAY = Json.array(new int[]{1, 2, 3, 4}).toString();
     private static final String SIMPLE_OBJECT = Json.object()
             .add("a", 1)
             .add("b", 2)
@@ -66,7 +66,7 @@ public class JsonSchemaHelperNullTest extends AbstractJsonSchemaTest {
                     .add("ba", 21)
                     .add("bb", 22)
                     .add("bc", 23))
-            .add("c", Json.array(31, 32, 33, 34))
+            .add("c", Json.array(new int[]{31, 32, 33, 34}))
             .add("d", true)
             .toString();
 
