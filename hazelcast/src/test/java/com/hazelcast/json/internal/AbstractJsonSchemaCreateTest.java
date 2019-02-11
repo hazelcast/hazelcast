@@ -131,7 +131,7 @@ public abstract class AbstractJsonSchemaCreateTest {
 
     @Test
     public void testSimpleArray() throws IOException {
-        String jsonString = Json.array(1, 2, 3).toString();
+        String jsonString = Json.array(new int[]{1, 2, 3}).toString();
 
         JsonParser parser = createParserFromString(jsonString);
         JsonSchemaNode description = JsonSchemaHelper.createSchema(parser);
