@@ -20,7 +20,8 @@ import com.hazelcast.core.HazelcastException;
 
 /**
  * A {@link com.hazelcast.core.HazelcastException} that indicates that a {@link com.hazelcast.core.DistributedObject}
- * access was attempted, but the object is destroyed.
+ * access was attempted to a destroyed object while there was a blocking operation on it, e.g., waiting a response
+ * when trying to acquire a lock.
  */
 public class DistributedObjectDestroyedException extends HazelcastException {
 
