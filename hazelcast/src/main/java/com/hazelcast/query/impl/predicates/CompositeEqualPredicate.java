@@ -52,7 +52,7 @@ public class CompositeEqualPredicate implements Predicate, IndexAwarePredicate {
      * @param value the value to construct the predicate for.
      */
     public CompositeEqualPredicate(InternalIndex index, CompositeValue value) {
-        // We can's store a direct index reference here, the actual index must
+        // We can't store a direct index reference here, the actual index must
         // always be obtained from the QueryContext while executing the query to
         // make index stats work properly.
         this.indexName = index.getName();

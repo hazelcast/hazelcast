@@ -42,7 +42,7 @@ public abstract class AbstractIndex implements InternalIndex {
 
     /**
      * Represents a null-like value that is equal to itself and less than any
-     * other value except {@link  CompositeValue#NEGATIVE_INFINITY}. The later
+     * other value except {@link CompositeValue#NEGATIVE_INFINITY}. The latter
      * is needed to establish the ordering of keys for composite indexes.
      */
     public static final ComparableIdentifiedDataSerializable NULL = new NullObject();

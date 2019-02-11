@@ -21,9 +21,9 @@ import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static com.hazelcast.query.impl.Comparison.GREATER;
@@ -41,7 +41,7 @@ import static java.util.Collections.emptySet;
  */
 public class AttributeIndexRegistry {
 
-    private final Map<String, Record> registry = new ConcurrentHashMap<String, Record>();
+    private final ConcurrentMap<String, Record> registry = new ConcurrentHashMap<String, Record>();
 
     /**
      * Registers the given index in this registry.
@@ -115,7 +115,8 @@ public class AttributeIndexRegistry {
 
         // It's enough to have volatile non-atomic mutations here, just to ensure
         // the visibility, since only a single thread may mutate a record at any
-        // given time.
+        // given time. All invocations are coming from Indexes.addOrGetIndex
+        // which is synchronized.
 
         volatile InternalIndex unordered;
 

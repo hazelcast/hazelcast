@@ -112,7 +112,7 @@ public final class PredicateUtils {
      *                                  255 components.
      * @see #constructCanonicalCompositeIndexName
      */
-    public static String[] parseCompositeIndexComponents(String name) {
+    public static String[] parseOutCompositeIndexComponents(String name) {
         String[] components = COMMA_PATTERN.split(name, -1);
 
         if (components.length == 1) {
@@ -123,7 +123,7 @@ public final class PredicateUtils {
             throw new IllegalArgumentException("Too many composite index attributes: " + name);
         }
 
-        Set<String> seenComponents = new HashSet<String>();
+        Set<String> seenComponents = new HashSet<String>(components.length);
         for (int i = 0; i < components.length; ++i) {
             String component = PredicateUtils.canonicalizeAttribute(components[i]);
             components[i] = component;

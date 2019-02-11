@@ -124,7 +124,7 @@ public class Indexes {
             return index;
         }
 
-        String[] components = PredicateUtils.parseCompositeIndexComponents(name);
+        String[] components = PredicateUtils.parseOutCompositeIndexComponents(name);
         if (components == null) {
             name = PredicateUtils.canonicalizeAttribute(name);
         } else {

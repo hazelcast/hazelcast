@@ -140,7 +140,7 @@ public abstract class BaseIndexStore implements IndexStore {
 
     @Override
     public void destroy() {
-        // NOOP
+        // nothing to destroy
     }
 
     @SuppressWarnings("unchecked")

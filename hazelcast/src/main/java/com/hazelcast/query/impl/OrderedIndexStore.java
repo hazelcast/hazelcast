@@ -177,11 +177,6 @@ public class OrderedIndexStore extends BaseIndexStore {
         }
     }
 
-    @Override
-    public String toString() {
-        return "OrderedIndexStore{" + "recordMap=" + recordMap.size() + '}';
-    }
-
     /**
      * Adds entry to the given index map without copying it.
      * Needs to be invoked in a thread-safe way.

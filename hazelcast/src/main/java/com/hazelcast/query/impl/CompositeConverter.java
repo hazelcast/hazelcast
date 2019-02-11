@@ -28,6 +28,13 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
  * Represents a composite converter composed out of a converter tuple. Used
  * while converting {@link CompositeValue}s for the purpose of querying and
  * storing.
+ * <p>
+ * A composite converter may be marked as {@link #isTransient transient} if at
+ * least one of its component converters is resolved to {@link
+ * TypeConverters#NULL_CONVERTER NULL_CONVERTER}. That null converter set for a
+ * certain component indicates that there are only {@code null} values present
+ * in the index for the corresponding attribute and therefore the actual
+ * attribute type is not resolved yet.
  */
 public class CompositeConverter implements TypeConverter {
 

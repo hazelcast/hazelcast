@@ -72,7 +72,7 @@ public class CompositeRangePredicate implements Predicate, IndexAwarePredicate {
             throw new IllegalArgumentException("range must be bounded");
         }
 
-        // We can's store a direct index reference here, the actual index must
+        // We can't store a direct index reference here, the actual index must
         // always be obtained from the QueryContext while executing the query to
         // make index stats work properly.
         this.indexName = index.getName();

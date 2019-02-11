@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.parseCompositeIndexComponents;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.parseOutCompositeIndexComponents;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -41,12 +41,12 @@ public class AttributeCanonicalizationTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyComponentIsNotAllowed() {
-        parseCompositeIndexComponents("a,");
+        parseOutCompositeIndexComponents("a,");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testDuplicateComponentsAreNotAllowed() {
-        parseCompositeIndexComponents("a,b,a");
+        parseOutCompositeIndexComponents("a,b,a");
     }
 
     @Test

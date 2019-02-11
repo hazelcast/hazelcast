@@ -211,7 +211,16 @@ public class RangeVisitor extends AbstractVisitor {
 
     private static class Range {
 
+        /**
+         * Indicates a range with unknown satisfiability for which there is no
+         * enough type information available to decide on its satisfiability or
+         * unsatisfiability.
+         */
         public static final Range UNKNOWN = new Range();
+
+        /**
+         * Indicates an unsatisfiable range like {@code a < 100 and a > 100}.
+         */
         public static final Range UNSATISFIABLE = new Range();
 
         private final String attribute;
@@ -355,6 +364,10 @@ public class RangeVisitor extends AbstractVisitor {
             }
         }
 
+        /**
+         * @return {@code true} if this range is a nullness check range like
+         * {@code a = null}, {@code false} otherwise.
+         */
         private boolean isNullnessCheck() {
             if (isNull(from) && isNull(to)) {
                 assert fromInclusive && toInclusive;
