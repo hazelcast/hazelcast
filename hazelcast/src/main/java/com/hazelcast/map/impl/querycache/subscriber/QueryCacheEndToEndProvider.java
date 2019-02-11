@@ -57,29 +57,7 @@ public class QueryCacheEndToEndProvider<K, V> {
             return existingQueryCache;
         }
 
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
-        try {
-            synchronized (mutex) {
-                ConcurrentMap<String, InternalQueryCache<K, V>> queryCacheRegistry
-                        = getOrPutIfAbsent(queryCacheRegistryPerMap, mapName, queryCacheRegistryConstructor);
-
-                InternalQueryCache<K, V> queryCache = queryCacheRegistry.get(cacheName);
-                if (queryCache != null) {
-                    return queryCache;
-                }
-
-                String cacheId = UuidUtil.newUnsecureUuidString();
-                queryCache = constructor.createNew(cacheId);
-                if (queryCache != NULL_QUERY_CACHE) {
-                    queryCacheRegistry.put(cacheName, queryCache);
-                    return queryCache;
-                }
-
-                return null;
-            }
-        } finally {
-            closeResource(mutex);
-        }
+        return tryCreateQueryCache(mapName, cacheName, constructor);
     }
 
     private InternalQueryCache<K, V> getExistingQueryCacheOrNull(String mapName, String cacheName) {
@@ -91,6 +69,38 @@ public class QueryCacheEndToEndProvider<K, V> {
             }
         }
         return null;
+    }
+
+    /**
+     * Idempotent query cache create mechanism.
+     */
+    public InternalQueryCache<K, V> tryCreateQueryCache(String mapName, String cacheName,
+                                                        ConstructorFunction<String, InternalQueryCache<K, V>> constructor) {
+
+        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        try {
+            synchronized (mutex) {
+                ConcurrentMap<String, InternalQueryCache<K, V>> queryCacheRegistry
+                        = getOrPutIfAbsent(queryCacheRegistryPerMap, mapName, queryCacheRegistryConstructor);
+
+                InternalQueryCache<K, V> queryCache = queryCacheRegistry.get(cacheName);
+                // if this is a recreation we expect to have a Uuid otherwise we
+                // need to generate one for the first creation of query cache.
+                String cacheId = queryCache == null
+                        ? UuidUtil.newUnsecureUuidString() : queryCache.getCacheId();
+
+                queryCache = constructor.createNew(cacheId);
+
+                if (queryCache != NULL_QUERY_CACHE) {
+                    queryCacheRegistry.put(cacheName, queryCache);
+                    return queryCache;
+                }
+
+                return null;
+            }
+        } finally {
+            closeResource(mutex);
+        }
     }
 
     public void removeSingleQueryCache(String mapName, String cacheName) {

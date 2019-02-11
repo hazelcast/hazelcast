@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
@@ -57,6 +58,8 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
 
     void setPublisherListenerId(String publisherListenerId);
 
+    String getPublisherListenerId();
+
     /**
      * @return internally used ID for this query cache
      */
@@ -67,7 +70,7 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
      *
      * @return {@code true} if this query cache is at its max capacity,
      * otherwise return {@code false}
-     * @see com.hazelcast.config.QueryCacheConfig#populate
+     * @see QueryCacheConfig#isPopulate()
      */
     boolean reachedMaxCapacity();
 
@@ -75,4 +78,17 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
      * @return extractors of this query cache instance.
      */
     Extractors getExtractors();
+
+    /**
+     * Recreates this query cache.
+     *
+     * Recreation steps are:
+     * <ul>
+     * <li>Reset local subscribers' state, clear all cache entries so far.</li>
+     * <li>Recreate/reset publisher (server) side
+     * resources by using this subscribers'metadata e.g. on
+     * server restart we can recreate server side resources.</li>
+     * </ul>
+     */
+    void recreate();
 }

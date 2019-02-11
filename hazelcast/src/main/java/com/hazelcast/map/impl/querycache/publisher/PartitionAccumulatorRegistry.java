@@ -47,7 +47,8 @@ public class PartitionAccumulatorRegistry implements Registry<Integer, Accumulat
      */
     private volatile String uuid;
 
-    public PartitionAccumulatorRegistry(AccumulatorInfo info, ConstructorFunction<Integer, Accumulator> accumulatorConstructor) {
+    public PartitionAccumulatorRegistry(AccumulatorInfo info,
+                                        ConstructorFunction<Integer, Accumulator> accumulatorConstructor) {
         this.info = info;
         this.eventFilter = createEventFilter();
         this.accumulatorConstructor = accumulatorConstructor;

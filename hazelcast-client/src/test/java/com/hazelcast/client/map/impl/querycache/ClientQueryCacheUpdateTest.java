@@ -43,8 +43,8 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientQueryCacheUpdateTest extends HazelcastTestSupport {
 
-    private final String mapName = randomString();
-    private final String queryCacheName = randomString();
+    private final String mapName = "mapName";
+    private final String queryCacheName = "queryCacheName";
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private HazelcastInstance client;

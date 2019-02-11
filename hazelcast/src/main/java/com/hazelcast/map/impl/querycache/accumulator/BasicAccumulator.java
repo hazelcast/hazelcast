@@ -40,8 +40,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E> {
 
-    protected final ILogger logger = Logger.getLogger(getClass());
     protected final AccumulatorHandler<E> handler;
+    protected final ILogger logger = Logger.getLogger(getClass());
 
     protected BasicAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);
@@ -132,8 +132,7 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
 
     @Override
     public void reset() {
-        buffer.reset();
-        partitionSequencer.reset();
+        handler.reset();
     }
 
     private E readNextExpiredOrNull(long now, long delay, TimeUnit unit) {
@@ -156,7 +155,7 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
     }
 
     @SuppressWarnings("unchecked")
-    private AccumulatorHandler<E> createAccumulatorHandler(QueryCacheContext context, AccumulatorInfo info) {
+    protected AccumulatorHandler<E> createAccumulatorHandler(QueryCacheContext context, AccumulatorInfo info) {
         QueryCacheEventService queryCacheEventService = context.getQueryCacheEventService();
         AccumulatorProcessor<Sequenced> processor = createAccumulatorProcessor(info, queryCacheEventService);
         return (AccumulatorHandler<E>) new PublisherAccumulatorHandler(context, processor);

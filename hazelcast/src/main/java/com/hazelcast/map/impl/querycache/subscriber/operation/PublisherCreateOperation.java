@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.querycache.subscriber.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.Target;
@@ -135,7 +135,11 @@ public class PublisherCreateOperation extends MapOperation {
         PublisherContext publisherContext = getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
         PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrCreate(mapName);
+        // If InternalQueryCache#recreate is called, we forcibly
+        // remove and recreate registration matching with cacheId
+        publisherRegistry.remove(cacheId);
         PartitionAccumulatorRegistry partitionAccumulatorRegistry = publisherRegistry.getOrCreate(cacheId);
+
         partitionAccumulatorRegistry.setUuid(getCallerUuid());
     }
 
@@ -240,7 +244,7 @@ public class PublisherCreateOperation extends MapOperation {
         // values of the entries may be different if keyData-s are equal
         // so this `if` checks the existence of keyData in the set. If it is there, just removing it and adding
         // `the new row with the same keyData but possibly with the new value`.
-        // TODO
+        // TODO can cause duplicate event receive on client side
         //if (queryResultSet.contains(row)) {
         //    queryResultSet.remove(row);
         //}

@@ -58,6 +58,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
@@ -125,20 +126,11 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public boolean tryRecover() {
-        SubscriberContext subscriberContext = context.getSubscriberContext();
-        MapSubscriberRegistry mapSubscriberRegistry = subscriberContext.getMapSubscriberRegistry();
-
-        SubscriberRegistry subscriberRegistry = mapSubscriberRegistry.getOrNull(mapName);
-        if (subscriberRegistry == null) {
+        SubscriberAccumulator subscriberAccumulator = getOrNullSubscriberAccumulator();
+        if (subscriberAccumulator == null) {
             return false;
         }
 
-        Accumulator accumulator = subscriberRegistry.getOrNull(cacheId);
-        if (accumulator == null) {
-            return false;
-        }
-
-        SubscriberAccumulator subscriberAccumulator = (SubscriberAccumulator) accumulator;
         ConcurrentMap<Integer, Long> brokenSequences = subscriberAccumulator.getBrokenSequences();
         if (brokenSequences.isEmpty()) {
             return true;
@@ -491,6 +483,46 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Indexes getIndexes() {
         return indexes;
+    }
+
+    @Override
+    public void recreate() {
+        SubscriberContext subscriberContext = context.getSubscriberContext();
+
+        // 0. Check subscriber still exists
+        SubscriberAccumulator subscriberAccumulator = getOrNullSubscriberAccumulator();
+        if (subscriberAccumulator == null) {
+            return;
+        }
+
+        // 1. Reset subscriber side resources
+        subscriberAccumulator.reset();
+
+        // 2. Reset/recreate publisher, which is always on server side, resources.
+        QueryCacheRequest request = newQueryCacheRequest()
+                .withCacheName(cacheName)
+                .forMap(delegate)
+                .withContext(context);
+
+        QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
+        queryCacheEndToEndProvider.tryCreateQueryCache(mapName, cacheName, subscriberContext.newEndToEndConstructor(request));
+    }
+
+    private SubscriberAccumulator getOrNullSubscriberAccumulator() {
+        SubscriberContext subscriberContext = context.getSubscriberContext();
+        MapSubscriberRegistry mapSubscriberRegistry = subscriberContext.getMapSubscriberRegistry();
+
+        SubscriberRegistry subscriberRegistry = mapSubscriberRegistry.getOrNull(mapName);
+        if (subscriberRegistry == null) {
+            return null;
+        }
+
+        Accumulator accumulator = subscriberRegistry.getOrNull(cacheId);
+        if (accumulator == null) {
+            return null;
+        }
+
+        return (SubscriberAccumulator) accumulator;
     }
 
     @Override

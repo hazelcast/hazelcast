@@ -36,4 +36,9 @@ public class NodeSubscriberContext extends AbstractSubscriberContext {
     public SubscriberContextSupport getSubscriberContextSupport() {
         return subscriberContextSupport;
     }
+
+    @Override
+    public QueryCacheEndToEndConstructor newEndToEndConstructor(QueryCacheRequest request) {
+        return new NodeQueryCacheEndToEndConstructor(request);
+    }
 }

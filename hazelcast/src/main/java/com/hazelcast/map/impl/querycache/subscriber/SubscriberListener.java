@@ -32,7 +32,7 @@ import java.util.Collection;
 /**
  * Subscriber side listener per {@code QueryCache} which listens events sent by publisher-sides.
  */
-class SubscriberListener implements ListenerAdapter<IMapEvent> {
+public class SubscriberListener implements ListenerAdapter<IMapEvent> {
 
     private final AccumulatorInfo info;
     private final Accumulator accumulator;

@@ -72,6 +72,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
     private Collection<QueryResult> createPublishersAndGetQueryResults(AccumulatorInfo info) {
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
         Collection<Member> members = context.getMemberList();
+
         List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
         for (Member member : members) {
             Address address = member.getAddress();

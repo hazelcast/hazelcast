@@ -58,4 +58,10 @@ abstract class AbstractAccumulator<E extends Sequenced> implements Accumulator<E
         return entry != null
                 && (now - entry.getCreationTime()) >= delayMillis;
     }
+
+    @Override
+    public void reset() {
+        buffer.reset();
+        partitionSequencer.reset();
+    }
 }
