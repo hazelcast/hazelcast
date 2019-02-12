@@ -54,6 +54,13 @@ public class JsonGetterContextCache {
         }
     }
 
+    /**
+     * Cleanup on best effort basis. Concurrent calls to this method may
+     * leave the cache empty. In that case, lost entries are re-cached
+     * at a later call to {@link #getContext(String)}.
+     *
+     * @param excluded
+     */
     private void cleanupIfNeccessary(JsonGetterContext excluded) {
         int cacheCount;
         while ((cacheCount = internalCache.size()) > maxContexts) {

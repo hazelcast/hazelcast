@@ -27,8 +27,8 @@ public class JsonGetterContext {
     private static final int PATTERN_CACHE_MAX_SIZE = 20;
     private static final int PATTERN_CACHE_MAX_VOTES = 20;
 
-    private JsonPathCursor pathCursor;
-    private ThreadLocal<WeightedEvictableList<JsonPattern>> patternListHolder;
+    private final JsonPathCursor pathCursor;
+    private final ThreadLocal<WeightedEvictableList<JsonPattern>> patternListHolder;
 
     public JsonGetterContext(String attributePath) {
         this.pathCursor = JsonPathCursor.createCursor(attributePath);
