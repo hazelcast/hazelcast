@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
@@ -27,6 +28,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 import static com.hazelcast.util.AddressUtil.getPossibleInetAddressesFor;
 
@@ -47,7 +49,7 @@ public final class AddressHelper {
                 : addressHolder.getAddress();
     }
 
-    public static Collection<Address> getSocketAddresses(String address) {
+    public static Addresses getSocketAddresses(String address) {
         AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
         String scopedAddress = getScopedHostName(addressHolder);
 
@@ -59,8 +61,7 @@ public final class AddressHelper {
         return getPossibleSocketAddresses(port, scopedAddress, maxPortTryCount);
     }
 
-    public static Collection<Address> getPossibleSocketAddresses(int port, String scopedAddress,
-                                                                           int portTryCount) {
+    public static Addresses getPossibleSocketAddresses(int port, String scopedAddress, int portTryCount) {
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getByName(scopedAddress);
@@ -72,29 +73,38 @@ public final class AddressHelper {
         if (possiblePort == -1) {
             possiblePort = INITIAL_FIRST_PORT;
         }
-        final Collection<Address> addresses = new LinkedList<Address>();
+        LinkedList<Address> addressList = new LinkedList<Address>();
 
         if (inetAddress == null) {
             for (int i = 0; i < portTryCount; i++) {
                 try {
-                    addresses.add(new Address(scopedAddress, possiblePort + i));
+                    addressList.add(new Address(scopedAddress, possiblePort + i));
                 } catch (UnknownHostException ignored) {
                     Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
                 }
             }
         } else if (inetAddress instanceof Inet4Address) {
             for (int i = 0; i < portTryCount; i++) {
-                addresses.add(new Address(scopedAddress, inetAddress, possiblePort + i));
+                addressList.add(new Address(scopedAddress, inetAddress, possiblePort + i));
             }
         } else if (inetAddress instanceof Inet6Address) {
-            final Collection<Inet6Address> possibleInetAddresses = getPossibleInetAddressesFor((Inet6Address) inetAddress);
+            Collection<Inet6Address> possibleInetAddresses = getPossibleInetAddressesFor((Inet6Address) inetAddress);
             for (Inet6Address inet6Address : possibleInetAddresses) {
                 for (int i = 0; i < portTryCount; i++) {
-                    addresses.add(new Address(scopedAddress, inet6Address, possiblePort + i));
+                    addressList.add(new Address(scopedAddress, inet6Address, possiblePort + i));
                 }
             }
         }
 
-        return addresses;
+        return toAddresses(addressList);
+    }
+
+    private static Addresses toAddresses(List<Address> addressList) {
+        Addresses result = new Addresses();
+        if (addressList.size() > 0) {
+            result.primary().add(addressList.remove(0));
+            result.secondary().addAll(addressList);
+        }
+        return result;
     }
 }

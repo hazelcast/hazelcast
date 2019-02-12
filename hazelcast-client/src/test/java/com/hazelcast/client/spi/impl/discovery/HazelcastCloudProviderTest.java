@@ -63,7 +63,7 @@ public class HazelcastCloudProviderTest {
 
     @Test
     public void testLoadAddresses() {
-        Collection<Address> addresses = provider.loadAddresses();
+        Collection<Address> addresses = provider.loadAddresses().primary();
 
         assertEquals(3, addresses.size());
         for (Address address : expectedAddresses.keySet()) {
@@ -76,7 +76,7 @@ public class HazelcastCloudProviderTest {
     public void testLoadAddresses_whenExceptionIsThrown() {
         when(hazelcastCloudDiscovery.discoverNodes()).thenThrow(new IllegalStateException("Expected exception"));
 
-        Collection<Address> addresses = provider.loadAddresses();
+        Collection<Address> addresses = provider.loadAddresses().primary();
 
         assertEquals("Expected that no addresses are loaded", 0, addresses.size());
     }

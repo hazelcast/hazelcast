@@ -18,21 +18,19 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
+import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.util.AddressHelper;
-import com.hazelcast.nio.Address;
 
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
  * Default address provider of Hazelcast.
- *
+ * <p>
  * Loads addresses from the Hazelcast configuration.
  */
 public class DefaultAddressProvider implements AddressProvider {
 
-    private ClientNetworkConfig networkConfig;
+    private final ClientNetworkConfig networkConfig;
     private boolean noOtherAddressProviderExist;
 
     public DefaultAddressProvider(ClientNetworkConfig networkConfig, boolean noOtherAddressProviderExist) {
@@ -41,16 +39,18 @@ public class DefaultAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Collection<Address> loadAddresses() {
-        final List<String> addresses = networkConfig.getAddresses();
-        if (addresses.isEmpty() && noOtherAddressProviderExist) {
-            addresses.add("127.0.0.1");
-        }
-        final List<Address> possibleAddresses = new LinkedList<Address>();
+    public Addresses loadAddresses() {
+        List<String> configuredAddresses = networkConfig.getAddresses();
 
-        for (String address : addresses) {
-            possibleAddresses.addAll(AddressHelper.getSocketAddresses(address));
+        if (configuredAddresses.isEmpty() && noOtherAddressProviderExist) {
+            configuredAddresses.add("127.0.0.1");
         }
-        return possibleAddresses;
+
+        Addresses addresses = new Addresses();
+        for (String address : configuredAddresses) {
+            addresses.addAll(AddressHelper.getSocketAddresses(address));
+        }
+
+        return addresses;
     }
 }
