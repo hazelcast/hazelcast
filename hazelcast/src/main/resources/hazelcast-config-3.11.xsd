@@ -1446,12 +1446,12 @@
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets the InMemoryFormat.
-                        Setting the InMemoryFormat controls the format of the stored item in the
+                        Sets the in-memory format.
+                        Setting the in-memory format controls the format of the stored item in the
                         ringbuffer:
                         - OBJECT: the item is stored in deserialized format (a regular object)
                         - BINARY (default): the item is stored in serialized format (a binary blob)
-                        The object InMemoryFormat is useful when:
+                        The object in-memory format is useful when:
                         - the object stored in object format has a smaller footprint than in
                         binary format
                         - if there are readers using a filter. Since for every filter
