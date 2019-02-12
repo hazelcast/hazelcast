@@ -20,9 +20,32 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+/**
+ * MetadataInitializer is used to process and generate metadata from
+ * keys and values saved in map store.
+ */
 public interface MetadataInitializer {
 
+    /**
+     * Returns metadata for given binary data. Implementing class decides
+     * the type of the metadata returned.
+     *
+     * @param keyData
+     * @return metadata created from given binary data
+     * @throws IOException
+     */
     Object createFromData(Data keyData) throws IOException;
 
+    /**
+     * Returns metadata for given object. Implementing class decides
+     * the type of the metadata returned.
+     *
+     * It is up to the implementating class to verify the type of the
+     * argument.
+     *
+     * @param object
+     * @return metadata created from given object
+     * @throws IOException
+     */
     Object createFromObject(Object object) throws IOException;
 }

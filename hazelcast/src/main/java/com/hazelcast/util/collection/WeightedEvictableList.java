@@ -81,6 +81,10 @@ public class WeightedEvictableList<T> {
      * Adds a new item to the list. If the list is full, the half of the
      * list is emptied. Removed half of the entries are the ones with
      * the least weight.
+     *
+     * When half of the list is removed, the weights of the remaining
+     * items are reset.
+     *
      * @param item
      * @return The node that can be used to vote for
      */

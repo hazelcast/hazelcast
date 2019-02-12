@@ -130,7 +130,7 @@ public class MapContainer {
         this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         MetadataInitializer metadataInitializer;
         if (mapConfig.getPreprocessingPolicy() == PreprocessingPolicy.CREATION_TIME) {
-            metadataInitializer = new DefaultMetadataInitializer();
+            metadataInitializer = new JsonMetadataInitializer();
         } else {
             metadataInitializer = new NoMetadataInitializer();
         }

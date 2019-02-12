@@ -27,7 +27,7 @@ import java.io.IOException;
 
 import static com.hazelcast.internal.serialization.impl.HeapData.HEAP_DATA_OVERHEAD;
 
-public class DefaultMetadataInitializer implements MetadataInitializer {
+public class JsonMetadataInitializer implements MetadataInitializer {
 
     private static final int UTF_CHAR_COUNT_FIELD_SIZE = 4;
 

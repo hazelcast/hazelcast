@@ -40,6 +40,10 @@ abstract class Getter {
         return getValue(obj);
     }
 
+    /**
+     * Method for generic getters that can make use of metadata if available. These getters must
+     * gracefully fallback to not using metadata if unavailable.
+     */
     Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
         return getValue(obj, attributePath);
     }
