@@ -324,7 +324,7 @@ public class MapTransactionRegressionTest extends HazelcastTestSupport {
         };
 
         EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate<String, Integer> p = e.equal(1);
+        Predicate<String, Integer> p = e.get("this").equal(1);
         map.addEntryListener(l, p, null, false);
 
         for (Integer i = 0; i < 100; i++) {
