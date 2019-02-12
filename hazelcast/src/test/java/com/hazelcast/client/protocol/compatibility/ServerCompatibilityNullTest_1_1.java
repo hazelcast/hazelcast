@@ -83,10 +83,10 @@ public class ServerCompatibilityNullTest_1_1 {
             assertTrue(isEqual(aByte, params.serializationVersion));
                 assertFalse(params.clientHazelcastVersionExist);
                 assertFalse(params.clientNameExist);
-                assertFalse(params.attributesExist);
+                assertFalse(params.labelsExist);
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.1) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -110,10 +110,10 @@ public class ServerCompatibilityNullTest_1_1 {
             assertTrue(isEqual(aByte, params.serializationVersion));
                 assertFalse(params.clientHazelcastVersionExist);
                 assertFalse(params.clientNameExist);
-                assertFalse(params.attributesExist);
+                assertFalse(params.labelsExist);
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.1) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared

@@ -42,7 +42,7 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientAttributeTest {
+public class ClientLabelTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private final String label = "attributeValue";

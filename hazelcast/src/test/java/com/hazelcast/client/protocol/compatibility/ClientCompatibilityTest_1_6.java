@@ -70,7 +70,7 @@ public class ClientCompatibilityTest_1_6 {
             DataInputStream inputStream = new DataInputStream(input);
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.6) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -94,11 +94,12 @@ public class ClientCompatibilityTest_1_6 {
                 assertTrue(isEqual(aByte, params.serializationVersion));
                 assertTrue(isEqual(aString, params.serverHazelcastVersion));
                 assertTrue(isEqual(members, params.clientUnregisteredMembers));
+                assertFalse(params.partitionCountExist);
 }
 
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.6) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -122,6 +123,7 @@ public class ClientCompatibilityTest_1_6 {
                 assertTrue(isEqual(aByte, params.serializationVersion));
                 assertTrue(isEqual(aString, params.serverHazelcastVersion));
                 assertTrue(isEqual(members, params.clientUnregisteredMembers));
+                assertFalse(params.partitionCountExist);
 }
 
 

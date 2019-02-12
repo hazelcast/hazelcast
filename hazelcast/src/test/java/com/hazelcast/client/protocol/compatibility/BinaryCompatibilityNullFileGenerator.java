@@ -58,24 +58,24 @@ public class BinaryCompatibilityNullFileGenerator {
         DataOutputStream outputStream = new DataOutputStream(out);
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(   aString ,   aString ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(   aString ,   aString ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   strings   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(   aByte ,   null ,   null ,   null ,   aByte ,   aString ,   null   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(   aByte ,   null ,   null ,   null ,   aByte ,   aString ,   null ,   anInt   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(   aData ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(   aData ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   strings   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(   aByte ,   null ,   null ,   null ,   aByte ,   aString ,   null   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(   aByte ,   null ,   null ,   null ,   aByte ,   aString ,   null ,   anInt   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }

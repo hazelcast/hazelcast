@@ -59,7 +59,7 @@ public class EncodeDecodeCompatibilityNullTest {
     @org.junit.Test
             public void test() {
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings   );
     ClientAuthenticationCodec.RequestParameters params = ClientAuthenticationCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.username));
             assertTrue(isEqual(aString, params.password));
@@ -70,10 +70,10 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
             assertTrue(isEqual(aString, params.clientName));
-            assertTrue(isEqual(aListOfStringToString, params.attributes));
+            assertTrue(isEqual(strings, params.labels));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt   );
     ClientAuthenticationCodec.ResponseParameters params = ClientAuthenticationCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aByte, params.status));
             assertTrue(isEqual(null, params.address));
@@ -82,9 +82,10 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.serverHazelcastVersion));
             assertTrue(isEqual(null, params.clientUnregisteredMembers));
+            assertTrue(isEqual(anInt, params.partitionCount));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings   );
     ClientAuthenticationCustomCodec.RequestParameters params = ClientAuthenticationCustomCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aData, params.credentials));
             assertTrue(isEqual(null, params.uuid));
@@ -94,10 +95,10 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
             assertTrue(isEqual(aString, params.clientName));
-            assertTrue(isEqual(aListOfStringToString, params.attributes));
+            assertTrue(isEqual(strings, params.labels));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt   );
     ClientAuthenticationCustomCodec.ResponseParameters params = ClientAuthenticationCustomCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aByte, params.status));
             assertTrue(isEqual(null, params.address));
@@ -106,6 +107,7 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.serverHazelcastVersion));
             assertTrue(isEqual(null, params.clientUnregisteredMembers));
+            assertTrue(isEqual(anInt, params.partitionCount));
 }
 {
     ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(    aBoolean   );

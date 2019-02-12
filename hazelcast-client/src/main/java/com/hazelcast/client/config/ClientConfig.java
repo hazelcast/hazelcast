@@ -1016,12 +1016,14 @@ public class ClientConfig {
     }
 
     /**
-     * Adds a label for this client available
+     * Adds a label for this client {@link com.hazelcast.core.Client} available
      *
      * @param label The label to be added.
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
-    public void addLabel(String label) {
+    public ClientConfig addLabel(String label) {
         labels.add(label);
+        return this;
     }
 
     /**

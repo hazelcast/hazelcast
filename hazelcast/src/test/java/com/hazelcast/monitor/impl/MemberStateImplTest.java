@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
@@ -77,7 +78,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.address = "localhost";
         client.clientType = "undefined";
         client.name = "aClient";
-        client.attributes = Collections.singletonMap("attrKey", "attrValue");
+        client.labels = new HashSet<String>(Collections.singletonList("label"));
         clients.add(client);
 
         Map<String, Long> runtimeProps = new HashMap<String, Long>();
@@ -147,7 +148,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals("localhost", client.address);
         assertEquals("undefined", client.clientType);
         assertEquals("aClient", client.name);
-        assertEquals("attrValue", client.attributes.get("attrKey"));
+        assertContains(client.labels, "label");
 
         NodeState deserializedState = deserialized.getNodeState();
         assertEquals(clusterState, deserializedState.getClusterState());
