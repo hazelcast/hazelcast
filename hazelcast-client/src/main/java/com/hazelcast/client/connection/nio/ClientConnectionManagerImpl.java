@@ -700,7 +700,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         private void onAuthenticated() {
-            ClientConnection oldConnection = activeConnections.put(inetSocketAddressCache.get(target), connection);
+            Address memberAddress = connection.getEndPoint();
+            ClientConnection oldConnection = activeConnections.put(inetSocketAddressCache.get(memberAddress), connection);
             if (oldConnection == null) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Authentication succeeded for " + connection
@@ -711,11 +712,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Re-authentication succeeded for " + connection);
                 }
-                assert connection.equals(oldConnection);
+                if (!connection.equals(oldConnection)) {
+                    logger.severe("The address that client is connected from does not match with the member address. "
+                            + " This setup is illegal and will cause inconsistent behaviour "
+                            + "Address that client uses : " + target + ", member address : " + memberAddress);
+                }
             }
 
             connectionsInProgress.remove(inetSocketAddressCache.get(target));
-            logger.info("Authenticated with server " + connection.getEndPoint() + ", server version:" + connection
+            logger.info("Authenticated with server " + memberAddress + ", server version:" + connection
                     .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());
 
             // Check if connection is closed by remote before authentication complete, if that is the case
