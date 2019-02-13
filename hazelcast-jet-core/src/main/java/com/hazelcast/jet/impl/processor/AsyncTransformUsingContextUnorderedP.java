@@ -168,11 +168,13 @@ public final class AsyncTransformUsingContextUnorderedP<C, T, K, R> extends Abst
         if (watermark.timestamp() <= lastReceivedWm) {
             return true;
         }
-        lastReceivedWm = watermark.timestamp();
         if (watermarkCounts.isEmpty()) {
+            if (!tryEmit(watermark)) {
+                return false;
+            }
             lastEmittedWm = watermark.timestamp();
-            return tryEmit(watermark);
         }
+        lastReceivedWm = watermark.timestamp();
         return true;
     }
 

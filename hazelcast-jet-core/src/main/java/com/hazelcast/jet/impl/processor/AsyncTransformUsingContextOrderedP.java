@@ -153,7 +153,7 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
     /**
      * Drains items from the queue until either:
      * <ul><li>
-     *     encountering an incomplete item
+     *     encountering a non-completed item
      * </li><li>
      *     the outbox gets full
      * </li></ul>
