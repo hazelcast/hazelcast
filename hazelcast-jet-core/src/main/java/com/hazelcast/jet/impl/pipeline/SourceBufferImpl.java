@@ -28,6 +28,7 @@ import java.util.Queue;
 
 public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
     private final Queue<T> buffer = new ArrayDeque<>();
+    private final Traverser<T> traverser = buffer::poll;
     private boolean isClosed;
 
     private SourceBufferImpl() {
@@ -46,7 +47,7 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
 
     @Override
     public final Traverser<T> traverse() {
-        return buffer::poll;
+        return traverser;
     }
 
     public final boolean isEmpty() {

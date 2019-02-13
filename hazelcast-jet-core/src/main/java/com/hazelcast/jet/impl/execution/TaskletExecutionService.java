@@ -21,6 +21,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
+import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -266,9 +268,10 @@ public class TaskletExecutionService {
         private static final int COOPERATIVE_LOGGING_THRESHOLD = 5;
 
         @Probe(name = "taskletCount")
-        private final List<TaskletTracker> trackers;
+        private final CopyOnWriteArrayList<TaskletTracker> trackers;
         @Probe
         private final AtomicLong iterationCount = new AtomicLong();
+        private final ProgressTracker progressTracker = new ProgressTracker();
 
         CooperativeWorker() {
             this.trackers = new CopyOnWriteArrayList<>();
@@ -276,55 +279,57 @@ public class TaskletExecutionService {
 
         @Override
         public void run() {
-            final Thread thread = currentThread();
             long idleCount = 0;
+            // capture thread once and prevent lambda allocation on each iteration
+            Consumer<TaskletTracker> runTasklet = t -> runTasklet(Thread.currentThread(), t);
+
             while (true) {
                 Boolean gracefulShutdownLocal = gracefulShutdown.get();
                 // exit condition
                 if (gracefulShutdownLocal != null && (!gracefulShutdownLocal || trackers.isEmpty())) {
                     break;
                 }
-                boolean madeProgress = false;
-                for (TaskletTracker t : trackers) {
-                    long start = 0;
-                    if (logger.isFinestEnabled()) {
-                        start = System.nanoTime();
-                    }
-                    try {
-                        thread.setContextClassLoader(t.jobClassLoader);
-                        final ProgressState result = t.tasklet.call();
-                        if (result.isDone()) {
-                            dismissTasklet(t);
-                        } else {
-                            madeProgress |= result.isMadeProgress();
-                        }
-                    } catch (Throwable e) {
-                        logger.warning("Exception in " + t.tasklet, e);
-                        t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
-                    }
-                    if (t.executionTracker.executionCompletedExceptionally()) {
-                        dismissTasklet(t);
-                    }
-
-                    if (logger.isFinestEnabled()) {
-                        long elapsedMs = NANOSECONDS.toMillis((System.nanoTime() - start));
-                        if (elapsedMs > COOPERATIVE_LOGGING_THRESHOLD) {
-                            logger.finest("Cooperative tasklet call of '" + t.tasklet + "' took more than "
-                                    + COOPERATIVE_LOGGING_THRESHOLD + " ms: " + elapsedMs + "ms");
-                        }
-                    }
-                }
+                progressTracker.reset();
+                // use garbage-free iterator -- relies on implementation in COWArrayList that doesn't use an Iterator
+                trackers.forEach(runTasklet);
                 lazyIncrement(iterationCount);
-                if (madeProgress) {
+                if (progressTracker.isMadeProgress()) {
                     idleCount = 0;
                 } else {
                     IDLER_COOPERATIVE.idle(++idleCount);
                 }
             }
-            // Best-effort attempt to release all tasklets. A tasklet can still be added
-            // to a dead worker through work stealing.
             trackers.forEach(t -> t.executionTracker.taskletDone());
             trackers.clear();
+        }
+
+        private void runTasklet(Thread thread, TaskletTracker t) {
+            long start = 0;
+            if (logger.isFinestEnabled()) {
+                start = System.nanoTime();
+            }
+            try {
+                thread.setContextClassLoader(t.jobClassLoader);
+                final ProgressState result = t.tasklet.call();
+                if (result.isDone()) {
+                    dismissTasklet(t);
+                }
+                progressTracker.mergeWith(result);
+            } catch (Throwable e) {
+                logger.warning("Exception in " + t.tasklet, e);
+                t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
+            }
+            if (t.executionTracker.executionCompletedExceptionally()) {
+                dismissTasklet(t);
+            }
+
+            if (logger.isFinestEnabled()) {
+                long elapsedMs = NANOSECONDS.toMillis((System.nanoTime() - start));
+                if (elapsedMs > COOPERATIVE_LOGGING_THRESHOLD) {
+                    logger.finest("Cooperative tasklet call of '" + t.tasklet + "' took more than "
+                            + COOPERATIVE_LOGGING_THRESHOLD + " ms: " + elapsedMs + "ms");
+                }
+            }
         }
 
         private void dismissTasklet(TaskletTracker t) {

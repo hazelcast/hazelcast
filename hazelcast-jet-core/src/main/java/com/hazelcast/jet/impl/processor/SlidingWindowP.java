@@ -33,6 +33,8 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.util.function.LongFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -77,7 +79,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     // package-visible for testing
-    final Map<Long, Map<K, A>> tsToKeyToAcc = new HashMap<>();
+    final Long2ObjectHashMap<Map<K, A>> tsToKeyToAcc = new Long2ObjectHashMap<>();
     Map<K, A> slidingWindow;
     // Holds the sliding window while emitting early window results. We reuse the
     // slidingWindow field for early results so the code can be simpler.
@@ -104,7 +106,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     private ProcessingGuarantee processingGuarantee;
 
     // extracted lambdas to reduce GC litter
-    private final Function<Long, Map<K, A>> createMapPerTsFunction;
+    private final LongFunction<Map<K, A>> createMapPerTsFunction;
     private final Function<K, A> createAccFunction;
 
     @Probe
