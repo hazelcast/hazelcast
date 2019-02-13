@@ -21,9 +21,11 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.function.DistributedTriPredicate;
 
@@ -325,10 +327,42 @@ public interface GeneralStageWithKey<T, K> {
      * call site and not propagated from the processor that will produce the
      * result, so there is no actual type safety provided.
      *
+     * @param <R>          the type of the output items
+     * @param stageName    a human-readable name for the custom stage
+     * @param procSupplier the supplier of processors
+     */
+    @Nonnull
+    <R> GeneralStage<R> customTransform(@Nonnull String stageName, @Nonnull DistributedSupplier<Processor> procSupplier);
+
+    /**
+     * Attaches a stage with a custom transform based on the provided supplier
+     * of Core API {@link Processor}s. The inbound edge will be distributed and
+     * partitioned using the key function assigned to this stage.
+     * <p>
+     * Note that the type parameter of the returned stage is inferred from the
+     * call site and not propagated from the processor that will produce the
+     * result, so there is no actual type safety provided.
+     *
+     * @param <R>          the type of the output items
+     * @param stageName    a human-readable name for the custom stage
+     * @param procSupplier the supplier of processors
+     */
+    @Nonnull
+    <R> GeneralStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorSupplier procSupplier);
+
+    /**
+     * Attaches a stage with a custom transform based on the provided supplier
+     * of Core API {@link Processor}s. The inbound edge will be distributed and
+     * partitioned using the key function assigned to this stage.
+     * <p>
+     * Note that the type parameter of the returned stage is inferred from the
+     * call site and not propagated from the processor that will produce the
+     * result, so there is no actual type safety provided.
+     *
      * @param <R> the type of the output items
      * @param stageName a human-readable name for the custom stage
      * @param procSupplier the supplier of processors
      */
     @Nonnull
-    <R> GeneralStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorSupplier procSupplier);
+    <R> GeneralStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier);
 }

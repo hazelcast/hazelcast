@@ -32,9 +32,11 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -48,6 +50,7 @@ import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -528,6 +531,34 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         Map<String, Integer> expected = toBag(input
                 .stream().map(mapFn).collect(toList()));
         assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
+    }
+
+
+    @Test
+    public void customTransform_keyed() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+
+        DistributedFunction<Integer, Integer> extractKeyFn = i -> i % 2;
+
+        // When
+        StreamStage<Object> custom = srcStage
+                .withoutTimestamps()
+                .groupingKey(extractKeyFn)
+                .customTransform("map", Processors.mapUsingContextP(
+                        ContextFactory.withCreateFn(jet -> new HashSet<>()),
+                        (Set<Integer> ctx, Integer item) -> {
+                            Integer key = extractKeyFn.apply(item);
+                            return ctx.add(key) ? key : null;
+                        }));
+
+        // Then
+        custom.drainTo(sink);
+        executeAsync();
+        // Each processor emitted distinct keys it observed. If groupingKey isn't correctly partitioning,
+        // multiple processors will observe the same keys and the counts won't match.
+        assertTrueEventually(() -> assertEquals(toBag(asList(0, 1)), sinkToBag()));
     }
 
     @Test

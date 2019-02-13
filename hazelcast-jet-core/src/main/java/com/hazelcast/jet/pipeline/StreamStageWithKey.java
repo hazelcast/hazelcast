@@ -19,7 +19,11 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.function.DistributedTriPredicate;
 
@@ -111,5 +115,18 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
         return (StreamStage<Entry<K, R>>) GeneralStageWithKey.super.<R>rollingAggregate(aggrOp);
     }
 
+    @Nonnull @Override
+    default <R> StreamStage<R> customTransform(@Nonnull String stageName,
+                                               @Nonnull DistributedSupplier<Processor> procSupplier
+    ) {
+        return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
+    }
 
+    @Nonnull @Override
+    default <R> StreamStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorSupplier procSupplier) {
+        return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
+    }
+
+    @Nonnull @Override
+    <R> StreamStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier);
 }

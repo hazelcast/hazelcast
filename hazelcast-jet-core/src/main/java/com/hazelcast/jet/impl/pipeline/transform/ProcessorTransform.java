@@ -17,17 +17,14 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
-
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.processor.Processors.filterUsingContextP;
@@ -36,12 +33,12 @@ import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingContextP;
 
 public class ProcessorTransform extends AbstractTransform {
-    final ProcessorSupplier processorSupplier;
+    final ProcessorMetaSupplier processorSupplier;
 
     ProcessorTransform(
             @Nonnull String name,
             @Nonnull Transform upstream,
-            @Nonnull ProcessorSupplier processorSupplier
+            @Nonnull ProcessorMetaSupplier processorSupplier
     ) {
         super(name, upstream);
         this.processorSupplier = processorSupplier;
@@ -50,9 +47,9 @@ public class ProcessorTransform extends AbstractTransform {
     public static ProcessorTransform customProcessorTransform(
             @Nonnull String name,
             @Nonnull Transform upstream,
-            @Nonnull DistributedSupplier<Processor> createProcessorFn
+            @Nonnull ProcessorMetaSupplier createProcessorFn
     ) {
-        return new ProcessorTransform(name, upstream, ProcessorSupplier.of(createProcessorFn));
+        return new ProcessorTransform(name, upstream, createProcessorFn);
     }
 
     public static <C, T, R> ProcessorTransform mapUsingContextTransform(
@@ -60,7 +57,8 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
     ) {
-        return new ProcessorTransform("mapUsingContext", upstream, mapUsingContextP(contextFactory, mapFn));
+        return new ProcessorTransform("mapUsingContext", upstream,
+                ProcessorMetaSupplier.of(mapUsingContextP(contextFactory, mapFn)));
     }
 
     public static <C, T> ProcessorTransform filterUsingContextTransform(
@@ -68,7 +66,8 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
     ) {
-        return new ProcessorTransform("filterUsingContext", upstream, filterUsingContextP(contextFactory, filterFn));
+        return new ProcessorTransform("filterUsingContext", upstream,
+                ProcessorMetaSupplier.of(filterUsingContextP(contextFactory, filterFn)));
     }
 
     public static <C, T, R> ProcessorTransform flatMapUsingContextTransform(
@@ -77,7 +76,7 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return new ProcessorTransform("flatMapUsingContext", upstream,
-                flatMapUsingContextP(contextFactory, flatMapFn));
+                ProcessorMetaSupplier.of(flatMapUsingContextP(contextFactory, flatMapFn)));
     }
 
     public static <C, T, R> ProcessorTransform flatMapUsingContextAsyncTransform(
@@ -90,7 +89,7 @@ public class ProcessorTransform extends AbstractTransform {
         //      be sent to a random member. We keep it this way for simplicity:
         //      the number of in-flight items is limited (maxAsyncOps)
         return new ProcessorTransform(operationName + "UsingContextAsync", upstream,
-                flatMapUsingContextAsyncP(contextFactory, Object::hashCode, flatMapAsyncFn));
+                ProcessorMetaSupplier.of(flatMapUsingContextAsyncP(contextFactory, Object::hashCode, flatMapAsyncFn)));
     }
 
     @Override

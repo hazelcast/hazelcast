@@ -19,8 +19,7 @@ package com.hazelcast.jet.impl.pipeline;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
@@ -52,7 +51,6 @@ import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
@@ -338,7 +336,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     <RET> RET attachCustomTransform(
             @Nonnull String stageName,
-            @Nonnull DistributedSupplier<Processor> procSupplier
+            @Nonnull ProcessorMetaSupplier procSupplier
     ) {
         return attach(customProcessorTransform(stageName, transform, procSupplier), fnAdapter);
     }
@@ -346,7 +344,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     <K, RET> RET attachPartitionedCustomTransform(
             @Nonnull String stageName,
-            @Nonnull ProcessorSupplier procSupplier,
+            @Nonnull ProcessorMetaSupplier procSupplier,
             @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
 
     ) {

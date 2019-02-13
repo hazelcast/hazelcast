@@ -32,9 +32,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -578,5 +580,31 @@ public class BatchStageTest extends PipelineTestSupport {
                                      .map(String::valueOf)
                                      .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void customTransform_keyed() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+
+        DistributedFunction<Integer, Integer> extractKeyFn = i -> i % 2;
+
+        // When
+        BatchStage<Object> custom = srcStage
+                .groupingKey(extractKeyFn)
+                .customTransform("map", Processors.mapUsingContextP(
+                        ContextFactory.withCreateFn(jet -> new HashSet<>()),
+                        (Set<Integer> ctx, Integer item) -> {
+                            Integer key = extractKeyFn.apply(item);
+                            return ctx.add(key) ? key : null;
+                        }));
+
+        // Then
+        custom.drainTo(sink);
+        execute();
+        // Each processor emitted distinct keys it observed. If groupingKey isn't correctly partitioning,
+        // multiple processors will observe the same keys and the counts won't match.
+        assertEquals(toBag(asList(0, 1)), sinkToBag());
     }
 }

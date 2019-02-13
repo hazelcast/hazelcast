@@ -21,6 +21,8 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -181,9 +183,18 @@ public interface StreamStage<T> extends GeneralStage<T> {
     }
 
     @Nonnull @Override
-    <R> StreamStage<R> customTransform(
-            @Nonnull String stageName,
-            @Nonnull DistributedSupplier<Processor> procSupplier);
+    default <R> StreamStage<R> customTransform(@Nonnull String stageName,
+                                               @Nonnull DistributedSupplier<Processor> procSupplier) {
+        return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
+    }
+
+    @Nonnull @Override
+    default <R> StreamStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorSupplier procSupplier) {
+        return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
+    }
+
+    @Nonnull @Override
+    <R> StreamStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier);
 
     @Nonnull @Override
     StreamStage<T> setLocalParallelism(int localParallelism);

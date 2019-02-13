@@ -22,10 +22,14 @@ import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedQuadFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.function.DistributedTriPredicate;
 
@@ -536,4 +540,19 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     default GroupAggregateBuilder1<T, K> aggregateBuilder() {
         return new GroupAggregateBuilder1<>(this);
     }
+
+    @Nonnull @Override
+    default <R> BatchStage<R> customTransform(@Nonnull String stageName,
+                                              @Nonnull DistributedSupplier<Processor> procSupplier
+    ) {
+        return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
+    }
+
+    @Nonnull @Override
+    default <R> BatchStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorSupplier procSupplier) {
+        return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
+    }
+
+    @Nonnull @Override
+    <R> BatchStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier);
 }
