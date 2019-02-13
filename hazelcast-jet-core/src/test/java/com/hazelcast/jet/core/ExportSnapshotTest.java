@@ -241,6 +241,10 @@ public class ExportSnapshotTest extends JetTestSupport {
             job.resume();
             assertJobStatusEventually(job, RUNNING);
         }
+        // use the state to start new job
+        Job job2 = client.newJob(dag);
+        assertJobStatusEventually(job2, RUNNING);
+        assertTrueAllTheTime(() -> assertEquals(RUNNING, job2.getStatus()), 1);
     }
 
     @Test

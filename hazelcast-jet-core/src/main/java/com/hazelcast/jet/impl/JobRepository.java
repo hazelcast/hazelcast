@@ -468,8 +468,8 @@ public class JobRepository {
         }
     }
 
-    void cacheValidationRecord(@Nonnull String snapshotMapName, @Nonnull SnapshotValidationRecord validationRecord) {
-        exportedSnapshotDetailsCache.set(snapshotMapName, validationRecord);
+    void cacheValidationRecord(@Nonnull String snapshotName, @Nonnull SnapshotValidationRecord validationRecord) {
+        exportedSnapshotDetailsCache.set(snapshotName, validationRecord);
     }
 
     public static final class UpdateJobExecutionRecordEntryProcessor implements

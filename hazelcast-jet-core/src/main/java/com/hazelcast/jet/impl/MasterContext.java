@@ -336,11 +336,12 @@ public class MasterContext {
 
         if (localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
             String sourceMapName = jobExecutionRecord.successfulSnapshotDataMapName(jobId);
+            String targetMapName = EXPORTED_SNAPSHOTS_PREFIX + name;
             JetInstance jetInstance = coordinationService.getJetService().getJetInstance();
-            return copyMapUsingJob(jetInstance, COPY_MAP_JOB_QUEUE_SIZE, sourceMapName, EXPORTED_SNAPSHOTS_PREFIX + name)
+            return copyMapUsingJob(jetInstance, COPY_MAP_JOB_QUEUE_SIZE, sourceMapName, targetMapName)
                     .whenComplete(withTryCatch(logger, (r, t) -> {
                         SnapshotValidationRecord validationRecord =
-                                (SnapshotValidationRecord) jetInstance.getMap(sourceMapName)
+                                (SnapshotValidationRecord) jetInstance.getMap(targetMapName)
                                                                       .get(SnapshotValidationRecord.KEY);
                         jobRepository.cacheValidationRecord(name, validationRecord);
                         if (cancelJob) {
