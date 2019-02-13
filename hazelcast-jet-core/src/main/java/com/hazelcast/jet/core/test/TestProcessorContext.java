@@ -30,7 +30,6 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
 
     private int localProcessorIndex;
     private int globalProcessorIndex;
-    private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
 
     /**
      * Constructor with default values.
@@ -70,20 +69,6 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
         return this;
     }
 
-    @Override
-    public ProcessingGuarantee processingGuarantee() {
-        return processingGuarantee;
-    }
-
-    /**
-     * Sets the processing guarantee.
-     */
-    @Nonnull
-    public TestProcessorContext setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
-        this.processingGuarantee = processingGuarantee;
-        return this;
-    }
-
     @Nonnull @Override
     public TestProcessorContext setLogger(@Nonnull ILogger logger) {
         return (TestProcessorContext) super.setLogger(logger);
@@ -107,6 +92,11 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
     @Nonnull @Override
     public TestProcessorContext setVertexName(@Nonnull String vertexName) {
         return (TestProcessorContext) super.setVertexName(vertexName);
+    }
+
+    @Nonnull @Override
+    public TestProcessorContext setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
+        return (TestProcessorContext) super.setProcessingGuarantee(processingGuarantee);
     }
 
     @Override

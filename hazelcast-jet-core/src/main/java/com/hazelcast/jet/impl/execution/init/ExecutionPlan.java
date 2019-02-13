@@ -321,7 +321,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         vertex.localParallelism(),
                         vertex.localParallelism() * memberCount,
                         memberIndex,
-                        memberCount
+                        memberCount,
+                        jobConfig.getProcessingGuarantee()
                 ));
             } catch (Exception e) {
                 throw sneakyThrow(e);

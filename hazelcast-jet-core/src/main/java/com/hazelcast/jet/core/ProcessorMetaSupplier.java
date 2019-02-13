@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
@@ -372,6 +373,17 @@ public interface ProcessorMetaSupplier extends Serializable {
          */
         @Nonnull
         ILogger logger();
-    }
 
+        /**
+         * Returns true, if snapshots will be saved for this job.
+         */
+        default boolean snapshottingEnabled() {
+            return processingGuarantee() != ProcessingGuarantee.NONE;
+        }
+
+        /**
+         * Returns the guarantee for current job.
+         */
+        ProcessingGuarantee processingGuarantee();
+    }
 }

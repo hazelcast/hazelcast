@@ -89,7 +89,8 @@ public final class ExecutionPlanBuilder {
                     metaSupplier.getClass().getName(), vertex.getName()));
             try {
                 metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
-                        vertex.getName(), localParallelism, totalParallelism, clusterSize));
+                        vertex.getName(), localParallelism, totalParallelism, clusterSize,
+                        jobConfig.getProcessingGuarantee()));
             } catch (Exception e) {
                 throw sneakyThrow(e);
             }

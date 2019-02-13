@@ -41,9 +41,11 @@ public final class Contexts {
         private final int localParallelism;
         private final int totalParallelism;
         private final int memberCount;
+        private final ProcessingGuarantee processingGuarantee;
 
         MetaSupplierCtx(JetInstance jetInstance, long jobId, long executionId, JobConfig jobConfig, ILogger logger,
-                        String vertexName, int localParallelism, int totalParallelism, int memberCount) {
+                        String vertexName, int localParallelism, int totalParallelism, int memberCount,
+                        ProcessingGuarantee processingGuarantee) {
             this.jetInstance = jetInstance;
             this.jobId = jobId;
             this.executionId = executionId;
@@ -53,6 +55,7 @@ public final class Contexts {
             this.totalParallelism = totalParallelism;
             this.localParallelism = localParallelism;
             this.memberCount = memberCount;
+            this.processingGuarantee = processingGuarantee;
         }
 
         @Nonnull
@@ -100,17 +103,24 @@ public final class Contexts {
         public ILogger logger() {
             return logger;
         }
+
+        @Override
+        public ProcessingGuarantee processingGuarantee() {
+            return processingGuarantee;
+        }
     }
 
     static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
 
         private final int memberIndex;
 
+        @SuppressWarnings("checkstyle:ParameterNumber")
         ProcSupplierCtx(
                 JetInstance jetInstance, long jobId, long executionId, JobConfig jobConfig, ILogger logger,
-                String vertexName, int localParallelism, int totalParallelism, int memberIndex, int memberCount) {
+                String vertexName, int localParallelism, int totalParallelism, int memberIndex, int memberCount,
+                ProcessingGuarantee processingGuarantee) {
             super(jetInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
-                    memberCount);
+                    memberCount, processingGuarantee);
             this.memberIndex = memberIndex;
         }
 
@@ -124,7 +134,6 @@ public final class Contexts {
 
         private final int localProcessorIndex;
         private final int globalProcessorIndex;
-        private final ProcessingGuarantee processingGuarantee;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         public ProcCtx(JetInstance instance, long jobId, long executionId, JobConfig jobConfig,
@@ -132,10 +141,9 @@ public final class Contexts {
                        int globalProcessorIndex, ProcessingGuarantee processingGuarantee, int localParallelism,
                        int memberIndex, int memberCount) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
-                    memberCount * localParallelism, memberIndex, memberCount);
+                    memberCount * localParallelism, memberIndex, memberCount, processingGuarantee);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
-            this.processingGuarantee = processingGuarantee;
         }
 
         @Override
@@ -146,11 +154,6 @@ public final class Contexts {
         @Override
         public int globalProcessorIndex() {
             return globalProcessorIndex;
-        }
-
-        @Override
-        public ProcessingGuarantee processingGuarantee() {
-            return processingGuarantee;
         }
     }
 }

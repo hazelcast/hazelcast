@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -297,17 +296,5 @@ public interface Processor {
          * The value is in the range {@code [0...totalParallelism-1]}.
          */
         int globalProcessorIndex();
-
-        /**
-         * Returns true, if snapshots will be saved for this job.
-         */
-        default boolean snapshottingEnabled() {
-            return processingGuarantee() != ProcessingGuarantee.NONE;
-        }
-
-        /**
-         * Returns the guarantee for current job.
-         */
-        ProcessingGuarantee processingGuarantee();
     }
 }

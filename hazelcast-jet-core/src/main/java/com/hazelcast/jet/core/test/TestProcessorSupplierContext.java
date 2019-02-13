@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.test;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 
@@ -54,6 +55,11 @@ public class TestProcessorSupplierContext
     @Nonnull @Override
     public TestProcessorSupplierContext setLocalParallelism(int localParallelism) {
         return (TestProcessorSupplierContext) super.setLocalParallelism(localParallelism);
+    }
+
+    @Nonnull @Override
+    public TestProcessorSupplierContext setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
+        return (TestProcessorSupplierContext) super.setProcessingGuarantee(processingGuarantee);
     }
 
     @Override
