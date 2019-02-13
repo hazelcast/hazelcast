@@ -152,35 +152,35 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
     private void testTumblingWindow(long earlyResultsPeriod) {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedBiFunction<Long, Long, String> formatFn =
-                (timestamp, item) -> String.format("(%03d, %03d)", timestamp, item);
+        Function<TimestampedItem<Long>, String> formatFn =
+                tsItem -> String.format("(%03d, %03d)", tsItem.timestamp(), tsItem.item());
 
         addToSrcMapJournal(input);
         if (earlyResultsPeriod == 0) {
             addToSrcMapJournal(closingItems);
         }
+        final int winSize = 4;
+        StreamStage<Integer> stage = srcStage.withTimestamps(i -> i, maxLag);
 
         // When
-        final int winSize = 4;
-        StreamStage<String> aggregated = srcStage
-                .withTimestamps(i -> i, maxLag)
-                .window(tumbling(winSize)
-                        .setEarlyResultsPeriod(earlyResultsPeriod))
-                .aggregate(summingLong(i -> i), (start, end, sum) -> formatFn.apply(end, sum));
+        StreamStage<TimestampedItem<Long>> aggregated = stage.window(
+                tumbling(winSize).setEarlyResultsPeriod(earlyResultsPeriod)
+        ).aggregate(summingLong(i -> i));
 
         // Then
         aggregated.drainTo(sink);
         jet().newJob(p);
 
         Function<Integer, Long> expectedWindowSum = start -> winSize * (2L * start + winSize - 1) / 2;
-        Stream<String> expectedStream = input
+        Stream<TimestampedItem<Long>> expectedStream = input
                 .stream()
                 .map(i -> i - i % winSize)
                 .distinct()
-                .map(start -> formatFn.apply((long) start + winSize, expectedWindowSum.apply(start)));
-        boolean ignoreDuplicates = earlyResultsPeriod != 0;
-        String expectedString = streamToString(expectedStream, ignoreDuplicates);
-        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+                .map(start -> new TimestampedItem<>((long) start + winSize, expectedWindowSum.apply(start)));
+        String expectedString = streamToString(expectedStream, null, formatFn);
+        assertTrueEventually(() -> assertEquals(
+                expectedString,
+                streamToString(sinkStreamOfTsItem(), TimestampedItem::item, formatFn)),
                 10);
     }
 
@@ -198,23 +198,22 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
     private void testSlidingWindow(long earlyResultsPeriod) {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedBiFunction<Long, Long, String> formatFn =
-                (timestamp, item) -> String.format("(%03d, %03d)", timestamp, item);
+        Function<TimestampedItem<Long>, String> formatFn =
+                tsItem -> String.format("(%03d, %03d)", tsItem.timestamp(), tsItem.item());
 
         addToSrcMapJournal(input);
         if (earlyResultsPeriod == 0) {
             addToSrcMapJournal(closingItems);
         }
-
-        // When
+        StreamStage<Integer> stage0 = srcStage.withTimestamps(i -> i, maxLag);
         final int winSize = 4;
         final int slideBy = 2;
-        StreamStage<String> aggregated = srcStage
-                .withTimestamps(i -> i, maxLag)
-                .window(sliding(winSize, slideBy)
-                        .setEarlyResultsPeriod(earlyResultsPeriod))
-                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START ? null
-                        : formatFn.apply(end, sum));
+
+        // When
+        StreamStage<TimestampedItem<Long>> aggregated = stage0.window(
+                sliding(winSize, slideBy).setEarlyResultsPeriod(earlyResultsPeriod)
+        ).aggregate(summingLong(i -> i), (start, end, sum) ->
+                start == FILTERED_OUT_WINDOW_START ? null : new TimestampedItem<>(end, sum));
 
         // Then
         aggregated.drainTo(sink);
@@ -223,24 +222,25 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         // Window covers [start, end)
         BiFunction<Integer, Integer, Long> expectedWindowSum =
                 (start, end) -> (end - start) * (start + end - 1) / 2L;
-        Stream<String> headOfStream = IntStream
+        Stream<TimestampedItem<Long>> headOfStream = IntStream
                 .range(-winSize + slideBy, 0)
                 .map(i -> i + i % slideBy) // result of % is negative because i is negative
                 .distinct()
-                .mapToObj(start -> formatFn.apply((long) start + winSize,
+                .mapToObj(start -> new TimestampedItem<>((long) start + winSize,
                         expectedWindowSum.apply(0, start + winSize)));
-        Stream<String> restOfStream = input
+        Stream<TimestampedItem<Long>> restOfStream = input
                 .stream()
                 .map(i -> i - i % slideBy)
                 .distinct()
                 .map(start -> start == FILTERED_OUT_WINDOW_START ? null
-                        : formatFn.apply((long) start + winSize,
+                        : new TimestampedItem<>((long) start + winSize,
                                 expectedWindowSum.apply(start, min(start + winSize, itemCount))))
                 .filter(Objects::nonNull);
-        Stream<String> expectedStream = concat(headOfStream, restOfStream);
-        boolean ignoreDuplicates = earlyResultsPeriod != 0;
-        String expectedString = streamToString(expectedStream, ignoreDuplicates);
-        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+        Stream<TimestampedItem<Long>> expectedStream = concat(headOfStream, restOfStream);
+        String expectedString = streamToString(expectedStream, null, formatFn);
+        assertTrueEventually(() -> assertEquals(
+                expectedString,
+                streamToString(sinkStreamOfTsItem(), TimestampedItem::item, formatFn)),
                 10);
     }
 
@@ -262,38 +262,44 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         List<Integer> input = sequence(itemCount).stream()
                                                  .map(ts -> ts + (ts / sessionLength) * sessionTimeout)
                                                  .collect(toList());
-        DistributedBiFunction<Long, Long, String> formatFn =
-                (timestamp, item) -> String.format("(%03d, %03d)", timestamp, item);
+        Function<TimestampedItem<Long>, String> formatFn =
+                tsItem -> String.format("(%03d, %03d)", tsItem.timestamp(), tsItem.item());
 
         addToSrcMapJournal(input);
         if (earlyResultsPeriod == 0) {
             addToSrcMapJournal(closingItems);
         }
+        StreamStage<Integer> stage0 = srcStage.withTimestamps(i -> i, maxLag);
 
         // When
-        StreamStage<String> aggregated = srcStage
-                .withTimestamps(i -> i, maxLag)
-                .window(session(sessionTimeout)
-                        .setEarlyResultsPeriod(earlyResultsPeriod))
-                .aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START
-                        ? null
-                        : formatFn.apply(start, sum));
+        StreamStage<TimestampedItem<Long>> aggregated = stage0.window(
+                session(sessionTimeout).setEarlyResultsPeriod(earlyResultsPeriod)
+        ).aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START
+                ? null
+                : new TimestampedItem<>(start, sum));
 
         // Then
         aggregated.drainTo(sink);
         jet().newJob(p);
 
         Function<Integer, Long> expectedWindowSum = start -> sessionLength * (2 * start + sessionLength - 1) / 2L;
-        Stream<String> expectedStream = input.stream()
-                                             .map(i -> i - i % (sessionLength + sessionTimeout))
-                                             .distinct()
-                                             .map(start -> start == FILTERED_OUT_WINDOW_START ? null
-                                                     : formatFn.apply((long) start, expectedWindowSum.apply(start)))
-                                             .filter(Objects::nonNull);
-        boolean ignoreDuplicates = earlyResultsPeriod != 0;
-        String expectedString = streamToString(expectedStream, ignoreDuplicates);
-        assertTrueEventually(() -> assertEquals(expectedString, streamToString(sinkList.stream(), ignoreDuplicates)),
+        Stream<TimestampedItem<Long>> expectedStream = input
+                .stream()
+                .map(i -> i - i % (sessionLength + sessionTimeout))
+                .distinct()
+                .map(start -> start == FILTERED_OUT_WINDOW_START ? null
+                        : new TimestampedItem<>((long) start, expectedWindowSum.apply(start)))
+                .filter(Objects::nonNull);
+        String expectedString = streamToString(expectedStream, null, formatFn);
+        assertTrueEventually(() -> assertEquals(
+                expectedString,
+                streamToString(sinkStreamOfTsItem(), TimestampedItem::item, formatFn)),
                 10);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Stream<TimestampedItem<Long>> sinkStreamOfTsItem() {
+        return sinkList.stream().map(TimestampedItem.class::cast);
     }
 
     @Test

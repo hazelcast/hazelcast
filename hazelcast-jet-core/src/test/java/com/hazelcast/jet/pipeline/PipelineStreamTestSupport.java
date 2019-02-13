@@ -20,9 +20,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import org.junit.Before;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -30,8 +33,10 @@ import static com.hazelcast.jet.Util.mapEventNewValue;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Collections.nCopies;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
 
@@ -83,11 +88,17 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
         return jet().newJob(p);
     }
 
-    static String streamToString(Stream<?> stream, boolean ignoreDuplicates) {
-        if (ignoreDuplicates) {
-            stream = stream.distinct();
+    static <T, K> String streamToString(
+            @Nonnull Stream<? extends T> stream,
+            @Nullable Function<? super T, ? extends K> distinctKeyFn,
+            @Nonnull Function<? super T, ? extends String> formatFn
+    ) {
+        if (distinctKeyFn != null) {
+            // Keeps the last duplicate item (as required to validate early window results)
+            stream = stream.collect(toMap(distinctKeyFn, identity(), (t0, t1) -> t1))
+                           .values().stream();
         }
-        return stream.map(Object::toString)
+        return stream.map(formatFn)
                      .sorted()
                      .collect(joining("\n"));
     }
