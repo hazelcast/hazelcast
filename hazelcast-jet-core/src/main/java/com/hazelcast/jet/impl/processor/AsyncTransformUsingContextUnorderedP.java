@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.ManyToOneConcurrentArrayQueue;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
@@ -43,6 +44,7 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
@@ -94,6 +96,9 @@ public final class AsyncTransformUsingContextUnorderedP<C, T, K, R> extends Abst
     /** Temporary collection for restored objects during snapshot restore. */
     private ArrayDeque<T> restoredObjects = new ArrayDeque<>();
 
+    @Probe(name = "numInFlightOps")
+    private final AtomicInteger asyncOpsCounterMetric = new AtomicInteger();
+
     /**
      * Constructs a processor with the given mapping function.
      */
@@ -132,6 +137,7 @@ public final class AsyncTransformUsingContextUnorderedP<C, T, K, R> extends Abst
         if (getOutbox().hasUnfinishedItem() && !emitFromTraverser(currentTraverser)) {
             return false;
         }
+        asyncOpsCounterMetric.lazySet(asyncOpsCounter);
         @SuppressWarnings("unchecked")
         T castedItem = (T) item;
         if (!processItem(castedItem)) {

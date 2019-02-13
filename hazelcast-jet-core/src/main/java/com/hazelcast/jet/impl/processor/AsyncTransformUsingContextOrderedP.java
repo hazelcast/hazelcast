@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -31,6 +32,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithContext.supplierWithContext;
@@ -61,6 +63,9 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
     private int maxAsyncOps;
     private ResettableSingletonTraverser<Watermark> watermarkTraverser = new ResettableSingletonTraverser<>();
     private boolean tryProcessSucceeded;
+
+    @Probe(name = "numInFlightOps")
+    private final AtomicInteger asyncOpsCounterMetric = new AtomicInteger();
 
     /**
      * Constructs a processor with the given mapping function.
@@ -124,6 +129,7 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
         } else {
             emitFromTraverser(currentTraverser);
         }
+        asyncOpsCounterMetric.lazySet(queue.size());
         return tryProcessSucceeded = !getOutbox().hasUnfinishedItem();
     }
 
