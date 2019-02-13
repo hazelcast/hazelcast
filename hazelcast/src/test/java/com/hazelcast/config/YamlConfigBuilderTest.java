@@ -82,6 +82,7 @@ import static org.junit.Assert.fail;
 public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
+    @Test
     public void testConfigurationURL() throws Exception {
         URL configURL = getClass().getClassLoader().getResource("hazelcast-default.yaml");
         Config config = new YamlConfigBuilder(configURL).build();
@@ -89,6 +90,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testConfigurationWithFileName() throws Exception {
         assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
 
@@ -141,6 +143,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSecurityInterceptorConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -234,6 +237,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readAwsConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -266,6 +270,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readGcpConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -288,6 +293,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readAzureConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -310,6 +316,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readKubernetesConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -332,6 +339,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readEurekaConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -354,6 +362,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readDiscoveryConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -385,6 +394,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSSLConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -404,6 +414,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSymmetricEncryptionConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -425,6 +436,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readPortCount() {
         // check when it is explicitly set
         Config config = buildConfig(""
@@ -446,6 +458,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readPortAutoIncrement() {
         // explicitly set
         Config config = buildConfig(""
@@ -465,6 +478,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void networkReuseAddress() {
         Config config = buildConfig(""
                 + "hazelcast:\n"
@@ -474,6 +488,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readSemaphoreConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -493,6 +508,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readQueueConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -561,6 +577,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readListConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -608,6 +625,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readSetConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -655,6 +673,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readLockConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -672,6 +691,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readReliableTopic() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -708,6 +728,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readRingbuffer() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -755,6 +776,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readAtomicLong() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -781,6 +803,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readAtomicReference() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -807,6 +830,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readCountDownLatch() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -826,6 +850,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCaseInsensitivityOfSettings() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -858,6 +883,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testManagementCenterConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -875,6 +901,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testManagementCenterConfigComplex() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -898,6 +925,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNullManagementCenterConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -911,6 +939,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testEmptyManagementCenterConfig() {
         String yaml = "hazelcast: {}";
 
@@ -922,6 +951,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNotEnabledManagementCenterConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -935,6 +965,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNotEnabledWithURLManagementCenterConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -950,6 +981,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testManagementCenterConfigComplexDisabledMutualAuth() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -968,6 +1000,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreInitialModeLazy() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -985,6 +1018,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_minEvictionCheckMillis() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -999,6 +1033,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_minEvictionCheckMillis_defaultValue() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1012,6 +1047,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_preprocessingPolicy() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1026,6 +1062,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_preprocessingPolicy_defaultValue() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1039,6 +1076,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_evictions() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1064,6 +1102,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_optimizeQueries() {
         String yaml1 = ""
                 + "hazelcast:\n"
@@ -1088,6 +1127,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_cacheValueConfig_defaultValue() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1101,6 +1141,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_cacheValueConfig_never() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1115,6 +1156,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_cacheValueConfig_always() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1129,6 +1171,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_cacheValueConfig_indexOnly() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1143,6 +1186,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreInitialModeEager() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1160,6 +1204,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreWriteBatchSize() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1175,6 +1220,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenDefault() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(MapStoreConfig.DEFAULT_WRITE_COALESCING, true);
 
@@ -1182,6 +1228,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenSetFalse() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(false, false);
 
@@ -1189,6 +1236,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenSetTrue() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(true, false);
 
@@ -1211,6 +1259,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNearCacheInMemoryFormat() {
         String mapName = "testMapNearCacheInMemoryFormat";
         String yaml = ""
@@ -1228,6 +1277,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNearCacheInMemoryFormatNative_withKeysByReference() {
         String mapName = "testMapNearCacheInMemoryFormatNative";
         String yaml = ""
@@ -1247,6 +1297,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNearCacheEvictionPolicy() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1282,6 +1333,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testPartitionGroupZoneAware() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1296,6 +1348,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testPartitionGroupSPI() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1308,6 +1361,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testPartitionGroupMemberGroups() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1339,6 +1393,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNearCacheFullConfig() {
         String mapName = "testNearCacheFullConfig";
         String yaml = ""
@@ -1378,6 +1433,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapWanReplicationRef() {
         String mapName = "testMapWanReplicationRef";
         String refName = "test";
@@ -1404,6 +1460,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testWanReplicationConfig() {
         String configName = "test";
         String yaml = ""
@@ -1456,7 +1513,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void default_value_of_persist_wan_replicated_data_is_false() {
+    @Test
+    public void testDefaultOfPersistWanReplicatedDataIsFalse() {
         String configName = "test";
         String yaml = ""
                 + "hazelcast:\n"
@@ -1471,6 +1529,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testWanReplicationSyncConfig() {
         String configName = "test";
         String yaml = ""
@@ -1497,6 +1556,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapEventJournalConfig() {
         String journalName = "mapName";
         String journal2Name = "map2Name";
@@ -1523,6 +1583,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapMerkleTreeConfig() {
         String mapName = "mapName";
         String map2Name = "map2Name";
@@ -1548,6 +1609,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCacheEventJournalConfig() {
         String journalName = "cacheName";
         String journal2Name = "cache2Name";
@@ -1574,6 +1636,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testFlakeIdGeneratorConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1611,6 +1674,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void setMapStoreConfigImplementationTest() {
         String mapName = "mapStoreImpObjTest";
         String yaml = ""
@@ -1637,6 +1701,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapPartitionLostListenerConfig() {
         String mapName = "map1";
         String listenerName = "DummyMapPartitionLostListenerImpl";
@@ -1648,6 +1713,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapPartitionLostListenerConfigReadOnly() {
         String mapName = "map1";
         String listenerName = "DummyMapPartitionLostListenerImpl";
@@ -1673,6 +1739,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCachePartitionLostListenerConfig() {
         String cacheName = "cache1";
         String listenerName = "DummyCachePartitionLostListenerImpl";
@@ -1684,6 +1751,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCachePartitionLostListenerConfigReadOnly() {
         String cacheName = "cache1";
         String listenerName = "DummyCachePartitionLostListenerImpl";
@@ -1709,6 +1777,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readMulticastConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1739,6 +1808,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testWanConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1858,6 +1928,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1879,6 +1950,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumListenerConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1947,6 +2019,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig_whenRecentlyActiveQuorum_withDefaultValues() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1966,6 +2039,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig_whenRecentlyActiveQuorum_withCustomValues() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1986,6 +2060,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig_whenProbabilisticQuorum_withDefaultValues() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2010,6 +2085,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig_whenProbabilisticQuorum_withCustomValues() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2036,6 +2112,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCacheConfig() {
         // TODO do we really need to keep the 'class-name' keys?
         String yaml = ""
@@ -2115,6 +2192,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testExecutorConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2136,6 +2214,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testDurableExecutorConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2157,6 +2236,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testScheduledExecutorConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2183,6 +2263,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCardinalityEstimatorConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2223,6 +2304,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testPNCounterConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2242,6 +2324,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMultiMapConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2280,6 +2363,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testReplicatedMapConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2308,6 +2392,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testListConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2342,6 +2427,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSetConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2376,6 +2462,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2508,6 +2595,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testIndexesConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2528,6 +2616,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testAttributeConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2603,6 +2692,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQueryCacheFullConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2661,6 +2751,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapQueryCachePredicate() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2683,6 +2774,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testLiteMemberConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2695,6 +2787,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNonLiteMemberConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2749,6 +2842,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapNativeMaxSizePolicy() {
         String yamlFormat = ""
                 + "hazelcast:\n"
@@ -2774,6 +2868,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testInstanceName() {
         String name = randomName();
         String yaml = ""
@@ -2785,6 +2880,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testUserCodeDeployment() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2807,6 +2903,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCRDTReplicationConfig() {
         final String yaml = ""
                 + "hazelcast:\n"
@@ -2821,6 +2918,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testGlobalSerializer() {
         String name = randomName();
         String val = "true";
@@ -2838,6 +2936,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testJavaSerializationFilter() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2877,6 +2976,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testHotRestart() {
         String dir = "/mnt/hot-restart-root/";
         String backupDir = "/mnt/hot-restart-backup/";
@@ -2908,6 +3008,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapEvictionPolicyClassName() {
         String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
         String yaml = ""
@@ -2923,6 +3024,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapEvictionPolicyIsSelected_whenEvictionPolicySet() {
         String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
         String yaml = ""
@@ -2939,6 +3041,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCachePermission() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2961,6 +3064,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testConfigPermission() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2980,7 +3084,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test(expected = InvalidConfigurationException.class)
-    public void testCacheConfig_withInvalidEvictionConfig_failsFast() {
+    public void testCacheConfig_withNativeInMemoryFormat_failsFastInOSS() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  cache:\n"
@@ -2995,6 +3099,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testAllPermissionsCovered() {
         InputStream yamlResource = YamlConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-fullconfig.yaml");
         Config config = null;
@@ -3026,6 +3131,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMemberAddressProviderEnabled() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3042,6 +3148,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMemberAddressProviderEnabled_withProperties() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3061,6 +3168,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testFailureDetector_withProperties() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3089,6 +3197,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testHandleMemberAttributes() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3104,6 +3213,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMemcacheProtocolEnabled() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3116,6 +3226,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testRestApiDefaults() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3132,6 +3243,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testRestApiEndpointGroups() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3155,6 +3267,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test(expected = InvalidConfigurationException.class)
     public void testUnknownRestApiEndpointGroup() {
         String yaml = ""
                 + "hazelcast:\n"

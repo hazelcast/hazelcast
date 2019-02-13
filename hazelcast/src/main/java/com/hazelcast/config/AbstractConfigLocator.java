@@ -171,7 +171,7 @@ public abstract class AbstractConfigLocator {
             String configSystemProperty = System.getProperty(propertyKey);
 
             if (configSystemProperty == null) {
-                LOGGER.finest("Could not find 'hazelcast.config' System property");
+                LOGGER.finest("Could not find '" + propertyKey + "' System property");
                 return false;
             }
 

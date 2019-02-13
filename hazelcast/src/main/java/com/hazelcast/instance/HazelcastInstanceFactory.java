@@ -62,7 +62,6 @@ public final class HazelcastInstanceFactory {
 
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
     private static final ConcurrentMap<String, InstanceFuture> INSTANCE_MAP = new ConcurrentHashMap<String, InstanceFuture>(5);
-    private static final boolean DONT_USE_DEFAULT = false;
 
     static {
         ModularJavaUtils.checkJavaInternalAccess(Logger.getLogger(HazelcastInstanceFactory.class));
