@@ -493,6 +493,70 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         assertEquals(config.getProperty("prop2"), "value2");
     }
 
+    @Override
+    @Test
+    public void testReplaceVariablesWithFileSystemConfig() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String configXml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, configXml);
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new FileSystemXmlConfig(file, properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithInMemoryConfig() {
+        String configXml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_END_TAG;
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new InMemoryXmlConfig(configXml, properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithClasspathConfig() {
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new ClasspathXmlConfig("test-hazelcast-variable.xml", properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithUrlConfig() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String configXml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, configXml);
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new UrlXmlConfig("file://" + file.getPath(), properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
     private static Config buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);

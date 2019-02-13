@@ -485,6 +485,67 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         assertEquals(config.getProperty("prop2"), "value2");
     }
 
+    @Override
+    @Test
+    public void testReplaceVariablesWithFileSystemConfig() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String configYaml = ""
+                + "hazelcast:\n"
+                + "  properties:\n"
+                + "    prop: ${variable}";
+        writeStringToStreamAndClose(os, configYaml);
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new FileSystemYamlConfig(file, properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithInMemoryConfig() {
+        String configYaml = ""
+                + "hazelcast:\n"
+                + "  properties:\n"
+                + "    prop: ${variable}";
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new InMemoryYamlConfig(configYaml, properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithClasspathConfig() {
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new ClasspathYamlConfig("test-hazelcast-variable.yaml", properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithUrlConfig() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String configYaml = ""
+                + "hazelcast:\n"
+                + "  properties:\n"
+                + "    prop: ${variable}";
+        writeStringToStreamAndClose(os, configYaml);
+
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        Config config = new UrlYamlConfig("file://" + file.getPath(), properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
     private static Config buildConfig(String yaml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlConfigBuilder configBuilder = new YamlConfigBuilder(bis);

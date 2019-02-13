@@ -129,6 +129,18 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     @Test
     public abstract void testImportWithVariableReplacementAsSubstring() throws Exception;
 
+    @Test
+    public abstract void testReplaceVariablesWithFileSystemConfig() throws Exception;
+
+    @Test
+    public abstract void testReplaceVariablesWithInMemoryConfig();
+
+    @Test
+    public abstract void testReplaceVariablesWithClasspathConfig();
+
+    @Test
+    public abstract void testReplaceVariablesWithUrlConfig() throws Exception;
+
     protected void expectInvalid() {
         InvalidConfigurationTest.expectInvalid(rule);
     }

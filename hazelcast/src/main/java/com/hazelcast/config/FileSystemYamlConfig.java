@@ -91,6 +91,6 @@ public class FileSystemYamlConfig extends Config {
 
         LOGGER.info("Configuring Hazelcast from '" + configFile.getAbsolutePath() + "'.");
         InputStream in = new FileInputStream(configFile);
-        new YamlConfigBuilder(in).build(this);
+        new YamlConfigBuilder(in).setProperties(properties).build(this);
     }
 }
