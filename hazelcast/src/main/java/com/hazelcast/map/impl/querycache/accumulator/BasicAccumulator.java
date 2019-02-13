@@ -133,6 +133,7 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
     @Override
     public void reset() {
         handler.reset();
+        super.reset();
     }
 
     private E readNextExpiredOrNull(long now, long delay, TimeUnit unit) {
