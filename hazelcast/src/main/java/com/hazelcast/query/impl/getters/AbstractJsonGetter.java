@@ -41,12 +41,12 @@ public abstract class AbstractJsonGetter extends Getter {
     private static final String PATTERN_TRY_COUNT_PROPERTY = "com.hazelcast.internal.pattern.try.count";
 
     private static final int QUERY_CONTEXT_CACHE_MAX_SIZE = 40;
-    private static final int QUERY_CONTECT_CACHE_CLEANUP_SIZE = 3;
+    private static final int QUERY_CONTEXT_CACHE_CLEANUP_SIZE = 3;
 
     private final int patternTryCount;
 
     private JsonGetterContextCache contextCache =
-            new JsonGetterContextCache(QUERY_CONTEXT_CACHE_MAX_SIZE, QUERY_CONTECT_CACHE_CLEANUP_SIZE);
+            new JsonGetterContextCache(QUERY_CONTEXT_CACHE_MAX_SIZE, QUERY_CONTEXT_CACHE_CLEANUP_SIZE);
 
     AbstractJsonGetter(Getter parent) {
         super(parent);

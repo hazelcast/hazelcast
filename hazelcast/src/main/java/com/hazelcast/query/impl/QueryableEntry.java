@@ -211,7 +211,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         if (metadata == null) {
             return null;
         }
-        return metadata.get(isKey);
+        return isKey ? metadata.getKeyMetadata() : metadata.getValueMetadata();
     }
 
 }

@@ -31,6 +31,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport {
@@ -118,6 +119,24 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
         factory.setValue(record, data2);
 
         assertEquals(getValue(data2, object2), record.getValue());
+    }
+
+    @Test
+    public void testMetadataIsNotCreatedWhenBothKeyAndValueDoesNotHaveIt() {
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS, new MetadataInitializer() {
+            @Override
+            public Object createFromData(Data keyData) throws IOException {
+                return null;
+            }
+
+            @Override
+            public Object createFromObject(Object object) throws IOException {
+                return null;
+            }
+        });
+        record = factory.newRecord(data1, object1);
+
+        assertNull(record.getMetadata());
     }
 
     @Test(expected = AssertionError.class)

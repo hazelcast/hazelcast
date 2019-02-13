@@ -26,15 +26,19 @@ public class Metadata {
     private Object keyMeta;
     private Object valueMeta;
 
-    public Object get(boolean isKey) {
-        return isKey ? keyMeta : valueMeta;
+    public void setKeyMetadata(Object metadata) {
+        this.keyMeta = metadata;
     }
 
-    public void set(boolean isKey, Object meta) {
-        if (isKey) {
-            keyMeta = meta;
-        } else {
-            valueMeta = meta;
-        }
+    public void setValueMetadata(Object metadata) {
+        this.valueMeta = metadata;
+    }
+
+    public Object getKeyMetadata() {
+        return this.keyMeta;
+    }
+
+    public Object getValueMetadata() {
+        return this.valueMeta;
     }
 }

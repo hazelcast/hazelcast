@@ -44,7 +44,7 @@ public class JsonGetterContext {
     }
 
     public WeightedItem<JsonPattern> addPattern(JsonPattern pattern) {
-        return getPatternList().add(pattern);
+        return getPatternList().addOrVote(pattern);
     }
 
     public JsonPathCursor newJsonPathCursor() {

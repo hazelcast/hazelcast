@@ -22,9 +22,13 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * This list keeps the items as long as its size is less than maximum capacity.
- * Once the list size reaches {@code maxSize}, the half of the entries with
- * less weight are evicted.
+ * This list keeps the items as long as its size is less than maximum
+ * capacity. Once the list size reaches {@code maxSize}, the half of
+ * the entries with less weight are evicted.
+ *
+ * When a specified number of votes are cast the list is re-organized
+ * to bring the items with the most votes in front. Also, every time
+ * {@code maxSize} is reached, the list is reorganized.
  *
  * The list is not thread-safe.
  *
@@ -78,18 +82,33 @@ public class WeightedEvictableList<T> {
     }
 
     /**
-     * Adds a new item to the list. If the list is full, the half of the
-     * list is emptied. Removed half of the entries are the ones with
-     * the least weight.
+     * Adds a new item to the list or votes for the given item if it
+     * already exists. If the {@link #maxSize} is reached, half of the
+     * list is removed.
      *
-     * When half of the list is removed, the weights of the remaining
-     * items are reset.
+     * When half of the list is removed, the weights of all the items
+     * are reset. The newly added item gets a vote if applicable.
      *
      * @param item
      * @return The node that can be used to vote for
      */
-    public WeightedItem<T> add(T item) {
+    public WeightedItem<T> addOrVote(T item) {
+        for (int i = 0; i < list.size(); i++) {
+            WeightedItem<T> weightedItem = list.get(i);
+            if (weightedItem.item.equals(item)) {
+                voteFor(weightedItem);
+                return weightedItem;
+            }
+        }
         return organizeAndAdd(item);
+    }
+
+    public WeightedItem<T> getWeightedItem(int index) {
+        return list.get(index);
+    }
+
+    public int size() {
+        return list.size();
     }
 
     WeightedItem<T> organizeAndAdd(T item) {
@@ -107,6 +126,7 @@ public class WeightedEvictableList<T> {
         WeightedItem<T> returnValue = null;
         if (item != null) {
             returnValue = new WeightedItem<T>(item);
+            returnValue.weight = 1;
             list.add(returnValue);
         }
         return returnValue;

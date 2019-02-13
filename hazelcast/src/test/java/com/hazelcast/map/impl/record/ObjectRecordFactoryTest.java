@@ -27,7 +27,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -62,6 +66,27 @@ public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
 
         assertEquals(1, metadataInitializer.getDataCall());
         assertEquals(2, metadataInitializer.getObjectCall());
+    }
+
+    @Test
+    public void testMetadataIsCreatedLaterWhenValueIsUpdatedAndItHasMetadataFirstTime() {
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS, new MetadataInitializer() {
+            @Override
+            public Object createFromData(Data keyData) throws IOException {
+                return null;
+            }
+
+            @Override
+            public Object createFromObject(Object object) throws IOException {
+                return object == object2 ? true : null;
+            }
+        });
+        record = factory.newRecord(data1, object1);
+
+        factory.setValue(record, object2);
+
+        assertNotNull(record.getMetadata());
+        assertTrue((Boolean) record.getMetadata().getValueMetadata());
     }
 
     @Override

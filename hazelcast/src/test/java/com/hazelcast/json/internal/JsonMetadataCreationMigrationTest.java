@@ -98,13 +98,13 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
 
     protected void assertMetadata(Metadata metadata) {
         assertNotNull(metadata);
-        JsonSchemaNode keyNode = (JsonSchemaNode) metadata.get(true);
+        JsonSchemaNode keyNode = (JsonSchemaNode) metadata.getKeyMetadata();
         assertNotNull(keyNode);
         assertTrue(!keyNode.isTerminal());
         JsonSchemaNode childNode = ((JsonSchemaStructNode) keyNode).getChild(0).getValue();
         assertTrue(childNode.isTerminal());
 
-        JsonSchemaNode valueNode = (JsonSchemaNode) metadata.get(false);
+        JsonSchemaNode valueNode = (JsonSchemaNode) metadata.getValueMetadata();
         assertNotNull(valueNode);
         assertTrue(!valueNode.isTerminal());
         JsonSchemaNode valueChildNode = ((JsonSchemaStructNode) valueNode).getChild(0).getValue();

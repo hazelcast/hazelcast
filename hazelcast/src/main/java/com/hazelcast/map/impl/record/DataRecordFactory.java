@@ -78,9 +78,13 @@ public class DataRecordFactory implements RecordFactory<Data> {
     private void updateValueMetadata(Record<Data> record, Data dataValue) {
         try {
             Object valueMetadata = metadataInitializer.createFromData(dataValue);
-            Metadata existing = record.getMetadata();
-            if (existing != null) {
-                existing.set(false, valueMetadata);
+            if (valueMetadata != null) {
+                Metadata existing = record.getMetadata();
+                if (existing == null) {
+                    existing = new Metadata();
+                    record.setMetadata(existing);
+                }
+                existing.setValueMetadata(valueMetadata);
             }
         } catch (Exception e) {
             rethrow(e);
@@ -94,8 +98,8 @@ public class DataRecordFactory implements RecordFactory<Data> {
             Object valueMetadata = metadataInitializer.createFromData(value);
             if (keyMetadata != null || valueMetadata != null) {
                 Metadata metadata = new Metadata();
-                metadata.set(true, keyMetadata);
-                metadata.set(false, valueMetadata);
+                metadata.setKeyMetadata(keyMetadata);
+                metadata.setValueMetadata(valueMetadata);
                 return metadata;
             }
         } catch (Exception e) {
