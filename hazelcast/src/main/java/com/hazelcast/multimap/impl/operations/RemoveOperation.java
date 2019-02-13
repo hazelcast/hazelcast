@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
+import static com.hazelcast.internal.cluster.Versions.V3_12;
+
 public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Data value;
@@ -54,18 +56,25 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
-        Iterator<MultiMapRecord> iterator = coll.iterator();
-        while (iterator.hasNext()) {
-            MultiMapRecord r = iterator.next();
-            if (r.equals(record)) {
-                iterator.remove();
-                recordId = r.getRecordId();
-                response = true;
-                if (coll.isEmpty()) {
-                    container.delete(dataKey);
+
+        // RU_COMPAT_3_11
+        if (getNodeEngine().getClusterService().getClusterVersion().isGreaterOrEqual(V3_12)) {
+            response = coll.remove(record);
+        } else {
+            Iterator<MultiMapRecord> iterator = coll.iterator();
+            while (iterator.hasNext()) {
+                MultiMapRecord r = iterator.next();
+                if (r.equals(record)) {
+                    iterator.remove();
+                    recordId = r.getRecordId();
+                    response = true;
+                    break;
                 }
-                break;
             }
+        }
+
+        if (coll.isEmpty()) {
+            container.delete(dataKey);
         }
     }
 
@@ -84,7 +93,7 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
 
     @Override
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey, recordId);
+        return new RemoveBackupOperation(name, dataKey, recordId, value);
     }
 
     @Override
