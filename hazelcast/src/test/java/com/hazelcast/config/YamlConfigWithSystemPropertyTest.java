@@ -30,8 +30,6 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLDecoder;
 
-import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
-import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -39,11 +37,11 @@ import static org.junit.Assert.assertNotNull;
 /**
  * These tests manipulate system properties, therefore they must be run in serial mode.
  *
- * @see YamlConfigWithSystemPropertyTest
+ * @see XMLConfigWithSystemPropertyTest
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class XMLConfigWithSystemPropertyTest {
+public class YamlConfigWithSystemPropertyTest {
 
     @Before
     @After
@@ -53,11 +51,11 @@ public class XMLConfigWithSystemPropertyTest {
 
     @Test
     public void testConfigurationWithFile() throws Exception {
-        URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
+        URL url = getClass().getClassLoader().getResource("hazelcast-default.yaml");
         assertNotNull(url);
         String decodedURL = URLDecoder.decode(url.getFile(), "UTF-8");
         System.setProperty("hazelcast.config", decodedURL);
-        Config config = new XmlConfigBuilder().build();
+        Config config = new YamlConfigBuilder().build();
         URL file = new URL("file:");
         URL encodedURL = new URL(file, decodedURL);
         assertEquals(encodedURL, config.getConfigurationUrl());
@@ -66,45 +64,44 @@ public class XMLConfigWithSystemPropertyTest {
     @Test(expected = HazelcastException.class)
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void loadingThroughSystemProperty_nonExistingFile() throws Exception {
-        File file = createTempFile("foo", ".xml");
+        File file = createTempFile("foo", ".yaml");
         file.delete();
         System.setProperty("hazelcast.config", file.getAbsolutePath());
-        new XmlConfigBuilder();
+        new YamlConfigBuilder();
     }
 
     @Test
     public void loadingThroughSystemProperty_existingFile() throws Exception {
-        String xml = HAZELCAST_START_TAG
-                + "    <group>\n"
-                + "        <name>foobar</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </group>"
-                + HAZELCAST_END_TAG;
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  group:\n"
+                + "    name: foobar\n"
+                + "    password: dev-pass";
 
-        File file = createTempFile("foo", ".xml");
+        File file = createTempFile("foo", ".yaml");
         file.deleteOnExit();
         PrintWriter writer = new PrintWriter(file, "UTF-8");
-        writer.println(xml);
+        writer.println(yaml);
         writer.close();
 
         System.setProperty("hazelcast.config", file.getAbsolutePath());
 
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
+        YamlConfigBuilder configBuilder = new YamlConfigBuilder();
         Config config = configBuilder.build();
         assertEquals("foobar", config.getGroupConfig().getName());
     }
 
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingClasspathResource() {
-        System.setProperty("hazelcast.config", "classpath:idontexist.xml");
-        new XmlConfigBuilder();
+        System.setProperty("hazelcast.config", "classpath:idontexist.yaml");
+        new YamlConfigBuilder();
     }
 
     @Test
     public void loadingThroughSystemProperty_existingClasspathResource() {
-        System.setProperty("hazelcast.config", "classpath:test-hazelcast.xml");
+        System.setProperty("hazelcast.config", "classpath:test-hazelcast.yaml");
 
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
+        YamlConfigBuilder configBuilder = new YamlConfigBuilder();
         Config config = configBuilder.build();
         assertEquals("foobar", config.getGroupConfig().getName());
     }

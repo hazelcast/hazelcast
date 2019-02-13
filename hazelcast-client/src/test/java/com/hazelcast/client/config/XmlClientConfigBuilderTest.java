@@ -118,7 +118,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
-        File file = File.createTempFile("foo", "bar");
+        File file = File.createTempFile("foo", ".xml");
         delete(file);
         System.setProperty("hazelcast.client.config", file.getAbsolutePath());
 
@@ -134,7 +134,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
                 + "    </group>\n"
                 + "</hazelcast-client>";
 
-        File file = File.createTempFile("foo", "bar");
+        File file = File.createTempFile("foo", ".xml");
         file.deleteOnExit();
         PrintWriter writer = new PrintWriter(file, "UTF-8");
         writer.println(xml);
@@ -149,7 +149,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
-        System.setProperty("hazelcast.client.config", "classpath:idontexist");
+        System.setProperty("hazelcast.client.config", "classpath:idontexist.xml");
         new XmlClientConfigBuilder();
     }
 
