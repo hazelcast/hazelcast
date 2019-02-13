@@ -16,8 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.HazelcastException;
-
 /**
  * Support class for the {@link XmlConfigBuilder} that locates the XML configuration:
  * <ol>
@@ -29,34 +27,24 @@ import com.hazelcast.core.HazelcastException;
  */
 public class XmlConfigLocator extends AbstractConfigLocator {
 
-    /**
-     * Constructs a XmlConfigLocator that tries to find a usable XML configuration file.
-     *
-     * @throws HazelcastException if there was a problem locating the config-file
-     */
-    public XmlConfigLocator() {
-        this(true);
+    @Override
+    public boolean locateFromSystemProperty() {
+        return loadFromSystemProperty("hazelcast.config", "xml");
     }
 
-    public XmlConfigLocator(boolean fallbackToDefault) {
-        try {
-            if (loadFromSystemProperty("hazelcast.config")) {
-                return;
-            }
+    @Override
+    protected boolean locateInWorkDir() {
+        return loadFromWorkingDirectory("hazelcast.xml");
+    }
 
-            if (loadFromWorkingDirectory("hazelcast.xml")) {
-                return;
-            }
+    @Override
+    protected boolean locateOnClasspath() {
+        return loadConfigurationFromClasspath("hazelcast.xml");
+    }
 
-            if (loadConfigurationFromClasspath("hazelcast.xml")) {
-                return;
-            }
-
-            if (fallbackToDefault) {
-                loadDefaultConfigurationFromClasspath("hazelcast-default.xml");
-            }
-        } catch (RuntimeException e) {
-            throw new HazelcastException(e);
-        }
+    @Override
+    public boolean locateDefault() {
+        loadDefaultConfigurationFromClasspath("hazelcast-default.xml");
+        return true;
     }
 }

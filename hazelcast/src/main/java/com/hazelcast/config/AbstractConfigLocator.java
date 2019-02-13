@@ -55,78 +55,142 @@ public abstract class AbstractConfigLocator {
         return in != null || configurationFile != null || configurationUrl != null;
     }
 
+    /**
+     * Locates the configuration file in a system property
+     *
+     * @return true if the configuration file is found in the system property
+     * @throws HazelcastException if there was a problem locating the
+     *                            configuration file
+     */
+    public abstract boolean locateFromSystemProperty();
+
+    /**
+     * Locates the configuration file in the working directory
+     *
+     * @return true if the configuration file is found in the working directory
+     * @throws HazelcastException if there was a problem locating the
+     *                            configuration file
+     */
+    protected abstract boolean locateInWorkDir();
+
+    /**
+     * Locates the configuration file on the classpath
+     *
+     * @return true if the configuration file is found on the classpath
+     * @throws HazelcastException if there was a problem locating the
+     *                            configuration file
+     */
+    protected abstract boolean locateOnClasspath();
+
+    /**
+     * Locates the default configuration file
+     *
+     * @return true always, indicating the default configuration file is
+     * found
+     * @throws HazelcastException if there was a problem locating the
+     *                            default configuration file
+     */
+    public abstract boolean locateDefault();
+
+    public boolean locateEveryWhere() {
+        return locateFromSystemProperty()
+                || locateInWorkDir()
+                || locateOnClasspath()
+                || locateDefault();
+    }
+
+    public boolean locateInWorkDirOrOnClasspath() {
+        return locateInWorkDir() || locateOnClasspath();
+    }
+
     protected void loadDefaultConfigurationFromClasspath(String defaultConfigFile) {
-        LOGGER.info("Loading '" + defaultConfigFile + "' from classpath.");
+        try {
+            LOGGER.info("Loading '" + defaultConfigFile + "' from classpath.");
 
-        configurationUrl = Config.class.getClassLoader().getResource(defaultConfigFile);
+            configurationUrl = Config.class.getClassLoader().getResource(defaultConfigFile);
 
-        if (configurationUrl == null) {
-            throw new HazelcastException("Could not find '" + defaultConfigFile + "' in the classpath!"
-                    + "This may be due to a wrong-packaged or corrupted jar file.");
-        }
+            if (configurationUrl == null) {
+                throw new HazelcastException("Could not find '" + defaultConfigFile + "' in the classpath!"
+                        + "This may be due to a wrong-packaged or corrupted jar file.");
+            }
 
-        in = Config.class.getClassLoader().getResourceAsStream(defaultConfigFile);
-        if (in == null) {
-            throw new HazelcastException("Could not load '" + defaultConfigFile + "' from classpath");
+            in = Config.class.getClassLoader().getResourceAsStream(defaultConfigFile);
+            if (in == null) {
+                throw new HazelcastException("Could not load '" + defaultConfigFile + "' from classpath");
+            }
+        } catch (RuntimeException e) {
+            throw new HazelcastException(e);
         }
     }
 
     protected boolean loadConfigurationFromClasspath(String configFileName) {
-        URL url = Config.class.getClassLoader().getResource(configFileName);
-        if (url == null) {
-            LOGGER.finest("Could not find '" + configFileName + "' in classpath.");
-            return false;
-        }
+        try {
+            URL url = Config.class.getClassLoader().getResource(configFileName);
+            if (url == null) {
+                LOGGER.finest("Could not find '" + configFileName + "' in classpath.");
+                return false;
+            }
 
-        LOGGER.info("Loading '" + configFileName + "' from classpath.");
+            LOGGER.info("Loading '" + configFileName + "' from classpath.");
 
-        configurationUrl = url;
-        in = Config.class.getClassLoader().getResourceAsStream(configFileName);
-        if (in == null) {
-            throw new HazelcastException("Could not load '" + configFileName + "' from classpath");
+            configurationUrl = url;
+            in = Config.class.getClassLoader().getResourceAsStream(configFileName);
+            if (in == null) {
+                throw new HazelcastException("Could not load '" + configFileName + "' from classpath");
+            }
+            return true;
+        } catch (RuntimeException e) {
+            throw new HazelcastException(e);
         }
-        return true;
     }
 
     protected boolean loadFromWorkingDirectory(String configFilePath) {
-        File file = new File(configFilePath);
-        if (!file.exists()) {
-            LOGGER.finest("Could not find '" + configFilePath + "' in working directory.");
-            return false;
-        }
-
-        LOGGER.info("Loading '" + configFilePath + "' from working directory.");
-
-        configurationFile = file;
         try {
-            in = new FileInputStream(file);
-        } catch (FileNotFoundException e) {
-            throw new HazelcastException("Failed to open file: " + file.getAbsolutePath(), e);
+            File file = new File(configFilePath);
+            if (!file.exists()) {
+                LOGGER.finest("Could not find '" + configFilePath + "' in working directory.");
+                return false;
+            }
+
+            LOGGER.info("Loading '" + configFilePath + "' from working directory.");
+
+            configurationFile = file;
+            try {
+                in = new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                throw new HazelcastException("Failed to open file: " + file.getAbsolutePath(), e);
+            }
+            return true;
+        } catch (RuntimeException e) {
+            throw new HazelcastException(e);
         }
-        return true;
     }
 
     protected boolean loadFromSystemProperty(String propertyKey, String... expectedExtensions) {
-        String configSystemProperty = System.getProperty(propertyKey);
+        try {
+            String configSystemProperty = System.getProperty(propertyKey);
 
-        if (configSystemProperty == null) {
-            LOGGER.finest("Could not find 'hazelcast.config' System property");
-            return false;
+            if (configSystemProperty == null) {
+                LOGGER.finest("Could not find 'hazelcast.config' System property");
+                return false;
+            }
+
+            if (expectedExtensions != null && expectedExtensions.length > 0
+                    && !isExpectedExtensionConfigured(configSystemProperty, expectedExtensions)) {
+                return false;
+            }
+
+            LOGGER.info("Loading configuration " + configSystemProperty + " from System property 'hazelcast.config'");
+
+            if (configSystemProperty.startsWith("classpath:")) {
+                loadSystemPropertyClassPathResource(configSystemProperty);
+            } else {
+                loadSystemPropertyFileResource(configSystemProperty);
+            }
+            return true;
+        } catch (RuntimeException e) {
+            throw new HazelcastException(e);
         }
-
-        if (expectedExtensions != null && expectedExtensions.length > 0
-                && !isExpectedExtensionConfigured(configSystemProperty, expectedExtensions)) {
-            return false;
-        }
-
-        LOGGER.info("Loading configuration " + configSystemProperty + " from System property 'hazelcast.config'");
-
-        if (configSystemProperty.startsWith("classpath:")) {
-            loadSystemPropertyClassPathResource(configSystemProperty);
-        } else {
-            loadSystemPropertyFileResource(configSystemProperty);
-        }
-        return true;
     }
 
     private boolean isExpectedExtensionConfigured(String configSystemProperty, String[] expectedExtensions) {

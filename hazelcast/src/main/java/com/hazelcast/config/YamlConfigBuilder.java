@@ -84,7 +84,30 @@ public class YamlConfigBuilder implements ConfigBuilder {
      * Constructs a YamlConfigBuilder that tries to find a usable YAML configuration file.
      */
     public YamlConfigBuilder() {
-        YamlConfigLocator locator = new YamlConfigLocator();
+        this((YamlConfigLocator) null);
+    }
+
+    /**
+     * Constructs a {@link YamlConfigBuilder} that loads the configuration
+     * with the provided {@link YamlConfigLocator}.
+     * <p/>
+     * If the provided {@link YamlConfigLocator} is {@code null}, a new
+     * instance is created and the config is located in every possible
+     * places. For these places, please see {@link YamlConfigLocator}.
+     * <p/>
+     * If the provided {@link YamlConfigLocator} is not {@code null}, it
+     * is expected that it already located the configuration YAML to load
+     * from. No further attempt to locate the configuration YAML is made
+     * if the configuration YAML is not located already.
+     *
+     * @param locator the configured locator to use
+     */
+    public YamlConfigBuilder(YamlConfigLocator locator) {
+        if (locator == null) {
+            locator = new YamlConfigLocator();
+            locator.locateFromSystemProperty();
+        }
+
         this.in = locator.getIn();
         this.configurationFile = locator.getConfigurationFile();
         this.configurationUrl = locator.getConfigurationUrl();

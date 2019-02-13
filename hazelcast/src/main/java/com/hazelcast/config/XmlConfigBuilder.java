@@ -89,7 +89,29 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
      * Constructs a XmlConfigBuilder that tries to find a usable XML configuration file.
      */
     public XmlConfigBuilder() {
-        XmlConfigLocator locator = new XmlConfigLocator();
+        this((XmlConfigLocator) null);
+    }
+
+    /**
+     * Constructs a {@link XmlConfigBuilder} that loads the configuration
+     * with the provided {@link XmlConfigLocator}.
+     * <p/>
+     * If the provided {@link XmlConfigLocator} is {@code null}, a new
+     * instance is created and the config is located in every possible
+     * places. For these places, please see {@link XmlConfigLocator}.
+     * <p/>
+     * If the provided {@link XmlConfigLocator} is not {@code null}, it
+     * is expected that it already located the configuration XML to load
+     * from. No further attempt to locate the configuration XML is made
+     * if the configuration XML is not located already.
+     *
+     * @param locator the configured locator to use
+     */
+    public XmlConfigBuilder(XmlConfigLocator locator) {
+        if (locator == null) {
+            locator = new XmlConfigLocator();
+            locator.locateEveryWhere();
+        }
         this.in = locator.getIn();
         this.configurationFile = locator.getConfigurationFile();
         this.configurationUrl = locator.getConfigurationUrl();

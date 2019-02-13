@@ -17,35 +17,31 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
-import com.hazelcast.core.HazelcastException;
 
 /**
  * A support class for the {@link XmlClientConfigBuilder} to locate the client
  * xml configuration.
  */
 public class XmlClientConfigLocator extends AbstractConfigLocator {
-    /**
-     * Constructs a XmlClientConfigBuilder.
-     *
-     * @throws com.hazelcast.core.HazelcastException if the client XML config is not located.
-     */
-    public XmlClientConfigLocator() {
-        try {
-            if (loadFromSystemProperty("hazelcast.client.config")) {
-                return;
-            }
 
-            if (loadFromWorkingDirectory("hazelcast-client.xml")) {
-                return;
-            }
+    @Override
+    public boolean locateFromSystemProperty() {
+        return loadFromSystemProperty("hazelcast.client.config", "xml");
+    }
 
-            if (loadConfigurationFromClasspath("hazelcast-client.xml")) {
-                return;
-            }
+    @Override
+    protected boolean locateInWorkDir() {
+        return loadFromWorkingDirectory("hazelcast-client.xml");
+    }
 
-            loadDefaultConfigurationFromClasspath("hazelcast-client-default.xml");
-        } catch (final RuntimeException e) {
-            throw new HazelcastException("Failed to load ClientConfig", e);
-        }
+    @Override
+    protected boolean locateOnClasspath() {
+        return loadConfigurationFromClasspath("hazelcast-client.xml");
+    }
+
+    @Override
+    public boolean locateDefault() {
+        loadDefaultConfigurationFromClasspath("hazelcast-client-default.xml");
+        return true;
     }
 }

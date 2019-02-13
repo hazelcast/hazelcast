@@ -16,8 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.HazelcastException;
-
 /**
  * Support class for the {@link com.hazelcast.config.YamlConfigBuilder} that locates the YAML configuration:
  * <ol>
@@ -29,34 +27,24 @@ import com.hazelcast.core.HazelcastException;
  */
 public class YamlConfigLocator extends AbstractConfigLocator {
 
-    /**
-     * Constructs a YamlConfigLocator that tries to find a usable YAML configuration file.
-     *
-     * @throws HazelcastException if there was a problem locating the config-file
-     */
-    public YamlConfigLocator() {
-        this(true);
+    @Override
+    public boolean locateFromSystemProperty() {
+        return loadFromSystemProperty("hazelcast.config", "yaml", "yml");
     }
 
-    public YamlConfigLocator(boolean fallbackToDefault) {
-        try {
-            if (loadFromSystemProperty("hazelcast.config", "yaml", "yml")) {
-                return;
-            }
+    @Override
+    protected boolean locateInWorkDir() {
+        return loadFromWorkingDirectory("hazelcast.yaml");
+    }
 
-            if (loadFromWorkingDirectory("hazelcast.yaml")) {
-                return;
-            }
+    @Override
+    protected boolean locateOnClasspath() {
+        return loadConfigurationFromClasspath("hazelcast.yaml");
+    }
 
-            if (loadConfigurationFromClasspath("hazelcast.yaml")) {
-                return;
-            }
-
-            if (fallbackToDefault) {
-                loadDefaultConfigurationFromClasspath("hazelcast-default.yaml");
-            }
-        } catch (RuntimeException e) {
-            throw new HazelcastException(e);
-        }
+    @Override
+    public boolean locateDefault() {
+        loadDefaultConfigurationFromClasspath("hazelcast-default.yaml");
+        return true;
     }
 }

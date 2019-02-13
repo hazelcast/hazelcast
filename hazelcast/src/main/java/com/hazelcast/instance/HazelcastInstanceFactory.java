@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.XmlConfigLocator;
 import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.config.YamlConfigLocator;
 import com.hazelcast.core.DuplicateInstanceNameException;
@@ -128,12 +129,29 @@ public final class HazelcastInstanceFactory {
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         if (config == null) {
-            // try load config from any provided YAML config except for the default config
-            YamlConfigLocator yamlConfigLocator = new YamlConfigLocator(DONT_USE_DEFAULT);
-            if (yamlConfigLocator.isConfigPresent()) {
-                config = new YamlConfigBuilder().build();
+            XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
+            YamlConfigLocator yamlConfigLocator = new YamlConfigLocator();
+
+            if (xmlConfigLocator.locateFromSystemProperty()) {
+                // 1. Try loading XML config if provided in system property
+                config = new XmlConfigBuilder(xmlConfigLocator).build();
+
+            } else if (yamlConfigLocator.locateFromSystemProperty()) {
+                // 2. Try loading YAML config if provided in system property
+                config = new YamlConfigBuilder(yamlConfigLocator).build();
+
+            } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+                // 3. Try loading XML config from the working directory or from the classpath
+                config = new XmlConfigBuilder(xmlConfigLocator).build();
+
+            } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+                // 4. Try loading YAML config from the working directory or from the classpath
+                config = new YamlConfigBuilder(yamlConfigLocator).build();
+
             } else {
-                config = new XmlConfigBuilder().build();
+                // 5. Loading the default XML configuration file
+                xmlConfigLocator.locateDefault();
+                config = new XmlConfigBuilder(xmlConfigLocator).build();
             }
         }
 
