@@ -65,7 +65,7 @@ import static org.junit.Assert.fail;
 
 /**
  * XML specific implementation of the tests that should be maintained in
- * both XML and YAML configuration builder tests
+ * both XML and YAML configuration builder tests.
  * <p/>
  *
  * NOTE: This test class must not define test cases, it is meant only to
@@ -1430,7 +1430,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void default_value_of_persist_wan_replicated_data_is_false() {
+    public void testDefaultOfPersistWanReplicatedDataIsFalse() {
         String configName  = "test";
         String xml = HAZELCAST_START_TAG
                 + "  <wan-replication name=\"" + configName + "\">\n"
@@ -2883,12 +2883,21 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 permTypes.isEmpty());
     }
 
-    // TODO what is this really testing?
-    // The thrown Exception has nothing to do with the eviction config,
-    // it blames NATIVE in-memory-format in the OS build...
     @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testCacheConfig_withInvalidEvictionConfig_failsFast() {
+        String xml = HAZELCAST_START_TAG
+                + "    <cache name=\"cache\">"
+                + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"INVALID\"/>"
+                + "    </cache>"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testCacheConfig_withNativeInMemoryFormat_failsFastInOSS() {
         String xml = HAZELCAST_START_TAG
                 + "    <cache name=\"cache\">"
                 + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"

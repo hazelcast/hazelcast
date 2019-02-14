@@ -25,14 +25,14 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * Abstract class defining the common test cases for XML and YAML
- * based configuration tests
+ * based configuration tests.
  * <p/>
  * All common test cases should be defined in this class to guarantee
  * compilation error if either YAML or XML configuration misses to cover
  * a common case.
  * <p/>
  * For specific test cases, see {@link XmlOnlyConfigBuilderTest} and
- * {@link YamlOnlyConfigBuilderTest}
+ * {@link YamlOnlyConfigBuilderTest}.
  *
  * @see XMLConfigBuilderTest
  * @see YamlConfigBuilderTest
@@ -219,7 +219,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testWanReplicationConfig();
 
     @Test
-    public abstract void default_value_of_persist_wan_replicated_data_is_false();
+    public abstract void testDefaultOfPersistWanReplicatedDataIsFalse();
 
     @Test
     public abstract void testWanReplicationSyncConfig();
@@ -400,11 +400,11 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public abstract void testAllPermissionsCovered();
 
-    // TODO what is this really testing?
-    // The thrown Exception has nothing to do with the eviction config,
-    // it blames NATIVE in-memory-format in OS build...
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testCacheConfig_withInvalidEvictionConfig_failsFast();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testCacheConfig_withNativeInMemoryFormat_failsFastInOSS();
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testMemberAddressProvider_classNameIsMandatory();
@@ -433,7 +433,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testUnknownRestApiEndpointGroup();
 
-    protected void assertAwsConfig(AwsConfig aws) {
+    protected static void assertAwsConfig(AwsConfig aws) {
         assertEquals("sample-access-key", aws.getProperties().get("access-key"));
         assertEquals("sample-secret-key", aws.getProperties().get("secret-key"));
         assertEquals("sample-role", aws.getProperties().get("iam-role"));

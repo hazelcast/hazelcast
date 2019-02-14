@@ -37,7 +37,6 @@ import java.net.URL;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -130,7 +129,6 @@ public class XmlOnlyConfigBuilderTest {
         testXSDConfigXML("hazelcast-fullconfig.xml");
     }
 
-    // No YAML identical to the XML can be written
     @Test(expected = IllegalArgumentException.class)
     public void testAttributeConfig_noName_noExtractor() {
         String xml = HAZELCAST_START_TAG
@@ -143,7 +141,6 @@ public class XmlOnlyConfigBuilderTest {
         buildConfig(xml);
     }
 
-    // No YAML identical to the XML can be written
     @Test(expected = IllegalArgumentException.class)
     public void testAttributeConfig_noName_noExtractor_singleTag() {
         String xml = HAZELCAST_START_TAG
@@ -156,7 +153,7 @@ public class XmlOnlyConfigBuilderTest {
         buildConfig(xml);
     }
 
-    private void assertXsdVersion(String buildVersion, String expectedXsdVersion) {
+    private static void assertXsdVersion(String buildVersion, String expectedXsdVersion) {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, buildVersion);
         assertEquals("Unexpected release version retrieved for build version " + buildVersion, expectedXsdVersion,
                 new XmlConfigBuilder().getReleaseVersion());
@@ -173,22 +170,21 @@ public class XmlOnlyConfigBuilderTest {
         assertTrue(ConfigCompatibilityChecker.isCompatible(config, config2));
     }
 
-    private Config buildConfig(String xml) {
+    private static Config buildConfig(String xml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
     }
 
-    private void testXSDConfigXML(String xmlFileName) throws Exception {
+    private static void testXSDConfigXML(String xmlFileName) throws Exception {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-"
                 + Versions.CURRENT_CLUSTER_VERSION + ".xsd");
-        assertNotNull(schemaResource);
-
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);
         Validator validator = schema.newValidator();
+
         try {
             validator.validate(source);
         } catch (SAXException ex) {
