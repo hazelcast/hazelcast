@@ -39,6 +39,7 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -67,9 +68,9 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion,
-                       ReplicaFragmentMigrationState fragmentMigrationState, boolean firstFragment, boolean lastFragment) {
-        super(migrationInfo, partitionStateVersion);
+    public MigrationOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations, int partitionStateVersion,
+            ReplicaFragmentMigrationState fragmentMigrationState, boolean firstFragment, boolean lastFragment) {
+        super(migrationInfo, completedMigrations, partitionStateVersion);
         this.fragmentMigrationState = fragmentMigrationState;
         this.firstFragment = firstFragment;
         this.lastFragment = lastFragment;

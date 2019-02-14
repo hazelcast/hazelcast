@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.ClassRule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -30,6 +32,9 @@ import java.util.Collection;
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class GracefulShutdownCorrectnessTest extends AbstractGracefulShutdownCorrectnessTest {
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
 
     @Parameterized.Parameters(name = "backups:{0},nodes:{1},shutdown:{2}")
     public static Collection<Object[]> parameters() {

@@ -198,6 +198,8 @@
 
     <!-- Partition -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]partition[\\/]"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]internal[\\/]partition[\\/]impl[\\/]InternalPartitionServiceImpl"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]internal[\\/]partition[\\/]impl[\\/]MigrationManager"/>
 
     <!-- Multimap -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]multimap[\\/]"/>

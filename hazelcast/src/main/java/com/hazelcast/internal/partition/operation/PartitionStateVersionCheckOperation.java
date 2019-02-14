@@ -16,64 +16,53 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
 /**
- * Sent from the master to publish or sync the partition table state to all cluster members.
+ * Sent from the master to check the partition table state version on target member.
  *
- * @see InternalPartitionServiceImpl#publishPartitionRuntimeState
- * @see InternalPartitionServiceImpl#syncPartitionRuntimeState
+ * @since 3.12
  */
-public final class PartitionStateOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation, JoinOperation, Versioned {
+public final class PartitionStateVersionCheckOperation extends AbstractPartitionOperation
+        implements MigrationCycleOperation {
 
-    private PartitionRuntimeState partitionState;
-    private boolean sync;
-    private boolean success;
+    private int version;
+    private transient boolean stale;
 
-    public PartitionStateOperation() {
+    public PartitionStateVersionCheckOperation() {
     }
 
-    public PartitionStateOperation(PartitionRuntimeState partitionState, boolean sync) {
-        this.partitionState = partitionState;
-        this.sync = sync;
+    public PartitionStateVersionCheckOperation(int version) {
+        this.version = version;
     }
 
     @Override
     public void run() {
-        Address callerAddress = getCallerAddress();
-        partitionState.setMaster(callerAddress);
         InternalPartitionServiceImpl partitionService = getService();
-        success = partitionService.processPartitionRuntimeState(partitionState);
+        int currentVersion = partitionService.getPartitionStateVersion();
 
-        ILogger logger = getLogger();
-        if (logger.isFineEnabled()) {
-            String message = (success ? "Applied" : "Rejected")
-                    + " new partition state. Version: " + partitionState.getVersion() + ", caller: " + callerAddress;
-            logger.fine(message);
+        if (currentVersion < version) {
+            stale = true;
+
+            ILogger logger = getLogger();
+            if (logger.isFineEnabled()) {
+                logger.fine("Partition table is stale! Current version: " + currentVersion
+                        + ", master version: " + version);
+            }
         }
     }
 
     @Override
-    public boolean returnsResponse() {
-        return sync;
-    }
-
-    @Override
     public Object getResponse() {
-        return success;
+        return !stale;
     }
 
     @Override
@@ -84,20 +73,17 @@ public final class PartitionStateOperation extends AbstractPartitionOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        partitionState = new PartitionRuntimeState();
-        partitionState.readData(in);
-        sync = in.readBoolean();
+        version = in.readInt();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        partitionState.writeData(out);
-        out.writeBoolean(sync);
+        out.writeInt(version);
     }
 
     @Override
     public int getId() {
-        return PartitionDataSerializerHook.PARTITION_STATE_OP;
+        return PartitionDataSerializerHook.PARTITION_STATE_VERSION_CHECK_OP;
     }
 }

@@ -50,7 +50,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void test_MOVE() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -59,7 +59,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5705), "5705"),
@@ -69,14 +69,14 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), -1, 0);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5703), "5703"), 2, -1, new PartitionReplica(new Address("localhost", 5705), "5705"), -1, 2);
     }
 
     @Test
     public void test_COPY() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 null,
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -85,7 +85,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -95,13 +95,13 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(null, -1, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), -1, 1);
     }
 
     @Test
     public void test_SHIFT_DOWN_withNullKeepReplicaIndex() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 null,
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -110,7 +110,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -120,13 +120,13 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, 1, new PartitionReplica(new Address("localhost", 5704), "5704"), -1, 0);
     }
 
     @Test
     public void test_SHIFT_DOWN_withNullNonNullKeepReplicaIndex() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -135,7 +135,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -145,14 +145,14 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), -1, 0);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5702), "5702"), 1, -1, new PartitionReplica(new Address("localhost", 5701), "5701"), -1, 1);
     }
 
     @Test
     public void test_SHIFT_DOWN_performedBy_MOVE() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -161,7 +161,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {new PartitionReplica(new Address("localhost", 5704), "5704"),
+        final PartitionReplica[] newReplicas = {new PartitionReplica(new Address("localhost", 5704), "5704"),
                                                  new PartitionReplica(new Address("localhost", 5701), "5701"),
                                                  new PartitionReplica(new Address("localhost", 5702), "5702"),
                                                  null,
@@ -170,7 +170,7 @@ public class MigrationPlannerTest {
                                                  null,
                                                  };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), -1, 0);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5702), "5702"), 1, -1, new PartitionReplica(new Address("localhost", 5701), "5701"), -1, 1);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5703), "5703"), 2, -1, new PartitionReplica(new Address("localhost", 5702), "5702"), -1, 2);
@@ -178,7 +178,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void test_SHIFT_UP() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 null,
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -187,7 +187,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
@@ -197,7 +197,7 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
 
         verify(callback).migrate(null, -1, -1, new PartitionReplica(new Address("localhost", 5703), "5703"), 2, 1);
         verify(callback).migrate(null, -1, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), 3, 2);
@@ -205,7 +205,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void test_SHIFT_UPS_performedBy_MOVE() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -214,7 +214,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
@@ -224,7 +224,7 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
 
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5704), "5704"), 3, -1, new PartitionReplica(new Address("localhost", 5705), "5705"), -1, 3);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5703), "5703"), 2, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), -1, 2);
@@ -233,7 +233,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void test_SHIFT_DOWN_performedAfterKnownNewReplicaOwnerKickedOutOfReplicas() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -242,7 +242,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
                 new PartitionReplica(new Address("localhost", 5705), "5705"),
@@ -252,7 +252,7 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, 5, new PartitionReplica(new Address("localhost", 5704), "5704"), -1, 0);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5705), "5705"), 3, -1, new PartitionReplica(new Address("localhost", 5706), "5706"), -1, 3);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5703), "5703"), 2, -1, new PartitionReplica(new Address("localhost", 5705), "5705"), -1, 2);
@@ -261,7 +261,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void test_SHIFT_DOWN_performedBeforeNonConflicting_SHIFT_UP() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -270,7 +270,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
                 new PartitionReplica(new Address("localhost", 5705), "5705"),
@@ -280,7 +280,7 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, 4, new PartitionReplica(new Address("localhost", 5704), "5704"), -1, 0);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5705), "5705"), 3, -1, new PartitionReplica(new Address("localhost", 5706), "5706"), -1, 3);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5703), "5703"), 2, -1, new PartitionReplica(new Address("localhost", 5705), "5705"), -1, 2);
@@ -288,7 +288,7 @@ public class MigrationPlannerTest {
 
     @Test
     public void test_MOVE_toNull() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -297,7 +297,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -307,13 +307,13 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5705), "5705"), 3, -1, null, -1, -1);
     }
 
     @Test
     public void test_SHIFT_UP_toReplicaIndexWithExistingOwner() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -322,7 +322,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -332,14 +332,14 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5702), "5702"), 1, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), 3, 1);
     }
 
     @Test
     public void test_MOVE_performedAfter_SHIFT_UP_toReplicaIndexWithExistingOwnerKicksItOutOfCluster()
             throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -348,7 +348,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -358,14 +358,14 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5702), "5702"), 1, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), 3, 1);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, -1, new PartitionReplica(new Address("localhost", 5702), "5702"), -1, 0);
     }
 
     @Test
     public void test_SHIFT_UP_multipleTimes() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 null,
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -374,7 +374,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
                 new PartitionReplica(new Address("localhost", 5704), "5704"),
@@ -384,14 +384,14 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(null, -1, -1, new PartitionReplica(new Address("localhost", 5703), "5703"), 2, 1);
         verify(callback).migrate(null, -1, -1, new PartitionReplica(new Address("localhost", 5704), "5704"), 3, 2);
     }
 
     @Test
     public void test_SHIFT_UP_nonNullSource_isNoLongerReplica() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 null,
@@ -400,7 +400,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 null,
                 null,
@@ -410,13 +410,13 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, -1, new PartitionReplica(new Address("localhost", 5702), "5702"), 1, 0);
     }
 
     @Test
     public void test_SHIFT_UP_nonNullSource_willGetAnotherMOVE() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 new PartitionReplica(new Address("localhost", 5702), "5702"),
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -425,7 +425,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 null,
@@ -435,14 +435,14 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, -1, new PartitionReplica(new Address("localhost", 5703), "5703"), 2, 0);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5702), "5702"), 1, -1, new PartitionReplica(new Address("localhost", 5701), "5701"), -1, 1);
     }
 
     @Test
     public void test_SHIFT_UP_SHIFT_DOWN_atomicTogether() throws UnknownHostException {
-        final PartitionReplica[] oldAddresses = {
+        final PartitionReplica[] oldReplicas = {
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 null,
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
@@ -451,7 +451,7 @@ public class MigrationPlannerTest {
                 null,
                 null,
         };
-        final PartitionReplica[] newAddresses = {
+        final PartitionReplica[] newReplicas = {
                 new PartitionReplica(new Address("localhost", 5703), "5703"),
                 new PartitionReplica(new Address("localhost", 5701), "5701"),
                 null,
@@ -461,7 +461,7 @@ public class MigrationPlannerTest {
                 null,
         };
 
-        migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
         verify(callback).migrate(new PartitionReplica(new Address("localhost", 5701), "5701"), 0, 1, new PartitionReplica(new Address("localhost", 5703), "5703"), 2, 0);
     }
 
@@ -573,20 +573,20 @@ public class MigrationPlannerTest {
     }
 
     private void testRandom(int initialLen) throws UnknownHostException {
-        PartitionReplica[] oldMembers = new PartitionReplica[InternalPartition.MAX_REPLICA_COUNT];
+        PartitionReplica[] oldReplicas = new PartitionReplica[InternalPartition.MAX_REPLICA_COUNT];
         for (int i = 0; i < initialLen; i++) {
-            oldMembers[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUuidString());
+            oldReplicas[i] = new PartitionReplica(newAddress(5000 + i), UuidUtil.newUnsecureUuidString());
         }
 
-        PartitionReplica[] newMembers = Arrays.copyOf(oldMembers, oldMembers.length);
-        int newLen = (int) (Math.random() * (oldMembers.length - initialLen + 1));
+        PartitionReplica[] newReplicas = Arrays.copyOf(oldReplicas, oldReplicas.length);
+        int newLen = (int) (Math.random() * (oldReplicas.length - initialLen + 1));
         for (int i = 0; i < newLen; i++) {
-            newMembers[i + initialLen] = new PartitionReplica(newAddress(6000 + i), UuidUtil.newUnsecureUuidString());
+            newReplicas[i + initialLen] = new PartitionReplica(newAddress(6000 + i), UuidUtil.newUnsecureUuidString());
         }
 
-        shuffle(newMembers, initialLen + newLen);
+        shuffle(newReplicas, initialLen + newLen);
 
-        migrationPlanner.planMigrations(oldMembers, newMembers, callback);
+        migrationPlanner.planMigrations(0, oldReplicas, newReplicas, callback);
     }
 
     private void shuffle(PartitionReplica[] array, int len) {

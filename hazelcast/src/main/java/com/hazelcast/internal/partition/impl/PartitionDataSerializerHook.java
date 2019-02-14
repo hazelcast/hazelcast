@@ -31,7 +31,9 @@ import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncResponse;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRetryResponse;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
+import com.hazelcast.internal.partition.operation.PartitionStateVersionCheckOperation;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation;
+import com.hazelcast.internal.partition.operation.PublishCompletedMigrationsOperation;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.internal.partition.operation.ShutdownRequestOperation;
 import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
@@ -69,8 +71,10 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int MIGRATION_REQUEST = 19;
     public static final int NON_FRAGMENTED_SERVICE_NAMESPACE = 20;
     public static final int PARTITION_REPLICA = 21;
+    public static final int PUBLISH_COMPLETED_MIGRATIONS = 22;
+    public static final int PARTITION_STATE_VERSION_CHECK_OP = 23;
 
-    private static final int LEN = PARTITION_REPLICA + 1;
+    private static final int LEN = PARTITION_STATE_VERSION_CHECK_OP + 1;
 
     @Override
     public int getFactoryId() {
@@ -177,6 +181,18 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         constructors[PARTITION_REPLICA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PartitionReplica();
+            }
+        };
+        constructors[PUBLISH_COMPLETED_MIGRATIONS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PublishCompletedMigrationsOperation();
+            }
+        };
+        constructors[PARTITION_STATE_VERSION_CHECK_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PartitionStateVersionCheckOperation();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

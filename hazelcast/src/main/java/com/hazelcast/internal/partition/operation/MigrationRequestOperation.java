@@ -55,6 +55,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -77,9 +78,9 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     public MigrationRequestOperation() {
     }
 
-    public MigrationRequestOperation(MigrationInfo migrationInfo, int partitionStateVersion,
-                                     boolean fragmentedMigrationEnabled) {
-        super(migrationInfo, partitionStateVersion);
+    public MigrationRequestOperation(MigrationInfo migrationInfo, List<MigrationInfo> completedMigrations,
+            int partitionStateVersion, boolean fragmentedMigrationEnabled) {
+        super(migrationInfo, completedMigrations, partitionStateVersion);
         this.fragmentedMigrationEnabled = fragmentedMigrationEnabled;
     }
 
@@ -137,8 +138,9 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      */
     private void invokeMigrationOperation(ReplicaFragmentMigrationState migrationState, boolean firstFragment) {
         boolean lastFragment = !fragmentedMigrationEnabled || !namespacesContext.hasNext();
-        Operation operation = new MigrationOperation(migrationInfo, partitionStateVersion, migrationState,
-                firstFragment, lastFragment);
+        Operation operation = new MigrationOperation(migrationInfo,
+                firstFragment ? completedMigrations : Collections.<MigrationInfo>emptyList(),
+                partitionStateVersion, migrationState, firstFragment, lastFragment);
 
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
@@ -320,6 +322,10 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                     completeMigration(true);
                 }
             } else {
+                ILogger logger = getLogger();
+                if (logger.isFineEnabled()) {
+                    logger.fine("Received false response from migration destination -> " + migrationInfo);
+                }
                 completeMigration(false);
             }
         }

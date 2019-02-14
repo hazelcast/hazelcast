@@ -42,6 +42,8 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.internal.partition.AbstractPartitionAssignmentsCorrectnessTest.assertPartitionAssignments;
+import static com.hazelcast.internal.partition.AbstractPartitionAssignmentsCorrectnessTest.assertPartitionAssignmentsEventually;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -108,7 +110,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         warmUpPartitions(hz1, hz2, hz3);
         hz2.shutdown();
-        assertPartitionAssignments();
+        assertPartitionAssignmentsEventually(factory);
     }
 
     @Test
@@ -126,7 +128,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         hz2.shutdown();
 
-        assertPartitionAssignments();
+        assertPartitionAssignmentsEventually(factory);
     }
 
     @Test
@@ -138,7 +140,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2, hz3);
         hz2.shutdown();
 
-        assertPartitionAssignments();
+        assertPartitionAssignments(factory);
     }
 
     @Test
@@ -160,7 +162,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2, hz3);
         hz1.shutdown();
 
-        assertPartitionAssignments();
+        assertPartitionAssignmentsEventually(factory);
     }
 
     @Test
@@ -176,7 +178,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         hz1.shutdown();
 
-        assertPartitionAssignments();
+        assertPartitionAssignmentsEventually(factory);
     }
 
     @Test
@@ -188,7 +190,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2, hz3);
         hz1.shutdown();
 
-        assertPartitionAssignments();
+        assertPartitionAssignments(factory);
     }
 
     @Test
@@ -263,7 +265,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         assertOpenEventually(latch);
 
         if (initializePartitions) {
-            assertPartitionAssignments();
+            assertPartitionAssignmentsEventually(factory);
         }
     }
 
@@ -295,7 +297,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         }
 
         assertOpenEventually(latch);
-        assertPartitionAssignments();
+        assertPartitionAssignmentsEventually(factory);
     }
 
     @Test
@@ -349,7 +351,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         terminateInstance(instances[terminateIndex]);
 
         assertOpenEventually(latch);
-        assertPartitionAssignments();
+        assertPartitionAssignmentsEventually(factory);
     }
 
     @Test
@@ -477,10 +479,6 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         f1.get();
         f2.get();
-    }
-
-    private void assertPartitionAssignments() {
-        PartitionAssignmentsCorrectnessTest.assertPartitionAssignments(factory);
     }
 
     private static void assertPartitionTableEquals(InternalPartition[] partitions1, InternalPartition[] partitions2) {

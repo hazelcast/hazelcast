@@ -456,7 +456,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         TestMigrationAwareService service = getNodeEngineImpl(hz).getService(TestMigrationAwareService.SERVICE_NAME);
         List<PartitionMigrationEvent> events = service.getBeforeEvents();
         Set<PartitionMigrationEvent> uniqueEvents = new HashSet<PartitionMigrationEvent>(events);
-        assertEquals(uniqueEvents.size(), events.size());
+        assertEquals("Node: " + getAddress(hz) + ", Events: " + events, uniqueEvents.size(), events.size());
     }
 
     private static InternalPartitionServiceImpl getPartitionServiceImpl(HazelcastInstance hz) {
