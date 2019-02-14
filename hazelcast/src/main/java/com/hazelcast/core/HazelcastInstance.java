@@ -37,9 +37,17 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
- * Multiple Hazelcast instances can be created on a JVM.
- * Each Hazelcast instance has its own socket, threads.
+ * Hazelcast instance. Each instance is a member and/or client in a Hazelcast cluster. When
+ * you want to use Hazelcast's distributed data structures, you must first create an instance.
+ * Multiple Hazelcast instances can be created on a single JVM.
+ * 
+ * Instances should be shut down explicitly. When it is a member, use {@link com.hazelcast.core.LifecycleService#shutdown()}.
+ * When it is a client, you need to shut it down 
+ * using {@link com.hazelcast.client.HazelcastClient#shutdown(HazelcastInstance instance)}
+ * since it has started with non-daemon threads. Otherwise, it will continue to run and 
+ * even connect to another live member if the one it was connected fails.
+ *
+ * Each Hazelcast instance has its own socket and threads.
  *
  * @see Hazelcast#newHazelcastInstance(Config config)
  */
