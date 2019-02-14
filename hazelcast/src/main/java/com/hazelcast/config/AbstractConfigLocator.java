@@ -28,7 +28,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * Abstract base class for config locators
+ * Abstract base class for config locators.
  *
  * @see XmlConfigLocator
  * @see YamlConfigLocator
@@ -56,7 +56,7 @@ public abstract class AbstractConfigLocator {
     }
 
     /**
-     * Locates the configuration file in a system property
+     * Locates the configuration file in a system property.
      *
      * @return true if the configuration file is found in the system property
      * @throws HazelcastException if there was a problem locating the
@@ -65,7 +65,7 @@ public abstract class AbstractConfigLocator {
     public abstract boolean locateFromSystemProperty();
 
     /**
-     * Locates the configuration file in the working directory
+     * Locates the configuration file in the working directory.
      *
      * @return true if the configuration file is found in the working directory
      * @throws HazelcastException if there was a problem locating the
@@ -74,7 +74,7 @@ public abstract class AbstractConfigLocator {
     protected abstract boolean locateInWorkDir();
 
     /**
-     * Locates the configuration file on the classpath
+     * Locates the configuration file on the classpath.
      *
      * @return true if the configuration file is found on the classpath
      * @throws HazelcastException if there was a problem locating the
@@ -83,7 +83,7 @@ public abstract class AbstractConfigLocator {
     protected abstract boolean locateOnClasspath();
 
     /**
-     * Locates the default configuration file
+     * Locates the default configuration file.
      *
      * @return true always, indicating the default configuration file is
      * found
@@ -92,7 +92,7 @@ public abstract class AbstractConfigLocator {
      */
     public abstract boolean locateDefault();
 
-    public boolean locateEveryWhere() {
+    public boolean locateEverywhere() {
         return locateFromSystemProperty()
                 || locateInWorkDir()
                 || locateOnClasspath()
@@ -105,18 +105,18 @@ public abstract class AbstractConfigLocator {
 
     protected void loadDefaultConfigurationFromClasspath(String defaultConfigFile) {
         try {
-            LOGGER.info("Loading '" + defaultConfigFile + "' from classpath.");
+            LOGGER.info(String.format("Loading '%s' from the classpath.", defaultConfigFile));
 
             configurationUrl = Config.class.getClassLoader().getResource(defaultConfigFile);
 
             if (configurationUrl == null) {
-                throw new HazelcastException("Could not find '" + defaultConfigFile + "' in the classpath!"
-                        + "This may be due to a wrong-packaged or corrupted jar file.");
+                throw new HazelcastException(String.format("Could not find '%s' in the classpath! This may be due to a "
+                        + "wrong-packaged or corrupted jar file.", defaultConfigFile));
             }
 
             in = Config.class.getClassLoader().getResourceAsStream(defaultConfigFile);
             if (in == null) {
-                throw new HazelcastException("Could not load '" + defaultConfigFile + "' from classpath");
+                throw new HazelcastException(String.format("Could not load '%s' from the classpath", defaultConfigFile));
             }
         } catch (RuntimeException e) {
             throw new HazelcastException(e);
@@ -127,16 +127,16 @@ public abstract class AbstractConfigLocator {
         try {
             URL url = Config.class.getClassLoader().getResource(configFileName);
             if (url == null) {
-                LOGGER.finest("Could not find '" + configFileName + "' in classpath.");
+                LOGGER.finest(String.format("Could not find '%s' in the classpath.", configFileName));
                 return false;
             }
 
-            LOGGER.info("Loading '" + configFileName + "' from classpath.");
+            LOGGER.info(String.format("Loading '%s' from the classpath.", configFileName));
 
             configurationUrl = url;
             in = Config.class.getClassLoader().getResourceAsStream(configFileName);
             if (in == null) {
-                throw new HazelcastException("Could not load '" + configFileName + "' from classpath");
+                throw new HazelcastException(String.format("Could not load '%s' from the classpath", configFileName));
             }
             return true;
         } catch (RuntimeException e) {
@@ -148,17 +148,17 @@ public abstract class AbstractConfigLocator {
         try {
             File file = new File(configFilePath);
             if (!file.exists()) {
-                LOGGER.finest("Could not find '" + configFilePath + "' in working directory.");
+                LOGGER.finest(String.format("Could not find '%s' in the working directory.", configFilePath));
                 return false;
             }
 
-            LOGGER.info("Loading '" + configFilePath + "' from working directory.");
+            LOGGER.info(String.format("Loading '%s' from the working directory.", configFilePath));
 
             configurationFile = file;
             try {
                 in = new FileInputStream(file);
             } catch (FileNotFoundException e) {
-                throw new HazelcastException("Failed to open file: " + file.getAbsolutePath(), e);
+                throw new HazelcastException(String.format("Failed to open file: %s", file.getAbsolutePath()), e);
             }
             return true;
         } catch (RuntimeException e) {
@@ -171,7 +171,7 @@ public abstract class AbstractConfigLocator {
             String configSystemProperty = System.getProperty(propertyKey);
 
             if (configSystemProperty == null) {
-                LOGGER.finest("Could not find '" + propertyKey + "' System property");
+                LOGGER.finest(String.format("Could not find '%s' System property", propertyKey));
                 return false;
             }
 
@@ -180,7 +180,7 @@ public abstract class AbstractConfigLocator {
                 return false;
             }
 
-            LOGGER.info("Loading configuration " + configSystemProperty + " from System property 'hazelcast.config'");
+            LOGGER.info(String.format("Loading configuration '%s' from System property '%s'", configSystemProperty, propertyKey));
 
             if (configSystemProperty.startsWith("classpath:")) {
                 loadSystemPropertyClassPathResource(configSystemProperty);
@@ -208,23 +208,24 @@ public abstract class AbstractConfigLocator {
     private void loadSystemPropertyFileResource(String configSystemProperty) {
         // it's a file
         configurationFile = new File(configSystemProperty);
-        LOGGER.info("Using configuration file at " + configurationFile.getAbsolutePath());
+        LOGGER.info(String.format("Using configuration file at %s", configurationFile.getAbsolutePath()));
 
         if (!configurationFile.exists()) {
-            String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
+            String msg = String.format("Config file at '%s' doesn't exist.", configurationFile.getAbsolutePath());
             throw new HazelcastException(msg);
         }
 
         try {
             in = new FileInputStream(configurationFile);
         } catch (FileNotFoundException e) {
-            throw new HazelcastException("Failed to open file: " + configurationFile.getAbsolutePath(), e);
+            throw new HazelcastException(String.format("Failed to open file: %s", configurationFile.getAbsolutePath()), e);
         }
 
         try {
             configurationUrl = configurationFile.toURI().toURL();
         } catch (MalformedURLException e) {
-            throw new HazelcastException("Failed to create URL from the file: " + configurationFile.getAbsolutePath(), e);
+            throw new HazelcastException(String.format("Failed to create URL from the file: %s", configurationFile
+                    .getAbsolutePath()), e);
         }
     }
 
@@ -232,7 +233,7 @@ public abstract class AbstractConfigLocator {
         // it's an explicit configured classpath resource
         String resource = configSystemProperty.substring("classpath:".length());
 
-        LOGGER.info("Using classpath resource at " + resource);
+        LOGGER.info(String.format("Using classpath resource at %s", resource));
 
         if (resource.isEmpty()) {
             throw new HazelcastException("classpath resource can't be empty");
@@ -240,7 +241,7 @@ public abstract class AbstractConfigLocator {
 
         in = Config.class.getClassLoader().getResourceAsStream(resource);
         if (in == null) {
-            throw new HazelcastException("Could not load classpath resource: " + resource);
+            throw new HazelcastException(String.format("Could not load classpath resource: %s", resource));
         }
         configurationUrl = Config.class.getResource(resource);
     }

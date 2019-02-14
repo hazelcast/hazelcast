@@ -110,7 +110,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
     public XmlConfigBuilder(XmlConfigLocator locator) {
         if (locator == null) {
             locator = new XmlConfigLocator();
-            locator.locateEveryWhere();
+            locator.locateEverywhere();
         }
         this.in = locator.getIn();
         this.configurationFile = locator.getConfigurationFile();

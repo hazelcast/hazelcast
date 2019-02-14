@@ -32,7 +32,6 @@ import java.net.URLDecoder;
 
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * These tests manipulate system properties, therefore they must be run in serial mode.
@@ -52,7 +51,6 @@ public class YamlConfigWithSystemPropertyTest {
     @Test
     public void testConfigurationWithFile() throws Exception {
         URL url = getClass().getClassLoader().getResource("hazelcast-default.yaml");
-        assertNotNull(url);
         String decodedURL = URLDecoder.decode(url.getFile(), "UTF-8");
         System.setProperty("hazelcast.config", decodedURL);
         Config config = new YamlConfigBuilder().build();

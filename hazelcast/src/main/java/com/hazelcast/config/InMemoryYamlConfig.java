@@ -61,6 +61,5 @@ public class InMemoryYamlConfig extends Config {
 
         InputStream in = new ByteArrayInputStream(stringToBytes(yaml));
         new YamlConfigBuilder(in).build(this);
-        //        new YamlConfigBuilder(in).setProperties(properties).build(this);
     }
 }

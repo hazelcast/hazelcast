@@ -16,32 +16,64 @@
 
 package com.hazelcast.internal.yaml;
 
+/**
+ * Utility class for working with YAML nodes.
+ */
 public final class YamlUtil {
     private YamlUtil() {
     }
 
+    /**
+     * Takes a generic {@link YamlNode} instance and returns it casted to
+     * {@link YamlMapping} if the type of the node is a descendant of
+     * {@link YamlMapping}.
+     *
+     * @param node The generic node to cast
+     * @return the casted mapping
+     * @throws YamlException if the provided node is not a mapping
+     */
     public static YamlMapping asMapping(YamlNode node) {
         if (node != null && !(node instanceof YamlMapping)) {
             String nodeName = node.nodeName();
-            throw new YamlException("Child " + nodeName + " is not a mapping, it's actual type is " + node.getClass());
+            throw new YamlException(String.format("Child %s is not a mapping, it's actual type is %s",
+                    nodeName, node.getClass()));
         }
 
         return (YamlMapping) node;
     }
 
+    /**
+     * Takes a generic {@link YamlNode} instance and returns it casted to
+     * {@link YamlSequence} if the type of the node is a descendant of
+     * {@link YamlSequence}.
+     *
+     * @param node The generic node to cast
+     * @return the casted sequence
+     * @throws YamlException if the provided node is not a sequence
+     */
     public static YamlSequence asSequence(YamlNode node) {
         if (node != null && !(node instanceof YamlSequence)) {
             String nodeName = node.nodeName();
-            throw new YamlException("Child " + nodeName + " is not a sequence, it's actual type is " + node.getClass());
+            throw new YamlException(String.format("Child %s is not a sequence, it's actual type is %s",
+                    nodeName, node.getClass()));
         }
 
         return (YamlSequence) node;
     }
 
+    /**
+     * Takes a generic {@link YamlNode} instance and returns it casted to
+     * {@link YamlScalar} if the type of the node is a descendant of
+     * {@link YamlScalar}.
+     *
+     * @param node The generic node to cast
+     * @return the casted scalar
+     * @throws YamlException if the provided node is not a scalar
+     */
     public static YamlScalar asScalar(YamlNode node) {
         if (node != null && !(node instanceof YamlScalar)) {
             String nodeName = node.nodeName();
-            throw new YamlException("Child " + nodeName + " is not a scalar, it's actual type is " + node.getClass());
+            throw new YamlException(String.format("Child %s is not a scalar, it's actual type is %s", nodeName, node.getClass()));
         }
 
         return (YamlScalar) node;

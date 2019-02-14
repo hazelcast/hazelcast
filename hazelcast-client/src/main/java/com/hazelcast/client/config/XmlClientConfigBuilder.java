@@ -85,7 +85,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
      */
     public XmlClientConfigBuilder() {
         XmlClientConfigLocator locator = new XmlClientConfigLocator();
-        locator.locateEveryWhere();
+        locator.locateEverywhere();
         this.in = locator.getIn();
     }
 

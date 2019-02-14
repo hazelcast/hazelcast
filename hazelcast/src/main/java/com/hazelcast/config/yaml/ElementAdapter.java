@@ -35,9 +35,9 @@ import static com.hazelcast.config.yaml.EmptyNamedNodeMap.emptyNamedNodeMap;
 import static com.hazelcast.config.yaml.EmptyNodeList.emptyNodeList;
 
 /**
- * Class adapting {@link YamlNode}s to {@link Element}
+ * Class adapting {@link YamlNode}s to {@link Element}.
  * <p/>
- * Used for processing YAML configuration
+ * Used for processing YAML configuration.
  */
 public class ElementAdapter implements Element {
     private final YamlNode yamlNode;

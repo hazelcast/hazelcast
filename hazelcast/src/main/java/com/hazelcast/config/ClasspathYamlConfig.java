@@ -96,6 +96,5 @@ public class ClasspathYamlConfig extends Config {
             throw new IllegalArgumentException("Specified resource '" + resource + "' could not be found!");
         }
         new YamlConfigBuilder(in).build(this);
-        //        new YamlConfigBuilder(in).setProperties(properties).build(this);
     }
 }

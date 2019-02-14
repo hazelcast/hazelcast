@@ -21,7 +21,6 @@ import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.util.ExceptionUtil;
-import org.w3c.dom.Node;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -130,7 +129,6 @@ public class YamlConfigBuilder implements ConfigBuilder {
     }
 
     private void parseAndBuildConfig(Config config) throws Exception {
-        Node w3cRootNode;
         YamlMapping yamlRootNode;
         try {
             yamlRootNode = ((YamlMapping) YamlLoader.load(in));
@@ -143,9 +141,7 @@ public class YamlConfigBuilder implements ConfigBuilder {
             throw new InvalidConfigurationException("No mapping with hazelcast key is found in the provided configuration");
         }
 
-        w3cRootNode = W3cDomUtil.asW3cNode(imdgRoot);
-
-        new YamlMemberDomConfigProcessor(true, config).buildConfig(w3cRootNode);
+        new YamlMemberDomConfigProcessor(true, config).buildConfig(W3cDomUtil.asW3cNode(imdgRoot));
     }
 
 }

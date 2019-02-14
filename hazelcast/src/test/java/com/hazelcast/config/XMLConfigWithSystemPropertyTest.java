@@ -34,7 +34,6 @@ import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * These tests manipulate system properties, therefore they must be run in serial mode.
@@ -54,7 +53,6 @@ public class XMLConfigWithSystemPropertyTest {
     @Test
     public void testConfigurationWithFile() throws Exception {
         URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
-        assertNotNull(url);
         String decodedURL = URLDecoder.decode(url.getFile(), "UTF-8");
         System.setProperty("hazelcast.config", decodedURL);
         Config config = new XmlConfigBuilder().build();
