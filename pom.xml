@@ -79,7 +79,7 @@
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
         <hazelcast.version>3.12-SNAPSHOT</hazelcast.version>
-        <hazelcast.protocol.version>1.6.0</hazelcast.protocol.version>
+        <hazelcast.protocol.version>1.8.0-3</hazelcast.protocol.version>
 
         <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
@@ -94,7 +94,7 @@
 
         <maven.enforcer.plugin.version>3.0.0-M1</maven.enforcer.plugin.version>
         <maven.surefire.plugin.version>2.22.1</maven.surefire.plugin.version>
-        <maven.spotbugs.plugin.version>3.1.6</maven.spotbugs.plugin.version>
+        <maven.spotbugs.plugin.version>3.1.11</maven.spotbugs.plugin.version>
         <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
@@ -395,6 +395,10 @@
                     <excludePackageNames>
                         *.impl:*.internal
                     </excludePackageNames>
+
+                    <!-- see https://bugs.openjdk.java.net/browse/JDK-8212233
+                             https://issues.apache.org/jira/browse/MJAVADOC-555 -->
+                    <source>${jdk.version}</source>
                 </configuration>
                 <executions>
                     <execution>

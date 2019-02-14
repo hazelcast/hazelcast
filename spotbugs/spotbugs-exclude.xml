@@ -22,4 +22,10 @@
     <Match>
         <Bug pattern="EI_EXPOSE_REP2" />
     </Match>
+
+    <!-- false positive in Java 11, see https://github.com/spotbugs/spotbugs/issues/756 -->
+    <Match>
+        <Class name="com.hazelcast.jet.impl.connector.StreamFilesP" />
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+    </Match>
 </FindBugsFilter>
