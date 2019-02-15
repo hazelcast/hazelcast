@@ -29,7 +29,7 @@ final class Tag {
     Tag(String spec) {
         String[] labelParts = spec.trim().split("\\s*=\\s*");
         if (labelParts.length != 2) {
-            throw new IllegalArgumentException(String.format("Invalid label specification: '%s'", spec));
+            throw new IllegalArgumentException(String.format("Invalid tag specification: '%s'", spec));
         }
         this.key = labelParts[0];
         this.value = labelParts[1];

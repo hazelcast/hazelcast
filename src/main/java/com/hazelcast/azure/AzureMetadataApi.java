@@ -17,6 +17,11 @@
 package com.hazelcast.azure;
 
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Responsible for connecting to the Azure Instance Metadata API.
@@ -27,53 +32,68 @@ import com.hazelcast.internal.json.Json;
 final class AzureMetadataApi {
     private static final String METADATA_ENDPOINT = "http://169.254.169.254";
     private static final String API_VERSION = "2018-02-01";
+    private static final String RESOURCE = "https://management.azure.com";
 
     private final String endpoint;
+    private final Map<String, String> metadata;
 
     AzureMetadataApi() {
         this.endpoint = METADATA_ENDPOINT;
+        this.metadata = new HashMap<String, String>();
     }
 
     /**
      * For test purposes only.
      */
-    AzureMetadataApi(String endpoint) {
+    AzureMetadataApi(String endpoint, Map<String, String> metadata) {
         this.endpoint = endpoint;
+        this.metadata = Collections.unmodifiableMap(metadata);
+    }
+
+    private void fillMetadata() {
+        if (metadata.isEmpty()) {
+            String urlString = String.format("%s/metadata/instance/compute?api-version=%s", endpoint, API_VERSION);
+            String response = callGet(urlString);
+            JsonObject jsonObject = Json.parse(response).asObject();
+            for (String property : jsonObject.names()) {
+                metadata.put(property, jsonObject.get(property).asString());
+            }
+        }
+    }
+
+    private String getMetadataProperty(String property) {
+        fillMetadata();
+        return metadata.get(property);
     }
 
     String subscriptionId() {
-        String urlString = String.format("%s/metadata/instance/compute/subscriptionId", endpoint);
-        return callGet(urlString, true);
+        return getMetadataProperty("subscriptionId");
     }
 
     String resourceGroupName() {
-        String urlString = String.format("%s/metadata/instance/compute/resourceGroupName", endpoint);
-        return callGet(urlString, true);
+        return getMetadataProperty("resourceGroupName");
     }
 
     String location() {
-        String urlString = String.format("%s/metadata/instance/compute/location", endpoint);
-        return callGet(urlString, true);
+        return getMetadataProperty("location");
     }
 
     String availabilityZone() {
-        String urlString = String.format("%s/metadata/instance/compute/zone", endpoint);
-        return callGet(urlString, true);
+        return getMetadataProperty("zone");
     }
 
     String faultDomain() {
-        String urlString = String.format("%s/metadata/instance/compute/platformFaultDomain", endpoint);
-        return callGet(urlString, true);
+        return getMetadataProperty("platformFaultDomain");
     }
 
     String scaleSet() {
-        String urlString = String.format("%s/metadata/instance/compute/vmScaleSetName", endpoint);
-        return callGet(urlString, true);
+        return getMetadataProperty("vmScaleSetName");
     }
 
     String accessToken() {
-        String urlString = String.format("%s/metadata/identity/oauth2/token", endpoint);
-        String accessTokenResponse = callGet(urlString, false);
+        String urlString = String.format("%s/metadata/identity/oauth2/token?api-version=%s&resource=%s", endpoint,
+                API_VERSION, RESOURCE);
+        String accessTokenResponse = callGet(urlString);
         return extractAccessToken(accessTokenResponse);
     }
 
@@ -81,18 +101,10 @@ final class AzureMetadataApi {
         return Json.parse(accessTokenResponse).asObject().get("access_token").asString();
     }
 
-    private String body() {
-        return String.format("api-version=%s", API_VERSION);
-    }
-
-    private String body(String format) {
-        return String.format("api-version=%s&format=%s", API_VERSION, format);
-    }
-
-    private String callGet(String urlString, boolean textOutput) {
+    private String callGet(String urlString) {
         return RestClient.create(urlString)
                 .withHeader("Metadata", "true")
-                .withBody(textOutput ? body("text") : body()).get();
+                .get();
     }
 
 }

@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.azure.AzureProperties.CLIENT;
 import static com.hazelcast.azure.AzureProperties.CLIENT_ID;
 import static com.hazelcast.azure.AzureProperties.CLIENT_SECRET;
 import static com.hazelcast.azure.AzureProperties.PORT;
@@ -98,6 +99,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private AzureConfig createAzureConfig() {
         return AzureConfig.builder()
+                .setClient((Boolean) getOrDefault(CLIENT.getDefinition(), CLIENT.getDefaultValue()))
                 .setTenantId(getOrNull(TENANT_ID))
                 .setClientId(getOrNull(CLIENT_ID))
                 .setClientSecret(getOrNull(CLIENT_SECRET))

@@ -16,22 +16,24 @@
 
 package com.hazelcast.azure;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+
+import com.hazelcast.config.InvalidConfigurationException;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.logging.Logger;
 
 import static com.hazelcast.azure.Utils.isAllBlank;
+import static com.hazelcast.azure.Utils.isAllNotBlank;
 import static com.hazelcast.azure.Utils.isBlank;
 
 /**
  * Responsible for fetching the discovery information from Azure APIs.
  */
 final class AzureClient {
-    private static final ILogger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class);
+    private static final Logger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class.getSimpleName());
 
-    private static final int RETRIES = 10;
+    private static final int RETRIES = 2;
 
     private final AzureMetadataApi azureMetadataApi;
     private final AzureComputeApi azureComputeApi;
@@ -45,7 +47,7 @@ final class AzureClient {
     private final String scaleSet;
     private final Tag tag;
 
-    private final boolean hasSIM;
+    private final boolean hasSMIRight;
 
     AzureClient(AzureMetadataApi azureMetadataApi, AzureComputeApi azureComputeApi,
                 AzureAuthenticator azureAuthenticator, AzureConfig azureConfig) {
@@ -56,12 +58,21 @@ final class AzureClient {
         this.tenantId = azureConfig.getTenantId();
         this.clientId = azureConfig.getClientId();
         this.clientSecret = azureConfig.getClientSecret();
+        this.hasSMIRight = hasSMIRight(tenantId, clientId, clientSecret);
         this.subscriptionId = subscriptionIdFromConfigOrMetadataApi(azureConfig);
         this.resourceGroup = resourceGroupFromConfigOrMetadataApi(azureConfig);
         this.scaleSet = scaleSetFromConfigOrMetadataApi(azureConfig);
         this.tag = azureConfig.getTag();
+    }
 
-        this.hasSIM = isAllBlank(tenantId, clientId, clientSecret);
+    private boolean hasSMIRight(String tenantId, String clientId, String clientSecret) {
+        boolean hasSMIRight = isAllBlank(tenantId, clientId, clientSecret);
+        if (!hasSMIRight && !isAllNotBlank(tenantId, clientId, clientSecret)) {
+            //All 3 property must be defined & not empty
+            throw new InvalidConfigurationException("Invalid Azure Discovery config: " +
+                    "All of tenantId, clientId & clientSecret must defined or none");
+        }
+        return hasSMIRight;
     }
 
     private String subscriptionIdFromConfigOrMetadataApi(final AzureConfig azureConfig) {
@@ -78,7 +89,7 @@ final class AzureClient {
     }
 
     private String resourceGroupFromConfigOrMetadataApi(final AzureConfig azureConfig) {
-        if (!isBlank(azureConfig.getResourceGroup())) {
+        if (!isBlank(azureConfig.getResourceGroup()) || azureConfig.isClient()) {
             return azureConfig.getResourceGroup();
         }
         LOGGER.finest("Property 'resourceGroup' not configured, fetching from the VM metadata service");
@@ -117,18 +128,19 @@ final class AzureClient {
     }
 
     private String fetchAccessToken() {
-        if (hasSIM) {
+        if (hasSMIRight) {
             return azureMetadataApi.accessToken();
+        } else {
+            return azureAuthenticator.refreshAccessToken(tenantId, clientId, clientSecret);
         }
-        return azureAuthenticator.refreshAccessToken(tenantId, clientId, clientSecret);
     }
 
     String getAvailabilityZone() {
         String zone = azureMetadataApi.availabilityZone();
-        if (!isBlank(zone)) {
-            return String.format("%s-%s", azureMetadataApi.location(), zone);
-        } else {
+        if (isBlank(zone)) {
             return azureMetadataApi.faultDomain();
+        } else {
+            return String.format("%s-%s", azureMetadataApi.location(), zone);
         }
     }
 }

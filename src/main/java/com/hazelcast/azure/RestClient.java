@@ -16,28 +16,27 @@
 
 package com.hazelcast.azure;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility class for making REST calls.
  */
 final class RestClient {
-    private static final ILogger LOGGER = Logger.getLogger(RestClient.class);
+    private static final Logger LOGGER = Logger.getLogger(RestClient.class.getSimpleName());
 
     private static final int HTTP_OK = 200;
 
     private final String url;
-    private final List<Header> headers = new ArrayList<Header>();
+    private final Map<String, String> headers = new LinkedHashMap<String, String>();
     private String body;
 
     private RestClient(String url) {
@@ -58,7 +57,7 @@ final class RestClient {
     }
 
     RestClient withHeader(String key, String value) {
-        headers.add(new Header(key, value));
+        headers.put(key, value);
         return this;
     }
 
@@ -82,7 +81,7 @@ final class RestClient {
             URL urlToConnect = new URL(url);
             connection = (HttpURLConnection) urlToConnect.openConnection();
             connection.setRequestMethod(method);
-            for (Header header : headers) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
             if (body != null) {
@@ -97,11 +96,13 @@ final class RestClient {
                 outputStream.flush();
             }
 
-            if (connection.getResponseCode() != HTTP_OK) {
+            if (connection.getResponseCode() == HTTP_OK) {
+                return read(connection.getInputStream());
+            } else {
                 throw new RestClientException(String.format("Failure executing: %s at: %s. Message: %s,", method, url,
                         read(connection.getErrorStream())));
             }
-            return read(connection.getInputStream());
+
         } catch (Exception e) {
             throw new RestClientException("Failure in executing REST call", e);
         } finally {
@@ -112,27 +113,9 @@ final class RestClient {
                 try {
                     outputStream.close();
                 } catch (IOException e) {
-                    LOGGER.finest("Error while closing HTTP output stream", e);
+                    LOGGER.log(Level.FINEST, "Error while closing HTTP output stream", e);
                 }
             }
-        }
-    }
-
-    private static final class Header {
-        private final String key;
-        private final String value;
-
-        private Header(String key, String value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        private String getKey() {
-            return key;
-        }
-
-        private String getValue() {
-            return value;
         }
     }
 

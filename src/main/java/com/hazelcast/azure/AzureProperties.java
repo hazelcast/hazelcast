@@ -70,7 +70,7 @@ enum AzureProperties {
     TAG("tag", STRING, true),
 
     /**
-     * Port range where Hazelcast is expected to be running. Format: "5701" or "5701-5710".
+     * Port range where Hazelcast is expected to be running. Format: "5701" or "5701-5703".
      * <p>
      * The default value is "5701-5703".
      */

@@ -20,6 +20,7 @@ package com.hazelcast.azure;
  * Utility methods.
  */
 final class Utils {
+
     private Utils() {
     }
 
@@ -39,6 +40,16 @@ final class Utils {
                 if (!isBlank(val)) {
                     return false;
                 }
+            }
+        }
+        return true;
+    }
+
+    static boolean isAllNotBlank(final String... values) {
+        if (values == null) return false;
+        for (final String val : values) {
+            if (isBlank(val)) {
+                return false;
             }
         }
         return true;

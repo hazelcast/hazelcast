@@ -40,7 +40,6 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
     @Override
     public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode node, ILogger logger,
                                                   Map<String, Comparable> properties) {
-
         return new AzureDiscoveryStrategy(properties);
     }
 

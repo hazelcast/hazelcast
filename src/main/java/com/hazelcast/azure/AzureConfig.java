@@ -76,7 +76,7 @@ final class AzureConfig {
 
     static final class Builder {
 
-        private AzureConfig config;
+        private final AzureConfig config;
 
         private Builder() {
             this.config = new AzureConfig();

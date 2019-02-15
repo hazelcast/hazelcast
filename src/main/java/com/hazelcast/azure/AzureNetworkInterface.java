@@ -22,21 +22,16 @@ import java.util.Set;
  * AzureNetworkInterface
  */
 final class AzureNetworkInterface {
-    private String id;
-    private String privateIp;
-    private String publicIpId;
-    private Set<Tag> tags;
+    private final String id;
+    private final String privateIp;
+    private final String publicIpId;
+    private final Set<Tag> tags;
 
-    private AzureNetworkInterface() {
-    }
-
-    static AzureNetworkInterface of(String id, String privateIp, String publicIpId, Set<Tag> tags) {
-        AzureNetworkInterface anInterface = new AzureNetworkInterface();
-        anInterface.id = id;
-        anInterface.privateIp = privateIp;
-        anInterface.publicIpId = publicIpId;
-        anInterface.tags = tags;
-        return anInterface;
+    public AzureNetworkInterface (String id, String privateIp, String publicIpId, Set<Tag> tags) {
+        this.id = id;
+        this.privateIp = privateIp;
+        this.publicIpId = publicIpId;
+        this.tags = tags;
     }
 
     String getId() {
