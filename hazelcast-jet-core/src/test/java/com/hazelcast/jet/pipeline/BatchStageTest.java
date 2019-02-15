@@ -346,7 +346,7 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void rollingAggregate() {
+    public void rollingAggregate_global() {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);

@@ -33,7 +33,6 @@ public class SnapshotContext {
 
     private final ILogger logger;
 
-    private final long jobId;
     private final String jobNameAndExecutionId;
     private final ProcessingGuarantee guarantee;
 
@@ -103,10 +102,9 @@ public class SnapshotContext {
     private final AtomicLong totalChunks = new AtomicLong();
     private boolean isCancelled;
 
-    public SnapshotContext(ILogger logger, long jobId, String jobNameAndExecutionId, long activeSnapshotId,
+    public SnapshotContext(ILogger logger, String jobNameAndExecutionId, long activeSnapshotId,
                            ProcessingGuarantee guarantee
     ) {
-        this.jobId = jobId;
         this.jobNameAndExecutionId = jobNameAndExecutionId;
         this.activeSnapshotId = currentSnapshotId = activeSnapshotId;
         this.guarantee = guarantee;
@@ -274,7 +272,7 @@ public class SnapshotContext {
     }
 
     // public-visible for tests
-    public AtomicInteger getNumRemainingTasklets() {
+    AtomicInteger getNumRemainingTasklets() {
         return numRemainingTasklets;
     }
 }

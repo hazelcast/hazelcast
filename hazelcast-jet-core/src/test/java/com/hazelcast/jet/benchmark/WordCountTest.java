@@ -147,9 +147,8 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @Ignore
     public void testAggregations() {
         final Map<String, Long>[] counts = new Map[1];
-        benchmark("aggregations", () -> {
-            counts[0] = instance.<Integer, String>getMap("words").aggregate(new WordCountAggregator());
-        });
+        benchmark("aggregations", () ->
+                counts[0] = instance.<Integer, String>getMap("words").aggregate(new WordCountAggregator()));
         assertCounts(counts[0]);
     }
 
@@ -202,7 +201,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         dag.edge(between(source, mapReduce))
            .edge(between(mapReduce, combineLocal))
-           .edge(between(combineLocal, combineGlobal).distributed().allToOne())
+           .edge(between(combineLocal, combineGlobal).distributed().allToOne("ALL"))
            .edge(between(combineGlobal, sink));
 
         benchmark("jet", () -> instance.newJob(dag).join());

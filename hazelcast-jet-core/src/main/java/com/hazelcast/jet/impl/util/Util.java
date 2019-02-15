@@ -76,6 +76,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
@@ -94,6 +96,7 @@ public final class Util {
 
     private static final int BUFFER_SIZE = 1 << 15;
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+    private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
 
     private Util() {
     }
@@ -526,5 +529,27 @@ public final class Util {
         JobConfig jobConfig = new JobConfig()
                 .setName("copy-" + sourceMap + "-to-" + targetMap);
         return instance.newJob(dag, jobConfig).getFuture();
+    }
+
+    /**
+     * If the name ends with "-N", returns a new name where "-N" is replaced
+     * with "-M" where M = N + 1. If N is too large for {@code int}, negative,
+     * unparseable, not present or smaller than 2, then it's ignored and just
+     * "-2" is appended.
+     */
+    public static String addOrIncrementIndexInName(String name) {
+        Matcher m = TRAILING_NUMBER_PATTERN.matcher(name);
+        int index = 2;
+        if (m.matches()) {
+            try {
+                int newIndex = Integer.parseInt(m.group(2)) + 1;
+                if (newIndex > 2) {
+                    index = newIndex;
+                    name = m.group(1);
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return name + '-' + index;
     }
 }

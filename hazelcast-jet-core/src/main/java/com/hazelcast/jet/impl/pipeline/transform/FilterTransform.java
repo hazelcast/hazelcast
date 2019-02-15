@@ -42,7 +42,7 @@ public class FilterTransform<T> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(), filterP(filterFn()));
+        PlannerVertex pv = p.addVertex(this, name(), localParallelism(), filterP(filterFn()));
         p.addEdges(this, pv.v);
     }
 }

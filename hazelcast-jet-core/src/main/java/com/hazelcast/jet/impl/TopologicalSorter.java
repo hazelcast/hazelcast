@@ -19,9 +19,11 @@ package com.hazelcast.jet.impl;
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.entry;
@@ -80,6 +82,24 @@ public final class TopologicalSorter<V> {
                                                  .map(tarjanVertices::get)
                                                  .collect(toList())));
         return new TopologicalSorter<>(tarjanAdjacencyMap, vertexNameFn).go();
+    }
+
+    /**
+     * Checks that a collection we assume is topologically sorted actually is
+     * sorted.
+     *
+     * @throws RuntimeException if it's not sorted
+     */
+    public static <V> void checkTopologicalSort(Iterable<Entry<V, List<V>>> adjacencyMap) {
+        Set<V> seen = new HashSet<>();
+        for (Entry<V, List<V>> parentAndChildren : adjacencyMap) {
+            for (V child : parentAndChildren.getValue()) {
+                if (seen.contains(child)) {
+                    throw new RuntimeException("A child seen before its parent");
+                }
+            }
+            seen.add(parentAndChildren.getKey());
+        }
     }
 
     // Partial implementation of Tarjan's algorithm:

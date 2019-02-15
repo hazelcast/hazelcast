@@ -195,7 +195,7 @@ public class ProcessorTaskletTest_Snapshots {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);
         }
-        snapshotContext = new SnapshotContext(mock(ILogger.class), 1, "test job", -1, guarantee);
+        snapshotContext = new SnapshotContext(mock(ILogger.class), "test job", -1, guarantee);
         snapshotContext.initTaskletCount(1, 0);
         final ProcessorTasklet t = new ProcessorTasklet(context, serializationService, processor, instreams, outstreams,
                 snapshotContext, snapshotCollector, null);

@@ -34,6 +34,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.addClamped;
+import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
 import static com.hazelcast.jet.impl.util.Util.gcd;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
@@ -140,5 +141,19 @@ public class UtilTest extends JetTestSupport {
         logger.info("Done copying");
 
         assertEquals(testData, new HashMap<>(instances[0].getMap("target")));
+    }
+
+    @Test
+    public void test_addIndexToName() {
+        assertEquals("a-2", addOrIncrementIndexInName("a"));
+        assertEquals("a-3", addOrIncrementIndexInName("a-2"));
+        assertEquals("a-26", addOrIncrementIndexInName("a-25"));
+        assertEquals("a-25x-2", addOrIncrementIndexInName("a-25x"));
+        assertEquals("a-1351318168168168168168-2", addOrIncrementIndexInName("a-1351318168168168168168"));
+        assertEquals("a-" + Integer.MAX_VALUE + "-2", addOrIncrementIndexInName("a-" + Integer.MAX_VALUE));
+        assertEquals("a-0-2", addOrIncrementIndexInName("a-0"));
+        assertEquals("a-1-2", addOrIncrementIndexInName("a-1"));
+        assertEquals("a-1-3", addOrIncrementIndexInName("a-1-2"));
+        assertEquals("a--1-2", addOrIncrementIndexInName("a--1"));
     }
 }

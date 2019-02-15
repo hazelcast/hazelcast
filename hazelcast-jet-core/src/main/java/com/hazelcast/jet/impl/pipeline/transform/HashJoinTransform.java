@@ -95,7 +95,6 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
     @Override
     @SuppressWarnings("unchecked")
     public void addToDag(Planner p) {
-        String namePrefix = p.uniqueVertexName(this.name());
         PlannerVertex primary = p.xform2vertex.get(this.upstream().get(0));
         List keyFns = this.clauses.stream()
                                   .map(JoinClause::leftKeyFn)
@@ -104,11 +103,11 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         List<Tag> tags = this.tags;
         DistributedBiFunction mapToOutputBiFn = this.mapToOutputBiFn;
         DistributedTriFunction mapToOutputTriFn = this.mapToOutputTriFn;
-        Vertex joiner = p.addVertex(this, namePrefix + "-joiner", localParallelism(),
+        Vertex joiner = p.addVertex(this, name() + "-joiner", localParallelism(),
                 () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn)).v;
         p.dag.edge(from(primary.v, primary.nextAvailableOrdinal()).to(joiner, 0));
 
-        String collectorName = namePrefix + "-collector";
+        String collectorName = name() + "-collector";
         int collectorOrdinal = 1;
         for (Transform fromTransform : tailList(this.upstream())) {
             PlannerVertex fromPv = p.xform2vertex.get(fromTransform);

@@ -46,6 +46,6 @@ public class BatchSourceTransform<T> extends AbstractTransform implements BatchS
 
     @Override
     public void addToDag(Planner p) {
-        p.addVertex(this, p.uniqueVertexName(name()), localParallelism(), metaSupplier);
+        p.addVertex(this, name(), localParallelism(), metaSupplier);
     }
 }

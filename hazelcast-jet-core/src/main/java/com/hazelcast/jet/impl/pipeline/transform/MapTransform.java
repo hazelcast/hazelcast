@@ -42,7 +42,7 @@ public class MapTransform<T, R> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name()), localParallelism(), mapP(mapFn()));
+        PlannerVertex pv = p.addVertex(this, name(), localParallelism(), mapP(mapFn()));
         p.addEdges(this, pv.v);
     }
 }

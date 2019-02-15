@@ -23,11 +23,11 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
+import com.hazelcast.jet.impl.util.ConstantFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.UuidUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -262,6 +262,10 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public <T> Edge partitioned(@Nonnull DistributedFunction<T, ?> extractKeyFn) {
+        // optimization for DistributedFunctions#constantKey()
+        if (extractKeyFn instanceof ConstantFunction) {
+            return allToOne(extractKeyFn.apply(null));
+        }
         return partitioned(extractKeyFn, defaultPartitioner());
     }
 
@@ -284,13 +288,13 @@ public class Edge implements IdentifiedDataSerializable {
 
     /**
      * Activates a special-cased {@link RoutingPolicy#PARTITIONED PARTITIONED}
-     * routing policy where all items will be assigned the same, randomly
-     * chosen partition ID. Therefore all items will be directed to the same
-     * processor.
+     * routing policy where all items will be routed to the same partition ID,
+     * determined from the given {@code key}. It means that all items will be
+     * directed to the same processor and other processors will be idle.
      */
     @Nonnull
-    public Edge allToOne() {
-        return partitioned(wholeItem(), new Single());
+    public Edge allToOne(Object key) {
+        return partitioned(wholeItem(), new Single(key));
     }
 
     /**
@@ -534,20 +538,20 @@ public class Edge implements IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final String key;
+        private final Object key;
         private int partition;
 
-        Single() {
-            key = UuidUtil.newUnsecureUuidString();
+        Single(Object key) {
+            this.key = key;
         }
 
         @Override
-        public void init(DefaultPartitionStrategy strategy) {
+        public void init(@Nonnull DefaultPartitionStrategy strategy) {
             partition = strategy.getPartition(key);
         }
 
         @Override
-        public int getPartition(Object item, int partitionCount) {
+        public int getPartition(@Nonnull Object item, int partitionCount) {
             return partition;
         }
     }

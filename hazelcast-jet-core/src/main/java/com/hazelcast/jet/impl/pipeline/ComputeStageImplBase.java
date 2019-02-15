@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FilterTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapTransform;
+import com.hazelcast.jet.impl.pipeline.transform.GlobalRollingAggregateTransform;
 import com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MergeTransform;
@@ -279,6 +280,17 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                         fnAdapter.adaptKeyFn(keyFn),
                         fnAdapter.adaptAggregateOperation1(aggrOp),
                         fnAdapter.adaptRollingAggregateOutputFn(mapToOutputFn)),
+                fnAdapter);
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    <R, RET> RET attachGlobalRollingAggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp) {
+        GlobalRollingAggregateTransform transform = new GlobalRollingAggregateTransform(
+                this.transform,
+                fnAdapter.adaptAggregateOperation1(aggrOp),
+                fnAdapter.adaptRollingAggregateOutputFn((key, result) -> result));
+        return (RET) attach(transform,
                 fnAdapter);
     }
 

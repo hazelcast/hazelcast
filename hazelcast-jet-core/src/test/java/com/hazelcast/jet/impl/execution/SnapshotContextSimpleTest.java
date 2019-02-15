@@ -40,7 +40,7 @@ public class SnapshotContextSimpleTest {
     public ExpectedException exception = ExpectedException.none();
 
     private SnapshotContext ssContext =
-            new SnapshotContext(mock(ILogger.class), 1, "test job", 9, ProcessingGuarantee.EXACTLY_ONCE);
+            new SnapshotContext(mock(ILogger.class), "test job", 9, ProcessingGuarantee.EXACTLY_ONCE);
 
     @Test
     public void when_cancelledInitially_then_cannotStartNewSnapshot() {

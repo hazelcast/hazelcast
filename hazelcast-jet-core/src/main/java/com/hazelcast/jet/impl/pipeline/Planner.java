@@ -45,7 +45,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
-import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
+import static com.hazelcast.jet.impl.TopologicalSorter.checkTopologicalSort;
 import static java.util.stream.Collectors.toList;
 
 @SuppressWarnings("unchecked")
@@ -71,6 +71,7 @@ public class Planner {
     }
 
     DAG createDag() {
+        pipeline.makeNamesUnique();
         Map<Transform, List<Transform>> adjacencyMap = pipeline.adjacencyMap();
         validateNoLeakage(adjacencyMap);
 
@@ -103,8 +104,8 @@ public class Planner {
             }
         }
 
-        Iterable<Transform> sorted = topologicalSort(adjacencyMap, Object::toString);
-        for (Transform transform : sorted) {
+        checkTopologicalSort(adjacencyMap.entrySet());
+        for (Transform transform : adjacencyMap.keySet()) {
             transform.addToDag(this);
         }
         return dag;
@@ -157,36 +158,6 @@ public class Planner {
 
     public void addEdges(Transform transform, Vertex toVertex) {
         addEdges(transform, toVertex, e -> { });
-    }
-
-    /**
-     * Makes the proposed name unique in the DAG by adding an optional "-N"
-     * between the name and the suffix.
-     *
-     * @return unique name to be used for the vertex
-     */
-    @Nonnull
-    public String uniqueVertexName(@Nonnull String proposedName) {
-        return uniqueName(vertexNames, proposedName);
-    }
-
-    /**
-     * Returns a unique name for a proposed name given a set of previously known names
-     * by adding an optional "-N" between the name and the suffix.
-     *
-     * @return unique name to be used
-     */
-    @Nonnull
-    static String uniqueName(
-            @Nonnull Set<String> knownNames, @Nonnull String proposedName
-    ) {
-        for (int index = 1; ; index++) {
-            String candidate = proposedName
-                    + (index == 1 ? "" : "-" + index);
-            if (knownNames.add(candidate)) {
-                return candidate;
-            }
-        }
     }
 
     /**

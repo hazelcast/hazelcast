@@ -61,7 +61,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     private MockAsyncSnapshotWriter mockSsWriter;
 
     private void init(List<Object> inputData) {
-        ssContext = new SnapshotContext(Logger.getLogger(SnapshotContext.class), 1, "test job", 1,
+        ssContext = new SnapshotContext(Logger.getLogger(SnapshotContext.class), "test job", 1,
                 ProcessingGuarantee.EXACTLY_ONCE);
         ssContext.initTaskletCount(1, 0);
         inputData = new ArrayList<>(inputData);

@@ -25,9 +25,7 @@ import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -46,7 +44,6 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Category(ParallelTest.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class Processors_globalAggregationIntegrationTest extends JetTestSupport {
 
@@ -77,7 +74,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
             Vertex aggregate = dag.newVertex("aggregate", Processors.aggregateP(summingOp))
                     .localParallelism(1);
             dag
-                    .edge(between(source, aggregate).distributed().allToOne())
+                    .edge(between(source, aggregate).distributed().allToOne("foo"))
                     .edge(between(aggregate, sink).isolated());
 
         } else {
@@ -85,7 +82,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
             Vertex combine = dag.newVertex("combine", combineP(summingOp)).localParallelism(1);
             dag
                     .edge(between(source, accumulate))
-                    .edge(between(accumulate, combine).distributed().allToOne())
+                    .edge(between(accumulate, combine).distributed().allToOne("foo"))
                     .edge(between(combine, sink).isolated());
         }
 

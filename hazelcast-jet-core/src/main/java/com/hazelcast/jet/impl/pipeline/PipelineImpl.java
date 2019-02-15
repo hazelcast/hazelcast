@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
-import static com.hazelcast.jet.impl.pipeline.Planner.uniqueName;
+import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static java.util.stream.Collectors.toList;
 
@@ -125,20 +125,16 @@ public class PipelineImpl implements Pipeline {
 
     @Nonnull @Override
     public String toDotString() {
+        makeNamesUnique();
         Map<Transform, List<Transform>> adjMap = this.adjacencyMap();
         Map<Transform, String> transformNames = new HashMap<>();
-        Set<String> knownNames = new HashSet<>();
         final StringBuilder builder = new StringBuilder(256);
         builder.append("digraph Pipeline {\n");
         for (Entry<Transform, List<Transform>> entry : adjMap.entrySet()) {
             Transform src = entry.getKey();
-            String srcName = transformNames.computeIfAbsent(
-                    src, t -> uniqueName(knownNames, t.name())
-            );
+            String srcName = transformNames.computeIfAbsent(src, Transform::name);
             for (Transform dest : entry.getValue()) {
-                String destName = transformNames.computeIfAbsent(
-                        dest, t -> uniqueName(knownNames, t.name())
-                );
+                String destName = transformNames.computeIfAbsent(dest, Transform::name);
                 builder.append("\t")
                        .append("\"").append(escapeGraphviz(srcName)).append("\"")
                        .append(" -> ")
@@ -158,6 +154,16 @@ public class PipelineImpl implements Pipeline {
 
     void register(Transform stage, List<Transform> downstream) {
         List<Transform> prev = adjacencyMap.put(stage, downstream);
-        assert prev == null : "Double registering of a Stage with this Pipeline: " + stage;
+        assert prev == null : "Double registration of a Stage with this Pipeline: " + stage;
+    }
+
+    void makeNamesUnique() {
+        Set<String> usedNames = new HashSet<>();
+        for (Transform transform : adjacencyMap.keySet()) {
+            // replace the name with a unique one
+            while (!usedNames.add(transform.name())) {
+                transform.setName(addOrIncrementIndexInName(transform.name()));
+            }
+        }
     }
 }

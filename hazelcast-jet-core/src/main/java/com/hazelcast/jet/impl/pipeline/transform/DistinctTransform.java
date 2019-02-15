@@ -40,7 +40,7 @@ public class DistinctTransform<T, K> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        String vertexName = p.uniqueVertexName(this.name());
+        String vertexName = name();
         Vertex v1 = p.dag.newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, distinctP(keyFn))
                          .localParallelism(localParallelism());
         PlannerVertex pv2 = p.addVertex(this, vertexName, localParallelism(), distinctP(keyFn));

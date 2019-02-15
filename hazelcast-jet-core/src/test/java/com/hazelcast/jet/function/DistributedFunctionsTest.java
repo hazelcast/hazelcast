@@ -16,23 +16,21 @@
 
 package com.hazelcast.jet.function;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.function.DistributedFunctions.CONSTANT_KEY;
-import static com.hazelcast.jet.function.DistributedPredicate.alwaysFalse;
-import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
-import static com.hazelcast.jet.function.DistributedFunctions.constantKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.DistributedPredicate.alwaysFalse;
+import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class DistributedFunctionsTest extends HazelcastTestSupport {
 
     @Test
@@ -54,11 +52,6 @@ public class DistributedFunctionsTest extends HazelcastTestSupport {
     @Test
     public void when_entryValue() {
         assertEquals(2, entryValue().apply(entry(1, 2)));
-    }
-
-    @Test
-    public void when_constantKey() {
-        assertEquals(CONSTANT_KEY, constantKey().apply(1));
     }
 
     @Test
