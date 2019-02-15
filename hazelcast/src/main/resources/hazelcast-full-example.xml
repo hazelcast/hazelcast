@@ -850,8 +850,8 @@
         create additional metadata about them. This metadata then is used to make querying and indexing faster.
         Turning on preprocessing may decrease put throughput.
         Valid values are:
-        CREATION_TIME: Objects of supported types are pre-processed when they are created and updated.
-        OFF (default): No pre-processing is done.
+        CREATION_TIME (default): Objects of supported types are pre-processed when they are created and updated.
+        OFF: No pre-processing is done.
         * <cache-deserialized-values>:
         Controls caching of deserialized values. Caching makes the query evaluation faster, but it costs memory.
         Available values are as follows:
@@ -1093,7 +1093,7 @@
      -->
     <map name="default">
         <in-memory-format>BINARY</in-memory-format>
-        <preprocessing-policy>OFF</preprocessing-policy>
+        <preprocessing-policy>CREATION_TIME</preprocessing-policy>
         <statistics-enabled>true</statistics-enabled>
         <optimize-queries>true</optimize-queries>
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>

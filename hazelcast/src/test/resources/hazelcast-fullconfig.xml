@@ -354,10 +354,10 @@
             create additional metadata about them. This metadata then is used to make querying and indexing faster.
             Turning on preprocessing may decrease put throughput.
             Valid values are:
-            CREATION_TIME: Objects of supported types are pre-processed when they are created and updated.
-            OFF (default): No pre-processing is done.
+            CREATION_TIME (default): Objects of supported types are pre-processed when they are created and updated.
+            OFF: No pre-processing is done.
         -->
-        <preprocessing-policy>OFF</preprocessing-policy>
+        <preprocessing-policy>CREATION_TIME</preprocessing-policy>
 
         <!--
             Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
