@@ -20,7 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.impl.MasterContext;
+import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
@@ -238,9 +238,9 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge priority(int priority) {
-        if (priority == MasterContext.SNAPSHOT_RESTORE_EDGE_PRIORITY) {
+        if (priority == MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY) {
             throw new IllegalArgumentException("priority must not be Integer.MIN_VALUE ("
-                    + MasterContext.SNAPSHOT_RESTORE_EDGE_PRIORITY + ')');
+                    + MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY + ')');
         }
         this.priority = priority;
         return this;

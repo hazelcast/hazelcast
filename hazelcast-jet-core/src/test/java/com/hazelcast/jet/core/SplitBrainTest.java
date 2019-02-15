@@ -102,7 +102,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             assertTrueEventually(() -> {
                 MasterContext masterContext = service2.getJobCoordinationService().getMasterContext(jobId);
                 assertNotNull(masterContext);
-                minorityJobFutureRef[0] = masterContext.jobCompletionFuture();
+                minorityJobFutureRef[0] = masterContext.jobContext().jobCompletionFuture();
             });
 
             assertTrueAllTheTime(() -> {

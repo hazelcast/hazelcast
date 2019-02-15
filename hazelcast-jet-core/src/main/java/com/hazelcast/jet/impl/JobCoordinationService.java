@@ -210,7 +210,7 @@ public class JobCoordinationService {
         }
         CompletableFuture[] futures = masterContexts
                 .values().stream()
-                .map(MasterContext::gracefullyTerminate)
+                .map(mc -> mc.jobContext().gracefullyTerminate())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(futures);
     }
@@ -230,7 +230,7 @@ public class JobCoordinationService {
             jobsScanned = false;
         }
 
-        ctxes.forEach(ctx -> ctx.setFinalResult(new CancellationException()));
+        ctxes.forEach(ctx -> ctx.jobContext().setFinalResult(new CancellationException()));
     }
 
     public CompletableFuture<Void> joinSubmittedJob(long jobId) {
@@ -290,7 +290,7 @@ public class JobCoordinationService {
                     + ", should be " + RUNNING);
         }
 
-        String terminationResult = masterContext.requestTermination(terminationMode, false).f1();
+        String terminationResult = masterContext.jobContext().requestTermination(terminationMode, false).f1();
         if (terminationResult != null) {
             throw new IllegalStateException("Cannot " + terminationMode + ": " + terminationResult);
         }
@@ -341,7 +341,7 @@ public class JobCoordinationService {
         MasterContext currentMasterContext = masterContexts.get(jobId);
         if (currentMasterContext != null) {
             JobStatus jobStatus = currentMasterContext.jobStatus();
-            if (jobStatus == RUNNING && currentMasterContext.requestedTerminationMode() != null) {
+            if (jobStatus == RUNNING && currentMasterContext.jobContext().requestedTerminationMode() != null) {
                 return COMPLETING;
             }
             return jobStatus;
@@ -389,7 +389,7 @@ public class JobCoordinationService {
         if (masterContext == null) {
             throw new JobNotFoundException("MasterContext not found to resume job " + idToString(jobId));
         }
-        masterContext.resumeJob(jobRepository::newExecutionId);
+        masterContext.jobContext().resumeJob(jobRepository::newExecutionId);
     }
 
     public CompletableFuture<Void> exportSnapshot(long jobId, String name, boolean cancelJob) {
@@ -399,7 +399,7 @@ public class JobCoordinationService {
         if (masterContext == null) {
             throw new JobNotFoundException("MasterContext not found to export snapshot of job " + idToString(jobId));
         }
-        return masterContext.exportSnapshot(name, cancelJob);
+        return masterContext.snapshotContext().exportSnapshot(name, cancelJob);
     }
 
     /**
@@ -439,7 +439,7 @@ public class JobCoordinationService {
         }
         logger.fine("Added a shutting-down member: " + uuid);
         CompletableFuture[] futures = masterContexts.values().stream()
-                                                    .map(mc -> mc.onParticipantGracefulShutdown(uuid))
+                                                    .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
                                                     .toArray(CompletableFuture[]::new);
         // Need to do this even if futures.length == 0, we need to perform the action in whenComplete
         CompletableFuture.allOf(futures)
@@ -541,7 +541,8 @@ public class JobCoordinationService {
         if (logger.isFineEnabled()) {
             logger.fine(mc.jobIdString() + " snapshot is scheduled in " + snapshotInterval + "ms");
         }
-        executionService.schedule(COORDINATOR_EXECUTOR_NAME, () -> mc.startScheduledSnapshot(executionId),
+        executionService.schedule(COORDINATOR_EXECUTOR_NAME,
+                () -> mc.snapshotContext().startScheduledSnapshot(executionId),
                 snapshotInterval, MILLISECONDS);
     }
 
@@ -590,7 +591,7 @@ public class JobCoordinationService {
         // any partitions assigned. Jet doesn't use such members.
         int dataMembersWithPartitionsCount = Math.min(dataMembersCount, partitionCount);
         for (MasterContext mc : masterContexts.values()) {
-            allSucceeded &= mc.maybeScaleUp(dataMembersWithPartitionsCount);
+            allSucceeded &= mc.jobContext().maybeScaleUp(dataMembersWithPartitionsCount);
         }
         if (!allSucceeded) {
             scheduleScaleUp(RETRY_DELAY_IN_MILLIS);
@@ -668,14 +669,14 @@ public class JobCoordinationService {
         }
 
         if (oldMasterContext != null) {
-            return oldMasterContext.jobCompletionFuture();
+            return oldMasterContext.jobContext().jobCompletionFuture();
         }
 
         // If job is not currently running, it might be that it just completed.
         // Since we've put the MasterContext into the masterContexts map, someone else could
         // have joined to the job in the meantime so we should notify its future.
         if (completeMasterContextIfJobAlreadyCompleted(masterContext)) {
-            return masterContext.jobCompletionFuture();
+            return masterContext.jobContext().jobCompletionFuture();
         }
 
         if (jobExecutionRecord.isSuspended()) {
@@ -685,7 +686,7 @@ public class JobCoordinationService {
             tryStartJob(masterContext);
         }
 
-        return masterContext.jobCompletionFuture();
+        return masterContext.jobContext().jobCompletionFuture();
     }
 
     // If a job result is present, it completes the master context using the job result
@@ -695,21 +696,21 @@ public class JobCoordinationService {
         if (jobResult != null) {
             logger.fine("Completing master context for " + masterContext.jobIdString()
                     + " since already completed with result: " + jobResult);
-            masterContext.setFinalResult(jobResult.getFailureAsThrowable());
+            masterContext.jobContext().setFinalResult(jobResult.getFailureAsThrowable());
             return masterContexts.remove(jobId, masterContext);
         }
 
         if (!masterContext.jobConfig().isAutoScaling() && jobRepository.getExecutionIdCount(jobId) > 0) {
             logger.info("Suspending or failing " + masterContext.jobIdString()
                     + " since auto-restart is disabled and the job has been executed before");
-            masterContext.finalizeJob(new TopologyChangedException());
+            masterContext.jobContext().finalizeJob(new TopologyChangedException());
         }
 
         return false;
     }
 
     private void tryStartJob(MasterContext masterContext) {
-        masterContext.tryStartJob(jobRepository::newExecutionId);
+        masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
     }
 
     private int getQuorumSize() {
