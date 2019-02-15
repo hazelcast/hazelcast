@@ -32,28 +32,22 @@ import java.util.List;
 
 public abstract class AbstractJsonGetter extends Getter {
 
+    private static final int QUERY_CONTEXT_CACHE_MAX_SIZE = 40;
+    private static final int QUERY_CONTEXT_CACHE_CLEANUP_SIZE = 3;
+
     /**
      * The number of times this getter will try to use previously observed
      * patterns. The getter tries most commonly observed patterns first.
      * If known patterns do not work, then a new pattern is created for
      * this object.
      */
-    private static final String PATTERN_TRY_COUNT_PROPERTY = "com.hazelcast.internal.pattern.try.count";
-
-    private static final int QUERY_CONTEXT_CACHE_MAX_SIZE = 40;
-    private static final int QUERY_CONTEXT_CACHE_CLEANUP_SIZE = 3;
-
-    private final int patternTryCount;
+    private static final int PATTERN_TRY_COUNT = 2;
 
     private JsonGetterContextCache contextCache =
             new JsonGetterContextCache(QUERY_CONTEXT_CACHE_MAX_SIZE, QUERY_CONTEXT_CACHE_CLEANUP_SIZE);
 
     AbstractJsonGetter(Getter parent) {
         super(parent);
-        this.patternTryCount = Integer.parseInt(System.getProperty(PATTERN_TRY_COUNT_PROPERTY, "2"));
-        if (patternTryCount < 0) {
-            throw new IllegalArgumentException("Pattern try count cannot be smaller than 0. Given: " + patternTryCount);
-        }
     }
 
     public static JsonPathCursor getPath(String attributePath) {
@@ -156,7 +150,7 @@ public abstract class AbstractJsonGetter extends Getter {
 
         JsonPathCursor pathCursor = queryContext.newJsonPathCursor();
         JsonPattern knownPattern = null;
-        for (int i = 0; i < patternTryCount && i < patternsSnapshot.size(); i++) {
+        for (int i = 0; i < PATTERN_TRY_COUNT && i < patternsSnapshot.size(); i++) {
             WeightedItem<JsonPattern> patternWeightedItem = patternsSnapshot.get(i);
             knownPattern = patternWeightedItem.getItem();
             JsonValue value = JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor);
@@ -172,8 +166,7 @@ public abstract class AbstractJsonGetter extends Getter {
             if (knownPattern.hasAny()) {
                 return getValue(obj, attributePath);
             }
-            WeightedItem<JsonPattern> weightedItem = queryContext.addPattern(knownPattern);
-            queryContext.voteFor(weightedItem);
+            queryContext.addOrVoteForPattern(knownPattern);
             return convertFromJsonValue(JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor));
         }
         return null;

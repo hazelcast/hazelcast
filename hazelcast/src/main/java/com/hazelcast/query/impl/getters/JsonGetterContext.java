@@ -43,7 +43,7 @@ public class JsonGetterContext {
         getPatternList().voteFor(item);
     }
 
-    public WeightedItem<JsonPattern> addPattern(JsonPattern pattern) {
+    public WeightedItem<JsonPattern> addOrVoteForPattern(JsonPattern pattern) {
         return getPatternList().addOrVote(pattern);
     }
 
