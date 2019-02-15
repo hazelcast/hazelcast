@@ -882,7 +882,7 @@ public class ConfigXmlGenerator {
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .node("quorum-ref", m.getQuorumName())
                     .node("read-backup-data", m.isReadBackupData())
-                    .node("preprocessing-policy", m.getPreprocessingPolicy());
+                    .node("metadata-policy", m.getMetadataPolicy());
 
             appendHotRestartConfig(gen, m.getHotRestartConfig());
             mapStoreConfigXmlGenerator(gen, m);

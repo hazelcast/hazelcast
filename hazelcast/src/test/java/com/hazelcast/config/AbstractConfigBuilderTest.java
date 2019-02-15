@@ -153,10 +153,10 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapConfig_minEvictionCheckMillis_defaultValue();
 
     @Test
-    public abstract void testMapConfig_preprocessingPolicy();
+    public abstract void testMapConfig_metadataPolicy();
 
     @Test
-    public abstract void testMapConfig_preprocessingPolicy_defaultValue();
+    public abstract void testMapConfig_metadataPolicy_defaultValue();
 
     @Test
     public abstract void testMapConfig_evictions();

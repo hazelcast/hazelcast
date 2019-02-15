@@ -19,7 +19,7 @@ package com.hazelcast.json.internal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.PreprocessingPolicy;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
@@ -69,7 +69,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
     private HazelcastInstance[] instances;
     private IMap map;
     private IMap mapWithMapStore;
-    private IMap mapWithoutPreprocessing;
+    private IMap mapWithoutMetadata;
 
     @Parameterized.Parameters(name = "InMemoryFormat: {0}")
     public static Collection<Object[]> parameters() {
@@ -87,7 +87,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         factory = createHazelcastInstanceFactory(NODE_COUNT);
         instances = factory.newInstances(getConfig());
         map = instances[0].getMap(randomMapName());
-        mapWithoutPreprocessing = instances[0].getMap("noprocessing" + randomMapName());
+        mapWithoutMetadata = instances[0].getMap("noprocessing" + randomMapName());
         mapWithMapStore = instances[0].getMap("mapStore" + randomName());
     }
 
@@ -100,11 +100,11 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutDoesNotCreateMetadata_whenPreprocessingIsOff() {
+    public void testPutDoesNotCreateMetadata_whenMetadataPolicyIsOff() {
         for (int i = 0; i < ENTRY_COUNT; i++) {
-            mapWithoutPreprocessing.put(createValue("key", i), createValue("value", i));
+            mapWithoutMetadata.put(createValue("key", i), createValue("value", i));
         }
-        assertMetadataNotCreated(mapWithoutPreprocessing.getName());
+        assertMetadataNotCreated(mapWithoutMetadata.getName());
     }
 
     @Test
@@ -292,9 +292,9 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
                 .setBackupCount(getNodeCount() - 1)
                 .setAsyncBackupCount(0)
                 .setInMemoryFormat(getInMemoryFormat())
-                .setPreprocessingPolicy(PreprocessingPolicy.CREATION_TIME);
+                .setMetadataPolicy(MetadataPolicy.CREATE_ON_UPDATE);
         config.getMapConfig("noprocessing*")
-                .setPreprocessingPolicy(PreprocessingPolicy.OFF)
+                .setMetadataPolicy(MetadataPolicy.OFF)
                 .setInMemoryFormat(getInMemoryFormat());
         config.getMapConfig("mapStore*")
                 .setInMemoryFormat(getInMemoryFormat())

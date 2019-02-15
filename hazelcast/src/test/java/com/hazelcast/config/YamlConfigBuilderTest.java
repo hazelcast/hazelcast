@@ -1054,22 +1054,22 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapConfig_preprocessingPolicy() {
+    public void testMapConfig_metadataPolicy() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    mymap:\n"
-                + "      preprocessing-policy: OFF";
+                + "      metadata-policy: OFF";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("mymap");
 
-        assertEquals(PreprocessingPolicy.OFF, mapConfig.getPreprocessingPolicy());
+        assertEquals(MetadataPolicy.OFF, mapConfig.getMetadataPolicy());
     }
 
     @Override
     @Test
-    public void testMapConfig_preprocessingPolicy_defaultValue() {
+    public void testMapConfig_metadataPolicy_defaultValue() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  map:\n"
@@ -1078,7 +1078,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("mymap");
 
-        assertEquals(PreprocessingPolicy.CREATION_TIME, mapConfig.getPreprocessingPolicy());
+        assertEquals(MetadataPolicy.CREATE_ON_UPDATE, mapConfig.getMetadataPolicy());
     }
 
     @Override

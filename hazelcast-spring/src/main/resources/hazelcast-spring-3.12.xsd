@@ -727,13 +727,13 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="preprocessing-policy" use="optional" type="preprocessing-policy" default="OFF">
+                                <xs:attribute name="metadata-policy" use="optional" type="metadata-policy" default="CREATE_ON_UPDATE">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Pre-processing policy for this map.
+                                            Metadata policy for this map.
                                             Valid values are:
-                                            CREATION_TIME (default): Objects of supported types are pre-processed when they are created and updated.
-                                            OFF: No pre-processing is done.
+                                            CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created and updated.
+                                            OFF: No metadata is created.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -3309,9 +3309,9 @@
     <xs:simpleType name="parameterized-backup-count">
         <xs:union memberTypes="backup-count parameterizedValueType"/>
     </xs:simpleType>
-    <xs:simpleType name="preprocessing-policy">
+    <xs:simpleType name="metadata-policy">
         <xs:restriction base="non-space-string">
-            <xs:enumeration value="CREATION_TIME"/>
+            <xs:enumeration value="CREATE_ON_UPDATE"/>
             <xs:enumeration value="OFF"/>
         </xs:restriction>
     </xs:simpleType>

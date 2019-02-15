@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.internal.serialization.impl.StringNavigableJsonAdapter;
+import com.hazelcast.query.QueryException;
 
 import java.io.IOException;
 
@@ -42,6 +43,10 @@ public final class JsonGetter extends AbstractJsonGetter {
 
     @Override
     JsonParser createParser(Object obj) throws IOException {
-        return factory.createParser(obj.toString());
+        if (obj instanceof HazelcastJsonValue) {
+            return factory.createParser(((HazelcastJsonValue) obj).toJsonString());
+        } else {
+            throw new QueryException("Queried object is not of HazelcastJsonValue type. It is " + obj.getClass());
+        }
     }
 }

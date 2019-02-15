@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.PreprocessingPolicy;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
@@ -65,14 +65,14 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
     public CacheDeserializedValues cacheDeserializedValues;
 
     @Parameterized.Parameter(2)
-    public PreprocessingPolicy preprocessingPolicy;
+    public MetadataPolicy metadataPolicy;
 
-    @Parameterized.Parameters(name = "inMemoryFormat: {0}, cacheDeserializedValues: {1}, preprocessing: {2}")
+    @Parameterized.Parameters(name = "inMemoryFormat: {0}, cacheDeserializedValues: {1}, metadataPolicy: {2}")
     public static Collection<Object[]> parametersInMemoryFormat() {
         List<Object[]> parameters = new ArrayList<Object[]>();
         for (InMemoryFormat imf: new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
             for (CacheDeserializedValues cdv: CacheDeserializedValues.values()) {
-                for (PreprocessingPolicy pp: PreprocessingPolicy.values()) {
+                for (MetadataPolicy pp: MetadataPolicy.values()) {
                     parameters.add(new Object[]{imf, cdv, pp});
                 }
             }
@@ -85,7 +85,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
         Config config = super.getConfig();
         config.getMapConfig(MAP_NAME)
                 .setInMemoryFormat(inMemoryFormat)
-                .setPreprocessingPolicy(preprocessingPolicy)
+                .setMetadataPolicy(metadataPolicy)
                 .setCacheDeserializedValues(cacheDeserializedValues);
         return config;
     }

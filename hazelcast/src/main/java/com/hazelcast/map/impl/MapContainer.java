@@ -23,7 +23,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.PreprocessingPolicy;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -129,7 +129,7 @@ public class MapContainer {
         this.quorumName = mapConfig.getQuorumName();
         this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         MetadataInitializer metadataInitializer;
-        if (mapConfig.getPreprocessingPolicy() == PreprocessingPolicy.CREATION_TIME) {
+        if (mapConfig.getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
             metadataInitializer = new JsonMetadataInitializer();
         } else {
             metadataInitializer = new NoMetadataInitializer();
