@@ -171,6 +171,7 @@
                     <include>**/*.sh</include>
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
+                    <include>**/*.yaml</include>
                     <include>**/*.xsd</include>
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>

@@ -401,9 +401,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testAllPermissionsCovered();
 
     @Test(expected = InvalidConfigurationException.class)
-    public abstract void testCacheConfig_withInvalidEvictionConfig_failsFast();
-
-    @Test(expected = InvalidConfigurationException.class)
     public abstract void testCacheConfig_withNativeInMemoryFormat_failsFastInOSS();
 
     @Test(expected = InvalidConfigurationException.class)

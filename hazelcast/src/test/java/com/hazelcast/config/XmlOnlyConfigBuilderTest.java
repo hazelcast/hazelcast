@@ -153,6 +153,17 @@ public class XmlOnlyConfigBuilderTest {
         buildConfig(xml);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testCacheConfig_withInvalidEvictionConfig_failsFast() {
+        String xml = HAZELCAST_START_TAG
+                + "    <cache name=\"cache\">"
+                + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"INVALID\"/>"
+                + "    </cache>"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
     private static void assertXsdVersion(String buildVersion, String expectedXsdVersion) {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, buildVersion);
         assertEquals("Unexpected release version retrieved for build version " + buildVersion, expectedXsdVersion,

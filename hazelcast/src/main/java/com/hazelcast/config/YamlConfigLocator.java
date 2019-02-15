@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 /**
- * Support class for the {@link XmlConfigBuilder} that locates the XML configuration:
+ * Support class for the {@link com.hazelcast.config.YamlConfigBuilder} that locates the YAML configuration:
  * <ol>
  * <li>system property</li>
  * <li>working directory</li>
@@ -25,26 +25,26 @@ package com.hazelcast.config;
  * <li>default</li>
  * </ol>
  */
-public class XmlConfigLocator extends AbstractConfigLocator {
+public class YamlConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.config", "xml");
+        return loadFromSystemProperty("hazelcast.config", "yaml", "yml");
     }
 
     @Override
     protected boolean locateInWorkDir() {
-        return loadFromWorkingDirectory("hazelcast.xml");
+        return loadFromWorkingDirectory("hazelcast.yaml");
     }
 
     @Override
     protected boolean locateOnClasspath() {
-        return loadConfigurationFromClasspath("hazelcast.xml");
+        return loadConfigurationFromClasspath("hazelcast.yaml");
     }
 
     @Override
     public boolean locateDefault() {
-        loadDefaultConfigurationFromClasspath("hazelcast-default.xml");
+        loadDefaultConfigurationFromClasspath("hazelcast-default.yaml");
         return true;
     }
 }

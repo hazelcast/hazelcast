@@ -39,6 +39,15 @@ public class MyServiceConfigParser extends AbstractXmlConfigHelper implements Se
                         config.intProp = Integer.parseInt(value);
                     } else if ("bool-prop".equals(name)) {
                         config.boolProp = Boolean.parseBoolean(getTextContent(node));
+                    } else if ("complex-prop".equals(name)) {
+                        Node attribute = node.getAttributes().getNamedItem("an-attribute");
+                        config.nestedAttribute = attribute.getTextContent();
+                        for (Node nestedNode : childElements(node)) {
+                            final String nestedNodeName = cleanNodeName(nestedNode);
+                            if ("nested-prop".equals(nestedNodeName)) {
+                                config.nestedStringProp = getTextContent(nestedNode);
+                            }
+                        }
                     }
                 }
             }

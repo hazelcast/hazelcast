@@ -25,6 +25,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -32,7 +33,6 @@ import org.w3c.dom.NodeList;
 import java.io.InputStream;
 
 import static com.hazelcast.config.yaml.EmptyNamedNodeMap.emptyNamedNodeMap;
-import static com.hazelcast.config.yaml.EmptyNodeList.emptyNodeList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -105,7 +105,9 @@ public class W3cDomTest extends HazelcastTestSupport {
         assertEquals(NOT_EXISTING, elItem1);
         assertEquals(42.42D, elItem2, 10E-2);
         assertFalse(elItem3);
-        assertSame(emptyNodeList(), elItem0AsNode.getChildNodes());
+        NodeList elItem0ChildNodes = elItem0AsNode.getChildNodes();
+        assertEquals(1, elItem0ChildNodes.getLength());
+        assertEquals("value1", elItem0ChildNodes.item(0).getNodeValue());
         assertEquals("value1", elItem0AsNode.getNodeValue());
 
         // root-map/embedded-map/embedded-list2
@@ -118,6 +120,18 @@ public class W3cDomTest extends HazelcastTestSupport {
         assertEquals("Hazelcast IMDG\n"
                 + "The Leading Open Source In-Memory Data Grid:\n"
                 + "Distributed Computing, Simplified.\n", multilineStr);
+
+        Element embeddedMapAsElement = (Element) embeddedMap;
+        String scalarStrAttr = embeddedMapAsElement.getAttribute("scalar-str");
+        assertEquals("h4z3lc4st", scalarStrAttr);
+        assertEquals("embedded-map", embeddedMapAsElement.getTagName());
+        assertTrue(embeddedMapAsElement.hasAttribute("scalar-str"));
+
+        assertEquals("", embeddedMapAsElement.getAttribute("non-existing"));
+
+        NodeList nodesByTagName = embeddedMapAsElement.getElementsByTagName("scalar-str");
+        assertEquals(1, nodesByTagName.getLength());
+        assertEquals("h4z3lc4st", nodesByTagName.item(0).getNodeValue());
 
     }
 }

@@ -94,7 +94,7 @@ final class YamlOrderedMappingImpl implements YamlOrderedMapping {
         return randomAccessChildren.get(index);
     }
 
-    static YamlOrderedMappingImpl asOrderedMapping(YamlMapping yamlMapping) {
+    public static YamlOrderedMappingImpl asOrderedMapping(YamlMapping yamlMapping) {
         return new YamlOrderedMappingImpl(yamlMapping);
     }
 

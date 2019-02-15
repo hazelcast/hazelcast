@@ -39,18 +39,22 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.ConfigSections.CONFIG_REPLACERS;
+import static com.hazelcast.config.ConfigSections.IMPORT;
 import static com.hazelcast.config.DomConfigHelper.asElementIterable;
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.config.ConfigSections.CONFIG_REPLACERS;
-import static com.hazelcast.config.ConfigSections.IMPORT;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
 /**
  * Contains logic for replacing system variables in the XML file and importing XML files from different locations.
  */
-public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
+public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
+
+    private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigBuilder.class);
+
+    private Properties properties = System.getProperties();
 
     protected enum ConfigType {
         SERVER("hazelcast"),
@@ -64,12 +68,11 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         }
     }
 
-    private static final ILogger LOGGER = Logger.getLogger(AbstractConfigBuilder.class);
 
     private final Set<String> currentlyImportedFiles = new HashSet<String>();
     private final XPath xpath;
 
-    public AbstractConfigBuilder() {
+    public AbstractXmlConfigBuilder() {
         XPathFactory fac = XPathFactory.newInstance();
         this.xpath = fac.newXPath();
 
@@ -99,12 +102,13 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     private void replaceImportElementsWithActualFileContents(Node root) throws Exception {
         Document document = root.getOwnerDocument();
         NodeList misplacedImports = (NodeList) xpath.evaluate(
-                format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.name, getXmlType().name), document, XPathConstants.NODESET);
+                format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.name, getConfigType().name), document,
+                XPathConstants.NODESET);
         if (misplacedImports.getLength() > 0) {
             throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         }
         NodeList importTags = (NodeList) xpath.evaluate(
-                format("/hz:%s/hz:%s", getXmlType().name, IMPORT.name), document, XPathConstants.NODESET);
+                format("/hz:%s/hz:%s", getConfigType().name, IMPORT.name), document, XPathConstants.NODESET);
         for (Node node : asElementIterable(importTags)) {
             loadAndReplaceImportElement(root, node);
         }
@@ -142,15 +146,31 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     protected abstract Document parse(InputStream inputStream) throws Exception;
 
     /**
-     * @return system properties
+     * Gets the current used properties. Can be null if no properties are set.
+     *
+     * @return the current used properties
+     * @see #setPropertiesInternal(Properties)
      */
-    protected abstract Properties getProperties();
+    public Properties getProperties() {
+        return properties;
+    }
+
+    /**
+     * Sets the used properties. Can be null if no properties should be used.
+     * <p>
+     * Properties are used to resolve ${variable} occurrences in the XML file.
+     *
+     * @param properties the new properties
+     */
+    protected void setPropertiesInternal(Properties properties) {
+        this.properties = properties;
+    }
 
     /**
      * @return ConfigType of current config class as enum value
      */
     @Override
-    protected abstract ConfigType getXmlType();
+    protected abstract ConfigType getConfigType();
 
     String getAttribute(Node node, String attName) {
         return DomConfigHelper.getAttribute(node, attName, domLevel3);
@@ -172,7 +192,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         replacers.add(propertyReplacer);
 
         // Add other replacers defined in the XML
-        Node node = (Node) xpath.evaluate(format("/hz:%s/hz:%s", getXmlType().name, CONFIG_REPLACERS.name), root,
+        Node node = (Node) xpath.evaluate(format("/hz:%s/hz:%s", getConfigType().name, CONFIG_REPLACERS.name), root,
                 XPathConstants.NODE);
         if (node != null) {
             String failFastAttr = getAttribute(node, "fail-if-value-missing");

@@ -18,6 +18,9 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.XmlConfigLocator;
+import com.hazelcast.config.YamlConfigBuilder;
+import com.hazelcast.config.YamlConfigLocator;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
@@ -125,7 +128,30 @@ public final class HazelcastInstanceFactory {
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         if (config == null) {
-            config = new XmlConfigBuilder().build();
+            XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
+            YamlConfigLocator yamlConfigLocator = new YamlConfigLocator();
+
+            if (xmlConfigLocator.locateFromSystemProperty()) {
+                // 1. Try loading XML config if provided in system property
+                config = new XmlConfigBuilder(xmlConfigLocator).build();
+
+            } else if (yamlConfigLocator.locateFromSystemProperty()) {
+                // 2. Try loading YAML config if provided in system property
+                config = new YamlConfigBuilder(yamlConfigLocator).build();
+
+            } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+                // 3. Try loading XML config from the working directory or from the classpath
+                config = new XmlConfigBuilder(xmlConfigLocator).build();
+
+            } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+                // 4. Try loading YAML config from the working directory or from the classpath
+                config = new YamlConfigBuilder(yamlConfigLocator).build();
+
+            } else {
+                // 5. Loading the default XML configuration file
+                xmlConfigLocator.locateDefault();
+                config = new XmlConfigBuilder(xmlConfigLocator).build();
+            }
         }
 
         return newHazelcastInstance(

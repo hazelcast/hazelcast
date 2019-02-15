@@ -96,6 +96,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
             + "</actions>";
 
     @Override
+    @Test
     public void testConfigurationURL() throws Exception {
         URL configURL = getClass().getClassLoader().getResource("hazelcast-default.xml");
         Config config = new XmlConfigBuilder(configURL).build();
@@ -103,6 +104,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testConfigurationWithFileName() throws Exception {
         assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
 
@@ -157,6 +159,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSecurityInterceptorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<security enabled=\"true\">"
@@ -259,6 +262,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readAwsConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <group>\n"
@@ -300,6 +304,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readGcpConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
@@ -324,6 +329,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readAzureConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
@@ -348,6 +354,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readKubernetesConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
@@ -372,6 +379,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readEurekaConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
@@ -396,6 +404,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readDiscoveryConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <group>\n"
@@ -436,6 +445,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSSLConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
@@ -459,6 +469,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSymmetricEncryptionConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
@@ -481,6 +492,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readPortCount() {
         // check when it is explicitly set
         Config config = buildConfig(HAZELCAST_START_TAG
@@ -501,6 +513,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readPortAutoIncrement() {
         // explicitly set
         Config config = buildConfig(HAZELCAST_START_TAG
@@ -520,6 +533,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void networkReuseAddress() {
         Config config = buildConfig(HAZELCAST_START_TAG
                 + "    <network>\n"
@@ -530,6 +544,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readSemaphoreConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <semaphore name=\"default\">\n"
@@ -549,6 +564,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readQueueConfig() {
         String xml = HAZELCAST_START_TAG
                 + "      <queue name=\"custom\">"
@@ -605,6 +621,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readListConfig() {
         String xml = HAZELCAST_START_TAG
                 + "      <list name=\"myList\">"
@@ -638,6 +655,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readSetConfig() {
         String xml = HAZELCAST_START_TAG
                 + "      <set name=\"mySet\">"
@@ -670,6 +688,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readLockConfig() {
         String xml = HAZELCAST_START_TAG
                 + "  <lock name=\"default\">"
@@ -688,6 +707,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readReliableTopic() {
         String xml = HAZELCAST_START_TAG
                 + "    <reliable-topic name=\"custom\">"
@@ -716,6 +736,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readRingbuffer() {
         String xml = HAZELCAST_START_TAG
                 + "    <ringbuffer name=\"custom\">"
@@ -756,6 +777,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readAtomicLong() {
         String xml = HAZELCAST_START_TAG
                 + "    <atomic-long name=\"custom\">"
@@ -774,6 +796,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readAtomicReference() {
         String xml = HAZELCAST_START_TAG
                 + "    <atomic-reference name=\"custom\">"
@@ -792,6 +815,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readCountDownLatch() {
         String xml = HAZELCAST_START_TAG
                 + "    <count-down-latch name=\"custom\">"
@@ -805,6 +829,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCaseInsensitivityOfSettings() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"testCaseInsensitivity\">"
@@ -833,6 +858,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<management-center enabled=\"true\" scripting-enabled='false'>"
@@ -849,6 +875,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testManagementCenterConfigComplex() {
         String xml = HAZELCAST_START_TAG
                 + "<management-center enabled=\"true\">"
@@ -873,6 +900,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNullManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<management-center>"
@@ -887,6 +915,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testEmptyManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG + HAZELCAST_END_TAG;
 
@@ -898,6 +927,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNotEnabledManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<management-center enabled=\"false\">"
@@ -911,6 +941,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNotEnabledWithURLManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<management-center enabled=\"false\">"
@@ -926,6 +957,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testManagementCenterConfigComplexDisabledMutualAuth() {
         String xml = HAZELCAST_START_TAG
                 + "<management-center enabled=\"true\">"
@@ -944,6 +976,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreInitialModeLazy() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -959,6 +992,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_minEvictionCheckMillis() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -973,6 +1007,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_minEvictionCheckMillis_defaultValue() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -986,6 +1021,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_preprocessingPolicy() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1000,6 +1036,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_preprocessingPolicy_defaultValue() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1013,6 +1050,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_evictions() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"lruMap\">"
@@ -1039,6 +1077,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_optimizeQueries() {
         String xml1 = HAZELCAST_START_TAG
                 + "<map name=\"mymap1\">"
@@ -1063,6 +1102,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_cacheValueConfig_defaultValue() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1076,6 +1116,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_cacheValueConfig_never() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1090,6 +1131,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_cacheValueConfig_always() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1104,6 +1146,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig_cacheValueConfig_indexOnly() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1118,6 +1161,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreInitialModeEager() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1133,6 +1177,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreWriteBatchSize() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -1149,6 +1194,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenDefault() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(MapStoreConfig.DEFAULT_WRITE_COALESCING, true);
 
@@ -1156,6 +1202,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenSetFalse() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(false, false);
 
@@ -1163,6 +1210,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenSetTrue() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(true, false);
 
@@ -1186,6 +1234,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNearCacheInMemoryFormat() {
         String mapName = "testMapNearCacheInMemoryFormat";
         String xml = HAZELCAST_START_TAG
@@ -1204,6 +1253,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNearCacheInMemoryFormatNative_withKeysByReference() {
         String mapName = "testMapNearCacheInMemoryFormatNative";
         String xml = HAZELCAST_START_TAG
@@ -1224,6 +1274,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNearCacheEvictionPolicy() {
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"lfuNearCache\">"
@@ -1260,6 +1311,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testPartitionGroupZoneAware() {
         String xml = HAZELCAST_START_TAG
                 + "<partition-group enabled=\"true\" group-type=\"ZONE_AWARE\" />"
@@ -1272,6 +1324,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testPartitionGroupSPI() {
         String xml = HAZELCAST_START_TAG
                 + "<partition-group enabled=\"true\" group-type=\"SPI\" />"
@@ -1282,6 +1335,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testPartitionGroupMemberGroups() {
         String xml = HAZELCAST_START_TAG
                 + "<partition-group enabled=\"true\" group-type=\"SPI\">"
@@ -1313,6 +1367,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNearCacheFullConfig() {
         String mapName = "testNearCacheFullConfig";
         String xml = HAZELCAST_START_TAG
@@ -1349,6 +1404,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapWanReplicationRef() {
         String mapName = "testMapWanReplicationRef";
         String refName = "test";
@@ -1376,6 +1432,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testWanReplicationConfig() {
         String configName  = "test";
         String xml = HAZELCAST_START_TAG
@@ -1430,6 +1487,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testDefaultOfPersistWanReplicatedDataIsFalse() {
         String configName  = "test";
         String xml = HAZELCAST_START_TAG
@@ -1446,6 +1504,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testWanReplicationSyncConfig() {
         String configName  = "test";
         String xml = HAZELCAST_START_TAG
@@ -1473,6 +1532,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapEventJournalConfig() {
         String journalName = "mapName";
         String xml = HAZELCAST_START_TAG
@@ -1492,6 +1552,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapMerkleTreeConfig() {
         String mapName = "mapName";
         String xml = HAZELCAST_START_TAG
@@ -1509,6 +1570,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCacheEventJournalConfig() {
         String journalName = "cacheName";
         String xml = HAZELCAST_START_TAG
@@ -1528,6 +1590,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testFlakeIdGeneratorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<flake-id-generator name='gen'>"
@@ -1559,6 +1622,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void setMapStoreConfigImplementationTest() {
         String mapName = "mapStoreImpObjTest";
         String xml = HAZELCAST_START_TAG
@@ -1585,6 +1649,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapPartitionLostListenerConfig() {
         String mapName = "map1";
         String listenerName = "DummyMapPartitionLostListenerImpl";
@@ -1596,6 +1661,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapPartitionLostListenerConfigReadOnly() {
         String mapName = "map1";
         String listenerName = "DummyMapPartitionLostListenerImpl";
@@ -1622,6 +1688,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCachePartitionLostListenerConfig() {
         String cacheName = "cache1";
         String listenerName = "DummyCachePartitionLostListenerImpl";
@@ -1633,6 +1700,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCachePartitionLostListenerConfigReadOnly() {
         String cacheName = "cache1";
         String listenerName = "DummyCachePartitionLostListenerImpl";
@@ -1666,14 +1734,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void readMulticastConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <group>\n"
-                + "        <name>dev</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </group>\n"
                 + "    <network>\n"
-                + "        <port auto-increment=\"true\">5701</port>\n"
                 + "        <join>\n"
                 + "            <multicast enabled=\"false\" loopbackModeEnabled=\"true\">\n"
                 + "                <multicast-group>224.2.2.4</multicast-group>\n"
@@ -1703,6 +1767,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testWanConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <wan-replication name=\"my-wan-cluster\">\n"
@@ -1803,6 +1868,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1823,6 +1889,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumListenerConfig() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1887,6 +1954,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig_whenRecentlyActiveQuorum_withDefaultValues() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1905,6 +1973,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig_whenRecentlyActiveQuorum_withCustomValues() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1923,6 +1992,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig_whenProbabilisticQuorum_withDefaultValues() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1946,6 +2016,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQuorumConfig_whenProbabilisticQuorum_withCustomValues() {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
@@ -1968,6 +2039,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCacheConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <cache name=\"foobar\">\n"
@@ -2036,6 +2108,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testExecutorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <executor-service name=\"foobar\">\n"
@@ -2057,6 +2130,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testDurableExecutorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <durable-executor-service name=\"foobar\">\n"
@@ -2078,6 +2152,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testScheduledExecutorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <scheduled-executor-service name=\"foobar\">\n"
@@ -2102,6 +2177,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCardinalityEstimatorConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <cardinality-estimator name=\"foobar\">\n"
@@ -2140,6 +2216,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testPNCounterConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <pn-counter name=\"pn-counter-1\">\n"
@@ -2159,6 +2236,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMultiMapConfig() {
         String xml = HAZELCAST_START_TAG
                 + "  <multimap name=\"myMultiMap\">"
@@ -2195,6 +2273,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testReplicatedMapConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <replicatedmap name=\"foobar\">\n"
@@ -2221,6 +2300,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testListConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <list name=\"foobar\">\n"
@@ -2253,6 +2333,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSetConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <set name=\"foobar\">\n"
@@ -2285,6 +2366,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <map name=\"foobar\">\n"
@@ -2414,6 +2496,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testIndexesConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
@@ -2438,6 +2521,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testAttributeConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
@@ -2514,6 +2598,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testQueryCacheFullConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"test\">"
@@ -2564,6 +2649,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapQueryCachePredicate() {
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"test\">\n"
@@ -2587,6 +2673,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testLiteMemberConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <lite-member enabled=\"true\"/>\n"
@@ -2598,6 +2685,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testNonLiteMemberConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <lite-member enabled=\"false\"/>\n"
@@ -2648,6 +2736,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapNativeMaxSizePolicy() {
         String xmlFormat = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
@@ -2671,6 +2760,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testInstanceName() {
         String name = randomName();
         String xml = HAZELCAST_START_TAG
@@ -2682,6 +2772,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testUserCodeDeployment() {
         String xml = HAZELCAST_START_TAG
                 + "<user-code-deployment enabled=\"true\">"
@@ -2703,6 +2794,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCRDTReplicationConfig() {
         final String xml = HAZELCAST_START_TAG
                 + "<crdt-replication>\n"
@@ -2717,6 +2809,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testGlobalSerializer() {
         String name = randomName();
         String val = "true";
@@ -2735,6 +2828,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testJavaSerializationFilter() {
         String xml = HAZELCAST_START_TAG
                 + "  <serialization>\n"
@@ -2773,6 +2867,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testHotRestart() {
         String dir = "/mnt/hot-restart-root/";
         String backupDir = "/mnt/hot-restart-backup/";
@@ -2806,6 +2901,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapEvictionPolicyClassName() {
         String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
         String xml = HAZELCAST_START_TAG
@@ -2820,6 +2916,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMapEvictionPolicyIsSelected_whenEvictionPolicySet() {
         String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
         String xml = HAZELCAST_START_TAG
@@ -2835,6 +2932,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCachePermission() {
         String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
                 + "  <client-permissions>"
@@ -2851,6 +2949,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testConfigPermission() {
         String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
                 + "  <client-permissions>"
@@ -2867,6 +2966,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testAllPermissionsCovered() {
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-fullconfig.xml");
         Config config = null;
@@ -2881,18 +2981,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         }
         assertTrue("All permission types should be listed in hazelcast-fullconfig.xml. Not found ones: " + permTypes,
                 permTypes.isEmpty());
-    }
-
-    @Override
-    @Test(expected = InvalidConfigurationException.class)
-    public void testCacheConfig_withInvalidEvictionConfig_failsFast() {
-        String xml = HAZELCAST_START_TAG
-                + "    <cache name=\"cache\">"
-                + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"INVALID\"/>"
-                + "    </cache>"
-                + HAZELCAST_END_TAG;
-
-        buildConfig(xml);
     }
 
     @Override
@@ -2922,6 +3010,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMemberAddressProviderEnabled() {
         String xml = HAZELCAST_START_TAG
                 + "<network> "
@@ -2939,6 +3028,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMemberAddressProviderEnabled_withProperties() {
         String xml = HAZELCAST_START_TAG
                 + "<network> "
@@ -2960,6 +3050,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testFailureDetector_withProperties() {
         String xml = HAZELCAST_START_TAG
                 + "<network>"
@@ -2990,6 +3081,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testHandleMemberAttributes() {
         String xml = HAZELCAST_START_TAG
                 + "<member-attributes>\n"
@@ -3004,6 +3096,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testMemcacheProtocolEnabled() {
         String xml = HAZELCAST_START_TAG
                 + "<memcache-protocol enabled='true'/>\n"
@@ -3015,6 +3108,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testRestApiDefaults() {
         String xml = HAZELCAST_START_TAG
                 + "<rest-api enabled='false'/>\n"
@@ -3030,6 +3124,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testRestApiEndpointGroups() {
         String xml = HAZELCAST_START_TAG
                 + "<rest-api enabled='true'>\n"
@@ -3048,6 +3143,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test(expected = InvalidConfigurationException.class)
     public void testUnknownRestApiEndpointGroup() {
         String xml = HAZELCAST_START_TAG
                 + "<rest-api enabled='true'>\n"

@@ -40,13 +40,12 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 /**
  * A XML {@link ConfigBuilder} implementation.
  */
-public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBuilder {
+public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements ConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
     private final InputStream in;
 
-    private Properties properties = System.getProperties();
     private File configurationFile;
     private URL configurationUrl;
 
@@ -90,21 +89,32 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
      * Constructs a XmlConfigBuilder that tries to find a usable XML configuration file.
      */
     public XmlConfigBuilder() {
-        XmlConfigLocator locator = new XmlConfigLocator();
-        this.in = locator.getIn();
-        this.configurationFile = locator.getConfigurationFile();
-        this.configurationUrl = locator.getConfigurationUrl();
+        this((XmlConfigLocator) null);
     }
 
     /**
-     * Gets the current used properties. Can be null if no properties are set.
+     * Constructs a {@link XmlConfigBuilder} that loads the configuration
+     * with the provided {@link XmlConfigLocator}.
+     * <p/>
+     * If the provided {@link XmlConfigLocator} is {@code null}, a new
+     * instance is created and the config is located in every possible
+     * places. For these places, please see {@link XmlConfigLocator}.
+     * <p/>
+     * If the provided {@link XmlConfigLocator} is not {@code null}, it
+     * is expected that it already located the configuration XML to load
+     * from. No further attempt to locate the configuration XML is made
+     * if the configuration XML is not located already.
      *
-     * @return the current used properties
-     * @see #setProperties(java.util.Properties)
+     * @param locator the configured locator to use
      */
-    @Override
-    public Properties getProperties() {
-        return properties;
+    public XmlConfigBuilder(XmlConfigLocator locator) {
+        if (locator == null) {
+            locator = new XmlConfigLocator();
+            locator.locateEverywhere();
+        }
+        this.in = locator.getIn();
+        this.configurationFile = locator.getConfigurationFile();
+        this.configurationUrl = locator.getConfigurationUrl();
     }
 
     /**
@@ -115,13 +125,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
      * @param properties the new properties
      * @return the XmlConfigBuilder
      */
-    public XmlConfigBuilder setProperties(Properties properties) {
-        this.properties = properties;
+    protected XmlConfigBuilder setProperties(Properties properties) {
+        super.setPropertiesInternal(properties);
         return this;
     }
 
     @Override
-    protected ConfigType getXmlType() {
+    protected ConfigType getConfigType() {
         return ConfigType.SERVER;
     }
 

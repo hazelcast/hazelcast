@@ -16,37 +16,24 @@
 
 package com.hazelcast.config.yaml;
 
-import com.hazelcast.internal.yaml.YamlNode;
+import com.hazelcast.internal.yaml.YamlScalar;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-/**
- * Empty {@link NodeList} implementation. Used by {@link ElementAdapter#getChildNodes()}
- * when wrapping {@link YamlNode}s with no children.
- */
-final class EmptyNodeList implements NodeList {
-    private static final NodeList INSTANCE = new EmptyNodeList();
+class NodeListScalarAdapter implements NodeList {
+    private final YamlScalar scalar;
 
-    private EmptyNodeList() {
+    NodeListScalarAdapter(YamlScalar scalar) {
+        this.scalar = scalar;
     }
 
     @Override
     public Node item(int index) {
-        return null;
+        return new ScalarTextNodeAdapter(scalar);
     }
 
     @Override
     public int getLength() {
-        return 0;
-    }
-
-    /**
-     * Returns the singleton instance of this class
-     *
-     * @return an empty {@link NodeList}
-     * @see #INSTANCE
-     */
-    static NodeList emptyNodeList() {
-        return INSTANCE;
+        return 1;
     }
 }

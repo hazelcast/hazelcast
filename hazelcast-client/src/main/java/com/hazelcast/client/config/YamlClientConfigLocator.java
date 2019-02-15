@@ -14,37 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.client.config;
+
+import com.hazelcast.config.AbstractConfigLocator;
 
 /**
- * Support class for the {@link XmlConfigBuilder} that locates the XML configuration:
- * <ol>
- * <li>system property</li>
- * <li>working directory</li>
- * <li>classpath</li>
- * <li>default</li>
- * </ol>
+ * A support class for the {@link YamlClientConfigBuilder} to locate the client
+ * YAML configuration.
  */
-public class XmlConfigLocator extends AbstractConfigLocator {
+public class YamlClientConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.config", "xml");
+        return loadFromSystemProperty("hazelcast.client.config", "yaml", "yml");
     }
 
     @Override
     protected boolean locateInWorkDir() {
-        return loadFromWorkingDirectory("hazelcast.xml");
+        return loadFromWorkingDirectory("hazelcast-client.yaml");
     }
 
     @Override
     protected boolean locateOnClasspath() {
-        return loadConfigurationFromClasspath("hazelcast.xml");
+        return loadConfigurationFromClasspath("hazelcast-client.yaml");
     }
 
     @Override
     public boolean locateDefault() {
-        loadDefaultConfigurationFromClasspath("hazelcast-default.xml");
+        loadDefaultConfigurationFromClasspath("hazelcast-client-default.yaml");
         return true;
     }
 }
