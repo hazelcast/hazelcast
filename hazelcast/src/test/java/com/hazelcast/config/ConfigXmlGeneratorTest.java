@@ -992,7 +992,7 @@ public class ConfigXmlGeneratorTest {
         MapConfig expectedConfig = new MapConfig()
                 .setName("carMap")
                 .setInMemoryFormat(InMemoryFormat.NATIVE)
-                .setPreprocessingPolicy(PreprocessingPolicy.CREATION_TIME)
+                .setMetadataPolicy(MetadataPolicy.CREATE_ON_UPDATE)
                 .setEvictionPolicy(EvictionPolicy.LRU)
                 .setMaxIdleSeconds(100)
                 .setTimeToLiveSeconds(1000)

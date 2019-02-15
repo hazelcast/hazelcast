@@ -105,7 +105,7 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
         map.put("k_int_2", 11);
 
         assertEquals(5, map.get("k_int"));
-        assertEquals(10, Json.parse(map.get("k_json").toString()).asInt());
+        assertEquals(10, Json.parse(((HazelcastJsonValue) map.get("k_json")).toJsonString()).asInt());
         assertEquals(11, map.get("k_int_2"));
     }
 

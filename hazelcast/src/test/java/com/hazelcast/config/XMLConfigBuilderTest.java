@@ -1031,22 +1031,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testMapConfig_preprocessingPolicy() {
+    public void testMapConfig_metadataPolicy() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
-                + "<preprocessing-policy>OFF</preprocessing-policy>"
+                + "<metadata-policy>CREATE_ON_UPDATE</metadata-policy>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("mymap");
 
-        assertEquals(PreprocessingPolicy.OFF, mapConfig.getPreprocessingPolicy());
+        assertEquals(MetadataPolicy.CREATE_ON_UPDATE, mapConfig.getMetadataPolicy());
     }
 
     @Override
     @Test
-    public void testMapConfig_preprocessingPolicy_defaultValue() {
+    public void testMapConfig_metadataPolicy_defaultValue() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
                 + "</map>"
@@ -1055,7 +1055,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("mymap");
 
-        assertEquals(PreprocessingPolicy.CREATION_TIME, mapConfig.getPreprocessingPolicy());
+        assertEquals(MetadataPolicy.CREATE_ON_UPDATE, mapConfig.getMetadataPolicy());
     }
 
     @Override

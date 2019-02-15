@@ -21,17 +21,17 @@ package com.hazelcast.config;
  * create additional metadata about them. This metadata then is used
  * to make querying and indexing faster.
  */
-public enum PreprocessingPolicy {
+public enum MetadataPolicy {
 
     /**
      * Hazelcast processes supported objects at the time of creation
      * and updates. This may increase put latency for the specific
      * data structure that this option is configured with.
      */
-    CREATION_TIME,
+    CREATE_ON_UPDATE,
 
     /**
-     * Turns of pre-processing.
+     * Turns off metadata creation.
      */
     OFF
 }

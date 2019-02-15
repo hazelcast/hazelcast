@@ -18,7 +18,7 @@ package com.hazelcast.json;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.PreprocessingPolicy;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
@@ -59,15 +59,15 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     public InMemoryFormat inMemoryFormat;
 
     @Parameter(1)
-    public PreprocessingPolicy preprocessingPolicy;
+    public MetadataPolicy metadataPolicy;
 
-    @Parameterized.Parameters(name = "inMemoryFormat: {0}, preprocessingPolicy: {1}")
+    @Parameterized.Parameters(name = "inMemoryFormat: {0}, metadataPolicy: {1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][] {
-                {InMemoryFormat.BINARY, PreprocessingPolicy.OFF},
-                {InMemoryFormat.BINARY, PreprocessingPolicy.CREATION_TIME},
-                {InMemoryFormat.OBJECT, PreprocessingPolicy.OFF},
-                {InMemoryFormat.OBJECT, PreprocessingPolicy.CREATION_TIME},
+                {InMemoryFormat.BINARY, MetadataPolicy.OFF},
+                {InMemoryFormat.BINARY, MetadataPolicy.CREATE_ON_UPDATE},
+                {InMemoryFormat.OBJECT, MetadataPolicy.OFF},
+                {InMemoryFormat.OBJECT, MetadataPolicy.CREATE_ON_UPDATE},
         });
     }
 
@@ -83,7 +83,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         Config config = super.getConfig();
         config.getMapConfig("default")
                 .setInMemoryFormat(inMemoryFormat)
-                .setPreprocessingPolicy(preprocessingPolicy);
+                .setMetadataPolicy(metadataPolicy);
         return config;
     }
 

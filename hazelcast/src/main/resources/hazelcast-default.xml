@@ -163,14 +163,14 @@
         <in-memory-format>BINARY</in-memory-format>
 
         <!--
-            Pre-processing policy for this map. Hazelcast may process objects of supported types ahead of time to
+            Metadata creation policy for this map. Hazelcast may process objects of supported types ahead of time to
             create additional metadata about them. This metadata then is used to make querying and indexing faster.
-            Turning on preprocessing may decrease put throughput.
+            Metadata creation may decrease put throughput.
             Valid values are:
-            CREATION_TIME (default): Objects of supported types are pre-processed when they are created and updated.
-            OFF: No pre-processing is done.
+            CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created and updated.
+            OFF: No metadata is created.
         -->
-        <preprocessing-policy>CREATION_TIME</preprocessing-policy>
+        <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
 
         <!--
             Number of backups. If 1 is set as the backup-count for example,

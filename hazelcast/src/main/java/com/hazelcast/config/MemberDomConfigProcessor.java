@@ -1552,8 +1552,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String value = getTextContent(node).trim();
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value));
-            } else if ("preprocessing-policy".equals(nodeName)) {
-                mapConfig.setPreprocessingPolicy(PreprocessingPolicy.valueOf(upperCaseInternal(value)));
+            } else if ("metadata-policy".equals(nodeName)) {
+                mapConfig.setMetadataPolicy(MetadataPolicy.valueOf(upperCaseInternal(value)));
             } else if ("in-memory-format".equals(nodeName)) {
                 mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("async-backup-count".equals(nodeName)) {
