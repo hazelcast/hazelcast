@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -41,7 +40,6 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * The RingBuffer is currently not a distributed data-structure, so its content will be fully stored on a single member
  * in the cluster and its backup in another member in the cluster.
  */
-@Beta
 public class RingbufferConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned, NamedConfig {
 
     /**
@@ -473,7 +471,6 @@ public class RingbufferConfig implements SplitBrainMergeTypeProvider, Identified
     /**
      * A readonly version of the {@link RingbufferConfig}.
      */
-    @Beta
     private static class RingbufferConfigReadOnly extends RingbufferConfig {
 
         RingbufferConfigReadOnly(RingbufferConfig config) {

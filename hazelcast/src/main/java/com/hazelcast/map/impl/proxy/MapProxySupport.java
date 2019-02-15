@@ -84,7 +84,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -151,7 +150,6 @@ abstract class MapProxySupport<K, V>
      * If you set this value too high, you may ran into OOME or blocked network pipelines due to huge operations.
      * If you set this value too low, you will lower the performance of the putAll() operation.
      */
-    @Beta
     private static final HazelcastProperty MAP_PUT_ALL_BATCH_SIZE
             = new HazelcastProperty("hazelcast.map.put.all.batch.size", 0);
 
@@ -179,7 +177,6 @@ abstract class MapProxySupport<K, V>
      * If you set this value too high, you will waste memory.
      * If you set this value too low, you will suffer from expensive {@link java.util.Arrays#copyOf} calls.
      */
-    @Beta
     private static final HazelcastProperty MAP_PUT_ALL_INITIAL_SIZE_FACTOR
             = new HazelcastProperty("hazelcast.map.put.all.initial.size.factor", 0);
 

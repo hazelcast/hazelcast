@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * This interface is an {@link IAtomicLong} interface that exposes its operations using an
  * {@link ICompletableFuture} interface so it can be used in the reactive programming model
@@ -25,7 +23,6 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @since 3.2
  */
-@Beta
 @Deprecated
 public interface AsyncAtomicLong extends IAtomicLong {
 

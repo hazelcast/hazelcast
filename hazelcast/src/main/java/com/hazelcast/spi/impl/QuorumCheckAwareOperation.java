@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Marker interface for operations which need to control whether the check
  * for quorum will be performed. Internal operations (not triggered by the
@@ -27,7 +25,6 @@ import com.hazelcast.spi.annotation.Beta;
  * @see QuorumCheckAwareOperation
  * @see com.hazelcast.spi.ReadonlyOperation
  */
-@Beta
 public interface QuorumCheckAwareOperation {
 
     /**

@@ -16,15 +16,12 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Represents a read-only view of a MaxIdle for the merging process after a split-brain.
  *
  * @param <V> the type of the value
  * @since 3.10
  */
-@Beta
 public interface MergingMaxIdle<V> extends MergingValue<V> {
 
     /**

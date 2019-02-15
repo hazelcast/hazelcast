@@ -31,7 +31,6 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.Collection;
@@ -2935,7 +2934,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @see QueryCache
      * @since 3.8
      */
-    @Beta
     QueryCache<K, V> getQueryCache(String name);
 
     /**
@@ -2957,7 +2955,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @see QueryCache
      * @since 3.8
      */
-    @Beta
     QueryCache<K, V> getQueryCache(String name, Predicate<K, V> predicate, boolean includeValue);
 
     /**
@@ -2980,7 +2977,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @see QueryCache
      * @since 3.8
      */
-    @Beta
     QueryCache<K, V> getQueryCache(String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue);
 
     /**

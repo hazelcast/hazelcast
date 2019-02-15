@@ -18,7 +18,6 @@ package com.hazelcast.spi;
 
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -45,7 +44,6 @@ import java.util.List;
  * @see com.hazelcast.instance.DefaultAddressPicker
  * @see com.hazelcast.config.NetworkConfig#setMemberAddressProviderConfig(com.hazelcast.config.MemberAddressProviderConfig)
  */
-@Beta
 public interface MemberAddressProvider {
     /**
      * What address should Hazelcast bind to.

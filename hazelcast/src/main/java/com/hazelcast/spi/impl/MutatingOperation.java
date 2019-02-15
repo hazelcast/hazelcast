@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Marker interface for operations that change state/data.
  * Used for quorum to reject operations if the quorum size not satisfied.
@@ -29,6 +27,5 @@ import com.hazelcast.spi.annotation.Beta;
  * @see QuorumCheckAwareOperation
  * @see com.hazelcast.spi.ReadonlyOperation
  */
-@Beta
 public interface MutatingOperation {
 }

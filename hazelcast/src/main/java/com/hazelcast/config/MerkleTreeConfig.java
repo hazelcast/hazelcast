@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
@@ -53,7 +52,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @since 3.11
  */
-@Beta
 public class MerkleTreeConfig implements IdentifiedDataSerializable {
     /**
      * Minimal depth of the merkle tree.
@@ -231,7 +229,6 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
     }
 
     // not private for testing
-    @Beta
     static class MerkleTreeConfigReadOnly extends MerkleTreeConfig {
         MerkleTreeConfigReadOnly(MerkleTreeConfig config) {
             super(config);
