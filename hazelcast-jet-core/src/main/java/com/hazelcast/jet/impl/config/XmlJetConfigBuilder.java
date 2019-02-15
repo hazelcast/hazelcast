@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.config.AbstractConfigBuilder;
+import com.hazelcast.config.AbstractXmlConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -55,11 +55,9 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 /**
  * Loads the {@link JetConfig} using XML.
  */
-public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
+public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlJetConfigBuilder.class);
-
-    private final Properties properties;
 
     private final JetConfig jetConfig = new JetConfig();
 
@@ -74,7 +72,7 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
      * </ol>
      */
     private XmlJetConfigBuilder(Properties properties, InputStream in) {
-        this.properties = properties;
+        setPropertiesInternal(properties);
         try {
             parseAndBuildConfig(in);
         } catch (Exception e) {
@@ -127,13 +125,9 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
         }
     }
 
-    @Override
-    protected Properties getProperties() {
-        return properties;
-    }
 
     @Override
-    protected ConfigType getXmlType() {
+    protected ConfigType getConfigType() {
         return ConfigType.JET;
     }
 
