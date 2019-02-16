@@ -2693,7 +2693,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    people:\n"
                 + "      attributes:\n"
                 + "        weight:\n"
-                + "          extractor:\n";
+                + "          extractor: \"\"\n";
         buildConfig(yaml);
     }
 

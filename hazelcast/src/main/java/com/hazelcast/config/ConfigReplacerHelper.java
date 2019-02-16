@@ -61,17 +61,11 @@ final class ConfigReplacerHelper {
         final NodeList childNodes = root.getChildNodes();
         for (int k = 0; k < childNodes.getLength(); k++) {
             Node child = childNodes.item(k);
-            if (child != null) {
-                traverseChildrenAndReplaceVariables(child, replacer, failFast);
-            }
+            traverseChildrenAndReplaceVariables(child, replacer, failFast);
         }
     }
 
     private static void replaceVariables(Node node, ConfigReplacer replacer, boolean failFast) {
-        if (node == null) {
-            return;
-        }
-
         String value = node.getNodeValue();
         if (value != null) {
             String replacedValue = replaceValue(node, replacer, failFast, value);

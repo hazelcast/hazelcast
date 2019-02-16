@@ -123,7 +123,8 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
             throw new InvalidConfigurationException("Failed to load resource: " + resource);
         }
         if (!currentlyImportedFiles.add(url.getPath())) {
-            throw new InvalidConfigurationException("Cyclic loading of resource '" + url.getPath() + "' detected!");
+            throw new InvalidConfigurationException("Resource '" + url.getPath() + "' is already loaded! This can be due to"
+                    + " duplicate or cyclic imports.");
         }
         Document doc = parse(url.openStream());
         Element importedRoot = doc.getDocumentElement();

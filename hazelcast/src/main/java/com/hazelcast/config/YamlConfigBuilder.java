@@ -22,7 +22,6 @@ import com.hazelcast.config.yaml.ElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlMapping;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
-import com.hazelcast.internal.yaml.YamlMappingImpl;
 import com.hazelcast.internal.yaml.YamlNameNodePair;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlSequence;
@@ -187,7 +186,8 @@ public class YamlConfigBuilder implements ConfigBuilder {
                 throw new InvalidConfigurationException("Failed to load resource: " + resource);
             }
             if (!currentlyImportedFiles.add(url.getPath())) {
-                throw new InvalidConfigurationException("Cyclic loading of resource '" + url.getPath() + "' detected!");
+                throw new InvalidConfigurationException("Resource '" + url.getPath() + "' is already loaded! This can be due to"
+                        + " duplicate or cyclic imports.");
             }
 
             YamlNode rootLoaded;
@@ -196,7 +196,11 @@ public class YamlConfigBuilder implements ConfigBuilder {
             } catch (Exception ex) {
                 throw new InvalidConfigurationException("Loading YAML document from resource " + url.getPath() + " failed", ex);
             }
-            YamlNode imdgRootLoaded = asMapping(rootLoaded).child(ConfigSections.HAZELCAST.name().toLowerCase());
+
+            YamlNode imdgRootLoaded = asMapping(rootLoaded).child(ConfigSections.HAZELCAST.name.toLowerCase());
+            if (imdgRootLoaded == null) {
+                return;
+            }
 
             replaceVariables(asW3cNode(imdgRootLoaded));
             importDocuments(imdgRootLoaded);
@@ -220,10 +224,6 @@ public class YamlConfigBuilder implements ConfigBuilder {
      * @param target The target YAML document's root
      */
     private void merge(YamlNode source, YamlNode target) {
-        if (source == null) {
-            return;
-        }
-
         YamlMapping sourceAsMapping = asMapping(source);
         YamlMapping targetAsMapping = asMapping(target);
 
@@ -232,9 +232,7 @@ public class YamlConfigBuilder implements ConfigBuilder {
             if (targetChild != null) {
                 merge(sourceChild, targetChild);
             } else {
-                if (targetAsMapping instanceof MutableYamlMapping) {
-                    ((YamlMappingImpl) targetAsMapping).addChild(sourceChild.nodeName(), sourceChild);
-                }
+                ((MutableYamlMapping) targetAsMapping).addChild(sourceChild.nodeName(), sourceChild);
             }
         }
     }
@@ -255,7 +253,7 @@ public class YamlConfigBuilder implements ConfigBuilder {
 
         if (replacersNode != null) {
             String failFastAttr = getAttribute(replacersNode, "fail-if-value-missing", true);
-            failFast = isNullOrEmpty(failFastAttr) ? true : Boolean.parseBoolean(failFastAttr);
+            failFast = isNullOrEmpty(failFastAttr) || Boolean.parseBoolean(failFastAttr);
             for (Node n : childElements(replacersNode)) {
                 String nodeName = cleanNodeName(n);
                 if ("replacers".equals(nodeName)) {

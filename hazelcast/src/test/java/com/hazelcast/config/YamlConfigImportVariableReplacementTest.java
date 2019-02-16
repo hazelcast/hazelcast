@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +33,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -111,7 +113,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "        enabled: ${tcp.ip.enabled}\n";
         writeStringToStreamAndClose(os, networkConfig);
 
-        String xml = ""
+        String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - ${config.location}";
@@ -119,7 +121,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         Properties properties = new Properties();
         properties.setProperty("config.location", file.getAbsolutePath());
         properties.setProperty("tcp.ip.enabled", "true");
-        Config config = buildConfig(xml, properties);
+        Config config = buildConfig(yaml, properties);
         JoinConfig join = config.getNetworkConfig().getJoin();
         assertFalse(join.getMulticastConfig().isEnabled());
         assertTrue(join.getTcpIpConfig().isEnabled());
@@ -153,9 +155,9 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - file:///%s";
-        File config1 = createConfigFile("hz1", "xml");
-        File config2 = createConfigFile("hz2", "xml");
-        File config3 = createConfigFile("hz3", "xml");
+        File config1 = createConfigFile("hz1", "yaml");
+        File config2 = createConfigFile("hz2", "yaml");
+        File config3 = createConfigFile("hz3", "yaml");
         String config1Yaml = String.format(template, config2.getAbsolutePath());
         String config2Yaml = String.format(template, config3.getAbsolutePath());
         String config3Yaml = String.format(template, config1.getAbsolutePath());
@@ -169,7 +171,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Override
     @Test
     public void testImportEmptyResourceContent() throws Exception {
-        File config1 = createConfigFile("hz1", "xml");
+        File config1 = createConfigFile("hz1", "yaml");
         FileOutputStream os1 = new FileOutputStream(config1);
         String config1Yaml = ""
                 + "hazelcast:\n"
@@ -195,11 +197,32 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
     @Test
     public void testImportNotExistingResourceThrowsException() {
         expectInvalid();
-        String xml = ""
+        String yaml = ""
                 + "hazelcast:\n"
                 + "  import:\n"
                 + "    - notexisting.yaml";
-        buildConfig(xml, null);
+        buildConfig(yaml, null);
+    }
+
+    @Override
+    @Test(expected = HazelcastException.class)
+    public void testImportFromNonHazelcastConfigThrowsException() throws Exception {
+        File file = createConfigFile("mymap", "config");
+        FileOutputStream os = new FileOutputStream(file);
+        String mapConfig = ""
+                + "non-hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      backup-count: 3";
+        writeStringToStreamAndClose(os, mapConfig);
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  import:\n"
+                + "    - file:///" + file.getAbsolutePath();
+
+        Config config = buildConfig(yaml, null);
+        assertNull(config.getMapConfig("mymap"));
     }
 
     @Override
@@ -380,7 +403,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "          cipherAlgorithm: DES\n"
                 + "          secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1\n"
                 + "          secretKeyAlgorithm: DES\n"
-                + "      - class-name: " + XmlConfigImportVariableReplacementTest.IdentityReplacer.class.getName() + "\n"
+                + "      - class-name: " + IdentityReplacer.class.getName() + "\n"
                 + "  group:\n"
                 + "    name: ${java.version} $ID{dev}\n"
                 + "    password: $ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}\n";
@@ -421,10 +444,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "  config-replacers:\n"
                 + "    fail-if-value-missing: false\n"
                 + "    replacers:\n"
-                + "      - class-name: " + XmlConfigImportVariableReplacementTest.TestReplacer.class.getName() + "\n"
+                + "      - class-name: " + TestReplacer.class.getName() + "\n"
                 + "        properties:\n"
                 + "          p1: a property\n"
-                + "          p2: !!null\n"
+                + "          p2: \"\"\n"
                 + "          p3: another property\n"
                 + "          p4: <test/>\n"
                 + "  group:\n"
@@ -553,10 +576,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         return configBuilder.build();
     }
 
-    private static Config buildConfig(String xml, String key, String value) {
+    private static Config buildConfig(String yaml, String key, String value) {
         Properties properties = new Properties();
         properties.setProperty(key, value);
-        return buildConfig(xml, properties);
+        return buildConfig(yaml, properties);
     }
 
 }

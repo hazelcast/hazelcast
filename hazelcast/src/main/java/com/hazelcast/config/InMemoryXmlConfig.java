@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
@@ -53,7 +54,7 @@ public class InMemoryXmlConfig extends Config {
      */
     public InMemoryXmlConfig(String xml, Properties properties) {
         LOGGER.info("Configuring Hazelcast from 'in-memory xml'.");
-        if (xml == null || "".equals(xml.trim())) {
+        if (isNullOrEmptyAfterTrim(xml)) {
             throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");
         }
         if (properties == null) {

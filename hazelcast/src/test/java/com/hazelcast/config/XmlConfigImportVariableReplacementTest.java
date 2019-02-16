@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.EncryptionReplacer;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -207,6 +208,33 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "    <import resource=\"notexisting.xml\"/>\n"
                 + HAZELCAST_END_TAG;
         buildConfig(xml, null);
+    }
+
+    @Override
+    @Test(expected = HazelcastException.class)
+    public void testImportFromNonHazelcastConfigThrowsException() throws Exception {
+        File file = createConfigFile("mymap", "config");
+        FileOutputStream os = new FileOutputStream(file);
+        String mapConfig = HAZELCAST_START_TAG
+                + "    <map name=\"mymap\">\n"
+                + "       <backup-count>6</backup-count>"
+                + "       <time-to-live-seconds>10</time-to-live-seconds>"
+                + "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
+                + "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n"
+                + "            <write-delay-seconds>10</write-delay-seconds>\n"
+                + "            <write-batch-size>100</write-batch-size>\n"
+                + "        </map-store>"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+        writeStringToStreamAndClose(os, mapConfig);
+
+        String xml = ""
+                + "<non-hazelcast>\n"
+                + "  <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "</non-hazelcast>";
+
+        Config config = buildConfig(xml, null);
+        assertNull(config.getMapConfig("mymap"));
     }
 
     @Override

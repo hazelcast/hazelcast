@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
@@ -52,7 +53,7 @@ public class InMemoryYamlConfig extends Config {
      */
     public InMemoryYamlConfig(String yaml, Properties properties) {
         LOGGER.info("Configuring Hazelcast from 'in-memory YAML'.");
-        if (yaml == null || "".equals(yaml.trim())) {
+        if (isNullOrEmptyAfterTrim(yaml)) {
             throw new IllegalArgumentException("YAML configuration is null or empty! Please use a well-structured YAML.");
         }
         if (properties == null) {
