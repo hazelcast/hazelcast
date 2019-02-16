@@ -57,12 +57,12 @@ public class MockConnection implements Connection {
     }
 
     public MockConnection(ConnectionLifecycleListener lifecycleListener, Address localEndpoint,
-                          Address remoteEndpoint, NodeEngineImpl remoteNodeEngine, EndpointManager endpointManager) {
+                          Address remoteEndpoint, NodeEngineImpl remoteNodeEngine, EndpointManager localEndpointManager) {
         this.lifecycleListener = lifecycleListener;
         this.localEndpoint = localEndpoint;
         this.remoteEndpoint = remoteEndpoint;
         this.remoteNodeEngine = remoteNodeEngine;
-        this.endpointManager = endpointManager;
+        this.endpointManager = localEndpointManager;
     }
 
     @Override

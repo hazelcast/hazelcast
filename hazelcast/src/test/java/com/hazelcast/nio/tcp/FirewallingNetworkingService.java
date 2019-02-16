@@ -63,9 +63,7 @@ public class FirewallingNetworkingService
     public FirewallingNetworkingService(NetworkingService delegate, Set<Address> initiallyBlockedAddresses) {
         this.delegate = delegate;
         this.blockedAddresses.addAll(initiallyBlockedAddresses);
-        this.packetConsumer = delegate.getEndpointManager(MEMBER) instanceof Consumer
-                ? (Consumer<Packet>) delegate.getEndpointManager(MEMBER)
-                : null;
+        this.packetConsumer = delegate.getEndpointManager(MEMBER);
     }
 
     @Override

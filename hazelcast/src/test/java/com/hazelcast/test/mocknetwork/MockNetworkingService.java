@@ -84,6 +84,8 @@ class MockNetworkingService
         this.logger = ioService.getLoggingService().getLogger(MockNetworkingService.class);
     }
 
+
+
     static class MockEndpointManager
             implements EndpointManager<MockConnection> {
 
@@ -142,15 +144,21 @@ class MockNetworkingService
             if (!ns.live) {
                 throw new IllegalStateException("connection manager is not live!");
             }
-            Address target = targetNode.getThisAddress();
-            MockConnection thisConnection = new MockConnection(lifecycleListener, target, ns.node.getThisAddress(),
-                    ns.node.getNodeEngine(), ns.mockEndpointMgr);
-            MockConnection remoteConnection = new MockConnection(lifecycleListener, ns.node.getThisAddress(),
-                    target, targetNode.getNodeEngine(), ns.mockEndpointMgr);
+
+            Node node = ns.node;
+            Address local = node.getThisAddress();
+            Address remote = targetNode.getThisAddress();
+
+            MockConnection thisConnection = new MockConnection(lifecycleListener, remote, local,
+                    node.getNodeEngine(), targetNode.getEndpointManager());
+
+            MockConnection remoteConnection = new MockConnection(lifecycleListener, local, remote,
+                    targetNode.getNodeEngine(), node.getEndpointManager());
+
             remoteConnection.localConnection = thisConnection;
             thisConnection.localConnection = remoteConnection;
-            ns.mapConnections.put(target, remoteConnection);
-            ns.logger.info("Created connection to endpoint: " + target + ", connection: " + remoteConnection);
+            ns.mapConnections.put(remote, remoteConnection);
+            ns.logger.info("Created connection to endpoint: " + remote + ", connection: " + remoteConnection);
             return remoteConnection;
         }
 
