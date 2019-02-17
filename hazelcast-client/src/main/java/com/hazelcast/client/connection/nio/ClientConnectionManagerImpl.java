@@ -41,8 +41,11 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -171,7 +174,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return networking;
     }
 
-    protected NioNetworking initNetworking(HazelcastClientInstanceImpl client) {
+    protected NioNetworking initNetworking(final HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
 
         SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
@@ -203,7 +206,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         .inputThreadCount(inputThreads)
                         .outputThreadCount(outputThreads)
                         .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
-                        .channelInitializer(client.getClientExtension().createChannelInitializer()));
+                        .channelInitializerProvider(new ChannelInitializerProvider() {
+                            @Override
+                            public ChannelInitializer provide(EndpointQualifier qualifier) {
+                                return client.getClientExtension().createChannelInitializer();
+                            }
+                        }));
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
@@ -461,7 +469,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             bindSocketToPort(socket);
 
-            Channel channel = networking.register(socketChannel, true);
+            Channel channel = networking.register(null, socketChannel, true);
             channel.connect(inetSocketAddressCache.get(remoteAddress), connectionTimeoutMillis);
 
             ClientConnection connection

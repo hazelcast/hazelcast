@@ -19,9 +19,11 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.ChannelOptions;
-import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.internal.networking.InboundHandler;
+import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.ascii.MemcacheTextDecoder;
 import com.hazelcast.nio.ascii.RestApiTextDecoder;
@@ -35,7 +37,6 @@ import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
-import static com.hazelcast.nio.ConnectionType.MEMBER;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static com.hazelcast.nio.IOUtil.newByteBuffer;
@@ -55,13 +56,14 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  * The ProtocolDecoder doesn't forward to the dst; it replaces itself once the
  * protocol bytes are known. So that is why the Void type for dst.
  */
-public class ProtocolDecoder extends InboundHandler<ByteBuffer, Void> {
+public class UnifiedProtocolDecoder
+        extends InboundHandler<ByteBuffer, Void> {
 
     private final IOService ioService;
-    private final ProtocolEncoder protocolEncoder;
+    private final UnifiedProtocolEncoder protocolEncoder;
     private final HazelcastProperties props;
 
-    public ProtocolDecoder(IOService ioService, ProtocolEncoder protocolEncoder) {
+    public UnifiedProtocolDecoder(IOService ioService, UnifiedProtocolEncoder protocolEncoder) {
         this.ioService = ioService;
         this.protocolEncoder = protocolEncoder;
         this.props = ioService.properties();
@@ -130,8 +132,8 @@ public class ProtocolDecoder extends InboundHandler<ByteBuffer, Void> {
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE);
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-        connection.setType(MEMBER);
-        channel.inboundPipeline().replace(this, ioService.createMemberInboundHandlers(connection));
+        connection.setType(ConnectionType.MEMBER);
+        channel.inboundPipeline().replace(this, ioService.createInboundHandlers(EndpointQualifier.MEMBER, connection));
     }
 
     private void initChannelForClient() {
@@ -150,7 +152,6 @@ public class ProtocolDecoder extends InboundHandler<ByteBuffer, Void> {
         config.setOption(SO_RCVBUF, clientRcvBuf());
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-        connection.getConnectionManager().incrementTextConnections();
 
         TextEncoder encoder = new TextEncoder(connection);
 

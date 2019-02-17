@@ -23,7 +23,8 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.util.StringUtil;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
@@ -31,6 +32,8 @@ import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200_WITH_NO_CONTENT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_503;
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
@@ -160,10 +163,12 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         Node node = textCommandService.getNode();
         StringBuilder res = new StringBuilder(node.getClusterService().getMemberListString());
         res.append("\n");
-        ConnectionManager connectionManager = node.getConnectionManager();
-        res.append("ConnectionCount: ").append(connectionManager.getCurrentClientConnections());
+        NetworkingService ns = node.getNetworkingService();
+        EndpointManager cem = ns.getEndpointManager(CLIENT);
+        EndpointManager tem = ns.getEndpointManager(REST);
+        res.append("ConnectionCount: ").append(cem.getActiveConnections().size());
         res.append("\n");
-        res.append("AllConnectionCount: ").append(connectionManager.getAllTextConnections());
+        res.append("AllConnectionCount: ").append(tem.getActiveConnections().size());
         res.append("\n");
         command.setResponse(null, stringToBytes(res.toString()));
     }

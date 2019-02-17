@@ -40,4 +40,5 @@ public interface Endpoint {
      * @return the socket address for this endpoint
      */
     SocketAddress getSocketAddress();
+
 }

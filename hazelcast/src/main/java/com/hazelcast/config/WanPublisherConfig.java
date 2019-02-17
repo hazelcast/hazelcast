@@ -62,6 +62,17 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
     private EurekaConfig eurekaConfig = new EurekaConfig();
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
     private WanSyncConfig wanSyncConfig = new WanSyncConfig();
+    /**
+     * WAN endpoint configuration qualifier. When using pre-3.12 network configuration, its value
+     * can be {@code null} and is not taken into account. With 3.12+ advanced network config,
+     * an {@link EndpointConfig} or {@link ServerSocketEndpointConfig} is looked up with
+     * protocol type {@code WAN} and this string as identifier. If such an {@link EndpointConfig}
+     * is found, its configuration is used when the WAN publisher opens a connection to the
+     * target cluster members.
+     *
+     * @since 3.12
+     */
+    private String endpoint;
 
     /**
      * Returns the config for the WAN sync mechanism.
@@ -408,6 +419,15 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         return this;
     }
 
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public WanPublisherConfig setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "WanPublisherConfig{"
@@ -426,6 +446,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
                 + ", kubernetesConfig=" + kubernetesConfig
                 + ", eurekaConfig=" + eurekaConfig
                 + ", discoveryConfig=" + discoveryConfig
+                + ", endpoint=" + endpoint
                 + '}';
     }
 
@@ -467,6 +488,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
             out.writeObject(kubernetesConfig);
             out.writeObject(eurekaConfig);
             out.writeObject(discoveryConfig);
+            out.writeUTF(endpoint);
         }
     }
 
@@ -496,6 +518,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
             kubernetesConfig = in.readObject();
             eurekaConfig = in.readObject();
             discoveryConfig = in.readObject();
+            endpoint = in.readUTF();
         }
     }
 
@@ -553,6 +576,9 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         if (!discoveryConfig.equals(that.discoveryConfig)) {
             return false;
         }
+        if (endpoint != null ? !endpoint.equals(that.endpoint) : that.endpoint != null) {
+            return false;
+        }
         return wanSyncConfig != null ? wanSyncConfig.equals(that.wanSyncConfig) : that.wanSyncConfig == null;
     }
 
@@ -574,6 +600,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         result = 31 * result + eurekaConfig.hashCode();
         result = 31 * result + discoveryConfig.hashCode();
         result = 31 * result + (wanSyncConfig != null ? wanSyncConfig.hashCode() : 0);
+        result = 31 * result + (endpoint != null ? endpoint.hashCode() : 0);
         return result;
     }
 }

@@ -31,6 +31,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.MemberVersion;
 
@@ -38,10 +39,14 @@ import java.util.Map;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.util.Collections.singletonMap;
 
 @PrivateApi
-public final class MemberImpl extends AbstractMember implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
+public final class MemberImpl
+        extends AbstractMember
+        implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
     /**
      * Denotes that member list join version of a member is not known yet.
@@ -58,25 +63,11 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     }
 
     public MemberImpl(Address address, MemberVersion version, boolean localMember) {
-        this(address, version, localMember, null, null, false);
+        this(singletonMap(MEMBER, address), version, localMember, null, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
     }
 
     public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid) {
-        this(address, version, localMember, uuid, null, false);
-    }
-
-    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid, Map<String, Object> attributes,
-                      boolean liteMember) {
-        super(address, version, uuid, attributes, liteMember);
-        this.localMember = localMember;
-    }
-
-    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid, Map<String, Object> attributes,
-                      boolean liteMember, int memberListJoinVersion, HazelcastInstanceImpl instance) {
-        super(address, version, uuid, attributes, liteMember);
-        this.localMember = localMember;
-        this.memberListJoinVersion = memberListJoinVersion;
-        this.instance = instance;
+        this(singletonMap(MEMBER, address), version, localMember, uuid, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
     }
 
     public MemberImpl(MemberImpl member) {
@@ -84,6 +75,15 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         this.localMember = member.localMember;
         this.memberListJoinVersion = member.memberListJoinVersion;
         this.instance = member.instance;
+    }
+
+    private MemberImpl(Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
+                       String uuid, Map<String, Object> attributes, boolean liteMember, int memberListJoinVersion,
+                       HazelcastInstanceImpl instance) {
+        super(addresses, version, uuid, attributes, liteMember);
+        this.memberListJoinVersion = memberListJoinVersion;
+        this.localMember = localMember;
+        this.instance = instance;
     }
 
     @Override
@@ -200,6 +200,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         }
     }
 
+
     public void setMemberListJoinVersion(int memberListJoinVersion) {
         this.memberListJoinVersion = memberListJoinVersion;
     }
@@ -272,6 +273,69 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
             String uuid = nodeEngine.getLocalMember().getUuid();
             return new MemberAttributeChangedOp(operationType, key, value)
                     .setCallerUuid(uuid).setNodeEngine(nodeEngine);
+        }
+    }
+
+    public static class Builder {
+        private final Map<EndpointQualifier, Address> addressMap;
+
+        private Map<String, Object> attributes;
+        private boolean localMember;
+        private String uuid;
+        private boolean liteMember;
+        private MemberVersion version;
+        private int memberListJoinVersion = NA_MEMBER_LIST_JOIN_VERSION;
+        private HazelcastInstanceImpl instance;
+
+        public Builder(Address address) {
+            Preconditions.isNotNull(address, "address");
+            this.addressMap = singletonMap(MEMBER, address);
+        }
+
+        public Builder(Map<EndpointQualifier, Address> addresses) {
+            Preconditions.isNotNull(addresses, "addresses");
+            Preconditions.isNotNull(addresses.get(MEMBER), "addresses.get(MEMBER)");
+            this.addressMap = addresses;
+        }
+
+        public Builder localMember(boolean localMember) {
+            this.localMember = localMember;
+            return this;
+        }
+
+        public Builder version(MemberVersion memberVersion) {
+            this.version = memberVersion;
+            return this;
+        }
+
+        public Builder uuid(String uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public Builder attributes(Map<String, Object> attributes) {
+            this.attributes = attributes;
+            return this;
+        }
+
+        public Builder memberListJoinVersion(int memberListJoinVersion) {
+            this.memberListJoinVersion = memberListJoinVersion;
+            return this;
+        }
+
+        public Builder liteMember(boolean liteMember) {
+            this.liteMember = liteMember;
+            return this;
+        }
+
+        public Builder instance(HazelcastInstanceImpl hazelcastInstanceImpl) {
+            this.instance = hazelcastInstanceImpl;
+            return this;
+        }
+
+        public MemberImpl build() {
+            return new MemberImpl(addressMap, version, localMember, uuid,
+                    attributes, liteMember, memberListJoinVersion, instance);
         }
     }
 }

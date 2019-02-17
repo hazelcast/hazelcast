@@ -50,7 +50,7 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
@@ -262,11 +262,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static ClientEngineImpl getClientEngineImpl(HazelcastInstance instance) {
-        return getNode(instance).getClientEngine();
+        return (ClientEngineImpl) getNode(instance).getClientEngine();
     }
 
-    public static ConnectionManager getConnectionManager(HazelcastInstance hz) {
-        return getNode(hz).getConnectionManager();
+    public static EndpointManager getEndpointManager(HazelcastInstance hz) {
+        return getNode(hz).getEndpointManager();
     }
 
     public static ClusterService getClusterService(HazelcastInstance hz) {
@@ -299,11 +299,11 @@ public abstract class HazelcastTestSupport {
 
     public static Packet toPacket(HazelcastInstance local, HazelcastInstance remote, Operation operation) {
         InternalSerializationService serializationService = getSerializationService(local);
-        ConnectionManager connectionManager = getConnectionManager(local);
+        EndpointManager endpointManager = getEndpointManager(local);
 
         return new Packet(serializationService.toBytes(operation), operation.getPartitionId())
                 .setPacketType(Packet.Type.OPERATION)
-                .setConn(connectionManager.getConnection(getAddress(remote)));
+                .setConn(endpointManager.getConnection(getAddress(remote)));
     }
 
     /**

@@ -73,7 +73,7 @@ public class RestClusterTest {
     protected Config createConfigWithRestEnabled() {
         Config config = new Config();
         RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
-        config.setRestApiConfig(restApiConfig);
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
         return config;
     }
 

@@ -75,6 +75,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -127,7 +128,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterJoinManager = new ClusterJoinManager(node, this, lock);
         clusterHeartbeatManager = new ClusterHeartbeatManager(node, this, lock);
 
-        node.connectionManager.addConnectionListener(this);
+        node.networkingService.getEndpointManager(MEMBER).addConnectionListener(this);
         //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
         nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
         nodeEngine.getExecutionService().register(VERSION_AUTO_UPGRADE_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
@@ -187,7 +188,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return;
             }
 
-            Connection conn = node.getConnectionManager().getConnection(address);
+            Connection conn = node.getEndpointManager(MEMBER).getConnection(address);
             if (conn != null && conn.isAlive()) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Cannot suspect " + member + ", since there's a live connection -> " + conn);
@@ -315,14 +316,20 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         assert !isJoined() : "Cannot reset local member UUID when joined.";
 
-        Address address = getThisAddress();
-        String newUuid = UuidUtil.createMemberUuid(address);
+        Address memberAddress = node.getThisAddress();
+        String newUuid = UuidUtil.createMemberUuid(memberAddress);
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
 
-        MemberImpl memberWithNewUuid = new MemberImpl(address, localMember.getVersion(),
-                true, newUuid, localMember.getAttributes(), localMember.isLiteMember(),
-                localMember.getMemberListJoinVersion(), node.hazelcastInstance);
+        MemberImpl memberWithNewUuid = new MemberImpl.Builder(memberAddress)
+                .version(localMember.getVersion())
+                .localMember(true)
+                .uuid(newUuid)
+                .attributes(localMember.getAttributes())
+                .liteMember(localMember.isLiteMember())
+                .memberListJoinVersion(localMember.getMemberListJoinVersion())
+                .instance(node.hazelcastInstance)
+                .build();
 
         localMember = memberWithNewUuid;
 
@@ -1004,8 +1011,14 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         assert member.isLiteMember() : "Local member is not lite member!";
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
 
-        localMember = new MemberImpl(member.getAddress(), member.getVersion(), true, member.getUuid(),
-                member.getAttributes(), false, member.getMemberListJoinVersion(), node.hazelcastInstance);
+        localMember = new MemberImpl.Builder(member.getAddressMap())
+                .version(member.getVersion())
+                .localMember(true)
+                .uuid(member.getUuid())
+                .attributes(member.getAttributes())
+                .memberListJoinVersion(member.getMemberListJoinVersion())
+                .instance(node.hazelcastInstance)
+                .build();
         node.loggingService.setThisMember(localMember);
         return localMember;
     }

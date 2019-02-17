@@ -87,7 +87,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
 
     public SystemLogPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getProperties(),
-                nodeEngine.getNode().connectionManager,
+                nodeEngine.getNode().networkingService.getAggregateEndpointManager(),
                 nodeEngine.getHazelcastInstance(),
                 nodeEngine.getLogger(SystemLogPlugin.class),
                 nodeEngine.getNode().getNodeExtension());

@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
@@ -43,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
+import static com.hazelcast.config.ConfigSections.ADVANCED_NETWORK;
 import static com.hazelcast.config.ConfigSections.ATOMIC_LONG;
 import static com.hazelcast.config.ConfigSections.ATOMIC_REFERENCE;
 import static com.hazelcast.config.ConfigSections.CACHE;
@@ -66,7 +68,6 @@ import static com.hazelcast.config.ConfigSections.LOCK;
 import static com.hazelcast.config.ConfigSections.MANAGEMENT_CENTER;
 import static com.hazelcast.config.ConfigSections.MAP;
 import static com.hazelcast.config.ConfigSections.MEMBER_ATTRIBUTES;
-import static com.hazelcast.config.ConfigSections.MEMCACHE_PROTOCOL;
 import static com.hazelcast.config.ConfigSections.MERKLE_TREE;
 import static com.hazelcast.config.ConfigSections.MULTIMAP;
 import static com.hazelcast.config.ConfigSections.NATIVE_MEMORY;
@@ -78,7 +79,6 @@ import static com.hazelcast.config.ConfigSections.QUEUE;
 import static com.hazelcast.config.ConfigSections.QUORUM;
 import static com.hazelcast.config.ConfigSections.RELIABLE_TOPIC;
 import static com.hazelcast.config.ConfigSections.REPLICATED_MAP;
-import static com.hazelcast.config.ConfigSections.REST_API;
 import static com.hazelcast.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.config.ConfigSections.SECURITY;
@@ -97,6 +97,10 @@ import static com.hazelcast.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.config.JobTrackerConfig.DEFAULT_COMMUNICATE_STATS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -132,6 +136,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (!canOccurMultipleTimes(nodeName)) {
                 occurrenceSet.add(nodeName);
             }
+        }
+
+        if (occurrenceSet.contains("network") && occurrenceSet.contains("advanced-network")
+                && config.getAdvancedNetworkConfig().isEnabled()) {
+            throw new InvalidConfigurationException("Ambiguous configuration: cannot include both <network> and "
+                    + "an enabled <advanced-network> element. Configure network using one of <network> or "
+                    + "<advanced-network enabled=\"true\">.");
         }
     }
 
@@ -224,10 +235,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCRDTReplication(node);
         } else if (PN_COUNTER.isEqual(nodeName)) {
             handlePNCounter(node);
-        } else if (REST_API.isEqual(nodeName)) {
-            handleRestApi(node);
-        } else if (MEMCACHE_PROTOCOL.isEqual(nodeName)) {
-            handleMemcacheProtocol(node);
+        } else if (ADVANCED_NETWORK.isEqual(nodeName)) {
+            handleAdvancedNetwork(node);
         } else {
             return true;
         }
@@ -546,6 +555,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
         } else if ("wan-sync".equals(targetChildName)) {
             handleWanSync(publisherConfig.getWanSyncConfig(), targetChild);
+        } else if ("endpoint-qualifier".equals(targetChildName)) {
+            publisherConfig.setEndpoint(getTextContent(targetChild));
         }
     }
 
@@ -571,7 +582,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleNetwork(Node node) throws Exception {
+    private void handleNetwork(Node node)
+            throws Exception {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("reuse-address".equals(nodeName)) {
@@ -585,7 +597,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 String address = getTextContent(child);
                 config.getNetworkConfig().setPublicAddress(address);
             } else if ("join".equals(nodeName)) {
-                handleJoin(child);
+                handleJoin(child, false);
             } else if ("interfaces".equals(nodeName)) {
                 handleInterfaces(child);
             } else if ("symmetric-encryption".equals(nodeName)) {
@@ -595,9 +607,197 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("socket-interceptor".equals(nodeName)) {
                 handleSocketInterceptorConfig(child);
             } else if ("member-address-provider".equals(nodeName)) {
-                handleMemberAddressProvider(child);
+                handleMemberAddressProvider(child, false);
             } else if ("failure-detector".equals(nodeName)) {
-                handleFailureDetector(child);
+                handleFailureDetector(child, false);
+            } else if ("rest-api".equals(nodeName)) {
+                handleRestApi(child);
+            } else if ("memcache-protocol".equals(nodeName)) {
+                handleMemcacheProtocol(child);
+            }
+        }
+    }
+
+    private void handleAdvancedNetwork(Node node)
+            throws Exception {
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                String value = att.getNodeValue();
+                config.getAdvancedNetworkConfig().setEnabled(getBooleanValue(value));
+            }
+        }
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("join".equals(nodeName)) {
+                handleJoin(child, true);
+            } else if ("wan-endpoint-config".equals(nodeName)) {
+                handleWanEndpointConfig(child);
+            } else if ("member-server-socket-endpoint-config".equals(nodeName)) {
+                handleMemberServerSocketEndpointConfig(child);
+            } else if ("client-server-socket-endpoint-config".equals(nodeName)) {
+                handleClientServerSocketEndpointConfig(child);
+            } else if ("wan-server-socket-endpoint-config".equals(nodeName)) {
+                handleWanServerSocketEndpointConfig(child);
+            } else if ("rest-server-socket-endpoint-config".equals(nodeName)) {
+                handleRestServerSocketEndpointConfig(child);
+            } else if ("memcache-server-socket-endpoint-config".equals(nodeName)) {
+                handleMemcacheServerSocketEndpointConfig(child);
+            } else if ("wan-socket-endpoint-config".equals(nodeName)) {
+                handleWanEndpointConfig(child);
+            } else if ("member-address-provider".equals(nodeName)) {
+                handleMemberAddressProvider(child, true);
+            } else if ("failure-detector".equals(nodeName)) {
+                handleFailureDetector(child, true);
+            }
+        }
+    }
+
+    private void handleEndpointConfig(EndpointConfig endpointConfig, Node node)
+            throws Exception {
+        String name = getAttribute(node, "name");
+        endpointConfig.setName(name);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            handleEndpointConfigCommons(child, nodeName, endpointConfig);
+        }
+        config.getAdvancedNetworkConfig().addWanEndpointConfig(endpointConfig);
+    }
+
+    private void handleMemberServerSocketEndpointConfig(Node node) throws Exception {
+        ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
+        config.setProtocolType(ProtocolType.MEMBER);
+        handleServerSocketEndpointConfig(config, node);
+    }
+
+    private void handleClientServerSocketEndpointConfig(Node node) throws Exception {
+        ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
+        config.setProtocolType(ProtocolType.CLIENT);
+        handleServerSocketEndpointConfig(config, node);
+    }
+
+    private void handleWanServerSocketEndpointConfig(Node node) throws Exception {
+        ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
+        config.setProtocolType(ProtocolType.WAN);
+        handleServerSocketEndpointConfig(config, node);
+    }
+
+    private void handleRestServerSocketEndpointConfig(Node node) throws Exception {
+        RestServerEndpointConfig config = new RestServerEndpointConfig();
+        handleServerSocketEndpointConfig(config, node);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("endpoint-groups".equals(nodeName)) {
+                for (Node endpointGroup : childElements(child)) {
+                    handleRestEndpointGroup(config, endpointGroup);
+                }
+            }
+        }
+    }
+
+    private void handleMemcacheServerSocketEndpointConfig(Node node) throws Exception {
+        ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
+        config.setProtocolType(ProtocolType.MEMCACHE);
+        handleServerSocketEndpointConfig(config, node);
+    }
+
+    private void handleWanEndpointConfig(Node node) throws Exception {
+        EndpointConfig config = new EndpointConfig();
+        config.setProtocolType(ProtocolType.WAN);
+        handleEndpointConfig(config, node);
+    }
+
+    private void handleServerSocketEndpointConfig(ServerSocketEndpointConfig endpointConfig, Node node)
+            throws Exception {
+        String name = getAttribute(node, "name");
+        endpointConfig.setName(name);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("port".equals(nodeName)) {
+                handlePort(child, endpointConfig);
+            } else if ("public-address".equals(nodeName)) {
+                String address = getTextContent(child);
+                endpointConfig.setPublicAddress(address);
+            } else if ("reuse-address".equals(nodeName)) {
+                String value = getTextContent(child).trim();
+                endpointConfig.setReuseAddress(getBooleanValue(value));
+            } else {
+                handleEndpointConfigCommons(child, nodeName, endpointConfig);
+            }
+        }
+        addEndpointConfig(endpointConfig);
+    }
+
+    private void addEndpointConfig(EndpointConfig endpointConfig) {
+        switch (endpointConfig.getProtocolType()) {
+            case MEMBER:
+                ensureServerSocketEndpointConfig(endpointConfig);
+                config.getAdvancedNetworkConfig().setMemberEndpointConfig((ServerSocketEndpointConfig) endpointConfig);
+                break;
+            case CLIENT:
+                ensureServerSocketEndpointConfig(endpointConfig);
+                config.getAdvancedNetworkConfig().setClientEndpointConfig((ServerSocketEndpointConfig) endpointConfig);
+                break;
+            case REST:
+                ensureServerSocketEndpointConfig(endpointConfig);
+                config.getAdvancedNetworkConfig().setRestEndpointConfig((RestServerEndpointConfig) endpointConfig);
+                break;
+            case WAN:
+                config.getAdvancedNetworkConfig().addWanEndpointConfig(endpointConfig);
+                break;
+            default:
+                throw new InvalidConfigurationException("Endpoint config has invalid protocol type "
+                        + endpointConfig.getProtocolType());
+        }
+    }
+
+    private void ensureServerSocketEndpointConfig(EndpointConfig endpointConfig) {
+        if (endpointConfig instanceof ServerSocketEndpointConfig) {
+            return;
+        }
+        throw new InvalidConfigurationException("Endpoint configuration of protocol type " + endpointConfig.getProtocolType()
+                + " must be defined in a <server-socket-endpoint-config> element");
+    }
+
+    private void handleEndpointConfigCommons(Node node, String nodeName, EndpointConfig endpointConfig)
+            throws Exception {
+        if ("outbound-ports".equals(nodeName)) {
+            handleOutboundPorts(node, endpointConfig);
+        } else if ("interfaces".equals(nodeName)) {
+            handleInterfaces(node, endpointConfig);
+        } else if ("ssl".equals(nodeName)) {
+            handleSSLConfig(node, endpointConfig);
+        } else if ("socket-interceptor".equals(nodeName)) {
+            handleSocketInterceptorConfig(node, endpointConfig);
+        } else if ("socket-options".equals(nodeName)) {
+            handleSocketOptions(node, endpointConfig);
+        } else if ("symmetric-encryption".equals(nodeName)) {
+            handleViaReflection(node, endpointConfig, new SymmetricEncryptionConfig());
+        }
+    }
+
+    private void handleSocketOptions(Node node, EndpointConfig endpointConfig) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("buffer-direct".equals(nodeName)) {
+                endpointConfig.setSocketBufferDirect(getBooleanValue(getTextContent(child)));
+            } else if ("tcp-no-delay".equals(nodeName)) {
+                endpointConfig.setSocketTcpNoDelay(getBooleanValue(getTextContent(child)));
+            } else if ("keep-alive".equals(nodeName)) {
+                endpointConfig.setSocketKeepAlive(getBooleanValue(getTextContent(child)));
+            } else if ("connect-timeout-seconds".equals(nodeName)) {
+                endpointConfig.setSocketConnectTimeoutSeconds(getIntegerValue("connect-timeout-seconds",
+                        getTextContent(child), DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS));
+            } else if ("send-buffer-size-kb".equals(nodeName)) {
+                endpointConfig.setSocketSendBufferSizeKb(getIntegerValue("send-buffer-size-kb",
+                        getTextContent(child), DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB));
+            } else if ("receive-buffer-size-kb".equals(nodeName)) {
+                endpointConfig.setSocketRcvBufferSizeKb(getIntegerValue("receive-buffer-size-kb",
+                        getTextContent(child), DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB));
+            } else if ("linger-seconds".equals(nodeName)) {
+                endpointConfig.setSocketLingerSeconds(getIntegerValue("linger-seconds",
+                        getTextContent(child), DEFAULT_SOCKET_LINGER_SECONDS));
             }
         }
     }
@@ -727,7 +927,25 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    void handleViaReflection(Node node, Object parent, Object child) throws Exception {
+    private void handleInterfaces(Node node, EndpointConfig endpointConfig) {
+        NamedNodeMap attributes = node.getAttributes();
+        InterfacesConfig interfaces = endpointConfig.getInterfaces();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            if ("enabled".equals(att.getNodeName())) {
+                String value = att.getNodeValue();
+                interfaces.setEnabled(getBooleanValue(value));
+            }
+        }
+        for (Node n : childElements(node)) {
+            if ("interface".equals(lowerCaseInternal(cleanNodeName(n)))) {
+                String value = getTextContent(n).trim();
+                interfaces.addInterface(value);
+            }
+        }
+    }
+
+    protected void handleViaReflection(Node node, Object parent, Object child) throws Exception {
         NamedNodeMap attributes = node.getAttributes();
         if (attributes != null) {
             for (int a = 0; a < attributes.getLength(); a++) {
@@ -829,22 +1047,27 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         return null;
     }
 
-    private void handleJoin(Node node) {
+    private void handleJoin(Node node, boolean advancedNetworkConfig) {
+        JoinConfig joinConfig = joinConfig(advancedNetworkConfig);
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
             if ("multicast".equals(name)) {
-                handleMulticast(child);
+                handleMulticast(child, advancedNetworkConfig);
             } else if ("tcp-ip".equals(name)) {
-                handleTcpIp(child);
+                handleTcpIp(child, advancedNetworkConfig);
             } else if (AliasedDiscoveryConfigUtils.supports(name)) {
-                handleAliasedDiscoveryStrategy(config.getNetworkConfig().getJoin(), child, name);
+                handleAliasedDiscoveryStrategy(joinConfig, child, name);
             } else if ("discovery-strategies".equals(name)) {
-                handleDiscoveryStrategies(config.getNetworkConfig().getJoin().getDiscoveryConfig(), child);
+                handleDiscoveryStrategies(joinConfig.getDiscoveryConfig(), child);
             }
         }
-
-        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.verify();
+    }
+
+    protected JoinConfig joinConfig(boolean advancedNetworkConfig) {
+        return advancedNetworkConfig
+                ? config.getAdvancedNetworkConfig().getJoin()
+                : config.getNetworkConfig().getJoin();
     }
 
     private void handleDiscoveryStrategies(DiscoveryConfig discoveryConfig, Node node) {
@@ -928,8 +1151,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleMulticast(Node node) {
-        JoinConfig join = config.getNetworkConfig().getJoin();
+    private void handleMulticast(Node node, boolean advancedNetworkConfig) {
+        JoinConfig join = joinConfig(advancedNetworkConfig);
         MulticastConfig multicastConfig = join.getMulticastConfig();
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
@@ -969,9 +1192,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleTcpIp(Node node) {
+    private void handleTcpIp(Node node, boolean advancedNetworkConfig) {
         NamedNodeMap attributes = node.getAttributes();
-        JoinConfig join = config.getNetworkConfig().getJoin();
+        JoinConfig join = joinConfig(advancedNetworkConfig);
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
@@ -986,7 +1209,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();
             if (cleanNodeName(n).equals("member-list")) {
-                handleMemberList(n);
+                handleMemberList(n, advancedNetworkConfig);
             } else if (cleanNodeName(n).equals("required-member")) {
                 if (tcpIpConfig.getRequiredMember() != null) {
                     throw new InvalidConfigurationException("Duplicate required-member"
@@ -999,8 +1222,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleMemberList(Node node) {
-        JoinConfig join = config.getNetworkConfig().getJoin();
+    protected void handleMemberList(Node node, boolean advancedNetworkConfig) {
+        JoinConfig join = joinConfig(advancedNetworkConfig);
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
@@ -1031,7 +1254,26 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleOutboundPorts(Node child) {
+    private void handlePort(Node node, ServerSocketEndpointConfig endpointConfig) {
+        String portStr = getTextContent(node).trim();
+        if (portStr.length() > 0) {
+            endpointConfig.setPort(parseInt(portStr));
+        }
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node att = attributes.item(a);
+            String value = getTextContent(att).trim();
+
+            if ("auto-increment".equals(att.getNodeName())) {
+                endpointConfig.setPortAutoIncrement(getBooleanValue(value));
+            } else if ("port-count".equals(att.getNodeName())) {
+                int portCount = parseInt(value);
+                endpointConfig.setPortCount(portCount);
+            }
+        }
+    }
+
+        protected void handleOutboundPorts(Node child) {
         NetworkConfig networkConfig = config.getNetworkConfig();
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
@@ -1042,7 +1284,17 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleLock(Node node) {
+    private void handleOutboundPorts(Node child, EndpointConfig endpointConfig) {
+        for (Node n : childElements(child)) {
+            String nodeName = cleanNodeName(n);
+            if ("ports".equals(nodeName)) {
+                String value = getTextContent(n);
+                endpointConfig.addOutboundPortDefinition(value);
+            }
+        }
+    }
+
+        protected void handleLock(Node node) {
         String name = getAttribute(node, "name");
         LockConfig lockConfig = new LockConfig();
         lockConfig.setName(name);
@@ -1887,21 +2139,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleSSLConfig(Node node) {
-        SSLConfig sslConfig = new SSLConfig();
-        NamedNodeMap attributes = node.getAttributes();
-        Node enabledNode = attributes.getNamedItem("enabled");
-        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
-        sslConfig.setEnabled(enabled);
-
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            if ("factory-class-name".equals(nodeName)) {
-                sslConfig.setFactoryClassName(getTextContent(n).trim());
-            } else if ("properties".equals(nodeName)) {
-                fillProperties(n, sslConfig.getProperties());
-            }
-        }
+        SSLConfig sslConfig = parseSslConfig(node);
         config.getNetworkConfig().setSSLConfig(sslConfig);
+    }
+
+    private void handleSSLConfig(Node node, EndpointConfig endpointConfig) {
+        SSLConfig sslConfig = parseSslConfig(node);
+        endpointConfig.setSSLConfig(sslConfig);
     }
 
     private void handleMcMutualAuthConfig(Node node) {
@@ -1923,11 +2167,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getManagementCenterConfig().setMutualAuthConfig(mcMutualAuthConfig);
     }
 
-    private void handleMemberAddressProvider(Node node) {
+    private void handleMemberAddressProvider(Node node, boolean advancedNetworkConfig) {
+        MemberAddressProviderConfig memberAddressProviderConfig = memberAddressProviderConfig(advancedNetworkConfig);
+
         Node enabledNode = node.getAttributes().getNamedItem("enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
-        MemberAddressProviderConfig memberAddressProviderConfig = config.getNetworkConfig().getMemberAddressProviderConfig();
         memberAddressProviderConfig.setEnabled(enabled);
+
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (nodeName.equals("class-name")) {
@@ -1939,7 +2185,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleFailureDetector(Node node) {
+    private MemberAddressProviderConfig memberAddressProviderConfig(boolean advancedNetworkConfig) {
+        return advancedNetworkConfig
+                ? config.getAdvancedNetworkConfig().getMemberAddressProviderConfig()
+                : config.getNetworkConfig().getMemberAddressProviderConfig();
+    }
+
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    private void handleFailureDetector(Node node, boolean advancedNetworkConfig) {
         if (!node.hasChildNodes()) {
             return;
         }
@@ -1978,7 +2231,11 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     icmpFailureDetectorConfig.setIntervalMilliseconds(interval);
                 }
             }
-            config.getNetworkConfig().setIcmpFailureDetectorConfig(icmpFailureDetectorConfig);
+            if (advancedNetworkConfig) {
+                config.getAdvancedNetworkConfig().setIcmpFailureDetectorConfig(icmpFailureDetectorConfig);
+            } else {
+                config.getNetworkConfig().setIcmpFailureDetectorConfig(icmpFailureDetectorConfig);
+            }
         }
     }
 
@@ -1987,7 +2244,12 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getNetworkConfig().setSocketInterceptorConfig(socketInterceptorConfig);
     }
 
-    protected void handleTopic(Node node) {
+    private void handleSocketInterceptorConfig(Node node, EndpointConfig endpointConfig) {
+        SocketInterceptorConfig socketInterceptorConfig = parseSocketInterceptorConfig(node);
+        endpointConfig.setSocketInterceptorConfig(socketInterceptorConfig);
+    }
+
+        protected void handleTopic(Node node) {
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
         TopicConfig tConfig = new TopicConfig();
@@ -2553,14 +2815,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleMemcacheProtocol(Node node) {
         MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
-        config.setMemcacheProtocolConfig(memcacheProtocolConfig);
+        config.getNetworkConfig().setMemcacheProtocolConfig(memcacheProtocolConfig);
         boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
         memcacheProtocolConfig.setEnabled(enabled);
     }
 
     private void handleRestApi(Node node) {
         RestApiConfig restApiConfig = new RestApiConfig();
-        config.setRestApiConfig(restApiConfig);
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
         boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
         restApiConfig.setEnabled(enabled);
         handleRestApiEndpointGroups(node);
@@ -2576,7 +2838,25 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleEndpointGroup(Node node, String name) {
+    private void handleRestEndpointGroup(RestServerEndpointConfig config, Node node) {
+        boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+        String name = getAttribute(node, "name");
+        RestEndpointGroup endpointGroup;
+        try {
+            endpointGroup = RestEndpointGroup.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException("Wrong name attribute value was provided in endpoint-group element: " + name
+                    + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values()));
+        }
+
+        if (enabled) {
+            config.enableGroups(endpointGroup);
+        } else {
+            config.disableGroups(endpointGroup);
+        }
+    }
+
+    void handleEndpointGroup(Node node, String name) {
         boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
         RestEndpointGroup endpointGroup;
         try {
@@ -2585,7 +2865,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             throw new InvalidConfigurationException("Wrong name attribute value was provided in endpoint-group element: " + name
                     + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values()));
         }
-        RestApiConfig restApiConfig = config.getRestApiConfig();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         if (enabled) {
             restApiConfig.enableGroups(endpointGroup);
         } else {

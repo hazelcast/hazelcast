@@ -37,8 +37,7 @@
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="rest-api" type="rest-api" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
@@ -2342,6 +2341,8 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="failure-detector" type="failure-detector" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="rest-api" type="rest-api" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="public-address" type="xs:string" use="optional"/>
         <xs:attribute name="port" type="xs:string" use="required"/>
@@ -2898,13 +2899,12 @@
     </xs:complexType>
     <xs:complexType name="rest-api">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="endpoint-group" minOccurs="0" maxOccurs="unbounded">
-                <xs:complexType>
-                    <xs:attribute name="name" type="endpoint-group-name" use="required"/>
-                    <xs:attribute name="enabled" type="xs:boolean" use="required"/>
-                </xs:complexType>
-            </xs:element>
+            <xs:element name="endpoint-group" type="endpoint-group" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="endpoint-group">
+        <xs:attribute name="name" type="endpoint-group-name" use="required"/>
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
     </xs:complexType>
     <xs:simpleType name="endpoint-group-name">
@@ -4234,4 +4234,144 @@
         <xs:attribute name="class-name" type="non-space-string" use="optional"/>
         <xs:attribute name="implementation" type="non-space-string" use="optional"/>
     </xs:attributeGroup>
+
+    <xs:complexType name="advanced-network">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="join" type="join" minOccurs="0"/>
+            <xs:element name="failure-detector" type="failure-detector" minOccurs="0"/>
+            <xs:element name="member-address-provider" type="member-address-provider" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        This configuration is not intended to provide addresses of other cluster members with
+                        which the hazelcast instance will form a cluster. This is an SPI for advanced use in
+                        cases where the DefaultAddressPicker does not pick suitable addresses to bind to
+                        and publish to other cluster members. For instance, this could allow easier
+                        deployment in some cases when running on Docker, AWS or other cloud environments.
+                        That said, if you are just starting with Hazelcast, you will probably want to
+                        set the member addresses by using the tcp-ip or multicast configuration
+                        or adding a discovery strategy.
+                        Member address provider allows to plug in own strategy to customize:
+                        1. What address Hazelcast will bind to
+                        2. What address Hazelcast will advertise to other members on which they can bind to
+
+                        In most environments you don't need to customize this and the default strategy will work just
+                        fine. However in some cloud environments the default strategy does not make the right choice and
+                        the member address provider delegates the process of address picking to external code.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="wan-endpoint-config" type="endpoint-config" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="wan-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="member-server-socket-endpoint-config" type="server-socket-endpoint-config"/>
+            <xs:element name="client-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="rest-server-socket-endpoint-config" type="rest-server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="memcache-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
+        </xs:choice>
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates whether the advanced network configuration is enabled or not. Default is false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="endpoint-config">
+        <xs:all>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0"/>
+            <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
+            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES, AES/CBC/PKCS5Padding,
+                        Blowfish, DESede.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="socket-options" type="endpoint-socket-options" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default=""/>
+    </xs:complexType>
+
+    <xs:complexType name="server-socket-endpoint-config">
+        <xs:all>
+            <xs:element name="reuse-address" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0"/>
+            <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
+            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES, AES/CBC/PKCS5Padding,
+                        Blowfish, DESede.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="socket-options" type="endpoint-socket-options" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default=""/>
+        <xs:attribute name="public-address" type="xs:string"/>
+        <xs:attribute name="port" type="xs:string" use="required"/>
+        <xs:attribute name="port-auto-increment" type="xs:string" default="true"/>
+        <xs:attribute name="port-count" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="rest-server-socket-endpoint-config">
+        <xs:all>
+            <xs:element name="reuse-address" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0"/>
+            <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
+            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES, AES/CBC/PKCS5Padding,
+                        Blowfish, DESede.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="socket-options" type="endpoint-socket-options" minOccurs="0"/>
+            <xs:element name="endpoint-groups" type="endpoint-groups" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Enables or disables named REST endpoint group.
+                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is used
+                        to control the behavior of the group.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default=""/>
+        <xs:attribute name="public-address" type="xs:string"/>
+        <xs:attribute name="port" type="xs:string" use="required"/>
+        <xs:attribute name="port-auto-increment" type="xs:string" default="true"/>
+        <xs:attribute name="port-count" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="endpoint-socket-options">
+        <xs:all>
+            <xs:element name="buffer-direct" type="parameterized-boolean" minOccurs="0"/>
+            <xs:element name="tcp-no-delay" type="parameterized-boolean" minOccurs="0"/>
+            <xs:element name="keep-alive" type="parameterized-boolean" minOccurs="0"/>
+            <xs:element name="connect-timeout-seconds" type="parameterized-non-negative-integer" minOccurs="0"/>
+            <xs:element name="send-buffer-size-kb" type="parameterized-positive-integer" minOccurs="0"/>
+            <xs:element name="receive-buffer-size-kb" type="parameterized-positive-integer" minOccurs="0"/>
+            <xs:element name="linger-seconds" type="parameterized-non-negative-integer" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="endpoint-groups">
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="endpoint-group" type="endpoint-group">
+                <xs:annotation>
+                    <xs:documentation>
+                        Enables or disables named REST endpoint group.
+                        If a group is not listed within the rest-api configuration, then it's 'enabledByDefault' flag is used
+                        to control the behavior of the group.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
 </xs:schema>

@@ -51,10 +51,11 @@ class InvocationBuilderImpl extends InvocationBuilder {
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             invocation = new PartitionInvocation(
                     context, op, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized,
-                    failOnIndeterminateOperationState);
+                    failOnIndeterminateOperationState, endpointManager);
         } else {
             invocation = new TargetInvocation(
-                    context, op, target, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+                    context, op, target, doneCallback, tryCount, tryPauseMillis,
+                    callTimeout, resultDeserialized, endpointManager);
         }
 
         InternalCompletableFuture future = invocation.invoke();

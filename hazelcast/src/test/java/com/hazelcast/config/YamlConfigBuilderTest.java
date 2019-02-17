@@ -3217,10 +3217,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testMemcacheProtocolEnabled() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  memcache-protocol:\n"
-                + "    enabled: true\n";
+                + "  network:\n"
+                + "    memcache-protocol:\n"
+                + "      enabled: true\n";
         Config config = buildConfig(yaml);
-        MemcacheProtocolConfig memcacheProtocolConfig = config.getMemcacheProtocolConfig();
+        MemcacheProtocolConfig memcacheProtocolConfig = config.getNetworkConfig().getMemcacheProtocolConfig();
         assertNotNull(memcacheProtocolConfig);
         assertTrue(memcacheProtocolConfig.isEnabled());
     }
@@ -3230,10 +3231,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testRestApiDefaults() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  rest-api:\n"
-                + "    enabled: false";
+                + "  network:\n"
+                + "    rest-api:\n"
+                + "      enabled: false";
         Config config = buildConfig(yaml);
-        RestApiConfig restApiConfig = config.getRestApiConfig();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         assertNotNull(restApiConfig);
         assertFalse(restApiConfig.isEnabled());
         for (RestEndpointGroup group : RestEndpointGroup.values()) {
@@ -3247,17 +3249,18 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testRestApiEndpointGroups() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  rest-api:\n"
-                + "    enabled: true\n"
-                + "    endpoint-groups:\n"
-                + "      HEALTH_CHECK:\n "
-                + "        enabled: true\n"
-                + "      DATA:\n"
-                + "        enabled: true\n"
-                + "      CLUSTER_READ:\n"
-                + "        enabled: false";
+                + "  network:\n"
+                + "    rest-api:\n"
+                + "      enabled: true\n"
+                + "      endpoint-groups:\n"
+                + "        HEALTH_CHECK:\n "
+                + "          enabled: true\n"
+                + "        DATA:\n"
+                + "          enabled: true\n"
+                + "        CLUSTER_READ:\n"
+                + "          enabled: false";
         Config config = buildConfig(yaml);
-        RestApiConfig restApiConfig = config.getRestApiConfig();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         assertTrue(restApiConfig.isEnabled());
         assertTrue(restApiConfig.isGroupEnabled(RestEndpointGroup.HEALTH_CHECK));
         assertFalse(restApiConfig.isGroupEnabled(RestEndpointGroup.CLUSTER_READ));
@@ -3271,11 +3274,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testUnknownRestApiEndpointGroup() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  rest-api:\n"
-                + "    enabled: true\n"
-                + "    endpoint-groups:\n"
-                + "      TEST:\n"
-                + "        enabled: true";
+                + "  network:\n"
+                + "    rest-api:\n"
+                + "      enabled: true\n"
+                + "      endpoint-groups:\n"
+                + "        TEST:\n"
+                + "          enabled: true";
         buildConfig(yaml);
     }
 

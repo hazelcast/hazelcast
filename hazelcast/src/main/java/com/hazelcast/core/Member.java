@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.version.MemberVersion;
@@ -57,6 +58,12 @@ public interface Member extends DataSerializable, Endpoint {
     Address getAddress();
 
     /**
+     * @return      a map of server socket {@link Address}es per {@link EndpointQualifier} of this member
+     * @since 3.12
+     */
+    Map<EndpointQualifier, Address> getAddressMap();
+
+    /**
      * Returns the InetSocketAddress of this member.
      *
      * @return InetSocketAddress of this member
@@ -67,11 +74,22 @@ public interface Member extends DataSerializable, Endpoint {
     InetSocketAddress getInetSocketAddress();
 
     /**
+     * Returns the socket address of this member for member to member communications or unified depending on config.
+     * Equivalent to {@link #getSocketAddress(EndpointQualifier) getSocketAddress(ProtocolType.MEMBER)}.
+     *
+     * @return the socket address of this member for member to member communications or unified depending on config.
+     * @deprecated as of Hazelcast 3.12, use {@link #getSocketAddress(EndpointQualifier)}
+     */
+    @Deprecated
+    InetSocketAddress getSocketAddress();
+
+    /**
      * Returns the socket address of this member.
      *
      * @return the socket address of this member
+     * @since 3.12
      */
-    InetSocketAddress getSocketAddress();
+    InetSocketAddress getSocketAddress(EndpointQualifier qualifier);
 
     /**
      * Returns the UUID of this member.

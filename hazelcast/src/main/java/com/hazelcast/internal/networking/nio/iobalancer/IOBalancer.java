@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.concurrent.BlockingQueue;
@@ -54,7 +55,7 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
  * Measuring interval can be customized via {@link GroupProperty#IO_BALANCER_INTERVAL_SECONDS}
  *
  * It doesn't leverage {@link com.hazelcast.nio.ConnectionListener} capability
- * provided by {@link com.hazelcast.nio.ConnectionManager} to observe connections
+ * provided by {@link EndpointManager} to observe connections
  * as it has to be notified right after a physical TCP connection is created whilst
  * <code>ConnectionListener</code> is notified only after a successful (Hazelcast)
  * binding process.

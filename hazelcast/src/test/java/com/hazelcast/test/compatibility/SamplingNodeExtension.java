@@ -22,13 +22,14 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -118,23 +119,23 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public MemberSocketInterceptor getMemberSocketInterceptor() {
-        return nodeExtension.getMemberSocketInterceptor();
+    public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {
+        return nodeExtension.getSocketInterceptor(endpointQualifier);
     }
 
     @Override
-    public InboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService) {
-        return nodeExtension.createInboundHandlers(connection, ioService);
+    public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection, IOService ioService) {
+        return nodeExtension.createInboundHandlers(qualifier, connection, ioService);
     }
 
     @Override
-    public OutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService) {
-        return nodeExtension.createOutboundHandlers(connection, ioService);
+    public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection, IOService ioService) {
+        return nodeExtension.createOutboundHandlers(qualifier, connection, ioService);
     }
 
     @Override
-    public ChannelInitializer createChannelInitializer(IOService ioService) {
-        return nodeExtension.createChannelInitializer(ioService);
+    public ChannelInitializerProvider createChannelInitializerProvider(IOService ioService) {
+        return nodeExtension.createChannelInitializerProvider(ioService);
     }
 
     @Override

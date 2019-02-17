@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -59,7 +58,7 @@ import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -73,9 +72,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.tcp.DefaultChannelInitializerProvider;
 import com.hazelcast.nio.tcp.PacketDecoder;
 import com.hazelcast.nio.tcp.PacketEncoder;
-import com.hazelcast.nio.tcp.PlainChannelInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -103,6 +102,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @PrivateApi
@@ -132,7 +132,8 @@ public class DefaultNodeExtension implements NodeExtension {
                 throw new IllegalStateException("Security requires Hazelcast Enterprise Edition");
             }
         }
-        SymmetricEncryptionConfig symmetricEncryptionConfig = node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
+        SymmetricEncryptionConfig symmetricEncryptionConfig
+                = getActiveMemberNetworkConfig(node.getConfig()).getSymmetricEncryptionConfig();
         if (symmetricEncryptionConfig != null && symmetricEncryptionConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Symmetric Encryption requires Hazelcast Enterprise Edition");
@@ -252,33 +253,28 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public MemberSocketInterceptor getMemberSocketInterceptor() {
+    public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {
         logger.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
         return null;
     }
 
     @Override
-    public InboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService) {
+    public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier,
+            TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
         PacketDecoder decoder = new PacketDecoder(connection, nodeEngine.getPacketDispatcher());
         return new InboundHandler[]{decoder};
     }
 
     @Override
-    public OutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService) {
+    public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier,
+            TcpIpConnection connection, IOService ioService) {
         return new OutboundHandler[]{new PacketEncoder()};
     }
 
     @Override
-    public ChannelInitializer createChannelInitializer(IOService ioService) {
-        SSLConfig sslConfig = ioService.getSSLConfig();
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
-                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
-            }
-        }
-
-        return new PlainChannelInitializer(ioService);
+    public ChannelInitializerProvider createChannelInitializerProvider(IOService ioService) {
+        return new DefaultChannelInitializerProvider(ioService, node.getConfig());
     }
 
     @Override
@@ -345,7 +341,9 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onPartitionStateChange() {
-        node.clientEngine.getPartitionListenerService().onPartitionStateChange();
+        if (node.clientEngine.getPartitionListenerService() != null) {
+            node.clientEngine.getPartitionListenerService().onPartitionStateChange();
+        }
     }
 
     @Override

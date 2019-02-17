@@ -18,6 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,7 +40,8 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class TcpIpConnectionManager_MemoryLeakTest extends HazelcastTestSupport {
+public class TcpIpEndpointManager_MemoryLeakTest
+        extends HazelcastTestSupport {
 
     @After
     public void after() {
@@ -49,17 +51,20 @@ public class TcpIpConnectionManager_MemoryLeakTest extends HazelcastTestSupport 
     @Test
     public void test() {
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getNode(hz1).getConnectionManager();
+        final TcpIpNetworkingService networkingService = (TcpIpNetworkingService) getNode(hz1).getNetworkingService();
 
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
         hz2.shutdown();
 
         assertClusterSizeEventually(1, hz1);
 
+        final MemberViewUnifiedEndpointManager endpointManager = (MemberViewUnifiedEndpointManager) networkingService
+                .getEndpointManager(EndpointQualifier.MEMBER);
+
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(0, connectionManager.getAcceptedChannels().size());
+                assertEquals(0, endpointManager.getAcceptedChannelsSize());
             }
         }, 5);
     }

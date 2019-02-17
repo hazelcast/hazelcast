@@ -48,7 +48,7 @@ public class MemcacheProtocolFilterTest extends AbstractTextProtocolsTestBase {
     @Test
     public void testRestApiDisabled() throws Exception {
         Config config = new Config();
-        config.setMemcacheProtocolConfig(new MemcacheProtocolConfig().setEnabled(false));
+        config.getNetworkConfig().setMemcacheProtocolConfig(new MemcacheProtocolConfig().setEnabled(false));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
         try {
@@ -96,7 +96,7 @@ public class MemcacheProtocolFilterTest extends AbstractTextProtocolsTestBase {
     @Test
     public void testRestApiWhenMemcacheEnabled() throws Exception {
         Config config = new Config();
-        config.setMemcacheProtocolConfig(new MemcacheProtocolConfig().setEnabled(true));
+        config.getNetworkConfig().setMemcacheProtocolConfig(new MemcacheProtocolConfig().setEnabled(true));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
         try {
@@ -121,7 +121,7 @@ public class MemcacheProtocolFilterTest extends AbstractTextProtocolsTestBase {
     @Test
     public void testVersionCommandWithMemcacheEnabled() throws Exception {
         Config config = new Config();
-        config.setMemcacheProtocolConfig(new MemcacheProtocolConfig().setEnabled(true));
+        config.getNetworkConfig().setMemcacheProtocolConfig(new MemcacheProtocolConfig().setEnabled(true));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
         try {

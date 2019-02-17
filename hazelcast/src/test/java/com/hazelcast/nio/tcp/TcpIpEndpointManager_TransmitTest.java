@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -33,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -41,14 +41,15 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_AbstractTest {
+public class TcpIpEndpointManager_TransmitTest
+        extends TcpIpConnection_AbstractTest {
     private List<Packet> packetsB = Collections.synchronizedList(new ArrayList<Packet>());
 
     @Override
     @Before
     public void setup() throws Exception {
         super.setup();
-        connManagerA.start();
+        networkingServiceA.start();
 
         ioServiceB.packetConsumer = new Consumer<Packet>() {
             @Override
@@ -62,39 +63,39 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
 
     @Test(expected = NullPointerException.class)
     public void withConnection_whenNullPacket() {
-        connManagerB.start();
+        networkingServiceB.start();
 
-        TcpIpConnection connection = connect(connManagerA, addressB);
-        connManagerA.transmit(null, connection);
+        TcpIpConnection connection = connect(networkingServiceA, addressB);
+        networkingServiceA.getEndpointManager(MEMBER).transmit(null, connection);
     }
 
     @Test
     public void withConnection_whenNullConnection() {
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
-        boolean result = connManagerA.transmit(packet, (Connection) null);
+        boolean result = networkingServiceA.getEndpointManager(MEMBER).transmit(packet, (TcpIpConnection) null);
 
         assertFalse(result);
     }
 
     @Test
     public void withConnection_whenConnectionWriteFails() {
-        Connection connection = mock(Connection.class);
+        TcpIpConnection connection = mock(TcpIpConnection.class);
         Packet packet = new Packet(serializationService.toBytes("foo"));
         when(connection.write(packet)).thenReturn(false);
 
-        boolean result = connManagerA.transmit(packet, connection);
+        boolean result = networkingServiceA.getEndpointManager(MEMBER).transmit(packet, connection);
 
         assertFalse(result);
     }
 
     @Test
     public void withConnection_whenConnectionWriteSucceeds() {
-        Connection connection = mock(Connection.class);
+        TcpIpConnection connection = mock(TcpIpConnection.class);
         Packet packet = new Packet(serializationService.toBytes("foo"));
         when(connection.write(packet)).thenReturn(true);
 
-        boolean result = connManagerA.transmit(packet, connection);
+        boolean result = networkingServiceA.getEndpointManager(MEMBER).transmit(packet, connection);
 
         assertTrue(result);
     }
@@ -103,26 +104,26 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
 
     @Test(expected = NullPointerException.class)
     public void withAddress_whenNullPacket() {
-        connManagerB.start();
+        networkingServiceB.start();
 
-        connManagerA.transmit(null, addressB);
+        networkingServiceA.getEndpointManager(MEMBER).transmit(null, addressB);
     }
 
     @Test(expected = NullPointerException.class)
     public void withAddress_whenNullAddress() {
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
-        connManagerA.transmit(packet, (Address) null);
+        networkingServiceA.getEndpointManager(MEMBER).transmit(packet, (Address) null);
     }
 
     @Test
     public void withAddress_whenConnectionExists() {
-        connManagerB.start();
+        networkingServiceB.start();
 
         final Packet packet = new Packet(serializationService.toBytes("foo"));
-        connect(connManagerA, addressB);
+        connect(networkingServiceA, addressB);
 
-        boolean result = connManagerA.transmit(packet, addressB);
+        boolean result = networkingServiceA.getEndpointManager(MEMBER).transmit(packet, addressB);
 
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
@@ -135,11 +136,11 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
 
     @Test
     public void withAddress_whenConnectionNotExists_thenCreated() {
-        connManagerB.start();
+        networkingServiceB.start();
 
         final Packet packet = new Packet(serializationService.toBytes("foo"));
 
-        boolean result = connManagerA.transmit(packet, addressB);
+        boolean result = networkingServiceA.getEndpointManager(MEMBER).transmit(packet, addressB);
 
         assertTrue(result);
         assertTrueEventually(new AssertTask() {
@@ -148,14 +149,14 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
                 assertContains(packetsB, packet);
             }
         });
-        assertNotNull(connManagerA.getConnection(addressB));
+        assertNotNull(networkingServiceA.getEndpointManager(MEMBER).getConnection(addressB));
     }
 
     @Test
     public void withAddress_whenConnectionCantBeEstablished() throws UnknownHostException {
         final Packet packet = new Packet(serializationService.toBytes("foo"));
 
-        boolean result = connManagerA.transmit(packet, new Address(addressA.getHost(), 6701));
+        boolean result = networkingServiceA.getEndpointManager(MEMBER).transmit(packet, new Address(addressA.getHost(), 6701));
 
         // true is being returned because there is no synchronization on the connection being established
         assertTrue(result);

@@ -17,12 +17,14 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.test.AssertTask;
 import org.junit.Test;
 
 import java.net.UnknownHostException;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -32,40 +34,41 @@ import static org.junit.Assert.assertTrue;
 /**
  * A test that verifies if two members can connect to each other.
  */
-public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpEndpointManager_AbstractConnectMemberTest
+        extends TcpIpConnection_AbstractTest {
 
     @Test
     public void testConnectionCount() {
-        connManagerA.start();
-        connManagerB.start();
+        networkingServiceA.start();
+        networkingServiceB.start();
 
-        connect(connManagerA, addressB);
+        connect(networkingServiceA, addressB);
 
-        assertEquals(1, connManagerA.getConnectionCount());
-        assertEquals(1, connManagerB.getConnectionCount());
+        assertEquals(1, networkingServiceA.getEndpointManager(MEMBER).getConnections().size());
+        assertEquals(1, networkingServiceB.getEndpointManager(MEMBER).getConnections().size());
     }
 
     // ================== getOrConnect ======================================================
 
     @Test
     public void getOrConnect_whenNotConnected_thenEventuallyConnectionAvailable() throws UnknownHostException {
-        startAllConnectionManagers();
+        startAllNetworkingServices();
 
-        Connection c = connManagerA.getOrConnect(addressB);
+        Connection c = networkingServiceA.getEndpointManager(MEMBER).getOrConnect(addressB);
         assertNull(c);
 
-        connect(connManagerA, addressB);
+        connect(networkingServiceA, addressB);
 
-        assertEquals(1, connManagerA.getActiveConnectionCount());
-        assertEquals(1, connManagerB.getActiveConnectionCount());
+        assertEquals(1, networkingServiceA.getEndpointManager(MEMBER).getActiveConnections().size());
+        assertEquals(1, networkingServiceB.getEndpointManager(MEMBER).getActiveConnections().size());
     }
 
     @Test
     public void getOrConnect_whenAlreadyConnectedSameConnectionReturned() throws UnknownHostException {
-        startAllConnectionManagers();
+        startAllNetworkingServices();
 
-        Connection c1 = connect(connManagerA, addressB);
-        Connection c2 = connManagerA.getOrConnect(addressB);
+        Connection c1 = connect(networkingServiceA, addressB);
+        Connection c2 = networkingServiceA.getEndpointManager(MEMBER).getOrConnect(addressB);
 
         assertSame(c1, c2);
     }
@@ -74,10 +77,10 @@ public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends T
 
     @Test
     public void destroyConnection_whenActive() throws Exception {
-        startAllConnectionManagers();
+        startAllNetworkingServices();
 
-        final TcpIpConnection connAB = connect(connManagerA, addressB);
-        final TcpIpConnection connBA = connect(connManagerB, addressA);
+        final TcpIpConnection connAB = connect(networkingServiceA, addressB);
+        final TcpIpConnection connBA = connect(networkingServiceB, addressA);
 
         connAB.close(null, null);
 
@@ -92,10 +95,10 @@ public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends T
 
     @Test
     public void destroyConnection_whenAlreadyDestroyed_thenCallIgnored() throws Exception {
-        startAllConnectionManagers();
+        startAllNetworkingServices();
 
-        connManagerA.getOrConnect(addressB);
-        TcpIpConnection c = connect(connManagerA, addressB);
+        networkingServiceA.getEndpointManager(MEMBER).getOrConnect(addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         // first destroy
         c.close(null, null);
@@ -107,29 +110,29 @@ public abstract class TcpIpConnectionManager_AbstractConnectMemberTest extends T
     }
 
     public void assertIsDestroyed(TcpIpConnection connection) {
-        TcpIpConnectionManager connectionManager = connection.getConnectionManager();
+        EndpointManager networkingService = connection.getEndpointManager();
 
         assertFalse(connection.isAlive());
-        assertNull(connectionManager.getConnection(connection.getEndPoint()));
+        assertNull(networkingService.getConnection(connection.getEndPoint()));
     }
 
     // ================== connection ======================================================
 
     @Test
     public void connect() throws UnknownHostException {
-        startAllConnectionManagers();
+        startAllNetworkingServices();
 
-        TcpIpConnection connAB = connect(connManagerA, addressB);
+        TcpIpConnection connAB = connect(networkingServiceA, addressB);
         assertTrue(connAB.isAlive());
         assertEquals(ConnectionType.MEMBER, connAB.getType());
-        assertEquals(1, connManagerA.getActiveConnectionCount());
+        assertEquals(1, networkingServiceA.getEndpointManager(MEMBER).getActiveConnections().size());
 
-        TcpIpConnection connBA = (TcpIpConnection) connManagerB.getConnection(addressA);
+        TcpIpConnection connBA = (TcpIpConnection) networkingServiceB.getEndpointManager(MEMBER).getConnection(addressA);
         assertTrue(connBA.isAlive());
         assertEquals(ConnectionType.MEMBER, connBA.getType());
-        assertEquals(1, connManagerB.getActiveConnectionCount());
+        assertEquals(1, networkingServiceB.getEndpointManager(MEMBER).getActiveConnections().size());
 
-        assertEquals(connManagerA.getIoService().getThisAddress(), connBA.getEndPoint());
-        assertEquals(connManagerB.getIoService().getThisAddress(), connAB.getEndPoint());
+        assertEquals(networkingServiceA.getIoService().getThisAddress(), connBA.getEndPoint());
+        assertEquals(networkingServiceB.getIoService().getThisAddress(), connAB.getEndPoint());
     }
 }

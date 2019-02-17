@@ -16,6 +16,7 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.AtomicLongConfig;
@@ -34,6 +35,7 @@ import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -92,6 +94,7 @@ import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
+import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.SSLConfig;
@@ -99,6 +102,7 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SemaphoreConfig;
+import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
@@ -110,6 +114,8 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
@@ -212,6 +218,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> quorumManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
         private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
+        private ManagedMap<EndpointQualifier, AbstractBeanDefinition> endpointConfigsMap;
+
+        private boolean hasNetwork;
+        private boolean hasAdvancedNetworkEnabled;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -243,6 +253,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.quorumManagedMap = createManagedMap("quorumConfigs");
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
             this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
+            this.endpointConfigsMap = new ManagedMap<EndpointQualifier, AbstractBeanDefinition>();
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -255,7 +266,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             return configBuilder.getBeanDefinition();
         }
 
-        @SuppressWarnings("checkstyle:methodlength")
+        @SuppressWarnings({"checkstyle:methodlength", "checkstyle:npathcomplexity"})
         public void handleConfig(Element element) {
             if (element != null) {
                 handleCommonBeanAttributes(element, configBuilder, parserContext);
@@ -263,6 +274,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     String nodeName = cleanNodeName(node);
                     if ("network".equals(nodeName)) {
                         handleNetwork(node);
+                    } else if ("advanced-network".equals(nodeName)) {
+                        handleAdvancedNetwork(node);
                     } else if ("group".equals(nodeName)) {
                         handleGroup(node);
                     } else if ("properties".equals(nodeName)) {
@@ -348,12 +361,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleCRDTReplication(node);
                     } else if ("pn-counter".equals(nodeName)) {
                         handlePNCounter(node);
-                    } else if ("rest-api".equals(nodeName)) {
-                        handleRestApi(node);
-                    } else if ("memcache-protocol".equals(nodeName)) {
-                        handleMemcacheProtocol(node);
                     }
                 }
+            }
+
+            if (hasNetwork && hasAdvancedNetworkEnabled) {
+                throw new InvalidConfigurationException("Ambiguous configuration: cannot include both <network> and "
+                        + "an enabled <advanced-network> element. Configure network using one of <network> or "
+                        + "<advanced-network enabled=\"true\">.");
             }
         }
 
@@ -562,6 +577,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleNetwork(Node node) {
+            hasNetwork = true;
             BeanDefinitionBuilder networkConfigBuilder = createBeanBuilder(NetworkConfig.class);
             AbstractBeanDefinition beanDefinition = networkConfigBuilder.getBeanDefinition();
             fillAttributeValues(node, networkConfigBuilder);
@@ -585,9 +601,164 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMemberAddressProvider(child, networkConfigBuilder);
                 } else if ("failure-detector".equals(nodeName)) {
                     handleFailureDetector(child, networkConfigBuilder);
+                } else if ("rest-api".equals(nodeName)) {
+                    handleRestApi(child, networkConfigBuilder);
+                } else if ("memcache-protocol".equals(nodeName)) {
+                    handleMemcacheProtocol(child, networkConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
+        }
+
+        void handleAdvancedNetwork(Node node) {
+            BeanDefinitionBuilder advNetworkConfigBuilder = createBeanBuilder(AdvancedNetworkConfig.class);
+            AbstractBeanDefinition beanDefinition = advNetworkConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, advNetworkConfigBuilder);
+            String enabled = getAttribute(node, "enabled");
+            if (getBooleanValue(enabled)) {
+                hasAdvancedNetworkEnabled = true;
+            }
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("join".equals(nodeName)) {
+                    handleJoin(child, advNetworkConfigBuilder);
+                } else if ("member-address-provider".equals(nodeName)) {
+                    handleMemberAddressProvider(child, advNetworkConfigBuilder);
+                } else if ("failure-detector".equals(nodeName)) {
+                    handleFailureDetector(child, advNetworkConfigBuilder);
+                } else if ("wan-endpoint-config".equals(nodeName)) {
+                    handleWanEndpointConfig(child);
+                } else if ("member-server-socket-endpoint-config".equals(nodeName)) {
+                    handleMemberServerSocketEndpointConfig(child);
+                } else if ("client-server-socket-endpoint-config".equals(nodeName)) {
+                    handleClientServerSocketEndpointConfig(child);
+                } else if ("wan-server-socket-endpoint-config".equals(nodeName)) {
+                    handleWanServerSocketEndpointConfig(child);
+                } else if ("rest-server-socket-endpoint-config".equals(nodeName)) {
+                    handleRestServerSocketEndpointConfig(child);
+                } else if ("memcache-server-socket-endpoint-config".equals(nodeName)) {
+                    handleMemcacheServerSocketEndpointConfig(child);
+                }
+            }
+            advNetworkConfigBuilder.addPropertyValue("endpointConfigs", endpointConfigsMap);
+            configBuilder.addPropertyValue("advancedNetworkConfig", beanDefinition);
+        }
+
+        void handleWanEndpointConfig(Node node) {
+            BeanDefinitionBuilder endpointConfigBuilder = createBeanBuilder(EndpointConfig.class);
+            handleEndpointConfig(node, ProtocolType.WAN, endpointConfigBuilder);
+        }
+
+        void handleEndpointConfig(Node node, ProtocolType type, BeanDefinitionBuilder endpointConfigBuilder) {
+            AbstractBeanDefinition beanDefinition = endpointConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, endpointConfigBuilder);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("outbound-ports".equals(nodeName)) {
+                    handleOutboundPorts(child, endpointConfigBuilder);
+                } else if ("interfaces".equals(nodeName)) {
+                    handleInterfaces(child, endpointConfigBuilder);
+                } else if ("symmetric-encryption".equals(nodeName)) {
+                    handleSymmetricEncryption(child, endpointConfigBuilder);
+                } else if ("ssl".equals(nodeName)) {
+                    handleSSLConfig(child, endpointConfigBuilder);
+                } else if ("socket-interceptor".equals(nodeName)) {
+                    handleSocketInterceptorConfig(child, endpointConfigBuilder);
+                } else if ("socket-options".equals(nodeName)) {
+                    handleEndpointSocketOptions(child, endpointConfigBuilder);
+                }
+            }
+            endpointConfigsMap.put(createEndpointQualifier(type, node), beanDefinition);
+        }
+
+        void handleMemberServerSocketEndpointConfig(Node node) {
+            BeanDefinitionBuilder endpointConfigBuilder = createBeanBuilder(ServerSocketEndpointConfig.class);
+            handleServerSocketEndpointConfig(node, ProtocolType.MEMBER, endpointConfigBuilder);
+        }
+
+        void handleClientServerSocketEndpointConfig(Node node) {
+            BeanDefinitionBuilder endpointConfigBuilder = createBeanBuilder(ServerSocketEndpointConfig.class);
+            handleServerSocketEndpointConfig(node, ProtocolType.CLIENT, endpointConfigBuilder);
+        }
+
+        void handleWanServerSocketEndpointConfig(Node node) {
+            BeanDefinitionBuilder endpointConfigBuilder = createBeanBuilder(ServerSocketEndpointConfig.class);
+            handleServerSocketEndpointConfig(node, ProtocolType.WAN, endpointConfigBuilder);
+        }
+
+        void handleRestServerSocketEndpointConfig(Node node) {
+            BeanDefinitionBuilder endpointConfigBuilder = createBeanBuilder(RestServerEndpointConfig.class);
+            handleServerSocketEndpointConfig(node, ProtocolType.REST, endpointConfigBuilder);
+
+            ManagedSet<RestEndpointGroup> groupSet = new ManagedSet<RestEndpointGroup>();
+            for (RestEndpointGroup group: RestEndpointGroup.values()) {
+                if (group.isEnabledByDefault()) {
+                    groupSet.add(group);
+                }
+            }
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("endpoint-groups".equals(nodeName)) {
+                    handleRestEndpointGroup(node, endpointConfigBuilder, groupSet);
+                }
+            }
+        }
+
+        void handleMemcacheServerSocketEndpointConfig(Node node) {
+            BeanDefinitionBuilder endpointConfigBuilder = createBeanBuilder(ServerSocketEndpointConfig.class);
+            handleServerSocketEndpointConfig(node, ProtocolType.MEMCACHE, endpointConfigBuilder);
+        }
+
+        void handleServerSocketEndpointConfig(Node node, ProtocolType type, BeanDefinitionBuilder endpointBuilder) {
+            AbstractBeanDefinition beanDefinition = endpointBuilder.getBeanDefinition();
+            fillAttributeValues(node, endpointBuilder);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("outbound-ports".equals(nodeName)) {
+                    handleOutboundPorts(child, endpointBuilder);
+                } else if ("interfaces".equals(nodeName)) {
+                    handleInterfaces(child, endpointBuilder);
+                } else if ("symmetric-encryption".equals(nodeName)) {
+                    handleSymmetricEncryption(child, endpointBuilder);
+                } else if ("ssl".equals(nodeName)) {
+                    handleSSLConfig(child, endpointBuilder);
+                } else if ("socket-interceptor".equals(nodeName)) {
+                    handleSocketInterceptorConfig(child, endpointBuilder);
+                } else if ("socket-options".equals(nodeName)) {
+                    handleEndpointSocketOptions(child, endpointBuilder);
+                }
+            }
+            endpointConfigsMap.put(createEndpointQualifier(type, node), beanDefinition);
+        }
+
+        void handleEndpointSocketOptions(Node node, BeanDefinitionBuilder endpointConfigBuilder) {
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                String textContent = getTextContent(child);
+                if ("buffer-direct".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketBufferDirect",
+                            getBooleanValue(textContent));
+                } else if ("tcp-no-delay".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketTcpNoDelay",
+                            getBooleanValue(textContent));
+                } else if ("keep-alive".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketKeepAlive",
+                            getBooleanValue(textContent));
+                } else if ("connect-timeout-seconds".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketConnectTimeoutSeconds",
+                            getIntegerValue("socketConnectTimeoutSeconds", textContent));
+                } else if ("send-buffer-size-kb".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketSendBufferSizeKb",
+                            getIntegerValue("socketSendBufferSizeKb", textContent));
+                } else if ("receive-buffer-size-kb".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketRcvBufferSizeKb",
+                            getIntegerValue("socketRcvBufferSizeKb", textContent));
+                } else if ("linger-seconds".equals(nodeName)) {
+                    endpointConfigBuilder.addPropertyValue("socketLingerSeconds",
+                            getIntegerValue("socketLingerSeconds", textContent));
+                }
+            }
         }
 
         public void handleGroup(Node node) {
@@ -1821,7 +1992,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
         }
 
-        private void handleRestApi(Node node) {
+        private void handleRestApi(Node node, BeanDefinitionBuilder networkConfigBuilder) {
             BeanDefinitionBuilder restApiConfigBuilder = createBeanBuilder(RestApiConfig.class);
             AbstractBeanDefinition beanDefinition = restApiConfigBuilder.getBeanDefinition();
             fillAttributeValues(node, restApiConfigBuilder);
@@ -1831,6 +2002,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     groupSet.add(group);
                 }
             }
+            handleRestEndpointGroup(node, restApiConfigBuilder, groupSet);
+            networkConfigBuilder.addPropertyValue("restApiConfig", beanDefinition);
+        }
+
+        private void handleRestEndpointGroup(Node node, BeanDefinitionBuilder builder,
+                                             ManagedSet<RestEndpointGroup> groupSet) {
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("endpoint-group".equals(nodeName)) {
@@ -1853,15 +2030,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                 }
             }
-            restApiConfigBuilder.addPropertyValue("enabledGroups", groupSet);
-            configBuilder.addPropertyValue("restApiConfig", beanDefinition);
+            builder.addPropertyValue("enabledGroups", groupSet);
         }
 
-        private void handleMemcacheProtocol(Node node) {
+        private void handleMemcacheProtocol(Node node, BeanDefinitionBuilder networkConfigBuilder) {
             BeanDefinitionBuilder memcacheProtocolConfigBuilder = createBeanBuilder(MemcacheProtocolConfig.class);
             AbstractBeanDefinition beanDefinition = memcacheProtocolConfigBuilder.getBeanDefinition();
             fillAttributeValues(node, memcacheProtocolConfigBuilder);
-            configBuilder.addPropertyValue("memcacheProtocolConfig", beanDefinition);
+            networkConfigBuilder.addPropertyValue("memcacheProtocolConfig", beanDefinition);
+        }
+
+        // construct the endpoint qualifier corresponding to an
+        // endpoint-config or server-socket-endpoint-config node
+        private EndpointQualifier createEndpointQualifier(ProtocolType type, Node node) {
+            return EndpointQualifier.resolve(type, getAttribute(node, "name"));
         }
     }
 }

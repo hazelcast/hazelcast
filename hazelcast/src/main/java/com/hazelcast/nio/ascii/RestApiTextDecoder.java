@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio.ascii;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
@@ -27,6 +24,9 @@ import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @PrivateApi
 public class RestApiTextDecoder extends TextDecoder {
@@ -48,7 +48,7 @@ public class RestApiTextDecoder extends TextDecoder {
     }
 
     private static RestApiFilter createFilter(TcpIpConnection connection) {
-        IOService ioService = connection.getConnectionManager().getIoService();
+        IOService ioService = connection.getEndpointManager().getNetworkingService().getIoService();
         return new RestApiFilter(ioService.getRestApiConfig() , TEXT_PARSERS);
     }
 }

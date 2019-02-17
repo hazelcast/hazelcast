@@ -20,38 +20,47 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.version.MemberVersion;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Map;
+
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.INHERITANCE;
+import static java.util.Collections.singletonMap;
 
 /**
  * Client side specific Member implementation.
  *
  * <p>Caution: This class is required by protocol encoder/decoder which are on the Hazelcast module.
  * So this implementation also stays in the same module, although it is totally client side specific.</p>
+ *
+ * This class is marked as serializable by convention as it implements interface {@link Member} which
+ * is {@link DataSerializable} and not {@code IdentifiedDataSerializable}. Actual serialization
+ * in client protocol communication is performed by a dedicated {@code MemberCodec}.
  */
-@BinaryInterface
+@SerializableByConvention(INHERITANCE)
 public final class MemberImpl extends AbstractMember implements Member {
 
     public MemberImpl() {
     }
 
     public MemberImpl(Address address, MemberVersion version) {
-        super(address, version, null, null, false);
+        super(singletonMap(MEMBER, address), version, null, null, false);
     }
 
     public MemberImpl(Address address, MemberVersion version, String uuid) {
-        super(address, version, uuid, null, false);
+        super(singletonMap(MEMBER, address), version, uuid, null, false);
     }
 
     public MemberImpl(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
-        super(address, MemberVersion.UNKNOWN, uuid, attributes, liteMember);
+        super(singletonMap(MEMBER, address), MemberVersion.UNKNOWN, uuid, attributes, liteMember);
     }
 
     public MemberImpl(Address address, MemberVersion version, String uuid, Map<String, Object> attributes, boolean liteMember) {
-        super(address, version, uuid, attributes, liteMember);
+        super(singletonMap(MEMBER, address), version, uuid, attributes, liteMember);
     }
 
     public MemberImpl(AbstractMember member) {

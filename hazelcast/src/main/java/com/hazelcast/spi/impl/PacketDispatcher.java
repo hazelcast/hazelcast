@@ -17,6 +17,8 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.function.Consumer;
 
@@ -34,7 +36,6 @@ public final class PacketDispatcher implements Consumer<Packet> {
     private final Consumer<Packet> eventService;
     private final Consumer<Packet> operationExecutor;
     private final Consumer<Packet> jetService;
-    private final Consumer<Packet> connectionManager;
     private final Consumer<Packet> responseHandler;
     private final Consumer<Packet> invocationMonitor;
 
@@ -43,13 +44,11 @@ public final class PacketDispatcher implements Consumer<Packet> {
                             Consumer<Packet> responseHandler,
                             Consumer<Packet> invocationMonitor,
                             Consumer<Packet> eventService,
-                            Consumer<Packet> connectionManager,
                             Consumer<Packet> jetService) {
         this.logger = logger;
         this.responseHandler = responseHandler;
         this.eventService = eventService;
         this.invocationMonitor = invocationMonitor;
-        this.connectionManager = connectionManager;
         this.operationExecutor = operationExecutor;
         this.jetService = jetService;
     }
@@ -71,7 +70,10 @@ public final class PacketDispatcher implements Consumer<Packet> {
                     eventService.accept(packet);
                     break;
                 case BIND:
-                    connectionManager.accept(packet);
+                case EXTENDED_BIND:
+                    Connection connection = packet.getConn();
+                    EndpointManager endpointManager = connection.getEndpointManager();
+                    endpointManager.accept(packet);
                     break;
                 case JET:
                     jetService.accept(packet);

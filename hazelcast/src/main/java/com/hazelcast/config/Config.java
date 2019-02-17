@@ -135,6 +135,9 @@ public class Config {
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
 
+    // @since 3.12
+    private AdvancedNetworkConfig advancedNetworkConfig = new AdvancedNetworkConfig();
+
     private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
@@ -160,10 +163,6 @@ public class Config {
     private UserCodeDeploymentConfig userCodeDeploymentConfig = new UserCodeDeploymentConfig();
 
     private CRDTReplicationConfig crdtReplicationConfig = new CRDTReplicationConfig();
-
-    private MemcacheProtocolConfig memcacheProtocolConfig;
-
-    private RestApiConfig restApiConfig;
 
     private String licenseKey;
 
@@ -355,6 +354,7 @@ public class Config {
         return this;
     }
 
+    // TODO (TK) : Inspect usages of NetworkConfig to replace where needed with {@link Config#getActiveMemberNetworkConfig()}
     /**
      * Returns the network configuration for this hazelcast instance. The
      * network configuration defines how a member will interact with other
@@ -3445,21 +3445,12 @@ public class Config {
         return this;
     }
 
-    public RestApiConfig getRestApiConfig() {
-        return restApiConfig;
+    public AdvancedNetworkConfig getAdvancedNetworkConfig() {
+        return advancedNetworkConfig;
     }
 
-    public Config setRestApiConfig(RestApiConfig restApiConfig) {
-        this.restApiConfig = restApiConfig;
-        return this;
-    }
-
-    public MemcacheProtocolConfig getMemcacheProtocolConfig() {
-        return memcacheProtocolConfig;
-    }
-
-    public Config setMemcacheProtocolConfig(MemcacheProtocolConfig memcacheProtocolConfig) {
-        this.memcacheProtocolConfig = memcacheProtocolConfig;
+    public Config setAdvancedNetworkConfig(AdvancedNetworkConfig advancedNetworkConfig) {
+        this.advancedNetworkConfig = advancedNetworkConfig;
         return this;
     }
 
@@ -3489,8 +3480,7 @@ public class Config {
                 + ", securityConfig=" + securityConfig
                 + ", liteMember=" + liteMember
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
-                + ", restApiConfig=" + restApiConfig
-                + ", memcacheProtocolConfig=" + memcacheProtocolConfig
+                + ", advancedNetworkConfig=" + advancedNetworkConfig
                 + '}';
     }
 }

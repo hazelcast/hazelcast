@@ -16,12 +16,15 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.NetworkingFactory;
 import com.hazelcast.nio.tcp.MockIOService;
-import com.hazelcast.nio.tcp.PlainChannelInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
+import com.hazelcast.nio.tcp.UnifiedChannelInitializer;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
@@ -31,7 +34,7 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
 public class SelectNow_NioNetworkingFactory implements NetworkingFactory {
 
     @Override
-    public NioNetworking create(MockIOService ioService, MetricsRegistry metricsRegistry) {
+    public NioNetworking create(final MockIOService ioService, MetricsRegistry metricsRegistry) {
         LoggingService loggingService = ioService.loggingService;
         HazelcastProperties properties = ioService.properties();
         return new NioNetworking(
@@ -45,7 +48,12 @@ public class SelectNow_NioNetworkingFactory implements NetworkingFactory {
                         .inputThreadCount(properties.getInteger(IO_INPUT_THREAD_COUNT))
                         .outputThreadCount(properties.getInteger(IO_OUTPUT_THREAD_COUNT))
                         .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
-                        .channelInitializer(new PlainChannelInitializer(ioService))
+                        .channelInitializerProvider(new ChannelInitializerProvider() {
+                            @Override
+                            public ChannelInitializer provide(EndpointQualifier qualifier) {
+                                return new UnifiedChannelInitializer(ioService);
+                            }
+                        })
                         .selectorMode(SelectorMode.SELECT_NOW));
     }
 }

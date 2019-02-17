@@ -24,6 +24,7 @@ import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.Map;
 
 public class SimpleMemberImpl implements Member {
@@ -54,6 +55,11 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
+    public Map<EndpointQualifier, Address> getAddressMap() {
+        return Collections.singletonMap(EndpointQualifier.MEMBER, new Address(address));
+    }
+
+    @Override
     public boolean localMember() {
         return false;
     }
@@ -65,6 +71,11 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public InetSocketAddress getSocketAddress() {
+        return address;
+    }
+
+    @Override
+    public InetSocketAddress getSocketAddress(EndpointQualifier qualifier) {
         return address;
     }
 

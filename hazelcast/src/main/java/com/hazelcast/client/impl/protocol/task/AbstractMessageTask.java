@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEndpointManager;
-import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.StubAuthenticationException;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
@@ -56,7 +56,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected final NodeEngineImpl nodeEngine;
     protected final InternalSerializationService serializationService;
     protected final ILogger logger;
-    protected final ClientEngineImpl clientEngine;
+    protected final ClientEngine clientEngine;
     protected P parameters;
     final ClientEndpointManager endpointManager;
     private final Node node;

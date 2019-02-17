@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -41,12 +41,13 @@ import static com.hazelcast.spi.properties.GroupProperty.SOCKET_SEND_BUFFER_SIZE
  * channels. It will deal with the exchange of protocols and based on that it
  * will set up the appropriate handlers in the pipeline.
  */
-public class PlainChannelInitializer implements ChannelInitializer {
+public class UnifiedChannelInitializer
+        implements ChannelInitializer {
 
     private final IOService ioService;
     private final HazelcastProperties props;
 
-    public PlainChannelInitializer(IOService ioService) {
+    public UnifiedChannelInitializer(IOService ioService) {
         this.props = ioService.properties();
         this.ioService = ioService;
     }
@@ -61,8 +62,8 @@ public class PlainChannelInitializer implements ChannelInitializer {
                 .setOption(SO_RCVBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE)
                 .setOption(SO_LINGER, props.getSeconds(SOCKET_LINGER_SECONDS));
 
-        ProtocolEncoder encoder = new ProtocolEncoder(ioService);
-        ProtocolDecoder decoder = new ProtocolDecoder(ioService, encoder);
+        UnifiedProtocolEncoder encoder = new UnifiedProtocolEncoder(ioService);
+        UnifiedProtocolDecoder decoder = new UnifiedProtocolDecoder(ioService, encoder);
 
         channel.outboundPipeline().addLast(encoder);
         channel.inboundPipeline().addLast(decoder);

@@ -118,7 +118,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     // when partitionId = -1, it is generic
     // when partitionId = -2, it is ad hoc
     // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
-    // and therefor the {@link OperationRunner#currentTask()} always returns null
+    // and therefore the {@link OperationRunner#currentTask()} always returns null
     OperationRunnerImpl(OperationServiceImpl operationService, int partitionId, int genericId, Counter failedBackupsCounter) {
         super(partitionId);
         this.genericId = genericId;
@@ -417,7 +417,8 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet);
-            outboundResponseHandler.send(caller, new ErrorResponse(throwable, callId, packet.isUrgent()));
+            outboundResponseHandler.send(connection.getEndpointManager(), caller,
+                    new ErrorResponse(throwable, callId, packet.isUrgent()));
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {

@@ -16,11 +16,11 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.nio.NetworkingService;
+import com.hazelcast.nio.tcp.FirewallingNetworkingService;
 
-import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 
 /**
@@ -30,8 +30,9 @@ import java.util.Collections;
 public class FirewallingNodeContext extends DefaultNodeContext {
 
     @Override
-    public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-        ConnectionManager connectionManager = super.createConnectionManager(node, serverSocketChannel);
-        return new FirewallingConnectionManager(connectionManager, Collections.<Address>emptySet());
+    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry) {
+        NetworkingService networkingService = super.createNetworkingService(node, registry);
+        return new FirewallingNetworkingService(networkingService, Collections.<Address>emptySet());
     }
+
 }

@@ -45,6 +45,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.F_ID;
 import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
@@ -79,7 +80,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledGlobally() throws InterruptedException, TimeoutException {
         setup(true);
 
-        dropOperationsBetween(instance1, instance2, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
         int partitionId = getPartitionId(instance1);
 
         InternalOperationService operationService = getNodeEngineImpl(instance1).getOperationService();
@@ -97,7 +98,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     public void partitionInvocation_shouldFailOnBackupTimeout_whenConfigurationEnabledForInvocation() throws InterruptedException, TimeoutException {
         setup(false);
 
-        dropOperationsBetween(instance1, instance2, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
         int partitionId = getPartitionId(instance1);
 
         InternalOperationService operationService = getNodeEngineImpl(instance1).getOperationService();
@@ -169,8 +170,8 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     public void transaction_shouldFail_whenBackupTimeoutOccurs() {
         setup(true);
 
-        dropOperationsBetween(instance1, instance2, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
-        dropOperationsBetween(instance2, instance1, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
+        dropOperationsBetween(instance2, instance1, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
 
         String name = randomMapName();
         String key1 = generateKeyOwnedBy(instance1);

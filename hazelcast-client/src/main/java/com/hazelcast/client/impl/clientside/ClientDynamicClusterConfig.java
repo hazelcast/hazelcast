@@ -49,6 +49,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
@@ -70,7 +71,6 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
-import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -82,7 +82,6 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
@@ -575,6 +574,16 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setNetworkConfig(NetworkConfig networkConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public AdvancedNetworkConfig getAdvancedNetworkConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setAdvancedNetworkConfig(AdvancedNetworkConfig advancedNetworkConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -1226,26 +1235,6 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setPNCounterConfigs(Map<String, PNCounterConfig> pnCounterConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public RestApiConfig getRestApiConfig() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setRestApiConfig(RestApiConfig restApiConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public MemcacheProtocolConfig getMemcacheProtocolConfig() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setMemcacheProtocolConfig(MemcacheProtocolConfig memcacheProtocolConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

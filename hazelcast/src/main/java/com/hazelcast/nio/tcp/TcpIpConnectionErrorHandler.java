@@ -32,9 +32,9 @@ public class TcpIpConnectionErrorHandler {
     private int faults;
     private long lastFaultTime;
 
-    public TcpIpConnectionErrorHandler(TcpIpConnectionManager connectionManager, Address endPoint) {
+    TcpIpConnectionErrorHandler(TcpIpEndpointManager endpointManager, Address endPoint) {
         this.endPoint = endPoint;
-        this.ioService = connectionManager.getIoService();
+        this.ioService = endpointManager.getNetworkingService().getIoService();
         this.minInterval = ioService.getConnectionMonitorInterval();
         this.maxFaults = ioService.getConnectionMonitorMaxFaults();
         this.logger = ioService.getLoggingService().getLogger(getClass());

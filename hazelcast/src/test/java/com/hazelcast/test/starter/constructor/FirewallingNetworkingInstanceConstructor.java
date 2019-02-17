@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.constructor;
 
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
 import java.lang.reflect.Constructor;
@@ -25,21 +25,21 @@ import java.util.Set;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.nio.tcp.FirewallingConnectionManager"})
-public class FirewallingConnectionManagerConstructor extends AbstractStarterObjectConstructor {
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.nio.tcp.FirewallingNetworkingService"})
+public class FirewallingNetworkingInstanceConstructor extends AbstractStarterObjectConstructor {
 
-    public FirewallingConnectionManagerConstructor(Class<?> targetClass) {
+    public FirewallingNetworkingInstanceConstructor(Class<?> targetClass) {
         super(targetClass);
     }
 
     @Override
     Object createNew0(Object delegate) throws Exception {
-        // obtain reference to constructor FirewallingConnectionManager(ConnectionManager, Set<Address>)
-        Constructor<?> constructor = targetClass.getDeclaredConstructor(ConnectionManager.class, Set.class);
+        // obtain reference to constructor FirewallingNetworkingService(ConnectionManager, Set<Address>)
+        Constructor<?> constructor = targetClass.getDeclaredConstructor(NetworkingService.class, Set.class);
 
-        Object connectionManager = getFieldValueReflectively(delegate, "delegate");
+        Object networkingService = getFieldValueReflectively(delegate, "delegate");
         Set blockedAddresses = (Set) getFieldValueReflectively(delegate, "blockedAddresses");
-        Object[] args = new Object[]{connectionManager, blockedAddresses};
+        Object[] args = new Object[]{networkingService, blockedAddresses};
 
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, targetClass.getClassLoader());
         return constructor.newInstance(proxiedArgs);

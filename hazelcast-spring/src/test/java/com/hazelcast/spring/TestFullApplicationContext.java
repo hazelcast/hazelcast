@@ -1427,7 +1427,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testRestApiConfig() {
-        RestApiConfig restApiConfig = config.getRestApiConfig();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         assertNotNull(restApiConfig);
         assertFalse(restApiConfig.isEnabled());
         for (RestEndpointGroup group : RestEndpointGroup.values()) {
@@ -1437,7 +1437,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testMemcacheProtocolConfig() {
-        MemcacheProtocolConfig memcacheProtocolConfig = config.getMemcacheProtocolConfig();
+        MemcacheProtocolConfig memcacheProtocolConfig = config.getNetworkConfig().getMemcacheProtocolConfig();
         assertNotNull(memcacheProtocolConfig);
         assertTrue(memcacheProtocolConfig.isEnabled());
     }

@@ -149,7 +149,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.backpressureRegulator = new BackpressureRegulator(
                 node.getProperties(), node.getLogger(BackpressureRegulator.class));
 
-        this.outboundResponseHandler = new OutboundResponseHandler(thisAddress, serializationService, node,
+        this.outboundResponseHandler = new OutboundResponseHandler(thisAddress, serializationService,
                 node.getLogger(OutboundResponseHandler.class));
 
         this.invocationRegistry = new InvocationRegistry(
@@ -459,7 +459,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         logger.finest("Starting OperationService");
 
         initInvocationContext();
-
         invocationMonitor.start();
         operationExecutor.start();
         inboundResponseHandlerSupplier.start();
@@ -471,7 +470,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR),
                 nodeEngine.getClusterService().getClusterClock(),
                 nodeEngine.getClusterService(),
-                node.connectionManager,
+                node.networkingService,
                 node.nodeEngine.getExecutionService(),
                 nodeEngine.getProperties().getMillis(OPERATION_CALL_TIMEOUT_MILLIS),
                 invocationRegistry,
@@ -485,7 +484,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 retryCount,
                 serializationService,
                 nodeEngine.getThisAddress(),
-                outboundOperationHandler);
+                outboundOperationHandler,
+                node.getEndpointManager());
     }
 
     /**

@@ -61,6 +61,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.cluster.impl.MemberMap.SINGLETON_MEMBER_LIST_VERSION;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.CANNOT_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
@@ -531,7 +532,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            Connection conn = node.connectionManager.getConnection(currentMaster);
+            Connection conn = node.getEndpointManager(MEMBER).getConnection(currentMaster);
             if (conn != null && conn.isAlive()) {
                 logger.info(format("Ignoring master response %s from %s since this node has an active master %s",
                         masterAddress, callerAddress, currentMaster));
@@ -550,7 +551,7 @@ public class ClusterJoinManager {
 
     private void setMasterAndJoin(Address masterAddress) {
         clusterService.setMasterAddress(masterAddress);
-        node.connectionManager.getOrConnect(masterAddress);
+        node.getEndpointManager(MEMBER).getOrConnect(masterAddress);
         if (!sendJoinRequest(masterAddress, true)) {
             logger.warning("Could not create connection to possible master " + masterAddress);
         }
@@ -566,7 +567,7 @@ public class ClusterJoinManager {
         checkNotNull(toAddress, "No endpoint is specified!");
 
         BuildInfo buildInfo = node.getBuildInfo();
-        final Address thisAddress = node.getThisAddress();
+        Address thisAddress = node.getThisAddress();
         JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), node.getVersion(),
                 thisAddress, clusterService.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
         return nodeEngine.getOperationService().send(new WhoisMasterOp(joinMessage), toAddress);
@@ -627,6 +628,7 @@ public class ClusterJoinManager {
     }
 
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
+        // todo check relationship between Connection and joinMessage.getAddress
         Address target = joinMessage.getAddress();
         MemberImpl member = clusterService.getMember(target);
         if (member == null) {
@@ -666,12 +668,12 @@ public class ClusterJoinManager {
             logger.warning(msg);
 
             clusterService.suspectMember(member, msg, false);
-            Connection existing = node.connectionManager.getConnection(target);
+            Connection existing = node.getEndpointManager(MEMBER).getConnection(target);
             if (existing != connection) {
                 if (existing != null) {
                     existing.close(msg, null);
                 }
-                node.connectionManager.registerConnection(target, connection);
+                node.getEndpointManager(MEMBER).registerConnection(target, connection);
             }
         }
         return true;

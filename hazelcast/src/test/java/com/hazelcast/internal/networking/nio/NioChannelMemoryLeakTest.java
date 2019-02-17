@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.TcpIpNetworkingService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -54,8 +54,8 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
         config.setProperty(MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "1");
         config.setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "1");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
-        final NioNetworking networking = (NioNetworking) connectionManager.getNetworking();
+        TcpIpNetworkingService networkingService = (TcpIpNetworkingService) getNode(instance).getNetworkingService();
+        final NioNetworking networking = (NioNetworking) networkingService.getNetworking();
         sleepSeconds(2);
         assertTrueEventually(new AssertTask() {
             @Override

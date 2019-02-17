@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
@@ -39,8 +40,9 @@ final class TargetInvocation extends Invocation<Address> {
                      int tryCount,
                      long tryPauseMillis,
                      long callTimeoutMillis,
-                     boolean deserialize) {
-        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+                     boolean deserialize,
+                     EndpointManager endpointManager) {
+        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, endpointManager);
         this.target = target;
     }
 
@@ -51,7 +53,7 @@ final class TargetInvocation extends Invocation<Address> {
                      long tryPauseMillis,
                      long callTimeoutMillis,
                      boolean deserialize) {
-        this(context, op, target, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+        this(context, op, target, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, null);
     }
 
     @Override

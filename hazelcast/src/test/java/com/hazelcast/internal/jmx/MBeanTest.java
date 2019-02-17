@@ -80,7 +80,7 @@ public class MBeanTest extends HazelcastTestSupport {
 
     @Test
     public void testConnection() throws Exception {
-        holder.assertMBeanExistEventually("HazelcastInstance.ConnectionManager", holder.getHz().getName());
+        holder.assertMBeanExistEventually("HazelcastInstance.NetworkingService", holder.getHz().getName());
     }
 
     @Test

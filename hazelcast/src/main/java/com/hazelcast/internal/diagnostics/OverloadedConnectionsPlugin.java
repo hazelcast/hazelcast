@@ -19,10 +19,10 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.AggregateEndpointManager;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -32,14 +32,13 @@ import com.hazelcast.util.ItemCounter;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Set;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.lang.Math.min;
-import static java.util.Collections.emptySet;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -118,7 +117,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     public void run(DiagnosticsLogWriter writer) {
         writer.startSection("OverloadedConnections");
 
-        Set<TcpIpConnection> connections = getTcpIpConnections();
+        Collection<TcpIpConnection> connections = getTcpIpConnections();
         for (TcpIpConnection connection : connections) {
             clear();
             scan(writer, connection, false);
@@ -130,13 +129,10 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
-    private Set<TcpIpConnection> getTcpIpConnections() {
-        ConnectionManager connectionManager = nodeEngine.getNode().getConnectionManager();
-        if (connectionManager instanceof TcpIpConnectionManager) {
-            return ((TcpIpConnectionManager) connectionManager).getActiveConnections();
-        } else {
-            return emptySet();
-        }
+    private Collection<TcpIpConnection> getTcpIpConnections() {
+        NetworkingService networkingService = nodeEngine.getNode().getNetworkingService();
+        AggregateEndpointManager endpointManager = networkingService.getAggregateEndpointManager();
+        return endpointManager.getActiveConnections();
     }
 
     private void scan(DiagnosticsLogWriter writer, TcpIpConnection connection, boolean priority) {

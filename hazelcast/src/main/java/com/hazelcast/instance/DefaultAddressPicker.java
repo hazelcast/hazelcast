@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -43,13 +43,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.instance.ServerSocketHelper.createServerSocketChannel;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-class DefaultAddressPicker extends AbstractAddressPicker {
+class DefaultAddressPicker
+        implements AddressPicker {
 
     /**
      * See https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html
@@ -61,17 +64,46 @@ class DefaultAddressPicker extends AbstractAddressPicker {
      */
     static final String PREFER_IPV6_ADDRESSES = "java.net.preferIPv6Addresses";
 
+    private final ILogger logger;
+
     private final HazelcastProperties hazelcastProperties;
+
     private final Config config;
+    private final InterfacesConfig interfacesConfig;
+    private final TcpIpConfig tcpIpConfig;
+    private final String publicAddressConfig;
+    private final EndpointQualifier endpointQualifier;
+    private final boolean isReuseAddress;
+    private final boolean isPortAutoIncrement;
+    private final int port;
+    private final int portCount;
 
     private HostnameResolver hostnameResolver = new InetAddressHostnameResolver();
     private Address publicAddress;
     private Address bindAddress;
+    private ServerSocketChannel serverSocketChannel;
 
     DefaultAddressPicker(Config config, ILogger logger) {
-        super(config.getNetworkConfig(), logger);
-        this.config = config;
+        this(config, null, config.getNetworkConfig().getInterfaces(), config.getNetworkConfig().getJoin().getTcpIpConfig(),
+                config.getNetworkConfig().isReuseAddress(), config.getNetworkConfig().isPortAutoIncrement(),
+                config.getNetworkConfig().getPort(), config.getNetworkConfig().getPortCount(),
+                config.getNetworkConfig().getPublicAddress(), logger);
+    }
+
+    DefaultAddressPicker(Config config, EndpointQualifier endpointQualifier, InterfacesConfig interfacesConfig,
+                         TcpIpConfig tcpIpConfig, boolean isReuseAddress, boolean isPortAutoIncrement, int port, int portCount,
+                         String publicAddressConfig, ILogger logger) {
+        this.logger = logger;
+        this.isReuseAddress = isReuseAddress;
+        this.isPortAutoIncrement = isPortAutoIncrement;
+        this.port = port;
+        this.portCount = portCount;
+        this.endpointQualifier = endpointQualifier;
+        this.interfacesConfig = interfacesConfig;
+        this.tcpIpConfig = tcpIpConfig;
+        this.publicAddressConfig = publicAddressConfig;
         this.hazelcastProperties = new HazelcastProperties(config);
+        this.config = config;
     }
 
     @Override
@@ -89,7 +121,7 @@ class DefaultAddressPicker extends AbstractAddressPicker {
                 logger.finest("Using public address the same as the bind address: " + publicAddress);
             }
         } catch (Exception e) {
-            ServerSocketChannel serverSocketChannel = getServerSocketChannel();
+            ServerSocketChannel serverSocketChannel = getServerSocketChannel(endpointQualifier);
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();
             }
@@ -102,11 +134,14 @@ class DefaultAddressPicker extends AbstractAddressPicker {
         boolean bindAny = hazelcastProperties.getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
         AddressDefinition bindAddressDef = pickAddressDef();
 
-        int port = createServerSocketChannel(bindAddressDef.inetAddress, bindAddressDef.port, bindAny);
+        serverSocketChannel = createServerSocketChannel(logger, endpointQualifier, bindAddressDef.inetAddress,
+                bindAddressDef.port == 0 ? port : bindAddressDef.port, portCount, isPortAutoIncrement, isReuseAddress, bindAny);
+
+        int port = serverSocketChannel.socket().getLocalPort();
         bindAddress = createAddress(bindAddressDef, port);
 
-        logger.info("Picked " + bindAddress + ", using socket " + getServerSocketChannel().socket()
-                + ", bind any local is " + bindAny);
+        logger.info("Picked " + bindAddress + (endpointQualifier == null ? "" : ", for endpoint " + endpointQualifier)
+                + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
         return getPublicAddress(port);
     }
 
@@ -147,30 +182,27 @@ class DefaultAddressPicker extends AbstractAddressPicker {
                 return addressDef;
             }
         }
-        NetworkConfig networkConfig = config.getNetworkConfig();
-        if (networkConfig.getInterfaces().isEnabled()) {
+
+        if (interfacesConfig.isEnabled()) {
             String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
                     + "Interface matching must be either disabled or updated in the hazelcast.xml config file.";
             logger.severe(msg);
             throw new RuntimeException(msg);
         }
-        if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
+        if (tcpIpConfig.isEnabled()) {
             logger.warning("Could not find a matching address to start with! Picking one of non-loopback addresses.");
         }
         return pickMatchingAddress(null);
     }
 
     private List<InterfaceDefinition> getInterfaces() {
-        NetworkConfig networkConfig = config.getNetworkConfig();
-        TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
-
         // address -> domain
         Map<String, String> addressDomainMap = createAddressToDomainMap(tcpIpConfig);
 
         // must preserve insertion order
         List<InterfaceDefinition> interfaceDefs = new ArrayList<InterfaceDefinition>();
-        if (networkConfig.getInterfaces().isEnabled()) {
-            Collection<String> configInterfaces = networkConfig.getInterfaces().getInterfaces();
+        if (interfacesConfig.isEnabled()) {
+            Collection<String> configInterfaces = interfacesConfig.getInterfaces();
             for (String configInterface : configInterfaces) {
                 if (!AddressUtil.isIpAddress(configInterface)) {
                     logger.warning("'" + configInterface + "' is not an IP address! Removing from interface list.");
@@ -196,7 +228,7 @@ class DefaultAddressPicker extends AbstractAddressPicker {
             return Collections.emptyMap();
         }
 
-        Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(config);
+        Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(tcpIpConfig);
         // LinkedHashMap is to guarantee order
         Map<String, String> addressDomainMap = createLinkedHashMap(possibleAddresses.size());
         for (String possibleAddress : possibleAddresses) {
@@ -257,7 +289,7 @@ class DefaultAddressPicker extends AbstractAddressPicker {
     private AddressDefinition getPublicAddress(int port) throws UnknownHostException {
         String address = config.getProperty("hazelcast.local.publicAddress");
         if (address == null) {
-            address = config.getNetworkConfig().getPublicAddress();
+            address = publicAddressConfig;
         }
         if (address != null) {
             address = address.trim();
@@ -373,8 +405,38 @@ class DefaultAddressPicker extends AbstractAddressPicker {
     }
 
     @Override
+    public Address getBindAddress(EndpointQualifier qualifier) {
+        return bindAddress;
+    }
+
+    @Override
     public Address getPublicAddress() {
         return publicAddress;
+    }
+
+    @Override
+    public Address getPublicAddress(EndpointQualifier qualifier) {
+        return publicAddress;
+    }
+
+    @Override
+    public ServerSocketChannel getServerSocketChannel() {
+        return getServerSocketChannel(MEMBER);
+    }
+
+    @Override
+    public ServerSocketChannel getServerSocketChannel(EndpointQualifier qualifier) {
+        return serverSocketChannel;
+    }
+
+    @Override
+    public Map<EndpointQualifier, ServerSocketChannel> getServerSocketChannels() {
+        return Collections.singletonMap(MEMBER, serverSocketChannel);
+    }
+
+    @Override
+    public Map<EndpointQualifier, Address> getPublicAddressMap() {
+        return Collections.singletonMap(MEMBER, publicAddress);
     }
 
     void setHostnameResolver(HostnameResolver hostnameResolver) {

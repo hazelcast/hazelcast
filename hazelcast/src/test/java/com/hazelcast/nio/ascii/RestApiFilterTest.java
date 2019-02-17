@@ -48,7 +48,7 @@ public class RestApiFilterTest extends RestApiConfigTestBase {
     @Test
     public void testRestApiDisabled() throws Exception {
         Config config = new Config();
-        config.setRestApiConfig(new RestApiConfig().setEnabled(false));
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(false));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
         try {
@@ -96,7 +96,7 @@ public class RestApiFilterTest extends RestApiConfigTestBase {
     @Test
     public void testMemcacheWhenRestApiEnabled() throws Exception {
         Config config = new Config();
-        config.setRestApiConfig(new RestApiConfig().setEnabled(true));
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(true));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
         try {
@@ -121,7 +121,7 @@ public class RestApiFilterTest extends RestApiConfigTestBase {
     @Test
     public void testHttpGetForUnknownResource() throws Exception {
         Config config = new Config();
-        config.setRestApiConfig(new RestApiConfig().setEnabled(true));
+        config.getNetworkConfig().setRestApiConfig(new RestApiConfig().setEnabled(true));
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         TextProtocolClient client = new TextProtocolClient(getAddress(hz).getInetSocketAddress());
         try {

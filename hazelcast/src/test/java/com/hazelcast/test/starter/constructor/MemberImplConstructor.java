@@ -16,10 +16,12 @@
 
 package com.hazelcast.test.starter.constructor;
 
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 import com.hazelcast.version.MemberVersion;
 
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
@@ -45,21 +47,35 @@ public class MemberImplConstructor extends AbstractStarterObjectConstructor {
         Class<?> addressClass = targetClassloader.loadClass("com.hazelcast.nio.Address");
         Class<?> memberVersionClass = targetClassloader.loadClass("com.hazelcast.version.MemberVersion");
 
-        // obtain reference to constructor MemberImpl(Address address, MemberVersion version, boolean localMember,
-        //                                            String uuid, Map<String, Object> attributes, boolean liteMember)
-        Constructor<?> constructor = targetClass.getDeclaredConstructor(addressClass, memberVersionClass, Boolean.TYPE,
-                String.class, Map.class, Boolean.TYPE);
-        Object[] args = new Object[]{
-                address,
-                memberVersion,
-                localMember,
-                uuid,
-                attributes,
-                liteMember,
-        };
+        try {
+            // RU_COMPAT_3_11
+            // obtain reference to constructor MemberImpl(Address address, MemberVersion version, boolean localMember,
+            //                                            String uuid, Map<String, Object> attributes, boolean liteMember)
+            Constructor<?> constructor = targetClass
+                    .getDeclaredConstructor(addressClass, memberVersionClass, Boolean.TYPE, String.class, Map.class, Boolean.TYPE);
+            Object[] args = new Object[]{address, memberVersion, localMember, uuid, attributes, liteMember};
 
-        Object[] proxiedArgs = proxyArgumentsIfNeeded(args, targetClassloader);
-        return constructor.newInstance(proxiedArgs);
+            Object[] proxiedArgs = proxyArgumentsIfNeeded(args, targetClassloader);
+            return constructor.newInstance(proxiedArgs);
+        } catch (NoSuchMethodException e) {
+            // Since 3.12, constructor args are
+            // (Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
+            // String uuid, Map<String, Object> attributes, boolean liteMember, int memberListJoinVersion,
+            // HazelcastInstanceImpl instance)
+            Class<?> hzImplClass = targetClassloader.loadClass("com.hazelcast.instance.HazelcastInstanceImpl");
+            Constructor<?> constructor = targetClass
+                    .getDeclaredConstructor(Map.class, memberVersionClass, Boolean.TYPE, String.class, Map.class, Boolean.TYPE,
+                            Integer.TYPE, hzImplClass);
+            constructor.setAccessible(true);
+            Class<?> endpointQualifierClass =
+                    targetClassloader.loadClass("com.hazelcast.instance.EndpointQualifier");
+            Object memberEndpointQualifer = endpointQualifierClass.getDeclaredField("MEMBER").get(null);
+            Map addressMap = new HashMap();
+            addressMap.put(memberEndpointQualifer, address);
+            Object[] args = new Object[] {addressMap, memberVersion, localMember, uuid, attributes, liteMember,
+                                          MemberImpl.NA_MEMBER_LIST_JOIN_VERSION, null};
+            return constructor.newInstance(proxyArgumentsIfNeeded(args, targetClassloader));
+        }
     }
 
     private static Object getMemberVersion(Object delegate) throws Exception {

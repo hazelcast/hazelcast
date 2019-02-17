@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class ClientEndpointImpl implements ClientEndpoint {
 
-    private final ClientEngineImpl clientEngine;
+    private final ClientEngine clientEngine;
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final Connection connection;
@@ -67,7 +67,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private String clientName;
     private Map<String, String> attributes;
 
-    public ClientEndpointImpl(ClientEngineImpl clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
+    public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
         this.logger = clientEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;

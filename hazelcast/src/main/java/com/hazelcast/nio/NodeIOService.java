@@ -17,11 +17,14 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
+import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -30,6 +33,7 @@ import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -46,8 +50,12 @@ import com.hazelcast.util.AddressUtil;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.internal.config.ConfigValidator.checkAndLogPropertyDeprecated;
 import static com.hazelcast.internal.config.ConfigValidator.ensurePropertyNotConfigured;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
@@ -73,12 +81,26 @@ public class NodeIOService implements IOService {
      */
     @SuppressWarnings("deprecation")
     private static RestApiConfig initRestApiConfig(HazelcastProperties properties, Config config) {
-        RestApiConfig restApiConfig = config.getRestApiConfig();
-        if (restApiConfig != null) {
+        boolean isAdvancedNetwork = config.getAdvancedNetworkConfig().isEnabled();
+        RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
+        boolean isRestConfigPresent = isAdvancedNetwork
+                ? config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.REST) != null
+                : restApiConfig != null;
+
+        if (isRestConfigPresent) {
             // ensure the legacy Hazelcast group properties are not provided
             ensurePropertyNotConfigured(properties, GroupProperty.REST_ENABLED);
             ensurePropertyNotConfigured(properties, GroupProperty.HTTP_HEALTHCHECK_ENABLED);
-        } else {
+        }
+
+        if (isRestConfigPresent && isAdvancedNetwork) {
+            restApiConfig = new RestApiConfig();
+            restApiConfig.setEnabled(true);
+
+            RestServerEndpointConfig restServerEndpointConfig = config.getAdvancedNetworkConfig().getRestEndpointConfig();
+            restApiConfig.setEnabledGroups(restServerEndpointConfig.getEnabledGroups());
+
+        } else if (!isRestConfigPresent)  {
             restApiConfig = new RestApiConfig();
             if (checkAndLogPropertyDeprecated(properties, GroupProperty.REST_ENABLED)) {
                 restApiConfig.setEnabled(true);
@@ -89,21 +111,33 @@ public class NodeIOService implements IOService {
                 restApiConfig.enableGroups(RestEndpointGroup.HEALTH_CHECK);
             }
         }
+
         return restApiConfig;
     }
 
     @SuppressWarnings("deprecation")
     private static MemcacheProtocolConfig initMemcacheProtocolConfig(HazelcastProperties properties, Config config) {
-        MemcacheProtocolConfig memcacheProtocolConfig = config.getMemcacheProtocolConfig();
-        if (memcacheProtocolConfig != null) {
-            // ensure the legacy Hazelcast group property is not provided
+        boolean isAdvancedNetwork = config.getAdvancedNetworkConfig().isEnabled();
+        MemcacheProtocolConfig memcacheProtocolConfig = config.getNetworkConfig().getMemcacheProtocolConfig();
+        boolean isMemcacheConfigPresent = isAdvancedNetwork
+                ? config.getAdvancedNetworkConfig().getEndpointConfigs().get(MEMCACHE) != null
+                : memcacheProtocolConfig != null;
+
+        if (isMemcacheConfigPresent) {
+            // ensure the legacy Hazelcast group properties are not provided
             ensurePropertyNotConfigured(properties, GroupProperty.MEMCACHE_ENABLED);
-        } else {
+        }
+
+        if (isMemcacheConfigPresent && isAdvancedNetwork) {
+            memcacheProtocolConfig = new MemcacheProtocolConfig();
+            memcacheProtocolConfig.setEnabled(true);
+        } else if (!isMemcacheConfigPresent)  {
             memcacheProtocolConfig = new MemcacheProtocolConfig();
             if (checkAndLogPropertyDeprecated(properties, GroupProperty.MEMCACHE_ENABLED)) {
                 memcacheProtocolConfig.setEnabled(true);
             }
         }
+
         return memcacheProtocolConfig;
     }
 
@@ -133,6 +167,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public Map<EndpointQualifier, Address> getThisAddresses() {
+        return nodeEngine.getLocalMember().getAddressMap();
+    }
+
+    @Override
     public void onFatalError(Exception e) {
         String hzName = nodeEngine.getHazelcastInstance().getName();
         Thread thread = new Thread(createThreadName(hzName, "io.error.shutdown")) {
@@ -143,17 +182,35 @@ public class NodeIOService implements IOService {
         thread.start();
     }
 
-    public SocketInterceptorConfig getSocketInterceptorConfig() {
+    public SocketInterceptorConfig getSocketInterceptorConfig(EndpointQualifier endpointQualifier) {
+        final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
+        if (advancedNetworkConfig.isEnabled()) {
+            EndpointConfig config = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
+            return config != null ? config.getSocketInterceptorConfig() : null;
+        }
+
         return node.getConfig().getNetworkConfig().getSocketInterceptorConfig();
     }
 
     @Override
-    public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
+    public SymmetricEncryptionConfig getSymmetricEncryptionConfig(EndpointQualifier endpointQualifier) {
+        final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
+        if (advancedNetworkConfig.isEnabled()) {
+            EndpointConfig config = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
+            return config != null ? config.getSymmetricEncryptionConfig() : null;
+        }
+
         return node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
     }
 
     @Override
-    public SSLConfig getSSLConfig() {
+    public SSLConfig getSSLConfig(EndpointQualifier endpointQualifier) {
+        final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
+        if (advancedNetworkConfig.isEnabled()) {
+            EndpointConfig config = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
+            return config != null ? config.getSSLConfig() : null;
+        }
+
         return node.getConfig().getNetworkConfig().getSSLConfig();
     }
 
@@ -227,14 +284,14 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+    public void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) throws IOException {
         socket.getChannel().configureBlocking(true);
 
-        if (!isSocketInterceptorEnabled()) {
+        if (!isSocketInterceptorEnabled(endpointQualifier)) {
             return;
         }
 
-        MemberSocketInterceptor memberSocketInterceptor = getMemberSocketInterceptor();
+        MemberSocketInterceptor memberSocketInterceptor = getSocketInterceptor(endpointQualifier);
         if (memberSocketInterceptor == null) {
             return;
         }
@@ -247,13 +304,19 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public boolean isSocketInterceptorEnabled() {
-        final SocketInterceptorConfig socketInterceptorConfig = getSocketInterceptorConfig();
+    public boolean isSocketInterceptorEnabled(EndpointQualifier endpointQualifier) {
+        final SocketInterceptorConfig socketInterceptorConfig = getSocketInterceptorConfig(endpointQualifier);
         return socketInterceptorConfig != null && socketInterceptorConfig.isEnabled();
     }
 
     @Override
-    public int getSocketConnectTimeoutSeconds() {
+    public int getSocketConnectTimeoutSeconds(EndpointQualifier endpointQualifier) {
+        final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
+        if (advancedNetworkConfig.isEnabled()) {
+            EndpointConfig config = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
+            return config != null ? config.getSocketConnectTimeoutSeconds() : 0;
+        }
+
         return node.getProperties().getSeconds(GroupProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
     }
 
@@ -283,22 +346,32 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public MemberSocketInterceptor getMemberSocketInterceptor() {
-        return node.getNodeExtension().getMemberSocketInterceptor();
+    public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {
+        return node.getNodeExtension().getSocketInterceptor(endpointQualifier);
     }
 
     @Override
-    public InboundHandler[] createMemberInboundHandlers(TcpIpConnection connection) {
-        return node.getNodeExtension().createInboundHandlers(connection, this);
+    public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection) {
+        return node.getNodeExtension().createInboundHandlers(qualifier, connection, this);
     }
 
     @Override
-    public OutboundHandler[] createMemberOutboundHandlers(TcpIpConnection connection) {
-        return node.getNodeExtension().createOutboundHandlers(connection, this);
+    public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection) {
+        return node.getNodeExtension().createOutboundHandlers(qualifier, connection, this);
     }
 
     @Override
-    public Collection<Integer> getOutboundPorts() {
+    public Collection<Integer> getOutboundPorts(EndpointQualifier endpointQualifier) {
+        final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
+        if (advancedNetworkConfig.isEnabled()) {
+            EndpointConfig endpointConfig = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
+            final Collection<Integer> outboundPorts = endpointConfig != null
+                    ? endpointConfig.getOutboundPorts() : Collections.<Integer>emptyList();
+            final Collection<String> outboundPortDefinitions = endpointConfig != null
+                    ? endpointConfig.getOutboundPortDefinitions() : Collections.<String>emptyList();
+            return AddressUtil.getOutboundPorts(outboundPorts, outboundPortDefinitions);
+        }
+
         final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
         final Collection<Integer> outboundPorts = networkConfig.getOutboundPorts();
         final Collection<String> outboundPortDefinitions = networkConfig.getOutboundPortDefinitions();
@@ -316,7 +389,7 @@ public class NodeIOService implements IOService {
         public void run() {
             ClusterServiceImpl clusterService = node.clusterService;
             if (clusterService.getMember(endpoint) != null) {
-                node.connectionManager.getOrConnect(endpoint);
+                node.getEndpointManager(MEMBER).getOrConnect(endpoint);
             }
         }
     }

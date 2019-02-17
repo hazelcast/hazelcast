@@ -17,10 +17,12 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.SelectorMode;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -33,6 +35,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -42,6 +46,7 @@ import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
+import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -56,8 +61,8 @@ public class TcpIpAcceptor implements MetricsProvider {
     private static final long SELECT_TIMEOUT_MILLIS = SECONDS.toMillis(60);
     private static final int SELECT_IDLE_COUNT_THRESHOLD = 10;
 
-    private final ServerSocketChannel serverSocketChannel;
-    private final TcpIpConnectionManager connectionManager;
+    private final ServerSocketRegistry registry;
+    private final TcpIpNetworkingService networkingService;
     private final ILogger logger;
     private final IOService ioService;
     @Probe
@@ -78,12 +83,14 @@ public class TcpIpAcceptor implements MetricsProvider {
 
     private volatile boolean stop;
     private volatile Selector selector;
-    private SelectionKey selectionKey;
 
-    public TcpIpAcceptor(ServerSocketChannel serverSocketChannel, TcpIpConnectionManager connectionManager) {
-        this.serverSocketChannel = serverSocketChannel;
-        this.connectionManager = connectionManager;
-        this.ioService = connectionManager.getIoService();
+    private final Set<SelectionKey> selectionKeys
+            = newSetFromMap(new ConcurrentHashMap<SelectionKey, Boolean>());
+
+    TcpIpAcceptor(ServerSocketRegistry registry, TcpIpNetworkingService networkingService, IOService ioService) {
+        this.registry = registry;
+            this.networkingService = networkingService;
+        this.ioService = networkingService.getIoService();
         this.logger = ioService.getLoggingService().getLogger(getClass());
         this.acceptorThread = new AcceptorIOThread();
     }
@@ -137,13 +144,19 @@ public class TcpIpAcceptor implements MetricsProvider {
         @Override
         public void run() {
             if (logger.isFinestEnabled()) {
-                logger.finest("Starting TcpIpAcceptor on " + serverSocketChannel);
+                logger.finest("Starting TcpIpAcceptor on " + registry);
             }
 
             try {
                 selector = Selector.open();
-                serverSocketChannel.configureBlocking(false);
-                selectionKey = serverSocketChannel.register(selector, OP_ACCEPT);
+                for (ServerSocketRegistry.Pair entry : registry) {
+                    ServerSocketChannel serverSocketChannel = entry.getChannel();
+
+                    serverSocketChannel.configureBlocking(false);
+                    SelectionKey selectionKey = serverSocketChannel.register(selector, OP_ACCEPT);
+                    selectionKey.attach(entry);
+                    selectionKeys.add(selectionKey);
+                }
                 if (selectorWorkaround) {
                     acceptLoopWithSelectorFix();
                 } else {
@@ -202,11 +215,20 @@ public class TcpIpAcceptor implements MetricsProvider {
         private void rebuildSelector() throws IOException {
             selectorRecreateCount.inc();
             // cancel existing selection key, register new one on the new selector
-            selectionKey.cancel();
+            for (SelectionKey key : selectionKeys) {
+                key.cancel();
+            }
+            selectionKeys.clear();
             closeSelector();
             Selector newSelector = Selector.open();
             selector = newSelector;
-            selectionKey = serverSocketChannel.register(newSelector, OP_ACCEPT);
+            for (ServerSocketRegistry.Pair entry : registry) {
+                ServerSocketChannel serverSocketChannel = entry.getChannel();
+
+                SelectionKey selectionKey = serverSocketChannel.register(newSelector, OP_ACCEPT);
+                selectionKey.attach(entry);
+                selectionKeys.add(selectionKey);
+            }
         }
 
         private void handleSelectionKeys(Iterator<SelectionKey> it) {
@@ -217,7 +239,9 @@ public class TcpIpAcceptor implements MetricsProvider {
                 // of course it is acceptable!
                 if (sk.isValid() && sk.isAcceptable()) {
                     eventCount.inc();
-                    acceptSocket();
+                    ServerSocketRegistry.Pair attachment = (ServerSocketRegistry.Pair) sk.attachment();
+                    ServerSocketChannel serverSocketChannel = attachment.getChannel();
+                    acceptSocket(attachment.getQualifier(), serverSocketChannel);
                 }
             }
         }
@@ -238,20 +262,20 @@ public class TcpIpAcceptor implements MetricsProvider {
             }
         }
 
-        private void acceptSocket() {
+        private void acceptSocket(final EndpointQualifier qualifier, ServerSocketChannel serverSocketChannel) {
             Channel channel = null;
+            TcpIpEndpointManager endpointManager = null;
             try {
                 SocketChannel socketChannel = serverSocketChannel.accept();
+                endpointManager = (TcpIpEndpointManager) networkingService.getUnifiedOrDedicatedEndpointManager(qualifier);
 
-                // todo: problem here because setReceiveBuffer is called after
-                // the socket is accepted; so it is too late.
                 if (socketChannel != null) {
-                    channel = connectionManager.createChannel(socketChannel, false);
+                    channel = endpointManager.newChannel(socketChannel, false);
                 }
             } catch (Exception e) {
                 exceptionCount.inc();
 
-                if (e instanceof ClosedChannelException && !connectionManager.isLive()) {
+                if (e instanceof ClosedChannelException && !networkingService.isLive()) {
                     // ClosedChannelException
                     // or AsynchronousCloseException
                     // or ClosedByInterruptException
@@ -273,23 +297,24 @@ public class TcpIpAcceptor implements MetricsProvider {
                 if (logger.isFineEnabled()) {
                     logger.fine("Accepting socket connection from " + theChannel.socket().getRemoteSocketAddress());
                 }
-                if (ioService.isSocketInterceptorEnabled()) {
+                if (ioService.isSocketInterceptorEnabled(qualifier)) {
+                    final TcpIpEndpointManager finalEndpointManager = endpointManager;
                     ioService.executeAsync(new Runnable() {
                         @Override
                         public void run() {
-                            configureAndAssignSocket(theChannel);
+                            configureAndAssignSocket(finalEndpointManager, theChannel);
                         }
                     });
                 } else {
-                    configureAndAssignSocket(theChannel);
+                    configureAndAssignSocket(endpointManager, theChannel);
                 }
             }
         }
 
-        private void configureAndAssignSocket(Channel channel) {
+        private void configureAndAssignSocket(TcpIpEndpointManager endpointManager, Channel channel) {
             try {
-                ioService.interceptSocket(channel.socket(), true);
-                connectionManager.newConnection(channel, null);
+                ioService.interceptSocket(endpointManager.getEndpointQualifier(), channel.socket(), true);
+                endpointManager.newConnection(channel, null);
             } catch (Exception e) {
                 exceptionCount.inc();
                 logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);

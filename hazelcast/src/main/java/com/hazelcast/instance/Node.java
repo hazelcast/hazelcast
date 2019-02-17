@@ -16,15 +16,18 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.NoOpClientEngine;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
+import com.hazelcast.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
-import com.hazelcast.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -51,6 +54,7 @@ import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -61,7 +65,9 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
@@ -85,7 +91,6 @@ import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
 import java.lang.reflect.Constructor;
-import java.nio.channels.ServerSocketChannel;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -101,10 +106,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
-import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.config.ConfigValidator.checkAdvancedNetworkConfig;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
@@ -131,7 +138,7 @@ public class Node {
     public final DynamicConfigurationAwareConfig config;
 
     public final NodeEngineImpl nodeEngine;
-    public final ClientEngineImpl clientEngine;
+    public final ClientEngine clientEngine;
 
     public final InternalPartitionServiceImpl partitionService;
     public final ClusterServiceImpl clusterService;
@@ -140,8 +147,13 @@ public class Node {
     public final TextCommandService textCommandService;
     public final LoggingServiceImpl loggingService;
 
-    public final ConnectionManager connectionManager;
+    public final NetworkingService networkingService;
 
+    /**
+     * Member-to-member address only.
+     * When the Node is configured with multiple endpoints, this address still represents {@link ProtocolType#MEMBER}
+     * For accessing a full address-map, see {@link AddressPicker#getPublicAddressMap()}
+     */
     public final Address address;
 
     public final SecurityContext securityContext;
@@ -192,6 +204,8 @@ public class Node {
 
         String loggingType = properties.getString(LOGGING_TYPE);
         loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
+
+        checkAdvancedNetworkConfig(config);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
             addressPicker.pickAddress();
@@ -199,14 +213,22 @@ public class Node {
             throw rethrow(e);
         }
 
-        final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
+        ServerSocketRegistry serverSocketRegistry = new ServerSocketRegistry(addressPicker.getServerSocketChannels(),
+                !config.getAdvancedNetworkConfig().isEnabled());
+
         try {
             boolean liteMember = config.isLiteMember();
-            address = addressPicker.getPublicAddress();
+            address = addressPicker.getPublicAddress(MEMBER);
             nodeExtension = nodeContext.createNodeExtension(this);
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            MemberImpl localMember = new MemberImpl(address, version, true, nodeExtension.createMemberUuid(address),
-                    memberAttributes, liteMember, NA_MEMBER_LIST_JOIN_VERSION, hazelcastInstance);
+            MemberImpl localMember = new MemberImpl.Builder(addressPicker.getPublicAddressMap())
+                    .version(version)
+                    .localMember(true)
+                    .uuid(nodeExtension.createMemberUuid(address))
+                    .attributes(memberAttributes)
+                    .liteMember(liteMember)
+                    .instance(hazelcastInstance)
+                    .build();
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
 
@@ -216,17 +238,16 @@ public class Node {
 
             serializationService = nodeExtension.createSerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
-
             nodeEngine = new NodeEngineImpl(this);
             config.setConfigurationService(nodeEngine.getConfigurationService());
             config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.collectMetrics(nodeExtension);
-            healthMonitor = new HealthMonitor(this);
 
-            clientEngine = new ClientEngineImpl(this);
-            connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
-            JoinConfig joinConfig = this.config.getNetworkConfig().getJoin();
+            networkingService = nodeContext.createNetworkingService(this, serverSocketRegistry);
+            healthMonitor = new HealthMonitor(this);
+            clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
+            JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
             DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig().getAsReadOnly();
             List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                     AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(joinConfig);
@@ -234,10 +255,10 @@ public class Node {
             clusterService = new ClusterServiceImpl(this, localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             textCommandService = nodeExtension.createTextCommandService();
-            multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
+            multicastService = createMulticastService(addressPicker.getBindAddress(MEMBER), this, config, logger);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
-            closeResource(serverSocketChannel);
+            serverSocketRegistry.destroy();
             try {
                 shutdownServices(true);
             } catch (Throwable ignored) {
@@ -245,6 +266,17 @@ public class Node {
             }
             throw rethrow(e);
         }
+    }
+
+    private boolean hasClientServerSocket() {
+        if (!config.getAdvancedNetworkConfig().isEnabled()) {
+            return true;
+        }
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = config.getAdvancedNetworkConfig().getEndpointConfigs();
+        EndpointConfig clientEndpointConfig = endpointConfigs.get(CLIENT);
+
+        return clientEndpointConfig != null;
     }
 
     private static ClassLoader getConfigClassloader(Config config) {
@@ -387,8 +419,8 @@ public class Node {
         initializeListeners(config);
         hazelcastInstance.lifecycleService.fireLifecycleEvent(LifecycleState.STARTING);
         clusterService.sendLocalMembershipEvent();
-        connectionManager.start();
-        JoinConfig join = config.getNetworkConfig().getJoin();
+        networkingService.start();
+        JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         if (join.getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(multicastService,
                     createThreadName(hazelcastInstance.getName(), "MulticastThread"));
@@ -410,9 +442,9 @@ public class Node {
         nodeExtension.beforeJoin();
         join();
         int clusterSize = clusterService.getSize();
-        if (config.getNetworkConfig().isPortAutoIncrement()
-                && address.getPort() >= config.getNetworkConfig().getPort() + clusterSize) {
-            logger.warning("Config seed port is " + config.getNetworkConfig().getPort()
+        if (getActiveMemberNetworkConfig(config).isPortAutoIncrement()
+                && address.getPort() >= getActiveMemberNetworkConfig(config).getPort() + clusterSize) {
+            logger.warning("Config seed port is " + getActiveMemberNetworkConfig(config).getPort()
                     + " and cluster size is " + clusterSize + ". Some of the ports seem occupied!");
         }
         try {
@@ -524,9 +556,9 @@ public class Node {
             logger.info("Shutting down multicast service...");
             multicastService.stop();
         }
-        if (connectionManager != null) {
+        if (networkingService != null) {
             logger.info("Shutting down connection manager...");
-            connectionManager.shutdown();
+            networkingService.shutdown();
         }
 
         if (nodeEngine != null) {
@@ -660,8 +692,16 @@ public class Node {
         return textCommandService;
     }
 
-    public ConnectionManager getConnectionManager() {
-        return connectionManager;
+    public NetworkingService getNetworkingService() {
+        return networkingService;
+    }
+
+    public EndpointManager getEndpointManager() {
+        return getEndpointManager(MEMBER);
+    }
+
+    public <T extends Connection> EndpointManager<T> getEndpointManager(EndpointQualifier qualifier) {
+        return networkingService.getEndpointManager(qualifier);
     }
 
     public ClassLoader getConfigClassLoader() {
@@ -672,7 +712,7 @@ public class Node {
         return nodeEngine;
     }
 
-    public ClientEngineImpl getClientEngine() {
+    public ClientEngine getClientEngine() {
         return clientEngine;
     }
 
@@ -780,7 +820,7 @@ public class Node {
     }
 
     Joiner createJoiner() {
-        JoinConfig join = config.getNetworkConfig().getJoin();
+        JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         join.verify();
 
         if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)) {
@@ -892,4 +932,5 @@ public class Node {
                     + " The group password configuration will be removed completely in a future release.");
         }
     }
+
 }

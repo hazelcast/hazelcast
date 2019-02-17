@@ -114,7 +114,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.12.xsd\">");
         gen.open("group")
                 .node("name", config.getGroupConfig().getName())
                 .node("password", getOrMaskValue(config.getGroupConfig().getPassword()))
@@ -127,6 +127,7 @@ public class ConfigXmlGenerator {
         securityXmlGenerator(gen, config);
         wanReplicationXmlGenerator(gen, config);
         networkConfigXmlGenerator(gen, config);
+        advancedNetworkConfigXmlGenerator(gen, config);
         mapConfigXmlGenerator(gen, config);
         replicatedMapConfigXmlGenerator(gen, config);
         cacheConfigXmlGenerator(gen, config);
@@ -159,8 +160,6 @@ public class ConfigXmlGenerator {
         crdtReplicationXmlGenerator(gen, config);
         pnCounterXmlGenerator(gen, config);
         quorumXmlGenerator(gen, config);
-        restApiXmlGenerator(gen, config);
-        memcacheProtocolXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -696,6 +695,9 @@ public class ConfigXmlGenerator {
            .node("initial-publisher-state", p.getInitialPublisherState())
            .node("queue-capacity", p.getQueueCapacity())
            .appendProperties(p.getProperties());
+        if (p.getEndpoint() != null) {
+            gen.node("endpoint-qualifier", p.getEndpoint());
+        }
         wanReplicationSyncGenerator(gen, p.getWanSyncConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(p));
         discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
@@ -719,6 +721,10 @@ public class ConfigXmlGenerator {
     }
 
     private void networkConfigXmlGenerator(XmlGenerator gen, Config config) {
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            return;
+        }
+
         NetworkConfig netCfg = config.getNetworkConfig();
         gen.open("network")
                 .node("public-address", netCfg.getPublicAddress())
@@ -744,13 +750,113 @@ public class ConfigXmlGenerator {
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
 
-        interfacesConfigXmlGenerator(gen, netCfg);
-        sslConfigXmlGenerator(gen, netCfg);
-        socketInterceptorConfigXmlGenerator(gen, netCfg);
-        symmetricEncInterceptorConfigXmlGenerator(gen, netCfg);
-        memberAddressProviderConfigXmlGenerator(gen, netCfg);
-        failureDetectorConfigXmlGenerator(gen, netCfg);
+        interfacesConfigXmlGenerator(gen, netCfg.getInterfaces());
+        sslConfigXmlGenerator(gen, netCfg.getSSLConfig());
+        socketInterceptorConfigXmlGenerator(gen, netCfg.getSocketInterceptorConfig());
+        symmetricEncInterceptorConfigXmlGenerator(gen, netCfg.getSymmetricEncryptionConfig());
+        memberAddressProviderConfigXmlGenerator(gen, netCfg.getMemberAddressProviderConfig());
+        failureDetectorConfigXmlGenerator(gen, netCfg.getIcmpFailureDetectorConfig());
+        restApiXmlGenerator(gen, netCfg);
+        memcacheProtocolXmlGenerator(gen, netCfg);
         gen.close();
+    }
+
+    private void advancedNetworkConfigXmlGenerator(XmlGenerator gen, Config config) {
+        AdvancedNetworkConfig netCfg = config.getAdvancedNetworkConfig();
+        if (!netCfg.isEnabled()) {
+            return;
+        }
+
+        gen.open("advanced-network", "enabled", netCfg.isEnabled());
+
+        JoinConfig join = netCfg.getJoin();
+        gen.open("join");
+        multicastConfigXmlGenerator(gen, join);
+        tcpConfigXmlGenerator(gen, join);
+        aliasedDiscoveryConfigsGenerator(gen, AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(join));
+        discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
+        gen.close();
+
+        failureDetectorConfigXmlGenerator(gen, netCfg.getIcmpFailureDetectorConfig());
+        memberAddressProviderConfigXmlGenerator(gen, netCfg.getMemberAddressProviderConfig());
+        for (EndpointConfig endpointConfig : netCfg.getEndpointConfigs().values()) {
+            endpointConfigXmlGenerator(gen, endpointConfig);
+        }
+        gen.close();
+    }
+
+    private void endpointConfigXmlGenerator(XmlGenerator gen, EndpointConfig endpointConfig) {
+        if (endpointConfig.getName() != null) {
+            gen.open(endpointConfigElementName(endpointConfig), "name", endpointConfig.getName());
+        } else {
+            gen.open(endpointConfigElementName(endpointConfig));
+        }
+
+        Collection<String> outboundPortDefinitions = endpointConfig.getOutboundPortDefinitions();
+        if (CollectionUtil.isNotEmpty(outboundPortDefinitions)) {
+            gen.open("outbound-ports");
+            for (String def : outboundPortDefinitions) {
+                gen.node("ports", def);
+            }
+            gen.close();
+        }
+
+        interfacesConfigXmlGenerator(gen, endpointConfig.getInterfaces());
+        sslConfigXmlGenerator(gen, endpointConfig.getSSLConfig());
+        socketInterceptorConfigXmlGenerator(gen, endpointConfig.getSocketInterceptorConfig());
+        symmetricEncInterceptorConfigXmlGenerator(gen, endpointConfig.getSymmetricEncryptionConfig());
+
+        if (endpointConfig instanceof RestServerEndpointConfig) {
+            RestServerEndpointConfig rsec = (RestServerEndpointConfig) endpointConfig;
+            gen.open("endpoint-groups");
+            for (RestEndpointGroup group : RestEndpointGroup.values()) {
+                gen.node("endpoint-group", null, "name", group.name(),
+                        "enabled", rsec.isGroupEnabled(group));
+            }
+            gen.close();
+        }
+
+        // socket-options
+        gen.open("socket-options");
+        gen.node("buffer-direct", endpointConfig.isSocketBufferDirect());
+        gen.node("tcp-no-delay", endpointConfig.isSocketTcpNoDelay());
+        gen.node("keep-alive", endpointConfig.isSocketKeepAlive());
+        gen.node("connect-timeout-seconds", endpointConfig.getSocketConnectTimeoutSeconds());
+        gen.node("send-buffer-size-kb", endpointConfig.getSocketSendBufferSizeKb());
+        gen.node("receive-buffer-size-kb", endpointConfig.getSocketRcvBufferSizeKb());
+        gen.node("linger-seconds", endpointConfig.getSocketLingerSeconds());
+        gen.close();
+
+        if (endpointConfig instanceof ServerSocketEndpointConfig) {
+            ServerSocketEndpointConfig serverSocketEndpointConfig = (ServerSocketEndpointConfig) endpointConfig;
+            gen.node("port", serverSocketEndpointConfig.getPort(),
+                    "port-count", serverSocketEndpointConfig.getPortCount(),
+                    "auto-increment", serverSocketEndpointConfig.isPortAutoIncrement())
+               .node("public-address", serverSocketEndpointConfig.getPublicAddress())
+               .node("reuse-address", serverSocketEndpointConfig.isReuseAddress());
+        }
+        gen.close();
+    }
+
+    private String endpointConfigElementName(EndpointConfig endpointConfig) {
+        if (endpointConfig instanceof ServerSocketEndpointConfig) {
+            switch (endpointConfig.getProtocolType()) {
+                case REST:
+                    return "rest-server-socket-endpoint-config";
+                case WAN:
+                    return "wan-server-socket-endpoint-config";
+                case CLIENT:
+                    return "client-server-socket-endpoint-config";
+                case MEMBER:
+                    return "member-server-socket-endpoint-config";
+                case MEMCACHE:
+                    return "memcache-server-socket-endpoint-config";
+                default:
+                    throw new IllegalStateException("Not recognised protocol type");
+            }
+        }
+
+        return "wan-endpoint-config";
     }
 
     @SuppressWarnings("deprecation")
@@ -1147,8 +1253,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void interfacesConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
-        InterfacesConfig interfaces = netCfg.getInterfaces();
+    private static void interfacesConfigXmlGenerator(XmlGenerator gen, InterfacesConfig interfaces) {
         gen.open("interfaces", "enabled", interfaces.isEnabled());
         for (String i : interfaces.getInterfaces()) {
             gen.node("interface", i);
@@ -1156,8 +1261,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private void sslConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
-        SSLConfig ssl = netCfg.getSSLConfig();
+    private void sslConfigXmlGenerator(XmlGenerator gen, SSLConfig ssl) {
         gen.open("ssl", "enabled", ssl != null && ssl.isEnabled());
         if (ssl != null) {
             Properties props = new Properties();
@@ -1200,8 +1304,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void socketInterceptorConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
-        SocketInterceptorConfig socket = netCfg.getSocketInterceptorConfig();
+    private static void socketInterceptorConfigXmlGenerator(XmlGenerator gen, SocketInterceptorConfig socket) {
         gen.open("socket-interceptor", "enabled", socket != null && socket.isEnabled());
         if (socket != null) {
             gen.node("class-name", classNameOrImplClass(socket.getClassName(), socket.getImplementation()))
@@ -1210,8 +1313,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private void symmetricEncInterceptorConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
-        SymmetricEncryptionConfig sec = netCfg.getSymmetricEncryptionConfig();
+    private void symmetricEncInterceptorConfigXmlGenerator(XmlGenerator gen, SymmetricEncryptionConfig sec) {
         if (sec == null) {
             return;
         }
@@ -1223,8 +1325,8 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void memberAddressProviderConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
-        MemberAddressProviderConfig memberAddressProviderConfig = netCfg.getMemberAddressProviderConfig();
+    private static void memberAddressProviderConfigXmlGenerator(XmlGenerator gen,
+                                                                MemberAddressProviderConfig memberAddressProviderConfig) {
         if (memberAddressProviderConfig == null) {
             return;
         }
@@ -1239,8 +1341,8 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void failureDetectorConfigXmlGenerator(XmlGenerator gen, NetworkConfig networkConfig) {
-        IcmpFailureDetectorConfig icmpFailureDetectorConfig = networkConfig.getIcmpFailureDetectorConfig();
+    private static void failureDetectorConfigXmlGenerator(XmlGenerator gen,
+                                                          IcmpFailureDetectorConfig icmpFailureDetectorConfig) {
         if (icmpFailureDetectorConfig == null) {
             return;
         }
@@ -1381,7 +1483,7 @@ public class ConfigXmlGenerator {
         gen.node("lite-member", null, "enabled", config.isLiteMember());
     }
 
-    private static void restApiXmlGenerator(XmlGenerator gen, Config config) {
+    private static void restApiXmlGenerator(XmlGenerator gen, NetworkConfig config) {
         RestApiConfig c = config.getRestApiConfig();
         if (c == null) {
             return;
@@ -1393,7 +1495,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void memcacheProtocolXmlGenerator(XmlGenerator gen, Config config) {
+    private static void memcacheProtocolXmlGenerator(XmlGenerator gen, NetworkConfig config) {
         MemcacheProtocolConfig c = config.getMemcacheProtocolConfig();
         if (c == null) {
             return;

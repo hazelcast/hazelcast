@@ -26,7 +26,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableMap;
 
 /**
  * This class is used to store assignment results in {@link com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation}
@@ -57,27 +58,14 @@ public class KeysAssignmentResult
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeBoolean(assignment != null);
-        if (assignment != null) {
-            out.writeInt(assignment.size());
-            for (Map.Entry<Object, Address> entry : assignment.entrySet()) {
-                out.writeObject(entry.getKey());
-                out.writeObject(entry.getValue());
-            }
-        }
+        writeNullableMap(assignment, out);
         out.writeInt(resultState.ordinal());
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        if (in.readBoolean()) {
-            int size = in.readInt();
-            assignment = createHashMap(size);
-            for (int i = 0; i < size; i++) {
-                assignment.put(in.readObject(), (Address) in.readObject());
-            }
-        }
+        assignment = readNullableMap(in);
         resultState = ResultState.byOrdinal(in.readInt());
     }
 

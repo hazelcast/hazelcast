@@ -213,6 +213,24 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         return list;
     }
 
+    protected SSLConfig parseSslConfig(Node node) {
+        SSLConfig sslConfig = new SSLConfig();
+        NamedNodeMap atts = node.getAttributes();
+        Node enabledNode = atts.getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
+        sslConfig.setEnabled(enabled);
+
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if ("factory-class-name".equals(nodeName)) {
+                sslConfig.setFactoryClassName(getTextContent(n));
+            } else if ("properties".equals(nodeName)) {
+                fillProperties(n, sslConfig.getProperties());
+            }
+        }
+        return sslConfig;
+    }
+
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");

@@ -17,52 +17,60 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.nio.NetworkingService;
 
 import java.util.Map;
 
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Management bean for {@link com.hazelcast.nio.ConnectionManager}
+ * Management bean for {@link NetworkingService}
  */
-@ManagedDescription("HazelcastInstance.ConnectionManager")
-public class ConnectionManagerMBean extends HazelcastMBean<ConnectionManager> {
+@ManagedDescription("HazelcastInstance.NetworkingService")
+public class NetworkingServiceMBean
+        extends HazelcastMBean<NetworkingService> {
 
     private static final int PROPERTY_COUNT = 3;
 
-    public ConnectionManagerMBean(HazelcastInstance hazelcastInstance, ConnectionManager connectionManager,
+    public NetworkingServiceMBean(HazelcastInstance hazelcastInstance, NetworkingService ns,
                                   ManagementService service) {
-        super(connectionManager, service);
+        super(ns, service);
 
         //no need to create HashTable here, as the setObjectName method creates a copy of the given properties
         final Map<String, String> properties = createHashMap(PROPERTY_COUNT);
-        properties.put("type", quote("HazelcastInstance.ConnectionManager"));
+        properties.put("type", quote("HazelcastInstance.NetworkingService"));
         properties.put("instance", quote(hazelcastInstance.getName()));
         properties.put("name", quote(hazelcastInstance.getName()));
         setObjectName(properties);
     }
 
-    public ConnectionManager getConnectionManager() {
+    public NetworkingService getNetworkingService() {
         return managedObject;
     }
 
     @ManagedAnnotation("clientConnectionCount")
     @ManagedDescription("Current number of client connections")
     public int getCurrentClientConnections() {
-        return getConnectionManager().getCurrentClientConnections();
+        EndpointManager cem = getNetworkingService().getEndpointManager(CLIENT);
+        if (cem == null) {
+            return -1;
+        }
+
+        return cem.getConnections().size();
     }
 
     @ManagedAnnotation("activeConnectionCount")
     @ManagedDescription("Current number of active connections")
     public int getActiveConnectionCount() {
-        return getConnectionManager().getActiveConnectionCount();
+        return getNetworkingService().getAggregateEndpointManager().getActiveConnections().size();
     }
 
     @ManagedAnnotation("connectionCount")
     @ManagedDescription("Current number of connections")
     public int getConnectionCount() {
-        return getConnectionManager().getConnectionCount();
+        return getNetworkingService().getAggregateEndpointManager().getConnections().size();
     }
 }

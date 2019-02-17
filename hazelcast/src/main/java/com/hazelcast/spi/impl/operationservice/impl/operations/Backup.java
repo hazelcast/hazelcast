@@ -177,7 +177,9 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         if (nodeEngine.getThisAddress().equals(originalCaller)) {
             operationService.getBackupHandler().notifyBackupComplete(callId);
         } else {
-            operationService.getOutboundResponseHandler().sendBackupAck(originalCaller, callId, backupOp.isUrgent());
+            operationService.getOutboundResponseHandler()
+                            .sendBackupAck(getConnection().getEndpointManager(),
+                                    originalCaller, callId, backupOp.isUrgent());
         }
     }
 

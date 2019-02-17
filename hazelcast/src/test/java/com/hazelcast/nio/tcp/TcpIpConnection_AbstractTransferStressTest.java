@@ -54,7 +54,7 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
     @Before
     public void setup() throws Exception {
         super.setup();
-        startAllConnectionManagers();
+        startAllNetworkingServices();
     }
 
     @Test
@@ -92,7 +92,7 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
     }
 
     private void testPackets(long verifyTimeoutInMillis) {
-        TcpIpConnection c = connect(connManagerA, addressB);
+        TcpIpConnection c = connect(networkingServiceA, addressB);
 
         WriteThread thread1 = new WriteThread(1, c);
         WriteThread thread2 = new WriteThread(2, c);
@@ -108,14 +108,14 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
         thread1.assertSucceedsEventually();
         thread2.assertSucceedsEventually();
 
-        // there is always one packet extra for the bind-request
-        final long expectedNormalPackets = thread1.normalPackets + thread2.normalPackets + 1;
+        // there is always one packet extra for the double bind-request
+        final long expectedNormalPackets = thread1.normalPackets + thread2.normalPackets + 2;
         final long expectedUrgentPackets = thread1.urgentPackets + thread2.urgentPackets;
 
         logger.info("expected normal packets: " + expectedNormalPackets);
         logger.info("expected priority packets: " + expectedUrgentPackets);
 
-        final TcpIpConnection connection = (TcpIpConnection) connManagerB.getConnection(addressA);
+        final TcpIpConnection connection = connect(networkingServiceB, addressA);
         long start = System.currentTimeMillis();
         assertTrueEventually(new AssertTask() {
             @Override

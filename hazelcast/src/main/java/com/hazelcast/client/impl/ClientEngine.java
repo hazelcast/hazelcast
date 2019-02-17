@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.Config;
+import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -27,9 +27,10 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.function.Consumer;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -38,6 +39,10 @@ import java.util.Map;
  * todo: what is the purpose of the client engine.
  */
 public interface ClientEngine extends Consumer<ClientMessage> {
+
+    void bind(ClientEndpoint endpoint);
+
+    Collection<Client> getClients();
 
     int getClientEndpointCount();
 
@@ -49,26 +54,21 @@ public interface ClientEngine extends Consumer<ClientMessage> {
 
     ProxyService getProxyService();
 
-    Config getConfig();
-
     ILogger getLogger(Class clazz);
-
-    Address getMasterAddress();
 
     Address getThisAddress();
 
     String getThisUuid();
 
-    MemberImpl getLocalMember();
+    ClientEndpointManager getEndpointManager();
+
+    ClientExceptions getClientExceptions();
 
     SecurityContext getSecurityContext();
 
-    /**
-     * Returns the SerializationService.
-     *
-     * @return the SerializationService
-     */
-    SerializationService getSerializationService();
+    TransactionManagerService getTransactionManagerService();
+
+    ClientPartitionListenerService getPartitionListenerService();
 
     /**
      * Returns Map which contains number of connected clients to the cluster.

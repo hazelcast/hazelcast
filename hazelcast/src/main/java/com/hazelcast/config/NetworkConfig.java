@@ -64,6 +64,10 @@ public class NetworkConfig {
 
     private IcmpFailureDetectorConfig icmpFailureDetectorConfig;
 
+    private RestApiConfig restApiConfig;
+
+    private MemcacheProtocolConfig memcacheProtocolConfig;
+
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
         reuseAddress = (!os.contains("win"));
@@ -360,6 +364,24 @@ public class NetworkConfig {
         return icmpFailureDetectorConfig;
     }
 
+    public RestApiConfig getRestApiConfig() {
+        return restApiConfig;
+    }
+
+    public NetworkConfig setRestApiConfig(RestApiConfig restApiConfig) {
+        this.restApiConfig = restApiConfig;
+        return this;
+    }
+
+    public MemcacheProtocolConfig getMemcacheProtocolConfig() {
+        return memcacheProtocolConfig;
+    }
+
+    public NetworkConfig setMemcacheProtocolConfig(MemcacheProtocolConfig memcacheProtocolConfig) {
+        this.memcacheProtocolConfig = memcacheProtocolConfig;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "NetworkConfig{"
@@ -373,6 +395,8 @@ public class NetworkConfig {
                 + ", socketInterceptorConfig=" + socketInterceptorConfig
                 + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
                 + ", icmpFailureDetectorConfig=" + icmpFailureDetectorConfig
+                + ", restApiConfig=" + restApiConfig
+                + ", memcacheProtocolConfig=" + memcacheProtocolConfig
                 + '}';
     }
 }

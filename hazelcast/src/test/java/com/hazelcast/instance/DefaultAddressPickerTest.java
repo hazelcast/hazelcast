@@ -88,7 +88,7 @@ public class DefaultAddressPickerTest {
     @After
     public void tearDown() {
         if (addressPicker != null) {
-            IOUtil.closeResource(addressPicker.getServerSocketChannel());
+            IOUtil.closeResource(addressPicker.getServerSocketChannel(null));
         }
     }
 
@@ -167,8 +167,8 @@ public class DefaultAddressPickerTest {
         addressPicker.pickAddress();
 
         int port = config.getNetworkConfig().getPort();
-        assertEquals(new Address(address, port), addressPicker.getBindAddress());
-        assertEquals(addressPicker.getBindAddress(), addressPicker.getPublicAddress());
+        assertEquals(new Address(address, port), addressPicker.getBindAddress(null));
+        assertEquals(addressPicker.getBindAddress(null), addressPicker.getPublicAddress(null));
     }
 
     @Test
@@ -179,10 +179,10 @@ public class DefaultAddressPickerTest {
         addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
-        int port = addressPicker.getServerSocketChannel().socket().getLocalPort();
+        int port = addressPicker.getServerSocketChannel(null).socket().getLocalPort();
 
-        assertEquals(new Address(loopback, port), addressPicker.getBindAddress());
-        assertEquals(addressPicker.getBindAddress(), addressPicker.getPublicAddress());
+        assertEquals(new Address(loopback, port), addressPicker.getBindAddress(null));
+        assertEquals(addressPicker.getBindAddress(null), addressPicker.getPublicAddress(null));
     }
 
     @Test
@@ -243,7 +243,7 @@ public class DefaultAddressPickerTest {
             port = config.getNetworkConfig().getPort();
         }
 
-        assertEquals(new Address(host, port), addressPicker.getPublicAddress());
+        assertEquals(new Address(host, port), addressPicker.getPublicAddress(null));
     }
 
     @Test
@@ -255,7 +255,7 @@ public class DefaultAddressPickerTest {
         addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
-        assertEquals(new Address(host, port), addressPicker.getPublicAddress());
+        assertEquals(new Address(host, port), addressPicker.getPublicAddress(null));
     }
 
     @Test(expected = UnknownHostException.class)
@@ -277,7 +277,7 @@ public class DefaultAddressPickerTest {
         addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
 
-        Address bindAddress = addressPicker.getBindAddress();
+        Address bindAddress = addressPicker.getBindAddress(null);
         assertTrue("Bind address: " + bindAddress, bindAddress.isIPv6());
     }
 

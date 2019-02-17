@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.util.AddressUtil;
 
@@ -38,12 +39,13 @@ import java.util.logging.Level;
  * The TcpIpConnector is responsible to make connections by connecting to a remote serverport. Once completed,
  * it will send the protocol and a bind-message.
  */
-public class TcpIpConnector {
+class TcpIpConnector {
 
     private static final int DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS = 3;
     private static final int MILLIS_PER_SECOND = 1000;
 
-    private final TcpIpConnectionManager connectionManager;
+    private final TcpIpEndpointManager endpointManager;
+
     private final ILogger logger;
     private final IOService ioService;
     private final int outboundPortCount;
@@ -51,11 +53,11 @@ public class TcpIpConnector {
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
 
-    public TcpIpConnector(TcpIpConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
-        this.ioService = connectionManager.getIoService();
+    TcpIpConnector(TcpIpEndpointManager endpointManager) {
+        this.endpointManager = endpointManager;
+        this.ioService = endpointManager.getNetworkingService().getIoService();
         this.logger = ioService.getLoggingService().getLogger(getClass());
-        Collection<Integer> ports = ioService.getOutboundPorts();
+        Collection<Integer> ports = ioService.getOutboundPorts(endpointManager.getEndpointQualifier());
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
     }
@@ -95,7 +97,7 @@ public class TcpIpConnector {
 
         @Override
         public void run() {
-            if (!connectionManager.isLive()) {
+            if (!endpointManager.getNetworkingService().isLive()) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("ConnectionManager is not live, connection attempt to " + address + " is cancelled!");
                 }
@@ -110,8 +112,8 @@ public class TcpIpConnector {
                 Address thisAddress = ioService.getThisAddress();
                 if (address.isIPv4()) {
                     // remote is IPv4; connect...
-                    tryToConnect(address.getInetSocketAddress(),
-                            ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
+                    tryToConnect(address.getInetSocketAddress(), ioService.getSocketConnectTimeoutSeconds(
+                            endpointManager.getEndpointQualifier()) * MILLIS_PER_SECOND);
                 } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                     // Both remote and this addresses are IPv6.
                     // This is a local IPv6 address and scope ID is known.
@@ -119,7 +121,8 @@ public class TcpIpConnector {
                     Inet6Address inetAddress = AddressUtil
                             .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
                     tryToConnect(new InetSocketAddress(inetAddress, address.getPort()),
-                            ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
+                            ioService.getSocketConnectTimeoutSeconds(
+                                    endpointManager.getEndpointQualifier()) * MILLIS_PER_SECOND);
                 } else {
                     // remote is IPv6 and this is either IPv4 or a global IPv6.
                     // find possible remote inet6 addresses and try each one to connect...
@@ -127,7 +130,7 @@ public class TcpIpConnector {
                 }
             } catch (Throwable e) {
                 logger.finest(e);
-                connectionManager.failedConnection(address, e, silent);
+                endpointManager.failedConnection(address, e, silent);
             }
         }
 
@@ -141,7 +144,8 @@ public class TcpIpConnector {
             }
             boolean connected = false;
             Exception error = null;
-            int configuredTimeoutMillis = ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND;
+            int configuredTimeoutMillis =
+                    ioService.getSocketConnectTimeoutSeconds(endpointManager.getEndpointQualifier()) * MILLIS_PER_SECOND;
             int timeoutMillis = configuredTimeoutMillis > 0 && configuredTimeoutMillis < Integer.MAX_VALUE
                     ? configuredTimeoutMillis : DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * MILLIS_PER_SECOND;
             for (Inet6Address inetAddress : possibleInetAddresses) {
@@ -162,9 +166,9 @@ public class TcpIpConnector {
         private void tryToConnect(InetSocketAddress socketAddress, int timeout) throws Exception {
             SocketChannel socketChannel = SocketChannel.open();
 
-            Channel channel = connectionManager.createChannel(socketChannel, true);
+            TcpIpConnection connection = null;
+            Channel channel = endpointManager.newChannel(socketChannel, true);
             try {
-
                 if (ioService.isSocketBind()) {
                     bindSocket(socketChannel);
                 }
@@ -178,14 +182,16 @@ public class TcpIpConnector {
                 try {
                     channel.connect(socketAddress, timeout);
 
-                    ioService.interceptSocket(socketChannel.socket(), false);
+                    ioService.interceptSocket(endpointManager.getEndpointQualifier(), socketChannel.socket(), false);
 
-                    TcpIpConnection connection = connectionManager.newConnection(channel, address);
-                    connectionManager.sendBindRequest(connection, address, true);
+                    connection = endpointManager.newConnection(channel, address);
+                    BindRequest request = new BindRequest(logger, ioService, connection, address, true);
+                    request.send();
                 } catch (NullPointerException e) {
                     // Helper piece of code, which will allow to identify rare NPEs in TLS connections
                     // https://github.com/hazelcast/hazelcast-enterprise/issues/2104
                     //TODO remove this catch block once the TLS NPE problem is successfully resolved
+                    closeConnection(connection, e);
                     closeSocket(socketChannel);
                     logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                             + "[" + e.getMessage() + "]");
@@ -193,13 +199,14 @@ public class TcpIpConnector {
                             "Add this stacktrace to https://github.com/hazelcast/hazelcast-enterprise/issues/2104 please!", e);
                     throw e;
                 } catch (Exception e) {
+                    closeConnection(connection, e);
                     closeSocket(socketChannel);
                     logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                             + "[" + e.getMessage() + "]");
                     throw e;
                 }
             } finally {
-                connectionManager.removeAcceptedChannel(channel);
+                endpointManager.removeAcceptedChannel(channel);
             }
         }
 
@@ -229,6 +236,12 @@ public class TcpIpConnector {
 
         private InetAddress getInetAddress() throws UnknownHostException {
             return ioService.isSocketBindAny() ? null : ioService.getThisAddress().getInetAddress();
+        }
+
+        private void closeConnection(final Connection connection, Throwable t) {
+            if (connection != null) {
+                connection.close(null, t);
+            }
         }
 
         private void closeSocket(final SocketChannel socketChannel) {

@@ -277,4 +277,5 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
         }
         LOGGER.warning(message);
     }
+
 }

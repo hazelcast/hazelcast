@@ -27,7 +27,7 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -128,8 +128,9 @@ public interface NodeExtension {
      * otherwise returns null.
      *
      * @return MemberSocketInterceptor
+     * @param endpointQualifier
      */
-    MemberSocketInterceptor getMemberSocketInterceptor();
+    MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier);
 
     /**
      * Creates a <tt>InboundHandler</tt> for given <tt>Connection</tt> instance.
@@ -141,7 +142,7 @@ public interface NodeExtension {
      * @param ioService  IOService
      * @return the created InboundHandler.
      */
-    InboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService);
+    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection, IOService ioService);
 
     /**
      * Creates a <tt>OutboundHandler</tt> for given <tt>Connection</tt> instance.
@@ -150,20 +151,16 @@ public interface NodeExtension {
      * @param ioService  IOService
      * @return the created OutboundHandler
      */
-    OutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService);
+    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection, IOService ioService);
 
 
     /**
-     * Creates the ChannelInitializer.
-     *
-     * Currently there is a single global channel instance per member; but as soon
-     * as WAN is going to run on different ports, we probably need multiple
-     * ChannelInitializers.
+     * Creates the ChannelInitializerProvider.
      *
      * @param ioService
      * @return
      */
-    ChannelInitializer createChannelInitializer(IOService ioService);
+    ChannelInitializerProvider createChannelInitializerProvider(IOService ioService);
 
     /**
      * Called on thread start to inject/intercept extension specific logic,

@@ -248,6 +248,23 @@ hazelcast:
         max-attempts: 2
         parallel-mode: true
         ttl: 255
+    rest-api:
+      enabled: true
+      endpoint-groups:
+        CLUSTER_READ:
+          enabled: true
+        CLUSTER_WRITE:
+          enabled: true
+        DATA:
+          enabled: true
+        HEALTH_CHECK:
+          enabled: true
+        HOT_RESTART:
+          enabled: true
+        WAN:
+          enabled: true
+    memcache-protocol:
+      enabled: true
 
   partition-group:
     enabled: true
@@ -962,21 +979,3 @@ hazelcast:
   lite-member:
     enabled: true
 
-  rest-api:
-    enabled: true
-    endpoint-groups:
-      CLUSTER_READ:
-        enabled: true
-      CLUSTER_WRITE:
-        enabled: true
-      DATA:
-        enabled: true
-      HEALTH_CHECK:
-        enabled: true
-      HOT_RESTART:
-        enabled: true
-      WAN:
-        enabled: true
-
-  memcache-protocol:
-    enabled: true

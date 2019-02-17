@@ -91,7 +91,7 @@ public class ClientInvocationTest extends ClientTestSupport {
         }
 
         // crash the server
-        getNode(server).getConnectionManager().shutdown();
+        getNode(server).getNetworkingService().shutdown();
         server.getLifecycleService().terminate();
 
         int callBackCount = 0;

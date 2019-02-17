@@ -16,14 +16,16 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.Networking;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
+import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.logging.ILogger;
@@ -86,7 +88,7 @@ public final class NioNetworking implements Networking {
     private final String threadNamePrefix;
     private final ChannelErrorHandler errorHandler;
     private final int balancerIntervalSeconds;
-    private final ChannelInitializer channelInitializer;
+    private final ChannelInitializerProvider channelInitializerProvider;
     private final int inputThreadCount;
     private final int outputThreadCount;
     private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<NioChannel, Boolean>());
@@ -108,7 +110,7 @@ public final class NioNetworking implements Networking {
         this.logger = loggingService.getLogger(NioNetworking.class);
         this.errorHandler = ctx.errorHandler;
         this.balancerIntervalSeconds = ctx.balancerIntervalSeconds;
-        this.channelInitializer = ctx.channelInitializer;
+        this.channelInitializerProvider = ctx.channelInitializerProvider;
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
@@ -219,9 +221,10 @@ public final class NioNetworking implements Networking {
     }
 
     @Override
-    public Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException {
-        NioChannel channel = new NioChannel(
-                socketChannel, clientMode, channelInitializer, metricsRegistry, closeListenerExecutor);
+    public Channel register(EndpointQualifier endpointQualifier, SocketChannel socketChannel, boolean clientMode)
+            throws IOException {
+        ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
+        NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, metricsRegistry, closeListenerExecutor);
 
         socketChannel.configureBlocking(false);
 
@@ -330,7 +333,7 @@ public final class NioNetworking implements Networking {
         // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
         private SelectorMode selectorMode = SelectorMode.getConfiguredValue();
         private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
-        private ChannelInitializer channelInitializer;
+        private ChannelInitializerProvider channelInitializerProvider;
 
         public Context() {
             String selectorModeString = SelectorMode.getConfiguredString();
@@ -384,8 +387,8 @@ public final class NioNetworking implements Networking {
             return this;
         }
 
-        public Context channelInitializer(ChannelInitializer channelInitializer) {
-            this.channelInitializer = channelInitializer;
+        public Context channelInitializerProvider(ChannelInitializerProvider channelInitializerProvider) {
+            this.channelInitializerProvider = channelInitializerProvider;
             return this;
         }
     }

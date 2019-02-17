@@ -431,7 +431,9 @@ public class SerializationTest extends HazelcastTestSupport {
         String host = "127.0.0.1";
         int port = 5000;
 
-        Member member = new MemberImpl(new Address(host, port), MemberVersion.of("3.8.0"), false, uuid);
+        Member member = new MemberImpl.Builder(new Address(host, port))
+                .version(MemberVersion.of("3.8.0"))
+                .uuid(uuid).build();
 
         testMemberLeftException(uuid, host, port, member);
     }
@@ -452,7 +454,11 @@ public class SerializationTest extends HazelcastTestSupport {
         String host = "127.0.0.1";
         int port = 5000;
 
-        Member member = new MemberImpl(new Address(host, port), MemberVersion.of("3.8.0"), false, uuid, null, true);
+        Member member = new MemberImpl.Builder(new Address(host, port))
+                .version(MemberVersion.of("3.8.0"))
+                .liteMember(true)
+                .uuid(uuid)
+                .build();
 
         testMemberLeftException(uuid, host, port, member);
     }

@@ -28,10 +28,12 @@ import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
+import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -51,7 +53,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -808,9 +809,9 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, hz1, hz3);
 
-        assertNull(getConnectionManager(hz1).getConnection(target));
+        assertNull(getEndpointManager(hz1).getConnection(target));
 
-        final ConnectionManager cm3 = getConnectionManager(hz3);
+        final EndpointManager cm3 = getEndpointManager(hz3);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -834,10 +835,10 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         final Address target = getAddress(hz3);
 
         ConnectionRemovedListener connListener1 = new ConnectionRemovedListener(target);
-        getConnectionManager(hz1).addConnectionListener(connListener1);
+        getEndpointManager(hz1).addConnectionListener(connListener1);
 
         ConnectionRemovedListener connListener2 = new ConnectionRemovedListener(target);
-        getConnectionManager(hz2).addConnectionListener(connListener2);
+        getEndpointManager(hz2).addConnectionListener(connListener2);
 
         dropOperationsBetween(hz3, hz1, F_ID, singletonList(HEARTBEAT));
         assertClusterSizeEventually(2, hz1, hz2);
@@ -904,8 +905,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-            return delegate.createConnectionManager(node, serverSocketChannel);
+        public NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry) {
+            return delegate.createNetworkingService(node, registry);
         }
     }
 

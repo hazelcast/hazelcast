@@ -33,7 +33,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class ClientServiceProxy implements ClientService {
 
-    private final ClientEngineImpl clientEngine;
+    private final ClientEngine clientEngine;
     private final NodeEngine nodeEngine;
 
     public ClientServiceProxy(Node node) {
