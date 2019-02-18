@@ -56,4 +56,5 @@
 
     <!-- Suppress checks for test code -->
     <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]"/>
+    <suppress checks="LineLength" files="DecoratorTest.java"/>
 </suppressions>
