@@ -27,6 +27,7 @@ import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -138,11 +139,19 @@ class ClusterConnector {
             client.onClusterConnect(connection);
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onClusterConnect();
+        } catch (ConfigurationException e) {
+            logger.warning("Exception during initial connection to " + address + ", exception " + e);
+            if (null != connection) {
+                connection.close("Could not connect to " + address + " as owner", e);
+            }
+
+            throw rethrow(e);
         } catch (Exception e) {
             logger.warning("Exception during initial connection to " + address + ", exception " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
+
             return null;
         }
         return connection;
