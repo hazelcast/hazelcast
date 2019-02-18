@@ -2946,7 +2946,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleCPSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
+    void handleCPSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
         for (Node child : childElements(node)) {
             CPSemaphoreConfig cpSemaphoreConfig = new CPSemaphoreConfig();
             for (Node subChild : childElements(child)) {
@@ -2962,7 +2962,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleFencedLocks(CPSubsystemConfig cpSubsystemConfig, Node node) {
+    void handleFencedLocks(CPSubsystemConfig cpSubsystemConfig, Node node) {
         for (Node child : childElements(node)) {
             FencedLockConfig lockConfig = new FencedLockConfig();
             for (Node subChild : childElements(child)) {

@@ -17,6 +17,10 @@
 package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
+import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -3465,5 +3469,64 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        ports: 72000-72100\n";
 
         return buildConfig(yaml);
+    }
+
+    @Override
+    public void testCPSubsystemConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  cp-subsystem:\n"
+                + "    cp-member-count: 10\n"
+                + "    group-size: 5\n"
+                + "    session-time-to-live-seconds: 15\n"
+                + "    session-heartbeat-interval-seconds: 3\n"
+                + "    missing-cp-member-auto-removal-seconds: 120\n"
+                + "    fail-on-indeterminate-operation-state: true\n"
+                + "    raft-algorithm:\n"
+                + "      leader-election-timeout-in-millis: 500\n"
+                + "      leader-heartbeat-period-in-millis: 100\n"
+                + "      max-missed-leader-heartbeat-count: 3\n"
+                + "      append-request-max-entry-count: 25\n"
+                + "      commit-index-advance-count-to-snapshot: 250\n"
+                + "      uncommitted-entry-count-to-reject-new-appends: 75\n"
+                + "      append-request-backoff-timeout-in-millis: 50\n"
+                + "    semaphores:\n"
+                + "      sem1:\n"
+                + "        jdk-compatible: true\n"
+                + "      sem2:\n"
+                + "        jdk-compatible: false\n"
+                + "    locks:\n"
+                + "      lock1:\n"
+                + "        lock-acquire-limit: 1\n"
+                + "      lock2:\n"
+                + "        lock-acquire-limit: 2\n";
+        Config config = buildConfig(yaml);
+        CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
+        assertEquals(10, cpSubsystemConfig.getCPMemberCount());
+        assertEquals(5, cpSubsystemConfig.getGroupSize());
+        assertEquals(15, cpSubsystemConfig.getSessionTimeToLiveSeconds());
+        assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
+        assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
+        assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
+        RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
+        assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
+        assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
+        assertEquals(3, raftAlgorithmConfig.getMaxMissedLeaderHeartbeatCount());
+        assertEquals(25, raftAlgorithmConfig.getAppendRequestMaxEntryCount());
+        assertEquals(250, raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot());
+        assertEquals(75, raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends());
+        assertEquals(50, raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis());
+        CPSemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
+        CPSemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
+        assertNotNull(semaphoreConfig1);
+        assertNotNull(semaphoreConfig2);
+        assertTrue(semaphoreConfig1.isJDKCompatible());
+        assertFalse(semaphoreConfig2.isJDKCompatible());
+        FencedLockConfig lockConfig1 = cpSubsystemConfig.findLockConfig("lock1");
+        FencedLockConfig lockConfig2 = cpSubsystemConfig.findLockConfig("lock2");
+        assertNotNull(lockConfig1);
+        assertNotNull(lockConfig2);
+        assertEquals(1, lockConfig1.getLockAcquireLimit());
+        assertEquals(2, lockConfig2.getLockAcquireLimit());
     }
 }

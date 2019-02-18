@@ -357,3 +357,25 @@ hazelcast:
     default:
       replica-count: 2147483647
       statistics-enabled: true
+
+  cp-subsystem:
+    cp-member-count: 0
+    group-size: 0
+    session-time-to-live-seconds: 300
+    session-heartbeat-interval-seconds: 5
+    missing-cp-member-auto-removal-seconds: 0
+    fail-on-indeterminate-operation-state: false
+    raft-algorithm:
+      leader-election-timeout-in-millis: 2000
+      leader-heartbeat-period-in-millis: 5000
+      max-missed-leader-heartbeat-count: 5
+      append-request-max-entry-count: 50
+      commit-index-advance-count-to-snapshot: 1000
+      uncommitted-entry-count-to-reject-new-appends: 100
+      append-request-backoff-timeout-in-millis: 100
+#    semaphores:
+#      default:
+#        jdk-compatible: false
+#    locks:
+#      default:
+#        lock-acquire-limit: 0
