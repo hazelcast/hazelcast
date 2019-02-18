@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.yaml;
 
-import com.hazelcast.internal.util.JavaVersion;
-
 import java.io.InputStream;
 import java.io.Reader;
+
+import static com.hazelcast.internal.yaml.YamlUtil.ensureRunningOnJava8OrHigher;
 
 /**
  * YAML loader that can load, parse YAML documents and can build a tree
@@ -154,9 +154,7 @@ public final class YamlLoader {
     }
 
     private static YamlDocumentLoader getLoad() {
-        if (!JavaVersion.isAtLeast(JavaVersion.JAVA_1_8)) {
-            throw new UnsupportedOperationException("Processing YAML documents requires Java 8 or higher version");
-        }
+        ensureRunningOnJava8OrHigher();
 
         return new ReflectiveYamlDocumentLoader();
     }

@@ -19,11 +19,14 @@ package com.hazelcast.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
 
 /**
  * Test cases specific only to YAML based configuration. The cases not
@@ -39,6 +42,11 @@ import java.io.ByteArrayInputStream;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class YamlOnlyConfigBuilderTest {
+
+    @Before
+    public void assumeRunningOnJdk8() {
+        assumeThatJDK8OrHigher();
+    }
 
     @Test(expected = InvalidConfigurationException.class)
     public void testMapQueryCachePredicateBothClassNameAndSql() {

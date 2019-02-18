@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import static com.hazelcast.internal.yaml.YamlUtil.ensureRunningOnJava8OrHigher;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -118,6 +119,8 @@ public class YamlConfigBuilder implements ConfigBuilder {
     }
 
     Config build(Config config) {
+        ensureRunningOnJava8OrHigher();
+
         config.setConfigurationFile(configurationFile);
         config.setConfigurationUrl(configurationUrl);
         try {

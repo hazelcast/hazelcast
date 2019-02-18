@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +81,11 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
+
+    @Before
+    public void assumeRunningOnJdk8() {
+        assumeThatJDK8OrHigher();
+    }
 
     @Override
     @Test
