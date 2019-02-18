@@ -84,9 +84,11 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
                 assertFalse(params.clientNameExist);
                 assertFalse(params.labelsExist);
+                assertFalse(params.partitionCountExist);
+                assertFalse(params.clusterIdExist);
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt ,    aString   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -111,9 +113,11 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
                 assertFalse(params.clientNameExist);
                 assertFalse(params.labelsExist);
+                assertFalse(params.partitionCountExist);
+                assertFalse(params.clusterIdExist);
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt ,    aString   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -6439,12 +6443,13 @@ public class ServerCompatibilityNullTest_1_5 {
             assertTrue(isEqual(null, params.partitioningStrategyImplementation));
             assertTrue(isEqual(null, params.hotRestartConfig));
                 assertFalse(params.mergeBatchSizeExist);
+                assertFalse(params.metadataPolicyExist);
 }
 {
     ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeResponse( );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
-    // (version 1.6), only the bytes after frame length fields are compared
+    // (version 1.8), only the bytes after frame length fields are compared
     int frameLength = clientMessage.getFrameLength();
     assertTrue(frameLength >= length);
     inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);

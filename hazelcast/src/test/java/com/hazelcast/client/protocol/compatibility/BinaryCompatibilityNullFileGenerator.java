@@ -58,24 +58,24 @@ public class BinaryCompatibilityNullFileGenerator {
         DataOutputStream outputStream = new DataOutputStream(out);
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(   aString ,   aString ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   strings   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(   aString ,   aString ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   strings ,   null ,   null   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(   aByte ,   null ,   null ,   null ,   aByte ,   aString ,   null ,   anInt   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(   aByte ,   null ,   null ,   null ,   aByte ,   aString ,   null ,   anInt ,   aString   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(   aData ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   strings   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(   aData ,   null ,   null ,   aBoolean ,   aString ,   aByte ,   aString ,   aString ,   strings ,   null ,   null   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(   aByte ,   null ,   null ,   null ,   aByte ,   aString ,   null ,   anInt   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(   aByte ,   null ,   null ,   null ,   aByte ,   aString ,   null ,   anInt ,   aString   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -294,6 +294,18 @@ public class BinaryCompatibilityNullFileGenerator {
 }
 {
     ClientMessage clientMessage = ClientCreateProxiesCodec.encodeResponse( );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ClientIsFailoverSupportedCodec.encodeRequest( );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ClientIsFailoverSupportedCodec.encodeResponse(   aBoolean   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -4914,7 +4926,7 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(   aString ,   anInt ,   anInt ,   anInt ,   anInt ,   aString ,   aBoolean ,   aString ,   aString ,   aString ,   null ,   null ,   aBoolean ,   null ,   null ,   aString ,   anInt ,   null ,   null ,   null ,   null ,   null ,   null ,   null ,   null ,   null ,   anInt   );
+    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(   aString ,   anInt ,   anInt ,   anInt ,   anInt ,   aString ,   aBoolean ,   aString ,   aString ,   aString ,   null ,   null ,   aBoolean ,   null ,   null ,   aString ,   anInt ,   null ,   null ,   null ,   null ,   null ,   null ,   null ,   null ,   null ,   anInt ,   anInt   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }

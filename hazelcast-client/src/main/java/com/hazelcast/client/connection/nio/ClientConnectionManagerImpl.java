@@ -617,11 +617,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
                 return ClientAuthenticationCodec
                         .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
-                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
+                                serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels,
+                                null, null);
             } else {
                 Data data = ss.toData(credentials);
-                return ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, asOwner, ClientTypes.JAVA,
-                        serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
+                return ClientAuthenticationCustomCodec
+                        .encodeRequest(data, uuid, ownerUuid, asOwner, ClientTypes.JAVA, serializationVersion,
+                                BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels, null, null);
             }
         }
 
