@@ -16,8 +16,15 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.QueryCacheConfig;
 import org.w3c.dom.Node;
 
+/**
+ * Helper which is used for building {@link QueryCacheConfig} from declarative configurations.
+ *
+ * @see QueryCacheXmlConfigBuilderHelper
+ * @see QueryCacheYamlConfigBuilderHelper
+ */
 interface QueryCacheConfigBuilderHelper {
     void handleQueryCache(ClientConfig clientConfig, Node node);
 }

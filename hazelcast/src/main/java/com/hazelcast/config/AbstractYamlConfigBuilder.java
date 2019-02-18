@@ -153,7 +153,7 @@ public abstract class AbstractYamlConfigBuilder {
 
         if (replacersNode != null) {
             String failFastAttr = getAttribute(replacersNode, "fail-if-value-missing", true);
-            failFast = isNullOrEmpty(failFastAttr) ? true : Boolean.parseBoolean(failFastAttr);
+            failFast = isNullOrEmpty(failFastAttr) || Boolean.parseBoolean(failFastAttr);
             for (Node n : childElements(replacersNode)) {
                 String nodeName = cleanNodeName(n);
                 if ("replacers".equals(nodeName)) {

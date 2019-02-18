@@ -25,7 +25,8 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 
 /**
- * Helper which is used for building {@link QueryCacheConfig} from declarative configurations.
+ * XML-specific implementation of the {@link QueryCacheConfigBuilderHelper}
+ * interface. Builds {@link QueryCacheConfig} from XML configuration.
  */
 final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBuilderHelper {
 
@@ -46,6 +47,11 @@ final class QueryCacheXmlConfigBuilderHelper extends AbstractQueryCacheConfigBui
     protected String getCacheName(Node queryCacheNode) {
         NamedNodeMap attrs = queryCacheNode.getAttributes();
         return getTextContent(attrs.getNamedItem("name"));
+    }
+
+    @Override
+    protected String getCacheMapName(NamedNodeMap attrs) {
+        return getTextContent(attrs.getNamedItem("mapName"));
     }
 
     protected void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode) {

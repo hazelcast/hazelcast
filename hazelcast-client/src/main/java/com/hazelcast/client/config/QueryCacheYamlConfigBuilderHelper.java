@@ -27,6 +27,10 @@ import org.w3c.dom.Node;
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 
+/**
+ * YAML-specific implementation of the {@link QueryCacheConfigBuilderHelper}
+ * interface. Builds {@link QueryCacheConfig} from YAML configuration.
+ */
 final class QueryCacheYamlConfigBuilderHelper extends AbstractQueryCacheConfigBuilderHelper {
     QueryCacheYamlConfigBuilderHelper() {
         super(true);
@@ -42,6 +46,11 @@ final class QueryCacheYamlConfigBuilderHelper extends AbstractQueryCacheConfigBu
     @Override
     protected String getCacheName(Node queryCacheNode) {
         return queryCacheNode.getNodeName();
+    }
+
+    @Override
+    protected String getCacheMapName(NamedNodeMap attrs) {
+        return getTextContent(attrs.getNamedItem("map-name"));
     }
 
     @Override

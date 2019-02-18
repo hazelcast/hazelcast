@@ -22,7 +22,6 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.config.yaml.ElementAdapter;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -37,7 +36,7 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
+import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 
 class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
@@ -248,7 +247,7 @@ class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
 
     @Override
     protected void fillProperties(Node node, Map<String, Comparable> properties) {
-        YamlMapping propertiesMapping = asMapping(((ElementAdapter) node).getYamlNode());
+        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
         for (YamlNode propNode : propertiesMapping.children()) {
             YamlScalar propScalar = asScalar(propNode);
             String key = propScalar.nodeName();
@@ -259,7 +258,7 @@ class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
 
     @Override
     protected void fillProperties(Node node, Properties properties) {
-        YamlMapping propertiesMapping = asMapping(((ElementAdapter) node).getYamlNode());
+        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
         for (YamlNode propNode : propertiesMapping.children()) {
             YamlScalar propScalar = asScalar(propNode);
             String key = propScalar.nodeName();

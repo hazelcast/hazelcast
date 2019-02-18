@@ -161,6 +161,6 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
 
     @Override
     protected String getConfigRoot() {
-        return ConfigSections.HAZELCAST.name.toLowerCase();
+        return ConfigSections.HAZELCAST.name;
     }
 }

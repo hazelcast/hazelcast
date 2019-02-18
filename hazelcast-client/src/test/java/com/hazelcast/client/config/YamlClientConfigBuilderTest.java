@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.util.RandomLB;
+import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -261,6 +263,59 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         assertEquals("rel-topic", reliableTopicConfig.getName());
         assertEquals(10, reliableTopicConfig.getReadBatchSize());
         assertEquals(TopicOverloadPolicy.BLOCK, reliableTopicConfig.getTopicOverloadPolicy());
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testQueryCacheBothPredicateDefinedThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  query-caches:\n"
+                + "    query-cache-name:\n"
+                + "      map-name: map-name\n"
+                + "      predicate:\n"
+                + "        class-name: com.hazelcast.example.Predicate\n"
+                + "        sql: \"%age=40\"";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testQueryCacheNoPredicateDefinedThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  query-caches:\n"
+                + "    query-cache-name:\n"
+                + "      predicate: {}";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testLoadBalancerRandom() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  load-balancer:\n"
+                + "    type: random";
+
+        ClientConfig config = buildConfig(yaml);
+
+        assertInstanceOf(RandomLB.class, config.getLoadBalancer());
+    }
+
+    @Override
+    @Test
+    public void testLoadBalancerRoundRobin() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  load-balancer:\n"
+                + "    type: round-robin";
+
+        ClientConfig config = buildConfig(yaml);
+
+        assertInstanceOf(RoundRobinLB.class, config.getLoadBalancer());
     }
 
     public static ClientConfig buildConfig(String yaml) {

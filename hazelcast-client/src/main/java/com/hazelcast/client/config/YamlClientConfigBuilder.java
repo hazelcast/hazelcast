@@ -158,6 +158,6 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
 
     @Override
     protected String getConfigRoot() {
-        return ClientConfigSections.HAZELCAST_CLIENT.name.toLowerCase();
+        return ClientConfigSections.HAZELCAST_CLIENT.name;
     }
 }

@@ -216,29 +216,37 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public void testQueryCacheFullConfig() throws Exception {
-        QueryCacheConfig queryCacheConfig = fullClientConfig.getQueryCacheConfigs().get("map-name").get("query-cache-name");
-        EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
+        QueryCacheConfig queryCacheClassPredicateConfig = fullClientConfig.getQueryCacheConfigs().get("map-name")
+                                                                          .get("query-cache-class-name-predicate");
+        QueryCacheConfig queryCacheSqlPredicateConfig = fullClientConfig.getQueryCacheConfigs().get("map-name")
+                                                                        .get("query-cache-sql-predicate");
+        EntryListenerConfig entryListenerConfig = queryCacheClassPredicateConfig.getEntryListenerConfigs().get(0);
 
-        assertEquals("query-cache-name", queryCacheConfig.getName());
+        assertEquals("query-cache-class-name-predicate", queryCacheClassPredicateConfig.getName());
         assertTrue(entryListenerConfig.isIncludeValue());
         assertFalse(entryListenerConfig.isLocal());
         assertEquals("com.hazelcast.examples.EntryListener", entryListenerConfig.getClassName());
-        assertTrue(queryCacheConfig.isIncludeValue());
-        assertEquals(1, queryCacheConfig.getBatchSize());
-        assertEquals(16, queryCacheConfig.getBufferSize());
-        assertEquals(0, queryCacheConfig.getDelaySeconds());
-        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
-        assertEquals(10000, queryCacheConfig.getEvictionConfig().getSize());
-        assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
-        assertFalse(queryCacheConfig.isCoalesce());
-        assertTrue(queryCacheConfig.isPopulate());
-        for (MapIndexConfig mapIndexConfig : queryCacheConfig.getIndexConfigs()) {
+        assertTrue(queryCacheClassPredicateConfig.isIncludeValue());
+        assertEquals(1, queryCacheClassPredicateConfig.getBatchSize());
+        assertEquals(16, queryCacheClassPredicateConfig.getBufferSize());
+        assertEquals(0, queryCacheClassPredicateConfig.getDelaySeconds());
+        assertEquals(EvictionPolicy.LRU, queryCacheClassPredicateConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
+                queryCacheClassPredicateConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(10000, queryCacheClassPredicateConfig.getEvictionConfig().getSize());
+        assertEquals(InMemoryFormat.BINARY, queryCacheClassPredicateConfig.getInMemoryFormat());
+        assertFalse(queryCacheClassPredicateConfig.isCoalesce());
+        assertTrue(queryCacheClassPredicateConfig.isPopulate());
+        for (MapIndexConfig mapIndexConfig : queryCacheClassPredicateConfig.getIndexConfigs()) {
             assertEquals("name", mapIndexConfig.getAttribute());
             assertFalse(mapIndexConfig.isOrdered());
         }
 
-        assertEquals("com.hazelcast.examples.ExamplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
+        assertEquals("com.hazelcast.examples.ExamplePredicate",
+                queryCacheClassPredicateConfig.getPredicateConfig().getClassName());
+
+        assertEquals("query-cache-sql-predicate", queryCacheSqlPredicateConfig.getName());
+        assertEquals("%age=40", queryCacheSqlPredicateConfig.getPredicateConfig().getSql());
     }
 
     @Test
@@ -424,4 +432,16 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testReliableTopic_defaults();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testQueryCacheBothPredicateDefinedThrows();
+
+    @Test(expected = InvalidConfigurationException.class)
+    public abstract void testQueryCacheNoPredicateDefinedThrows();
+
+    @Test
+    public abstract void testLoadBalancerRandom();
+
+    @Test
+    public abstract void testLoadBalancerRoundRobin();
 }

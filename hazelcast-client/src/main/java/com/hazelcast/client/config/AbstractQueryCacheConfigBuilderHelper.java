@@ -32,6 +32,13 @@ import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
+/**
+ * Abstract class sharing logic between the two implementations of the
+ * {@link QueryCacheConfigBuilderHelper} interface.
+ *
+ * @see QueryCacheXmlConfigBuilderHelper
+ * @see QueryCacheYamlConfigBuilderHelper
+ */
 abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfigBuilderHelper {
     private final boolean domLevel3;
 
@@ -108,7 +115,7 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
     protected void handleQueryCacheNode(ClientConfig clientConfig, Node queryCacheNode) {
         NamedNodeMap attrs = queryCacheNode.getAttributes();
         String cacheName = getCacheName(queryCacheNode);
-        String mapName = getTextContent(attrs.getNamedItem("mapName"));
+        String mapName = getCacheMapName(attrs);
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
         for (Node childNode : childElements(queryCacheNode)) {
             String textContent = getTextContent(childNode);
@@ -117,6 +124,8 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
         }
         clientConfig.addQueryCacheConfig(mapName, queryCacheConfig);
     }
+
+    protected abstract String getCacheMapName(NamedNodeMap attrs);
 
     protected abstract void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode);
 

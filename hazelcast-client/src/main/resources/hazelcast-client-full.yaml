@@ -233,8 +233,8 @@ hazelcast-client:
       prefetch-validity-millis: 600000
 
   query-caches:
-    query-cache-name:
-      mapName: map-name
+    query-cache-class-name-predicate:
+      map-name: map-name
       predicate:
         class-name: com.hazelcast.examples.ExamplePredicate
       entry-listeners:
@@ -255,6 +255,10 @@ hazelcast-client:
       indexes:
         name:
           ordered: false
+    query-cache-sql-predicate:
+      map-name: map-name
+      predicate:
+        sql: "%age=40"
 
   connection-strategy:
     async-start: true

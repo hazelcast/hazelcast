@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.util.RandomLB;
+import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -301,6 +303,56 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertEquals("rel-topic", reliableTopicConfig.getName());
         assertEquals(10, reliableTopicConfig.getReadBatchSize());
         assertEquals(TopicOverloadPolicy.BLOCK, reliableTopicConfig.getTopicOverloadPolicy());
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testQueryCacheBothPredicateDefinedThrows() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<query-caches>"
+                + "  <query-cache name=\"cache-name\" mapName=\"map-name\">"
+                + "    <predicate type=\"class-name\">com.hazelcast.example.Predicate</predicate>"
+                + "    <predicate type=\"sql\">%age=40</predicate>"
+                + "  </query-cache>"
+                + "</query-caches>"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testQueryCacheNoPredicateDefinedThrows() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<query-caches>"
+                + "  <query-cache name=\"cache-name\" mapName=\"map-name\">"
+                + "  </query-cache>"
+                + "</query-caches>"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    public void testLoadBalancerRandom() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<load-balancer type=\"random\" />"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig config = buildConfig(xml);
+
+        assertInstanceOf(RandomLB.class, config.getLoadBalancer());
+    }
+
+    @Override
+    public void testLoadBalancerRoundRobin() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<load-balancer type=\"round-robin\" />"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig config = buildConfig(xml);
+
+        assertInstanceOf(RoundRobinLB.class, config.getLoadBalancer());
     }
 
     static ClientConfig buildConfig(String xml, Properties properties) {
