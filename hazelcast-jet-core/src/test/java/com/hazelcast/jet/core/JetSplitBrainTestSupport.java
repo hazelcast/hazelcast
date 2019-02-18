@@ -27,7 +27,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.nio.tcp.FirewallingNetworkingService.FirewallingEndpointManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -160,7 +160,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
                 addressesToBlock.add(getAddress(anInstancesToBlock.getHazelcastInstance()));
                 // block communication from these instances to the new address
 
-                FirewallingConnectionManager connectionManager = getFireWalledConnectionManager(
+                FirewallingEndpointManager connectionManager = getFireWalledEndpointManager(
                         anInstancesToBlock.getHazelcastInstance());
                 connectionManager.blockNewConnection(newMemberAddress);
                 connectionManager.closeActiveConnection(newMemberAddress);
@@ -200,8 +200,8 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         waitAllForSafeState(Stream.of(instances).map(JetInstance::getHazelcastInstance).collect(toList()));
     }
 
-    private static FirewallingConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
-        return (FirewallingConnectionManager) getNode(hz).getConnectionManager();
+    private static FirewallingEndpointManager getFireWalledEndpointManager(HazelcastInstance hz) {
+        return (FirewallingEndpointManager) getNode(hz).getEndpointManager();
     }
 
     private Brains getBrains(JetInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {

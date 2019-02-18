@@ -29,7 +29,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.nio.tcp.FirewallingNetworkingService.FirewallingEndpointManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -277,7 +277,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
     private void setDelayTime(long ms) {
         for (JetInstance instance : instances) {
-            FirewallingConnectionManager cm = (FirewallingConnectionManager) getNode(instance).getConnectionManager();
+            FirewallingEndpointManager cm = (FirewallingEndpointManager) getNode(instance).getEndpointManager();
             cm.setDelayMillis(ms, ms);
         }
     }

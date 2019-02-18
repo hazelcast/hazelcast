@@ -218,7 +218,7 @@ public final class Util {
     }
 
     public static Connection getMemberConnection(@Nonnull NodeEngine engine, @Nonnull Address memberAddr) {
-        return ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(memberAddr);
+        return ((NodeEngineImpl) engine).getNode().getEndpointManager().getConnection(memberAddr);
     }
 
     public static JetInstance getJetInstance(NodeEngine nodeEngine) {
