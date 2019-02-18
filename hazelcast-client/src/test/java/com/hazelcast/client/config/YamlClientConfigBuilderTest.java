@@ -55,6 +55,8 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
     @Before
     public void init() throws Exception {
+        assumeThatJDK8OrHigher();
+
         URL schemaResource = YamlConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-full.yaml");
         fullClientConfig = new YamlClientConfigBuilder(schemaResource).build();
 
