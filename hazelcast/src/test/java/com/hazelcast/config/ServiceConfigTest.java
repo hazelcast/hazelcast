@@ -49,6 +49,8 @@ public class ServiceConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testYaml() {
+        assumeThatJDK8OrHigher();
+
         Config config = new ClasspathYamlConfig("com/hazelcast/config/hazelcast-service.yaml");
         ServiceConfig serviceConfig = config.getServicesConfig().getServiceConfig("my-service");
         assertEquals("com.hazelcast.examples.MyService", serviceConfig.getClassName());
