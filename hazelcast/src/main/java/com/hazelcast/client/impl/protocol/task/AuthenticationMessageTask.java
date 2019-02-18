@@ -28,7 +28,6 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Default Authentication with username password handling task
