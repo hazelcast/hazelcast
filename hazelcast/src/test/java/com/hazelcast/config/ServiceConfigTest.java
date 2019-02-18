@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -37,6 +38,16 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ServiceConfigTest extends HazelcastTestSupport {
+    static final String HAZELCAST_START_TAG = ""
+            + "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\"\n"
+            + "           xmlns:s=\"http://www.hazelcast.com/schema/sample\"\n"
+            + "           xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+            + "           xsi:schemaLocation=\"\n"
+            + "           http://www.hazelcast.com/schema/sample\n"
+            + "           hazelcast-sample-service.xsd\n"
+            + "           http://www.hazelcast.com/schema/config\n"
+            + "           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\">\n";
+    static final String HAZELCAST_END_TAG = "</hazelcast>\n";
 
     @Test
     public void testXml() {
@@ -56,6 +67,36 @@ public class ServiceConfigTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.examples.MyService", serviceConfig.getClassName());
 
         assertParsedServiceConfig(serviceConfig);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testXmlMissingParserClassThrows() {
+        String xml = ""
+                + HAZELCAST_START_TAG
+                + "    <services enable-defaults=\"false\">\n"
+                + "        <service enabled=\"true\">\n"
+                + "            <name>my-service</name>\n"
+                + "            <class-name>com.hazelcast.examples.MyService</class-name>\n"
+                + "            <configuration />\n"
+                + "        </service>\n"
+                + "    </services>\n"
+                + HAZELCAST_END_TAG;
+
+        new InMemoryXmlConfig(xml);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testYamlMissingParserClassThrows() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  services:\n"
+                + "    enable-defaults: false\n"
+                + "    my-service:\n"
+                + "      enabled: true\n"
+                + "      class-name: com.hazelcast.examples.MyService\n"
+                + "      configuration: {}\n";
+
+        new InMemoryYamlConfig(yaml);
     }
 
     private void assertParsedServiceConfig(ServiceConfig serviceConfig) {
@@ -79,7 +120,7 @@ public class ServiceConfigTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         factory.newHazelcastInstance(config);
 
-        assertTrue(configObject == service.config);
+        assertSame(configObject, service.config);
     }
 
     @Test
