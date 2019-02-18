@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.config.yaml.ElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlMapping;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
@@ -44,6 +43,7 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getAttribute;
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
+import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static com.hazelcast.internal.yaml.YamlUtil.ensureRunningOnJava8OrHigher;
@@ -172,6 +172,21 @@ public class YamlConfigBuilder implements ConfigBuilder {
         new YamlMemberDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }
 
+    /**
+     * Imports external YAML documents into the provided main YAML document.
+     * <p/>
+     * Since the YAML configuration uses mappings, in order to keep the
+     * configuration defined in the main YAML document the imported
+     * document (the source) will be actually merged into the main
+     * document (the target). An example to it is defining one map in the
+     * main document, and another map in the imported document. In this
+     * case the documents should be merged to include both map configurations
+     * under the {@code root/map} node.
+     *
+     * @param imdgRoot The root of the main YAML configuration document
+     * @throws Exception If a YAML document to be imported can't be loaded
+     * @see #merge(YamlNode, YamlNode)
+     */
     private void importDocuments(YamlNode imdgRoot) throws Exception {
         YamlMapping rootAsMapping = asMapping(imdgRoot);
         YamlSequence importSeq = rootAsMapping.childAsSequence(ConfigSections.IMPORT.name);
@@ -205,8 +220,6 @@ public class YamlConfigBuilder implements ConfigBuilder {
             replaceVariables(asW3cNode(imdgRootLoaded));
             importDocuments(imdgRootLoaded);
 
-            // we need to merge and not just substitute with the content of the imported document
-            // YAML documents define mappings where the name of the nodes should be unique
             merge(imdgRootLoaded, imdgRoot);
         }
 
@@ -214,11 +227,11 @@ public class YamlConfigBuilder implements ConfigBuilder {
     }
 
     /**
-     * Merges the source YAML document into the target YAML document
+     * Merges the source YAML document into the target YAML document.
      * <p/>
-     * If a given source node is not found in the target, it will be attached
+     * If a given source node is not found in the target, it will be attached.
      * If a given source node is found in the target, this method is invoked
-     * recursively with the given node
+     * recursively with the given node.
      *
      * @param source The source YAML document's root
      * @param target The target YAML document's root
@@ -264,7 +277,7 @@ public class YamlConfigBuilder implements ConfigBuilder {
             }
         }
 
-        ConfigReplacerHelper.traverseChildrenAndReplaceVariables(node, replacers, failFast);
+        ConfigReplacerHelper.traverseChildrenAndReplaceVariables(node, replacers, failFast, new YamlDomVariableReplacer());
     }
 
     private ConfigReplacer createReplacer(Node node) throws Exception {
@@ -287,16 +300,12 @@ public class YamlConfigBuilder implements ConfigBuilder {
     }
 
     private void fillReplacerProperties(Node node, Properties properties) {
-        YamlMapping propertiesMapping = asMapping(((ElementAdapter) node).getYamlNode());
+        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
         for (YamlNameNodePair childNodePair : propertiesMapping.childrenPairs()) {
             String childName = childNodePair.nodeName();
             YamlNode child = childNodePair.childNode();
-            if (child != null) {
-                Object nodeValue = asScalar(child).nodeValue();
-                properties.put(childName, nodeValue != null ? nodeValue.toString() : "");
-            } else {
-                properties.put(childName, "");
-            }
+            Object nodeValue = asScalar(child).nodeValue();
+            properties.put(childName, nodeValue != null ? nodeValue.toString() : "");
         }
     }
 

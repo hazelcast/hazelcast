@@ -26,10 +26,10 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
-import java.util.Properties;
 
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
+import static org.hamcrest.Matchers.containsString;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -40,65 +40,71 @@ public class XmlSchemaValidationTest {
     @Test
     public void testXmlDeniesDuplicateGroupConfig() {
         expectDuplicateElementError("group");
-        String groupConfig = "    <group>\n"
+        String groupConfig = ""
+                + "    <group>\n"
                 + "        <name>foobar</name>\n"
                 + "        <password>dev-pass</password>\n"
                 + "    </group>\n";
-        buildConfig(HAZELCAST_START_TAG + groupConfig + groupConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + groupConfig + groupConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicateNetworkConfig() {
         expectDuplicateElementError("network");
-        String networkConfig = "    <network>\n"
+        String networkConfig = ""
+                + "    <network>\n"
                 + "        <join>\n"
                 + "            <multicast enabled=\"false\"/>\n"
                 + "            <tcp-ip enabled=\"true\"/>\n"
                 + "        </join>\n"
                 + "    </network>\n";
-        buildConfig(HAZELCAST_START_TAG + networkConfig + networkConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + networkConfig + networkConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicateLicenseKeyConfig() {
         expectDuplicateElementError("license-key");
         String licenseConfig = "    <license-key>foo</license-key>";
-        buildConfig(HAZELCAST_START_TAG + licenseConfig + licenseConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + licenseConfig + licenseConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicatePropertiesConfig() {
         expectDuplicateElementError("properties");
-        String propertiesConfig = "    <properties>\n"
+        String propertiesConfig = ""
+                + "    <properties>\n"
                 + "        <property name='foo'>fooval</property>\n"
                 + "    </properties>\n";
-        buildConfig(HAZELCAST_START_TAG + propertiesConfig + propertiesConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + propertiesConfig + propertiesConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicatePartitionGroupConfig() {
         expectDuplicateElementError("partition-group");
-        String partitionConfig = "   <partition-group>\n"
+        String partitionConfig = ""
+                + "   <partition-group>\n"
                 + "      <member-group>\n"
                 + "          <interface>foo</interface>\n"
                 + "      </member-group>\n"
                 + "   </partition-group>\n";
-        buildConfig(HAZELCAST_START_TAG + partitionConfig + partitionConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + partitionConfig + partitionConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicateListenersConfig() {
         expectDuplicateElementError("listeners");
-        String listenersConfig = "   <listeners>"
+        String listenersConfig = ""
+                + "   <listeners>\n"
                 + "        <listener>foo</listener>\n\n"
                 + "   </listeners>\n";
-        buildConfig(HAZELCAST_START_TAG + listenersConfig + listenersConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + listenersConfig + listenersConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicateSerializationConfig() {
         expectDuplicateElementError("serialization");
-        String serializationConfig = "       <serialization>\n"
+        String serializationConfig = ""
+                + "       <serialization>\n"
                 + "        <portable-version>0</portable-version>\n"
                 + "        <data-serializable-factories>\n"
                 + "            <data-serializable-factory factory-id=\"1\">com.hazelcast.examples.DataSerializableFactory\n"
@@ -114,45 +120,47 @@ public class XmlSchemaValidationTest {
                 + "        </serializers>\n"
                 + "        <check-class-def-errors>true</check-class-def-errors>\n"
                 + "    </serialization>\n";
-        buildConfig(HAZELCAST_START_TAG + serializationConfig + serializationConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + serializationConfig + serializationConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicateServicesConfig() {
         expectDuplicateElementError("services");
-        String servicesConfig = "   <services>       "
+        String servicesConfig = ""
+                + "   <services>\n"
                 + "       <service enabled=\"true\">\n"
                 + "            <name>custom-service</name>\n"
                 + "            <class-name>com.hazelcast.examples.MyService</class-name>\n"
                 + "        </service>\n"
                 + "   </services>";
-        buildConfig(HAZELCAST_START_TAG + servicesConfig + servicesConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + servicesConfig + servicesConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicateSecurityConfig() {
         expectDuplicateElementError("security");
         String securityConfig = "   <security/>\n";
-        buildConfig(HAZELCAST_START_TAG + securityConfig + securityConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + securityConfig + securityConfig + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testXmlDeniesDuplicateMemberAttributesConfig() {
         expectDuplicateElementError("member-attributes");
-        String memberAttConfig = "    <member-attributes>\n"
+        String memberAttConfig = ""
+                + "    <member-attributes>\n"
                 + "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n"
                 + "    </member-attributes>\n";
-        buildConfig(HAZELCAST_START_TAG + memberAttConfig + memberAttConfig + HAZELCAST_END_TAG, null);
+        buildConfig(HAZELCAST_START_TAG + memberAttConfig + memberAttConfig + HAZELCAST_END_TAG);
     }
 
     private void expectDuplicateElementError(String elName) {
+        rule.expectMessage(containsString(elName));
         InvalidConfigurationTest.expectInvalid(rule);
     }
 
-    private static Config buildConfig(String xml, Properties properties) {
+    private static Config buildConfig(String xml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.setProperties(properties);
         return configBuilder.build();
     }
 

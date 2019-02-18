@@ -197,7 +197,7 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
                 XPathConstants.NODE);
         if (node != null) {
             String failFastAttr = getAttribute(node, "fail-if-value-missing");
-            failFast = isNullOrEmpty(failFastAttr) ? true : Boolean.parseBoolean(failFastAttr);
+            failFast = isNullOrEmpty(failFastAttr) || Boolean.parseBoolean(failFastAttr);
             for (Node n : childElements(node)) {
                 String value = cleanNodeName(n);
                 if ("replacer".equals(value)) {
@@ -206,7 +206,7 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
             }
         }
 
-        ConfigReplacerHelper.traverseChildrenAndReplaceVariables(root, replacers, failFast);
+        ConfigReplacerHelper.traverseChildrenAndReplaceVariables(root, replacers, failFast, new XmlDomVariableReplacer());
     }
 
     private ConfigReplacer createReplacer(Node node) throws Exception {
