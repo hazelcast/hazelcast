@@ -20,9 +20,8 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
@@ -47,7 +46,6 @@ public class RestMultiendpointTest
     @Before
     public void setup() {
         config.getGroupConfig().setName(randomString());
-        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
 
         ServerSocketEndpointConfig memberEndpointConfig = new ServerSocketEndpointConfig();
         memberEndpointConfig.setName("MEMBER")
