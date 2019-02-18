@@ -25,6 +25,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.events.Event;
@@ -98,6 +99,7 @@ import static java.net.URLEncoder.encode;
 public class ManagementCenterService {
 
     private static final int HTTP_SUCCESS = 200;
+    private static final int HTTP_NOT_MODIFIED = 304;
     private static final int CONNECTION_TIMEOUT_MILLIS = 5000;
     private static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
     private static final long DEFAULT_UPDATE_INTERVAL = 3000;
@@ -435,10 +437,14 @@ public class ManagementCenterService {
     private final class StateSendThread extends Thread {
 
         private final long updateIntervalMs;
+        private final ClientBwListConfigHandler bwListConfigHandler;
+
+        private String lastConfigETag;
 
         private StateSendThread() {
             super(createThreadName(instance.getName(), "MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
+            bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         }
 
         private long calcUpdateInterval() {
@@ -451,7 +457,7 @@ public class ManagementCenterService {
             try {
                 while (isRunning()) {
                     long startMs = Clock.currentTimeMillis();
-                    sendState();
+                    sendStateAndReadConfig();
                     long endMs = Clock.currentTimeMillis();
                     sleepIfPossible(updateIntervalMs, endMs - startMs);
                 }
@@ -463,12 +469,16 @@ public class ManagementCenterService {
             }
         }
 
-        private void sendState() throws MalformedURLException {
+        private void sendStateAndReadConfig() throws MalformedURLException {
             URL url = newCollectorUrl();
             OutputStream outputStream = null;
             OutputStreamWriter writer = null;
             try {
                 HttpURLConnection connection = openJsonConnection(url);
+                if (lastConfigETag != null) {
+                    connection.setRequestProperty("If-None-Match", lastConfigETag);
+                }
+
                 outputStream = connection.getOutputStream();
                 writer = new OutputStreamWriter(outputStream, "UTF-8");
 
@@ -480,22 +490,53 @@ public class ManagementCenterService {
 
                     writer.flush();
                     outputStream.flush();
-                    boolean success = post(connection);
-                    if (manCenterConnectionLost && success) {
-                        logger.info("Connection to Management Center restored.");
-                        manCenterConnectionLost = false;
-                    } else if (!success) {
-                        manCenterConnectionLost = true;
-                    }
+
+                    processResponse(connection);
                 }
             } catch (Exception e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
                     log("Failed to connect to: " + url, e);
+                    bwListConfigHandler.handleLostConnection();
                 }
             } finally {
                 closeResource(writer);
                 closeResource(outputStream);
+            }
+        }
+
+        private void processResponse(HttpURLConnection connection) throws Exception {
+            int responseCode = connection.getResponseCode();
+            boolean okResponse = responseCode == HTTP_SUCCESS || responseCode == HTTP_NOT_MODIFIED;
+            if (!okResponse && !manCenterConnectionLost) {
+                logger.warning("Failed to send response, responseCode:" + responseCode + " url:" + connection.getURL());
+            }
+
+            if (manCenterConnectionLost && okResponse) {
+                logger.info("Connection to Management Center restored.");
+                manCenterConnectionLost = false;
+            } else if (!okResponse) {
+                manCenterConnectionLost = true;
+            }
+
+            // process response only if config changed
+            if (responseCode == HTTP_SUCCESS) {
+                readAndApplyConfig(connection);
+            }
+        }
+
+        private void readAndApplyConfig(HttpURLConnection connection) throws Exception {
+            InputStream inputStream = null;
+            InputStreamReader reader = null;
+            try {
+                inputStream = connection.getInputStream();
+                reader = new InputStreamReader(inputStream, "UTF-8");
+                JsonObject response = Json.parse(reader).asObject();
+                lastConfigETag = connection.getHeaderField("ETag");
+                bwListConfigHandler.handleConfig(response);
+            } finally {
+                closeResource(reader);
+                closeResource(inputStream);
             }
         }
 

@@ -16,20 +16,29 @@
 
 package com.hazelcast.internal.management;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-
+import com.hazelcast.internal.management.dto.ClientBwListDTO;
+import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.hazelcast.internal.management.dto.ClientBwListDTO.Mode;
+import static com.hazelcast.internal.management.dto.ClientBwListEntryDTO.Type;
+
 public class MancenterMock extends NanoHTTPD {
+
+    private volatile ClientBwListDTO clientBwList;
 
     public MancenterMock(int port) throws IOException {
         super(port);
+        resetClientBwList();
         start();
     }
 
@@ -62,6 +71,7 @@ public class MancenterMock extends NanoHTTPD {
         } else if (path.contains("collector.do")) {
             final JsonObject object = Json.parse(files.get("postData")).asObject();
             process(object);
+            return newFixedLengthResponse(Status.OK, "application/json", getConfigString());
         }
         return newFixedLengthResponse("");
     }
@@ -70,4 +80,23 @@ public class MancenterMock extends NanoHTTPD {
         memberState = new TimedMemberState();
         memberState.fromJson(json.get("timedMemberState").asObject());
     }
+
+    public void enableClientWhitelist(String... ips) {
+        List<ClientBwListEntryDTO> entries = new ArrayList<ClientBwListEntryDTO>();
+        if (ips != null) {
+            for (String ip : ips) {
+                entries.add(new ClientBwListEntryDTO(Type.IP_ADDRESS, ip));
+            }
+        }
+        clientBwList = new ClientBwListDTO(Mode.WHITELIST, entries);
+    }
+
+    public void resetClientBwList() {
+        clientBwList = new ClientBwListDTO(Mode.DISABLED, new ArrayList<ClientBwListEntryDTO>());
+    }
+
+    private String getConfigString() {
+        return "{\"clientBwList\":" + clientBwList.toJson().toString() + "}";
+    }
+
 }
