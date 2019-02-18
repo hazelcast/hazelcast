@@ -63,6 +63,7 @@ import static org.junit.Assert.assertEquals;
 
 public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
+    // used to test the suppression of null output from mapToOutputFn
     private static final long FILTERED_OUT_WINDOW_START = 0;
 
     private static final Function<TimestampedEntry<String, Long>, Tuple2<Long, String>> TS_ENTRY_KEY_FN =
@@ -187,7 +188,6 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                         .setEarlyResultsPeriod(earlyResultsPeriod))
                 .groupingKey(Entry::getKey)
                 .aggregate(summingLong(Entry::getValue), (start, end, key, sum) ->
-                        // filter out one of the windows - this is to test map-to-null behavior
                         start == FILTERED_OUT_WINDOW_START ? null : new TimestampedEntry<>(end, key, sum));
 
         // Then
@@ -287,35 +287,41 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 .map(ts -> ts + (ts / sessionLength) * sessionTimeout)
                 .collect(toList());
         addToSrcMapJournal(input);
-        if (earlyResultsPeriod == 0) {
+        boolean emittingEarlyResults = earlyResultsPeriod != 0;
+        if (!emittingEarlyResults) {
             addToSrcMapJournal(closingItems);
         }
 
         // When
-        Function<TimestampedEntry<String, Long>, String> formatFn = fx.tsEntryFormatFn;
-        StreamStage<TimestampedEntry<String, Long>> aggregated = fx.stage0()
-                .window(session(sessionTimeout)
-                        .setEarlyResultsPeriod(earlyResultsPeriod))
-                .groupingKey(Entry::getKey)
-                .aggregate(summingLong(Entry::getValue), (start, end, key, sum) ->
-                        // filter out one of the windows - this is to test map-to-null behavior
-                        start == 0 ? null : new TimestampedEntry<>(start, key, sum));
+        StageWithKeyAndWindow<Entry<String, Integer>, String> windowed = fx
+                .stage0()
+                .window(session(sessionTimeout).setEarlyResultsPeriod(earlyResultsPeriod))
+                .groupingKey(Entry::getKey);
 
         // Then
-        aggregated.drainTo(sink);
+
+        windowed.aggregate(summingLong(Entry::getValue), (start, end, key, sum) ->
+                //                                      suppress incomplete windows to get predictable results
+                (start == FILTERED_OUT_WINDOW_START || (emittingEarlyResults && end - start != sessionLength + 1))
+                        ? null
+                        : new TimestampedEntry<>(start, key, sum))
+                .drainTo(sink);
         jet().newJob(p);
 
         Stream<TimestampedEntry<String, Long>> expectedStream = input
                 .stream()
                 .map(i -> (long) i - i % (sessionLength + sessionTimeout))
                 .distinct()
+                .filter(start -> start != FILTERED_OUT_WINDOW_START)
                 .flatMap(start -> {
                     long sum = sessionLength * (2 * start + sessionLength - 1) / 2L;
-                    return start == 0 ? null
-                            : Stream.of(new TimestampedEntry<>(start, "a", sum),
+                    return Stream.of(
+                            new TimestampedEntry<>(start, "a", sum),
                             new TimestampedEntry<>(start, "b", sum));
                 })
                 .filter(Objects::nonNull);
+
+        Function<TimestampedEntry<String, Long>, String> formatFn = fx.tsEntryFormatFn;
         String expectedString = streamToString(expectedStream, null, formatFn);
         assertTrueEventually(() -> assertEquals(
                 expectedString,

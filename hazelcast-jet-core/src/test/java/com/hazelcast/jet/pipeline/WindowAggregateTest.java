@@ -56,6 +56,7 @@ import static org.junit.Assert.assertEquals;
 
 public class WindowAggregateTest extends PipelineStreamTestSupport {
 
+    // used to test the suppression of null output from mapToOutputFn
     private static final long FILTERED_OUT_WINDOW_START = 0;
 
     @Test
@@ -232,10 +233,9 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stream()
                 .map(i -> i - i % slideBy)
                 .distinct()
-                .map(start -> start == FILTERED_OUT_WINDOW_START ? null
-                        : new TimestampedItem<>((long) start + winSize,
-                                expectedWindowSum.apply(start, min(start + winSize, itemCount))))
-                .filter(Objects::nonNull);
+                .filter(start -> start != FILTERED_OUT_WINDOW_START)
+                .map(start -> new TimestampedItem<>((long) start + winSize,
+                                expectedWindowSum.apply(start, min(start + winSize, itemCount))));
         Stream<TimestampedItem<Long>> expectedStream = concat(headOfStream, restOfStream);
         String expectedString = streamToString(expectedStream, null, formatFn);
         assertTrueEventually(() -> assertEquals(
@@ -266,20 +266,24 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 tsItem -> String.format("(%03d, %03d)", tsItem.timestamp(), tsItem.item());
 
         addToSrcMapJournal(input);
-        if (earlyResultsPeriod == 0) {
+        boolean emittingEarlyResults = earlyResultsPeriod != 0;
+        if (!emittingEarlyResults) {
             addToSrcMapJournal(closingItems);
         }
         StreamStage<Integer> stage0 = srcStage.withTimestamps(i -> i, maxLag);
 
         // When
-        StreamStage<TimestampedItem<Long>> aggregated = stage0.window(
+        StageWithWindow<Integer> windowed = stage0.window(
                 session(sessionTimeout).setEarlyResultsPeriod(earlyResultsPeriod)
-        ).aggregate(summingLong(i -> i), (start, end, sum) -> start == FILTERED_OUT_WINDOW_START
-                ? null
-                : new TimestampedItem<>(start, sum));
+        );
 
         // Then
-        aggregated.drainTo(sink);
+        windowed.aggregate(summingLong(i -> i), (start, end, sum) ->
+                //                                      suppress incomplete windows to get predictable results
+                (start == FILTERED_OUT_WINDOW_START || (emittingEarlyResults && end - start != sessionLength + 1))
+                        ? null
+                        : new TimestampedItem<>(start, sum))
+                .drainTo(sink);
         jet().newJob(p);
 
         Function<Integer, Long> expectedWindowSum = start -> sessionLength * (2 * start + sessionLength - 1) / 2L;
@@ -287,9 +291,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stream()
                 .map(i -> i - i % (sessionLength + sessionTimeout))
                 .distinct()
-                .map(start -> start == FILTERED_OUT_WINDOW_START ? null
-                        : new TimestampedItem<>((long) start, expectedWindowSum.apply(start)))
-                .filter(Objects::nonNull);
+                .filter(start -> start != FILTERED_OUT_WINDOW_START)
+                .map(start -> new TimestampedItem<>((long) start, expectedWindowSum.apply(start)));
         String expectedString = streamToString(expectedStream, null, formatFn);
         assertTrueEventually(() -> assertEquals(
                 expectedString,
