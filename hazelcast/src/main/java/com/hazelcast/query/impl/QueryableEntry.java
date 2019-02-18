@@ -75,6 +75,15 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         Object attributeValue = getAttributeValue(attributeName);
         if (attributeValue == null) {
             return NULL_CONVERTER;
+        } else if (attributeValue instanceof MultiResult) {
+            MultiResult multiResult = (MultiResult) attributeValue;
+            for (Object result : multiResult.getResults()) {
+                if (result != null) {
+                    AttributeType attributeType = extractAttributeType(result);
+                    return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
+                }
+            }
+            return NULL_CONVERTER;
         } else {
             AttributeType attributeType = extractAttributeType(attributeValue);
             return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
@@ -156,36 +165,10 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     public static AttributeType extractAttributeType(Object attributeValue) {
-        if (attributeValue instanceof MultiResult) {
-            return extractAttributeTypeFromMultiResult((MultiResult) attributeValue);
-        } else {
-            return extractAttributeTypeFromSingleResult(attributeValue);
-        }
-    }
-
-    private static AttributeType extractAttributeTypeFromSingleResult(Object extractedSingleResult) {
-        if (extractedSingleResult == null) {
-            return null;
-        }
-        if (extractedSingleResult instanceof Portable) {
+        if (attributeValue instanceof Portable) {
             return AttributeType.PORTABLE;
         }
-        return ReflectionHelper.getAttributeType(extractedSingleResult.getClass());
-
-    }
-
-    private static AttributeType extractAttributeTypeFromMultiResult(MultiResult extractedMultiResult) {
-        Object firstNonNullResult = null;
-        for (Object result : extractedMultiResult.getResults()) {
-            if (result != null) {
-                firstNonNullResult = result;
-                break;
-            }
-        }
-        if (firstNonNullResult == null) {
-            return null;
-        }
-        return ReflectionHelper.getAttributeType(firstNonNullResult.getClass());
+        return ReflectionHelper.getAttributeType(attributeValue.getClass());
     }
 
     private static Object getMetadataOrNull(Metadata metadata, boolean isKey) {

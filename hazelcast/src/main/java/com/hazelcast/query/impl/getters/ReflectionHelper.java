@@ -49,10 +49,6 @@ public final class ReflectionHelper {
     }
 
     public static AttributeType getAttributeType(Class klass) {
-        if (klass == null) {
-            return null;
-        }
-
         if (klass == String.class) {
             return AttributeType.STRING;
         } else if (klass == int.class || klass == Integer.class) {

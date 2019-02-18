@@ -411,12 +411,9 @@ public class IndexTest {
             this.attributeValue = attributeValue;
         }
 
+        @Override
         public Comparable getAttributeValue(String attributeName) throws QueryException {
             return attributeValue;
-        }
-
-        public AttributeType getAttributeType(String attributeName) {
-            return ReflectionHelper.getAttributeType(attributeValue.getClass());
         }
 
         @Override
