@@ -174,7 +174,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         Record record = getRecordOrNull(key, now, true);
         if (record == null) {
-            record = createRecord(value, ttl, maxIdle, now);
+            record = createRecord(key, value, ttl, maxIdle, now);
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
         } else {
@@ -325,7 +325,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Record record = null;
         Object value = mapDataStore.load(key);
         if (value != null) {
-            record = createRecord(value, DEFAULT_TTL, DEFAULT_MAX_IDLE, getNow());
+            record = createRecord(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE, getNow());
             storage.put(key, record);
             mutationObserver.onLoadRecord(key, record);
             if (!backup) {
@@ -699,7 +699,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         onStore(record);
 
         if (record == null) {
-            record = createRecord(value, ttl, maxIdle, now);
+            record = createRecord(key, value, ttl, maxIdle, now);
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
         } else {
@@ -737,7 +737,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
-            record = createRecord(newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            record = createRecord(key, newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
             mergeRecordExpiration(record, mergingEntry);
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
@@ -795,7 +795,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             newValue = persistenceEnabledFor(provenance) ? mapDataStore.add(key, newValue, now) : newValue;
-            record = createRecord(newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            record = createRecord(key, newValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
             mergeRecordExpiration(record, mergingEntry);
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
@@ -882,7 +882,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Object oldValue = null;
         if (record == null) {
             value = mapServiceContext.interceptPut(name, null, value);
-            record = createRecord(value, ttl, maxIdle, now);
+            record = createRecord(key, value, ttl, maxIdle, now);
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
         } else {
@@ -924,7 +924,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         EntryEventType entryEventType = null;
         if (record == null) {
             value = mapServiceContext.interceptPut(name, null, value);
-            record = createRecord(value, ttl, maxIdle, now);
+            record = createRecord(key, value, ttl, maxIdle, now);
             storage.put(key, record);
             if (canPublishLoadEvent()) {
                 mutationObserver.onLoadRecord(key, record);
@@ -1000,7 +1000,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             oldValue = mapDataStore.load(key);
             if (oldValue != null) {
-                record = createRecord(oldValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+                record = createRecord(key, oldValue, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
                 storage.put(key, record);
 
                 mutationObserver.onPutRecord(key, record);
@@ -1014,7 +1014,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = mapServiceContext.interceptPut(name, null, value);
             value = mapDataStore.add(key, value, now);
             onStore(record);
-            record = createRecord(value, ttl, maxIdle, now);
+            record = createRecord(key, value, ttl, maxIdle, now);
             storage.put(key, record);
             mutationObserver.onPutRecord(key, record);
 

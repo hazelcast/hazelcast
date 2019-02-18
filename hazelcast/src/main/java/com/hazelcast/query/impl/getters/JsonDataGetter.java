@@ -18,6 +18,9 @@ package com.hazelcast.query.impl.getters;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DataInputNavigableJsonAdapter;
+import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
@@ -30,8 +33,11 @@ public final class JsonDataGetter extends AbstractJsonGetter {
 
     private JsonFactory factory = new JsonFactory();
 
-    public JsonDataGetter() {
+    private InternalSerializationService ss;
+
+    JsonDataGetter(InternalSerializationService ss) {
         super(null);
+        this.ss = ss;
     }
 
     protected JsonParser createParser(Object obj) throws IOException {
@@ -39,5 +45,12 @@ public final class JsonDataGetter extends AbstractJsonGetter {
         return factory.createParser(data.toByteArray(),
                 HEAP_DATA_OVERHEAD + UTF_CHARACTER_COUNT_FIELD_SIZE,
                 data.dataSize() - UTF_CHARACTER_COUNT_FIELD_SIZE);
+    }
+
+    @Override
+    protected NavigableJsonInputAdapter annotate(Object object) {
+        Data data = (Data) object;
+        return new DataInputNavigableJsonAdapter(ss.createObjectDataInput(data),
+                HEAP_DATA_OVERHEAD + UTF_CHARACTER_COUNT_FIELD_SIZE);
     }
 }

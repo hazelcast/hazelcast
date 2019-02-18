@@ -106,8 +106,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Object value, long ttlMillis, long maxIdle, long now) {
-        Record record = recordFactory.newRecord(value);
+    public Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now) {
+        Record record = recordFactory.newRecord(key, value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
@@ -161,6 +161,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.haveAtLeastOneIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
+            queryableEntry.setMetadata(record.getMetadata());
             indexes.putEntry(queryableEntry, oldValue, Index.OperationSource.USER);
         }
     }

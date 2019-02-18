@@ -21,13 +21,37 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.JsonTokenId;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
+import com.hazelcast.json.internal.JsonPattern;
+import com.hazelcast.json.internal.JsonSchemaHelper;
+import com.hazelcast.json.internal.JsonSchemaNode;
+import com.hazelcast.util.collection.WeightedEvictableList.WeightedItem;
 
 import java.io.IOException;
+import java.util.List;
 
 public abstract class AbstractJsonGetter extends Getter {
 
+    private static final int QUERY_CONTEXT_CACHE_MAX_SIZE = 40;
+    private static final int QUERY_CONTEXT_CACHE_CLEANUP_SIZE = 3;
+
+    /**
+     * The number of times this getter will try to use previously observed
+     * patterns. The getter tries most commonly observed patterns first.
+     * If known patterns do not work, then a new pattern is created for
+     * this object.
+     */
+    private static final int PATTERN_TRY_COUNT = 2;
+
+    private JsonGetterContextCache contextCache =
+            new JsonGetterContextCache(QUERY_CONTEXT_CACHE_MAX_SIZE, QUERY_CONTEXT_CACHE_CLEANUP_SIZE);
+
     AbstractJsonGetter(Getter parent) {
         super(parent);
+    }
+
+    public static JsonPathCursor getPath(String attributePath) {
+        return JsonPathCursor.createCursor(attributePath);
     }
 
     /**
@@ -114,6 +138,41 @@ public abstract class AbstractJsonGetter extends Getter {
     }
 
     @Override
+    Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+        if (metadata == null) {
+            return getValue(obj, attributePath);
+        }
+        JsonSchemaNode schemaNode = (JsonSchemaNode) metadata;
+
+        NavigableJsonInputAdapter adapter = annotate(obj);
+        JsonGetterContext queryContext = contextCache.getContext(attributePath);
+        List<WeightedItem<JsonPattern>> patternsSnapshot = queryContext.getPatternListSnapshot();
+
+        JsonPathCursor pathCursor = queryContext.newJsonPathCursor();
+        JsonPattern knownPattern = null;
+        for (int i = 0; i < PATTERN_TRY_COUNT && i < patternsSnapshot.size(); i++) {
+            WeightedItem<JsonPattern> patternWeightedItem = patternsSnapshot.get(i);
+            knownPattern = patternWeightedItem.getItem();
+            JsonValue value = JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor);
+            pathCursor.reset();
+            if (value != null) {
+                queryContext.voteFor(patternWeightedItem);
+                return convertFromJsonValue(value);
+            }
+        }
+        knownPattern = JsonSchemaHelper.createPattern(adapter, schemaNode, pathCursor);
+        pathCursor.reset();
+        if (knownPattern != null) {
+            if (knownPattern.hasAny()) {
+                return getValue(obj, attributePath);
+            }
+            queryContext.addOrVoteForPattern(knownPattern);
+            return convertFromJsonValue(JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor));
+        }
+        return null;
+    }
+
+    @Override
     Class getReturnType() {
         throw new IllegalArgumentException("Non applicable for Json getters");
     }
@@ -122,6 +181,12 @@ public abstract class AbstractJsonGetter extends Getter {
     boolean isCacheable() {
         return false;
     }
+
+    int getContextCacheSize() {
+        return contextCache.getCacheSize();
+    }
+
+    protected abstract NavigableJsonInputAdapter annotate(Object object);
 
     /**
      * Looks for the attribute with the given name only in current
@@ -214,7 +279,7 @@ public abstract class AbstractJsonGetter extends Getter {
             case JsonTokenId.ID_STRING:
                 return parser.getValueAsString();
             case JsonTokenId.ID_NUMBER_INT:
-                return parser.getIntValue();
+                return parser.getLongValue();
             case JsonTokenId.ID_NUMBER_FLOAT:
                 return parser.getValueAsDouble();
             case JsonTokenId.ID_TRUE:
@@ -224,9 +289,5 @@ public abstract class AbstractJsonGetter extends Getter {
             default:
                 return null;
         }
-    }
-
-    public static JsonPathCursor getPath(String attributePath) {
-        return new JsonPathCursor(attributePath);
     }
 }

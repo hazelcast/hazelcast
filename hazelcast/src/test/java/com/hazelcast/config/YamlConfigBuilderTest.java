@@ -1059,12 +1059,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  map:\n"
                 + "    mymap:\n"
-                + "      preprocessing-policy: CREATION_TIME";
+                + "      preprocessing-policy: OFF";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("mymap");
 
-        assertEquals(PreprocessingPolicy.CREATION_TIME, mapConfig.getPreprocessingPolicy());
+        assertEquals(PreprocessingPolicy.OFF, mapConfig.getPreprocessingPolicy());
     }
 
     @Override
@@ -1078,7 +1078,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("mymap");
 
-        assertEquals(PreprocessingPolicy.OFF, mapConfig.getPreprocessingPolicy());
+        assertEquals(PreprocessingPolicy.CREATION_TIME, mapConfig.getPreprocessingPolicy());
     }
 
     @Override

@@ -16,8 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
@@ -83,9 +82,8 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
     }
 
     protected boolean convertAndApplyForSingleAttributeValue(Map.Entry mapEntry, Object attributeValue) {
-        if (attributeValue instanceof HazelcastJsonValue) {
-            Object value = JsonGetter.convertFromJsonValue(Json.parse(attributeValue.toString()));
-            return applyForSingleAttributeValue(mapEntry, (Comparable) value);
+        if (attributeValue instanceof JsonValue) {
+            attributeValue = JsonGetter.convertFromJsonValue((JsonValue) attributeValue);
         }
         return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
     }

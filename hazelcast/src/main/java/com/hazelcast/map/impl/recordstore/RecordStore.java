@@ -392,7 +392,7 @@ public interface RecordStore<R extends Record> {
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
-    Record createRecord(Object value, long ttlMillis, long maxIdle, long now);
+    Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now);
 
     Record loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 

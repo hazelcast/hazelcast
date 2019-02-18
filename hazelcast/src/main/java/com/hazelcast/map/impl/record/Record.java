@@ -17,10 +17,12 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Metadata;
 
 /**
  * @param <V> the type of value which is in the Record
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface Record<V> {
 
     /**
@@ -122,5 +124,8 @@ public interface Record<V> {
      */
     void setSequence(long sequence);
 
+    void setMetadata(Metadata metadata);
+
+    Metadata getMetadata();
 
 }

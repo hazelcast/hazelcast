@@ -14,18 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
-
-import com.hazelcast.nio.serialization.Data;
+package com.hazelcast.query;
 
 /**
- * Factory for creating records. Created for every partition.
- *
- * @param <T> the type of object which is going to be created.
+ * Keeps generic metadata for a key value pair. The type of kept metadata
+ * is object. It is up to the user of this class to determine the type of
+ * metadata and act accordingly.
  */
-public interface RecordFactory<T> {
+public class Metadata {
 
-    Record<T> newRecord(Data key, Object value);
+    private Object keyMeta;
+    private Object valueMeta;
 
-    void setValue(Record<T> record, Object value);
+    public void setKeyMetadata(Object metadata) {
+        this.keyMeta = metadata;
+    }
+
+    public void setValueMetadata(Object metadata) {
+        this.valueMeta = metadata;
+    }
+
+    public Object getKeyMetadata() {
+        return this.keyMeta;
+    }
+
+    public Object getValueMetadata() {
+        return this.valueMeta;
+    }
 }

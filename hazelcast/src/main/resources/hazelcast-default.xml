@@ -29,7 +29,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.12.xsd">
 
     <group>
         <name>dev</name>
@@ -167,10 +167,10 @@
             create additional metadata about them. This metadata then is used to make querying and indexing faster.
             Turning on preprocessing may decrease put throughput.
             Valid values are:
-            CREATION_TIME: Objects of supported types are pre-processed when they are created and updated.
-            OFF (default): No pre-processing is done.
+            CREATION_TIME (default): Objects of supported types are pre-processed when they are created and updated.
+            OFF: No pre-processing is done.
         -->
-        <preprocessing-policy>OFF</preprocessing-policy>
+        <preprocessing-policy>CREATION_TIME</preprocessing-policy>
 
         <!--
             Number of backups. If 1 is set as the backup-count for example,

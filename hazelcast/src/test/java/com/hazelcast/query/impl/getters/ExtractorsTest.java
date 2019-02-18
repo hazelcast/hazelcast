@@ -86,7 +86,7 @@ public class ExtractorsTest {
     @Test
     public void extract_reflection_correctValue() {
         // WHEN
-        Object power = createExtractors(null).extract(bond, "car.power");
+        Object power = createExtractors(null).extract(bond, "car.power", null);
 
         // THEN
         assertThat((Integer) power, equalTo(550));
@@ -127,7 +127,7 @@ public class ExtractorsTest {
         Extractors extractors = createExtractors(config);
 
         // WHEN
-        Object power = extractors.extract(bond, "gimmePower");
+        Object power = extractors.extract(bond, "gimmePower", null);
 
         // THEN
         assertThat((Integer) power, equalTo(550));
@@ -136,7 +136,7 @@ public class ExtractorsTest {
     @Test
     public void extract_nullTarget() {
         // WHEN
-        Object power = createExtractors(null).extract(null, "gimmePower");
+        Object power = createExtractors(null).extract(null, "gimmePower", null);
 
         // THEN
         assertNull(power);
@@ -145,7 +145,7 @@ public class ExtractorsTest {
     @Test
     public void extract_nullAll() {
         // WHEN
-        Object power = createExtractors(null).extract(null, null);
+        Object power = createExtractors(null).extract(null, null, null);
 
         // THEN
         assertNull(power);
@@ -153,7 +153,7 @@ public class ExtractorsTest {
 
     @Test(expected = NullPointerException.class)
     public void extract_nullAttribute() {
-        createExtractors(null).extract(bond, null);
+        createExtractors(null).extract(bond, null, null);
     }
 
     private static class Bond {

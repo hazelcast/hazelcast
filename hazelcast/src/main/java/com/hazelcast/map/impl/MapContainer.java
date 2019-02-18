@@ -23,6 +23,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PreprocessingPolicy;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -127,7 +128,13 @@ public class MapContainer {
         this.partitioningStrategy = createPartitioningStrategy();
         this.quorumName = mapConfig.getQuorumName();
         this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
-        this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
+        MetadataInitializer metadataInitializer;
+        if (mapConfig.getPreprocessingPolicy() == PreprocessingPolicy.CREATION_TIME) {
+            metadataInitializer = new JsonMetadataInitializer();
+        } else {
+            metadataInitializer = new NoMetadataInitializer();
+        }
+        this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService, metadataInitializer);
         this.objectNamespace = MapService.getObjectNamespace(name);
         initWanReplication(nodeEngine);
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
@@ -229,15 +236,16 @@ public class MapContainer {
     }
 
     // overridden in different context
-    ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
+    ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService,
+                                                                            final MetadataInitializer metadataInitializer) {
         return new ConstructorFunction<Void, RecordFactory>() {
             @Override
             public RecordFactory createNew(Void notUsedArg) {
                 switch (mapConfig.getInMemoryFormat()) {
                     case BINARY:
-                        return new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
+                        return new DataRecordFactory(mapConfig, serializationService, partitioningStrategy, metadataInitializer);
                     case OBJECT:
-                        return new ObjectRecordFactory(mapConfig, serializationService);
+                        return new ObjectRecordFactory(mapConfig, serializationService, metadataInitializer);
                     default:
                         throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
                 }

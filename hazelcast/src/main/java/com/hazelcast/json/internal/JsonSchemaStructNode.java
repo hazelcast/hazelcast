@@ -55,6 +55,7 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
 
     /**
      * The size of this object in terms of items or attributes it contains.
+     *
      * @return the number of child nodes
      */
     public int getChildCount() {

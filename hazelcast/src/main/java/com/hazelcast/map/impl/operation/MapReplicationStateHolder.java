@@ -170,7 +170,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     final Data value = recordReplicationInfo.getValue();
-                    Record newRecord = recordStore.createRecord(value, DEFAULT_TTL, DEFAULT_MAX_IDLE, Clock.currentTimeMillis());
+                    Record newRecord = recordStore.createRecord(key, value, DEFAULT_TTL, DEFAULT_MAX_IDLE,
+                            Clock.currentTimeMillis());
                     applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
 

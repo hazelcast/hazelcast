@@ -1034,14 +1034,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testMapConfig_preprocessingPolicy() {
         String xml = HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
-                + "<preprocessing-policy>CREATION_TIME</preprocessing-policy>"
+                + "<preprocessing-policy>OFF</preprocessing-policy>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("mymap");
 
-        assertEquals(PreprocessingPolicy.CREATION_TIME, mapConfig.getPreprocessingPolicy());
+        assertEquals(PreprocessingPolicy.OFF, mapConfig.getPreprocessingPolicy());
     }
 
     @Override
@@ -1055,7 +1055,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("mymap");
 
-        assertEquals(PreprocessingPolicy.OFF, mapConfig.getPreprocessingPolicy());
+        assertEquals(PreprocessingPolicy.CREATION_TIME, mapConfig.getPreprocessingPolicy());
     }
 
     @Override

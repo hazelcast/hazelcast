@@ -30,6 +30,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Metadata;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
@@ -87,6 +88,7 @@ public class PartitionScanRunner {
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = (Data) toData(record.getKey());
+            Metadata metadata = record.getMetadata();
             Object value = toData(
                     useCachedValues ? Records.getValueOrCachedValue(record, serializationService) : record.getValue());
             if (value == null) {
@@ -94,7 +96,9 @@ public class PartitionScanRunner {
             }
 
             queryEntry.init(serializationService, key, value, extractors);
-            if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
+            queryEntry.setMetadata(metadata);
+            boolean valid = predicate.apply(queryEntry);
+            if (valid && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 result.add(queryEntry);
 
                 // We can't reuse the existing entry after it was added to the

@@ -20,7 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.map.impl.record.AbstractRecord;
+import com.hazelcast.map.impl.JsonMetadataInitializer;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
@@ -64,9 +64,8 @@ public class LazyEntryViewFromRecordTest {
         MapConfig mapConfig = new MapConfig();
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         DataRecordFactory dataRecordFactory
-                = new DataRecordFactory(mapConfig, serializationService, mockPartitioningStrategy);
-        recordInstance = dataRecordFactory.newRecord(value);
-        ((AbstractRecord) recordInstance).setKey(serializationService.toData(key));
+                = new DataRecordFactory(mapConfig, serializationService, mockPartitioningStrategy, new JsonMetadataInitializer());
+        recordInstance = dataRecordFactory.newRecord(serializationService.toData(key), value);
         return new LazyEntryViewFromRecord(recordInstance, serializationService);
     }
 

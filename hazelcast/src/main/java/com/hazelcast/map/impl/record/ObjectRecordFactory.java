@@ -17,25 +17,34 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Metadata;
 import com.hazelcast.spi.serialization.SerializationService;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class ObjectRecordFactory implements RecordFactory<Object> {
 
     private final SerializationService serializationService;
     private final boolean statisticsEnabled;
+    private final MetadataInitializer metadataInitializer;
 
-    public ObjectRecordFactory(MapConfig config, SerializationService serializationService) {
+    public ObjectRecordFactory(MapConfig config,
+                               SerializationService serializationService,
+                               MetadataInitializer metadataInitializer) {
         this.serializationService = serializationService;
         this.statisticsEnabled = config.isStatisticsEnabled();
+        this.metadataInitializer = metadataInitializer;
     }
 
     @Override
-    public Record<Object> newRecord(Object value) {
+    public Record<Object> newRecord(Data key, Object value) {
         assert value != null : "value can not be null";
 
         Object objectValue = serializationService.toObject(value);
         Record<Object> record = statisticsEnabled ? new ObjectRecordWithStats(objectValue) : new ObjectRecord(objectValue);
+        record.setMetadata(initializeMetadata(key, objectValue));
         return record;
     }
 
@@ -48,5 +57,39 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
             v = serializationService.toObject(value);
         }
         record.setValue(v);
+        updateValueMetadata(record, v);
+    }
+
+    private void updateValueMetadata(Record<Object> record, Object value) {
+        try {
+            Object valueMetadata = metadataInitializer.createFromObject(value);
+            if (valueMetadata != null) {
+                Metadata existing = record.getMetadata();
+                if (existing == null) {
+                    existing = new Metadata();
+                    record.setMetadata(existing);
+                }
+                existing.setValueMetadata(valueMetadata);
+            }
+        } catch (Exception e) {
+            rethrow(e);
+        }
+    }
+
+    private Metadata initializeMetadata(Data key, Object value) {
+
+        try {
+            Object keyMetadata = metadataInitializer.createFromData(key);
+            Object valueMetadata = metadataInitializer.createFromObject(value);
+            if (keyMetadata != null || valueMetadata != null) {
+                Metadata metadata = new Metadata();
+                metadata.setKeyMetadata(keyMetadata);
+                metadata.setValueMetadata(valueMetadata);
+                return metadata;
+            }
+        } catch (Exception e) {
+            rethrow(e);
+        }
+        return null;
     }
 }

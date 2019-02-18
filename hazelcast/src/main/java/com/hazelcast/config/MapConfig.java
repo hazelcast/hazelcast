@@ -108,7 +108,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     /**
      * Default pre-processing policy
      */
-    public static final PreprocessingPolicy DEFAULT_PREPROCESSING_POLICY = PreprocessingPolicy.OFF;
+    public static final PreprocessingPolicy DEFAULT_PREPROCESSING_POLICY = PreprocessingPolicy.CREATION_TIME;
 
     private String name;
 

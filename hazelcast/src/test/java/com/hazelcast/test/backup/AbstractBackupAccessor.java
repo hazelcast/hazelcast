@@ -41,7 +41,7 @@ abstract class AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
         if (cluster == null || cluster.length == 0) {
             throw new IllegalArgumentException("Cluster has to have at least 1 member.");
         }
-        if (replicaIndex < 1 || replicaIndex > IPartition.MAX_BACKUP_COUNT) {
+        if (replicaIndex > IPartition.MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("Cannot access replica index " + replicaIndex);
         }
         this.cluster = cluster;

@@ -134,4 +134,5 @@ public class JsonSchemaHelperTest extends AbstractJsonSchemaTest {
     protected InMemoryFormat getInMemoryFormay() {
         return inMemoryFormat;
     }
+
 }

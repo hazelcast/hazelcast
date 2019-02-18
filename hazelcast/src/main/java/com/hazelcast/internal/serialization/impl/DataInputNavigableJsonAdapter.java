@@ -28,7 +28,6 @@ import java.io.DataInput;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
-import java.nio.charset.Charset;
 
 public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
@@ -59,7 +58,7 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
     @Override
     public boolean isAttributeName(JsonPathCursor cursor) {
         try {
-            byte[] nameBytes = cursor.getCurrent().getBytes(Charset.forName("UTF8"));
+            byte[] nameBytes = cursor.getCurrentAsUTF8();
             if (!isQuote()) {
                 return false;
             }

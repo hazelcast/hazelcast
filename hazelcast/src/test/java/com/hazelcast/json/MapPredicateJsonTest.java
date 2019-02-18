@@ -18,6 +18,7 @@ package com.hazelcast.json;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.PreprocessingPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
@@ -36,6 +37,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 import java.util.Map;
@@ -45,19 +48,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     TestHazelcastInstanceFactory factory;
     HazelcastInstance instance;
 
-    @Parameterized.Parameter
+    @Parameter(0)
     public InMemoryFormat inMemoryFormat;
 
-    @Parameterized.Parameters(name = "inMemoryFormat: {0}")
+    @Parameter(1)
+    public PreprocessingPolicy preprocessingPolicy;
+
+    @Parameterized.Parameters(name = "inMemoryFormat: {0}, preprocessingPolicy: {1}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][] {{InMemoryFormat.BINARY}, {InMemoryFormat.OBJECT}});
+        return asList(new Object[][] {
+                {InMemoryFormat.BINARY, PreprocessingPolicy.OFF},
+                {InMemoryFormat.BINARY, PreprocessingPolicy.CREATION_TIME},
+                {InMemoryFormat.OBJECT, PreprocessingPolicy.OFF},
+                {InMemoryFormat.OBJECT, PreprocessingPolicy.CREATION_TIME},
+        });
     }
 
     @Before
@@ -70,7 +81,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
-        config.getMapConfig("default").setInMemoryFormat(inMemoryFormat);
+        config.getMapConfig("default")
+                .setInMemoryFormat(inMemoryFormat)
+                .setPreprocessingPolicy(preprocessingPolicy);
         return config;
     }
 
@@ -574,6 +587,27 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         Collection<JsonValue> vals = map.values(Predicates.greaterEqual("arr[1][3]", 20));
         assertEquals(1, vals.size());
         assertTrue(vals.contains(p1));
+    }
+
+    @Test
+    public void testSecondTimeKnownPatternIsUsed() {
+        IMap<String, JsonValue> map = instance.getMap(randomMapName());
+
+        HazelcastJsonValue p1 = putJsonString(map, "a", 30, true);
+        HazelcastJsonValue p2 = putJsonString(map, "b", 20, false);
+        HazelcastJsonValue p3 = putJsonString(map, "c", 10, true);
+
+        Collection<JsonValue> vals = map.values(Predicates.greaterEqual("name", "b"));
+
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
+
+        vals = map.values(Predicates.greaterEqual("name", "b"));
+
+        assertEquals(2, vals.size());
+        assertTrue(vals.contains(p2));
+        assertTrue(vals.contains(p3));
     }
 
     @Test
