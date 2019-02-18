@@ -18,13 +18,15 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.core.Client;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.util.JsonUtil;
 
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
@@ -51,14 +53,14 @@ public class ClientEndPointDTO implements JsonSerializable {
 
     @Override
     public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
+        final JsonObject root = Json.object();
         root.add("uuid", uuid);
         root.add("address", address);
         root.add("clientType", clientType);
         root.add("name", name);
-        JsonObject labelsObject = Json.object();
+        JsonArray labelsObject = Json.array();
         for (String label : labels) {
-            labelsObject.add("label", label);
+            labelsObject.add(label);
         }
         root.add("labels", labelsObject);
         return root;
@@ -70,11 +72,10 @@ public class ClientEndPointDTO implements JsonSerializable {
         address = getString(json, "address");
         clientType = getString(json, "clientType");
         name = getString(json, "name");
-        JsonObject labelsObject = JsonUtil.getObject(json, "labels");
+        JsonArray labelsArray = getArray(json, "labels");
         labels = new HashSet<String>();
-        for (JsonObject.Member labelMember : labelsObject) {
-            String value = labelMember.getValue().asString();
-            labels.add(value);
+        for (JsonValue labelValue : labelsArray) {
+            labels.add(labelValue.asString());
         }
     }
 }
