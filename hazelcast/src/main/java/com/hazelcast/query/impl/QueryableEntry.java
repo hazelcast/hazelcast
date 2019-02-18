@@ -71,6 +71,13 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
 
     protected abstract Object getTargetObject(boolean key);
 
+    /**
+     * Returns a converter corresponding to the attribute with the given name.
+     * Never {@code null}, but may return {@link TypeConverters#NULL_CONVERTER}
+     * if the attribute value is {@code null} and therefore its type can't be
+     * inferred. The latter may also happen for collection attributes if the
+     * collection is empty or all its elements are {@code null}.
+     */
     TypeConverter getConverter(String attributeName) {
         Object attributeValue = getAttributeValue(attributeName);
         if (attributeValue == null) {
@@ -164,6 +171,15 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return extractors.extract(target, attributeName, metadata);
     }
 
+    /**
+     * Deduces the {@link AttributeType} of the given non-{@code null} attribute
+     * value.
+     *
+     * @param attributeValue the attribute value to deduce the type of.
+     * @return the deduced attribute type or {@code null} if there is no
+     * attribute type corresponding to the type of the value. See {@link
+     * AttributeType} for the list of representable attribute types.
+     */
     public static AttributeType extractAttributeType(Object attributeValue) {
         if (attributeValue instanceof Portable) {
             return AttributeType.PORTABLE;
