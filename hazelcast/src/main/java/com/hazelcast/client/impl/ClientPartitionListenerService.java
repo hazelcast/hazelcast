@@ -18,6 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
@@ -35,9 +36,11 @@ public class ClientPartitionListenerService {
 
     private final Map<ClientEndpoint, Long> partitionListeningEndpoints = new ConcurrentHashMap<ClientEndpoint, Long>();
     private final NodeEngineImpl nodeEngine;
+    private final boolean advancedNetworkConfigEnabled;
 
     ClientPartitionListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
     }
 
     public void onPartitionStateChange() {
@@ -75,6 +78,7 @@ public class ClientPartitionListenerService {
         partitionListeningEndpoints.remove(clientEndpoint);
     }
 
+    // return address->partitions mapping, where address is the client address of the member
     public Collection<Map.Entry<Address, List<Integer>>> getPartitions(PartitionTableView partitionTableView) {
 
         Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
@@ -86,13 +90,21 @@ public class ClientPartitionListenerService {
                 partitionsMap.clear();
                 return partitionsMap.entrySet();
             }
-            List<Integer> indexes = partitionsMap.get(owner.address());
+            Address clientOwnerAddress = clientAddressOf(owner.address());
+            List<Integer> indexes = partitionsMap.get(clientOwnerAddress);
             if (indexes == null) {
                 indexes = new LinkedList<Integer>();
-                partitionsMap.put(owner.address(), indexes);
+                partitionsMap.put(clientOwnerAddress, indexes);
             }
             indexes.add(partitionId);
         }
         return partitionsMap.entrySet();
+    }
+
+    private Address clientAddressOf(Address memberAddress) {
+        if (!advancedNetworkConfigEnabled) {
+            return memberAddress;
+        }
+        return nodeEngine.getClusterService().getMember(memberAddress).getAddressMap().get(EndpointQualifier.CLIENT);
     }
 }
