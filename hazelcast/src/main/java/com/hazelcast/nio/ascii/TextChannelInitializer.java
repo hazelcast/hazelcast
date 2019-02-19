@@ -32,6 +32,7 @@ public class TextChannelInitializer
         this.rest = rest;
     }
 
+
     @Override
     public void initChannel(Channel channel) {
         super.initChannel(channel);

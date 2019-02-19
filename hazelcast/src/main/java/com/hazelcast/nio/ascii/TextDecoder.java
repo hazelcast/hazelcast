@@ -16,20 +16,11 @@
 
 package com.hazelcast.nio.ascii;
 
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
-import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
-import static com.hazelcast.nio.IOUtil.compactOrClear;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
-
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.logging.ILogger;
@@ -38,6 +29,14 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.StringUtil;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 
 @PrivateApi
 public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
@@ -73,6 +72,11 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
     public void sendResponse(TextCommand command) {
         encoder.enqueue(command);
+    }
+
+    @Override
+    public void handlerAdded() {
+        initSrcBuffer();
     }
 
     @Override

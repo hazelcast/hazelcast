@@ -76,7 +76,7 @@ public class RestTest {
         Hazelcast.shutdownAll();
     }
 
-    private Config setup() {
+    public Config setup() {
         Config config = new Config();
         RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
