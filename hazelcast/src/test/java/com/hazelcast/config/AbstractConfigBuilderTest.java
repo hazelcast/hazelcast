@@ -16,12 +16,24 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
+import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
+import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
+import static com.hazelcast.instance.ProtocolType.CLIENT;
+import static com.hazelcast.instance.ProtocolType.MEMCACHE;
+import static com.hazelcast.instance.ProtocolType.WAN;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Abstract class defining the common test cases for XML and YAML
@@ -38,6 +50,10 @@ import static org.junit.Assert.assertEquals;
  * @see YamlConfigBuilderTest
  */
 public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
+
     @Test
     public abstract void testConfigurationURL() throws Exception;
 
@@ -432,6 +448,115 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testUnknownRestApiEndpointGroup();
+
+    @Test
+    public abstract void testDefaultAdvancedNetworkConfig();
+
+    @Test
+    public abstract void testAmbiguousNetworkConfig_throwsException();
+
+    @Test
+    public abstract void testNetworkConfigUnambiguous_whenAdvancedNetworkDisabled();
+
+    @Test
+    public abstract void testMultipleMemberEndpointConfigs_throwsException();
+
+    @Test
+    public void testCompleteAdvancedNetworkConfig() {
+        Config config = buildCompleteAdvancedNetworkConfig();
+
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        JoinConfig joinConfig = advancedNetworkConfig.getJoin();
+        IcmpFailureDetectorConfig fdConfig = advancedNetworkConfig.getIcmpFailureDetectorConfig();
+        MemberAddressProviderConfig providerConfig = advancedNetworkConfig.getMemberAddressProviderConfig();
+
+        assertTrue(advancedNetworkConfig.isEnabled());
+        // join config
+        assertFalse(joinConfig.getMulticastConfig().isEnabled());
+        assertTrue(joinConfig.getTcpIpConfig().isEnabled());
+        assertEquals("10.10.1.10", joinConfig.getTcpIpConfig().getRequiredMember());
+        assertContains(joinConfig.getTcpIpConfig().getMembers(), "10.10.1.11");
+        assertContains(joinConfig.getTcpIpConfig().getMembers(), "10.10.1.12");
+        // failure detector config
+        assertTrue(fdConfig.isEnabled());
+        assertTrue(fdConfig.isParallelMode());
+        assertTrue(fdConfig.isFailFastOnStartup());
+        assertEquals(42, fdConfig.getTimeoutMilliseconds());
+        assertEquals(42, fdConfig.getMaxAttempts());
+        assertEquals(4200, fdConfig.getIntervalMilliseconds());
+        assertEquals(255, fdConfig.getTtl());
+        // member address provider config
+        assertEquals("com.hazelcast.test.Provider", providerConfig.getClassName());
+
+        // endpoint config
+        ServerSocketEndpointConfig memberEndpointConfig =
+                (ServerSocketEndpointConfig) advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.MEMBER);
+        assertEquals("member-server-socket", memberEndpointConfig.getName());
+        assertEquals(ProtocolType.MEMBER, memberEndpointConfig.getProtocolType());
+        // port
+        assertEquals(93, memberEndpointConfig.getPortCount());
+        assertEquals(9191, memberEndpointConfig.getPort());
+        assertFalse(memberEndpointConfig.isPortAutoIncrement());
+        // reuse address
+        assertTrue(memberEndpointConfig.isReuseAddress());
+        // outbound ports
+        assertEquals("33000-33100", memberEndpointConfig.getOutboundPortDefinitions().iterator().next());
+        // interfaces
+        assertTrue(memberEndpointConfig.getInterfaces().isEnabled());
+        assertEquals("10.10.0.1", memberEndpointConfig.getInterfaces().getInterfaces().iterator().next());
+        // ssl
+        assertTrue(memberEndpointConfig.getSSLConfig().isEnabled());
+        assertEquals("com.hazelcast.examples.MySSLContextFactory", memberEndpointConfig.getSSLConfig().getFactoryClassName());
+        assertEquals("bar", memberEndpointConfig.getSSLConfig().getProperty("foo"));
+        // socket interceptor
+        assertTrue(memberEndpointConfig.getSocketInterceptorConfig().isEnabled());
+        assertEquals("com.hazelcast.examples.MySocketInterceptor",
+                memberEndpointConfig.getSocketInterceptorConfig().getClassName());
+        assertEquals("baz", memberEndpointConfig.getSocketInterceptorConfig().getProperty("foo"));
+        // symmetric encryption config
+        assertTrue(memberEndpointConfig.getSymmetricEncryptionConfig().isEnabled());
+        assertEquals("Algorithm", memberEndpointConfig.getSymmetricEncryptionConfig().getAlgorithm());
+        assertEquals("thesalt", memberEndpointConfig.getSymmetricEncryptionConfig().getSalt());
+        assertEquals("thepassword", memberEndpointConfig.getSymmetricEncryptionConfig().getPassword());
+        assertEquals(1000, memberEndpointConfig.getSymmetricEncryptionConfig().getIterationCount());
+        // socket options
+        assertTrue(memberEndpointConfig.isSocketBufferDirect());
+        assertTrue(memberEndpointConfig.isSocketTcpNoDelay());
+        assertTrue(memberEndpointConfig.isSocketKeepAlive());
+        assertEquals(33, memberEndpointConfig.getSocketConnectTimeoutSeconds());
+        assertEquals(34, memberEndpointConfig.getSocketSendBufferSizeKb());
+        assertEquals(67, memberEndpointConfig.getSocketRcvBufferSizeKb());
+        assertEquals(11, memberEndpointConfig.getSocketLingerSeconds());
+
+        RestServerEndpointConfig restServerEndpointConfig = advancedNetworkConfig.getRestEndpointConfig();
+        assertEquals(8080, restServerEndpointConfig.getPort());
+        assertContainsAll(restServerEndpointConfig.getEnabledGroups(),
+                Arrays.asList(CLUSTER_READ, RestEndpointGroup.WAN, HEALTH_CHECK));
+
+        // memcache config
+        EndpointConfig memcacheEndpointConfig = advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.MEMCACHE);
+        assertEquals(MEMCACHE, memcacheEndpointConfig.getProtocolType());
+        assertEquals("42000-42100", memcacheEndpointConfig.getOutboundPortDefinitions().iterator().next());
+
+        // WAN server socket config
+        EndpointConfig wanServerSockerEndpointConfig = advancedNetworkConfig.getEndpointConfigs()
+                                                                            .get(EndpointQualifier.resolve(WAN, "WAN_SERVER"));
+        assertEquals(WAN, wanServerSockerEndpointConfig.getProtocolType());
+        assertEquals("52000-52100", wanServerSockerEndpointConfig.getOutboundPortDefinitions().iterator().next());
+
+        // WAN endpoint config
+        EndpointConfig wanEndpointConfig = advancedNetworkConfig.getEndpointConfigs()
+                                                                .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT"));
+        assertEquals(WAN, wanEndpointConfig.getProtocolType());
+        assertEquals("62000-62100", wanEndpointConfig.getOutboundPortDefinitions().iterator().next());
+
+        // client server socket config
+        EndpointConfig clientServerSocketConfig = advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.CLIENT);
+        assertEquals(CLIENT, clientServerSocketConfig.getProtocolType());
+        assertEquals("72000-72100", clientServerSocketConfig.getOutboundPortDefinitions().iterator().next());
+    }
+
+    protected abstract Config buildCompleteAdvancedNetworkConfig();
 
     protected static void assertAwsConfig(AwsConfig aws) {
         assertEquals("sample-access-key", aws.getProperties().get("access-key"));

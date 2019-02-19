@@ -41,7 +41,7 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFullConfig() {
+    public void testFullConfigNormalNetwork() {
         Config xmlConfig = new ClasspathXmlConfig("hazelcast-fullconfig.xml");
         Config yamlConfig = new ClasspathYamlConfig("hazelcast-fullconfig.yaml");
 
@@ -52,7 +52,20 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
 
         assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+    }
 
+    @Test
+    public void testFullConfigAdvancedNetwork() {
+        Config xmlConfig = new ClasspathXmlConfig("hazelcast-fullconfig-advanced-network-config.xml");
+        Config yamlConfig = new ClasspathYamlConfig("hazelcast-fullconfig-advanced-network-config.yaml");
+
+        sortClientPermissionConfigs(xmlConfig);
+        sortClientPermissionConfigs(yamlConfig);
+
+        String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
+        String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
+
+        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
     }
 
     @Test
