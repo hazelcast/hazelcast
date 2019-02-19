@@ -214,6 +214,32 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
     }
 
     @Test
+    public void testReconnectModeASYNC_clusterDown_clientGetsOfflineExcption() {
+        HazelcastInstance member1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        IMap<Object, Object> map = client.getMap(randomMapName());
+
+        member1.shutdown();
+        member2.shutdown();
+
+        assertTrue(client.getLifecycleService().isRunning());
+        for (int i = 0; i < 100; i++) {
+            try {
+                map.get(randomString());
+                assertTrue("map.get should throw HazelcastClientOfflineException", false);
+            } catch (HazelcastClientOfflineException e) {
+
+            }
+        }
+
+    }
+
+    @Test
     public void testReconnectModeASYNCSingleMemberStartLate() {
         final CountDownLatch initialConnectionLatch = new CountDownLatch(1);
         final CountDownLatch reconnectedLatch = new CountDownLatch(1);

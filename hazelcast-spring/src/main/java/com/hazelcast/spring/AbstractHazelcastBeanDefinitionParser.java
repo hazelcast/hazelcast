@@ -73,7 +73,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
     /**
      * Base Helper class for Spring Xml Builder
      */
-    public abstract class SpringXmlBuilderHelper extends AbstractXmlConfigHelper {
+    public abstract static class SpringXmlBuilderHelper extends AbstractXmlConfigHelper {
 
         protected BeanDefinitionBuilder configBuilder;
 

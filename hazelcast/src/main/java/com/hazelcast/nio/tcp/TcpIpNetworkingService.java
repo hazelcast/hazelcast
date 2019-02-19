@@ -21,6 +21,7 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
@@ -77,8 +78,9 @@ public class TcpIpNetworkingService
                                   ServerSocketRegistry registry,
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
-                                  Networking networking) {
-        this(config, ioService, registry, loggingService, metricsRegistry, networking, null);
+                                  Networking networking,
+                                  ChannelInitializerProvider channelInitializerProvider) {
+        this(config, ioService, registry, loggingService, metricsRegistry, networking, channelInitializerProvider, null);
     }
 
     public TcpIpNetworkingService(Config config, IOService ioService,
@@ -86,6 +88,7 @@ public class TcpIpNetworkingService
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
                                   Networking networking,
+                                  ChannelInitializerProvider channelInitializerProvider,
                                   HazelcastProperties properties) {
 
         this.ioService = ioService;
@@ -96,13 +99,13 @@ public class TcpIpNetworkingService
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpNetworkingService")));
         if (registry.holdsUnifiedSocket()) {
-            unifiedEndpointManager = new TcpIpUnifiedEndpointManager(this, null, ioService,
-                    loggingService, metricsRegistry, properties);
+            unifiedEndpointManager = new TcpIpUnifiedEndpointManager(this, null, channelInitializerProvider,
+                    ioService, loggingService, metricsRegistry, properties);
         } else {
             unifiedEndpointManager = null;
         }
 
-        initEndpointManager(config, ioService, loggingService, metricsRegistry, properties);
+        initEndpointManager(config, ioService, loggingService, metricsRegistry, channelInitializerProvider, properties);
         if (unifiedEndpointManager != null) {
             this.aggregateEndpointManager = new UnifiedAggregateEndpointManager(unifiedEndpointManager, endpointManagers);
         } else {
@@ -113,9 +116,10 @@ public class TcpIpNetworkingService
     }
 
     private void initEndpointManager(Config config, IOService ioService,
-                                                                   LoggingService loggingService,
-                                                                   MetricsRegistry metricsRegistry,
-                                                                   HazelcastProperties properties) {
+                                     LoggingService loggingService,
+                                     MetricsRegistry metricsRegistry,
+                                     ChannelInitializerProvider channelInitializerProvider,
+                                     HazelcastProperties properties) {
         if (unifiedEndpointManager != null) {
             //todo (TK): have separate view for REST & Memcache? might require further changes to JMX & MC REST
             TextViewUnifiedEndpointManager textViewUnifiedEndpointManager
@@ -128,7 +132,7 @@ public class TcpIpNetworkingService
         } else {
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
-                EndpointManager em = newEndpointManager(ioService, qualifier,
+                EndpointManager em = newEndpointManager(ioService, qualifier, channelInitializerProvider,
                         loggingService, metricsRegistry, properties, singleton(endpointConfig.getProtocolType()));
                 endpointManagers.put(qualifier, em);
             }
@@ -137,11 +141,12 @@ public class TcpIpNetworkingService
 
     private EndpointManager<TcpIpConnection> newEndpointManager(IOService ioService,
                                                                 EndpointQualifier qualifier,
+                                                                ChannelInitializerProvider channelInitializerProvider,
                                                                 LoggingService loggingService,
                                                                 MetricsRegistry metricsRegistry,
                                                                 HazelcastProperties properties,
                                                                 Set<ProtocolType> supportedProtocolTypes) {
-        return new TcpIpEndpointManager(this,  qualifier, ioService, loggingService,
+        return new TcpIpEndpointManager(this, qualifier, channelInitializerProvider, ioService, loggingService,
                 metricsRegistry, properties, supportedProtocolTypes);
     }
 
@@ -232,6 +237,7 @@ public class TcpIpNetworkingService
      * Under unified endpoint environments, this will return the respective view of the {@link TcpIpUnifiedEndpointManager}
      * eg. {@link MemberViewUnifiedEndpointManager} or {@link ClientViewUnifiedEndpointManager} which report connections based
      * on the qualifier, but they register/create connection directly on the Unified manager.
+     *
      * @param qualifier
      * @return
      */

@@ -326,4 +326,9 @@ public interface NodeExtension {
      * method creates and schedules a new auto upgrade task.
      */
     void scheduleClusterVersionAutoUpgrade();
+
+    /**
+     * @return true if client failover feature is supported
+     */
+    boolean isClientFailoverSupported();
 }

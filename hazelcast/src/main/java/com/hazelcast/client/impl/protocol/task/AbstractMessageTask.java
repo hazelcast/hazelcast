@@ -98,21 +98,21 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     @Override
     public final void run() {
         try {
-            doRun();
+            if (requiresAuthentication() && !endpoint.isAuthenticated()) {
+                handleAuthenticationFailure();
+            } else {
+                initializeAndProcessMessage();
+            }
         } catch (Throwable e) {
             handleProcessingFailure(e);
         }
     }
 
-    protected void doRun() throws Throwable {
-        if (!endpoint.isAuthenticated()) {
-            handleAuthenticationFailure();
-        } else {
-            initializeAndProcessMessage();
-        }
+    protected boolean requiresAuthentication() {
+        return true;
     }
 
-    void initializeAndProcessMessage() throws Throwable {
+    private void initializeAndProcessMessage() throws Throwable {
         if (!node.getNodeExtension().isStartCompleted()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }

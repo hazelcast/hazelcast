@@ -49,6 +49,7 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     protected ClientAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         ClientAuthenticationCustomCodec.RequestParameters parameters = ClientAuthenticationCustomCodec
                 .decodeRequest(clientMessage);
@@ -69,7 +70,11 @@ public class AuthenticationCustomCredentialsMessageTask
 
         if (parameters.labelsExist) {
             labels = Collections.unmodifiableSet(new HashSet<String>(parameters.labels));
+        } else {
+            labels = Collections.emptySet();
         }
+        partitionCount = parameters.partitionCountExist ? parameters.partitionCount : null;
+        clusterId = parameters.clusterIdExist ? parameters.clusterId : null;
         return parameters;
     }
 
@@ -80,10 +85,10 @@ public class AuthenticationCustomCredentialsMessageTask
 
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version,
-                                       List<Member> cleanedUpMembers) {
+                                       List<Member> cleanedUpMembers, int partitionCount, String clusterId) {
         return ClientAuthenticationCustomCodec
                 .encodeResponse(status, thisAddress, uuid, ownerUuid, version, getMemberBuildInfo().getVersion(),
-                        cleanedUpMembers);
+                        cleanedUpMembers, partitionCount, clusterId);
     }
 
     @Override

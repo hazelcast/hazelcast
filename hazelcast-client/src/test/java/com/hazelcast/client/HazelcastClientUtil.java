@@ -17,42 +17,15 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
-import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.core.DuplicateInstanceNameException;
+import com.hazelcast.client.impl.clientside.FailoverClientConfigSupport;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
-import static com.hazelcast.client.HazelcastClient.CLIENTS;
+import static com.hazelcast.client.HazelcastClient.newHazelcastClientInternal;
 
 public class HazelcastClientUtil {
 
-    public static HazelcastInstance newHazelcastClient(ClientConfig config, AddressProvider addressProvider) {
-        if (config == null) {
-            config = new XmlClientConfigBuilder().build();
-        }
-
-        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        HazelcastClientProxy proxy;
-        try {
-            Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
-            ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, factory, addressProvider);
-            client.start();
-            OutOfMemoryErrorDispatcher.registerClient(client);
-            proxy = new HazelcastClientProxy(client);
-
-            if (CLIENTS.putIfAbsent(client.getName(), proxy) != null) {
-                throw new DuplicateInstanceNameException("HazelcastClientInstance with name '" + client.getName()
-                        + "' already exists!");
-            }
-        } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
-        }
-        return proxy;
+    public static HazelcastInstance newHazelcastClient(AddressProvider addressProvider, ClientConfig clientConfig) {
+        return newHazelcastClientInternal(addressProvider, FailoverClientConfigSupport.resolveClientConfig(clientConfig));
     }
 }

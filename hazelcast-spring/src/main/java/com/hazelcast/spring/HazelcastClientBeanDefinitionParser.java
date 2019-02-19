@@ -94,7 +94,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
     /**
      * Client bean definition builder
      */
-    public class SpringXmlBuilder extends SpringXmlBuilderHelper {
+    public static class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private static final int INITIAL_CAPACITY = 10;
 
@@ -120,11 +120,17 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("reliableTopicConfigMap", reliableTopicConfigMap);
         }
 
+       public AbstractBeanDefinition handleClient(Node rootNode) {
+            AbstractBeanDefinition configBean = createConfigBean(rootNode);
+            builder.addConstructorArgValue(configBean);
+            return builder.getBeanDefinition();
+        }
+
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
-        public AbstractBeanDefinition handleClient(Element element) {
-            handleCommonBeanAttributes(element, builder, parserContext);
-            handleClientAttributes(element);
-            for (Node node : childElements(element)) {
+        AbstractBeanDefinition createConfigBean(Node rootNode) {
+            handleCommonBeanAttributes(rootNode, builder, parserContext);
+            handleClientAttributes(rootNode);
+            for (Node node : childElements(rootNode)) {
                 String nodeName = cleanNodeName(node);
                 if ("group".equals(nodeName)) {
                     createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
@@ -165,8 +171,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleLabels(node);
                 }
             }
-            builder.addConstructorArgValue(configBuilder.getBeanDefinition());
-            return builder.getBeanDefinition();
+            return configBuilder.getBeanDefinition();
         }
 
         private void handleSecurity(Node node) {
@@ -250,8 +255,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("userCodeDeploymentConfig", userCodeDeploymentConfig.getBeanDefinition());
         }
 
-        private void handleClientAttributes(Element element) {
-            NamedNodeMap attributes = element.getAttributes();
+        private void handleClientAttributes(Node node) {
+            NamedNodeMap attributes = node.getAttributes();
             if (attributes != null) {
                 for (int a = 0; a < attributes.getLength(); a++) {
                     Node att = attributes.item(a);

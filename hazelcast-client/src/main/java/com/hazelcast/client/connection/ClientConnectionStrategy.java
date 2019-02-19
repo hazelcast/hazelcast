@@ -107,7 +107,7 @@ public abstract class ClientConnectionStrategy {
     public abstract void onDisconnect(ClientConnection connection);
 
     /**
-     * The {@link ClientConnectionManager} will call this method as a last step of its shutdown.
+     * This will be called as the last step of the HazelcastClient's shutdown.
      */
     public abstract void shutdown();
 

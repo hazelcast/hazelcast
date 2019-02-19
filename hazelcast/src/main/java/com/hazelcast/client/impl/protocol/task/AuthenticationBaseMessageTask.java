@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.ReAuthenticationOperationSupplier;
 import com.hazelcast.client.impl.client.ClientPrincipal;
@@ -43,6 +44,7 @@ import java.util.Set;
 
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.AUTHENTICATED;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.CREDENTIALS_FAILED;
+import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.SERIALIZATION_VERSION_MISMATCH;
 
 /**
@@ -54,6 +56,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     protected transient String clientName;
     protected transient Set<String> labels;
     protected transient Credentials credentials;
+    protected transient String clusterId;
+    protected transient Integer partitionCount;
     transient byte clientSerializationVersion;
     transient String clientVersion;
 
@@ -74,8 +78,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         return prepareAuthenticatedClientMessage();
     }
 
-    protected void doRun() throws Throwable {
-        initializeAndProcessMessage();
+    @Override
+    protected boolean requiresAuthentication() {
+        return false;
     }
 
     @Override
@@ -83,6 +88,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         switch (authenticate()) {
             case SERIALIZATION_VERSION_MISMATCH:
                 sendClientMessage(prepareSerializationVersionMismatchClientMessage());
+                break;
+            case NOT_ALLOWED_IN_CLUSTER:
+                sendClientMessage(prepareNotAllowedInCluster());
                 break;
             case CREDENTIALS_FAILED:
                 sendClientMessage(prepareUnauthenticatedClientMessage());
@@ -103,18 +111,32 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         }
     }
 
+    @SuppressWarnings("checkstyle:returncount")
     private AuthenticationStatus authenticate() {
         if (clientSerializationVersion != serializationService.getVersion()) {
             return SERIALIZATION_VERSION_MISMATCH;
-        }
-
-        if (!isOwnerConnection() && !isMember(principal)) {
+        } else if (!isOwnerConnection() && !isMember(principal)) {
             logger.warning("Member having UUID " + principal.getOwnerUuid()
                     + " is not part of the cluster. Client Authentication rejected.");
             return CREDENTIALS_FAILED;
+        } else if (!clientEngine.isClientAllowed(new ClientImpl(null,
+                connection.getRemoteSocketAddress(), clientName, labels))) {
+            return NOT_ALLOWED_IN_CLUSTER;
         } else if (credentials == null) {
             logger.severe("Could not retrieve Credentials object!");
             return CREDENTIALS_FAILED;
+        } else if (partitionCount != null && clientEngine.getPartitionService().getPartitionCount() != partitionCount) {
+            logger.warning("Received auth from " + connection + " with principal " + principal
+                    + ",  authentication rejected because client has a different partition count. "
+                    + "Partition count client expects :" + partitionCount
+                    + ", Member partition count:" + clientEngine.getPartitionService().getPartitionCount());
+            return NOT_ALLOWED_IN_CLUSTER;
+        } else if (clusterId != null && !clientEngine.getClusterService().getClusterId().equals(clusterId)) {
+            logger.warning("Received auth from " + connection + " with principal " + principal
+                    + ",  authentication rejected because client has a different cluster id. "
+                    + "Cluster Id client expects :" + clusterId
+                    + ", Member partition count:" + clientEngine.getClusterService().getClusterId());
+            return NOT_ALLOWED_IN_CLUSTER;
         } else if (clientEngine.getSecurityContext() != null) {
             return authenticate(clientEngine.getSecurityContext());
         } else if (credentials instanceof UsernamePasswordCredentials) {
@@ -157,12 +179,20 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         Connection connection = endpoint.getConnection();
         logger.warning("Received auth from " + connection + " with principal " + principal + ", authentication failed");
         byte status = CREDENTIALS_FAILED.getId();
-        return encodeAuth(status, null, null, null, serializationService.getVersion(), null);
+        return encodeAuth(status, null, null, null, serializationService.getVersion(), null,
+                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
+    }
+
+    private ClientMessage prepareNotAllowedInCluster() {
+        byte status = NOT_ALLOWED_IN_CLUSTER.getId();
+        return encodeAuth(status, null, null, null, serializationService.getVersion(), null,
+                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
         return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, null,
-                serializationService.getVersion(), null);
+                serializationService.getVersion(), null,
+                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
@@ -180,7 +210,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         final Address thisAddress = clientEngine.getThisAddress();
         byte status = AUTHENTICATED.getId();
         return encodeAuth(status, thisAddress, principal.getUuid(), principal.getOwnerUuid(),
-                serializationService.getVersion(), Collections.<Member>emptyList());
+                serializationService.getVersion(), Collections.<Member>emptyList(),
+                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
     }
 
     private void setConnectionType() {
@@ -206,7 +237,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     }
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid,
-                                                byte serializationVersion, List<Member> cleanedUpMembers);
+                                                byte serializationVersion, List<Member> cleanedUpMembers,
+                                                int partitionCount, String clusterId);
 
     protected abstract boolean isOwnerConnection();
 

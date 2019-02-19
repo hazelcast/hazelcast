@@ -1914,7 +1914,33 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="client">
+    <xs:element name="client-failover">
+        <xs:annotation>
+            <xs:documentation>
+                Configure the hazelcast client with multiple configs. Client will connect to first one and when disconnected
+                from that it will connect to next available cluster via given alternative configs.
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.HazelcastInstance"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="hazelcast-bean">
+                    <xs:sequence>
+                        <xs:element name="client" type="client-type" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                    <xs:attribute name="try-count" type="xs:int" default="0"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+
+    <xs:element name="client" type="client-type">
         <xs:annotation>
             <xs:documentation>
                 Configure the hazelcast client
@@ -1925,34 +1951,35 @@
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
-        <xs:complexType>
-            <xs:complexContent>
-                <xs:extension base="hazelcast-bean">
-                    <xs:choice minOccurs="0" maxOccurs="unbounded">
-                        <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="labels" type="labels" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="network" type="network-client" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="security" type="client-security" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="flake-id-generator" type="client-flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element name="reliable-topic" type="client-reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:choice>
-                    <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
-                    <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
-                </xs:extension>
-            </xs:complexContent>
-        </xs:complexType>
     </xs:element>
+
+    <xs:complexType name="client-type">
+        <xs:complexContent>
+            <xs:extension base="hazelcast-bean">
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="labels" type="labels" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="network" type="network-client" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="security" type="client-security" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="flake-id-generator" type="client-flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="reliable-topic" type="client-reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:choice>
+                <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
+                <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 
     <xs:element name="map" type="hazelcast-type">
         <xs:annotation>

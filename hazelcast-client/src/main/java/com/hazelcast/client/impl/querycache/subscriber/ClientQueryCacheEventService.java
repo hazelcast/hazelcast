@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.impl.querycache.subscriber;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -86,10 +86,10 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     private final ILogger logger = Logger.getLogger(getClass());
     private final ConcurrentMap<String, QueryCacheToListenerMapper> registrations;
 
-    public ClientQueryCacheEventService(ClientContext clientContext) {
-        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientContext.getListenerService();
+    public ClientQueryCacheEventService(HazelcastClientInstanceImpl client) {
+        AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
         this.listenerService = listenerService;
-        this.serializationService = clientContext.getSerializationService();
+        this.serializationService = client.getSerializationService();
         this.executor = listenerService.getEventExecutor();
         this.registrations = new ConcurrentHashMap<String, QueryCacheToListenerMapper>();
     }

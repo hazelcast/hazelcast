@@ -63,4 +63,17 @@ public class LegacyWildcardConfigPatternMatcher implements ConfigPatternMatcher 
         int indexSecondPart = itemName.indexOf(secondPart, index + 1);
         return (indexSecondPart != -1);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        return o != null && getClass() == o.getClass();
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

@@ -21,6 +21,8 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
+import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -79,6 +81,7 @@ public class TcpIpEndpointManager
     private final ILogger logger;
     private final IOService ioService;
     private final EndpointQualifier endpointQualifier;
+    private final ChannelInitializerProvider channelInitializerProvider;
     private final NetworkingService networkingService;
     private final TcpIpConnector connector;
     private final BindHandler bindHandler;
@@ -111,11 +114,13 @@ public class TcpIpEndpointManager
 
     private final EndpointConnectionLifecycleListener connectionLifecycleListener = new EndpointConnectionLifecycleListener();
 
-    TcpIpEndpointManager(NetworkingService networkingService, EndpointQualifier qualifier, IOService ioService,
+    TcpIpEndpointManager(NetworkingService networkingService, EndpointQualifier qualifier,
+                         ChannelInitializerProvider channelInitializerProvider, IOService ioService,
                          LoggingService loggingService, MetricsRegistry metricsRegistry,
                          HazelcastProperties properties, Set<ProtocolType> supportedProtocolTypes) {
         this.networkingService = networkingService;
         this.endpointQualifier = qualifier;
+        this.channelInitializerProvider = channelInitializerProvider;
         this.ioService = ioService;
         this.logger = loggingService.getLogger(TcpIpEndpointManager.class);
         this.connector = new TcpIpConnector(this);
@@ -291,7 +296,8 @@ public class TcpIpEndpointManager
 
     Channel newChannel(SocketChannel socketChannel, boolean clientMode)
             throws IOException {
-        Channel channel = getNetworkingService().getNetworking().register(endpointQualifier, socketChannel, clientMode);
+        Networking networking = getNetworkingService().getNetworking();
+        Channel channel = networking.register(endpointQualifier, channelInitializerProvider, socketChannel, clientMode);
         acceptedChannels.add(channel);
         return channel;
     }

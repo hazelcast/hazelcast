@@ -40,7 +40,6 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
  */
-@SuppressWarnings("checkstyle:methodcount")
 public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);

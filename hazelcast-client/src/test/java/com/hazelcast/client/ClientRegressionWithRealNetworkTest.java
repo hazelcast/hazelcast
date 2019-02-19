@@ -274,7 +274,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         };
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, addressProvider);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(addressProvider, clientConfig);
 
 
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
