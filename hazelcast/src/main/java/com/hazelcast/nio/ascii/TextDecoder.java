@@ -58,9 +58,10 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
     private final TextProtocolFilter textProtocolFilter;
     private final ILogger logger;
     private final TextParsers textParsers;
+    private final boolean rootDecoder;
 
     public TextDecoder(TcpIpConnection connection, TextEncoder encoder, TextProtocolFilter textProtocolFilter,
-            TextParsers textParsers) {
+            TextParsers textParsers, boolean rootDecoder) {
         IOService ioService = connection.getEndpointManager().getNetworkingService().getIoService();
         this.textCommandService = ioService.getTextCommandService();
         this.encoder = encoder;
@@ -68,6 +69,7 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
         this.textProtocolFilter = textProtocolFilter;
         this.textParsers = textParsers;
         this.logger = ioService.getLoggingService().getLogger(getClass());
+        this.rootDecoder = rootDecoder;
     }
 
     public void sendResponse(TextCommand command) {
@@ -76,7 +78,9 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
     @Override
     public void handlerAdded() {
-        initSrcBuffer();
+        if (rootDecoder) {
+            initSrcBuffer();
+        }
     }
 
     @Override

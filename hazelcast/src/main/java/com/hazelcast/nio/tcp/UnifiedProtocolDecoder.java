@@ -157,8 +157,9 @@ public class UnifiedProtocolDecoder
 
         channel.attributeMap().put(TextEncoder.TEXT_ENCODER, encoder);
 
-        TextDecoder decoder = restApi ? new RestApiTextDecoder(connection, encoder)
-                : new MemcacheTextDecoder(connection, encoder);
+        TextDecoder decoder = restApi
+                ? new RestApiTextDecoder(connection, encoder, false)
+                : new MemcacheTextDecoder(connection, encoder, false);
         decoder.src(newByteBuffer(config.getOption(SO_RCVBUF), config.getOption(DIRECT_BUF)));
         // we need to restore whatever is read
         decoder.src().put(stringToBytes(protocol));

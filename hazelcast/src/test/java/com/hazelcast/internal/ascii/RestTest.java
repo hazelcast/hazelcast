@@ -24,9 +24,9 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
@@ -39,11 +39,13 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.nio.IOUtil.readFully;
+import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -359,8 +361,10 @@ public class RestTest {
     @Test
     public void testNoHeaders() throws IOException {
         setup();
-        Address address = HazelcastTestSupport.getAddress(instance);
-        Socket socket = new Socket(address.getInetAddress(), address.getPort());
+        InetSocketAddress address = getNode(instance).getLocalMember().getSocketAddress(EndpointQualifier.REST);
+
+        HazelcastTestSupport.getAddress(instance);
+        Socket socket = new Socket(address.getAddress(), address.getPort());
         socket.setSoTimeout(5000);
         try {
             OutputStream os = socket.getOutputStream();
