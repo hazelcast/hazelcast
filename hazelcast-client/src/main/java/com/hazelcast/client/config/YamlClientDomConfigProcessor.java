@@ -44,13 +44,6 @@ class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         super(domLevel3, clientConfig, new QueryCacheYamlConfigBuilderHelper());
     }
 
-    //    @Override
-    //    protected void handleAttributeNode(Node n) {
-    //        String attributeName = n.getNodeName();
-    //        String value = n.getNodeValue();
-    //        clientConfig.setAttribute(attributeName, value);
-    //    }
-
     @Override
     protected void handleClusterMembers(Node node, ClientNetworkConfig clientNetworkConfig) {
         for (Node child : childElements(node)) {

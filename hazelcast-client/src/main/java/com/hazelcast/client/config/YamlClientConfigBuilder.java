@@ -143,7 +143,7 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
         }
 
-        YamlNode clientRoot = yamlRootNode.childAsMapping(ClientConfigSections.HAZELCAST_CLIENT.name.toLowerCase());
+        YamlNode clientRoot = yamlRootNode.childAsMapping(ClientConfigSections.HAZELCAST_CLIENT.name);
         if (clientRoot == null) {
             throw new InvalidConfigurationException("No mapping with hazelcast-client key is found in the provided "
                     + "configuration");
