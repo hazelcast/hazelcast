@@ -32,8 +32,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
@@ -51,17 +50,31 @@ public final class NioOutboundPipeline
         extends NioPipeline
         implements Supplier<OutboundFrame>, OutboundPipeline {
 
-    @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "writeQueueSize")
-    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "priorityWriteQueueSize")
-    public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    public static class WriteNode {
+        WriteNode next;
+        final OutboundFrame frame;
+        final Runnable task;
+
+        public WriteNode(OutboundFrame frame) {
+            this.frame = frame;
+            this.task = null;
+        }
+
+        public WriteNode(Runnable task) {
+            this.task = task;
+            this.frame = null;
+        }
+    }
+
+    public final AtomicReference<WriteNode> writeQueue = new AtomicReference<>();
+    // @SuppressWarnings("checkstyle:visibilitymodifier")
+    // @Probe(name = "priorityWriteQueueSize")
+    // public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
 
     private OutboundHandler[] handlers = new OutboundHandler[0];
     private ByteBuffer sendBuffer;
 
-    private final AtomicBoolean scheduled = new AtomicBoolean(false);
+    //private final AtomicBoolean scheduled = new AtomicBoolean(false);
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
     @Probe(name = "normalFramesWritten")
@@ -76,12 +89,20 @@ public final class NioOutboundPipeline
     private long priorityFramesWrittenLastPublish;
     private long processCountLastPublish;
 
+    private final static WriteNode SCHEDULED = new WriteNode((Runnable) null) {
+        @Override
+        public String toString() {
+            return "SCHEDULED";
+        }
+    };
+
     NioOutboundPipeline(NioChannel channel,
                         NioThread owner,
                         ChannelErrorHandler errorHandler,
                         ILogger logger,
                         IOBalancer balancer) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
+
     }
 
     @Override
@@ -99,7 +120,7 @@ public final class NioOutboundPipeline
     }
 
     public int totalFramesPending() {
-        return writeQueue.size() + priorityWriteQueue.size();
+        return 0;//return writeQueue.size() + priorityWriteQueue.size();
     }
 
     public long lastWriteTimeMillis() {
@@ -108,12 +129,13 @@ public final class NioOutboundPipeline
 
     @Probe(name = "writeQueuePendingBytes", level = DEBUG)
     public long bytesPending() {
-        return bytesPending(writeQueue);
+        return 0;//return bytesPending(writeQueue);
     }
 
     @Probe(name = "priorityWriteQueuePendingBytes", level = DEBUG)
     public long priorityBytesPending() {
-        return bytesPending(priorityWriteQueue);
+        //return bytesPending(priorityWriteQueue);
+        return 0;
     }
 
     private long bytesPending(Queue<OutboundFrame> writeQueue) {
@@ -131,141 +153,149 @@ public final class NioOutboundPipeline
 
     @Probe(level = DEBUG)
     private long isScheduled() {
-        return scheduled.get() ? 1 : 0;
-    }
-
-    public void write(OutboundFrame frame) {
-        if (frame.isUrgent()) {
-            priorityWriteQueue.offer(frame);
-        } else {
-            writeQueue.offer(frame);
-        }
-        schedule();
+        //return scheduled.get() ? 1 : 0;
+        return 0;
     }
 
     @Override
-    public OutboundFrame get() {
-        OutboundFrame frame = priorityWriteQueue.poll();
-        if (frame == null) {
-            frame = writeQueue.poll();
-            if (frame == null) {
-                return null;
-            }
-            normalFramesWritten.inc();
-        } else {
-            priorityFramesWritten.inc();
-        }
-
-        return frame;
+    public void execute(Runnable task) {
+        //System.out.println(this + " Execute:" + task);
+        schedule(new WriteNode(task));
     }
 
-    /**
-     * Makes sure this OutboundHandler is scheduled to be executed by the IO thread.
-     * <p/>
-     * This call is made by 'outside' threads that interact with the connection. For example when a frame is placed
-     * on the connection to be written. It will never be made by an IO thread.
-     * <p/>
-     * If the OutboundHandler already is scheduled, the call is ignored.
-     */
-    private void schedule() {
-        if (scheduled.get()) {
-            // So this pipeline is still scheduled, we don't need to schedule it again
-            return;
-        }
+    public void write(OutboundFrame frame) {
+        //System.out.println(this + " writing:" + frame);
+        schedule(new WriteNode(frame));
+    }
 
-        if (!scheduled.compareAndSet(false, true)) {
-            // Another thread already has scheduled this pipeline, we are done. It
-            // doesn't matter which thread does the scheduling, as long as it happens.
-            return;
-        }
+    private void schedule(WriteNode update) {
+        for (; ; ) {
+            WriteNode old = writeQueue.get();
+            update.next = old == SCHEDULED ? null : old;
+            if (writeQueue.compareAndSet(old, update)) {
+                if (old == null) {
+                    owner.addTaskAndWakeup(this);
 
-        addTaskAndWakeup(this);
+                    //addTaskAndWakeup(this);
+                }
+                return;
+            }
+        }
+    }
+
+    private WriteNode head;
+
+    @Override
+    public OutboundFrame get() {
+        for (; ; ) {
+            if (head == null) {
+                head = writeQueue.get();
+                if(head == null){
+                    throw new RuntimeException();
+                }
+
+                if (head == SCHEDULED) {
+                    return null;
+                }
+                if (!writeQueue.compareAndSet(head, SCHEDULED)) {
+                    continue;
+                }
+            }
+
+            if (head.task != null) {
+               // System.out.println(this+" head:"+head);
+                Runnable task = head.task;
+                head = head.next;
+                task.run();
+                continue;
+            }
+
+            OutboundFrame frame = head.frame;
+            normalFramesWritten.inc();
+           // System.out.println(this + " frames written:" + normalFramesWritten.get());
+            head = head.next;
+            return frame;
+        }
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void process() throws Exception {
-        processCount.inc();
-
-        OutboundHandler[] localHandlers = handlers;
-        HandlerStatus pipelineStatus = CLEAN;
-        for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
-            OutboundHandler handler = localHandlers[handlerIndex];
-
-            HandlerStatus handlerStatus = handler.onWrite();
-
-            if (localHandlers != handlers) {
-                // change in the pipeline detected, therefor the pipeline is restarted.
-                localHandlers = handlers;
-                pipelineStatus = CLEAN;
-                handlerIndex = -1;
-            } else if (handlerStatus != CLEAN) {
-                pipelineStatus = handlerStatus;
+        try {
+            if(writeQueue.get()==SCHEDULED){
+                throw new RuntimeException();
             }
+
+           // Thread.sleep(100);
+
+           // System.out.println("process:");
+            processCount.inc();
+
+            OutboundHandler[] localHandlers = handlers;
+            HandlerStatus pipelineStatus = CLEAN;
+            for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
+                OutboundHandler handler = localHandlers[handlerIndex];
+
+                HandlerStatus handlerStatus = handler.onWrite();
+
+                if (localHandlers != handlers) {
+                    // change in the pipeline detected, therefor the pipeline is restarted.
+                    localHandlers = handlers;
+                    pipelineStatus = CLEAN;
+                    handlerIndex = -1;
+                } else if (handlerStatus != CLEAN) {
+                    pipelineStatus = handlerStatus;
+                }
+            }
+
+            flushToSocket();
+
+            if (migrationReguested) {
+                startMigration();
+                return;
+            }
+
+            if (sendBuffer.remaining() > 0) {
+                pipelineStatus = DIRTY;
+            }
+
+            //System.out.println("pipelineStatus:" + pipelineStatus);
+
+            switch (pipelineStatus) {
+                case CLEAN:
+                    // There is nothing left to be done; so lets unschedule this pipeline
+                    // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
+                    unregisterOp(OP_WRITE);
+
+                   // System.out.println("unschedule:" + writeQueue.get());
+
+                    if (writeQueue.get() == SCHEDULED && writeQueue.compareAndSet(SCHEDULED, null)) {
+                       // System.out.println("unschedule complete");
+                        return;
+                    }
+
+                    // owner can't be null because this method is made by the owning io thread.
+                    if(writeQueue.get()==null){
+                        throw new RuntimeException();
+                    }
+                    owner.addTask(this);
+                    break;
+                case DIRTY:
+                    // pipeline is dirty, so lets register for an OP_WRITE to write
+                    // more data.
+                    registerOp(OP_WRITE);
+                    break;
+                case BLOCKED:
+                    // pipeline is blocked; no point in receiving OP_WRITE events.
+                    unregisterOp(OP_WRITE);
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            throw e;
         }
-
-        flushToSocket();
-
-        if (sendBuffer.remaining() > 0) {
-            pipelineStatus = DIRTY;
-        }
-
-        switch (pipelineStatus) {
-            case CLEAN:
-                // There is nothing left to be done; so lets unschedule this pipeline
-                unschedule();
-                break;
-            case DIRTY:
-                // pipeline is dirty, so lets register for an OP_WRITE to write
-                // more data.
-                registerOp(OP_WRITE);
-                break;
-            case BLOCKED:
-                // pipeline is blocked; no point in receiving OP_WRITE events.
-                unregisterOp(OP_WRITE);
-                break;
-            default:
-                throw new IllegalStateException();
-        }
-    }
-
-    /**
-     * Tries to unschedule this pipeline.
-     * <p/>
-     * It will only be unscheduled if:
-     * - there are no pending frames.
-     * <p/>
-     * If the outputBuffer is dirty then it will register itself for an OP_WRITE since we are interested in knowing
-     * if there is more space in the socket output buffer.
-     * If the outputBuffer is not dirty, then it will unregister itself from an OP_WRITE since it isn't interested
-     * in space in the socket outputBuffer.
-     * <p/>
-     * This call is only made by the owning IO thread.
-     */
-    private void unschedule() throws IOException {
-        // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
-        unregisterOp(OP_WRITE);
-        // So the outputBuffer is empty, so we are going to unschedule the pipeline.
-        scheduled.set(false);
-
-        if (writeQueue.isEmpty() && priorityWriteQueue.isEmpty()) {
-            // there are no remaining frames, so we are done.
-            return;
-        }
-
-        // So there are frames, but we just unscheduled ourselves. If we don't try to reschedule, then these
-        // Frames are at risk not to be send.
-        if (!scheduled.compareAndSet(false, true)) {
-            //someone else managed to schedule this OutboundHandler, so we are done.
-            return;
-        }
-
-        // We managed to reschedule. So lets add ourselves to the owner so we are processed again.
-        // We don't need to call wakeup because the current thread is the IO-thread and the selectionQueue will be processed
-        // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
-
-        // owner can't be null because this method is made by the owning io thread.
-        owner().addTask(this);
     }
 
     private void flushToSocket() throws IOException {
@@ -276,8 +306,9 @@ public final class NioOutboundPipeline
     }
 
     void drainWriteQueues() {
-        writeQueue.clear();
-        priorityWriteQueue.clear();
+        // writeQueue.clear();
+        // priorityWriteQueue.clear();
+        //writeQueue.set(null);
     }
 
     @Override
@@ -374,7 +405,11 @@ public final class NioOutboundPipeline
 
     @Override
     public OutboundPipeline wakeup() {
-        addTaskAndWakeup(this);
+        if(writeQueue.compareAndSet(null, new WriteNode(this))){
+            owner.addTaskAndWakeup(this);
+        }
+
+        //addTaskAndWakeup(this);
         return this;
     }
 }

@@ -193,6 +193,18 @@ public class NioThread extends Thread implements OperationHostileThread {
      * @throws NullPointerException if task is null
      */
     public void addTask(Runnable task) {
+        add0(task);
+        return;
+    }
+
+    private boolean add0(Runnable task) {
+        if(task instanceof NioOutboundPipeline){
+            NioOutboundPipeline out = (NioOutboundPipeline)task;
+            if(out.writeQueue.get()==null){
+                throw new RuntimeException();
+            }
+        }
+
         SelectionTaskNode update = new SelectionTaskNode();
         update.task = task;
         for (; ; ) {
@@ -200,7 +212,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             update.next = old;
             update.length = old == null ? 1 : old.length + 1;
             if (taskQueue.compareAndSet(old, update)) {
-                return;
+                return old == null;
             }
         }
     }
@@ -213,17 +225,8 @@ public class NioThread extends Thread implements OperationHostileThread {
      * @throws NullPointerException if task is null
      */
     public void addTaskAndWakeup(Runnable task) {
-        SelectionTaskNode update = new SelectionTaskNode();
-        update.task = task;
-        for (; ; ) {
-            SelectionTaskNode old = taskQueue.get();
-            update.next = old;
-            if (taskQueue.compareAndSet(old, update)) {
-                if (old == null) {
-                    selector.wakeup();
-                }
-                return;
-            }
+        if(add0(task)){
+            selector.wakeup();
         }
     }
 
@@ -294,8 +297,6 @@ public class NioThread extends Thread implements OperationHostileThread {
             if (selectedKeys > 0) {
                 processSelectionKeys();
             }
-
-
         }
     }
 
