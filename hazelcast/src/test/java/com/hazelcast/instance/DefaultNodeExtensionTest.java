@@ -98,7 +98,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_joinRequestAllowed_whenSameVersion() {
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nodeVersion, joinAddress, newUnsecureUuidString(),
-                false, null, null, null, null);
+                false, null, null, null, null, null);
 
         nodeExtension.validateJoinRequest(joinRequest);
     }
@@ -108,7 +108,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion nextPatchVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor(),
                 nodeVersion.getPatch() + 1);
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextPatchVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null);
+                newUnsecureUuidString(), false, null, null, null, null, null);
 
         nodeExtension.validateJoinRequest(joinRequest);
     }
@@ -118,7 +118,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion nextMinorVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor() + 1,
                 nodeVersion.getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMinorVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null);
+                newUnsecureUuidString(), false, null, null, null, null, null);
 
         expected.expect(VersionMismatchException.class);
         expected.expectMessage(containsString("Rolling Member Upgrades are only supported in Hazelcast Enterprise"));
@@ -130,7 +130,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion nextMinorVersion = MemberVersion.of(nodeVersion.getMajor(), nodeVersion.getMinor() - 1,
                 nodeVersion.getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMinorVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null);
+                newUnsecureUuidString(), false, null, null, null, null, null);
 
         expected.expect(VersionMismatchException.class);
         expected.expectMessage(containsString("Rolling Member Upgrades are only supported for the next minor version"));
@@ -143,7 +143,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         MemberVersion nextMajorVersion = MemberVersion.of(nodeVersion.getMajor() + 1, nodeVersion.getMinor(),
                 nodeVersion.getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, buildNumber, nextMajorVersion, joinAddress,
-                newUnsecureUuidString(), false, null, null, null, null);
+                newUnsecureUuidString(), false, null, null, null, null, null);
 
         expected.expect(VersionMismatchException.class);
         expected.expectMessage(containsString("Rolling Member Upgrades are only supported for the same major version"));

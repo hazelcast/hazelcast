@@ -22,6 +22,7 @@ import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,7 +40,9 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -71,6 +74,22 @@ public class AdvancedNetworkIntegrationTest {
         Config config = createCompleteMultiSocketConfig();
         HazelcastInstance hz = newHazelcastInstance(config);
         assertLocalPortsOpen(MEMBER_PORT, CLIENT_PORT, WAN1_PORT, WAN2_PORT, REST_PORT, MEMCACHE_PORT);
+    }
+
+    @Test
+    public void testMembersReportAllAddresses() {
+        Config config = createCompleteMultiSocketConfig();
+        for (int i = 0; i < 3; i++) {
+            newHazelcastInstance(config);
+        }
+        assertClusterSizeEventually(3, instances);
+
+        for (HazelcastInstance hz : instances) {
+            Set<Member> members = hz.getCluster().getMembers();
+            for (Member member : members) {
+                assertEquals(6, member.getAddressMap().size());
+            }
+        }
     }
 
     @Test(expected = AssertionError.class)

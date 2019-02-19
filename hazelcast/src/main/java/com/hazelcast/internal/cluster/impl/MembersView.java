@@ -65,7 +65,7 @@ public final class MembersView implements IdentifiedDataSerializable, Versioned 
         int newVersion = max(source.version, source.size());
         for (MemberInfo newMember : newMembers) {
             MemberInfo m = new MemberInfo(newMember.getAddress(), newMember.getUuid(), newMember.getAttributes(),
-                    newMember.isLiteMember(), newMember.getVersion(), ++newVersion);
+                    newMember.isLiteMember(), newMember.getVersion(), ++newVersion, newMember.getAddressMap());
             list.add(m);
         }
 
