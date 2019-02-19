@@ -209,6 +209,9 @@
                 <class>example.Foo</class>
                 <package>com.acme.app</package>
                 <package>com.acme.app.subpkg</package>
+                <prefix>java</prefix>
+                <prefix>[</prefix>
+                <prefix>com.</prefix>
             </whitelist>
         </java-serialization-filter>
     </serialization>
@@ -250,7 +253,7 @@
     </flake-id-generator>
 
     <query-caches>
-        <query-cache name="query-cache-name" mapName="map-name">
+        <query-cache name="query-cache-class-name-predicate" mapName="map-name">
             <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
             <entry-listeners>
                 <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
@@ -266,6 +269,9 @@
             <indexes>
                 <index ordered="false">name</index>
             </indexes>
+        </query-cache>
+        <query-cache name="query-cache-sql-predicate" mapName="map-name">
+            <predicate type="sql">%age=40</predicate>
         </query-cache>
     </query-caches>
 

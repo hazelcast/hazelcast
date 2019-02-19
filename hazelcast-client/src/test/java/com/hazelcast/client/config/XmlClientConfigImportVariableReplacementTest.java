@@ -24,13 +24,10 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -42,19 +39,15 @@ import java.util.Properties;
 import static com.hazelcast.client.config.XmlClientConfigBuilderTest.HAZELCAST_CLIENT_END_TAG;
 import static com.hazelcast.client.config.XmlClientConfigBuilderTest.HAZELCAST_CLIENT_START_TAG;
 import static com.hazelcast.client.config.XmlClientConfigBuilderTest.buildConfig;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestSupport {
+public class XmlClientConfigImportVariableReplacementTest extends AbstractClientConfigImportVariableReplacementTest {
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
+    @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportElementOnlyAppersInTopLevel() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -66,6 +59,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         buildConfig(xml);
     }
 
+    @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastElementOnlyAppearsOnce() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -76,6 +70,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         buildConfig(xml);
     }
 
+    @Override
     @Test
     public void readVariables() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -86,6 +81,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         assertEquals(40, config.getExecutorPoolSize());
     }
 
+    @Override
     @Test
     public void testImportConfigFromResourceVariables() throws IOException {
         File file = createConfigFile("foo", "bar");
@@ -119,6 +115,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         assertContains(config.getNetworkConfig().getAddresses(), "127.0.0.10");
     }
 
+    @Override
     @Test
     public void testImportedConfigVariableReplacement() throws IOException {
         File file = createConfigFile("foo", "bar");
@@ -143,6 +140,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         assertContains(config.getNetworkConfig().getAddresses(), "192.168.5.5");
     }
 
+    @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", ".xml");
@@ -161,6 +159,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         buildConfig(config1Xml);
     }
 
+    @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", ".xml");
@@ -184,6 +183,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         buildConfig(config1Xml);
     }
 
+    @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
         File config = createConfigFile("hz1", ".xml");
@@ -195,6 +195,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         buildConfig(configXml);
     }
 
+    @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -204,6 +205,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         buildConfig(xml);
     }
 
+    @Override
     @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -213,6 +215,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         buildConfig(xml);
     }
 
+    @Override
     @Test
     public void testReplacers() throws Exception {
         File passwordFile = tempFolder.newFile(getClass().getSimpleName() + ".pwd");
@@ -247,6 +250,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         assertEquals("My very secret secret", groupConfig.getPassword());
     }
 
+    @Override
     @Test(expected = ConfigurationException.class)
     public void testMissingReplacement() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -260,6 +264,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         buildConfig(xml, System.getProperties());
     }
 
+    @Override
     @Test
     public void testReplacerProperties() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -288,6 +293,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
      * Then: The configuration parsing doesn't fail and the variable string remains unchanged (i.e. backward compatible
      * behavior, as if {@code fail-if-value-missing} attribute is {@code false}).
      */
+    @Override
     @Test
     public void testNoConfigReplacersMissingProperties() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -299,6 +305,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         assertEquals("${noSuchPropertyAvailable}", groupConfig.getName());
     }
 
+    @Override
     @Test
     public void testImportGroupConfigFromClassPath() {
         String xml = HAZELCAST_CLIENT_START_TAG
@@ -309,18 +316,5 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         GroupConfig groupConfig = config.getGroupConfig();
         assertEquals("cluster1", groupConfig.getName());
         assertEquals("cluster1pass", groupConfig.getPassword());
-    }
-
-    private File createConfigFile(String filename, String suffix) throws IOException {
-        File file = createTempFile(filename, suffix);
-        file.setWritable(true);
-        file.deleteOnExit();
-        return file;
-    }
-
-    private void writeStringToStreamAndClose(FileOutputStream os, String string) throws IOException {
-        os.write(string.getBytes());
-        os.flush();
-        closeResource(os);
     }
 }

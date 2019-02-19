@@ -143,6 +143,7 @@
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEngineImpl"/>
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling|ClassFanOutComplexity|MethodCount"
               files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]ClientDomConfigProcessor"/>
+    <suppress checks="CyclomaticComplexity" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]YamlClientDomConfigProcessor"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]MemberImpl"/>
     <suppress checks="ClassFanOutComplexity|AnonInnerLength"
               files="com[\\/]hazelcast[\\/]client[\\/]connection[\\/]nio[\\/]ClientConnectionManagerImpl"/>
