@@ -59,7 +59,7 @@ public class EncodeDecodeCompatibilityNullTest {
     @org.junit.Test
             public void test() {
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings ,    null ,    null   );
     ClientAuthenticationCodec.RequestParameters params = ClientAuthenticationCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.username));
             assertTrue(isEqual(aString, params.password));
@@ -70,10 +70,12 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
             assertTrue(isEqual(aString, params.clientName));
-            assertTrue(isEqual(aListOfStringToString, params.attributes));
+            assertTrue(isEqual(strings, params.labels));
+            assertTrue(isEqual(null, params.partitionCount));
+            assertTrue(isEqual(null, params.clusterId));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt ,    aString   );
     ClientAuthenticationCodec.ResponseParameters params = ClientAuthenticationCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aByte, params.status));
             assertTrue(isEqual(null, params.address));
@@ -82,9 +84,11 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.serverHazelcastVersion));
             assertTrue(isEqual(null, params.clientUnregisteredMembers));
+            assertTrue(isEqual(anInt, params.partitionCount));
+            assertTrue(isEqual(aString, params.clusterId));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings ,    null ,    null   );
     ClientAuthenticationCustomCodec.RequestParameters params = ClientAuthenticationCustomCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aData, params.credentials));
             assertTrue(isEqual(null, params.uuid));
@@ -94,10 +98,12 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.clientHazelcastVersion));
             assertTrue(isEqual(aString, params.clientName));
-            assertTrue(isEqual(aListOfStringToString, params.attributes));
+            assertTrue(isEqual(strings, params.labels));
+            assertTrue(isEqual(null, params.partitionCount));
+            assertTrue(isEqual(null, params.clusterId));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null ,    anInt ,    aString   );
     ClientAuthenticationCustomCodec.ResponseParameters params = ClientAuthenticationCustomCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aByte, params.status));
             assertTrue(isEqual(null, params.address));
@@ -106,6 +112,8 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aByte, params.serializationVersion));
             assertTrue(isEqual(aString, params.serverHazelcastVersion));
             assertTrue(isEqual(null, params.clientUnregisteredMembers));
+            assertTrue(isEqual(anInt, params.partitionCount));
+            assertTrue(isEqual(aString, params.clusterId));
 }
 {
     ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(    aBoolean   );
@@ -339,6 +347,15 @@ public class EncodeDecodeCompatibilityNullTest {
 {
     ClientMessage clientMessage = ClientCreateProxiesCodec.encodeResponse( );
     ClientCreateProxiesCodec.ResponseParameters params = ClientCreateProxiesCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = ClientIsFailoverSupportedCodec.encodeRequest( );
+    ClientIsFailoverSupportedCodec.RequestParameters params = ClientIsFailoverSupportedCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = ClientIsFailoverSupportedCodec.encodeResponse(    aBoolean   );
+    ClientIsFailoverSupportedCodec.ResponseParameters params = ClientIsFailoverSupportedCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aBoolean, params.response));
 }
 {
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
@@ -5309,7 +5326,7 @@ public class EncodeDecodeCompatibilityNullTest {
     DynamicConfigAddQueueConfigCodec.ResponseParameters params = DynamicConfigAddQueueConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    aBoolean ,    aString ,    aString ,    aString ,    null ,    null ,    aBoolean ,    null ,    null ,    aString ,    anInt ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    anInt   );
+    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    aBoolean ,    aString ,    aString ,    aString ,    null ,    null ,    aBoolean ,    null ,    null ,    aString ,    anInt ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    anInt ,    anInt   );
     DynamicConfigAddMapConfigCodec.RequestParameters params = DynamicConfigAddMapConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.backupCount));
@@ -5338,6 +5355,7 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(null, params.partitioningStrategyImplementation));
             assertTrue(isEqual(null, params.hotRestartConfig));
             assertTrue(isEqual(anInt, params.mergeBatchSize));
+            assertTrue(isEqual(anInt, params.metadataPolicy));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeResponse( );

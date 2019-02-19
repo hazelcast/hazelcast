@@ -161,8 +161,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSecurity(node);
                 } else if ("instance-name".equals(nodeName)) {
                     configBuilder.addPropertyValue("instanceName", getTextContent(node));
-                } else if ("attributes".equals(nodeName)) {
-                    handleAttributes(node);
+                } else if ("labels".equals(nodeName)) {
+                    handleLabels(node);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
@@ -488,20 +488,18 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
 
-        private void handleAttributes(Node node) {
-            ManagedMap<String, Object> attributes = new ManagedMap<String, Object>();
+        private void handleLabels(Node node) {
+            ManagedList<String> labels = new ManagedList<String>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
-                if (!"attribute".equals(name)) {
+                if (!"label".equals(name)) {
                     continue;
                 }
-                String attributeName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
-                String value = getTextContent(n);
-                attributes.put(attributeName, value);
+                String label = getTextContent(n);
+                labels.add(label);
             }
-            configBuilder.addPropertyValue("attributes", attributes);
+            configBuilder.addPropertyValue("labels", labels);
         }
     }
-
 
 }

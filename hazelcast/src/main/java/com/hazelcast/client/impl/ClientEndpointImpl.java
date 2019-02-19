@@ -35,7 +35,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,7 +65,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private long authenticationCorrelationId;
     private volatile String stats;
     private String clientName;
-    private Map<String, String> attributes;
+    private Set<String> labels;
 
     public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -113,9 +113,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
-                              String clientVersion, long authCorrelationId, String clientName,
-                              Map<String, String> attributes) {
+    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection, String clientVersion,
+                              long authCorrelationId, String clientName, Set<String> labels) {
         this.principal = principal;
         this.ownerConnection = firstConnection;
         this.credentials = credentials;
@@ -123,7 +122,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.authenticationCorrelationId = authCorrelationId;
         this.setClientVersion(clientVersion);
         this.clientName = clientName;
-        this.attributes = attributes;
+        this.labels = labels;
     }
 
     @Override
@@ -203,8 +202,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public Map<String, String> getAttributes() {
-        return attributes;
+    public Set<String> getLabels() {
+        return labels;
     }
 
     @Override

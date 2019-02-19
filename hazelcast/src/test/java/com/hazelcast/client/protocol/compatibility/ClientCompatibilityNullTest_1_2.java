@@ -70,7 +70,7 @@ public class ClientCompatibilityNullTest_1_2 {
             DataInputStream inputStream = new DataInputStream(input);
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings ,    null ,    null   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -93,11 +93,13 @@ public class ClientCompatibilityNullTest_1_2 {
                 assertTrue(isEqual(aByte, params.serializationVersion));
                 assertFalse(params.serverHazelcastVersionExist);
                 assertFalse(params.clientUnregisteredMembersExist);
+                assertFalse(params.partitionCountExist);
+                assertFalse(params.clusterIdExist);
 }
 
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings ,    null ,    null   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -120,6 +122,8 @@ public class ClientCompatibilityNullTest_1_2 {
                 assertTrue(isEqual(aByte, params.serializationVersion));
                 assertFalse(params.serverHazelcastVersionExist);
                 assertFalse(params.clientUnregisteredMembersExist);
+                assertFalse(params.partitionCountExist);
+                assertFalse(params.clusterIdExist);
 }
 
 
@@ -385,6 +389,8 @@ public class ClientCompatibilityNullTest_1_2 {
     inputStream.read(bytes);
     ClientPingCodec.ResponseParameters params = ClientPingCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
 }
+
+
 
 
 

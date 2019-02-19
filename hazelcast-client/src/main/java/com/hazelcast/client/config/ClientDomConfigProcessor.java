@@ -43,12 +43,12 @@ import org.w3c.dom.Node;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.client.config.ClientConfigSections.ATTRIBUTES;
 import static com.hazelcast.client.config.ClientConfigSections.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientConfigSections.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.client.config.ClientConfigSections.GROUP;
 import static com.hazelcast.client.config.ClientConfigSections.INSTANCE_NAME;
+import static com.hazelcast.client.config.ClientConfigSections.LABELS;
 import static com.hazelcast.client.config.ClientConfigSections.LICENSE_KEY;
 import static com.hazelcast.client.config.ClientConfigSections.LISTENERS;
 import static com.hazelcast.client.config.ClientConfigSections.LOAD_BALANCER;
@@ -135,20 +135,15 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             handleFlakeIdGenerator(node);
         } else if (RELIABLE_TOPIC.isEqual(nodeName)) {
             handleReliableTopic(node);
-        } else if (ATTRIBUTES.isEqual(nodeName)) {
-            handleAttributes(node);
+        } else if (LABELS.isEqual(nodeName)) {
+            handleLabels(node);
         }
     }
 
-    private void handleAttributes(Node node) {
+    private void handleLabels(Node node) {
         for (Node n : childElements(node)) {
-            String name = cleanNodeName(n);
-            if (!"attribute".equals(name)) {
-                continue;
-            }
-            String attributeName = getTextContent(n.getAttributes().getNamedItem("name"));
             String value = getTextContent(n);
-            clientConfig.setAttribute(attributeName, value);
+            clientConfig.addLabel(value);
         }
     }
 

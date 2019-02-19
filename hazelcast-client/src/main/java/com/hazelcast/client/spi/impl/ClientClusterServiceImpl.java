@@ -45,7 +45,6 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -65,11 +64,11 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private final AtomicReference<Map<Address, Member>> members = new AtomicReference<Map<Address, Member>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
     private final Object initialMembershipListenerMutex = new Object();
-    private final Map<String, String> attributes;
+    private final Set<String> labels;
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        attributes = Collections.unmodifiableMap(new HashMap<String, String>(client.getClientConfig().getAttributes()));
+        labels = Collections.unmodifiableSet(client.getClientConfig().getLabels());
         ILogger logger = client.getLoggingService().getLogger(ClientClusterService.class);
         ClientConfig clientConfig = getClientConfig();
         List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
@@ -149,7 +148,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
         ClientPrincipal principal = cm.getPrincipal();
         final String uuid = principal != null ? principal.getUuid() : null;
-        return new ClientImpl(uuid, inetSocketAddress, client.getName(), attributes);
+        return new ClientImpl(uuid, inetSocketAddress, client.getName(), labels);
     }
 
     @Override

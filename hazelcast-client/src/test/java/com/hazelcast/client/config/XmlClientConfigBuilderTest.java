@@ -66,6 +66,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.hazelcast.nio.IOUtil.delete;
 import static org.junit.Assert.assertEquals;
@@ -181,11 +182,11 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAttributes() {
-        Map<String, String> attributes = fullClientConfig.getAttributes();
-        assertEquals(2, attributes.size());
-        assertEquals("bar", attributes.get("foo"));
-        assertEquals("admin", attributes.get("role"));
+    public void testLabels() {
+        Set<String> labels = fullClientConfig.getLabels();
+        assertEquals(2, labels.size());
+        assertContains(labels, "admin");
+        assertContains(labels, "foo");
     }
 
     @Test

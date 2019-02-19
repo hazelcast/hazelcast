@@ -39,7 +39,7 @@ import javax.security.auth.login.LoginException;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.AUTHENTICATED;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.CREDENTIALS_FAILED;
@@ -52,7 +52,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
 
     protected transient ClientPrincipal principal;
     protected transient String clientName;
-    protected transient Map<String, String> attributes;
+    protected transient Set<String> labels;
     protected transient Credentials credentials;
     transient byte clientSerializationVersion;
     transient String clientVersion;
@@ -168,8 +168,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     private ClientMessage prepareAuthenticatedClientMessage() {
         Connection connection = endpoint.getConnection();
 
-        endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion,
-                clientMessage.getCorrelationId(), clientName, attributes);
+        endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion, clientMessage.getCorrelationId(),
+                clientName, labels);
         setConnectionType();
         logger.info("Received auth from " + connection + ", successfully authenticated" + ", principal: " + principal
                 + ", owner connection: " + isOwnerConnection() + ", client version: " + clientVersion);

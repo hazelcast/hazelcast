@@ -70,7 +70,7 @@ public class ClientCompatibilityTest_1_5 {
             DataInputStream inputStream = new DataInputStream(input);
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings ,    anInt ,    aString   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -94,11 +94,13 @@ public class ClientCompatibilityTest_1_5 {
                 assertTrue(isEqual(aByte, params.serializationVersion));
                 assertTrue(isEqual(aString, params.serverHazelcastVersion));
                 assertTrue(isEqual(members, params.clientUnregisteredMembers));
+                assertFalse(params.partitionCountExist);
+                assertFalse(params.clusterIdExist);
 }
 
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    aListOfStringToString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString ,    aString ,    strings ,    anInt ,    aString   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
     // (version 1.8), only the bytes after frame length fields are compared
@@ -122,6 +124,8 @@ public class ClientCompatibilityTest_1_5 {
                 assertTrue(isEqual(aByte, params.serializationVersion));
                 assertTrue(isEqual(aString, params.serverHazelcastVersion));
                 assertTrue(isEqual(members, params.clientUnregisteredMembers));
+                assertFalse(params.partitionCountExist);
+                assertFalse(params.clusterIdExist);
 }
 
 
@@ -450,6 +454,8 @@ public class ClientCompatibilityTest_1_5 {
         handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
      }
 }
+
+
 
 
 
@@ -7204,10 +7210,10 @@ public class ClientCompatibilityTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    aBoolean ,    aString ,    aString ,    aString ,    listenerConfigs ,    listenerConfigs ,    aBoolean ,    aString ,    aData ,    aString ,    anInt ,    mapStoreConfig ,    nearCacheConfig ,    wanReplicationRef ,    mapIndexConfigs ,    mapAttributeConfigs ,    queryCacheConfigs ,    aString ,    aData ,    hotRestartConfig ,    anInt   );
+    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    aBoolean ,    aString ,    aString ,    aString ,    listenerConfigs ,    listenerConfigs ,    aBoolean ,    aString ,    aData ,    aString ,    anInt ,    mapStoreConfig ,    nearCacheConfig ,    wanReplicationRef ,    mapIndexConfigs ,    mapAttributeConfigs ,    queryCacheConfigs ,    aString ,    aData ,    hotRestartConfig ,    anInt ,    anInt   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
-    // (version 1.6), only the bytes after frame length fields are compared
+    // (version 1.8), only the bytes after frame length fields are compared
     int frameLength = clientMessage.getFrameLength();
     assertTrue(frameLength >= length);
     inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);

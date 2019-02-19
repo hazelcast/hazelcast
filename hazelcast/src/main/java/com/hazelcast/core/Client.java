@@ -17,7 +17,7 @@
 package com.hazelcast.core;
 
 import java.net.InetSocketAddress;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * The Client interface allows to get information about
@@ -60,8 +60,8 @@ public interface Client extends Endpoint {
     String getName();
 
     /**
-     * @return read only map of all attributes of this client.
+     * @return read only set of all labels of this client.
      * @since 3.12
      */
-    Map<String, String> getAttributes();
+    Set<String> getLabels();
 }
