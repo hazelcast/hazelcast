@@ -23,6 +23,7 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.Iterator;
 
 import static com.hazelcast.internal.cluster.Versions.V3_12;
 
-public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
+public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation, Versioned {
 
     private long recordId;
     private Data value;
