@@ -1033,6 +1033,19 @@ public class ClientConfig {
         return labels;
     }
 
+    /**
+     * Set labels for the client. Deletes old labels if added earlier.
+     *
+     * @param labels The labels to be set
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     */
+    public ClientConfig setLabels(Set<String> labels) {
+        Preconditions.isNotNull(labels, "labels");
+        this.labels.clear();
+        this.labels.addAll(labels);
+        return this;
+    }
+
     public ClientConfig setUserContext(ConcurrentMap<String, Object> userContext) {
         Preconditions.isNotNull(userContext, "userContext");
         this.userContext.clear();
