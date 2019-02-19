@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -830,6 +831,14 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
+    protected void handleOutboundPorts(Node child, EndpointConfig endpointConfig) {
+        for (Node n : childElements(child)) {
+            String value = getTextContent(n);
+            endpointConfig.addOutboundPortDefinition(value);
+        }
+    }
+
+    @Override
     protected void handleInterfacesList(Node node, InterfacesConfig interfaces) {
         for (Node interfacesNode : childElements(node)) {
             if ("interfaces".equals(lowerCaseInternal(cleanNodeName(interfacesNode)))) {
@@ -871,4 +880,32 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             }
         }
     }
+
+    @Override
+    protected String extractName(Node node) {
+        return node.getNodeName();
+    }
+
+    @Override
+    protected void handlePort(Node node, ServerSocketEndpointConfig endpointConfig) {
+        Node portNode = node.getAttributes().getNamedItem("port");
+        if (portNode != null) {
+            String portStr = portNode.getNodeValue().trim();
+            if (portStr.length() > 0) {
+                endpointConfig.setPort(parseInt(portStr));
+            }
+        }
+        handlePortAttributes(node, endpointConfig);
+    }
+
+    @Override
+    protected void handleWanEndpointConfig(Node node) throws Exception {
+        for (Node wanEndpointNode : childElements(node)) {
+            EndpointConfig config = new EndpointConfig();
+            config.setProtocolType(ProtocolType.WAN);
+            String endpointName = wanEndpointNode.getNodeName().trim();
+            handleEndpointConfig(config, wanEndpointNode, endpointName);
+        }
+    }
+
 }

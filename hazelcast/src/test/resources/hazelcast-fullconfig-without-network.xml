@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
   -->
 
 <!--
-    A comprehensive example of Hazelcast configuration.
+    A comprehensive example of Hazelcast configuration without network configuration.
+    This file is complete if included into either of the following:
+      - hazelcast-fullconfig.xml
+      - hazelcast-fullconfig-advanced-network-config.xml
 
     Hazelcast resolves configuration using the following approach:
 
@@ -76,7 +79,6 @@
                 <property name="snapshot.enabled">false</property>
                 <property name="group.password">pass</property>
             </properties>
-            <endpoint-qualifier>endpoint-tokyo</endpoint-qualifier>
         </wan-publisher>
         <wan-publisher group-name="istanbul">
             <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>
@@ -138,182 +140,6 @@
             <persist-wan-replicated-data>true</persist-wan-replicated-data>
         </wan-consumer>
     </wan-replication>
-    <advanced-network enabled="true">
-        <join>
-            <multicast enabled="true" loopbackModeEnabled="true">
-                <multicast-group>1.2.3.4</multicast-group>
-                <multicast-port>12345</multicast-port>
-                <multicast-timeout-seconds>5</multicast-timeout-seconds>
-                <multicast-time-to-live>10</multicast-time-to-live>
-                <trusted-interfaces>
-                    <interface>10.10.1.*</interface>
-                    <interface>10.10.2.*</interface>
-                </trusted-interfaces>
-            </multicast>
-            <tcp-ip enabled="false" connection-timeout-seconds="123">
-                <required-member>dummy</required-member>
-                <member>dummy1</member>
-                <member>dummy2</member>
-                <interface>127.0.0.10</interface>
-                <members>dummy3,dummy4</members>
-                <member-list>
-                    <member>dummy5</member>
-                    <member>dummy6</member>
-                </member-list>
-            </tcp-ip>
-            <aws enabled="false">
-                <access-key>my-access-key</access-key>
-                <secret-key>my-secret-key</secret-key>
-                <iam-role>dummy</iam-role>
-                <!--optional, default is us-east-1 -->
-                <region>us-west-1</region>
-                <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
-                <host-header>ec2.amazonaws.com</host-header>
-                <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
-                <security-group-name>hazelcast-sg</security-group-name>
-                <tag-key>type</tag-key>
-                <tag-value>hz-nodes</tag-value>
-                <use-public-ip>true</use-public-ip>
-            </aws>
-            <gcp enabled="false">
-                <zones>us-east1-b,us-east1-c</zones>
-            </gcp>
-            <azure enabled="false">
-                <client-id>CLIENT_ID</client-id>
-                <client-secret>CLIENT_SECRET</client-secret>
-                <tenant-id>TENANT_ID</tenant-id>
-                <subscription-id>SUB_ID</subscription-id>
-                <cluster-id>HZLCAST001</cluster-id>
-                <group-name>GROUP-NAME</group-name>
-            </azure>
-            <kubernetes enabled="false">
-                <namespace>MY-KUBERNETES-NAMESPACE</namespace>
-                <service-name>MY-SERVICE-NAME</service-name>
-                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
-                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
-            </kubernetes>
-            <eureka enabled="false">
-                <self-registration>true</self-registration>
-                <namespace>hazelcast</namespace>
-            </eureka>
-<!--            <discovery-strategies>
-                <node-filter class="DummyFilterClass"/>
-                <discovery-strategy class="DummyClass" enabled="true">
-                    <properties>
-                        <property name="foo">bar</property>
-                    </properties>
-                </discovery-strategy>
-            </discovery-strategies>-->
-        </join>
-        <member-address-provider enabled="false">
-            <class-name>DummyMemberAddressProvider</class-name>
-            <properties>
-                <property name="foo">bar</property>
-            </properties>
-        </member-address-provider>
-        <failure-detector>
-            <icmp enabled="false">
-                <timeout-milliseconds>1000</timeout-milliseconds>
-                <fail-fast-on-startup>true</fail-fast-on-startup>
-                <interval-milliseconds>1000</interval-milliseconds>
-                <max-attempts>2</max-attempts>
-                <parallel-mode>true</parallel-mode>
-                <ttl>255</ttl>
-            </icmp>
-        </failure-detector>
-        <!-- cluster protocol server socket -->
-        <member-server-socket-endpoint-config>
-            <outbound-ports>
-                <ports>33000-35000</ports>
-                <ports>37000,37001,37002,37003</ports>
-                <ports>38000,38500-38600</ports>
-            </outbound-ports>
-            <interfaces enabled="true">
-                <interface>10.10.1.*</interface>
-            </interfaces>
-            <ssl enabled="true">
-                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
-                <properties>
-                    <property name="foo">bar</property>
-                </properties>
-            </ssl>
-            <socket-interceptor enabled="true">
-                <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
-                <properties>
-                    <property name="foo">bar</property>
-                </properties>
-            </socket-interceptor>
-            <socket-options>
-                <buffer-direct>true</buffer-direct>
-                <tcp-no-delay>true</tcp-no-delay>
-                <keep-alive>true</keep-alive>
-                <connect-timeout-seconds>64</connect-timeout-seconds>
-                <send-buffer-size-kb>25</send-buffer-size-kb>
-                <receive-buffer-size-kb>33</receive-buffer-size-kb>
-                <linger-seconds>99</linger-seconds>
-            </socket-options>
-            <port auto-increment="true" port-count="100">5701</port>
-            <public-address>dummy</public-address>
-            <!-- If the address should be reused. See NetworkConfig.setReuseAddress for more information. -->
-            <reuse-address>true</reuse-address>
-        </member-server-socket-endpoint-config>
-        <!-- server socket listening for connections from hazelcast clients -->
-        <client-server-socket-endpoint-config>
-            <outbound-ports>
-                <ports>38000,38500-38600</ports>
-            </outbound-ports>
-            <interfaces enabled="false">
-                <interface>10.10.1.*</interface>
-            </interfaces>
-            <ssl enabled="true">
-                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
-                <properties>
-                    <property name="foo">bar</property>
-                </properties>
-            </ssl>
-            <socket-interceptor enabled="true">
-                <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
-                <properties>
-                    <property name="foo">bar</property>
-                </properties>
-            </socket-interceptor>
-            <port auto-increment="true" port-count="100">9999</port>
-            <public-address>10.10.0.10</public-address>
-            <reuse-address>true</reuse-address>
-        </client-server-socket-endpoint-config>
-        <!-- create a server socket for REST API -->
-        <rest-server-socket-endpoint-config name="internal-server-socket">
-            <interfaces enabled="false">
-                <interface>10.10.1.*</interface>
-            </interfaces>
-            <port auto-increment="false">8080</port>
-            <public-address>192.168.1.10</public-address>
-            <reuse-address>true</reuse-address>
-            <endpoint-groups>
-                <endpoint-group name="WAN" enabled="true"/>
-                <endpoint-group name="CLUSTER_READ" enabled="true"/>
-                <endpoint-group name="CLUSTER_WRITE" enabled="false"/>
-                <endpoint-group name="HEALTH_CHECK" enabled="true"/>
-            </endpoint-groups>
-        </rest-server-socket-endpoint-config>
-        <!-- specify SSL config to be used for outgoing connections -->
-        <wan-endpoint-config name="endpoint-tokyo">
-            <ssl enabled="true">
-                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
-                <properties>
-                    <property name="foo">bar</property>
-                </properties>
-            </ssl>
-        </wan-endpoint-config>
-        <wan-endpoint-config name="endpoint-london">
-            <symmetric-encryption enabled="true">
-                <algorithm>Algorithm</algorithm>
-                <salt>thesalt</salt>
-                <password>thepassword</password>
-                <iteration-count>1000</iteration-count>
-            </symmetric-encryption>
-        </wan-endpoint-config>
-    </advanced-network>
     <partition-group enabled="true" group-type="CUSTOM">
         <member-group>
             <interface>10.10.0.*</interface>
@@ -343,6 +169,7 @@
         <durability>2</durability>
         <capacity>50</capacity>
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <merge-policy batch-size="10">PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>
     <cardinality-estimator name="dummy">
         <backup-count>1</backup-count>
@@ -390,6 +217,17 @@
            NATIVE : values will be stored in non-heap region of JVM
         -->
         <in-memory-format>OBJECT</in-memory-format>
+
+        <!--
+            Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
+            create additional metadata about them. This metadata then is used to make querying and indexing faster.
+            Metadata creation may decrease put throughput.
+            Valid values are:
+            CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created and updated.
+            OFF: No metadata is created.
+        -->
+        <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
+
         <!--
             Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
             You can disable if you do not plan to use eviction on your entries.
@@ -735,7 +573,8 @@
             <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
         </portable-factories>
         <serializers>
-            <global-serializer override-java-serialization="true">com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
+            <global-serializer override-java-serialization="true">com.hazelcast.examples.GlobalSerializerFactory
+            </global-serializer>
             <serializer type-class="com.hazelcast.examples.DummyType"
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
@@ -804,20 +643,14 @@
                 <property name="property">value</property>
             </properties>
         </client-permission-policy>
-        <client-permissions>
+        <client-permissions on-join-operation="SEND">
             <all-permissions principal="admin">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>
             </all-permissions>
-            <map-permission name="default" principal="dev">
-                <actions>
-                    <action>create</action>
-                    <action>destroy</action>
-                    <action>put</action>
-                    <action>read</action>
-                </actions>
-            </map-permission>
+            <config-permission principal="deployer"/>
+            <transaction-permission principal="deployer"/>
             <map-permission name="custom" principal="dev">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
@@ -829,34 +662,96 @@
                     <action>read</action>
                 </actions>
             </map-permission>
-            <queue-permission name="default" principal="dev">
-                <endpoints>
-                    <endpoint>127.0.0.1</endpoint>
-                </endpoints>
+            <queue-permission name="*">
                 <actions>
-                    <action>create</action>
-                    <action>destroy</action>
-                    <action>add</action>
-                    <action>remove</action>
+                    <action>all</action>
                 </actions>
             </queue-permission>
-            <transaction-permission/>
-            <cache-permission name="/hz/cachemanager1/cache1" principal="dev">
-                <endpoints>
-                    <endpoint>127.0.0.1</endpoint>
-                </endpoints>
+            <topic-permission name="*">
                 <actions>
-                    <action>create</action>
-                    <action>destroy</action>
-                    <action>add</action>
-                    <action>remove</action>
+                    <action>all</action>
+                </actions>
+            </topic-permission>
+            <multimap-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </multimap-permission>
+            <list-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </list-permission>
+            <set-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </set-permission>
+            <id-generator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </id-generator-permission>
+            <flake-id-generator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </flake-id-generator-permission>
+            <lock-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </lock-permission>
+            <atomic-long-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </atomic-long-permission>
+            <countdown-latch-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </countdown-latch-permission>
+            <semaphore-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </semaphore-permission>
+            <executor-service-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </executor-service-permission>
+            <durable-executor-service-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </durable-executor-service-permission>
+            <cardinality-estimator-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </cardinality-estimator-permission>
+            <scheduled-executor-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </scheduled-executor-permission>
+            <cache-permission name="*">
+                <actions>
+                    <action>all</action>
                 </actions>
             </cache-permission>
-            <config-permission principal="dev">
-                <endpoints>
-                    <endpoint>127.0.0.1</endpoint>
-                </endpoints>
-            </config-permission>
+            <user-code-deployment-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </user-code-deployment-permission>
+            <pn-counter-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </pn-counter-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -911,4 +806,37 @@
         <mapName>default</mapName>
         <depth>5</depth>
     </merkle-tree>
+
+    <hot-restart-persistence enabled="false">
+        <backup-dir>backup-dir</backup-dir>
+        <base-dir>base-dir</base-dir>
+        <cluster-data-recovery-policy>FULL_RECOVERY_ONLY</cluster-data-recovery-policy>
+        <data-load-timeout-seconds>42</data-load-timeout-seconds>
+        <parallelism>3</parallelism>
+        <validation-timeout-seconds>10</validation-timeout-seconds>
+    </hot-restart-persistence>
+
+    <event-journal>
+        <mapName>mapName</mapName>
+        <capacity>10</capacity>
+        <time-to-live-seconds>10</time-to-live-seconds>
+    </event-journal>
+
+    <event-journal>
+        <cacheName>cacheName</cacheName>
+        <capacity>100</capacity>
+        <time-to-live-seconds>100</time-to-live-seconds>
+    </event-journal>
+
+    <jobtracker name="jobTracker">
+        <chunk-size>100</chunk-size>
+        <queue-size>200</queue-size>
+        <retry-count>10</retry-count>
+        <max-thread-size>20</max-thread-size>
+        <communicate-stats>false</communicate-stats>
+        <topology-changed-strategy>DISCARD_AND_RESTART</topology-changed-strategy>
+    </jobtracker>
+
+    <lite-member enabled="true"/>
+
 </hazelcast>

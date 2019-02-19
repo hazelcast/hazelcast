@@ -128,7 +128,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
                 throw new InvalidConfigurationException(
-                        "Duplicate '" + nodeName + "' definition found in XML configuration.");
+                        "Duplicate '" + nodeName + "' definition found in the configuration.");
             }
             if (handleNode(node, nodeName)) {
                 continue;
@@ -644,8 +644,6 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleRestServerSocketEndpointConfig(child);
             } else if ("memcache-server-socket-endpoint-config".equals(nodeName)) {
                 handleMemcacheServerSocketEndpointConfig(child);
-            } else if ("wan-socket-endpoint-config".equals(nodeName)) {
-                handleWanEndpointConfig(child);
             } else if ("member-address-provider".equals(nodeName)) {
                 handleMemberAddressProvider(child, true);
             } else if ("failure-detector".equals(nodeName)) {
@@ -654,10 +652,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleEndpointConfig(EndpointConfig endpointConfig, Node node)
+    private void handleEndpointConfig(EndpointConfig endpointConfig, Node node) throws Exception {
+        String endpointName = getAttribute(node, "name");
+        handleEndpointConfig(endpointConfig, node, endpointName);
+    }
+
+    protected void handleEndpointConfig(EndpointConfig endpointConfig, Node node, String endpointName)
             throws Exception {
-        String name = getAttribute(node, "name");
-        endpointConfig.setName(name);
+        endpointConfig.setName(endpointName);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             handleEndpointConfigCommons(child, nodeName, endpointConfig);
@@ -702,7 +704,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         handleServerSocketEndpointConfig(config, node);
     }
 
-    private void handleWanEndpointConfig(Node node) throws Exception {
+    protected void handleWanEndpointConfig(Node node) throws Exception {
         EndpointConfig config = new EndpointConfig();
         config.setProtocolType(ProtocolType.WAN);
         handleEndpointConfig(config, node);
@@ -745,6 +747,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 break;
             case WAN:
                 config.getAdvancedNetworkConfig().addWanEndpointConfig(endpointConfig);
+                break;
+            case MEMCACHE:
+                config.getAdvancedNetworkConfig().setMemcacheEndpointConfig((ServerSocketEndpointConfig) endpointConfig);
                 break;
             default:
                 throw new InvalidConfigurationException("Endpoint config has invalid protocol type "
@@ -937,12 +942,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 interfaces.setEnabled(getBooleanValue(value));
             }
         }
-        for (Node n : childElements(node)) {
-            if ("interface".equals(lowerCaseInternal(cleanNodeName(n)))) {
-                String value = getTextContent(n).trim();
-                interfaces.addInterface(value);
-            }
-        }
+        handleInterfacesList(node, interfaces);
     }
 
     protected void handleViaReflection(Node node, Object parent, Object child) throws Exception {
@@ -964,7 +964,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private static void invokeSetter(Object target, Node node, String argument) {
         Method method = getMethod(target, "set" + toPropertyName(cleanNodeName(node)), true);
         if (method == null) {
-            throw new InvalidConfigurationException("Invalid element/attribute name in XML configuration: " + node);
+            throw new InvalidConfigurationException("Invalid element/attribute name in the configuration: " + node);
         }
         Class<?> arg = method.getParameterTypes()[0];
         Object coercedArg =
@@ -1160,7 +1160,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String value = getTextContent(att).trim();
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 multicastConfig.setEnabled(getBooleanValue(value));
-            } else if ("loopbackmodeenabled".equals(lowerCaseInternal(att.getNodeName()))) {
+            } else if ("loopbackmodeenabled".equals(lowerCaseInternal(att.getNodeName()))
+                    || "loopback-mode-enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 multicastConfig.setLoopbackModeEnabled(getBooleanValue(value));
             }
         }
@@ -1213,7 +1214,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (cleanNodeName(n).equals("required-member")) {
                 if (tcpIpConfig.getRequiredMember() != null) {
                     throw new InvalidConfigurationException("Duplicate required-member"
-                            + " definition found in XML configuration. ");
+                            + " definition found in the configuration. ");
                 }
                 tcpIpConfig.setRequiredMember(value);
             } else if (memberTags.contains(cleanNodeName(n))) {
@@ -1254,11 +1255,15 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handlePort(Node node, ServerSocketEndpointConfig endpointConfig) {
+    protected void handlePort(Node node, ServerSocketEndpointConfig endpointConfig) {
         String portStr = getTextContent(node).trim();
         if (portStr.length() > 0) {
             endpointConfig.setPort(parseInt(portStr));
         }
+        handlePortAttributes(node, endpointConfig);
+    }
+
+    protected void handlePortAttributes(Node node, ServerSocketEndpointConfig endpointConfig) {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
@@ -1273,7 +1278,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-        protected void handleOutboundPorts(Node child) {
+    protected void handleOutboundPorts(Node child) {
         NetworkConfig networkConfig = config.getNetworkConfig();
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
@@ -1284,7 +1289,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleOutboundPorts(Node child, EndpointConfig endpointConfig) {
+    protected void handleOutboundPorts(Node child, EndpointConfig endpointConfig) {
         for (Node n : childElements(child)) {
             String nodeName = cleanNodeName(n);
             if ("ports".equals(nodeName)) {
@@ -2846,7 +2851,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleRestEndpointGroup(RestServerEndpointConfig config, Node node) {
         boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
-        String name = getAttribute(node, "name");
+        String name = extractName(node);
         RestEndpointGroup endpointGroup;
         try {
             endpointGroup = RestEndpointGroup.valueOf(name);
@@ -2860,6 +2865,10 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         } else {
             config.disableGroups(endpointGroup);
         }
+    }
+
+    protected String extractName(Node node) {
+        return getAttribute(node, "name");
     }
 
     void handleEndpointGroup(Node node, String name) {

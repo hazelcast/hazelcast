@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# A comprehensive example of Hazelcast configuration.
+# A comprehensive example of Hazelcast configuration with advanced network configuration.
 #
 # Hazelcast resolves configuration using the following approach:
 #
@@ -29,23 +29,14 @@
 # 4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
 #    ’hazelcast-default.yaml’, which is included in the the Hazelcast jar
 
+
 hazelcast:
 
   import:
     - hazelcast-fullconfig-without-network.yaml
 
-  network:
-    public-address: dummy
-    port:
-      auto-increment: true
-      port-count: 100
-      port: 5701
-    # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
-    reuse-address: true
-    outbound-ports:
-      - 33000-35000
-      - 37000,37001,37002,37003
-      - 38000,38500-38600
+  advanced-network:
+    enabled: true
     join:
       multicast:
         enabled: true
@@ -114,36 +105,6 @@ hazelcast:
       enabled: true
       interfaces:
         - 10.10.1.*
-    ssl:
-      enabled: true
-      factory-class-name: com.hazelcast.examples.MySSLContextFactory
-      properties:
-        foo: bar
-    socket-interceptor:
-      enabled: true
-      class-name: com.hazelcast.examples.MySocketInterceptor
-      properties:
-        foo: bar
-    symmetric-encryption:
-      enabled: false
-      #   encryption algorithm such as
-      #   DES/ECB/PKCS5Padding,
-      #   PBEWithMD5AndDES,
-      #   AES/CBC/PKCS5Padding,
-      #   Blowfish,
-      #   DESede
-      algorithm: PBEWithMD5AndDES
-      # salt value to use when generating the secret key
-      salt: thesalt
-      # pass phrase to use when generating the secret key
-      password: thepass
-      # iteration count to use when generating the secret key
-      iteration-count: 19
-    member-address-provider:
-      enabled: false
-      class-name: DummyMemberAddressProvider
-      properties:
-        foo: bar
     failure-detector:
       icmp:
         enabled: false
@@ -153,20 +114,112 @@ hazelcast:
         max-attempts: 2
         parallel-mode: true
         ttl: 255
-    rest-api:
-      enabled: true
+    member-address-provider:
+      enabled: false
+      class-name: DummyMemberAddressProvider
+      properties:
+        foo: bar
+    member-server-socket-endpoint-config:
+      outbound-ports:
+        - 33000-35000
+        - 37000,37001,37002,37003
+        - 38000,38500-38600
+      interfaces:
+        enabled: true
+        interfaces:
+          - 10.10.1.*
+      ssl:
+        enabled: true
+        factory-class-name: com.hazelcast.examples.MySSLContextFactory
+        properties:
+          foo: bar
+      socket-interceptor:
+        enabled: true
+        class-name: com.hazelcast.examples.MySocketInterceptor
+        properties:
+          foo: bar
+      socket-options:
+        buffer-direct: true
+        tcp-no-delay: true
+        keep-alive: true
+        connect-timeout-seconds: 64
+        send-buffer-size-kb: 25
+        receive-buffer-size-kb: 33
+        linger-seconds: 99
+      port:
+        port-count: 100
+        auto-increment: true
+        port: 5701
+      public-address: dummy
+      # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
+      reuse-address: true
+    client-server-socket-endpoint-config:
+      outbound-ports:
+        - 38000,38500-38600
+      interfaces:
+        enabled: false
+        interfaces:
+          - 10.10.1.*
+      ssl:
+        enabled: true
+        factory-class-name: com.hazelcast.examples.MySSLContextFactory
+        properties:
+          foo: bar
+      socket-interceptor:
+        enabled: true
+        class-name: com.hazelcast.examples.MySocketInterceptor
+        properties:
+          foo: bar
+      port:
+        port-count: 100
+        auto-increment: true
+        port: 9999
+      public-address: 10.10.0.10
+      reuse-address: true
+    rest-server-socket-endpoint-config:
+      name: internal-server-socket
+      interfaces:
+        enabled: false
+        interfaces:
+          - 10.10.1.*
+      port:
+        auto-increment: false
+        port: 8080
+      public-address: 192.168.1.10
+      reuse-address: true
       endpoint-groups:
+        WAN:
+          enabled: true
         CLUSTER_READ:
           enabled: true
         CLUSTER_WRITE:
-          enabled: true
-        DATA:
-          enabled: true
+          enabled: false
         HEALTH_CHECK:
           enabled: true
-        HOT_RESTART:
+    wan-endpoint-config:
+      endpoint-tokyo:
+        ssl:
           enabled: true
-        WAN:
+          factory-class-name: com.hazelcast.examples.MySSLContextFactory
+          properties:
+            foo: bar
+      endpoint-london:
+        symmetric-encryption:
           enabled: true
-    memcache-protocol:
-      enabled: true
+          algorithm: Algorithm
+          salt: thesalt
+          password: thepassword
+          iteration-count: 1000
+    wan-server-socket-endpoint-config:
+      name: wan-server-socket-config
+      interfaces:
+        enabled: false
+        interfaces:
+          - 192.168.8.101
+          - 10.20.10.100
+    memcache-server-socket-endpoint-config:
+      name: memcache
+      port:
+        auto-increment: false
+        port-count: 10
+        port: 6000

@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
@@ -3304,4 +3305,165 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         buildConfig(yaml);
     }
 
+    @Override
+    @Test
+    public void testDefaultAdvancedNetworkConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network: {}\n";
+
+        Config config = buildConfig(yaml);
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        JoinConfig joinConfig = advancedNetworkConfig.getJoin();
+        IcmpFailureDetectorConfig fdConfig = advancedNetworkConfig.getIcmpFailureDetectorConfig();
+        MemberAddressProviderConfig providerConfig = advancedNetworkConfig.getMemberAddressProviderConfig();
+
+        assertFalse(advancedNetworkConfig.isEnabled());
+        assertTrue(joinConfig.getMulticastConfig().isEnabled());
+        assertNull(fdConfig);
+        assertFalse(providerConfig.isEnabled());
+
+        assertTrue(advancedNetworkConfig.getEndpointConfigs().containsKey(EndpointQualifier.MEMBER));
+        assertEquals(1, advancedNetworkConfig.getEndpointConfigs().size());
+    }
+
+    @Override
+    @Test
+    public void testAmbiguousNetworkConfig_throwsException() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "  network:\n"
+                + "    port: 9999";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testNetworkConfigUnambiguous_whenAdvancedNetworkDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network: {}\n"
+                + "  network:\n"
+                + "    port:\n"
+                + "      port: 9999\n";
+
+        Config config = buildConfig(yaml);
+        assertFalse(config.getAdvancedNetworkConfig().isEnabled());
+        assertEquals(9999, config.getNetworkConfig().getPort());
+    }
+
+    @Override
+    @Test
+    public void testMultipleMemberEndpointConfigs_throwsException() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "advanced-network:\n"
+                + "  member-server-socket-endpoint-config: {}\n"
+                + "  member-server-socket-endpoint-config: {}";
+
+        expected.expect(InvalidConfigurationException.class);
+        buildConfig(yaml);
+
+    }
+
+    @Override
+    protected Config buildCompleteAdvancedNetworkConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    join:\n"
+                + "      multicast:\n"
+                + "        enabled: false\n"
+                + "      tcp-ip:\n"
+                + "        enabled: true\n"
+                + "        required-member: 10.10.1.10\n"
+                + "        member-list:\n"
+                + "          - 10.10.1.11\n"
+                + "          - 10.10.1.12\n"
+                + "    failure-detector:\n"
+                + "      icmp:\n"
+                + "        enabled: true\n"
+                + "        timeout-milliseconds: 42\n"
+                + "        fail-fast-on-startup: true\n"
+                + "        interval-milliseconds: 4200\n"
+                + "        max-attempts: 42\n"
+                + "        parallel-mode: true\n"
+                + "        ttl: 255\n"
+                + "    member-address-provider:\n"
+                + "      class-name: com.hazelcast.test.Provider\n"
+                + "    member-server-socket-endpoint-config:\n"
+                + "      name: member-server-socket\n"
+                + "      outbound-ports:\n"
+                + "        ports: 33000-33100\n"
+                + "      interfaces:\n"
+                + "        enabled: true\n"
+                + "        interfaces:\n"
+                + "          - 10.10.0.1\n"
+                + "      ssl:\n"
+                + "        enabled: true\n"
+                + "        factory-class-name: com.hazelcast.examples.MySSLContextFactory\n"
+                + "        properties:\n"
+                + "          foo: bar\n"
+                + "      socket-interceptor:\n"
+                + "        enabled: true\n"
+                + "        class-name: com.hazelcast.examples.MySocketInterceptor\n"
+                + "        properties:\n"
+                + "          foo: baz\n"
+                + "      socket-options:\n"
+                + "        buffer-direct: true\n"
+                + "        tcp-no-delay: true\n"
+                + "        keep-alive: true\n"
+                + "        connect-timeout-seconds: 33\n"
+                + "        send-buffer-size-kb: 34\n"
+                + "        receive-buffer-size-kb: 67\n"
+                + "        linger-seconds: 11\n"
+                + "      symmetric-encryption:\n"
+                + "        enabled: true\n"
+                + "        algorithm: Algorithm\n"
+                + "        salt: thesalt\n"
+                + "        password: thepassword\n"
+                + "        iteration-count: 1000\n"
+                + "      port:\n"
+                + "        port-count: 93\n"
+                + "        auto-increment: false\n"
+                + "        port: 9191\n"
+                + "      public-address: 10.20.10.10\n"
+                + "      reuse-address: true\n"
+                + "    rest-server-socket-endpoint-config:\n"
+                + "      name: REST\n"
+                + "      port:\n"
+                + "        port: 8080\n"
+                + "      endpoint-groups:\n"
+                + "        WAN:\n"
+                + "          enabled: true\n"
+                + "        CLUSTER_READ:\n"
+                + "          enabled: true\n"
+                + "        CLUSTER_WRITE:\n"
+                + "          enabled: false\n"
+                + "        HEALTH_CHECK:\n"
+                + "          enabled: true\n"
+                + "    memcache-server-socket-endpoint-config:\n"
+                + "      name: MEMCACHE\n"
+                + "      outbound-ports:\n"
+                + "        ports: 42000-42100\n"
+                + "    wan-server-socket-endpoint-config:\n"
+                + "      name: WAN_SERVER\n"
+                + "      outbound-ports:\n"
+                + "        ports: 52000-52100\n"
+                + "    wan-endpoint-config:\n"
+                + "      WAN_ENDPOINT:\n"
+                + "        outbound-ports:\n"
+                + "          ports: 62000-62100\n"
+                + "    client-server-socket-endpoint-config:\n"
+                + "      name: CLIENT\n"
+                + "      outbound-ports:\n"
+                + "        ports: 72000-72100\n";
+
+        return buildConfig(yaml);
+    }
 }

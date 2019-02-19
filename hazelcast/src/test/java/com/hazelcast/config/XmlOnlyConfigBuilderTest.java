@@ -121,7 +121,7 @@ public class XmlOnlyConfigBuilderTest {
 
     @Test
     public void testConfig2Xml2Config_withAdvancedNetworkConfig() {
-        testConfig2Xml2Config("hazelcast-full-advanced-network-config.xml");
+        testConfig2Xml2Config("hazelcast-fullconfig-advanced-network-config.xml");
     }
 
     @Test
