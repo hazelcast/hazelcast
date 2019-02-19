@@ -360,6 +360,10 @@ public class NioThread extends Thread implements OperationHostileThread {
                 return dirty;
             }
 
+            if(!taskQueue.compareAndSet(node, null)){
+                continue;
+            }
+
             dirty = true;
             do {
                 node.task.run();
