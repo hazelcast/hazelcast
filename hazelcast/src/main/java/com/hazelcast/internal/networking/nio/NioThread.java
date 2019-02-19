@@ -31,12 +31,10 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
-import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
-import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -73,8 +71,6 @@ public class NioThread extends Thread implements OperationHostileThread {
     @Probe(level = INFO)
     volatile long processCount;
 
-    @Probe(name = "taskQueueSize")
-    private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
     @Probe
     private final SwCounter eventCount = newSwCounter();
     @Probe
@@ -102,6 +98,8 @@ public class NioThread extends Thread implements OperationHostileThread {
 
     // set to true while testing
     private boolean selectorWorkaroundTest;
+
+    private final AtomicReference<SelectionTaskNode> taskQueue = new AtomicReference<SelectionTaskNode>();
 
     public NioThread(String threadName,
                      ILogger logger,
@@ -195,7 +193,16 @@ public class NioThread extends Thread implements OperationHostileThread {
      * @throws NullPointerException if task is null
      */
     public void addTask(Runnable task) {
-        taskQueue.add(task);
+        SelectionTaskNode update = new SelectionTaskNode();
+        update.task = task;
+        for (; ; ) {
+            SelectionTaskNode old = taskQueue.get();
+            update.next = old;
+            update.length = old == null ? 1 : old.length + 1;
+            if (taskQueue.compareAndSet(old, update)) {
+                return;
+            }
+        }
     }
 
     /**
@@ -206,9 +213,17 @@ public class NioThread extends Thread implements OperationHostileThread {
      * @throws NullPointerException if task is null
      */
     public void addTaskAndWakeup(Runnable task) {
-        taskQueue.add(task);
-        if (selectMode != SELECT_NOW) {
-            selector.wakeup();
+        SelectionTaskNode update = new SelectionTaskNode();
+        update.task = task;
+        for (; ; ) {
+            SelectionTaskNode old = taskQueue.get();
+            update.next = old;
+            if (taskQueue.compareAndSet(old, update)) {
+                if (old == null) {
+                    selector.wakeup();
+                }
+                return;
+            }
         }
     }
 
@@ -279,6 +294,8 @@ public class NioThread extends Thread implements OperationHostileThread {
             if (selectedKeys > 0) {
                 processSelectionKeys();
             }
+
+
         }
     }
 
@@ -292,8 +309,8 @@ public class NioThread extends Thread implements OperationHostileThread {
             if (selectedKeys > 0) {
                 idleCount = 0;
                 processSelectionKeys();
-            } else if (!taskQueue.isEmpty()) {
-                idleCount = 0;
+//            } else if (!taskQueue.isEmpty()) {
+//                idleCount = 0;
             } else {
                 // no keys were selected, not interrupted by wakeup therefore we hit an issue with JDK/network stack
                 long selectTimeTaken = currentTimeMillis() - before;
@@ -331,18 +348,37 @@ public class NioThread extends Thread implements OperationHostileThread {
         }
     }
 
+//    private final SelectionTaskNode[] array = new SelectionTaskNode[1024];
+//    private int arrayIndex = 0;
+
     private boolean processTaskQueue() {
-        boolean tasksProcessed = false;
-        while (!stop) {
-            Runnable task = taskQueue.poll();
-            if (task == null) {
-                break;
+        boolean dirty = false;
+
+        for(;;) {
+            SelectionTaskNode node = taskQueue.get();
+            if (node == null) {
+                return dirty;
             }
-            task.run();
-            completedTaskCount.inc();
-            tasksProcessed = true;
+
+            dirty = true;
+            do {
+                node.task.run();
+                node = node.next;
+            } while (node != null);
         }
-        return tasksProcessed;
+
+//
+//        boolean tasksProcessed = false;
+//        while (!stop) {
+//            Runnable task = taskQueue.poll();
+//            if (task == null) {
+//                break;
+//            }
+//            task.run();
+//            completedTaskCount.inc();
+//            tasksProcessed = true;
+//        }
+//        return tasksProcessed;
     }
 
     private void processSelectionKeys() {
@@ -368,7 +404,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             eventCount.inc();
             pipeline.process();
         } catch (Throwable t) {
-             pipeline.onError(t);
+            pipeline.onError(t);
         }
     }
 
@@ -386,7 +422,7 @@ public class NioThread extends Thread implements OperationHostileThread {
 
     public void shutdown() {
         stop = true;
-        taskQueue.clear();
+        taskQueue.set(null);
         interrupt();
     }
 
