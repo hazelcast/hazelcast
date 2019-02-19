@@ -28,10 +28,13 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.util.UuidUtil;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,9 +46,11 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.pipeline.Sources.map;
 import static com.hazelcast.jet.pipeline.Sources.remoteMap;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSupport {
 
-    private static CountDownLatch latch;
+    private static CountDownLatch startLatch;
+    private static CountDownLatch proceedLatch;
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -59,16 +64,16 @@ public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSu
     }
 
     @Test
-    public void when_migration_then_detected_local() {
+    public void when_migration_then_detected_local() throws Exception {
         when_migration_then_detected(false);
     }
 
     @Test
-    public void when_migration_then_detected_remote() {
+    public void when_migration_then_detected_remote() throws Exception {
         when_migration_then_detected(true);
     }
 
-    private void when_migration_then_detected(boolean remote) {
+    private void when_migration_then_detected(boolean remote) throws Exception {
         final JetInstance jobInstance = createJetMember();
         final HazelcastInstance mapInstance;
         final ClientConfig clientConfig;
@@ -76,7 +81,7 @@ public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSu
         if (remote) {
             remoteMemberConfig = new Config();
             GroupConfig groupConfig = remoteMemberConfig.getGroupConfig();
-            groupConfig.setName("remote-cluster");
+            groupConfig.setName(UuidUtil.newUnsecureUuidString());
             groupConfig.setPassword("remote-cluster");
             mapInstance = Hazelcast.newHazelcastInstance(remoteMemberConfig);
             remoteInstances.add(mapInstance);
@@ -98,20 +103,24 @@ public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSu
         }
         m.putAll(tmpMap);
 
+        startLatch = new CountDownLatch(1);
+        proceedLatch = new CountDownLatch(1);
+
         Pipeline p = Pipeline.create();
         p.drawFrom(remote ? remoteMap(m.getName(), clientConfig) : map(m))
          .setLocalParallelism(1)
          .map(o -> {
-             latch.await();
+             startLatch.countDown();
+             proceedLatch.await();
              return o;
          })
          .setLocalParallelism(1)
          .drainTo(Sinks.logger());
 
         // start the job. The map reader will be blocked thanks to the backpressure from the mapping stage
-        latch = new CountDownLatch(1);
         Job job = jobInstance.newJob(p, new JobConfig().setAutoScaling(false).setProcessingGuarantee(NONE));
 
+        startLatch.await();
         // create new member, migration will take place
         if (remote) {
             remoteInstances.add(Hazelcast.newHazelcastInstance(remoteMemberConfig));
@@ -121,7 +130,7 @@ public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSu
 
         // Then
         // release the latch, map reader should detect the migration and job should fail
-        latch.countDown();
+        proceedLatch.countDown();
 
         exception.expectMessage("migration detected");
         job.join();
