@@ -189,6 +189,7 @@ public class JetCommandLineTest extends JetTestSupport {
         Job job = newJob();
         assertJobStatusEventually(job, JobStatus.RUNNING);
         job.suspend();
+        assertJobStatusEventually(job, JobStatus.SUSPENDED);
 
         // When
         run("resume", job.getName());
@@ -203,6 +204,7 @@ public class JetCommandLineTest extends JetTestSupport {
         Job job = newJob();
         assertJobStatusEventually(job, JobStatus.RUNNING);
         job.suspend();
+        assertJobStatusEventually(job, JobStatus.SUSPENDED);
 
         // When
         run("resume", job.getIdString());
