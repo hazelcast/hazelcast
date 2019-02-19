@@ -59,6 +59,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
@@ -138,6 +139,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private final ClientExceptions clientExceptions;
     private final int endpointRemoveDelaySeconds;
     private final ClientPartitionListenerService partitionListenerService;
+    private final boolean advancedNetworkConfigEnabled;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -152,6 +154,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         this.clientExceptions = initClientExceptionFactory();
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
         this.partitionListenerService = new ClientPartitionListenerService(nodeEngine);
+        this.advancedNetworkConfigEnabled = node.getConfig().getAdvancedNetworkConfig().isEnabled();
     }
 
     private ClientExceptions initClientExceptionFactory() {
@@ -280,6 +283,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
 
     @Override
     public Address getThisAddress() {
+        if (advancedNetworkConfigEnabled) {
+            Address clientServerSocketAddress = node.getLocalMember().getAddressMap().get(CLIENT);
+            assert clientServerSocketAddress != null;
+            return clientServerSocketAddress;
+        }
         return node.getThisAddress();
     }
 
@@ -651,6 +659,32 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             }
         }
         return statsMap;
+    }
+
+    @Override
+    public Address memberAddressOf(Address clientAddress) {
+        if (!advancedNetworkConfigEnabled) {
+            return clientAddress;
+        }
+        Set<Member> clusterMembers = node.getClusterService().getMembers();
+        for (Member member : clusterMembers) {
+            if (member.getAddressMap().get(CLIENT).equals(clientAddress)) {
+                return member.getAddress();
+            }
+        }
+        throw new TargetNotMemberException("Could not locate member with client address " + clientAddress);
+    }
+
+    @Override
+    public Address clientAddressOf(Address memberAddress) {
+        if (!advancedNetworkConfigEnabled) {
+            return memberAddress;
+        }
+        Member member = node.getClusterService().getMember(memberAddress);
+        if (member != null) {
+            return member.getAddressMap().get(CLIENT);
+        }
+        throw new TargetNotMemberException("Could not locate member with member address " + memberAddress);
     }
 
     private static class PriorityPartitionSpecificRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {
