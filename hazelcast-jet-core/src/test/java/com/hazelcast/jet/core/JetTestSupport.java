@@ -29,6 +29,8 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobExecutionRecord;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.util.Util.RunnableExc;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -52,6 +54,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public abstract class JetTestSupport extends HazelcastTestSupport {
 
@@ -215,5 +218,33 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static Watermark wm(long timestamp) {
         return new Watermark(timestamp);
+    }
+
+    public void waitForFirstSnapshot(JobRepository jr, long jobId, int timeout) {
+        long[] snapshotId = {-1};
+        assertTrueEventually(() -> {
+            JobExecutionRecord record = jr.getJobExecutionRecord(jobId);
+            assertNotNull("null JobExecutionRecord", record);
+            assertTrue("No snapshot produced",
+                    record.dataMapIndex() >= 0 && record.snapshotId() >= 0);
+            assertTrue("stats are 0", record.snapshotStats().numBytes() > 0);
+            snapshotId[0] = record.snapshotId();
+        }, timeout);
+        logger.info("First snapshot found (id=" + snapshotId[0] + ")");
+    }
+
+    public void waitForNextSnapshot(JobRepository jr, long jobId, int timeoutSeconds) {
+        long originalSnapshotId = jr.getJobExecutionRecord(jobId).snapshotId();
+        // wait until there is at least one more snapshot
+        long[] snapshotId = {-1};
+        assertTrueEventually(() -> {
+            JobExecutionRecord record = jr.getJobExecutionRecord(jobId);
+            assertNotNull("jobExecutionRecord is null", record);
+            snapshotId[0] = record.snapshotId();
+            assertTrue("No more snapshots produced after restart in " + timeoutSeconds + " seconds",
+                    snapshotId[0] > originalSnapshotId);
+            assertTrue("stats are 0", record.snapshotStats().numBytes() > 0);
+        }, timeoutSeconds);
+        logger.info("Next snapshot found (id=" + snapshotId[0] + ", previous id=" + originalSnapshotId + ")");
     }
 }

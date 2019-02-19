@@ -21,7 +21,6 @@ import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -44,8 +43,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.server.JetCommandLine.runCommandLine;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class JetCommandLineTest extends JetTestSupport {
@@ -284,52 +282,6 @@ public class JetCommandLineTest extends JetTestSupport {
     }
 
     @Test
-    public void test_saveSnapshot_byJobName() {
-        // Given
-        Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-
-        // When
-        run("save-snapshot", job.getName(), "my-snapshot");
-
-        // Then
-        JobStateSnapshot ss = jet.getJobStateSnapshot("my-snapshot");
-        assertNotNull("no snapshot was found", ss);
-        assertEquals(job.getName(), ss.jobName());
-    }
-
-    @Test
-    public void test_saveSnapshotAndCancel_byJobName() {
-        // Given
-        Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-
-        // When
-        run("save-snapshot", "-C", job.getName(), "my-snapshot");
-
-        // Then
-        JobStateSnapshot ss = jet.getJobStateSnapshot("my-snapshot");
-        assertNotNull("no snapshot was found", ss);
-        assertEquals(job.getName(), ss.jobName());
-        assertJobStatusEventually(job, JobStatus.FAILED);
-    }
-
-    @Test
-    public void test_saveSnapshot_byJobId() {
-        // Given
-        Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-
-        // When
-        run("save-snapshot", job.getIdString(), "my-snapshot");
-
-        // Then
-        JobStateSnapshot ss = jet.getJobStateSnapshot("my-snapshot");
-        assertNotNull("no snapshot was found", ss);
-        assertEquals(job.getName(), ss.jobName());
-    }
-
-    @Test
     public void test_saveSnapshot_invalidNameOrId() {
         // When
         // Then
@@ -352,34 +304,15 @@ public class JetCommandLineTest extends JetTestSupport {
     }
 
     @Test
-    public void test_deleteSnapshot_bySnapshotName() {
-        // Given
-        Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-        JobStateSnapshot snapshot = job.exportSnapshot("my-snapshot");
-
-        // When
-        run("delete-snapshot", snapshot.name());
-
-        // Then
-        JobStateSnapshot ss = jet.getJobStateSnapshot(snapshot.name());
-        assertNull("Snapshot should have been deleted", ss);
-    }
-
-    @Test
     public void test_listSnapshots() {
         // Given
-        Job job = newJob();
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-        JobStateSnapshot snapshot = job.exportSnapshot("my-snapshot");
-
         // When
         run("list-snapshots");
 
         // Then
         String actual = captureOut();
-        assertContains(actual, snapshot.name());
-        assertContains(actual, snapshot.jobName());
+        assertTrue("output should contain one line (the table header), but contains:\n" + actual,
+                actual.trim().indexOf('\n') < 0 && !actual.isEmpty());
     }
 
     @Test
@@ -440,8 +373,6 @@ public class JetCommandLineTest extends JetTestSupport {
     private void run(String... args) {
         runCommandLine(cfg -> createJetClient(), out, err, false, args);
     }
-
-
 
     private void resetOut() {
         baosOut = new ByteArrayOutputStream();

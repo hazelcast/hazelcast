@@ -19,13 +19,14 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
@@ -42,15 +43,16 @@ class NodeExtensionCommon {
 
     private final Node node;
     private final ILogger logger;
-    private volatile JetService jetService;
+    private final JetService jetService;
 
-    NodeExtensionCommon(Node node) {
+    NodeExtensionCommon(Node node, JetService jetService) {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
+        this.jetService = jetService;
     }
 
     void afterStart() {
-        jetService().getJobCoordinationService().startScanningForJobs();
+        jetService.getJobCoordinationService().startScanningForJobs();
     }
 
     void beforeClusterStateChange(ClusterState requestedState) {
@@ -69,11 +71,11 @@ class NodeExtensionCommon {
     }
 
     void onClusterStateChange(ClusterState ignored) {
-        jetService().getJobCoordinationService().clusterChangeDone();
+        jetService.getJobCoordinationService().clusterChangeDone();
     }
 
     void handlePacket(Packet packet) {
-        jetService().handlePacket(packet);
+        jetService.handlePacket(packet);
     }
 
     void printNodeInfo(ILogger log, String addToProductName) {
@@ -81,17 +83,6 @@ class NodeExtensionCommon {
         log.fine(serializationVersionMessage());
         log.info('\n' + JET_LOGO);
         log.info(COPYRIGHT_LINE);
-    }
-
-    private JetService jetService() {
-        JetService local = jetService;
-        if (local == null) {
-            local = jetService = node.nodeEngine.getService(JetService.SERVICE_NAME);
-        }
-        if (local == null) {
-            throw new JetException("Node engine doesn't have the JetService");
-        }
-        return local;
     }
 
     private String versionAndAddressMessage(@Nonnull String addToName) {
@@ -107,5 +98,11 @@ class NodeExtensionCommon {
 
     private String serializationVersionMessage() {
         return "Configured Hazelcast Serialization version: " + node.getBuildInfo().getSerializationVersion();
+    }
+
+    Map<String, Object> createExtensionServices() {
+        Map<String, Object> extensionServices = new HashMap<>();
+        extensionServices.put(JetService.SERVICE_NAME, jetService);
+        return extensionServices;
     }
 }

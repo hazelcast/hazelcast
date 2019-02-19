@@ -19,20 +19,19 @@ package com.hazelcast.jet.impl.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.ExportSnapshotOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
 public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExportSnapshotCodec.RequestParameters> {
 
-    protected JetExportSnapshotMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    JetExportSnapshotMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetExportSnapshotCodec::decodeRequest,
                 o -> JetExportSnapshotCodec.encodeResponse());
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new ExportSnapshotOperation(parameters.jobId, parameters.name, parameters.cancelJob);
+        return getJetService().createExportSnapshotOperation(parameters.jobId, parameters.name, parameters.cancelJob);
     }
 
     @Override

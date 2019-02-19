@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import java.io.InputStream;
@@ -209,6 +210,7 @@ public class JetConfig {
      */
     @Nonnull
     public JetConfig setHazelcastConfig(@Nonnull Config config) {
+        Preconditions.checkNotNull(config, "config");
         hazelcastConfig = config;
         return this;
     }
@@ -226,6 +228,7 @@ public class JetConfig {
      */
     @Nonnull
     public JetConfig setInstanceConfig(@Nonnull InstanceConfig instanceConfig) {
+        Preconditions.checkNotNull(instanceConfig, "instanceConfig");
         this.instanceConfig = instanceConfig;
         return this;
     }
@@ -242,7 +245,8 @@ public class JetConfig {
      * Sets the metrics collection config.
      */
     @Nonnull
-    public JetConfig setMetricsConfig(MetricsConfig metricsConfig) {
+    public JetConfig setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
+        Preconditions.checkNotNull(metricsConfig, "metricsConfig");
         this.metricsConfig = metricsConfig;
         return this;
     }
@@ -250,6 +254,7 @@ public class JetConfig {
     /**
      * Returns the Jet-specific configuration properties.
      */
+    @Nonnull
     public Properties getProperties() {
         return properties;
     }
@@ -257,14 +262,28 @@ public class JetConfig {
     /**
      * Sets the Jet-specific configuration properties.
      */
-    public JetConfig setProperties(Properties properties) {
+    @Nonnull
+    public JetConfig setProperties(@Nonnull Properties properties) {
+        Preconditions.checkNotNull(properties, "properties");
         this.properties = properties;
+        return this;
+    }
+
+    /**
+     * Sets the value of the specified property.
+     */
+    @Nonnull
+    public JetConfig setProperty(@Nonnull String name, @Nonnull String value) {
+        Preconditions.checkNotNull(name, "name");
+        Preconditions.checkNotNull(value, "value");
+        properties.put(name, value);
         return this;
     }
 
     /**
      * Returns the default DAG edge configuration.
      */
+    @Nonnull
     public EdgeConfig getDefaultEdgeConfig() {
         return defaultEdgeConfig;
     }
@@ -273,7 +292,9 @@ public class JetConfig {
      * Sets the configuration object that specifies the defaults to use
      * for a DAG edge configuration.
      */
-    public JetConfig setDefaultEdgeConfig(EdgeConfig defaultEdgeConfig) {
+    @Nonnull
+    public JetConfig setDefaultEdgeConfig(@Nonnull EdgeConfig defaultEdgeConfig) {
+        Preconditions.checkNotNull(defaultEdgeConfig, "defaultEdgeConfig");
         this.defaultEdgeConfig = defaultEdgeConfig;
         return this;
     }

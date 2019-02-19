@@ -92,6 +92,10 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Part of {@link MasterContext} that deals with execution starting and
+ * termination.
+ */
 public class MasterJobContext {
 
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;

@@ -22,12 +22,14 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
 
+import java.util.Map;
+
 public class JetNodeExtension extends DefaultNodeExtension implements JetPacketConsumer {
     private final NodeExtensionCommon extCommon;
 
     public JetNodeExtension(Node node) {
         super(node);
-        extCommon = new NodeExtensionCommon(node);
+        extCommon = new NodeExtensionCommon(node, new JetService(node));
     }
 
     @Override
@@ -46,6 +48,11 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
     public void onClusterStateChange(ClusterState newState, boolean isTransient) {
         super.onClusterStateChange(newState, isTransient);
         extCommon.onClusterStateChange(newState);
+    }
+
+    @Override
+    public Map<String, Object> createExtensionServices() {
+        return extCommon.createExtensionServices();
     }
 
     @Override

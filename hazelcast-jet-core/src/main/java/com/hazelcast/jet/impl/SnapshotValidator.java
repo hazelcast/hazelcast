@@ -41,7 +41,7 @@ final class SnapshotValidator {
         SnapshotValidationRecord validationRecord = (SnapshotValidationRecord) map.get(SnapshotValidationRecord.KEY);
         if (validationRecord == null) {
             throw new JetException("State for " + jobIdString + " was supposed to be restored from '" + map.getName()
-                    + "', but that map doesn't contain the validation key: not an IMap with Jet snapshot or corrupted");
+                    + "', but that map doesn't contain the validation record: not an IMap with Jet snapshot or corrupted");
         }
         if (validationRecord.numChunks() != map.size() - 1) {
             // fallback validation that counts using aggregate(), ignoring different snapshot IDs

@@ -19,14 +19,11 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation.SnapshotOperationResult;
-import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.Operation;
 
@@ -40,27 +37,19 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
-import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.Util.copyMapUsingJob;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+/**
+ * Part of {@link MasterContext} that deals with snapshot creation.
+ */
 class MasterSnapshotContext {
 
-    /**
-     * Use smaller queue size because the snapshot entries are large ({@value
-     * AsyncSnapshotWriterImpl#DEFAULT_CHUNK_SIZE} bytes).
-     */
-    private static final int COPY_MAP_JOB_QUEUE_SIZE = 32;
-
-    private final MasterContext mc;
+    @SuppressWarnings("WeakerAccess") // accessed from subclass in jet-enterprise
+    final MasterContext mc;
     private final ILogger logger;
 
     /**
@@ -100,68 +89,6 @@ class MasterSnapshotContext {
 
     void enqueueSnapshot(String snapshotMapName, boolean isTerminal, CompletableFuture<Void> future) {
         snapshotQueue.add(tuple3(snapshotMapName, isTerminal, future));
-    }
-
-    CompletableFuture<Void> exportSnapshot(String name, boolean cancelJob) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        JobStatus localStatus;
-
-        mc.lock();
-        try {
-            localStatus = mc.jobStatus();
-            if (localStatus != RUNNING && localStatus != SUSPENDED) {
-                throw new JetException("Cannot export snapshot, job is neither RUNNING nor SUSPENDED, but " + localStatus);
-            }
-
-            if (localStatus == SUSPENDED) {
-                if (mc.jobExecutionRecord().snapshotId() < 0) {
-                    throw new JetException("Cannot export state snapshot: job is suspended and no successful snapshot " +
-                            "was created while it was running");
-                }
-                mc.setJobStatus(SUSPENDED_EXPORTING_SNAPSHOT);
-                localStatus = SUSPENDED_EXPORTING_SNAPSHOT;
-            } else {
-                enqueueSnapshot(name, cancelJob, future);
-            }
-        } finally {
-            mc.unlock();
-        }
-
-        if (localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
-            String sourceMapName = mc.jobExecutionRecord().successfulSnapshotDataMapName(mc.jobId());
-            String targetMapName = EXPORTED_SNAPSHOTS_PREFIX + name;
-            JetInstance jetInstance = mc.coordinationService().getJetService().getJetInstance();
-            return copyMapUsingJob(jetInstance, COPY_MAP_JOB_QUEUE_SIZE, sourceMapName, targetMapName)
-                    .whenComplete(withTryCatch(logger, (r, t) -> {
-                        SnapshotValidationRecord validationRecord =
-                                (SnapshotValidationRecord) jetInstance.getMap(targetMapName)
-                                                                      .get(SnapshotValidationRecord.KEY);
-                        mc.jobRepository().cacheValidationRecord(name, validationRecord);
-                        if (cancelJob) {
-                            String terminationFailure = mc.jobContext().requestTermination(CANCEL_FORCEFUL, true).f1();
-                            if (terminationFailure != null) {
-                                throw new JetException("State for " + mc.jobIdString() + " exported to '" + name
-                                        + "', but failed to cancel the job: " + terminationFailure);
-                            }
-                        } else {
-                            mc.setJobStatus(SUSPENDED);
-                        }
-                    }));
-        }
-        // TODO [viliam] bring back jobName where it was
-        if (cancelJob) {
-            // We already added a terminal snapshot to the queue. There will be one more added in
-            // `requestTermination`, but we'll never get to execute that one because the execution
-            // will terminate after our terminal snapshot.
-            String terminationFailure = mc.jobContext().requestTermination(CANCEL_GRACEFUL, false).f1();
-            if (terminationFailure != null) {
-                throw new JetException("Cannot cancel " + mc.jobIdString() + " and export to '" + name + "': "
-                        + terminationFailure);
-            }
-        } else {
-            tryBeginSnapshot();
-        }
-        return future;
     }
 
     void startScheduledSnapshot(long executionId) {
@@ -351,5 +278,9 @@ class MasterSnapshotContext {
             }
         }
         snapshotQueue.clear();
+    }
+
+    public ILogger logger() {
+        return logger;
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
@@ -27,10 +28,8 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.ManagedService;
@@ -49,19 +48,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.jet.impl.util.JetGroupProperty.JET_SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
+import static java.lang.Boolean.parseBoolean;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class JetService
-        implements ManagedService, ConfigurableService<JetConfig>, MembershipAwareService, LiveOperationsTracker {
+        implements ManagedService, MembershipAwareService, LiveOperationsTracker {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
 
-    private final NodeEngineImpl nodeEngine;
+    private NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final LiveOperationRegistry liveOperationRegistry;
     private final AtomicReference<CompletableFuture> shutdownFuture = new AtomicReference<>();
@@ -69,7 +70,7 @@ public class JetService
 
     // We share the migration watcher for local member because there's a deadlock possible when many
     // vertices registered/deregistered their own watchers.
-    private final MigrationWatcher sharedMigrationWatcher;
+    private MigrationWatcher sharedMigrationWatcher;
 
     private JetConfig config;
     private JetInstance jetInstance;
@@ -81,43 +82,32 @@ public class JetService
 
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
 
-    private final Supplier<int[]> sharedPartitionKeys = Util.memoizeConcurrent(this::computeSharedPartitionKeys);
+    private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
 
-    public JetService(NodeEngine nodeEngine) {
-        this.nodeEngine = (NodeEngineImpl) nodeEngine;
-        this.logger = nodeEngine.getLogger(getClass());
+    public JetService(Node node) {
+        this.logger = node.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
-        this.shutdownHookThread = shutdownHookThread(nodeEngine);
-        sharedMigrationWatcher = new MigrationWatcher(nodeEngine.getHazelcastInstance());
-    }
-
-    @Override
-    public void configure(JetConfig config) {
-        this.config = config;
+        this.shutdownHookThread = shutdownHookThread(node);
     }
 
     // ManagedService
-
     @Override
     public void init(NodeEngine engine, Properties properties) {
-        if (config == null) {
-            throw new IllegalStateException("JetConfig is not initialized");
-        }
-
+        this.nodeEngine = (NodeEngineImpl) engine;
+        this.config = (JetConfig) engine.getConfig().getServicesConfig().getServiceConfig(SERVICE_NAME).getConfigObject();
+        this.sharedMigrationWatcher = new MigrationWatcher(engine.getHazelcastInstance());
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
         taskletExecutionService = new TaskletExecutionService(nodeEngine,
                 config.getInstanceConfig().getCooperativeThreadCount());
-
         jobRepository = new JobRepository(jetInstance);
-
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
-        jobCoordinationService = new JobCoordinationService(nodeEngine, this, config, jobRepository);
+        jobCoordinationService = createJobCoordinationService();
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ExceptionUtil.registerJetExceptions(clientEngine.getClientExceptions());
 
-        if (Boolean.parseBoolean(properties.getProperty(SHUTDOWNHOOK_ENABLED.getName()))) {
+        if (parseBoolean(config.getHazelcastConfig().getProperties().getProperty(JET_SHUTDOWNHOOK_ENABLED.getName()))) {
             logger.finest("Adding Jet shutdown hook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
@@ -187,6 +177,15 @@ public class JetService
         jobCoordinationService.reset();
     }
 
+    JobCoordinationService createJobCoordinationService() {
+        return new JobCoordinationService(nodeEngine, this, config, jobRepository);
+    }
+
+    public Operation createExportSnapshotOperation(long jobId, String name, boolean cancelJob) {
+        throw new UnsupportedOperationException("You need Hazelcast Jet Enterprise with Rolling Job Upgrades " +
+                "enabled to use this feature");
+    }
+
     public JetInstance getJetInstance() {
         return jetInstance;
     }
@@ -197,6 +196,14 @@ public class JetService
 
     public JobRepository getJobRepository() {
         return jobRepository;
+    }
+
+    public NodeEngineImpl getNodeEngine() {
+        return nodeEngine;
+    }
+
+    public JetConfig getConfig() {
+        return config;
     }
 
     public JobCoordinationService getJobCoordinationService() {
@@ -287,9 +294,9 @@ public class JetService
         return sharedMigrationWatcher;
     }
 
-    private Thread shutdownHookThread(NodeEngine nodeEngine) {
+    private Thread shutdownHookThread(Node node) {
         return new Thread(() -> {
-            String policy = nodeEngine.getProperties().getString(SHUTDOWNHOOK_POLICY);
+            String policy = node.getProperties().getString(SHUTDOWNHOOK_POLICY);
             if (policy.equals("TERMINATE")) {
                 jetInstance.getHazelcastInstance().getLifecycleService().terminate();
             } else {

@@ -16,43 +16,20 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 
-import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.Edge.from;
-import static com.hazelcast.jet.core.ExportSnapshotTest.getSnapshotMap;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class PostponedSnapshotTest extends JetTestSupport {
-
-    private static volatile AtomicIntegerArray latches;
-
-    private JetInstance instance;
-
-    @Before
-    public void setup() {
-        instance = createJetMember();
-        latches = new AtomicIntegerArray(2);
-    }
+public class PostponedSnapshotTest extends PostponedSnapshotTestBase {
 
     @Test
     public void when_jobHasHigherPriorityEdge_then_noSnapshotUntilEdgeDone() {
@@ -81,87 +58,5 @@ public class PostponedSnapshotTest extends JetTestSupport {
 
         // Then
         assertTrueEventually(() -> assertTrue(shutdownFuture.isDone()));
-    }
-
-    @Test
-    public void when_exportStateWhilePostponed_beforeFirstSnapshot_then_exportWaits() {
-        when_exportStateWhilePostponed_then_exportWaits(true);
-    }
-
-    @Test
-    public void when_exportStateWhilePostponed_afterFirstSnapshot_then_exportWaits() {
-        when_exportStateWhilePostponed_then_exportWaits(false);
-    }
-
-    private void when_exportStateWhilePostponed_then_exportWaits(boolean beforeFirstSnapshot) {
-        Job job = startJob(beforeFirstSnapshot ? 20_000 : 10);
-
-        // When
-        Future snapshotFuture = spawn(() -> job.exportSnapshot("state"));
-        IMap<Object, Object> snapshotMap = getSnapshotMap(instance, "state");
-        assertTrueAllTheTime(() -> {
-            assertFalse(snapshotFuture.isDone());
-            assertTrue(snapshotMap.isEmpty());
-        }, 3);
-
-        // finish the job
-        latches.set(0, 1);
-
-        // Then
-        assertTrueEventually(() -> assertTrue(snapshotFuture.isDone()));
-        assertFalse(snapshotMap.isEmpty());
-    }
-
-    private Job startJob(long snapshotInterval) {
-        DAG dag = new DAG();
-        Vertex highPrioritySource = dag.newVertex("highPrioritySource", () -> new SourceP(0)).localParallelism(1);
-        Vertex lowPrioritySource = dag.newVertex("lowPrioritySource", () -> new SourceP(1)).localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeLoggerP());
-
-        dag.edge(between(highPrioritySource, sink).priority(-1))
-           .edge(from(lowPrioritySource).to(sink, 1));
-
-        JobConfig config = new JobConfig();
-        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        config.setSnapshotIntervalMillis(snapshotInterval);
-
-        Job job = instance.newJob(dag, config);
-        JobRepository jr = new JobRepository(instance);
-
-        // check, that snapshot starts, but stays in ONGOING state
-        if (snapshotInterval < 1000) {
-            assertTrueEventually(() -> {
-                JobExecutionRecord record = jr.getJobExecutionRecord(job.getId());
-                assertNotNull("record is null", record);
-                assertTrue(record.ongoingSnapshotId() >= 0);
-            }, 5);
-            assertTrueAllTheTime(() -> {
-                JobExecutionRecord record = jr.getJobExecutionRecord(job.getId());
-                assertTrue(record.ongoingSnapshotId() >= 0);
-                assertTrue("snapshotId=" + record.snapshotId(),
-                        record.snapshotId() < 0);
-            }, 2);
-        } else {
-            assertJobStatusEventually(job, RUNNING);
-        }
-        return job;
-    }
-
-    private static final class SourceP extends AbstractProcessor {
-        private final int latchIndex;
-
-        SourceP(int latchIndex) {
-            this.latchIndex = latchIndex;
-        }
-
-        @Override
-        public boolean complete() {
-            return latches.get(latchIndex) != 0;
-        }
-
-        @Override
-        public boolean saveToSnapshot() {
-            return tryEmitToSnapshot(latchIndex, latchIndex);
-        }
     }
 }

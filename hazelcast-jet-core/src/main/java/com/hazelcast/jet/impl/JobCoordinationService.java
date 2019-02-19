@@ -148,7 +148,7 @@ public class JobCoordinationService {
         String dagJson = dagToJson(jobId, config, dag);
         JobRecord jobRecord = new JobRecord(jobId, Clock.currentTimeMillis(), dag, dagJson, config);
         JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize, false);
-        MasterContext masterContext = new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
+        MasterContext masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 
         boolean hasDuplicateJobName;
         synchronized (lock) {
@@ -181,6 +181,10 @@ public class JobCoordinationService {
 
         logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request from client");
         nodeEngine.getExecutionService().execute(COORDINATOR_EXECUTOR_NAME, () -> tryStartJob(masterContext));
+    }
+
+    MasterContext createMasterContext(JobRecord jobRecord, JobExecutionRecord jobExecutionRecord) {
+        return new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
     }
 
     private boolean hasActiveJobWithName(@Nonnull String jobName) {
@@ -223,14 +227,14 @@ public class JobCoordinationService {
 
     public void reset() {
         assert !isMaster() : "this member is a master";
-        List<MasterContext> ctxes;
+        List<MasterContext> contexts;
         synchronized (lock) {
-            ctxes = new ArrayList<>(masterContexts.values());
+            contexts = new ArrayList<>(masterContexts.values());
             masterContexts.clear();
             jobsScanned = false;
         }
 
-        ctxes.forEach(ctx -> ctx.jobContext().setFinalResult(new CancellationException()));
+        contexts.forEach(ctx -> ctx.jobContext().setFinalResult(new CancellationException()));
     }
 
     public CompletableFuture<Void> joinSubmittedJob(long jobId) {
@@ -390,16 +394,6 @@ public class JobCoordinationService {
             throw new JobNotFoundException("MasterContext not found to resume job " + idToString(jobId));
         }
         masterContext.jobContext().resumeJob(jobRepository::newExecutionId);
-    }
-
-    public CompletableFuture<Void> exportSnapshot(long jobId, String name, boolean cancelJob) {
-        assertIsMaster("Cannot export snapshot for job " + idToString(jobId) + " from non-master node");
-
-        MasterContext masterContext = masterContexts.get(jobId);
-        if (masterContext == null) {
-            throw new JobNotFoundException("MasterContext not found to export snapshot of job " + idToString(jobId));
-        }
-        return masterContext.snapshotContext().exportSnapshot(name, cancelJob);
     }
 
     /**
@@ -664,7 +658,7 @@ public class JobCoordinationService {
         synchronized (lock) {
             checkOperationalState();
 
-            masterContext = new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
+            masterContext = createMasterContext(jobRecord, jobExecutionRecord);
             oldMasterContext = masterContexts.putIfAbsent(jobId, masterContext);
         }
 
@@ -776,7 +770,7 @@ public class JobCoordinationService {
         jobRepository.cleanup(runningJobIds);
     }
 
-    private void assertIsMaster(String error) {
+    void assertIsMaster(String error) {
         if (!isMaster()) {
             throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());
         }
@@ -784,5 +778,9 @@ public class JobCoordinationService {
 
     private boolean isMaster() {
         return nodeEngine.getClusterService().isMaster();
+    }
+
+    NodeEngineImpl nodeEngine() {
+        return nodeEngine;
     }
 }

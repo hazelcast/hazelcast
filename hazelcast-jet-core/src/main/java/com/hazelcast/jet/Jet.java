@@ -37,7 +37,9 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.util.Preconditions;
 
+import javax.annotation.Nonnull;
 import java.util.Properties;
 import java.util.function.Function;
 
@@ -45,6 +47,7 @@ import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
 import static com.hazelcast.jet.impl.metrics.JetMetricsService.applyMetricsConfig;
+import static com.hazelcast.jet.impl.util.JetGroupProperty.JET_SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_RESULTS_TTL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 
@@ -59,7 +62,9 @@ public final class Jet {
     /**
      * Creates a member of the Jet cluster with the given configuration.
      */
-    public static JetInstance newJetInstance(JetConfig config) {
+    @Nonnull
+    public static JetInstance newJetInstance(@Nonnull JetConfig config) {
+        Preconditions.checkNotNull(config, "config");
         return newJetInstanceImpl(config, cfg ->
                 HazelcastInstanceFactory.newHazelcastInstance(cfg, cfg.getInstanceName(), new JetNodeContext()));
     }
@@ -68,6 +73,7 @@ public final class Jet {
      * Creates a member of the Jet cluster with the configuration loaded from
      * default location.
      */
+    @Nonnull
     public static JetInstance newJetInstance() {
         return newJetInstance(JetConfig.loadDefault());
     }
@@ -75,6 +81,7 @@ public final class Jet {
     /**
      * Creates a Jet client with the default configuration.
      */
+    @Nonnull
     public static JetInstance newJetClient() {
         ClientConfig clientConfig = getClientConfig();
         return newJetClient(clientConfig);
@@ -86,7 +93,9 @@ public final class Jet {
      * {@link JetClientConfig} may be used to create a configuration with the
      * default group name and password for Jet.
      */
-    public static JetInstance newJetClient(ClientConfig config) {
+    @Nonnull
+    public static JetInstance newJetClient(@Nonnull ClientConfig config) {
+        Preconditions.checkNotNull(config, "config");
         return getJetClientInstance(HazelcastClient.newHazelcastClient(config));
     }
 
@@ -119,19 +128,27 @@ public final class Jet {
         Properties jetProps = jetConfig.getProperties();
         Properties hzProperties = hzConfig.getProperties();
 
-        // copy Jet Config properties as HZ properties
+        // Disable HZ shutdown hook, as we will use the Jet-specific property instead
+        String hzHookEnabled = hzProperties.getProperty(
+                SHUTDOWNHOOK_ENABLED.getName(), SHUTDOWNHOOK_ENABLED.getDefaultValue()
+        );
+        if (!jetProps.containsKey(JET_SHUTDOWNHOOK_ENABLED)) {
+            jetProps.setProperty(JET_SHUTDOWNHOOK_ENABLED.getName(), hzHookEnabled);
+        }
+        hzConfig.setProperty(SHUTDOWNHOOK_ENABLED.getName(), "false");
+
+        // copy Jet properties to HZ properties
         for (String prop : jetProps.stringPropertyNames()) {
             hzProperties.setProperty(prop, jetProps.getProperty(prop));
         }
 
-        HazelcastProperties properties = new HazelcastProperties(hzProperties);
-
         hzConfig.getServicesConfig()
                 .addServiceConfig(new ServiceConfig()
-                        .setEnabled(true)
+                        // use the user service config for JetService only as a config object holder,
+                        // the service will be created by JetNodeExtension instead
+                        .setEnabled(false)
                         .setName(JetService.SERVICE_NAME)
                         .setClassName(JetService.class.getName())
-                        .setProperties(jetServiceProperties(properties))
                         .setConfigObject(jetConfig))
                 .addServiceConfig(new ServiceConfig()
                         .setEnabled(true)
@@ -143,9 +160,10 @@ public final class Jet {
                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
                 .setStatisticsEnabled(false);
         metadataMapConfig.getMergePolicyConfig().setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
-        boolean enabled = hzConfig.getHotRestartPersistenceConfig().isEnabled();
-        metadataMapConfig.getHotRestartConfig().setEnabled(enabled);
+        boolean hotRestartEnabled = hzConfig.getHotRestartPersistenceConfig().isEnabled();
+        metadataMapConfig.getHotRestartConfig().setEnabled(hotRestartEnabled);
 
+        HazelcastProperties properties = new HazelcastProperties(hzProperties);
         MapConfig resultsMapConfig = new MapConfig(metadataMapConfig)
                 .setName(JOB_RESULTS_MAP_NAME)
                 .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
@@ -155,14 +173,6 @@ public final class Jet {
 
         MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
         applyMetricsConfig(hzConfig, metricsConfig);
-
-        // Force disable IMDG shutdown hook, we will use the Jet property instead
-        hzConfig.setProperty(SHUTDOWNHOOK_ENABLED.getName(), "false");
     }
 
-    private static Properties jetServiceProperties(HazelcastProperties hzProperties) {
-        Properties properties = new Properties();
-        properties.setProperty(SHUTDOWNHOOK_ENABLED.getName(), hzProperties.getString(SHUTDOWNHOOK_ENABLED));
-        return properties;
-    }
 }

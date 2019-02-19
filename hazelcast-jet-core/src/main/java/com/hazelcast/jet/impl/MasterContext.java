@@ -47,7 +47,10 @@ import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 
 /**
  * Data pertaining to single job on master member. There's one instance per job,
- * shared between multiple executions.
+ * shared between multiple executions. It has 2 subcomponents:<ul>
+ *      <li>{@link MasterJobContext}
+ *      <li>{@link MasterSnapshotContext}
+ * </ul>
  */
 public class MasterContext {
 
@@ -90,7 +93,11 @@ public class MasterContext {
         }
 
         jobContext = new MasterJobContext(this, nodeEngine.getLogger(MasterJobContext.class));
-        snapshotContext = new MasterSnapshotContext(this, nodeEngine.getLogger(MasterSnapshotContext.class));
+        snapshotContext = createMasterSnapshotContext(nodeEngine);
+    }
+
+    MasterSnapshotContext createMasterSnapshotContext(NodeEngineImpl nodeEngine) {
+        return new MasterSnapshotContext(this, nodeEngine.getLogger(MasterSnapshotContext.class));
     }
 
     void lock() {
@@ -98,7 +105,7 @@ public class MasterContext {
         lock.lock();
     }
 
-    protected void unlock() {
+    void unlock() {
         lock.unlock();
     }
 

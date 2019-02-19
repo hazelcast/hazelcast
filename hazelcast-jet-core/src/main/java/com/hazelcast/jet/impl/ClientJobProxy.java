@@ -104,18 +104,16 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     @Override
     public JobStateSnapshot cancelAndExportSnapshot(String name) {
-        ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, true);
-        try {
-            new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-        return container().getJobStateSnapshot(name);
+        return doExportSnapshot(name, true);
     }
 
     @Override
     public JobStateSnapshot exportSnapshot(String name) {
-        ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, false);
+        return doExportSnapshot(name, false);
+    }
+
+    private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+        ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, cancelJob);
         try {
             new CancellableFuture<>(invocation(request, masterAddress()).invoke()).get();
         } catch (Throwable t) {

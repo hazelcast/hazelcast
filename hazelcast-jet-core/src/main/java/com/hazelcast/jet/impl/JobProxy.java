@@ -22,7 +22,6 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.operation.ExportSnapshotOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
@@ -90,18 +89,19 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Override
     public JobStateSnapshot cancelAndExportSnapshot(String name) {
-        try {
-            invokeOp(new ExportSnapshotOperation(getId(), name, true)).get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-        return getJetInstance(container()).getJobStateSnapshot(name);
+        return doExportSnapshot(name, true);
     }
 
     @Override
     public JobStateSnapshot exportSnapshot(String name) {
+        return doExportSnapshot(name, false);
+    }
+
+    private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         try {
-            invokeOp(new ExportSnapshotOperation(getId(), name, false)).get();
+            JetService jetService = container().getService(JetService.SERVICE_NAME);
+            Operation operation = jetService.createExportSnapshotOperation(getId(), name, cancelJob);
+            invokeOp(operation).get();
         } catch (Exception e) {
             throw rethrow(e);
         }
