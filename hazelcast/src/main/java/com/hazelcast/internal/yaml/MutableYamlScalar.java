@@ -16,27 +16,14 @@
 
 package com.hazelcast.internal.yaml;
 
-public abstract class AbstractYamlNode implements MutableYamlNode {
-    private final YamlNode parent;
-    private String nodeName;
-
-    AbstractYamlNode(YamlNode parent, String nodeName) {
-        this.parent = parent;
-        this.nodeName = nodeName;
-    }
-
-    @Override
-    public String nodeName() {
-        return nodeName != null ? nodeName : UNNAMED_NODE;
-    }
-
-    @Override
-    public void setNodeName(String nodeName) {
-        this.nodeName = nodeName;
-    }
-
-    @Override
-    public YamlNode parent() {
-        return parent;
-    }
+/**
+ * Mutable interface of {@link YamlScalar}
+ */
+public interface MutableYamlScalar extends YamlScalar {
+    /**
+     * Sets the value of the scalar node
+     *
+     * @param newValue The new value of the scalar node
+     */
+    void setValue(Object newValue);
 }

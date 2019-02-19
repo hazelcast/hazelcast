@@ -16,6 +16,7 @@
 
 package com.hazelcast.config.yaml;
 
+import com.hazelcast.internal.yaml.MutableYamlScalar;
 import com.hazelcast.internal.yaml.YamlCollection;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
@@ -58,14 +59,19 @@ public class ElementAdapter implements Element {
     @Override
     public String getNodeValue() throws DOMException {
         if (yamlNode instanceof YamlScalar) {
-            return ((YamlScalar) yamlNode).nodeValue().toString();
+            Object nodeValue = ((YamlScalar) yamlNode).nodeValue();
+            return nodeValue != null ? nodeValue.toString() : null;
         }
         return null;
     }
 
     @Override
     public void setNodeValue(String nodeValue) throws DOMException {
-        throw new UnsupportedOperationException();
+        if (yamlNode instanceof MutableYamlScalar) {
+            ((MutableYamlScalar) yamlNode).setValue(nodeValue);
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override

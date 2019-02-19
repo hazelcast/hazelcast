@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.yaml.ElementAdapter;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -34,9 +33,9 @@ import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
+import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlMapping;
+import static com.hazelcast.config.yaml.W3cDomUtil.getWrappedYamlSequence;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
-import static com.hazelcast.internal.yaml.YamlUtil.asSequence;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 import static java.lang.Integer.parseInt;
@@ -148,7 +147,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void handleTrustedInterfaces(MulticastConfig multicastConfig, Node n) {
-        YamlSequence yamlNode = asSequence(((ElementAdapter) n).getYamlNode());
+        YamlSequence yamlNode = getWrappedYamlSequence(n);
         for (YamlNode interfaceNode : yamlNode.children()) {
             String trustedInterface = asScalar(interfaceNode).nodeValue();
             multicastConfig.addTrustedInterface(trustedInterface);
@@ -645,7 +644,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void fillProperties(Node node, Map<String, Comparable> properties) {
-        YamlMapping propertiesMapping = asMapping(((ElementAdapter) node).getYamlNode());
+        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
         for (YamlNode propNode : propertiesMapping.children()) {
             YamlScalar propScalar = asScalar(propNode);
             String key = propScalar.nodeName();
@@ -656,7 +655,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void fillProperties(Node node, Properties properties) {
-        YamlMapping propertiesMapping = asMapping(((ElementAdapter) node).getYamlNode());
+        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
         for (YamlNode propNode : propertiesMapping.children()) {
             YamlScalar propScalar = asScalar(propNode);
             String key = propScalar.nodeName();

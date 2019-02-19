@@ -82,6 +82,24 @@ public final class YamlUtil {
     }
 
     /**
+     * Takes a generic {@link YamlNode} instance and returns it casted to
+     * the provided {@code type} if the node is an instance of that type.
+     *
+     * @param node The generic node to cast
+     * @return the casted node
+     * @throws YamlException if the provided node is not the expected type
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(YamlNode node, Class<T> type) {
+        if (node != null && !type.isAssignableFrom(node.getClass())) {
+            String nodeName = node.nodeName();
+            throw new YamlException(String.format("Child %s is not a %s, it's actual type is %s", nodeName, type.getSimpleName(),
+                    node.getClass().getSimpleName()));
+        }
+        return (T) node;
+    }
+
+    /**
      * Checks if the runtime environment is Java8 or higher. If the
      * runtime is an older version the check throws
      * {@link UnsupportedOperationException}.

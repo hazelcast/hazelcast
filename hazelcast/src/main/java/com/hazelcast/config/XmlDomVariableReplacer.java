@@ -14,29 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.yaml;
+package com.hazelcast.config;
 
-public abstract class AbstractYamlNode implements MutableYamlNode {
-    private final YamlNode parent;
-    private String nodeName;
+import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import org.w3c.dom.Node;
 
-    AbstractYamlNode(YamlNode parent, String nodeName) {
-        this.parent = parent;
-        this.nodeName = nodeName;
-    }
+class XmlDomVariableReplacer extends AbstractDomVariableReplacer {
 
     @Override
-    public String nodeName() {
-        return nodeName != null ? nodeName : UNNAMED_NODE;
+    public void replaceVariables(Node node, ConfigReplacer replacer, boolean failFast) {
+        replaceVariableInNodeValue(node, replacer, failFast);
     }
 
-    @Override
-    public void setNodeName(String nodeName) {
-        this.nodeName = nodeName;
-    }
-
-    @Override
-    public YamlNode parent() {
-        return parent;
-    }
 }

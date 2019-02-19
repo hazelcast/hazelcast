@@ -16,27 +16,37 @@
 
 package com.hazelcast.internal.yaml;
 
-public abstract class AbstractYamlNode implements MutableYamlNode {
-    private final YamlNode parent;
-    private String nodeName;
+/**
+ * A pair consists of a node's name and its representing {@link YamlNode}
+ * instance
+ *
+ * @see YamlMapping#childrenPairs()
+ */
+public class YamlNameNodePair {
+    private final String nodeName;
+    private final YamlNode childNode;
 
-    AbstractYamlNode(YamlNode parent, String nodeName) {
-        this.parent = parent;
+    YamlNameNodePair(String nodeName, YamlNode childNode) {
         this.nodeName = nodeName;
+        this.childNode = childNode;
     }
 
-    @Override
+    /**
+     * Returns the name of the node
+     *
+     * @return the name of the node
+     */
     public String nodeName() {
-        return nodeName != null ? nodeName : UNNAMED_NODE;
+        return nodeName;
     }
 
-    @Override
-    public void setNodeName(String nodeName) {
-        this.nodeName = nodeName;
-    }
-
-    @Override
-    public YamlNode parent() {
-        return parent;
+    /**
+     * The {@link YamlNode} instance
+     *
+     * @return the node instance if present or {@code null} if the node
+     * is explicitly defined as {@code !!null} in the YAML document
+     */
+    public YamlNode childNode() {
+        return childNode;
     }
 }

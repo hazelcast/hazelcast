@@ -16,7 +16,12 @@
 
 package com.hazelcast.config.yaml;
 
+import com.hazelcast.internal.yaml.MutableYamlNode;
+import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
+import com.hazelcast.internal.yaml.YamlScalar;
+import com.hazelcast.internal.yaml.YamlSequence;
+import com.hazelcast.internal.yaml.YamlUtil;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -43,11 +48,90 @@ public final class W3cDomUtil {
         return new ElementAdapter(yamlNode);
     }
 
+    /**
+     * Returns the the wrapped {@link YamlMapping} instance of the
+     * provided {@link Node} if the {@code node} is an instance of
+     * {@link ElementAdapter} and the YAML node wrapped by the {@code node}
+     * is a {@link YamlMapping}.
+     *
+     * @param node The W3C node wrapping a YAML node
+     * @return the wrapped YAML node as mapping
+     * @throws IllegalArgumentException if the provided node is not an
+     *                                  instance of {@link ElementAdapter}
+     */
+    public static YamlMapping getWrappedYamlMapping(Node node) {
+        checkNodeIsElementAdapter(node);
+
+        return asYamlType(node, YamlMapping.class);
+    }
+
+    /**
+     * Returns the the wrapped {@link YamlSequence} instance of the
+     * provided {@link Node} if the {@code node} is an instance of
+     * {@link ElementAdapter} and the YAML node wrapped by the {@code node}
+     * is a {@link YamlSequence}.
+     *
+     * @param node The W3C node wrapping a YAML node
+     * @return the wrapped YAML node as sequence
+     * @throws IllegalArgumentException if the provided node is not an
+     *                                  instance of {@link ElementAdapter}
+     */
+    public static YamlSequence getWrappedYamlSequence(Node node) {
+        checkNodeIsElementAdapter(node);
+
+        return asYamlType(node, YamlSequence.class);
+    }
+
+    /**
+     * Returns the the wrapped {@link YamlScalar} instance of the
+     * provided {@link Node} if the {@code node} is an instance of
+     * {@link ElementAdapter} and the YAML node wrapped by the {@code node}
+     * is a {@link YamlScalar}.
+     *
+     * @param node The W3C node wrapping a YAML node
+     * @return the wrapped YAML node as scalar
+     * @throws IllegalArgumentException if the provided node is not an
+     *                                  instance of {@link ElementAdapter}
+     */
+    public static YamlScalar getWrappedYamlScalar(Node node) {
+        checkNodeIsElementAdapter(node);
+
+        return asYamlType(node, YamlScalar.class);
+    }
+
+    /**
+     * Returns the the wrapped {@link MutableYamlNode} instance of the
+     * provided {@link Node} if the {@code node} is an instance of
+     * {@link ElementAdapter} and the YAML node wrapped by the {@code node}
+     * is a {@link MutableYamlNode}.
+     *
+     * @param node The W3C node wrapping a YAML node
+     * @return the wrapped YAML node as a mutable YAML node
+     * @throws IllegalArgumentException if the provided node is not an
+     *                                  instance of {@link ElementAdapter}
+     */
+    public static MutableYamlNode getWrappedMutableYamlNode(Node node) {
+        checkNodeIsElementAdapter(node);
+
+        return asYamlType(node, MutableYamlNode.class);
+    }
+
     static NodeList asNodeList(Node node) {
         if (node == null) {
             return emptyNodeList();
         }
 
         return new SingletonNodeList(node);
+    }
+
+    private static <T extends YamlNode> T asYamlType(Node node, Class<T> type) {
+        return YamlUtil.asType(((ElementAdapter) node).getYamlNode(), type);
+    }
+
+    private static void checkNodeIsElementAdapter(Node node) {
+        if (!(node instanceof ElementAdapter)) {
+            throw new IllegalArgumentException(String.format("The provided node is not an instance of ElementAdapter, it is a %s",
+                    node.getClass().getName()));
+        }
     }
 }

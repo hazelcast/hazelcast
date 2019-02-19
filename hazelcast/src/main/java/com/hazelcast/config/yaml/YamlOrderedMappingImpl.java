@@ -17,6 +17,7 @@
 package com.hazelcast.config.yaml;
 
 import com.hazelcast.internal.yaml.YamlMapping;
+import com.hazelcast.internal.yaml.YamlNameNodePair;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
@@ -71,6 +72,11 @@ final class YamlOrderedMappingImpl implements YamlOrderedMapping {
     }
 
     @Override
+    public Iterable<YamlNameNodePair> childrenPairs() {
+        return wrappedMapping.childrenPairs();
+    }
+
+    @Override
     public int childCount() {
         return wrappedMapping.childCount();
     }
@@ -94,7 +100,7 @@ final class YamlOrderedMappingImpl implements YamlOrderedMapping {
         return randomAccessChildren.get(index);
     }
 
-    public static YamlOrderedMappingImpl asOrderedMapping(YamlMapping yamlMapping) {
+    static YamlOrderedMappingImpl asOrderedMapping(YamlMapping yamlMapping) {
         return new YamlOrderedMappingImpl(yamlMapping);
     }
 

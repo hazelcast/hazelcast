@@ -18,13 +18,15 @@ package com.hazelcast.internal.yaml;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static com.hazelcast.internal.yaml.YamlUtil.asSequence;
 
-class YamlMappingImpl extends AbstractYamlNode implements YamlMapping {
+public class YamlMappingImpl extends AbstractYamlNode implements MutableYamlMapping {
     private Map<String, YamlNode> children = Collections.emptyMap();
 
     YamlMappingImpl(YamlNode parent, String nodeName) {
@@ -66,8 +68,23 @@ class YamlMappingImpl extends AbstractYamlNode implements YamlMapping {
         return children.values();
     }
 
-    void addChild(String name, YamlNode node) {
+    @Override
+    public Iterable<YamlNameNodePair> childrenPairs() {
+        List<YamlNameNodePair> pairs = new LinkedList<YamlNameNodePair>();
+        for (Map.Entry<String, YamlNode> child : children.entrySet()) {
+            pairs.add(new YamlNameNodePair(child.getKey(), child.getValue()));
+        }
+        return pairs;
+    }
+
+    @Override
+    public void addChild(String name, YamlNode node) {
         getOrCreateChildren().put(name, node);
+    }
+
+    @Override
+    public void removeChild(String name) {
+        children.remove(name);
     }
 
     private Map<String, YamlNode> getOrCreateChildren() {
@@ -90,4 +107,5 @@ class YamlMappingImpl extends AbstractYamlNode implements YamlMapping {
                 + ", children=" + children
                 + '}';
     }
+
 }
