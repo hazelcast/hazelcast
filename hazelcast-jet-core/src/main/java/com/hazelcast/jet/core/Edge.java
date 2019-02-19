@@ -291,6 +291,10 @@ public class Edge implements IdentifiedDataSerializable {
      * routing policy where all items will be routed to the same partition ID,
      * determined from the given {@code key}. It means that all items will be
      * directed to the same processor and other processors will be idle.
+     * <p>
+     * It is equivalent to using {@code partitioned(t -> key)}, but it a
+     * has small optimization that the partition ID is not recalculated
+     * for each stream item.
      */
     @Nonnull
     public Edge allToOne(Object key) {
