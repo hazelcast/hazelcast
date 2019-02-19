@@ -18,74 +18,24 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DataRecordFactoryTest extends AbstractRecordFactoryTest<Data> {
 
     @Override
-    void newRecordFactory(boolean isStatisticsEnabled, CacheDeserializedValues cacheDeserializedValues,
-                          MetadataInitializer metadataInitializer) {
+    void newRecordFactory(boolean isStatisticsEnabled, CacheDeserializedValues cacheDeserializedValues) {
         MapConfig mapConfig = new MapConfig()
                 .setStatisticsEnabled(isStatisticsEnabled)
                 .setCacheDeserializedValues(cacheDeserializedValues);
 
-        factory = new DataRecordFactory(mapConfig, serializationService, partitioningStrategy, metadataInitializer);
-    }
-
-    @Test
-    public void testMetadataInitializerIsCalledAtCreation() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
-        newRecord(factory, data1, object1);
-
-        assertEquals(2, metadataInitializer.getDataCall());
-        assertEquals(0, metadataInitializer.getObjectCall());
-    }
-
-    @Test
-    public void testMetadataInitializerIsCalledAtUpdate() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
-        record = newRecord(factory, data1, object1);
-
-        factory.setValue(record, object2);
-
-        assertEquals(3, metadataInitializer.getDataCall());
-        assertEquals(0, metadataInitializer.getObjectCall());
-    }
-
-    @Test
-    public void testMetadataIsCreatedLaterWhenValueIsUpdatedAndItHasMetadataFirstTime() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, new MetadataInitializer() {
-            @Override
-            public Object createFromData(Data keyData) throws IOException {
-                return keyData == data2 ? true : null;
-            }
-
-            @Override
-            public Object createFromObject(Object object) throws IOException {
-                return null;
-            }
-        });
-        record = factory.newRecord(data1, data1);
-
-        factory.setValue(record, data2);
-
-        assertNotNull(record.getMetadata());
-        assertTrue((Boolean) record.getMetadata().getValueMetadata());
+        factory = new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
     }
 
     @Override

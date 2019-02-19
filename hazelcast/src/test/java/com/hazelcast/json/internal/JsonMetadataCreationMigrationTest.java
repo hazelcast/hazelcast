@@ -22,22 +22,25 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.json.HazelcastJson;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Metadata;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.backup.MapBackupAccessor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.backup.TestBackupUtils.newMapAccessor;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -45,10 +48,10 @@ import static org.junit.Assert.assertTrue;
 @Category({ParallelTest.class, QuickTest.class})
 public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
 
-    private static final int ENTRY_COUNT = 1000;
+    protected static final int ENTRY_COUNT = 1000;
 
-    private TestHazelcastInstanceFactory factory;
-    private final int NODE_COUNT = 5;
+    protected TestHazelcastInstanceFactory factory;
+    protected final int NODE_COUNT = 5;
 
     @Before
     public void setup() {
@@ -61,7 +64,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
 
         final IMap<HazelcastJsonValue, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < ENTRY_COUNT; i++) {
-            map.put(createValue("key", i), createValue("value", i));
+            map.put(createJsonValue("key", i), createJsonValue("value", i));
         }
 
         for (int i = 1; i < NODE_COUNT; i++) {
@@ -85,13 +88,9 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
     }
 
     protected void assertMetadataCreated(String mapName, int replicaCount) {
-        HazelcastInstance[] instances = factory.getAllHazelcastInstances().toArray(new HazelcastInstance[] { null });
         for (int i = 0; i < replicaCount; i++) {
-            MapBackupAccessor mapBackupAccessor = (MapBackupAccessor) newMapAccessor(instances, mapName, i);
             for (int j = 0; j < ENTRY_COUNT; j++) {
-                Record record = mapBackupAccessor.getRecord(createValue("key", j));
-                assertNotNull(record);
-                assertMetadata(record.getMetadata());
+                assertMetadata(getMetadata(mapName, createJsonValue("key", j), i));
             }
         }
     }
@@ -111,6 +110,19 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
         assertTrue(valueChildNode.isTerminal());
     }
 
+    protected Metadata getMetadata(String mapName, Object key, int replicaIndex) {
+        HazelcastInstance[] instances = factory.getAllHazelcastInstances().toArray(new HazelcastInstance[] { null });
+        HazelcastInstance instance = factory.getAllHazelcastInstances().iterator().next();
+        InternalSerializationService serializationService = getSerializationService(instance);
+        Data keyData = serializationService.toData(key);
+        int partitionId = getPartitionService(instance).getPartitionId(key);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(getBackupInstance(instances, partitionId, replicaIndex));
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+        RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
+        Record record = recordStore.getRecordOrNull(keyData);
+        return record.getMetadata();
+    }
+
     protected Config getConfig() {
         Config config = new Config();
         config.getMapConfig("default")
@@ -120,7 +132,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static HazelcastJsonValue createValue(String type, int innerValue) {
+    protected static HazelcastJsonValue createJsonValue(String type, int innerValue) {
         return HazelcastJson.fromString(Json.object()
                 .add("type", type)
                 .add("value", innerValue)

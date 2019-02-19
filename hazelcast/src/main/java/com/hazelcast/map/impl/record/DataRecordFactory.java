@@ -19,28 +19,22 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Metadata;
 import com.hazelcast.spi.serialization.SerializationService;
-
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class DataRecordFactory implements RecordFactory<Data> {
 
     private final SerializationService serializationService;
     private final PartitioningStrategy partitionStrategy;
     private final CacheDeserializedValues cacheDeserializedValues;
-    private final MetadataInitializer metadataInitializer;
     private final boolean statisticsEnabled;
 
     public DataRecordFactory(MapConfig config, SerializationService serializationService,
-                             PartitioningStrategy partitionStrategy, MetadataInitializer metadataInitializer) {
+                             PartitioningStrategy partitionStrategy) {
         this.serializationService = serializationService;
         this.partitionStrategy = partitionStrategy;
         this.statisticsEnabled = config.isStatisticsEnabled();
         this.cacheDeserializedValues = config.getCacheDeserializedValues();
-        this.metadataInitializer = metadataInitializer;
     }
 
     @Override
@@ -57,7 +51,6 @@ public class DataRecordFactory implements RecordFactory<Data> {
                 record = statisticsEnabled ? new CachedDataRecordWithStats(data) : new CachedDataRecord(data);
         }
         record.setKey(key);
-        record.setMetadata(initializeMetadata(key, data));
         return record;
     }
 
@@ -72,39 +65,5 @@ public class DataRecordFactory implements RecordFactory<Data> {
             v = serializationService.toData(value, partitionStrategy);
         }
         record.setValue(v);
-        updateValueMetadata(record, v);
-    }
-
-    private void updateValueMetadata(Record<Data> record, Data dataValue) {
-        try {
-            Object valueMetadata = metadataInitializer.createFromData(dataValue);
-            if (valueMetadata != null) {
-                Metadata existing = record.getMetadata();
-                if (existing == null) {
-                    existing = new Metadata();
-                    record.setMetadata(existing);
-                }
-                existing.setValueMetadata(valueMetadata);
-            }
-        } catch (Exception e) {
-            rethrow(e);
-        }
-    }
-
-    private Metadata initializeMetadata(Data key, Data value) {
-
-        try {
-            Object keyMetadata = metadataInitializer.createFromData(key);
-            Object valueMetadata = metadataInitializer.createFromData(value);
-            if (keyMetadata != null || valueMetadata != null) {
-                Metadata metadata = new Metadata();
-                metadata.setKeyMetadata(keyMetadata);
-                metadata.setValueMetadata(valueMetadata);
-                return metadata;
-            }
-        } catch (Exception e) {
-            rethrow(e);
-        }
-        return null;
     }
 }

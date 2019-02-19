@@ -29,6 +29,8 @@ import static com.hazelcast.internal.serialization.impl.HeapData.HEAP_DATA_OVERH
 
 public class JsonMetadataInitializer implements MetadataInitializer {
 
+    public static final JsonMetadataInitializer INSTANCE = new JsonMetadataInitializer();
+
     private static final int UTF_CHAR_COUNT_FIELD_SIZE = 4;
 
     private static final JsonFactory FACTORY = new JsonFactory();

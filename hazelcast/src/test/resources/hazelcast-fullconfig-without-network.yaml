@@ -216,6 +216,16 @@ hazelcast:
       # NATIVE : values will be stored in non-heap region of JVM
       in-memory-format: OBJECT
 
+      # Metadata creation policy for this map. Hazelcast may process
+      # objects of supported types ahead of time to create additional
+      # metadata about them. This metadata then is used to make querying
+      # and indexing faster. Metadata creation may decrease put
+      # throughput. Valid values are:
+      # CREATE_ON_UPDATE (default): Objects of supported types are
+      # pre-processed when they are created and updated.
+      # OFF: No metadata is created.
+      metadata-policy: CREATE_ON_UPDATE
+
       # Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
       # You can disable if you do not plan to use eviction on your entries.
       statistics-enabled: false

@@ -80,7 +80,8 @@ public class PartitionScanRunner {
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        Iterator<Record> iterator = partitionContainer.getRecordStore(mapName).loadAwareIterator(getNow(), false);
+        RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+        Iterator<Record> iterator = recordStore.loadAwareIterator(getNow(), false);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
@@ -88,7 +89,7 @@ public class PartitionScanRunner {
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = (Data) toData(record.getKey());
-            Metadata metadata = record.getMetadata();
+            Metadata metadata = getMetadataFromRecord(recordStore, record);
             Object value = toData(
                     useCachedValues ? Records.getValueOrCachedValue(record, serializationService) : record.getValue());
             if (value == null) {
@@ -107,6 +108,11 @@ public class PartitionScanRunner {
             }
         }
         result.orderAndLimit(pagingPredicate, nearestAnchorEntry);
+    }
+
+    // overridden in ee
+    protected Metadata getMetadataFromRecord(RecordStore recordStore, Record record) {
+        return record.getMetadata();
     }
 
     /**
