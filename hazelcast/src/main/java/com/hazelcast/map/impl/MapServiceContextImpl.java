@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.eviction.ExpirationManager;
@@ -63,6 +64,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.EventJournalWriterRecordStoreMutationObserver;
+import com.hazelcast.map.impl.recordstore.JsonMetadataRecordStoreMutationObserver;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreMutationObserver;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -851,8 +853,20 @@ class MapServiceContextImpl implements MapServiceContext {
     public Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId) {
         Collection<RecordStoreMutationObserver<Record>> observers = new LinkedList<RecordStoreMutationObserver<Record>>();
         addEventJournalUpdaterObserver(observers, mapName, partitionId);
+        addMetadataInitializerObserver(observers, mapName, partitionId);
 
         return observers;
+    }
+
+    protected void addMetadataInitializerObserver(Collection<RecordStoreMutationObserver<Record>> observers,
+                                                  String mapName, int partitionId) {
+        MapContainer mapContainer = getMapContainer(mapName);
+        MetadataPolicy policy = mapContainer.getMapConfig().getMetadataPolicy();
+        if (policy == MetadataPolicy.CREATE_ON_UPDATE) {
+            RecordStoreMutationObserver<Record> observer = new JsonMetadataRecordStoreMutationObserver(serializationService,
+                    JsonMetadataInitializer.INSTANCE);
+            observers.add(observer);
+        }
     }
 
     private void addEventJournalUpdaterObserver(Collection<RecordStoreMutationObserver<Record>> observers, String mapName, int

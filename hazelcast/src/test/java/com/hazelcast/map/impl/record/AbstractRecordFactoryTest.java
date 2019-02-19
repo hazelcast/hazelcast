@@ -20,7 +20,6 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -28,10 +27,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport {
@@ -48,8 +44,6 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     Record<T> record;
 
-    TestMetadataInitializer metadataInitializer = new TestMetadataInitializer();
-
     @Before
     public final void init() {
         serializationService = createSerializationService();
@@ -64,7 +58,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     @Test
     public void testNewRecord_withStatisticsDisabledAndCacheDeserializedValuesIsALWAYS() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS);
         record = newRecord(factory, data1, object1);
 
         assertInstanceOf(getCachedRecordClass(), record);
@@ -72,7 +66,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     @Test
     public void testNewRecord_withStatisticsDisabledAndCacheDeserializedValuesIsNEVER() {
-        newRecordFactory(false, CacheDeserializedValues.NEVER, metadataInitializer);
+        newRecordFactory(false, CacheDeserializedValues.NEVER);
         record = newRecord(factory, data1, object1);
 
         assertInstanceOf(getRecordClass(), record);
@@ -80,7 +74,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     @Test
     public void testNewRecord_withStatisticsEnabledAndCacheDeserializedValuesIsALWAYS() {
-        newRecordFactory(true, CacheDeserializedValues.ALWAYS, metadataInitializer);
+        newRecordFactory(true, CacheDeserializedValues.ALWAYS);
         record = newRecord(factory, data1, object1);
 
         assertInstanceOf(getCachedRecordWithStatsClass(), record);
@@ -88,7 +82,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     @Test
     public void testNewRecord_withStatisticsEnabledAndCacheDeserializedValuesIsNEVER() {
-        newRecordFactory(true, CacheDeserializedValues.NEVER, metadataInitializer);
+        newRecordFactory(true, CacheDeserializedValues.NEVER);
         record = newRecord(factory, data1, object1);
 
         assertInstanceOf(getRecordWithStatsClass(), record);
@@ -96,14 +90,14 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     @Test(expected = AssertionError.class)
     public void testNewRecord_withNullValue() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS);
 
         newRecord(factory, data1, null);
     }
 
     @Test
     public void testSetValue() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS);
         record = factory.newRecord(data1, object1);
 
         factory.setValue(record, object2);
@@ -113,7 +107,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     @Test
     public void testSetValue_withData() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS);
         record = factory.newRecord(data1, object1);
 
         factory.setValue(record, data2);
@@ -121,35 +115,16 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
         assertEquals(getValue(data2, object2), record.getValue());
     }
 
-    @Test
-    public void testMetadataIsNotCreatedWhenBothKeyAndValueDoesNotHaveIt() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, new MetadataInitializer() {
-            @Override
-            public Object createFromData(Data keyData) throws IOException {
-                return null;
-            }
-
-            @Override
-            public Object createFromObject(Object object) throws IOException {
-                return null;
-            }
-        });
-        record = factory.newRecord(data1, object1);
-
-        assertNull(record.getMetadata());
-    }
-
     @Test(expected = AssertionError.class)
     public void testSetValue_withNull() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS, metadataInitializer);
+        newRecordFactory(false, CacheDeserializedValues.ALWAYS);
         record = factory.newRecord(data1, object1);
 
         factory.setValue(record, null);
     }
 
     abstract void newRecordFactory(boolean isStatisticsEnabled,
-                                   CacheDeserializedValues cacheDeserializedValues,
-                                   MetadataInitializer metadataInitializer);
+                                   CacheDeserializedValues cacheDeserializedValues);
 
     abstract Class<?> getRecordClass();
 
@@ -169,29 +144,5 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
         Record<T> record = factory.newRecord(key, value);
         ((AbstractRecord) record).setKey(key);
         return record;
-    }
-
-    static class TestMetadataInitializer implements MetadataInitializer {
-
-        private int dataCall;
-        private int objectCall;
-
-        @Override
-        public Object createFromData(Data keyData) throws IOException {
-            return dataCall++;
-        }
-
-        @Override
-        public Object createFromObject(Object object) throws IOException {
-            return objectCall++;
-        }
-
-        public int getDataCall() {
-            return dataCall;
-        }
-
-        public int getObjectCall() {
-            return objectCall;
-        }
     }
 }
