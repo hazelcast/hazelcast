@@ -31,7 +31,11 @@ import com.hazelcast.util.function.Supplier;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
@@ -167,7 +171,14 @@ public final class NioOutboundPipeline
         schedule(new WriteNode(frame));
     }
 
+    //private ConcurrentHashMap<WriteNode,WriteNode> written = new ConcurrentHashMap();
+
+
     private void schedule(WriteNode update) {
+//        if(written.put(update,update)!=null){
+//            throw new RuntimeException();
+//        }
+
         for (; ; ) {
             WriteNode old = writeQueue.get();
             update.next = old == SCHEDULED ? null : old;
@@ -186,16 +197,17 @@ public final class NioOutboundPipeline
     public OutboundFrame get() {
         for (; ; ) {
             if (head == null) {
-                head = writeQueue.get();
-                if (head == null) {
+                WriteNode current = writeQueue.get();
+                if (current == null) {
                     throw new RuntimeException("head can't be null. It should be scheduled or a regular WriteNode");
                 }
-                if (head == SCHEDULED) {
+                if (current == SCHEDULED) {
                     return null;
                 }
-                if (!writeQueue.compareAndSet(head, SCHEDULED)) {
+                if (!writeQueue.compareAndSet(current, SCHEDULED)) {
                     continue;
                 }
+                head = current;
             }
 
             if (head.task != null) {
@@ -220,12 +232,6 @@ public final class NioOutboundPipeline
     @Override
     @SuppressWarnings("unchecked")
     public void process() throws Exception {
-        if(SCHEDULED.frame!=null)throw new RuntimeException();
-        if(SCHEDULED.next!=null)throw new RuntimeException();
-
-        // Thread.sleep(100);
-
-        // System.out.println("process:");
         processCount.inc();
 
         OutboundHandler[] localHandlers = handlers;
@@ -256,8 +262,6 @@ public final class NioOutboundPipeline
             pipelineStatus = DIRTY;
         }
 
-        //System.out.println("pipelineStatus:" + pipelineStatus);
-
         switch (pipelineStatus) {
             case CLEAN:
                 // There is nothing left to be done; so lets unschedule this pipeline
@@ -274,8 +278,7 @@ public final class NioOutboundPipeline
                 owner.addTask(this);
                 break;
             case DIRTY:
-                // pipeline is dirty, so lets register for an OP_WRITE to write
-                // more data.
+                // pipeline is dirty, so lets register for an OP_WRITE to write more data.
                 registerOp(OP_WRITE);
                 break;
             case BLOCKED:
