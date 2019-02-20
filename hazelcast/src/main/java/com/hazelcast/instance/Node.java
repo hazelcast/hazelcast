@@ -779,7 +779,7 @@ public class Node {
         MemberImpl localMember = getLocalMember();
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                localMember.getAttributes(), excludedMemberUuids);
+                localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap());
     }
 
     public ConfigCheck createConfigCheck() {

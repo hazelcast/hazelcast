@@ -158,6 +158,10 @@ public final class ScheduledTaskHandlerImpl
                 + schedulerName + '\'' + ", taskName='" + taskName + '\'' + '}';
     }
 
+    void setAddress(Address address) {
+        this.address = address;
+    }
+
     public static ScheduledTaskHandler of(Address addr, String schedulerName, String taskName) {
         return new ScheduledTaskHandlerImpl(addr, schedulerName, taskName);
     }

@@ -116,6 +116,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (!node.getNodeExtension().isStartCompleted()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
+        clientMessage.setClientEngine(clientEngine);
         parameters = decodeClientMessage(clientMessage);
         Credentials credentials = endpoint.getCredentials();
         interceptBefore(credentials);
@@ -234,6 +235,10 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected final BuildInfo getMemberBuildInfo() {
         return node.getBuildInfo();
+    }
+
+    protected boolean isAdvancedNetworkEnabled() {
+        return node.getConfig().getAdvancedNetworkConfig().isEnabled();
     }
 
     private Throwable peelIfNeeded(Throwable t) {

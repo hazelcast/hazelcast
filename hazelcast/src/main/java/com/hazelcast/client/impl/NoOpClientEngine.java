@@ -26,6 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 
@@ -139,5 +140,17 @@ public class NoOpClientEngine implements ClientEngine {
     @Override
     public void accept(ClientMessage clientMessage) {
 
+    }
+
+    @Override
+    public Address memberAddressOf(Address clientAddress) {
+        throw new TargetNotMemberException("NoOpClientEngine does not supply translation from client to "
+                + "member address");
+    }
+
+    @Override
+    public Address clientAddressOf(Address clientAddress) {
+        throw new TargetNotMemberException("NoOpClientEngine does not supply translation from member to "
+                + "client address");
     }
 }

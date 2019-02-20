@@ -62,11 +62,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_EVENT_EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
-import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
 import static java.util.Collections.unmodifiableMap;
@@ -377,14 +377,21 @@ public class MembershipManager {
         address.setScopeId(ipV6ScopeId);
         boolean localMember = thisAddress.equals(address);
 
-        return new MemberImpl.Builder(address).version(memberInfo.getVersion())
-                                              .localMember(localMember)
-                                              .uuid(memberInfo.getUuid())
-                                              .attributes(attributes)
-                                              .liteMember(memberInfo.isLiteMember())
-                                              .memberListJoinVersion(memberInfo.getMemberListJoinVersion())
-                                              .instance(node.hazelcastInstance)
-                                              .build();
+        MemberImpl.Builder builder;
+        if (memberInfo.getAddressMap() != null && memberInfo.getAddressMap().containsKey(MEMBER)) {
+            builder = new MemberImpl.Builder(memberInfo.getAddressMap());
+        } else {
+            builder = new MemberImpl.Builder(memberInfo.getAddress());
+        }
+
+        return builder.version(memberInfo.getVersion())
+                      .localMember(localMember)
+                      .uuid(memberInfo.getUuid())
+                      .attributes(attributes)
+                      .liteMember(memberInfo.isLiteMember())
+                      .memberListJoinVersion(memberInfo.getMemberListJoinVersion())
+                      .instance(node.hazelcastInstance)
+                      .build();
     }
 
     private void repairPartitionTableIfReturningMember(MemberImpl member) {
