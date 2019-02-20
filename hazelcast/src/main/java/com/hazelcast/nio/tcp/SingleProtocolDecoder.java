@@ -77,7 +77,8 @@ public class SingleProtocolDecoder
                 // replace this handler with the next one
                 channel.inboundPipeline().replace(this, inboundHandlers);
             } else {
-                throw new IllegalStateException("Unsupported protocol exchange detected");
+                throw new IllegalStateException("Unsupported protocol exchange detected, "
+                        + "expected protocol: " + supportedProtocol.name());
             }
 
             if (shouldSignalProtocolLoaded()) {
