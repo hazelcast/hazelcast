@@ -16,15 +16,19 @@
 
 package com.hazelcast.internal.management;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.io.IOException;
-import java.net.ServerSocket;
-
+import com.hazelcast.client.impl.ClientImpl;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -32,21 +36,27 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.ParseException;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -55,18 +65,25 @@ public class ManagementCenterServiceIntegrationTest {
     private static final String clusterName = "Session Integration (AWS discovery)";
 
     private static MancenterMock mancenterMock;
+    private static HazelcastInstanceImpl instance;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         HazelcastInstanceFactory.terminateAll();
         mancenterMock = new MancenterMock(availablePort());
-        Hazelcast.newHazelcastInstance(getManagementCenterConfig());
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) Hazelcast.newHazelcastInstance(getManagementCenterConfig());
+        instance = proxy.getOriginal();
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void tearDownClass() {
         HazelcastInstanceFactory.terminateAll();
         mancenterMock.stop();
+    }
+
+    @After
+    public void tearDown() {
+        mancenterMock.resetClientBwList();
     }
 
     @Test
@@ -98,6 +115,28 @@ public class ManagementCenterServiceIntegrationTest {
             public void run() throws Exception {
                 String responseString = doHttpGet("/mancen/getClusterName");
                 assertEquals(clusterName, responseString);
+            }
+        });
+    }
+
+    @Test
+    public void testClientBwListApplies() {
+        mancenterMock.enableClientWhitelist("127.0.0.1");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                String responseString = doHttpGet("/mancen/memberStateCheck");
+                assertNotNull(responseString);
+                assertNotEquals("", responseString);
+
+                String name = randomString();
+                Set<String> labels = new HashSet<String>();
+                Client client1 = new ClientImpl(null, InetSocketAddress.createUnresolved("127.0.0.1", 5000), name, labels);
+                assertTrue(instance.node.clientEngine.isClientAllowed(client1));
+
+                Client client2 = new ClientImpl(null, InetSocketAddress.createUnresolved("127.0.0.2", 5000), name, labels);
+                assertFalse(instance.node.clientEngine.isClientAllowed(client2));
             }
         });
     }
