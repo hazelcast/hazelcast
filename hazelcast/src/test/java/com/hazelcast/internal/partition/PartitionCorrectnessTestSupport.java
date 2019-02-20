@@ -19,8 +19,10 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.service.TestAbstractMigrationAwareService;
 import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
@@ -170,6 +172,32 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         }
     }
 
+    void assertPartitionAssignments() {
+        assertPartitionAssignments(factory);
+    }
+
+    static void assertPartitionAssignments(TestHazelcastInstanceFactory factory) {
+        Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
+        final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
+
+        for (HazelcastInstance hz : instances) {
+            Node node = getNode(hz);
+            InternalPartitionService partitionService = node.getPartitionService();
+            InternalPartition[] partitions = partitionService.getInternalPartitions();
+            ClusterService clusterService = node.getClusterService();
+            Member localMember = node.getLocalMember();
+
+            for (InternalPartition partition : partitions) {
+                for (int i = 0; i < replicaCount; i++) {
+                    PartitionReplica replica = partition.getReplica(i);
+                    assertNotNull("On " + localMember + ", Replica " + i + " is not found in " + partition, replica);
+                    assertNotNull("On " + localMember + ", Not member: " + replica,
+                            clusterService.getMember(replica.address(), replica.uuid()));
+                }
+            }
+        }
+    }
+
     void assertSizeAndDataEventually() {
         assertSizeAndDataEventually(false);
     }
@@ -178,14 +206,16 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         assertTrueEventually(new AssertSizeAndDataTask(allowDirty));
     }
 
-    void assertSizeAndData() throws InterruptedException {
+    void assertSizeAndData() {
         assertSizeAndData(false);
     }
 
-    private void assertSizeAndData(boolean allowDirty) throws InterruptedException {
+    private void assertSizeAndData(boolean allowDirty) {
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
         final int actualBackupCount = Math.min(backupCount, instances.size() - 1);
         final int expectedSize = partitionCount * (actualBackupCount + 1);
+
+        assertPartitionAssignments();
 
         int total = 0;
         int[] fragmentTotals = new int[NAMESPACES.length];

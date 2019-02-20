@@ -45,8 +45,6 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
 
     private MigrationInfo migration;
 
-    private int newPartitionStateVersion;
-
     private String expectedMemberUuid;
 
     private transient boolean success;
@@ -60,9 +58,8 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
         this.expectedMemberUuid = expectedMemberUuid;
     }
 
-    public MigrationCommitOperation(MigrationInfo migration, int newPartitionStateVersion, String expectedMemberUuid) {
+    public MigrationCommitOperation(MigrationInfo migration, String expectedMemberUuid) {
         this.migration = migration;
-        this.newPartitionStateVersion = newPartitionStateVersion;
         this.expectedMemberUuid = expectedMemberUuid;
     }
 
@@ -79,7 +76,7 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
         InternalPartitionServiceImpl service = getService();
 
         if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V3_12)) {
-            success = service.commitMigrationOnDestination(migration, newPartitionStateVersion, getCallerAddress());
+            success = service.commitMigrationOnDestination(migration, getCallerAddress());
         } else {
             // RU_COMPAT_3_11
             partitionState.setMaster(getCallerAddress());
@@ -113,7 +110,6 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
 
         if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
             migration = in.readObject();
-            newPartitionStateVersion = in.readInt();
         } else {
             // RU_COMPAT_3_11
             partitionState = new PartitionRuntimeState();
@@ -128,7 +124,6 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
 
         if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
             out.writeObject(migration);
-            out.writeInt(newPartitionStateVersion);
         } else {
             // RU_COMPAT_3_11
             partitionState.writeData(out);

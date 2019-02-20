@@ -30,6 +30,7 @@ import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -89,7 +90,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         dropOperationsBetween(nextMaster, singletonList(initialMaster), F_ID, singletonList(ASSIGN_PARTITIONS));
         dropOperationsBetween(slave1, singletonList(initialMaster), F_ID, singletonList(ASSIGN_PARTITIONS));
 
-        warmUpPartitions(initialMaster, slave2, slave3);
+        ensurePartitionsInitialized(initialMaster, slave2, slave3);
 
         final int initialPartitionStateVersion = getPartitionService(initialMaster).getPartitionStateVersion();
         assertEquals(initialPartitionStateVersion, getPartitionService(slave2).getPartitionStateVersion());
@@ -139,7 +140,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         dropOperationsBetween(nextMaster, singletonList(initialMaster), F_ID, singletonList(ASSIGN_PARTITIONS));
         dropOperationsBetween(slave1, singletonList(initialMaster), F_ID, singletonList(ASSIGN_PARTITIONS));
 
-        warmUpPartitions(initialMaster, slave2, slave3);
+        ensurePartitionsInitialized(initialMaster, slave2, slave3);
 
         final int initialPartitionStateVersion = getPartitionService(initialMaster).getPartitionStateVersion();
         assertEquals(initialPartitionStateVersion, getPartitionService(slave2).getPartitionStateVersion());
@@ -461,5 +462,21 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
     private static InternalPartitionServiceImpl getPartitionServiceImpl(HazelcastInstance hz) {
         return getNode(hz).partitionService;
+    }
+
+    private static void ensurePartitionsInitialized(HazelcastInstance... instances) {
+        warmUpPartitions(instances);
+        for (HazelcastInstance instance : instances) {
+            assertPartitionStateVersionInitialized(instance);
+        }
+    }
+
+    private static void assertPartitionStateVersionInitialized(HazelcastInstance instance) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertThat(getPartitionService(instance).getPartitionStateVersion(), Matchers.greaterThan(0));
+            }
+        });
     }
 }
