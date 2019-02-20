@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -32,6 +33,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
+import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -54,8 +56,11 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
+import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
@@ -69,6 +74,7 @@ import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.util.executor.ExecutorType.CACHED;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -458,7 +464,12 @@ public class JobCoordinationService {
     boolean shouldStartJobs() {
         ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
         if (!isMaster() || !nodeEngine.isRunning() || isClusterEnteringPassiveState
-                || clusterState != ClusterState.ACTIVE && clusterState != ClusterState.NO_MIGRATION) {
+                || clusterState == PASSIVE || clusterState == IN_TRANSITION) {
+            return false;
+        }
+        if (!allMembersHaveSameState(clusterState)) {
+            LoggingUtil.logFine(logger, "Not starting jobs because not all members have the same state: %s",
+                    clusterState);
             return false;
         }
         // if there are any members in a shutdown process, don't start jobs
@@ -471,6 +482,24 @@ public class JobCoordinationService {
         return partitionService.getPartitionStateManager().isInitialized()
                 && partitionService.areMigrationTasksAllowed()
                 && !partitionService.hasOnGoingMigrationLocal();
+    }
+
+    private boolean allMembersHaveSameState(ClusterState clusterState) {
+        // TODO remove once the issue is fixed on the imdg side
+        Set<Member> members = nodeEngine.getClusterService().getMembers();
+        List<Future<ClusterMetadata>> futures =
+                members.stream()
+                       .filter(member -> !member.localMember())
+                       .map(this::clusterMetadataAsync)
+                       .collect(toList());
+        return futures.stream()
+                      .map(future -> uncheckCall(future::get))
+                      .allMatch(metaData -> metaData.getState() == clusterState);
+    }
+
+    private Future<ClusterMetadata> clusterMetadataAsync(Member member) {
+        return nodeEngine.getOperationService().invokeOnTarget(JetService.SERVICE_NAME,
+                new GetClusterMetadataOperation(), member.getAddress());
     }
 
     void onMemberAdded(MemberImpl addedMember) {
@@ -737,10 +766,10 @@ public class JobCoordinationService {
 
     // runs periodically to restart jobs on coordinator failure and perform GC
     private void scanJobs() {
-        if (!shouldStartJobs()) {
-            return;
-        }
         try {
+            if (!shouldStartJobs()) {
+                return;
+            }
             Collection<JobRecord> jobs = jobRepository.getJobRecords();
             for (JobRecord jobRecord : jobs) {
                 JobExecutionRecord jobExecutionRecord = ensureExecutionRecord(jobRecord.getJobId(),
