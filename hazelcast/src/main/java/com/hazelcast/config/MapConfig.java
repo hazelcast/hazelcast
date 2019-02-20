@@ -1095,7 +1095,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         out.writeObject(hotRestartConfig);
         // RU_COMPAT_3_11
         if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            out.writeShort(preprocessingPolicy.getId());
+            out.writeShort(metadataPolicy.getId());
         }
     }
 
@@ -1127,7 +1127,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         hotRestartConfig = in.readObject();
         // RU_COMPAT_3_11
         if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            preprocessingPolicy = PreprocessingPolicy.getById(in.readShort());
+            metadataPolicy = MetadataPolicy.getById(in.readShort());
         }
     }
 }

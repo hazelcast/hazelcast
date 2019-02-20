@@ -37,7 +37,7 @@ public enum MetadataPolicy {
 
     private final int id;
 
-    PreprocessingPolicy(int id) {
+    MetadataPolicy(int id) {
         this.id = id;
     }
 
@@ -52,12 +52,12 @@ public enum MetadataPolicy {
     }
 
     /**
-     * Returns the PreprocessingPolicy for the given ID.
+     * Returns the MetadataPolicy for the given ID.
      *
-     * @return the PreprocessingPolicy found or null if not found
+     * @return the MetadataPolicy found or null if not found
      */
-    public static PreprocessingPolicy getById(final int id) {
-        for (PreprocessingPolicy policy : values()) {
+    public static MetadataPolicy getById(final int id) {
+        for (MetadataPolicy policy : values()) {
             if (policy.id == id) {
                 return policy;
             }
