@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
@@ -114,7 +115,7 @@ public final class ClientPartitionServiceImpl
     }
 
     private void waitForPartitionsFetchedOnce() {
-        while (partitionCount == 0 && client.getConnectionManager().isAlive()) {
+        while (partitions.isEmpty() && client.getConnectionManager().isAlive()) {
             if (isClusterFormedByOnlyLiteMembers()) {
                 throw new NoDataMemberInClusterException(
                         "Partitions can't be assigned since all nodes in the cluster are lite members");
@@ -199,6 +200,16 @@ public final class ClientPartitionServiceImpl
     @Override
     public Partition getPartition(int partitionId) {
         return new PartitionImpl(partitionId);
+    }
+
+    @Override
+    public boolean isPartitionCountConsistent(int partitionCount) {
+        return this.partitionCount == 0 || partitionCount == this.partitionCount;
+    }
+
+    @Override
+    public void beforeClusterSwitch(CandidateClusterContext context) {
+        partitions.clear();
     }
 
     private final class PartitionImpl implements Partition {

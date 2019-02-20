@@ -75,4 +75,17 @@ public class LegacyMatchingPointConfigPatternMatcher implements ConfigPatternMat
 
         return firstPart.length() + secondPart.length();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        return o != null && getClass() == o.getClass();
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

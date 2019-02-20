@@ -18,14 +18,21 @@ package com.hazelcast.client.spi.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.connection.nio.DefaultCredentialsFactory;
+import com.hazelcast.client.impl.clientside.CandidateClusterContext;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -39,8 +46,6 @@ import org.junit.runner.RunWith;
 import java.net.UnknownHostException;
 
 import static junit.framework.TestCase.assertNotNull;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -54,14 +59,25 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
     public void setup() throws Exception {
         Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        TestAddressProvider testAddressProvider = new TestAddressProvider();
 
+        TestAddressProvider provider = new TestAddressProvider();
         TestAddressTranslator translator = new TestAddressTranslator();
-        clientConnectionManager =
-                new ClientConnectionManagerImpl(getHazelcastClientInstanceImpl(client), translator, testAddressProvider);
-        ClientContext clientContext = spy(new ClientContext(getHazelcastClientInstanceImpl(client)));
-        when(clientContext.getConnectionManager()).thenReturn(clientConnectionManager);
-        clientConnectionManager.start(clientContext);
+
+        final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        clientConnectionManager = new ClientConnectionManagerImpl(clientInstanceImpl);
+        DefaultCredentialsFactory factory =
+                new DefaultCredentialsFactory(new ClientSecurityConfig(), new GroupConfig(), ClassLoader.getSystemClassLoader());
+        clientConnectionManager.start();
+        ChannelInitializerProvider channelInitializerProvider = new ChannelInitializerProvider() {
+
+            @Override
+            public ChannelInitializer provide(EndpointQualifier qualifier) {
+                return clientInstanceImpl.getClientExtension().createChannelInitializer();
+            }
+        };
+        clientConnectionManager.beforeClusterSwitch(new CandidateClusterContext(provider, translator, null,
+                factory, null, channelInitializerProvider));
+        clientConnectionManager.getOrConnect(new Address("127.0.0.1", 5701), true);
 
         translator.shouldTranslate = true;
 
@@ -110,7 +126,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
     }
 
     @Test
-    public void testTranslatorNotIsUsedGetActiveConnection() throws Exception {
+    public void testTranslatorIsNotUsedGetActiveConnection() throws Exception {
         Connection connection = clientConnectionManager.getActiveConnection(privateAddress);
         assertNotNull(connection);
     }

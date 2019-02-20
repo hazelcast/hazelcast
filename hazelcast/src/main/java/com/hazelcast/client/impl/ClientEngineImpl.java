@@ -128,6 +128,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
             = new ConcurrentHashMap<String, AtomicLong>();
 
+    private volatile ClientSelector clientSelector = ClientSelectors.any();
+
     private final ClientEndpointManagerImpl endpointManager;
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
@@ -431,6 +433,34 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     @Override
     public ClientPartitionListenerService getPartitionListenerService() {
         return partitionListenerService;
+    }
+
+    @Override
+    public boolean isClientAllowed(Client client) {
+        return clientSelector.select(client);
+    }
+
+    @Override
+    public void applySelector(ClientSelector newSelector) {
+        logger.info("Applying a new client selector :" + newSelector);
+        clientSelector = newSelector;
+        Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
+        for (ClientEndpoint endpoint : endpoints) {
+            if (clientSelector.select(endpoint)) {
+                continue;
+            }
+            String clientUuid = endpoint.getUuid();
+            String memberUuid = ownershipMappings.get(clientUuid);
+            ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid, memberUuid);
+            InternalOperationService service = nodeEngine.getOperationService();
+            Address thisAddress = getThisAddress();
+            Future future = service.createInvocationBuilder(ClientEngineImpl.SERVICE_NAME, op, thisAddress).invoke();
+            try {
+                future.get();
+            } catch (Exception e) {
+                logger.warning("Could not apply new selector for " + endpoint);
+            }
+        }
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {

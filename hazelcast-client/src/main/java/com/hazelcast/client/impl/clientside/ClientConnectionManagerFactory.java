@@ -16,13 +16,9 @@
 
 package com.hazelcast.client.impl.clientside;
 
-import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 
 public interface ClientConnectionManagerFactory {
 
-    ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client,
-                                                    AddressTranslator addressTranslator,
-                                                    AddressProvider addressProvider);
+    ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client);
 }

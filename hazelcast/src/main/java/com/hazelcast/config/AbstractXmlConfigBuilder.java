@@ -59,7 +59,8 @@ public abstract class AbstractXmlConfigBuilder extends AbstractXmlConfigHelper {
     protected enum ConfigType {
         SERVER("hazelcast"),
         CLIENT("hazelcast-client"),
-        JET("hazelcast-jet");
+        JET("hazelcast-jet"),
+        CLIENT_FAILOVER("hazelcast-client-failover");
 
         final String name;
 

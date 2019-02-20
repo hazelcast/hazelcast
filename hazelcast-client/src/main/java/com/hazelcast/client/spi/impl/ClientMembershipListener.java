@@ -17,9 +17,11 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
+import com.hazelcast.client.spi.ClusterSwitchAwareService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.InitialMembershipEvent;
@@ -46,16 +48,16 @@ import java.util.concurrent.TimeUnit;
 import static java.util.Collections.unmodifiableSet;
 
 class ClientMembershipListener extends ClientAddMembershipListenerCodec.AbstractEventHandler
-        implements EventHandler<ClientMessage> {
+        implements EventHandler<ClientMessage> , ClusterSwitchAwareService {
 
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
 
     private final ILogger logger;
-    private final Set<Member> members = new LinkedHashSet<Member>();
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientConnectionManagerImpl connectionManager;
+    private volatile Set<Member> members = new LinkedHashSet<Member>();
 
     private volatile CountDownLatch initialListFetchedLatch;
 
@@ -98,7 +100,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         }
 
         if (prevMembers.isEmpty()) {
-            //this means this is the first time client connected to server
+            //this means this is the first time client connected to cluster
             logger.info(membersString());
             clusterService.handleInitialMembershipEvent(
                     new InitialMembershipEvent(client.getCluster(), unmodifiableSet(members)));
@@ -229,5 +231,9 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                 + ", members=" + members
                 + ", client=" + client
                 + '}';
+    }
+
+    public void beforeClusterSwitch(CandidateClusterContext context) {
+        members = new LinkedHashSet<Member>();
     }
 }

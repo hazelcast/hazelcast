@@ -17,8 +17,11 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.Select_NioNetworkingFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -131,12 +134,19 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
 
         ServerSocketRegistry registry = new ServerSocketRegistry(singletonMap(MEMBER, ioService.serverSocketChannel), true);
 
+        final MockIOService finalIoService = ioService;
         return new TcpIpNetworkingService(null,
                 ioService,
                 registry,
                 ioService.loggingService,
                 metricsRegistry,
-                networkingFactory.create(ioService, metricsRegistry));
+                networkingFactory.create(ioService, metricsRegistry),
+                new ChannelInitializerProvider() {
+                    @Override
+                    public ChannelInitializer provide(EndpointQualifier qualifier) {
+                        return new UnifiedChannelInitializer(finalIoService);
+                    }
+                });
     }
 
     // ====================== support ========================================

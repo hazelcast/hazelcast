@@ -29,7 +29,7 @@ import java.util.Collection;
  *
  * Allows to retrieve Hazelcast members of the cluster, e.g. by their {@link Address} or UUID.
  */
-public interface ClientClusterService {
+public interface ClientClusterService extends ClusterSwitchAwareService {
 
     /**
      * @return The client interface representing the local client.

@@ -29,6 +29,8 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
         registerBeanDefinitionParser("hazelcast", new HazelcastInstanceDefinitionParser());
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
+        registerBeanDefinitionParser("client-failover",
+                new HazelcastFailoverClientBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
         registerBeanDefinitionParser("cache-manager", new CacheManagerBeanDefinitionParser());
         String[] types = {
@@ -53,7 +55,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "lock",
                 "reliableTopic",
                 "PNCounter",
-                };
+        };
         for (String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }

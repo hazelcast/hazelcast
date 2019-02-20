@@ -16,10 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NetworkingService;
@@ -36,10 +37,12 @@ import static com.hazelcast.nio.ConnectionType.REST_CLIENT;
 class TcpIpUnifiedEndpointManager
         extends TcpIpEndpointManager {
 
-    TcpIpUnifiedEndpointManager(NetworkingService root, EndpointQualifier qualifier, IOService ioService,
-                                LoggingService loggingService, MetricsRegistry metricsRegistry,
+    TcpIpUnifiedEndpointManager(NetworkingService root, EndpointQualifier qualifier,
+                                ChannelInitializerProvider channelInitializerProvider,
+                                IOService ioService, LoggingService loggingService, MetricsRegistry metricsRegistry,
                                 HazelcastProperties properties) {
-        super(root, qualifier, ioService, loggingService, metricsRegistry, properties, ProtocolType.valuesAsSet());
+        super(root, qualifier, channelInitializerProvider, ioService, loggingService,
+                metricsRegistry, properties, ProtocolType.valuesAsSet());
     }
 
     Set<TcpIpConnection> getTextConnections() {

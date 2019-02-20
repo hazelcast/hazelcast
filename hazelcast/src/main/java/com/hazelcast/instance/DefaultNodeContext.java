@@ -21,7 +21,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.NioNetworking;
@@ -144,7 +143,7 @@ public class DefaultNodeContext implements NodeContext {
     @Override
     public NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        Networking networking = createNetworking(node, ioService);
+        Networking networking = createNetworking(node);
         Config config = node.getConfig();
 
         return new TcpIpNetworkingService(config,
@@ -153,12 +152,11 @@ public class DefaultNodeContext implements NodeContext {
                 node.loggingService,
                 node.nodeEngine.getMetricsRegistry(),
                 networking,
-
+                node.getNodeExtension().createChannelInitializerProvider(ioService),
                 node.getProperties());
     }
 
-    private Networking createNetworking(Node node, NodeIOService ioService) {
-        ChannelInitializerProvider initializerProvider = node.getNodeExtension().createChannelInitializerProvider(ioService);
+    private Networking createNetworking(Node node) {
 
         LoggingServiceImpl loggingService = node.loggingService;
 
@@ -175,7 +173,6 @@ public class DefaultNodeContext implements NodeContext {
                         .errorHandler(errorHandler)
                         .inputThreadCount(props.getInteger(IO_INPUT_THREAD_COUNT))
                         .outputThreadCount(props.getInteger(IO_OUTPUT_THREAD_COUNT))
-                        .balancerIntervalSeconds(props.getInteger(IO_BALANCER_INTERVAL_SECONDS))
-                        .channelInitializerProvider(initializerProvider));
+                        .balancerIntervalSeconds(props.getInteger(IO_BALANCER_INTERVAL_SECONDS)));
     }
 }

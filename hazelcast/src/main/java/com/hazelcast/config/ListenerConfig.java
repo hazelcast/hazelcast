@@ -152,27 +152,6 @@ public class ListenerConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ListenerConfig that = (ListenerConfig) o;
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return className != null ? className.hashCode() : 0;
-    }
-
-    @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
     }
@@ -194,5 +173,32 @@ public class ListenerConfig implements IdentifiedDataSerializable {
         implementation = in.readObject();
     }
 
+    @Override
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
+        ListenerConfig that = (ListenerConfig) o;
+
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+            return false;
+        }
+        return readOnly != null ? readOnly.equals(that.readOnly) : that.readOnly == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (readOnly != null ? readOnly.hashCode() : 0);
+        return result;
+    }
 }

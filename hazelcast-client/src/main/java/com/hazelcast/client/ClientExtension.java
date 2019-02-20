@@ -16,8 +16,11 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -59,7 +62,22 @@ public interface ClientExtension {
      */
     SocketInterceptor createSocketInterceptor();
 
+    /**
+     * Create socket interceptor according to given config
+     *
+     * @param socketInterceptorConfig config for socket interceptor
+     * @return socket interceptor if it is able to created, null otherwise
+     */
+    SocketInterceptor createSocketInterceptor(SocketInterceptorConfig socketInterceptorConfig);
+
     ChannelInitializer createChannelInitializer();
+
+    /**
+     * @param sslConfig     ssl config for channel initializer
+     * @param socketOptions socket options for channel initializer
+     * @return @return ChannelInitializer created from given configs
+     */
+    ChannelInitializer createChannelInitializer(SSLConfig sslConfig, SocketOptions socketOptions);
 
     /**
      * Creates a {@link NearCacheManager} instance to be used by this client.

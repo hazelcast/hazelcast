@@ -127,6 +127,16 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
+    public boolean isClientAllowed(Client client) {
+        return true;
+    }
+
+    @Override
+    public void applySelector(ClientSelector selector) {
+
+    }
+
+    @Override
     public void accept(ClientMessage clientMessage) {
 
     }

@@ -490,6 +490,11 @@ public class DefaultNodeExtension implements NodeExtension {
         // NOP
     }
 
+    @Override
+    public boolean isClientFailoverSupported() {
+        return false;
+    }
+
     protected void createAndSetPhoneHome() {
         this.phoneHome = new PhoneHome(node);
     }

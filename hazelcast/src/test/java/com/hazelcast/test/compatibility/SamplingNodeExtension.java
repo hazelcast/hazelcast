@@ -264,4 +264,9 @@ public class SamplingNodeExtension implements NodeExtension {
     public void scheduleClusterVersionAutoUpgrade() {
         nodeExtension.scheduleClusterVersionAutoUpgrade();
     }
+
+    @Override
+    public boolean isClientFailoverSupported() {
+        return false;
+    }
 }

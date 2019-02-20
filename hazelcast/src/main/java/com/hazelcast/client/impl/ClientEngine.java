@@ -147,4 +147,19 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     Map<String, String> getClientStatistics();
 
     String getOwnerUuid(String clientUuid);
+
+    /**
+     * @param client to check if allowed through current ClientSelector
+     * @return true if allowed, false otherwise
+     */
+    boolean isClientAllowed(Client client);
+
+    /**
+     * Only Clients that can pass through filter are allowed to connect to cluster.
+     * Only one selector can be active at a time. Applying new one will override old selector.
+     *
+     * @param selector to select a client or group of clients to act upon
+     */
+    void applySelector(ClientSelector selector);
+
 }

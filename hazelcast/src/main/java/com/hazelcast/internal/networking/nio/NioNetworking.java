@@ -88,7 +88,6 @@ public final class NioNetworking implements Networking {
     private final String threadNamePrefix;
     private final ChannelErrorHandler errorHandler;
     private final int balancerIntervalSeconds;
-    private final ChannelInitializerProvider channelInitializerProvider;
     private final int inputThreadCount;
     private final int outputThreadCount;
     private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<NioChannel, Boolean>());
@@ -110,7 +109,6 @@ public final class NioNetworking implements Networking {
         this.logger = loggingService.getLogger(NioNetworking.class);
         this.errorHandler = ctx.errorHandler;
         this.balancerIntervalSeconds = ctx.balancerIntervalSeconds;
-        this.channelInitializerProvider = ctx.channelInitializerProvider;
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
@@ -221,8 +219,8 @@ public final class NioNetworking implements Networking {
     }
 
     @Override
-    public Channel register(EndpointQualifier endpointQualifier, SocketChannel socketChannel, boolean clientMode)
-            throws IOException {
+    public Channel register(EndpointQualifier endpointQualifier, ChannelInitializerProvider channelInitializerProvider,
+                            SocketChannel socketChannel, boolean clientMode) throws IOException {
         ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
         NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, metricsRegistry, closeListenerExecutor);
 
@@ -333,7 +331,6 @@ public final class NioNetworking implements Networking {
         // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
         private SelectorMode selectorMode = SelectorMode.getConfiguredValue();
         private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
-        private ChannelInitializerProvider channelInitializerProvider;
 
         public Context() {
             String selectorModeString = SelectorMode.getConfiguredString();
@@ -384,11 +381,6 @@ public final class NioNetworking implements Networking {
 
         public Context balancerIntervalSeconds(int balancerIntervalSeconds) {
             this.balancerIntervalSeconds = balancerIntervalSeconds;
-            return this;
-        }
-
-        public Context channelInitializerProvider(ChannelInitializerProvider channelInitializerProvider) {
-            this.channelInitializerProvider = channelInitializerProvider;
             return this;
         }
     }

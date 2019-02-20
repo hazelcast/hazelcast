@@ -17,10 +17,8 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.config.XmlClientConfigLocator;
-import com.hazelcast.client.config.YamlClientConfigBuilder;
-import com.hazelcast.client.config.YamlClientConfigLocator;
+import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -36,6 +34,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.resolveClientConfig;
 
 /**
  * The HazelcastClient is comparable to the {@link com.hazelcast.core.Hazelcast} class and provides the ability
@@ -70,47 +70,87 @@ public final class HazelcastClient {
     private HazelcastClient() {
     }
 
+    /**
+     * Creates a new HazelcastInstance (a new client in a cluster).
+     * This method allows you to create and run multiple instances
+     * of Hazelcast clients on the same JVM.
+     * <p/>
+     * To shutdown all running HazelcastInstances (all clients on this JVM)
+     * call {@link #shutdownAll()}.
+     *
+     * Hazelcast will look into two places for the configuration file:
+     * <ol>
+     *     <li>
+     *         System property: Hazelcast will first check if "hazelcast.client.config" system property is set to a file or a
+     *         {@code classpath:...} path.
+     *         Examples: -Dhazelcast.client.config=C:/myhazelcastclient.xml ,
+     *         -Dhazelcast.client.config=classpath:the-hazelcast-config.xml ,
+     *         -Dhazelcast.client.config=classpath:com/mydomain/hazelcast.xml
+     *     </li>
+     *     <li>
+     *         "hazelcast-client.xml" file in current working directory
+     *     </li>
+     *     <li>
+     *         Classpath: Hazelcast will check classpath for hazelcast-client.xml file.
+     *     </li>
+     * </ol>
+     * If Hazelcast doesn't find any config file, it will start with the default configuration (hazelcast-client-default.xml)
+     * located in hazelcast.jar.
+     *
+     * @return the new HazelcastInstance
+     * @see #shutdownAll()
+     * @see #getHazelcastClientByName(String) (String)
+     */
     public static HazelcastInstance newHazelcastClient() {
-        ClientConfig config;
-        XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
-        YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
-
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config if provided in system property
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config if provided in system property
-            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
-            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
-
-        } else {
-            // 5. Loading the default XML configuration file
-            xmlConfigLocator.locateDefault();
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-        }
-
-        return newHazelcastClient(config);
+        return newHazelcastClientInternal(null, resolveClientConfig());
     }
 
+    /**
+     * Creates a new HazelcastInstance (a new client in a cluster).
+     * This method allows you to create and run multiple instances
+     * of Hazelcast clients on the same JVM.
+     * <p/>
+     * To shutdown all running HazelcastInstances (all clients on this JVM)
+     * call {@link #shutdownAll()}.
+     *
+     * @param config Configuration for the new HazelcastInstance (member)
+     * @return the new HazelcastInstance
+     * @see #shutdownAll()
+     * @see #getHazelcastClientByName(String) (String)
+     */
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
-        if (config == null) {
-            config = new XmlClientConfigBuilder().build();
-        }
+        return newHazelcastClientInternal(null, resolveClientConfig(config));
+    }
 
+    /**
+     * Creates a client with cluster switch capability. Client will try to connect to alternative clusters according to
+     * ClientFailoverConfig when it disconnects from a cluster.
+     *
+     * If provided clientFailoverConfig is null, new XmlClientFailoverConfigBuilder().build() is used instead.
+     * It loads the client config using the following resolution mechanism:
+     * <ol>
+     *      <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
+     *          'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     *      <li>it checks if a hazelcast-client-failover.xml is available in the working dir</li>
+     *      <li>it checks if a hazelcast-client-failover.xml is available on the classpath</li>
+     *      <li>if none available build throws HazelcastException </li>
+     * </ol>
+     *
+     *
+     * @param clientFailoverConfig config describing the failover configs and try count
+     * @return the client instance
+     */
+    public static HazelcastInstance newHazelcastFailoverClient(ClientFailoverConfig clientFailoverConfig) {
+        return newHazelcastClientInternal(null, resolveClientConfig(clientFailoverConfig));
+    }
+
+    static HazelcastInstance newHazelcastClientInternal(AddressProvider addressProvider, ClientFailoverConfig failoverConfig) {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         HazelcastClientProxy proxy;
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, factory, null);
+            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(failoverConfig, factory, addressProvider);
             client.start();
             OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);

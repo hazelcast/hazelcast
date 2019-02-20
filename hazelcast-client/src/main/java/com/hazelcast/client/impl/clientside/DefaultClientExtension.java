@@ -32,6 +32,7 @@ import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -127,16 +128,29 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     @Override
+    public SocketInterceptor createSocketInterceptor(SocketInterceptorConfig socketInterceptorConfig) {
+        if (socketInterceptorConfig != null && socketInterceptorConfig.isEnabled()) {
+            LOGGER.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
+        }
+        return null;
+    }
+
+    @Override
     public ChannelInitializer createChannelInitializer() {
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         SSLConfig sslConfig = networkConfig.getSSLConfig();
+        SocketOptions socketOptions = networkConfig.getSocketOptions();
+        return createChannelInitializer(sslConfig, socketOptions);
+    }
+
+    @Override
+    public ChannelInitializer createChannelInitializer(SSLConfig sslConfig, SocketOptions socketOptions) {
         if (sslConfig != null && sslConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
             }
         }
 
-        SocketOptions socketOptions = networkConfig.getSocketOptions();
         HazelcastProperties properties = client.getProperties();
         boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
         return new ClientPlainChannelInitializer(socketOptions, directBuffer);
