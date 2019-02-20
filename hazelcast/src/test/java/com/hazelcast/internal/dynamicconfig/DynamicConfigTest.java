@@ -45,6 +45,7 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -901,7 +902,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMaxIdleSeconds(110)
                 .setQuorumName(randomString())
                 .addMapAttributeConfig(new MapAttributeConfig("attributeName", "com.attribute.extractor"))
-                .addMapIndexConfig(new MapIndexConfig("attr", true));
+                .addMapIndexConfig(new MapIndexConfig("attr", true))
+                .setMetadataPolicy(MetadataPolicy.OFF);
     }
 
     private MapConfig getMapConfig_withEntryListenerImplementation() {

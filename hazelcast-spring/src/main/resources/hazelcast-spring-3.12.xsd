@@ -740,7 +740,9 @@
                                 <xs:attribute name="metadata-policy" use="optional" type="metadata-policy" default="CREATE_ON_UPDATE">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Metadata policy for this map.
+                                            Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
+                                            create additional metadata about them. This metadata then is used to make querying and indexing faster.
+                                            Turning on preprocessing may decrease put throughput.
                                             Valid values are:
                                             CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created and updated.
                                             OFF: No metadata is created.

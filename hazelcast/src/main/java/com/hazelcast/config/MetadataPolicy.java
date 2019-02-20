@@ -28,10 +28,40 @@ public enum MetadataPolicy {
      * and updates. This may increase put latency for the specific
      * data structure that this option is configured with.
      */
-    CREATE_ON_UPDATE,
+    CREATE_ON_UPDATE(0),
 
     /**
      * Turns off metadata creation.
      */
-    OFF
+    OFF(1);
+
+    private final int id;
+
+    MetadataPolicy(int id) {
+        this.id = id;
+    }
+
+    /**
+     * Returns enumeration id of this policy. We use id field instead of
+     * {@link #ordinal()} because this value is used in client protocol.
+     * The ids for the known policies must not be changed.
+     * @return id
+     */
+    public int getId() {
+        return this.id;
+    }
+
+    /**
+     * Returns the MetadataPolicy for the given ID.
+     *
+     * @return the MetadataPolicy found or null if not found
+     */
+    public static MetadataPolicy getById(final int id) {
+        for (MetadataPolicy policy : values()) {
+            if (policy.id == id) {
+                return policy;
+            }
+        }
+        return null;
+    }
 }
