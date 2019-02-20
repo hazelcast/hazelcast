@@ -1,39 +1,46 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 
-==== 3.12 ====
+==== 3.12-BETA-1 ====
 
-1. Enhancements
+1. New Features
+
+Hazelcast IMDG Enterprise New Features:
+
+* **Blue-Green and Disaster Recovery for Java Clients:** Introduced the support for Hazelcast Java clients to switch between alternative clusters. See the Blue Green Deployment and Disaster Recovery section.
+
+2. Enhancements
 
 Hazelcast IMDG Enterprise Enhancements:
 
-* Sharing Hot Restart `base-dir` among Multiple Members: The base directory for the Hot Restart feature (`base-dir`) is now used as a shared directory between multiple members, and each member uses a unique sub-directory inside this base directory. This allows using the same configuration on all the members. Previously, each member had to use a separate directory which complicated the deployments on cloud-like environments. During the restart, a member tries to lock an already existing Hot Restart directory inside the base directory. If it cannot acquire any, then it creates a fresh new directory. See the Configuring Hot Restart section.
-* Add/Remove WAN Publishers in a Running Cluster: Introduced the ability to dynamically add or remove WAN publishers (target clusters). See the Dynamically Adding WAN Publishers section.
-* Automatic Removal of Stale Hot Restart Data: Introduced an option that allows the stale Hot Restart data to be removed automatically. See the description of the `auto-remove-stale-data` configuration element in the Configuring Hot Restart section.
-* Client Permission Handling When a New Member Joins: Introduced a declarative configuration attribute `on-join-operation` for the client permission in the Security configuration (its programmatic configuration equivalent is the `setOnJoinPermissionOperation()` method). This attribute allows to choose whether a new member joining to a cluster will apply the client permissions stored in its own configuration, or will use the ones defined in the cluster. See the Handling Permissions When a New Member Joins section.
-* Automatic Cluster Version Change after a Rolling Upgrade: Introduced the ability to automatically upgrade the cluster version after a rolling upgrade. See the Upgrading Cluster Version section.
-
+* **Sharing Hot Restart `base-dir` among Multiple Members:** The base directory for the Hot Restart feature (`base-dir`) is now used as a shared directory between multiple members, and each member uses a unique sub-directory
+inside this base directory. This allows using the same configuration on all the members. Previously, each member had to use a separate directory which complicated the deployments on cloud-like environments. During the restart, a member tries to lock an already existing Hot Restart directory inside the base directory. If it cannot acquire any, then it creates a fresh new directory. See the Configuring Hot Restart section.
+* **Add/Remove WAN Publishers in a Running Cluster:** Introduced the ability to dynamically add or remove WAN publishers (target clusters). See the Dynamically Adding WAN Publishers section.
+* **Automatic Removal of Stale Hot Restart Data:** Introduced an option that allows the stale Hot Restart data to be removed automatically. See the description of the `auto-remove-stale-data` configuration element in the Configuring Hot Restart section.
+* **Client Permission Handling When a New Member Joins:** Introduced a declarative configuration attribute `on-join-operation` for the client permission in the Security configuration (its programmatic configuration equivalent is the `setOnJoinPermissionOperation()` method). This attribute allows to choose whether a new member joining to a cluster will apply the client permissions stored in its own configuration, or will use the ones defined in the cluster. See the Handling Permissions When a New Member Joins section.
+* **Automatic Cluster Version Change after a Rolling Upgrade:** Introduced the ability to automatically upgrade the cluster version after a rolling upgrade. See the Upgrading Cluster Version section.
 
 Hazelcast IMDG Open Source Enhancements:
 
-* CP Subsystem: Implementing the https://raft.github.io/[Raft consensus algorithm], Hazelcast introduces its CP subsystem which runs within a Hazelcast cluster and offers linearizable implementations of Hazelcast's concurrency APIs. See the CP Subsystem chapter.
-* Client Instance Names and Attributes: You can now retrieve the names of client instances on the member side. Moreover, client attributes have been introduced so that you can group your clients and/or perform special operations for specific clients. See the Defining Client Attributes section.
+* **CP Subsystem:** Implementing the https://raft.github.io/[Raft consensus algorithm], Hazelcast introduces its CP subsystem which runs within a Hazelcast cluster and offers linearizable implementations of Hazelcast's concurrency APIs. See the CP Subsystem chapter.
+* **Client Instance Names and Attributes:** You can now retrieve the names of client instances on the member side. Moreover, client attributes have been introduced so that you can group your clients and/or perform special operations for specific clients. See the Defining Client Attributes section.
+* **Composite Indexes:** Introduced the ability to recognize the queries that use all the indexed properties and treat them as a composite, e.g., `foo = 1 and bar = 2 and foobar = 3`. See the Composite Indexes section.
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
-* ???. https://github.com/hazelcast/hazelcast/issues/???[[#???]]
+* Improved the Javadoc of `HazelcastClient` so that the code comments now use "unisocket client" instead of "dumb client". https://github.com/hazelcast/hazelcast/issues/14213[[#14213]]
+* Introduced the `/ready` endpoint to the REST API to allow checking a member if it is ready to be used after it joins to the cluster. https://github.com/hazelcast/hazelcast/issues/14089[[#14089]]
+* Improved the syncing of XSD files. https://github.com/hazelcast/hazelcast/issues/14070[[#14070]]
+* The `IMap.removeAll()` method now supports `PartitionPredicate`. https://github.com/hazelcast/hazelcast/issues/12238[[#12238]]
+* Improved the diagnostics tool so that it automatically creates the configured directory for the diagnostic outputs. https://github.com/hazelcast/hazelcast/issues/11946[[#11946]]
 
-[[fixes-312]]
-=== Fixes
+3. Fixes
 
-* ???. https://github.com/hazelcast/hazelcast/issues/???[[#???]]
-
-[[bc-312]]
-=== Behavioral Changes
-
-* ???
-
-[[rd-312]]
-=== Removed/Deprecated Features
-
-* ???
+* Fixed an issue where the REST API was not handling the HTTP requests without headers correctly: when a client sends an HTTP request without headers to the Hazelcast REST API, the `HttpCommand` class was wrongly expecting an additional new line. [#14353]
+* Fixed an issue where `QueryCache` was not returning the copies of the found objects. [#14333]
+* Fixed an issue where the MultiMap's `RemoveOperation` was iterating through the backing collection, which caused performance degradation (when using the `SET` collection type). [#14145]
+* Fixed an issue where the user code deployment feature was throwing `NullPointerException` while loading multiple nested classes and using entry processors. [#14105]
+* Fixed an issue where the newly joining members could not form a cluster when the existing members are killed. [#14051]
+* Fixed an issue where the `IMap.get()` method was not resetting the idle time counter when `read-backup-data` is enabled. [#14026]
+* Fixed an issue where the `addIndex()` method was performing a full copy of entries when a new member joins the cluster, which is not needed. [#13964]
+* `PagingPredicate` with comparator was failing to serialize when sending from the client or member when the cluster size is more than 1. This has been fixed by making the `PagingPredicateQuery` comparator serializable. [#12208]
