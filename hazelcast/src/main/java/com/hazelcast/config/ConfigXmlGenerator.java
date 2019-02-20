@@ -19,6 +19,10 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -160,6 +164,7 @@ public class ConfigXmlGenerator {
         crdtReplicationXmlGenerator(gen, config);
         pnCounterXmlGenerator(gen, config);
         quorumXmlGenerator(gen, config);
+        cpSubsystemConfig(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -1418,6 +1423,49 @@ public class ConfigXmlGenerator {
             handleQuorumFunction(gen, quorumConfig);
             gen.close();
         }
+    }
+
+    private static void cpSubsystemConfig(XmlGenerator gen, Config config) {
+        CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
+        gen.open("cp-subsystem")
+           .node("cp-member-count", cpSubsystemConfig.getCPMemberCount())
+           .node("group-size", cpSubsystemConfig.getGroupSize())
+           .node("session-time-to-live-seconds", cpSubsystemConfig.getSessionTimeToLiveSeconds())
+           .node("session-heartbeat-interval-seconds", cpSubsystemConfig.getSessionHeartbeatIntervalSeconds())
+           .node("missing-cp-member-auto-removal-seconds", cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds())
+           .node("fail-on-indeterminate-operation-state", cpSubsystemConfig.isFailOnIndeterminateOperationState());
+
+        RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
+        gen.open("raft-algorithm")
+           .node("leader-election-timeout-in-millis", raftAlgorithmConfig.getLeaderElectionTimeoutInMillis())
+           .node("leader-heartbeat-period-in-millis", raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis())
+           .node("max-missed-leader-heartbeat-count", raftAlgorithmConfig.getMaxMissedLeaderHeartbeatCount())
+           .node("append-request-max-entry-count", raftAlgorithmConfig.getAppendRequestMaxEntryCount())
+           .node("commit-index-advance-count-to-snapshot", raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot())
+           .node("uncommitted-entry-count-to-reject-new-appends",
+                   raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends())
+           .node("append-request-backoff-timeout-in-millis", raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis())
+           .close();
+
+        gen.open("semaphores");
+
+        for (CPSemaphoreConfig semaphoreConfig : cpSubsystemConfig.getSemaphoreConfigs().values()) {
+            gen.open("cp-semaphore")
+               .node("name", semaphoreConfig.getName())
+               .node("jdk-compatible", semaphoreConfig.isJDKCompatible())
+               .close();
+        }
+
+        gen.close().open("locks");
+
+        for (FencedLockConfig lockConfig : cpSubsystemConfig.getLockConfigs().values()) {
+            gen.open("fenced-lock")
+               .node("name", lockConfig.getName())
+               .node("lock-acquire-limit", lockConfig.getLockAcquireLimit())
+               .close();
+        }
+
+        gen.close().close();
     }
 
     private static void handleQuorumFunction(XmlGenerator gen, QuorumConfig quorumConfig) {

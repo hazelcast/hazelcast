@@ -32,6 +32,7 @@ import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.connection.nio.ClusterConnectorServiceImpl;
 import com.hazelcast.client.connection.nio.DefaultClientConnectionStrategy;
+import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
@@ -93,6 +94,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -197,6 +199,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExceptionFactory clientExceptionFactory;
     private final ClientUserCodeDeploymentService userCodeDeploymentService;
     private final ClientDiscoveryService clientDiscoveryService;
+    private final ClientProxySessionManager proxySessionManager;
 
     public HazelcastClientInstanceImpl(ClientFailoverConfig clientFailoverConfig,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -245,6 +248,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExceptionFactory = initClientExceptionFactory();
         statistics = new Statistics(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
+        proxySessionManager = new ClientProxySessionManager(this);
     }
 
     private ClusterConnectorService initClusterConnectorService() {
@@ -678,6 +682,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
+    public CPSubsystem getCPSubsystem() {
+        return new CPSubsystemImpl(this);
+    }
+
+    @Override
     public ConcurrentMap<String, Object> getUserContext() {
         return userContext;
     }
@@ -693,6 +702,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientUserCodeDeploymentService getUserCodeDeploymentService() {
         return userCodeDeploymentService;
+    }
+
+    public ClientProxySessionManager getProxySessionManager() {
+        return proxySessionManager;
     }
 
     public ProxyManager getProxyManager() {
@@ -744,7 +757,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         getLifecycleService().shutdown();
     }
 
-    public void doShutdown() {
+    public void doShutdown(boolean isGraceful) {
+        if (isGraceful) {
+            proxySessionManager.shutdown();
+        }
         proxyManager.destroy();
         connectionManager.shutdown();
         clientConnectionStrategy.shutdown();

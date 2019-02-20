@@ -17,6 +17,7 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.TextCommandService;
+
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -42,16 +43,16 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
         } catch (Exception e) {
             command.send500();
         }
+
         textCommandService.sendResponse(command);
     }
 
     private void handleMap(HttpDeleteCommand command, String uri) {
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
-            String mapName = uri.substring(URI_MAPS.length(), uri.length());
+            String mapName = uri.substring(URI_MAPS.length());
             textCommandService.deleteAll(mapName);
             command.send200();
-
         } else {
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
             String key = uri.substring(indexEnd + 1);

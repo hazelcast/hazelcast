@@ -845,3 +845,29 @@ hazelcast:
 
   lite-member:
     enabled: true
+
+  cp-subsystem:
+    cp-member-count: 10
+    group-size: 3
+    session-time-to-live-seconds: 60
+    session-heartbeat-interval-seconds: 5
+    missing-cp-member-auto-removal-seconds: 120
+    fail-on-indeterminate-operation-state: false
+    raft-algorithm:
+      leader-election-timeout-in-millis: 2000
+      leader-heartbeat-period-in-millis: 5000
+      max-missed-leader-heartbeat-count: 5
+      append-request-max-entry-count: 50
+      commit-index-advance-count-to-snapshot: 1000
+      uncommitted-entry-count-to-reject-new-appends: 100
+      append-request-backoff-timeout-in-millis: 100
+    semaphores:
+      sem1:
+        jdk-compatible: true
+      sem2:
+        jdk-compatible: false
+    locks:
+      lock1:
+        lock-acquire-limit: 1
+      lock2:
+        lock-acquire-limit: 2

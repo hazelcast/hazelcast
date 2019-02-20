@@ -23,6 +23,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
@@ -39,6 +40,7 @@ import org.mockito.Mockito;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheNativeMemoryConfig;
@@ -158,5 +160,40 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void checkNearCacheNativeMemoryConfig_shouldThrowExceptionWithoutNativeMemoryConfig_NATIVE_onEE() {
         checkNearCacheNativeMemoryConfig(NATIVE, null, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidationFails_whenGroupSizeSetCPMemberCountNotSet() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        config.setGroupSize(3);
+
+        checkCPSubsystemConfig(config);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidationFails_whenGroupSizeGreaterThanCPMemberCount() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        config.setGroupSize(5);
+        config.setCPMemberCount(3);
+
+        checkCPSubsystemConfig(config);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidationFails_whenSessionHeartbeatIntervalGreaterThanSessionTTL() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        config.setSessionTimeToLiveSeconds(5);
+        config.setSessionHeartbeatIntervalSeconds(10);
+
+        checkCPSubsystemConfig(config);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidationFails_whenSessionTTLGreaterThanMissingCPMemberAutoRemovalSeconds() {
+        CPSubsystemConfig config = new CPSubsystemConfig();
+        config.setMissingCPMemberAutoRemovalSeconds(5);
+        config.setSessionTimeToLiveSeconds(10);
+
+        checkCPSubsystemConfig(config);
     }
 }

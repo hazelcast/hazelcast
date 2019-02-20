@@ -839,4 +839,41 @@
 
     <lite-member enabled="true"/>
 
+    <cp-subsystem>
+        <cp-member-count>10</cp-member-count>
+        <group-size>3</group-size>
+        <session-time-to-live-seconds>60</session-time-to-live-seconds>
+        <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
+        <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>
+        <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+        <raft-algorithm>
+            <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
+            <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
+            <max-missed-leader-heartbeat-count>5</max-missed-leader-heartbeat-count>
+            <append-request-max-entry-count>50</append-request-max-entry-count>
+            <commit-index-advance-count-to-snapshot>1000</commit-index-advance-count-to-snapshot>
+            <uncommitted-entry-count-to-reject-new-appends>100</uncommitted-entry-count-to-reject-new-appends>
+            <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
+        </raft-algorithm>
+        <semaphores>
+            <cp-semaphore>
+                <name>sem1</name>
+                <jdk-compatible>true</jdk-compatible>
+            </cp-semaphore>
+            <cp-semaphore>
+                <name>sem2</name>
+                <jdk-compatible>false</jdk-compatible>
+            </cp-semaphore>
+        </semaphores>
+        <locks>
+            <fenced-lock>
+                <name>lock1</name>
+                <lock-acquire-limit>1</lock-acquire-limit>
+            </fenced-lock>
+            <fenced-lock>
+                <name>lock2</name>
+                <lock-acquire-limit>2</lock-acquire-limit>
+            </fenced-lock>
+        </locks>
+    </cp-subsystem>
 </hazelcast>

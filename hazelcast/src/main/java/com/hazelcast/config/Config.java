@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
@@ -167,6 +168,8 @@ public class Config {
     private String licenseKey;
 
     private boolean liteMember;
+
+    private CPSubsystemConfig cpSubsystemConfig = new CPSubsystemConfig();
 
     public Config() {
     }
@@ -3454,6 +3457,28 @@ public class Config {
         return this;
     }
 
+    /**
+     * Get current configuration for the CP subsystem
+     *
+     * @return CP subsystem configuration
+     * @since 3.12
+     */
+    public CPSubsystemConfig getCPSubsystemConfig() {
+        return cpSubsystemConfig;
+    }
+
+    /**
+     * Set CP subsystem configuration
+     *
+     * @param cpSubsystemConfig the CP subsystem configuration
+     * @return this config instance
+     * @since 3.12
+     */
+    public Config setCPSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
+        this.cpSubsystemConfig = cpSubsystemConfig;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "Config{"
@@ -3481,6 +3506,7 @@ public class Config {
                 + ", liteMember=" + liteMember
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
                 + ", advancedNetworkConfig=" + advancedNetworkConfig
+                + ", cpSubsystemConfig=" + cpSubsystemConfig
                 + '}';
     }
 }

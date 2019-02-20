@@ -80,6 +80,10 @@ public abstract class HttpCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(RES_400);
     }
 
+    public void send403() {
+        this.response = ByteBuffer.wrap(RES_403);
+    }
+
     public void send404() {
         this.response = ByteBuffer.wrap(RES_404);
     }

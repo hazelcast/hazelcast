@@ -16,16 +16,19 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.EndpointManager;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
 /**
@@ -74,6 +77,21 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
     @Override
     Member toTargetMember(PartitionReplica replica) {
         return context.clusterService.getMember(replica.address(), replica.uuid());
+    }
+
+    @Override
+    Exception newTargetNullException() {
+        ClusterState clusterState = context.clusterService.getClusterState();
+        if (!clusterState.isMigrationAllowed()) {
+            return new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
+                    + "but partitions can't be assigned in cluster-state: " + clusterState);
+        }
+        if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+            return new NoDataMemberInClusterException(
+                    "Target of invocation cannot be found! Partition owner is null "
+                            + "but partitions can't be assigned since all nodes in the cluster are lite members.");
+        }
+        return super.newTargetNullException();
     }
 
     @Override

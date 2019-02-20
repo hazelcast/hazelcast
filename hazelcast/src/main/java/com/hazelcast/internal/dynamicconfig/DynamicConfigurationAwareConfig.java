@@ -59,6 +59,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
@@ -161,6 +162,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     private final Config staticConfig;
     private final ConfigPatternMatcher configPatternMatcher;
     private final boolean isStaticFirst;
+    private final DynamicCPSubsystemConfig dynamicCPSubsystemConfig;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
     private volatile DynamicSecurityConfig dynamicSecurityConfig;
@@ -172,6 +174,7 @@ public class DynamicConfigurationAwareConfig extends Config {
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
         this.isStaticFirst = !properties.getBoolean(SEARCH_DYNAMIC_CONFIG_FIRST);
         this.dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), null);
+        this.dynamicCPSubsystemConfig = new DynamicCPSubsystemConfig(staticConfig.getCPSubsystemConfig());
         this.configSearcher = initConfigSearcher();
     }
 
@@ -1452,5 +1455,15 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private Searcher initConfigSearcher() {
         return ConfigSearch.searcherFor(staticConfig, configurationService, configPatternMatcher, isStaticFirst);
+    }
+
+    @Override
+    public CPSubsystemConfig getCPSubsystemConfig() {
+        return dynamicCPSubsystemConfig;
+    }
+
+    @Override
+    public Config setCPSubsystemConfig(CPSubsystemConfig cpSubsystemConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
     }
 }

@@ -52,6 +52,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.internal.CPSubsystemImpl;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
@@ -59,6 +61,7 @@ import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -108,6 +111,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     final String name;
     final ManagementService managementService;
     final LifecycleServiceImpl lifecycleService;
+    final CPSubsystemImpl cpSubsystem;
     final ManagedContext managedContext;
     final HazelcastInstanceCacheManager hazelcastCacheManager;
 
@@ -115,6 +119,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) {
         this.name = name;
         this.lifecycleService = new LifecycleServiceImpl(this);
+        this.cpSubsystem = new CPSubsystemImpl(this);
 
         ManagedContext configuredManagedContext = config.getManagedContext();
         this.managedContext = new HazelcastManagedContext(this, configuredManagedContext);
@@ -421,6 +426,14 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public IScheduledExecutorService getScheduledExecutorService(String name) {
         checkNotNull(name, "Retrieving a scheduled executor instance with a null name is not allowed!");
         return getDistributedObject(DistributedScheduledExecutorService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public CPSubsystem getCPSubsystem() {
+        if (node.getClusterService().getClusterVersion().isLessThan(Versions.V3_12)) {
+            throw new UnsupportedOperationException("CP Subsystem is not available before version 3.12!");
+        }
+        return cpSubsystem;
     }
 
     @Override

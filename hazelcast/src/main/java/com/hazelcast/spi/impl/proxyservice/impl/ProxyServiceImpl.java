@@ -171,6 +171,7 @@ public class ProxyServiceImpl
         waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, destroyProxyExceptionHandler);
     }
 
+    @Override
     public void destroyLocalDistributedObject(String serviceName, String name, boolean fireEvent) {
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {

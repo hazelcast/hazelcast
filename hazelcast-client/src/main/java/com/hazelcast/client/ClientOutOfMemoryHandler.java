@@ -65,7 +65,7 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
 
         private static void tryShutdown(HazelcastClientInstanceImpl client) {
             try {
-                client.doShutdown();
+                client.doShutdown(false);
             } catch (Throwable ignored) {
                 ignore(ignored);
             }

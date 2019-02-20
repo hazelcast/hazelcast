@@ -16,6 +16,9 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.cp.CPSubsystem;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -26,36 +29,62 @@ import java.util.concurrent.TimeUnit;
  * that allows one or more threads to wait until a set of operations being
  * performed in other threads completes.
  * <p>
- * There are a few differences compared to the {@link ICountDownLatch}:
+ * There are a few differences compared to the
+ * {@link java.util.concurrent.CountDownLatch java.util.concurrent.CountDownLatch}:
  * <ol>
  * <li>
- * the ICountDownLatch count can be reset using {@link #trySetCount(int)} after a countdown
- * has finished but not during an active count. This allows the same latch instance to be reused.
+ * the ICountDownLatch count can be reset using {@link #trySetCount(int)} after
+ * a countdown has finished but not during an active count. This allows
+ * the same latch instance to be reused.
  * </li>
  * <li>
- * There is no await() method to do an unbound wait since this is undesirable in a distributed
- * application: for example, a cluster can split or the master and
- * replicas could all die. In most cases, it is best to configure an explicit timeout so you have the ability
- * to deal with these situations.
+ * There is no await() method to do an unbound wait since this is undesirable
+ * in a distributed application: for example, a cluster can split or the master
+ * and replicas could all die. In most cases, it is best to configure
+ * an explicit timeout so you have the ability to deal with these situations.
  * </li>
  * </ol>
- * Behaviour of {@link ICountDownLatch} under split-brain scenarios should be taken into account when using this
- * data structure.  During a split, each partitioned cluster will either create a brand new and uninitialised (zero'd)
- * {@link ICountDownLatch} or it will continue to use the primary or back-up version.  For example
- * it may be possible for both the back-up and primary to be resident in one cluster partition and for another to
- * be created as new in another side.  In any of these cases the counter in the respective {@link ICountDownLatch}
+ * As of version 3.12, Hazelcast offers 2 different {@link ICountDownLatch}
+ * impls. Behaviour of {@link ICountDownLatch} under failure scenarios,
+ * including network partitions, depend on the impl. The first impl is the
+ * one accessed via {@link HazelcastInstance#getCountDownLatch(String)}.
+ * This impl works on top of Hazelcast's async replication algorithm and
+ * does not guarantee linearizability during failures. During a split, each
+ * partitioned cluster will either create a brand new and uninitialised (zero'd)
+ * {@link ICountDownLatch} instance, or it will continue to use the primary or
+ * backup replica. For example, it is possible for both the primary and backup
+ * replicas to be resident in one cluster partition, and for another one to be
+ * created as new in the other side of the network partition. In any of these
+ * cases, the counter value in the respective {@link ICountDownLatch} instance
  * may diverge.
  * <p>
- * When the split heals, Hazelcast performs a default largest cluster wins resolution or where clusters sizes are equal
- * a random winner is chosen. This can lead to situations where the {@ICountDown} is left in an unpredictable state,
- * and a countdown to zero may never be achieved.
+ * In this impl, when the split heals, Hazelcast performs a default largest
+ * cluster wins resolution, or a random winner is chosen where clusters sizes
+ * are equal. This can lead to situations where the {@link ICountDownLatch}
+ * can fall into an unpredictable state, and a countdown to zero may never be
+ * achieved.
  * <p>
- * If required, when using {@link ICountDownLatch} as an orchestration mechanism you should assess the state of the
- * orchestration outcome and the associated countdown actors after a split-brain heal has taken place, and take steps to
- * re-orchestrate if appropriate.
- *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
- *
+ * If required, when using {@link ICountDownLatch} as an orchestration
+ * mechanism, you should assess the state of the orchestration outcome and
+ * the associated countdown actors after a split-brain heal has taken place,
+ * and take steps to re-orchestrate if needed.
+ * <p>
+ * This {@link ICountDownLatch} impl also supports Quorum {@link QuorumConfig}
+ * in cluster versions 3.10 and higher. However, Hazelcast quorums do not
+ * guarantee strong consistency under failure scenarios.
+ * <p>
+ * The second {@link ICountDownLatch} impl is a new one introduced with the
+ * {@link CPSubsystem} in version 3.12. It is accessed via
+ * {@link CPSubsystem#getCountDownLatch(String)}. It has a major difference to
+ * the old implementation, that is, it works on top of the Raft consensus
+ * algorithm. It offers linearizability during crash failures and network
+ * partitions. It is CP with respect to the CAP principle. If a network
+ * partition occurs, it remains available on at most one side of the partition.
+ * <p>
+ * All of the API methods in the new CP {@link ICountDownLatch} impl offer
+ * the exactly-once execution semantics. For instance, even if
+ * a {@link #countDown()} call is internally retried because of crashed
+ * Hazelcast member, the counter value is decremented only once.
  */
 public interface ICountDownLatch extends DistributedObject {
 

@@ -81,6 +81,37 @@ import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecut
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledFromPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromAddressMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromPartitionMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.client.AddAndGetMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.client.AlterMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.client.ApplyMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.client.CompareAndSetMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.client.GetAndAddMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.client.GetAndSetMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomiclong.client.GetMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomicref.client.ContainsMessageTask;
+import com.hazelcast.cp.internal.datastructures.atomicref.client.SetMessageTask;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.client.AwaitMessageTask;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.client.CountDownMessageTask;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.client.GetCountMessageTask;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.client.GetRoundMessageTask;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.client.TrySetCountMessageTask;
+import com.hazelcast.cp.internal.datastructures.lock.client.GetLockOwnershipStateMessageTask;
+import com.hazelcast.cp.internal.datastructures.lock.client.LockMessageTask;
+import com.hazelcast.cp.internal.datastructures.lock.client.TryLockMessageTask;
+import com.hazelcast.cp.internal.datastructures.lock.client.UnlockMessageTask;
+import com.hazelcast.cp.internal.datastructures.semaphore.client.AcquirePermitsMessageTask;
+import com.hazelcast.cp.internal.datastructures.semaphore.client.AvailablePermitsMessageTask;
+import com.hazelcast.cp.internal.datastructures.semaphore.client.ChangePermitsMessageTask;
+import com.hazelcast.cp.internal.datastructures.semaphore.client.DrainPermitsMessageTask;
+import com.hazelcast.cp.internal.datastructures.semaphore.client.GetSemaphoreTypeMessageTask;
+import com.hazelcast.cp.internal.datastructures.semaphore.client.InitSemaphoreMessageTask;
+import com.hazelcast.cp.internal.datastructures.semaphore.client.ReleasePermitsMessageTask;
+import com.hazelcast.cp.internal.datastructures.spi.client.CreateRaftGroupMessageTask;
+import com.hazelcast.cp.internal.datastructures.spi.client.DestroyRaftObjectMessageTask;
+import com.hazelcast.cp.internal.session.client.CloseSessionMessageTask;
+import com.hazelcast.cp.internal.session.client.CreateSessionMessageTask;
+import com.hazelcast.cp.internal.session.client.GenerateThreadIdMessageTask;
+import com.hazelcast.cp.internal.session.client.HeartbeatSessionMessageTask;
 import com.hazelcast.flakeidgen.impl.client.NewIdBatchMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -2154,6 +2185,221 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
             }
         };
 //endregion
+
+
+
+
+        factories[com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CreateRaftGroupMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new DestroyRaftObjectMessageTask(clientMessage, node, connection);
+            }
+        };
+
+        factories[com.hazelcast.client.impl.protocol.codec.CPSessionCreateSessionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CreateSessionMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new HeartbeatSessionMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSessionCloseSessionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CloseSessionMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSessionGenerateThreadIdCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GenerateThreadIdMessageTask(clientMessage, node, connection);
+            }
+        };
+
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicLongAddAndGetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AddAndGetMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicLongCompareAndSetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CompareAndSetMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndAddCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GetAndAddMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GetMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndSetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GetAndSetMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicLongApplyCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ApplyMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicLongAlterCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AlterMessageTask(clientMessage, node, connection);
+            }
+        };
+
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicRefApplyCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.cp.internal.datastructures.atomicref.client.ApplyMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicRefSetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new SetMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicRefContainsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ContainsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicRefGetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.cp.internal.datastructures.atomicref.client.GetMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPAtomicRefCompareAndSetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.cp.internal.datastructures.atomicref.client.CompareAndSetMessageTask(clientMessage, node, connection);
+            }
+        };
+
+        factories[com.hazelcast.client.impl.protocol.codec.CPCountDownLatchAwaitCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AwaitMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPCountDownLatchCountDownCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CountDownMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetCountCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GetCountMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetRoundCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GetRoundMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPCountDownLatchTrySetCountCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new TrySetCountMessageTask(clientMessage, node, connection);
+            }
+        };
+
+        factories[com.hazelcast.client.impl.protocol.codec.CPFencedLockLockCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new LockMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPFencedLockTryLockCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new TryLockMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPFencedLockUnlockCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new UnlockMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPFencedLockGetLockOwnershipCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GetLockOwnershipStateMessageTask(clientMessage, node, connection);
+            }
+        };
+
+        factories[com.hazelcast.client.impl.protocol.codec.CPSemaphoreAcquireCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AcquirePermitsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSemaphoreAvailablePermitsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AvailablePermitsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSemaphoreChangeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ChangePermitsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSemaphoreDrainCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new DrainPermitsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSemaphoreGetSemaphoreTypeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new GetSemaphoreTypeMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSemaphoreInitCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new InitSemaphoreMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CPSemaphoreReleaseCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ReleasePermitsMessageTask(clientMessage, node, connection);
+            }
+        };
+
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

@@ -34,7 +34,6 @@ import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
@@ -120,6 +119,7 @@ import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
@@ -471,10 +471,7 @@ public class Node {
 
         if (!terminate) {
             int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
-            boolean success = callGracefulShutdownAwareServices(maxWaitSeconds);
-            if (!success) {
-                logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
-            }
+            callGracefulShutdownAwareServices(maxWaitSeconds);
         } else {
             logger.warning("Terminating forcefully...");
         }
@@ -508,7 +505,7 @@ public class Node {
         }
     }
 
-    private boolean callGracefulShutdownAwareServices(final int maxWaitSeconds) {
+    private void callGracefulShutdownAwareServices(final int maxWaitSeconds) {
         ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.SYSTEM_EXECUTOR);
         Collection<GracefulShutdownAwareService> services = nodeEngine.getServices(GracefulShutdownAwareService.class);
         Collection<Future> futures = new ArrayList<Future>(services.size());
@@ -517,9 +514,15 @@ public class Node {
             Future future = executor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    boolean success = service.onShutdown(maxWaitSeconds, TimeUnit.SECONDS);
-                    if (!success) {
-                        throw new HazelcastException("Graceful shutdown failed for " + service);
+                    try {
+                        boolean success = service.onShutdown(maxWaitSeconds, TimeUnit.SECONDS);
+                        if (success) {
+                            logger.fine("Graceful shutdown completed for " + service);
+                        } else {
+                            logger.warning("Graceful shutdown failed for " + service);
+                        }
+                    } catch (Throwable e) {
+                        logger.severe("Graceful shutdown failed for " + service, e);
                     }
                 }
 
@@ -531,11 +534,9 @@ public class Node {
             futures.add(future);
         }
         try {
-            FutureUtil.waitWithDeadline(futures, maxWaitSeconds, TimeUnit.SECONDS, FutureUtil.RETHROW_EVERYTHING);
-            return true;
+            waitWithDeadline(futures, maxWaitSeconds, TimeUnit.SECONDS, FutureUtil.RETHROW_EVERYTHING);
         } catch (Exception e) {
             logger.warning(e);
-            return false;
         }
     }
 

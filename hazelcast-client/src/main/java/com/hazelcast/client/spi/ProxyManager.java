@@ -25,6 +25,11 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.cache.impl.ClientCacheProxyFactory;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.cp.internal.datastructures.atomiclong.RaftAtomicLongProxyFactory;
+import com.hazelcast.client.cp.internal.datastructures.atomicref.RaftAtomicRefProxyFactory;
+import com.hazelcast.client.cp.internal.datastructures.countdownlatch.RaftCountDownLatchProxyFactory;
+import com.hazelcast.client.cp.internal.datastructures.lock.RaftFencedLockProxyFactory;
+import com.hazelcast.client.cp.internal.datastructures.semaphore.RaftSemaphoreProxyFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
@@ -77,6 +82,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -211,6 +221,11 @@ public final class ProxyManager {
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
         register(PNCounterService.SERVICE_NAME, ClientPNCounterProxy.class);
+        register(RaftAtomicLongService.SERVICE_NAME, new RaftAtomicLongProxyFactory(client));
+        register(RaftAtomicRefService.SERVICE_NAME, new RaftAtomicRefProxyFactory(client));
+        register(RaftCountDownLatchService.SERVICE_NAME, new RaftCountDownLatchProxyFactory(client));
+        register(RaftLockService.SERVICE_NAME, new RaftFencedLockProxyFactory(client));
+        register(RaftSemaphoreService.SERVICE_NAME, new RaftSemaphoreProxyFactory(client));
 
         ClassLoader classLoader = config.getClassLoader();
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {

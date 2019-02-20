@@ -68,7 +68,8 @@ enum ConfigSections {
     FLAKE_ID_GENERATOR("flake-id-generator", true),
     CRDT_REPLICATION("crdt-replication", false),
     PN_COUNTER("pn-counter", true),
-    ADVANCED_NETWORK("advanced-network", false);
+    ADVANCED_NETWORK("advanced-network", false),
+    CP_SUBSYSTEM("cp-subsystem", false);
 
     final String name;
     final boolean multipleOccurrence;

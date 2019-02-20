@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
+import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -147,7 +148,11 @@ public interface HazelcastInstance {
      *
      * @param key key of the lock instance
      * @return distributed lock instance for the specified key.
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getLock(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     ILock getLock(String key);
 
     /**
@@ -296,7 +301,11 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link IAtomicLong} proxy
      * @return IAtomicLong proxy for the given name
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getAtomicLong(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     IAtomicLong getAtomicLong(String name);
 
     /**
@@ -305,7 +314,11 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link IAtomicReference} proxy
      * @return {@link IAtomicReference} proxy for the given name
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getAtomicReference(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     <E> IAtomicReference<E> getAtomicReference(String name);
 
     /**
@@ -314,7 +327,11 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link ICountDownLatch} proxy
      * @return {@link ICountDownLatch} proxy for the given name
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getCountDownLatch(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     ICountDownLatch getCountDownLatch(String name);
 
     /**
@@ -323,7 +340,11 @@ public interface HazelcastInstance {
      *
      * @param name name of the {@link ISemaphore} proxy
      * @return {@link ISemaphore} proxy for the given name
+     * @deprecated This implementation may lose strong consistency in case of network failures
+     * or server failures. Please use {@link CPSubsystem#getSemaphore(String)} instead.
+     * This method will be removed in Hazelcast 4.0.
      */
+    @Deprecated
     ISemaphore getSemaphore(String name);
 
     /**
@@ -490,6 +511,13 @@ public interface HazelcastInstance {
      * @return the scheduled executor service for the given name
      */
     IScheduledExecutorService getScheduledExecutorService(String name);
+
+    /**
+     * Returns the CP subsystem that offers a set of in-memory linearizable data structures
+     *
+     * @return the CP subsystem that offers a set of in-memory linearizable data structures
+     */
+    CPSubsystem getCPSubsystem();
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

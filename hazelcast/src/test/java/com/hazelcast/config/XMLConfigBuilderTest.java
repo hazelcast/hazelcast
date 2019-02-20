@@ -19,6 +19,10 @@ package com.hazelcast.config;
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -3109,6 +3113,77 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testCPSubsystemConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<cp-subsystem>\n"
+                + "  <cp-member-count>10</cp-member-count>\n"
+                + "  <group-size>5</group-size>\n"
+                + "  <session-time-to-live-seconds>15</session-time-to-live-seconds>\n"
+                + "  <session-heartbeat-interval-seconds>3</session-heartbeat-interval-seconds>\n"
+                + "  <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>\n"
+                + "  <fail-on-indeterminate-operation-state>true</fail-on-indeterminate-operation-state>\n"
+                + "  <raft-algorithm>\n"
+                + "    <leader-election-timeout-in-millis>500</leader-election-timeout-in-millis>\n"
+                + "    <leader-heartbeat-period-in-millis>100</leader-heartbeat-period-in-millis>\n"
+                + "    <max-missed-leader-heartbeat-count>3</max-missed-leader-heartbeat-count>\n"
+                + "    <append-request-max-entry-count>25</append-request-max-entry-count>\n"
+                + "    <commit-index-advance-count-to-snapshot>250</commit-index-advance-count-to-snapshot>\n"
+                + "    <uncommitted-entry-count-to-reject-new-appends>75</uncommitted-entry-count-to-reject-new-appends>\n"
+                + "    <append-request-backoff-timeout-in-millis>50</append-request-backoff-timeout-in-millis>\n"
+                + "  </raft-algorithm>\n"
+                + "  <semaphores>\n"
+                + "    <cp-semaphore>\n"
+                + "      <name>sem1</name>\n"
+                + "      <jdk-compatible>true</jdk-compatible>\n"
+                + "    </cp-semaphore>\n"
+                + "    <cp-semaphore>\n"
+                + "      <name>sem2</name>\n"
+                + "      <jdk-compatible>false</jdk-compatible>\n"
+                + "    </cp-semaphore>\n"
+                + "  </semaphores>\n"
+                + "  <locks>\n"
+                + "    <fenced-lock>\n"
+                + "      <name>lock1</name>\n"
+                + "      <lock-acquire-limit>1</lock-acquire-limit>\n"
+                + "    </fenced-lock>\n"
+                + "    <fenced-lock>\n"
+                + "      <name>lock2</name>\n"
+                + "      <lock-acquire-limit>2</lock-acquire-limit>\n"
+                + "    </fenced-lock>\n"
+                + "  </locks>\n"
+                + "</cp-subsystem>"
+                + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+        CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
+        assertEquals(10, cpSubsystemConfig.getCPMemberCount());
+        assertEquals(5, cpSubsystemConfig.getGroupSize());
+        assertEquals(15, cpSubsystemConfig.getSessionTimeToLiveSeconds());
+        assertEquals(3, cpSubsystemConfig.getSessionHeartbeatIntervalSeconds());
+        assertEquals(120, cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds());
+        assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
+        RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
+        assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
+        assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
+        assertEquals(3, raftAlgorithmConfig.getMaxMissedLeaderHeartbeatCount());
+        assertEquals(25, raftAlgorithmConfig.getAppendRequestMaxEntryCount());
+        assertEquals(250, raftAlgorithmConfig.getCommitIndexAdvanceCountToSnapshot());
+        assertEquals(75, raftAlgorithmConfig.getUncommittedEntryCountToRejectNewAppends());
+        assertEquals(50, raftAlgorithmConfig.getAppendRequestBackoffTimeoutInMillis());
+        CPSemaphoreConfig semaphoreConfig1 = cpSubsystemConfig.findSemaphoreConfig("sem1");
+        CPSemaphoreConfig semaphoreConfig2 = cpSubsystemConfig.findSemaphoreConfig("sem2");
+        assertNotNull(semaphoreConfig1);
+        assertNotNull(semaphoreConfig2);
+        assertTrue(semaphoreConfig1.isJDKCompatible());
+        assertFalse(semaphoreConfig2.isJDKCompatible());
+        FencedLockConfig lockConfig1 = cpSubsystemConfig.findLockConfig("lock1");
+        FencedLockConfig lockConfig2 = cpSubsystemConfig.findLockConfig("lock2");
+        assertNotNull(lockConfig1);
+        assertNotNull(lockConfig2);
+        assertEquals(1, lockConfig1.getLockAcquireLimit());
+        assertEquals(2, lockConfig2.getLockAcquireLimit());
+    }
+
+    @Override
     public void testHandleMemberAttributes() {
         String xml = HAZELCAST_START_TAG
                 + "<member-attributes>\n"

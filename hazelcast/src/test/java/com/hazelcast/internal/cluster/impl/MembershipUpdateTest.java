@@ -16,24 +16,19 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.AddressPicker;
-import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.EndpointManager;
-import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -869,45 +864,6 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     static MemberMap getMemberMap(HazelcastInstance instance) {
         ClusterServiceImpl clusterService = getNode(instance).getClusterService();
         return clusterService.getMembershipManager().getMemberMap();
-    }
-
-    public static class StaticMemberNodeContext implements NodeContext {
-        private final NodeContext delegate;
-        private final String uuid;
-
-        public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, MemberImpl member) {
-            this(factory, member.getUuid(), member.getAddress());
-        }
-
-        public StaticMemberNodeContext(TestHazelcastInstanceFactory factory, String uuid, Address address) {
-            this.uuid = uuid;
-            delegate = factory.getRegistry().createNodeContext(address);
-        }
-
-        @Override
-        public NodeExtension createNodeExtension(Node node) {
-            return new DefaultNodeExtension(node) {
-                @Override
-                public String createMemberUuid(Address address) {
-                    return uuid;
-                }
-            };
-        }
-
-        @Override
-        public AddressPicker createAddressPicker(Node node) {
-            return delegate.createAddressPicker(node);
-        }
-
-        @Override
-        public Joiner createJoiner(Node node) {
-            return delegate.createJoiner(node);
-        }
-
-        @Override
-        public NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry) {
-            return delegate.createNetworkingService(node, registry);
-        }
     }
 
     private static class PostJoinAwareServiceImpl implements PostJoinAwareService {

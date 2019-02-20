@@ -17,6 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.config.cp.CPSemaphoreConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -908,4 +911,35 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         }
     }
 
+    @Override
+    void handleCPSemaphores(CPSubsystemConfig cpSubsystemConfig, Node node) {
+        for (Node child : childElements(node)) {
+            CPSemaphoreConfig cpSemaphoreConfig = new CPSemaphoreConfig();
+            cpSemaphoreConfig.setName(child.getNodeName());
+            for (Node subChild : childElements(child)) {
+                String nodeName = cleanNodeName(subChild);
+                String value = getTextContent(subChild).trim();
+                if ("jdk-compatible".equals(nodeName)) {
+                    cpSemaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
+                }
+            }
+            cpSubsystemConfig.addSemaphoreConfig(cpSemaphoreConfig);
+        }
+    }
+
+    @Override
+    void handleFencedLocks(CPSubsystemConfig cpSubsystemConfig, Node node) {
+        for (Node child : childElements(node)) {
+            FencedLockConfig lockConfig = new FencedLockConfig();
+            lockConfig.setName(child.getNodeName());
+            for (Node subChild : childElements(child)) {
+                String nodeName = cleanNodeName(subChild);
+                String value = getTextContent(subChild).trim();
+                if ("lock-acquire-limit".equals(nodeName)) {
+                    lockConfig.setLockAcquireLimit(Integer.parseInt(value));
+                }
+            }
+            cpSubsystemConfig.addLockConfig(lockConfig);
+        }
+    }
 }

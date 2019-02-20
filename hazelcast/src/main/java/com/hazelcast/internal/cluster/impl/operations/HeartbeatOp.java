@@ -48,7 +48,6 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
     public void run() {
         ClusterServiceImpl service = getService();
         ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
-
         heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp);
     }
 
