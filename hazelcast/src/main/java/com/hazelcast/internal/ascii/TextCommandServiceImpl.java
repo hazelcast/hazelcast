@@ -54,6 +54,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.BULK_GET;
@@ -175,9 +176,13 @@ public class TextCommandServiceImpl implements TextCommandService {
         stats.setDecrHits(decrementHits.get());
         stats.setDecrMisses(decrementMisses.get());
         NetworkingService cm = node.networkingService;
-        EndpointManager tem = cm.getEndpointManager(REST);
+        EndpointManager rem = cm.getEndpointManager(REST);
+        EndpointManager mem = cm.getEndpointManager(MEMCACHE);
+        int totalText = (rem != null ? rem.getActiveConnections().size() : 0)
+                + (mem != null ? mem.getActiveConnections().size() : 0);
+
         AggregateEndpointManager aem = cm.getAggregateEndpointManager();
-        stats.setCurrConnections(tem.getActiveConnections().size());
+        stats.setCurrConnections(totalText);
         stats.setTotalConnections(aem.getActiveConnections().size());
         return stats;
     }

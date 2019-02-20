@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.ascii;
 
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
@@ -75,7 +76,14 @@ public class HTTPCommunicator {
     public HTTPCommunicator(HazelcastInstance instance) {
         this.instance = instance;
 
-        SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
+        AdvancedNetworkConfig anc = instance.getConfig().getAdvancedNetworkConfig();
+        SSLConfig sslConfig;
+        if (anc.isEnabled()) {
+            sslConfig = anc.getRestEndpointConfig().getSSLConfig();
+        } else {
+            sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
+        }
+
         sslEnabled = sslConfig != null && sslConfig.isEnabled();
         String protocol = sslEnabled ? "https:/" : "http:/";
         MemberImpl localMember = getNode(instance).getClusterService().getLocalMember();
@@ -129,8 +137,7 @@ public class HTTPCommunicator {
     }
 
     public int getHealthReadyResponseCode() throws IOException {
-        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
-        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_READY;
+        String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_READY;
         return doGet(url).responseCode;
     }
 

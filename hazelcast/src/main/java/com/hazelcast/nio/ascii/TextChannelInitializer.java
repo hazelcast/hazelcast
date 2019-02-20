@@ -32,6 +32,7 @@ public class TextChannelInitializer
         this.rest = rest;
     }
 
+
     @Override
     public void initChannel(Channel channel) {
         super.initChannel(channel);
@@ -41,7 +42,7 @@ public class TextChannelInitializer
 
         channel.outboundPipeline().addLast(encoder);
         channel.inboundPipeline().addLast(rest
-                ? new RestApiTextDecoder(connection, encoder)
-                : new MemcacheTextDecoder(connection, encoder));
+                ? new RestApiTextDecoder(connection, encoder, true)
+                : new MemcacheTextDecoder(connection, encoder, true));
     }
 }

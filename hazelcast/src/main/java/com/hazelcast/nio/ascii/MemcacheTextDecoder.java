@@ -16,6 +16,19 @@
 
 package com.hazelcast.nio.ascii;
 
+import com.hazelcast.internal.ascii.CommandParser;
+import com.hazelcast.internal.ascii.memcache.DeleteCommandParser;
+import com.hazelcast.internal.ascii.memcache.GetCommandParser;
+import com.hazelcast.internal.ascii.memcache.IncrementCommandParser;
+import com.hazelcast.internal.ascii.memcache.SetCommandParser;
+import com.hazelcast.internal.ascii.memcache.SimpleCommandParser;
+import com.hazelcast.internal.ascii.memcache.TouchCommandParser;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.spi.annotation.PrivateApi;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
@@ -27,19 +40,6 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import com.hazelcast.internal.ascii.CommandParser;
-import com.hazelcast.internal.ascii.memcache.DeleteCommandParser;
-import com.hazelcast.internal.ascii.memcache.GetCommandParser;
-import com.hazelcast.internal.ascii.memcache.IncrementCommandParser;
-import com.hazelcast.internal.ascii.memcache.SetCommandParser;
-import com.hazelcast.internal.ascii.memcache.SimpleCommandParser;
-import com.hazelcast.internal.ascii.memcache.TouchCommandParser;
-import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 @PrivateApi
 public class MemcacheTextDecoder extends TextDecoder {
@@ -65,7 +65,7 @@ public class MemcacheTextDecoder extends TextDecoder {
         TEXT_PARSERS = new TextParsers(parsers);
     }
 
-    public MemcacheTextDecoder(TcpIpConnection connection, TextEncoder encoder) {
-        super(connection, encoder, AllowingTextProtocolFilter.INSTANCE, TEXT_PARSERS);
+    public MemcacheTextDecoder(TcpIpConnection connection, TextEncoder encoder, boolean rootDecoder) {
+        super(connection, encoder, AllowingTextProtocolFilter.INSTANCE, TEXT_PARSERS, rootDecoder);
     }
 }

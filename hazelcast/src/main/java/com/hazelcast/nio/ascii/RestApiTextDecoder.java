@@ -43,8 +43,8 @@ public class RestApiTextDecoder extends TextDecoder {
         TEXT_PARSERS = new TextParsers(parsers);
     }
 
-    public RestApiTextDecoder(TcpIpConnection connection, TextEncoder encoder) {
-        super(connection, encoder, createFilter(connection), TEXT_PARSERS);
+    public RestApiTextDecoder(TcpIpConnection connection, TextEncoder encoder, boolean rootDecoder) {
+        super(connection, encoder, createFilter(connection), TEXT_PARSERS, rootDecoder);
     }
 
     private static RestApiFilter createFilter(TcpIpConnection connection) {

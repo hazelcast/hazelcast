@@ -16,15 +16,14 @@
 
 package com.hazelcast.internal.ascii;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,10 +42,9 @@ import static org.junit.Assert.assertTrue;
 public class RestMultiendpointTest
         extends RestTest {
 
-    @Before
-    public void setup() {
+    @Override
+    public Config setup() {
         config.getGroupConfig().setName(randomString());
-
         ServerSocketEndpointConfig memberEndpointConfig = new ServerSocketEndpointConfig();
         memberEndpointConfig.setName("MEMBER")
                       .setPort(6000)
@@ -60,7 +58,8 @@ public class RestMultiendpointTest
         RestServerEndpointConfig restEndpoint = new RestServerEndpointConfig();
         restEndpoint.setName("Text")
                     .setPort(10000)
-                    .setPortAutoIncrement(true);
+                    .setPortAutoIncrement(true)
+                    .enableAllGroups();
 
         config.getAdvancedNetworkConfig()
               .setEnabled(true)
@@ -78,15 +77,17 @@ public class RestMultiendpointTest
                 .addMember("127.0.0.1:6000")
                 .addMember("127.0.0.1:6001");
 
-        instance = Hazelcast.newHazelcastInstance(config);
+        instance = factory.newHazelcastInstance(config);
 
-        remoteInstance = Hazelcast.newHazelcastInstance(config);
+        remoteInstance = factory.newHazelcastInstance(config);
 
         communicator = new HTTPCommunicator(instance);
+        return config;
     }
 
     @Test
     public void assertAdvancedNetworkInUse() {
+        setup();
         int numberOfEndpointsInConfig = config.getAdvancedNetworkConfig().getEndpointConfigs().size();
         MemberImpl local = getNode(instance).getClusterService().getLocalMember();
         assertTrue(local.getAddressMap().size() == numberOfEndpointsInConfig);
