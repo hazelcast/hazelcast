@@ -48,3 +48,6 @@ The following are the other improvements performed to solve the enhancement issu
 4. Removed/Deprecated Features
 
 * `ILock` interface and implementation of `ILock` has been deprecated, and `FencedLock` has been introduced.
+* The original implementations of `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` have been deprecated. Instead, the implementations provided by the CP Subsystem have been introduced.
+
+
