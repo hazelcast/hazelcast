@@ -16,14 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Configuration of User Code Deployment. When enabled it allows Hazelcast members to load classes from other cluster
  * members. This simplifies deployment as you do not have to deploy your domain classes into classpath of all
  * cluster members.
  */
-@Beta
 public class UserCodeDeploymentConfig {
 
     /**

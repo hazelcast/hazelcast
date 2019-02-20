@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
 
@@ -37,7 +36,6 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * This config is intended to be used with <a href="http://jet.hazelcast.org">Hazelcast Jet</a>
  * and does not expose any features in Hazelcast IMDG.
  */
-@Beta
 public class EventJournalConfig implements IdentifiedDataSerializable {
 
     /**
@@ -290,7 +288,6 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
     }
 
     // not private for testing
-    @Beta
     static class EventJournalConfigReadOnly extends EventJournalConfig {
         EventJournalConfigReadOnly(EventJournalConfig config) {
             super(config);

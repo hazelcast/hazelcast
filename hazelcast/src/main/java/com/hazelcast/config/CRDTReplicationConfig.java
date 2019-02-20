@@ -16,8 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * Configures the replication mechanism for all
  * {@link com.hazelcast.crdt.CRDT} implementations.
@@ -25,7 +23,6 @@ import com.hazelcast.spi.annotation.Beta;
  * and in each round the state is replicated up to the configured number
  * of members.
  */
-@Beta
 public class CRDTReplicationConfig {
     /**
      * The default period between two CRDT replication rounds.

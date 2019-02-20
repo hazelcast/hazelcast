@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.io.IOException;
@@ -51,7 +50,6 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * In the reliable topic, global order is always maintained, so all listeners
  * will observe exactly the same order of sequence of messages.
  */
-@Beta
 public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**

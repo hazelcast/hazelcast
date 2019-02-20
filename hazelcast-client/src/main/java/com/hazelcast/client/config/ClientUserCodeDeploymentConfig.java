@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.spi.annotation.Beta;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +28,6 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * This simplifies deployment as you do not have to deploy your domain classes into classpath of all
  * cluster members.
  */
-@Beta
 public class ClientUserCodeDeploymentConfig {
 
     private boolean enabled;

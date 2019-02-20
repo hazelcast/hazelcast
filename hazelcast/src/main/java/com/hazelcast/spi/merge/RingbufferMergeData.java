@@ -18,7 +18,6 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.Ringbuffer;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.merge.RingbufferMergingValueImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -31,7 +30,6 @@ import java.util.Iterator;
  * @see RingbufferMergingValueImpl
  * @since 3.10
  */
-@Beta
 public class RingbufferMergeData implements Iterable<Object> {
 
     private Object[] items;

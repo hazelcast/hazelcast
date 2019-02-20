@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Collection;
 import java.util.Map;
@@ -88,7 +87,6 @@ import java.util.Set;
  * @see com.hazelcast.config.QueryCacheConfig
  * @since 3.5
  */
-@Beta
 public interface QueryCache<K, V> {
 
     /**

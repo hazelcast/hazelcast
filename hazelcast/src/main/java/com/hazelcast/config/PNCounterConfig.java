@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
 
@@ -30,7 +29,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @since 3.10
  */
-@Beta
 public class PNCounterConfig implements IdentifiedDataSerializable, NamedConfig {
     /**
      * The default number of replicas on which state for this CRDT is kept
