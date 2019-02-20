@@ -220,7 +220,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
     }
 
     private Client createClient(String ip, String name, String... labels) {
-        Set<String> labelsSet = new HashSet<>();
+        Set<String> labelsSet = new HashSet<String>();
         if (labels != null && labels.length > 0) {
             for (String label : labels) {
                 labelsSet.add(label);
