@@ -1680,22 +1680,69 @@
         This attribute's default value is "default".
         It has the following sub-elements:
         * <statistics-enabled>:
-        When you enable it, you can retrieve Reliable Topic statistics. Its default value is true.
+            Enables or disables statistics for this reliable topic.
+            Collects the creation time, total number of published and received
+            messages for each member locally. Its default value is true.
         * <read-batch-size>:
-        The maximum number of items to be read in a batch.
+            Sets the read batch size.
+            The ReliableTopic tries to read a batch of messages from the ringbuffer.
+            It will get at least one, but if there are more available, then it will
+            try to get more to increase throughput. The maximum read batch size can
+            be influenced using the read batch size.
+            Apart from influencing the number of messages to retrieve, the
+            readBatchSize also determines how many messages will be processed
+            by the thread running the MessageListener before it returns back
+            to the pool to look for other MessageListeners that need to be
+            processed. The problem with returning to the pool and looking for new work
+            is that interacting with an executor is quite expensive due to contention
+            on the work-queue. The more work that can be done without retuning to the
+            pool, the smaller the overhead.
+            If the readBatchSize is 10 and there are 50 messages available,
+            10 items are retrieved and processed consecutively before the thread goes
+            back to the pool and helps out with the processing of other messages.
+            If the readBatchSize is 10 and there are 2 items available,
+            2 items are retrieved and processed consecutively.
+            If the readBatchSize is an issue because a thread will be busy
+            too long with processing a single MessageListener and it can't
+            help out other MessageListeners, increase the size of the
+            threadpool so the other MessageListeners don't need to wait for
+            a thread, but can be processed in parallel.
         * <topic-overload-policy>:
-        Policy to handle an overloaded topic. Its default value is BLOCK. Available values are as follows:
-        - DISCARD_OLDEST:
-            A message that has not expired can be overwritten. It does not matter if the retention period is set,
-             the overwrite will just overwrite the message.
-        - DISCARD_NEWEST:
-            Message that was to be published is discarded.
-        - BLOCK:
-            The caller will wait until there is space in the Ringbuffer.
-        - ERROR:
-            The publish call fails immediately.
+            A policy to deal with an overloaded topic; so topic where there is no place to store new messages.
+            This policy can only be used in combination with the
+            com.hazelcast.core.HazelcastInstance#getReliableTopic(String).
+            The reliable topic uses a com.hazelcast.ringbuffer.Ringbuffer to
+            store the messages. A ringbuffer doesn't track where readers are, so
+            it has no concept of a slow consumers. This provides many advantages like
+            high performance reads, but it also gives the ability to the reader to
+            re-read the same message multiple times in case of an error.
+            A ringbuffer has a limited, fixed capacity. A fast producer may overwrite
+            old messages that are still being read by a slow consumer. To prevent
+            this, we may configure a time-to-live on the ringbuffer (see
+            com.hazelcast.config.RingbufferConfig#setTimeToLiveSeconds(int).
+            Once the time-to-live is configured, the TopicOverloadPolicy
+            controls how the publisher is going to deal with the situation that a
+            ringbuffer is full and the oldest item in the ringbuffer is not old
+            enough to get overwritten.
+            Keep in mind that this retention period (time-to-live) can keep messages
+            from being overwritten, even though all readers might have already completed reading.
+            Its default value is BLOCK. Available values are as follows:
+            - DISCARD_OLDEST:
+                Using this policy, a message that has not expired can be overwritten.
+                No matter the retention period set, the overwrite will just overwrite
+                the item.
+                This can be a problem for slow consumers because they were promised a
+                certain time window to process messages. But it will benefit producers
+                and fast consumers since they are able to continue. This policy sacrifices
+                the slow producer in favor of fast producers/consumers.
+            - DISCARD_NEWEST:
+                Message that was to be published is discarded.
+            - BLOCK:
+                The caller will wait until there is space in the Ringbuffer.
+            - ERROR:
+                The publish call fails immediately.
         * <message-listeners>:
-        Adds listeners (listener classes) for the Reliable Topic messages using its sub-element <message-listener>.
+            Adds listeners (listener classes) for the Reliable Topic messages using its sub-element <message-listener>.
     -->
     <reliable-topic name="default">
         <statistics-enabled>true</statistics-enabled>
@@ -1805,31 +1852,45 @@
         can specify the name of your Ringbuffer.
         It has the following sub-elements:
         * <capacity>:
-            Number of items in the Ringbuffer. If no <time-to-live-seconds> is set, this value will always
-        be equal to the capacity after the head completes the first loop around the ring. This is
-        because no items are getting retired. Its default value is 10000.
+            Number of items in the Ringbuffer. If no <time-to-live-seconds> is set,
+            this value will always be equal to the capacity after the head completes
+            the first loop around the ring. This is because no items are being
+            expired. Its default value is 10000.
         * <time-to-live-seconds>:
-        Maximum number of seconds for each entry to stay in the Ringbuffer. Entries that are older than
-        this value and are not updated for this period  are automatically evicted from the Ringbuffer.
-        Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
+            Sets the time to live in seconds which is the maximum number of seconds
+            for each item to stay in the ringbuffer before being removed.
+            Entries that are older than time-to-live-seconds are removed from the
+            ringbuffer on the next ringbuffer operation (read or write).
+            Time to live can be disabled by setting time-to-live-seconds to 0.
+            It means that items won't get removed because they expire. They may only
+            be overwritten.
+            When time-to-live-seconds is disabled and after the tail does a full
+            loop in the ring, the ringbuffer size will always be equal to the capacity.
+            The time-to-live-seconds can be any integer between 0 and Integer#MAX_VALUE.
+            0 means infinite. The default is 0.
         * <backup-count>:
             Number of synchronous backups. For example, if it is set to 1, then the Ringbuffer items
             are copied to one other member for fail-safety. Its default value is 1.
         * <async-backup-count>:
-        Number of asynchronous backups. Its default value is 0.
+            Number of asynchronous backups. Its default value is 0.
         * <in-memory-format>:
-        Specifies in which format data will be stored in your Ringbuffer.
-        Available values are as follows:
-        - BINARY:
-            Data will be stored in serialized binary format. It is the default option.
-        - OBJECT:
-            Data will be stored in deserialized form.
+            Sets the in-memory format.
+            Setting the in-memory format controls the format of the stored item in the
+            ringbuffer:
+            - OBJECT: the item is stored in deserialized format (a regular object)
+            - BINARY (default): the item is stored in serialized format (a binary blob)
+            The object in-memory format is useful when:
+            - the object stored in object format has a smaller footprint than in
+            binary format
+            - if there are readers using a filter. Since for every filter
+            invocation, the object needs to be available in object format.
         * <ringbuffer-store>:
-        Includes the Ringbuffer store factory class name and property configurations. The store format is the same as the
-            in-memory-format for the Ringbuffer.
+            Includes the Ringbuffer store factory class name and property configurations.
+            The store format is the same as the in-memory-format for the Ringbuffer.
         * <quorum-ref>:
-        Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-        as the <quorum>'s name.
+            Adds the Split Brain Protection for this data-structure which you configure
+            using the <quorum> element. You should set the <quorum-ref>'s value as
+            the <quorum>'s name.
     -->
     <ringbuffer name="default">
         <capacity>10000</capacity>
@@ -1845,7 +1906,7 @@
             </properties>
         </ringbuffer-store>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy>PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
     <!--

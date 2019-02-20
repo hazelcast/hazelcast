@@ -27,8 +27,9 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Contains the configuration for an {@link EventListener}. The configuration contains either the classname
- * of the EventListener implementation, or the actual EventListener instance.
+ * Contains the configuration for an {@link EventListener}. The configuration
+ * contains either the classname of the EventListener implementation, or the
+ * actual EventListener instance.
  */
 public class ListenerConfig implements IdentifiedDataSerializable {
 

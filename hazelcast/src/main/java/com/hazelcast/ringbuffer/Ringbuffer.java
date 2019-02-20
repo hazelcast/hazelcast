@@ -16,6 +16,7 @@
 
 package com.hazelcast.ringbuffer;
 
+import com.hazelcast.core.BaseQueue;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
@@ -92,9 +93,9 @@ public interface Ringbuffer<E> extends DistributedObject {
     /**
      * Returns number of items in the Ringbuffer.
      * <p>
-     * If no ttl is set, the size will always be equal to capacity after the
+     * If no TTL is set, the size will always be equal to capacity after the
      * head completed the first loop around the ring. This is because no items
-     * are getting retired.
+     * are being removed.
      *
      * @return the size.
      */
@@ -128,25 +129,31 @@ public interface Ringbuffer<E> extends DistributedObject {
     long headSequence();
 
     /**
-     * Returns the remaining capacity of the ringbuffer.
+     * Returns the remaining capacity of the ringbuffer. If TTL is enabled,
+     * then the returned capacity is equal to the total capacity of the
+     * ringbuffer minus the number of used slots in the ringbuffer which have
+     * not yet been marked as expired and cleaned up. Keep in mind that some
+     * slots could have expired items that have not yet been cleaned up and
+     * that the returned value could be stale as soon as it is returned.
      * <p>
-     * The returned value could be stale as soon as it is returned.
-     * <p>
-     * If ttl is not set, the remaining capacity will always be the capacity.
+     * If TTL is disabled, the remaining capacity is equal to the total
+     * ringbuffer capacity.
      *
-     * @return the remaining capacity.
+     * @return the remaining capacity
+     * @see com.hazelcast.config.RingbufferConfig#DEFAULT_TTL_SECONDS
+     * @see #capacity()
      */
     long remainingCapacity();
 
     /**
      * Adds an item to the tail of the Ringbuffer. If there is no space in the
      * Ringbuffer, the add will overwrite the oldest item in the ringbuffer no
-     * matter what the ttl is. For more control on this behavior, check the
+     * matter what the TTL is. For more control on this behavior, check the
      * {@link #addAsync(Object, OverflowPolicy)} and the {@link OverflowPolicy}.
      * <p>
      * The returned value is the sequence of the added item. Using this sequence
      * you can read the added item.
-     * <p>
+     *
      * <h3>Using the sequence as ID</h3>
      * This sequence will always be unique for this Ringbuffer instance so it
      * can be used as a unique ID generator if you are publishing items on this
@@ -180,11 +187,11 @@ public interface Ringbuffer<E> extends DistributedObject {
      * policy what happens:
      * <ol>
      * <li>{@link OverflowPolicy#OVERWRITE}: we just overwrite the oldest item
-     * in the Ringbuffer and we violate the ttl</li>
+     * in the Ringbuffer and we violate the TTL</li>
      * <li>{@link OverflowPolicy#FAIL}: we return -1 </li>
      * </ol>
      * <p>
-     * The reason that FAIL exist is to give the opportunity to obey the ttl.
+     * The reason that FAIL exist is to give the opportunity to obey the TTL.
      * If blocking behavior is required, this can be implemented using retrying
      * in combination with an exponential backoff. Example:
      * <pre>{@code
@@ -229,9 +236,9 @@ public interface Ringbuffer<E> extends DistributedObject {
      * }
      * }</pre>
      * <p>
-     * This method is not destructive unlike e.g. a queue.take. So the same
-     * item can be read by multiple readers or it can be read multiple times by
-     * the same reader.
+     * This method is not destructive unlike e.g. a {@link BaseQueue#take()}.
+     * So the same item can be read by multiple readers or it can be read
+     * multiple times by the same reader.
      * <p>
      * Currently it isn't possible to control how long this call is going to
      * block. In the future we could add e.g.

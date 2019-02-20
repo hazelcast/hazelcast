@@ -353,10 +353,9 @@
                                 <xs:attribute name="capacity" use="optional" type="parameterized-unsigned-int">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will
-                                            always
+                                            Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will always
                                             be equal to capacity after the head completed the first loop around the ring. This is
-                                            because no items are getting retired. The default value is 10000.
+                                            because no items are getting expired. The default value is 10000.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -384,22 +383,33 @@
                                 <xs:attribute name="time-to-live-seconds" use="optional" type="parameterized-unsigned-int">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Maximum number of seconds for each entry to stay in the ringbuffer. Entries that are
-                                            older than &lt;time-to-live-seconds&gt; and are not updated for &lt;time-to-live-seconds&gt;
-                                            are automatically evicted from the map.
-                                            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                                            Sets the time to live in seconds which is the maximum number of seconds
+                                            for each item to stay in the ringbuffer before being removed.
+                                            Entries that are older than time-to-liveSeconds are removed from the
+                                            ringbuffer on the next ringbuffer operation (read or write).
+                                            Time to live can be disabled by setting time-to-liveSeconds to 0.
+                                            It means that items won't get removed because they expire. They may only
+                                            be overwritten.
+                                            When time-to-liveSeconds is disabled and after the tail does a full
+                                            loop in the ring, the ringbuffer size will always be equal to the capacity.
+                                            The time-to-liveSeconds can be any integer between 0 and Integer#MAX_VALUE.
+                                            0 means infinite. The default is 0.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
                                 <xs:attribute name="in-memory-format" use="optional" type="in-memory-format" default="BINARY">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Data type used to store entries.
-                                            Possible values:
-                                            BINARY (default): keys and values are stored as binary data.
-                                            OBJECT: values are stored in their object forms.
-                                            NATIVE: keys and values are stored in native memory. Only available on Hazelcast
-                                            Enterprise.
+                                            Sets the in-memory format.
+                                            Setting the in-memory format controls the format of the stored item in the
+                                            ringbuffer:
+                                            - OBJECT: the item is stored in deserialized format (a regular object)
+                                            - BINARY (default): the item is stored in serialized format (a binary blob)
+                                            The object in-memory format is useful when:
+                                            - the object stored in object format has a smaller footprint than in
+                                            binary format
+                                            - if there are readers using a filter. Since for every filter
+                                            invocation, the object needs to be available in object format.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -3671,13 +3681,39 @@
             <xs:element name="topic-overload-policy" minOccurs="0" default="BLOCK">
                 <xs:annotation>
                     <xs:documentation>
-                        Policy to deal with an overloaded topic; so topic where there is no place to store new messages.
-                        Options are
-                        DISCARD_OLDEST: Using this policy, a message that has not expired can be overwritten.
-                        No matter the retention period set, the overwrite will just overwrite the item.
-                        DISCARD_NEWEST : The message that was to be published, is discarded.
-                        BLOCK : The caller will wait till there space in the ringbuffer.
-                        ERROR : The publish call immediately fails.(Default Value)
+                        A policy to deal with an overloaded topic; so topic where there is no place to store new messages.
+                        This policy can only be used in combination with the
+                        com.hazelcast.core.HazelcastInstance#getReliableTopic(String).
+                        The reliable topic uses a com.hazelcast.ringbuffer.Ringbuffer to
+                        store the messages. A ringbuffer doesn't track where readers are, so
+                        it has no concept of a slow consumers. This provides many advantages like
+                        high performance reads, but it also gives the ability to the reader to
+                        re-read the same message multiple times in case of an error.
+                        A ringbuffer has a limited, fixed capacity. A fast producer may overwrite
+                        old messages that are still being read by a slow consumer. To prevent
+                        this, we may configure a time-to-live on the ringbuffer (see
+                        com.hazelcast.config.RingbufferConfig#setTimeToLiveSeconds(int).
+                        Once the time-to-live is configured, the TopicOverloadPolicy
+                        controls how the publisher is going to deal with the situation that a
+                        ringbuffer is full and the oldest item in the ringbuffer is not old
+                        enough to get overwritten.
+                        Keep in mind that this retention period (time-to-live) can keep messages
+                        from being overwritten, even though all readers might have already completed reading.
+                        Its default value is BLOCK. Available values are as follows:
+                        - DISCARD_OLDEST:
+                        Using this policy, a message that has not expired can be overwritten.
+                        No matter the retention period set, the overwrite will just overwrite
+                        the item.
+                        This can be a problem for slow consumers because they were promised a
+                        certain time window to process messages. But it will benefit producers
+                        and fast consumers since they are able to continue. This policy sacrifices
+                        the slow producer in favor of fast producers/consumers.
+                        - DISCARD_NEWEST:
+                        Message that was to be published is discarded.
+                        - BLOCK:
+                        The caller will wait until there is space in the Ringbuffer.
+                        - ERROR:
+                        The publish call fails immediately.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
@@ -3692,7 +3728,29 @@
             <xs:element name="read-batch-size" type="xs:int" minOccurs="0" default="10">
                 <xs:annotation>
                     <xs:documentation>
-                        The maximum number of items to read in a batch.
+                        Sets the read batch size.
+                        The ReliableTopic tries to read a batch of messages from the ringbuffer.
+                        It will get at least one, but if there are more available, then it will
+                        try to get more to increase throughput. The maximum read batch size can
+                        be influenced using the read batch size.
+                        Apart from influencing the number of messages to retrieve, the
+                        readBatchSize also determines how many messages will be processed
+                        by the thread running the MessageListener before it returns back
+                        to the pool to look for other MessageListeners that need to be
+                        processed. The problem with returning to the pool and looking for new work
+                        is that interacting with an executor is quite expensive due to contention
+                        on the work-queue. The more work that can be done without retuning to the
+                        pool, the smaller the overhead.
+                        If the readBatchSize is 10 and there are 50 messages available,
+                        10 items are retrieved and processed consecutively before the thread goes
+                        back to the pool and helps out with the processing of other messages.
+                        If the readBatchSize is 10 and there are 2 items available,
+                        2 items are retrieved and processed consecutively.
+                        If the readBatchSize is an issue because a thread will be busy
+                        too long with processing a single MessageListener and it can't
+                        help out other MessageListeners, increase the size of the
+                        threadpool so the other MessageListeners don't need to wait for
+                        a thread, but can be processed in parallel.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

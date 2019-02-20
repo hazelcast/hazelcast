@@ -62,10 +62,10 @@ public interface ITopic<E> extends DistributedObject {
     void publish(E message);
 
     /**
-     * Subscribes to this topic. When someone publishes a message on this topic.
-     * <p>
-     * onMessage() function of the given MessageListener is called. More than
-     * one message listener can be added on one instance.
+     * Subscribes to this topic. When a message is published, the
+     * {@link MessageListener#onMessage(Message)} method of the given
+     * MessageListener is called.
+     * More than one message listener can be added on one instance.
      *
      * @param listener the MessageListener to add
      * @return returns the registration ID
@@ -85,6 +85,8 @@ public interface ITopic<E> extends DistributedObject {
 
     /**
      * Returns statistics about this topic, like total number of publishes/receives.
+     * The statistics are local to this member and represent the activity on
+     * this member, not the entire cluster.
      *
      * @return statistics about this topic
      */

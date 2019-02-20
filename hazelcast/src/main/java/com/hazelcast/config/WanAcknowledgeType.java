@@ -40,7 +40,7 @@ public enum WanAcknowledgeType {
     /**
      * Gets the ID for the given {@link WanAcknowledgeType}.
      * <p>
-     * This reason this ID is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
+     * The reason this ID is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
      * reordering.
      *
      * @return the ID

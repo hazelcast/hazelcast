@@ -159,10 +159,10 @@ public interface HazelcastInstance {
     <E> Ringbuffer<E> getRingbuffer(String name);
 
     /**
-     * Creates or returns the reliable ReliableTopic instance with the specified name.
+     * Creates or returns the reliable topic instance with the specified name.
      *
-     * @param name name of the reliable ITopic
-     * @return the reliable ITopic
+     * @param name name of the reliable topic
+     * @return the reliable topic
      */
     <E> ITopic<E> getReliableTopic(String name);
 
