@@ -102,7 +102,6 @@ public final class NioOutboundPipeline
                         ILogger logger,
                         IOBalancer balancer) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
-
     }
 
     @Override
@@ -175,8 +174,6 @@ public final class NioOutboundPipeline
             if (writeQueue.compareAndSet(old, update)) {
                 if (old == null) {
                     owner.addTaskAndWakeup(this);
-
-                    //addTaskAndWakeup(this);
                 }
                 return;
             }
@@ -190,10 +187,9 @@ public final class NioOutboundPipeline
         for (; ; ) {
             if (head == null) {
                 head = writeQueue.get();
-                if(head == null){
-                    throw new RuntimeException();
+                if (head == null) {
+                    throw new RuntimeException("head can't be null. It should be scheduled or a regular WriteNode");
                 }
-
                 if (head == SCHEDULED) {
                     return null;
                 }
@@ -203,7 +199,10 @@ public final class NioOutboundPipeline
             }
 
             if (head.task != null) {
-               // System.out.println(this+" head:"+head);
+                if(head.frame!=null){
+                    throw new RuntimeException();
+                }
+                // System.out.println(this+" head:"+head);
                 Runnable task = head.task;
                 head = head.next;
                 task.run();
@@ -212,7 +211,7 @@ public final class NioOutboundPipeline
 
             OutboundFrame frame = head.frame;
             normalFramesWritten.inc();
-           // System.out.println(this + " frames written:" + normalFramesWritten.get());
+            // System.out.println(this + " frames written:" + normalFramesWritten.get());
             head = head.next;
             return frame;
         }
@@ -221,84 +220,74 @@ public final class NioOutboundPipeline
     @Override
     @SuppressWarnings("unchecked")
     public void process() throws Exception {
-        try {
-            if(writeQueue.get()==SCHEDULED){
-                throw new RuntimeException();
+        if(SCHEDULED.frame!=null)throw new RuntimeException();
+        if(SCHEDULED.next!=null)throw new RuntimeException();
+
+        // Thread.sleep(100);
+
+        // System.out.println("process:");
+        processCount.inc();
+
+        OutboundHandler[] localHandlers = handlers;
+        HandlerStatus pipelineStatus = CLEAN;
+        for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
+            OutboundHandler handler = localHandlers[handlerIndex];
+
+            HandlerStatus handlerStatus = handler.onWrite();
+
+            if (localHandlers != handlers) {
+                // change in the pipeline detected, therefor the pipeline is restarted.
+                localHandlers = handlers;
+                pipelineStatus = CLEAN;
+                handlerIndex = -1;
+            } else if (handlerStatus != CLEAN) {
+                pipelineStatus = handlerStatus;
             }
+        }
 
-           // Thread.sleep(100);
+        writeToSocket();
 
-           // System.out.println("process:");
-            processCount.inc();
+        if (migrationReguested) {
+            startMigration();
+            return;
+        }
 
-            OutboundHandler[] localHandlers = handlers;
-            HandlerStatus pipelineStatus = CLEAN;
-            for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
-                OutboundHandler handler = localHandlers[handlerIndex];
+        if (sendBuffer.remaining() > 0) {
+            pipelineStatus = DIRTY;
+        }
 
-                HandlerStatus handlerStatus = handler.onWrite();
+        //System.out.println("pipelineStatus:" + pipelineStatus);
 
-                if (localHandlers != handlers) {
-                    // change in the pipeline detected, therefor the pipeline is restarted.
-                    localHandlers = handlers;
-                    pipelineStatus = CLEAN;
-                    handlerIndex = -1;
-                } else if (handlerStatus != CLEAN) {
-                    pipelineStatus = handlerStatus;
+        switch (pipelineStatus) {
+            case CLEAN:
+                // There is nothing left to be done; so lets unschedule this pipeline
+
+                // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
+                unregisterOp(OP_WRITE);
+
+                if (writeQueue.get() == SCHEDULED && writeQueue.compareAndSet(SCHEDULED, null)) {
+                    // writeQueue is clean, so we are done. Now somebody else his concern to schedule.
+                    return;
                 }
-            }
 
-            flushToSocket();
-
-            if (migrationReguested) {
-                startMigration();
-                return;
-            }
-
-            if (sendBuffer.remaining() > 0) {
-                pipelineStatus = DIRTY;
-            }
-
-            //System.out.println("pipelineStatus:" + pipelineStatus);
-
-            switch (pipelineStatus) {
-                case CLEAN:
-                    // There is nothing left to be done; so lets unschedule this pipeline
-                    // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
-                    unregisterOp(OP_WRITE);
-
-                   // System.out.println("unschedule:" + writeQueue.get());
-
-                    if (writeQueue.get() == SCHEDULED && writeQueue.compareAndSet(SCHEDULED, null)) {
-                       // System.out.println("unschedule complete");
-                        return;
-                    }
-
-                    // owner can't be null because this method is made by the owning io thread.
-                    if(writeQueue.get()==null){
-                        throw new RuntimeException();
-                    }
-                    owner.addTask(this);
-                    break;
-                case DIRTY:
-                    // pipeline is dirty, so lets register for an OP_WRITE to write
-                    // more data.
-                    registerOp(OP_WRITE);
-                    break;
-                case BLOCKED:
-                    // pipeline is blocked; no point in receiving OP_WRITE events.
-                    unregisterOp(OP_WRITE);
-                    break;
-                default:
-                    throw new IllegalStateException();
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-            throw e;
+                // writeQueue is dirty, so lets reprocess the pipeline.
+                owner.addTask(this);
+                break;
+            case DIRTY:
+                // pipeline is dirty, so lets register for an OP_WRITE to write
+                // more data.
+                registerOp(OP_WRITE);
+                break;
+            case BLOCKED:
+                // pipeline is blocked; no point in receiving OP_WRITE events.
+                unregisterOp(OP_WRITE);
+                break;
+            default:
+                throw new IllegalStateException();
         }
     }
 
-    private void flushToSocket() throws IOException {
+    private void writeToSocket() throws IOException {
         lastWriteTime = currentTimeMillis();
         int written = socketChannel.write(sendBuffer);
         bytesWritten.inc(written);
@@ -405,7 +394,7 @@ public final class NioOutboundPipeline
 
     @Override
     public OutboundPipeline wakeup() {
-        if(writeQueue.compareAndSet(null, new WriteNode(this))){
+        if (writeQueue.compareAndSet(null, new WriteNode(this))) {
             owner.addTaskAndWakeup(this);
         }
 
