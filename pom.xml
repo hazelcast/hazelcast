@@ -61,7 +61,7 @@
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
+        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
         <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.15</maven.animal.sniffer.plugin.version>
@@ -1232,13 +1232,6 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
             <version>${jsr107.api.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.snakeyaml</groupId>
-            <artifactId>snakeyaml-engine</artifactId>
-            <version>${snakeyaml.engine.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
