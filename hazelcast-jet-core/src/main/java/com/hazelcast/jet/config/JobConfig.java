@@ -18,16 +18,20 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.Serializable;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -36,7 +40,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
  */
-public class JobConfig implements Serializable {
+public class JobConfig implements IdentifiedDataSerializable {
 
     private static final long SNAPSHOT_INTERVAL_MILLIS_DEFAULT = SECONDS.toMillis(10);
 
@@ -45,7 +49,7 @@ public class JobConfig implements Serializable {
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
     private boolean autoScaling = true;
     private boolean splitBrainProtectionEnabled;
-    private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
+    private List<ResourceConfig> resourceConfigs = new ArrayList<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
 
@@ -411,5 +415,87 @@ public class JobConfig implements Serializable {
     public JobConfig setInitialSnapshotName(@Nullable String initialSnapshotName) {
         this.initialSnapshotName = initialSnapshotName;
         return this;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetConfigDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetConfigDataSerializerHook.JOB_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeObject(processingGuarantee);
+        out.writeLong(snapshotIntervalMillis);
+        out.writeBoolean(autoScaling);
+        out.writeBoolean(splitBrainProtectionEnabled);
+        out.writeObject(resourceConfigs);
+        out.writeObject(classLoaderFactory);
+        out.writeUTF(initialSnapshotName);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        processingGuarantee = in.readObject();
+        snapshotIntervalMillis = in.readLong();
+        autoScaling = in.readBoolean();
+        splitBrainProtectionEnabled = in.readBoolean();
+        resourceConfigs = in.readObject();
+        classLoaderFactory = in.readObject();
+        initialSnapshotName = in.readUTF();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        JobConfig jobConfig = (JobConfig) o;
+
+        if (snapshotIntervalMillis != jobConfig.snapshotIntervalMillis) {
+            return false;
+        }
+        if (autoScaling != jobConfig.autoScaling) {
+            return false;
+        }
+        if (splitBrainProtectionEnabled != jobConfig.splitBrainProtectionEnabled) {
+            return false;
+        }
+        if (!Objects.equals(name, jobConfig.name)) {
+            return false;
+        }
+        if (processingGuarantee != jobConfig.processingGuarantee) {
+            return false;
+        }
+        if (!Objects.equals(resourceConfigs, jobConfig.resourceConfigs)) {
+            return false;
+        }
+        if (!Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)) {
+            return false;
+        }
+        return Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (processingGuarantee != null ? processingGuarantee.hashCode() : 0);
+        result = 31 * result + (int) (snapshotIntervalMillis ^ (snapshotIntervalMillis >>> 32));
+        result = 31 * result + (autoScaling ? 1 : 0);
+        result = 31 * result + (splitBrainProtectionEnabled ? 1 : 0);
+        result = 31 * result + (resourceConfigs != null ? resourceConfigs.hashCode() : 0);
+        result = 31 * result + (classLoaderFactory != null ? classLoaderFactory.hashCode() : 0);
+        result = 31 * result + (initialSnapshotName != null ? initialSnapshotName.hashCode() : 0);
+        return result;
     }
 }

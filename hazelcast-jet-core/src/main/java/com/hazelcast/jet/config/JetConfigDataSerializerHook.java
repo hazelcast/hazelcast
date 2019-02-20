@@ -14,22 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.metrics.management;
+package com.hazelcast.jet.config;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public final class MetricsSerializerHook implements DataSerializerHook {
+import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_CONFIG_DS_FACTORY;
+import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_CONFIG_DS_FACTORY_ID;
 
-    public static final String METRICS_DS_FACTORY = "hazelcast.serialization.ds.jet.metrics";
-    public static final int METRICS_DS_FACTORY_ID = -10003;
+/**
+ * Hazelcast serializer hooks for the classes in the {@code
+ * com.hazelcast.jet.config} package. This is not a public-facing API.
+ */
+public final class JetConfigDataSerializerHook implements DataSerializerHook {
 
-    public static final int RINGBUFFER_SLICE = 1;
+    /**
+     * Serialization ID of the {@link com.hazelcast.jet.config.JobConfig} class.
+     */
+    public static final int JOB_CONFIG = 0;
 
-    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(METRICS_DS_FACTORY, METRICS_DS_FACTORY_ID);
-
+    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_CONFIG_DS_FACTORY, JET_CONFIG_DS_FACTORY_ID);
 
     @Override
     public int getFactoryId() {
@@ -38,18 +44,19 @@ public final class MetricsSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new MetricsSerializerHook.Factory();
+        return new Factory();
     }
 
     private static class Factory implements DataSerializableFactory {
         @Override
         public IdentifiedDataSerializable create(int typeId) {
             switch (typeId) {
-                case RINGBUFFER_SLICE:
-                    return new ConcurrentArrayRingbuffer.RingbufferSlice<>();
+                case JOB_CONFIG:
+                    return new JobConfig();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
         }
     }
+
 }

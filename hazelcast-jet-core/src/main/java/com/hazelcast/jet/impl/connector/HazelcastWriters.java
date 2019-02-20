@@ -31,6 +31,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.JetDataSerializerHook;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -40,7 +41,6 @@ import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -709,12 +709,12 @@ public final class HazelcastWriters {
 
         @Override
         public int getFactoryId() {
-            return SerializationConstants.FACTORY_ID;
+            return JetDataSerializerHook.FACTORY_ID;
         }
 
         @Override
         public int getId() {
-            return SerializationConstants.APPLY_FN_ENTRY_PROCESSOR;
+            return JetDataSerializerHook.APPLY_FN_ENTRY_PROCESSOR;
         }
 
         // used to group entries when more than one entry exists for the same key

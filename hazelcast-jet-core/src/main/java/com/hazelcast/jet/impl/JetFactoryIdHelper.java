@@ -16,34 +16,28 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.Edge;
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.connector.HazelcastWriters.ApplyFnEntryProcessor;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * Constants used for Hazelcast's {@link IdentifiedDataSerializable}
  * mechanism.
  */
-public final class SerializationConstants {
+public final class JetFactoryIdHelper {
     /** Name of the system property that specifies Jet's data serialization factory ID. */
     public static final String JET_DS_FACTORY = "hazelcast.serialization.ds.jet";
     /** Default ID of Jet's data serialization factory. */
     public static final int JET_DS_FACTORY_ID = -10001;
-    /** Resolved ID of Jet's data serialization factory. */
-    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
-    /** Serialization ID of the {@link DAG} class. */
-    public static final int DAG = 0;
-    /** Serialization ID of the {@link Vertex} class. */
-    public static final int VERTEX = 1;
-    /** Serialization ID of the {@link Edge} class. */
-    public static final int EDGE = 2;
-    /** Serialization ID of the {@link ApplyFnEntryProcessor} class. */
-    public static final int APPLY_FN_ENTRY_PROCESSOR = 3;
 
-    private SerializationConstants() {
+    public static final String JET_IMPL_DS_FACTORY = "hazelcast.serialization.ds.jet.impl";
+    public static final int JET_IMPL_DS_FACTORY_ID = -10002;
 
+    public static final String JET_METRICS_DS_FACTORY = "hazelcast.serialization.ds.jet.metrics";
+    public static final int JET_METRICS_DS_FACTORY_ID = -10003;
+
+    public static final String JET_CONFIG_DS_FACTORY = "hazelcast.serialization.ds.jet.config";
+    public static final int JET_CONFIG_DS_FACTORY_ID = -10004;
+
+
+    private JetFactoryIdHelper() {
     }
 }

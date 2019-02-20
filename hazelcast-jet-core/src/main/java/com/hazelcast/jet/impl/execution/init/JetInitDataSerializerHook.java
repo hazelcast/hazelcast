@@ -55,10 +55,10 @@ import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public final class JetInitDataSerializerHook implements DataSerializerHook {
+import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_IMPL_DS_FACTORY;
+import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_IMPL_DS_FACTORY_ID;
 
-    public static final String JET_IMPL_DS_FACTORY = "hazelcast.serialization.ds.jet.impl";
-    public static final int JET_IMPL_DS_FACTORY_ID = -10002;
+public final class JetInitDataSerializerHook implements DataSerializerHook {
 
     public static final int EXECUTION_PLAN = 0;
     public static final int VERTEX_DEF = 1;

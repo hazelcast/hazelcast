@@ -20,7 +20,6 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -465,11 +464,11 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public int getFactoryId() {
-        return SerializationConstants.FACTORY_ID;
+        return JetDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return SerializationConstants.DAG;
+        return JetDataSerializerHook.DAG;
     }
 }

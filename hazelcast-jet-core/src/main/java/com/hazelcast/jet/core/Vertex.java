@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -200,12 +199,12 @@ public class Vertex implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return SerializationConstants.FACTORY_ID;
+        return JetDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return SerializationConstants.VERTEX;
+        return JetDataSerializerHook.VERTEX;
     }
 
     // END Implementation of IdentifiedDataSerializable

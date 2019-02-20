@@ -158,12 +158,12 @@ public class ConcurrentArrayRingbuffer<E> {
 
         @Override
         public int getFactoryId() {
-            return MetricsSerializerHook.FACTORY_ID;
+            return JetMetricsDataSerializerHook.FACTORY_ID;
         }
 
         @Override
         public int getId() {
-            return MetricsSerializerHook.RINGBUFFER_SLICE;
+            return JetMetricsDataSerializerHook.RINGBUFFER_SLICE;
         }
 
         @Override

@@ -14,41 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.core;
+package com.hazelcast.jet.impl.metrics.management;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.jet.impl.connector.HazelcastWriters.ApplyFnEntryProcessor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY;
-import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY_ID;
+import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_METRICS_DS_FACTORY;
+import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_METRICS_DS_FACTORY_ID;
 
-/**
- * A Java Service Provider hook for Hazelcast's Identified Data Serializable
- * mechanism.
- */
-public final class JetDataSerializerHook implements DataSerializerHook {
+public final class JetMetricsDataSerializerHook implements DataSerializerHook {
 
-    /**
-     * Serialization ID of the {@link DAG} class.
-     */
-    public static final int DAG = 0;
-    /**
-     * Serialization ID of the {@link Vertex} class.
-     */
-    public static final int VERTEX = 1;
-    /**
-     * Serialization ID of the {@link Edge} class.
-     */
-    public static final int EDGE = 2;
-    /**
-     * Serialization ID of the {@link ApplyFnEntryProcessor} class.
-     */
-    public static final int APPLY_FN_ENTRY_PROCESSOR = 3;
+    public static final int RINGBUFFER_SLICE = 1;
 
-    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
+    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_METRICS_DS_FACTORY, JET_METRICS_DS_FACTORY_ID);
 
     @Override
     public int getFactoryId() {
@@ -64,14 +44,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
         @Override
         public IdentifiedDataSerializable create(int typeId) {
             switch (typeId) {
-                case DAG:
-                    return new DAG();
-                case EDGE:
-                    return new Edge();
-                case VERTEX:
-                    return new Vertex();
-                case APPLY_FN_ENTRY_PROCESSOR:
-                    return new ApplyFnEntryProcessor();
+                case RINGBUFFER_SLICE:
+                    return new ConcurrentArrayRingbuffer.RingbufferSlice<>();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

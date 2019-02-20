@@ -34,8 +34,8 @@ public class ResourceConfig implements Serializable {
     /**
      * Creates a resource config with the given properties.
      *
-     * @param url  url of the resource
-     * @param id   id of the resource
+     * @param url       url of the resource
+     * @param id        id of the resource
      * @param isArchive true, if this is an JAR archive with many entries
      */
     ResourceConfig(@Nonnull URL url, String id, boolean isArchive) {
@@ -82,5 +82,33 @@ public class ResourceConfig implements Serializable {
     @Override
     public String toString() {
         return "ResourceConfig{url=" + url + ", id='" + id + '\'' + ", isArchive=" + isArchive + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ResourceConfig that = (ResourceConfig) o;
+
+        if (isArchive != that.isArchive) {
+            return false;
+        }
+        if (url != null ? !url.toString().equals(that.url.toString()) : that.url != null) {
+            return false;
+        }
+        return id != null ? id.equals(that.id) : that.id == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = url != null ? url.toString().hashCode() : 0;
+        result = 31 * result + (id != null ? id.hashCode() : 0);
+        result = 31 * result + (isArchive ? 1 : 0);
+        return result;
     }
 }

@@ -41,4 +41,4 @@ com.hazelcast.jet.impl.serialization.HashSetHook
 com.hazelcast.jet.impl.serialization.MapEntryHook
 com.hazelcast.jet.impl.serialization.ObjectArrayHook
 com.hazelcast.jet.impl.serialization.PriorityQueueHook
-com.hazelcast.jet.impl.metrics.management.MetricsSerializerHook
+com.hazelcast.jet.impl.metrics.management.JetMetricsDataSerializerHook

@@ -21,7 +21,6 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.MasterJobContext;
-import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.jet.impl.util.ConstantFunction;
 import com.hazelcast.nio.ObjectDataInput;
@@ -489,12 +488,12 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return SerializationConstants.FACTORY_ID;
+        return JetDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return SerializationConstants.EDGE;
+        return JetDataSerializerHook.EDGE;
     }
 
     // END Implementation of IdentifiedDataSerializable
