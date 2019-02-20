@@ -56,8 +56,8 @@ public final class NioOutboundPipeline
 
     public static class WriteNode {
         WriteNode next;
-        final OutboundFrame frame;
-        final Runnable task;
+        OutboundFrame frame;
+        Runnable task;
 
         public WriteNode(OutboundFrame frame) {
             this.frame = frame;
@@ -67,6 +67,20 @@ public final class NioOutboundPipeline
         public WriteNode(Runnable task) {
             this.task = task;
             this.frame = null;
+        }
+
+        boolean isCleared() {
+            return frame == null && task == null;
+        }
+
+        @Override
+        public String toString() {
+            return "WriteNode{" +
+                    "next=" + next +
+                    ", frame=" + frame +
+                    ", task=" + task +
+                    ", hash=" + hashCode() +
+                    '}';
         }
     }
 
@@ -92,13 +106,13 @@ public final class NioOutboundPipeline
     private long normalFramesWrittenLastPublish;
     private long priorityFramesWrittenLastPublish;
     private long processCountLastPublish;
-
-    private final static WriteNode SCHEDULED = new WriteNode((Runnable) null) {
-        @Override
-        public String toString() {
-            return "SCHEDULED";
-        }
-    };
+//
+//    private final static WriteNode SCHEDULED = new WriteNode((Runnable) null) {
+//        @Override
+//        public String toString() {
+//            return "SCHEDULED";
+//        }
+//    };
 
     NioOutboundPipeline(NioChannel channel,
                         NioThread owner,
@@ -171,7 +185,7 @@ public final class NioOutboundPipeline
     private void schedule(WriteNode update) {
         for (; ; ) {
             WriteNode old = writeQueue.get();
-            update.next = old == SCHEDULED ? null : old;
+            update.next = old;
             if (writeQueue.compareAndSet(old, update)) {
                 if (old == null) {
                     owner.addTaskAndWakeup(this);
@@ -187,35 +201,28 @@ public final class NioOutboundPipeline
     public OutboundFrame get() {
         for (; ; ) {
             if (head == null) {
-                WriteNode current = writeQueue.get();
-                if (current == null) {
-                    throw new RuntimeException("head can't be null. It should be scheduled or a regular WriteNode");
-                }
-                if (current == SCHEDULED) {
+                head = writeQueue.get();
+                if (head == null) {
+                    // there is no work, we are done
                     return null;
                 }
-                if (!writeQueue.compareAndSet(current, SCHEDULED)) {
-                    continue;
-                }
-                head = current;
             }
 
             if (head.task != null) {
-                if (head.frame != null) {
-                    throw new RuntimeException();
-                }
-                // System.out.println(this+" head:"+head);
                 Runnable task = head.task;
+                head.task = null;
                 head = head.next;
                 task.run();
-                continue;
+            } else if (head.frame != null) {
+                OutboundFrame frame = head.frame;
+                head.frame = null;
+                head = head.next;
+                normalFramesWritten.inc();
+                return frame;
+            } else {
+                head = null;
+                return null;
             }
-
-            OutboundFrame frame = head.frame;
-            normalFramesWritten.inc();
-            // System.out.println(this + " frames written:" + normalFramesWritten.get());
-            head = head.next;
-            return frame;
         }
     }
 
@@ -259,7 +266,8 @@ public final class NioOutboundPipeline
                 // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
                 unregisterOp(OP_WRITE);
 
-                if (writeQueue.get() == SCHEDULED && writeQueue.compareAndSet(SCHEDULED, null)) {
+                WriteNode node = writeQueue.get();
+                if (node.isCleared() && writeQueue.compareAndSet(node, null)) {
                     // writeQueue is clean, so we are done. Now somebody else his concern to schedule.
                     return;
                 }

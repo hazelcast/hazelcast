@@ -116,6 +116,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         execute(new Runnable() {
             @Override
             public void run() {
+                System.out.println("StartTask executed");
                 try {
                     getSelectionKey();
                 } catch (Throwable t) {
@@ -125,7 +126,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
 
             @Override
             public String toString() {
-                return "StartTask";
+                return "StartTask@"+hashCode();
             }
         });
     }
