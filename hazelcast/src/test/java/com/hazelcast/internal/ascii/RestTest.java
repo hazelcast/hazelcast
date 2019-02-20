@@ -66,7 +66,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class RestTest {
 
-    private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
+    protected final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
     protected HazelcastInstance instance;
     protected HazelcastInstance remoteInstance;

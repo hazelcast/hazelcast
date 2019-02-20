@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -78,9 +77,9 @@ public class RestMultiendpointTest
                 .addMember("127.0.0.1:6000")
                 .addMember("127.0.0.1:6001");
 
-        instance = Hazelcast.newHazelcastInstance(config);
+        instance = factory.newHazelcastInstance(config);
 
-        remoteInstance = Hazelcast.newHazelcastInstance(config);
+        remoteInstance = factory.newHazelcastInstance(config);
 
         communicator = new HTTPCommunicator(instance);
         return config;
