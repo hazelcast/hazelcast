@@ -26,6 +26,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.PartitioningStrategy;
@@ -103,6 +104,9 @@ public class AddMapConfigMessageTask
             config.setQueryCacheConfigs(queryCacheConfigs);
         }
         config.setWanReplicationRef(parameters.wanReplicationRef);
+        if (parameters.metadataPolicyExist) {
+            config.setMetadataPolicy(MetadataPolicy.getById(parameters.metadataPolicy));
+        }
         return config;
     }
 
