@@ -28,6 +28,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.ParseException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -58,7 +59,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ManagementCenterServiceIntegrationTest {
 
