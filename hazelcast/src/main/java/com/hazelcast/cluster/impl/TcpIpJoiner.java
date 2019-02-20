@@ -18,6 +18,7 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InterfacesConfig;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.Node;
@@ -59,6 +60,7 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     private final int maxPortTryCount;
     private volatile boolean claimingMastership;
+    private final JoinConfig joinConfig;
 
     public TcpIpJoiner(Node node) {
         super(node);
@@ -68,6 +70,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     GroupProperty.TCP_JOIN_PORT_TRY_COUNT, tryCount));
         }
         maxPortTryCount = tryCount;
+        joinConfig = getActiveMemberNetworkConfig(config).getJoin();
     }
 
     public boolean isClaimingMastership() {
@@ -75,7 +78,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private int getConnTimeoutSeconds() {
-        return getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
+        return joinConfig.getTcpIpConfig().getConnectionTimeoutSeconds();
     }
 
     @Override
@@ -87,7 +90,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (!clusterService.isJoined()) {
                 joinViaPossibleMembers();
             }
-        } else if (getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig().getRequiredMember() != null) {
+        } else if (joinConfig.getTcpIpConfig().getRequiredMember() != null) {
             Address requiredMember = getRequiredMemberAddress();
             long maxJoinMillis = getMaxJoinMillis();
             joinViaTargetMember(requiredMember, maxJoinMillis);
@@ -284,7 +287,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private Address getRequiredMemberAddress() {
-        TcpIpConfig tcpIpConfig = getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig();
+        TcpIpConfig tcpIpConfig = joinConfig.getTcpIpConfig();
         String host = tcpIpConfig.getRequiredMember();
         try {
             AddressHolder addressHolder = AddressUtil.getAddressHolder(host, getActiveMemberNetworkConfig(config).getPort());

@@ -17,20 +17,27 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.fail;
@@ -46,11 +53,15 @@ public class AdvancedNetworkIntegrationTest {
     private static final int REST_PORT = MEMBER_PORT + 4;
     private static final int MEMCACHE_PORT = MEMBER_PORT + 5;
 
-    private HazelcastInstance hz;
+    private final Set<HazelcastInstance> instances =
+            Collections.newSetFromMap(new ConcurrentHashMap<HazelcastInstance, Boolean>());
+
+    @Rule
+    public ExpectedException expect = ExpectedException.none();
 
     @After
     public void tearDown() {
-        if (hz != null) {
+        for (HazelcastInstance hz : instances) {
             hz.getLifecycleService().terminate();
         }
     }
@@ -58,13 +69,49 @@ public class AdvancedNetworkIntegrationTest {
     @Test
     public void testCompleteMultisocketConfig() {
         Config config = createCompleteMultiSocketConfig();
-        hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz = newHazelcastInstance(config);
         assertLocalPortsOpen(MEMBER_PORT, CLIENT_PORT, WAN1_PORT, WAN2_PORT, REST_PORT, MEMCACHE_PORT);
     }
 
     @Test(expected = AssertionError.class)
     public void testLocalPortAssertionWorks() {
         assertLocalPortsOpen(MEMBER_PORT);
+    }
+
+    @Test
+    public void testConnectionToWrongPort() {
+        int firstMemberPort = 6000;
+        int firstClientPort = 7000;
+        int secondMemberPort = 8000;
+
+        Config config = smallInstanceConfig();
+        config.getAdvancedNetworkConfig().setEnabled(true);
+        config.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(firstMemberPort))
+                                         .setClientEndpointConfig(createServerSocketConfig(firstClientPort));
+        JoinConfig joinConfig = config.getAdvancedNetworkConfig().getJoin();
+        joinConfig.getMulticastConfig().setEnabled(false);
+        joinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + secondMemberPort);
+        HazelcastInstance hz = newHazelcastInstance(config);
+
+        Config other = smallInstanceConfig();
+        other.getAdvancedNetworkConfig().setEnabled(true);
+        other.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(secondMemberPort));
+        JoinConfig otherJoinConfig = other.getAdvancedNetworkConfig().getJoin();
+        otherJoinConfig.getMulticastConfig().setEnabled(false);
+        // Mis-configured to point to Client port of 1st member
+        otherJoinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + firstClientPort);
+        other.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "1");
+
+        expect.expect(IllegalStateException.class);
+        expect.expectMessage("Node failed to start!");
+
+        HazelcastInstance hz2 = newHazelcastInstance(other);
+    }
+
+    private HazelcastInstance newHazelcastInstance(Config config) {
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        instances.add(hz);
+        return hz;
     }
 
     private Config createCompleteMultiSocketConfig() {
