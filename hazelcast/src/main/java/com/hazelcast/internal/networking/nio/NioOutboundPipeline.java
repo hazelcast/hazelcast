@@ -156,29 +156,19 @@ public final class NioOutboundPipeline
 
     @Probe(level = DEBUG)
     private long isScheduled() {
-        //return scheduled.get() ? 1 : 0;
-        return 0;
+        return writeQueue.get() == null ? 0 : 1;
     }
 
     @Override
     public void execute(Runnable task) {
-        //System.out.println(this + " Execute:" + task);
         schedule(new WriteNode(task));
     }
 
     public void write(OutboundFrame frame) {
-        //System.out.println(this + " writing:" + frame);
         schedule(new WriteNode(frame));
     }
 
-    //private ConcurrentHashMap<WriteNode,WriteNode> written = new ConcurrentHashMap();
-
-
     private void schedule(WriteNode update) {
-//        if(written.put(update,update)!=null){
-//            throw new RuntimeException();
-//        }
-
         for (; ; ) {
             WriteNode old = writeQueue.get();
             update.next = old == SCHEDULED ? null : old;
@@ -211,7 +201,7 @@ public final class NioOutboundPipeline
             }
 
             if (head.task != null) {
-                if(head.frame!=null){
+                if (head.frame != null) {
                     throw new RuntimeException();
                 }
                 // System.out.println(this+" head:"+head);
