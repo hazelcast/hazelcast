@@ -12,6 +12,8 @@ Release 3.12
 - Added the ability to retrieve the names of client instances on the member side.
 - Introduced client attributes.
 - Introduced composite indexes.
+- Deprecated the original `ILock`, `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` implementations and introduced their implementations provided by CP Subsystem.
+
 
 Release 3.11
 
