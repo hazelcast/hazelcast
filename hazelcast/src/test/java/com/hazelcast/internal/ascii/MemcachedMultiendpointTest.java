@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 public class MemcachedMultiendpointTest
         extends MemcachedTest {
 
+    @Override
     public void setup() throws Exception {
         AdvancedNetworkConfig anc = config.getAdvancedNetworkConfig();
         anc.setEnabled(true)
