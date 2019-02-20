@@ -115,7 +115,7 @@ public final class ClientPartitionServiceImpl
     }
 
     private void waitForPartitionsFetchedOnce() {
-        while (partitions.isEmpty() && client.getConnectionManager().isAlive()) {
+        while ((partitions.isEmpty() || partitionCount == 0) && client.getConnectionManager().isAlive()) {
             if (isClusterFormedByOnlyLiteMembers()) {
                 throw new NoDataMemberInClusterException(
                         "Partitions can't be assigned since all nodes in the cluster are lite members");
