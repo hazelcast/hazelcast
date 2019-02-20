@@ -354,13 +354,15 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
+    @SuppressWarnings("unchecked")
     <K, RET> RET attachPartitionedCustomTransform(
             @Nonnull String stageName,
             @Nonnull ProcessorMetaSupplier procSupplier,
             @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
-
     ) {
-        return attach(partitionedCustomProcessorTransform(stageName, transform, procSupplier, partitionKeyFn),
+        DistributedFunction adaptedKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
+        return (RET) attach(
+                partitionedCustomProcessorTransform(stageName, transform, procSupplier, adaptedKeyFn),
                 fnAdapter);
     }
 
