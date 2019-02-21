@@ -389,7 +389,7 @@
         <group-size>0</group-size>
         <session-time-to-live-seconds>300</session-time-to-live-seconds>
         <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
-        <missing-cp-member-auto-removal-seconds>0</missing-cp-member-auto-removal-seconds>
+        <missing-cp-member-auto-removal-seconds>14400</missing-cp-member-auto-removal-seconds>
         <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
