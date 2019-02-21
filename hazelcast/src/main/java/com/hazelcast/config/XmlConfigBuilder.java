@@ -125,7 +125,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
      * @param properties the new properties
      * @return the XmlConfigBuilder
      */
-    protected XmlConfigBuilder setProperties(Properties properties) {
+    public XmlConfigBuilder setProperties(Properties properties) {
         super.setPropertiesInternal(properties);
         return this;
     }
