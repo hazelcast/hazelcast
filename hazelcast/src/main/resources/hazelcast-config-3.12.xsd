@@ -4544,23 +4544,21 @@
             <xs:element name="missing-cp-member-auto-removal-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Duration to wait before automatically removing a missing CP member from
-                        the CP subsystem. It is 0 by default and disabled. When a CP member
-                        leaves the cluster, it is not automatically removed from
-                        the CP subsystem, since the missing CP member could be still alive
-                        and left the cluster because of a network partition. On the other hand,
-                        if a missing CP member is actually crashed, it creates a danger for its
-                        CP groups, because it will be still part of majority calculations.
-                        This situation could lead to losing majority of CP groups if multiple
-                        CP members leave the cluster over time.
-                        If this configuration is enabled, missing CP members will be
-                        automatically removed from the CP subsystem after some time.
-                        This feature is very useful in terms of fault tolerance when
-                        CP member count is also configured to be larger than group size.
-                        In this case, a missing CP member will be safely replaced in its CP
-                        groups with other available CP members in the CP subsystem. This
-                        configuration also implies that no network partition is expected to be
-                        longer than the configured duration.
+                        Duration to wait before automatically removing a missing CP member
+                        from the CP subsystem. When a CP member leaves the cluster, it is not
+                        automatically removed from the CP subsystem, since it could be still
+                        alive and left the cluster because of a network partition.
+                        On the other hand, if a missing CP member is actually crashed,
+                        it creates a danger for its CP groups, because it will be still part of
+                        majority calculations. This situation could lead to losing majority of
+                        CP groups if multiple CP members leave the cluster over time.
+                        With the default configuration, missing CP members will be automatically
+                        removed from the CP subsystem after 4 hours. This feature is very useful
+                        in terms of fault tolerance when CP member count is also configured
+                        to be larger than group size. In this case, a missing CP member will be
+                        safely replaced in its CP groups with other available CP members
+                        in the CP subsystem. This configuration also implies that no network
+                        partition is expected to be longer than the configured duration.
                         Must be greater than or equal to session-time-to-live-seconds.
                     </xs:documentation>
                 </xs:annotation>

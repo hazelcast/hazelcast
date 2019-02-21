@@ -53,7 +53,7 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
     }
 
     @Override
-    public CPSubsystemConfig setMissingCPMemberAutoRemovalSeconds(long missingCPMemberAutoRemovalSeconds) {
+    public CPSubsystemConfig setMissingCPMemberAutoRemovalSeconds(int missingCPMemberAutoRemovalSeconds) {
         throw new UnsupportedOperationException();
     }
 
