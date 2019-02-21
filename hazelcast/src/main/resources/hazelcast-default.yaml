@@ -373,7 +373,7 @@ hazelcast:
     group-size: 0
     session-time-to-live-seconds: 300
     session-heartbeat-interval-seconds: 5
-    missing-cp-member-auto-removal-seconds: 0
+    missing-cp-member-auto-removal-seconds: 14400
     fail-on-indeterminate-operation-state: false
     raft-algorithm:
       leader-election-timeout-in-millis: 2000

@@ -129,6 +129,13 @@ public class CPSubsystemConfig {
      */
     public static final int MAX_GROUP_SIZE = 7;
 
+    /**
+     * Default duration to wait before automatically removing
+     * a missing CP member from the CP subsystem.
+     * See {@link #missingCPMemberAutoRemovalSeconds}
+     */
+    public static final int DEFAULT_MISSING_CP_MEMBER_AUTO_REMOVAL_SECONDS = (int) TimeUnit.HOURS.toSeconds(4);
+
 
     /**
      * Number of {@link CPMember}s to initialize the {@link CPSubsystem}.
@@ -188,28 +195,26 @@ public class CPSubsystemConfig {
     private int sessionHeartbeatIntervalSeconds = DEFAULT_HEARTBEAT_INTERVAL_SECONDS;
 
     /**
-     * Duration to wait before automatically removing a missing CP member from
-     * the CP subsystem. It is 0 by default and disabled. When a CP member
-     * leaves the cluster, it is not automatically removed from
-     * the CP subsystem, since the missing CP member could be still alive
-     * and left the cluster because of a network partition. On the other hand,
-     * if a missing CP member is actually crashed, it creates a danger for its
-     * CP groups, because it will be still part of majority calculations.
-     * This situation could lead to losing majority of CP groups if multiple
-     * CP members leave the cluster over time.
+     * Duration to wait before automatically removing a missing CP member
+     * from the CP subsystem. When a CP member leaves the cluster, it is not
+     * automatically removed from the CP subsystem, since it could be still
+     * alive and left the cluster because of a network partition.
+     * On the other hand, if a missing CP member is actually crashed,
+     * it creates a danger for its CP groups, because it will be still part of
+     * majority calculations. This situation could lead to losing majority of
+     * CP groups if multiple CP members leave the cluster over time.
      * <p>
-     * If this configuration is enabled, missing CP members will be
-     * automatically removed from the CP subsystem after some time.
-     * This feature is very useful in terms of fault tolerance when
-     * CP member count is also configured to be larger than group size.
-     * In this case, a missing CP member will be safely replaced in its CP
-     * groups with other available CP members in the CP subsystem. This
-     * configuration also implies that no network partition is expected to be
-     * longer than the configured duration.
+     * With the default configuration, missing CP members will be automatically
+     * removed from the CP subsystem after 4 hours. This feature is very useful
+     * in terms of fault tolerance when CP member count is also configured
+     * to be larger than group size. In this case, a missing CP member will be
+     * safely replaced in its CP groups with other available CP members
+     * in the CP subsystem. This configuration also implies that no network
+     * partition is expected to be longer than the configured duration.
      * <p>
      * Must be greater than or equal to {@link #sessionTimeToLiveSeconds}
      */
-    private long missingCPMemberAutoRemovalSeconds;
+    private int missingCPMemberAutoRemovalSeconds = DEFAULT_MISSING_CP_MEMBER_AUTO_REMOVAL_SECONDS;
 
     /**
      * Offers a choice between at-least-once and at-most-once execution
@@ -332,7 +337,7 @@ public class CPSubsystemConfig {
      * @return duration for a CP session to be kept alive
      *         after the last heartbeat
      */
-    public long getSessionTimeToLiveSeconds() {
+    public int getSessionTimeToLiveSeconds() {
         return sessionTimeToLiveSeconds;
     }
 
@@ -374,7 +379,7 @@ public class CPSubsystemConfig {
      * @return duration to wait before automatically removing
      *         a missing CP member from the CP subsystem
      */
-    public long getMissingCPMemberAutoRemovalSeconds() {
+    public int getMissingCPMemberAutoRemovalSeconds() {
         return missingCPMemberAutoRemovalSeconds;
     }
 
@@ -384,7 +389,7 @@ public class CPSubsystemConfig {
      *
      * @return this config instance
      */
-    public CPSubsystemConfig setMissingCPMemberAutoRemovalSeconds(long missingCPMemberAutoRemovalSeconds) {
+    public CPSubsystemConfig setMissingCPMemberAutoRemovalSeconds(int missingCPMemberAutoRemovalSeconds) {
         checkTrue(missingCPMemberAutoRemovalSeconds >= 0, "missing cp member auto-removal seconds must be non-negative");
         this.missingCPMemberAutoRemovalSeconds = missingCPMemberAutoRemovalSeconds;
         return this;
