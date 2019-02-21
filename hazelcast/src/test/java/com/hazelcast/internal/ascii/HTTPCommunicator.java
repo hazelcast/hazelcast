@@ -74,6 +74,10 @@ public class HTTPCommunicator {
     private String tlsProtocol = "TLSv1.1";
 
     public HTTPCommunicator(HazelcastInstance instance) {
+        this(instance, null);
+    }
+
+    public HTTPCommunicator(HazelcastInstance instance, String baseRestAddress) {
         this.instance = instance;
 
         AdvancedNetworkConfig anc = instance.getConfig().getAdvancedNetworkConfig();
@@ -86,9 +90,13 @@ public class HTTPCommunicator {
 
         sslEnabled = sslConfig != null && sslConfig.isEnabled();
         String protocol = sslEnabled ? "https:/" : "http:/";
-        MemberImpl localMember = getNode(instance).getClusterService().getLocalMember();
-        this.baseRestAddress = localMember.getSocketAddress(REST).toString();
-        this.address = protocol + baseRestAddress + "/hazelcast/rest/";
+        if (baseRestAddress == null) {
+            MemberImpl localMember = getNode(instance).getClusterService().getLocalMember();
+            this.baseRestAddress = localMember.getSocketAddress(REST).toString();
+        } else {
+            this.baseRestAddress = baseRestAddress;
+        }
+        this.address = protocol + this.baseRestAddress + "/hazelcast/rest/";
     }
 
     public HTTPCommunicator setTlsProtocol(String tlsProtocol) {
