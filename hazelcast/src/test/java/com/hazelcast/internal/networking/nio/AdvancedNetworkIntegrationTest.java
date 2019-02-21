@@ -18,28 +18,22 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.RestServerEndpointConfig;
-import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.Set;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
+import static com.hazelcast.internal.networking.nio.AbstractAdvancedNetworkIntegrationTest.MEMBER_PORT;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
@@ -47,32 +41,15 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class AdvancedNetworkIntegrationTest {
-
-    private static final int MEMBER_PORT = 11000;
-    private static final int CLIENT_PORT = MEMBER_PORT + 1;
-    private static final int WAN1_PORT = MEMBER_PORT + 2;
-    private static final int WAN2_PORT = MEMBER_PORT + 3;
-    private static final int REST_PORT = MEMBER_PORT + 4;
-    private static final int MEMCACHE_PORT = MEMBER_PORT + 5;
-
-    private final Set<HazelcastInstance> instances =
-            Collections.newSetFromMap(new ConcurrentHashMap<HazelcastInstance, Boolean>());
+public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkIntegrationTest {
 
     @Rule
     public ExpectedException expect = ExpectedException.none();
 
-    @After
-    public void tearDown() {
-        for (HazelcastInstance hz : instances) {
-            hz.getLifecycleService().terminate();
-        }
-    }
-
     @Test
     public void testCompleteMultisocketConfig() {
         Config config = createCompleteMultiSocketConfig();
-        HazelcastInstance hz = newHazelcastInstance(config);
+        newHazelcastInstance(config);
         assertLocalPortsOpen(MEMBER_PORT, CLIENT_PORT, WAN1_PORT, WAN2_PORT, REST_PORT, MEMCACHE_PORT);
     }
 
@@ -106,7 +83,7 @@ public class AdvancedNetworkIntegrationTest {
         Config config = smallInstanceConfig();
         config.getAdvancedNetworkConfig().setEnabled(true);
         config.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(firstMemberPort))
-                                         .setClientEndpointConfig(createServerSocketConfig(firstClientPort));
+                .setClientEndpointConfig(createServerSocketConfig(firstClientPort));
         JoinConfig joinConfig = config.getAdvancedNetworkConfig().getJoin();
         joinConfig.getMulticastConfig().setEnabled(false);
         joinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + secondMemberPort);
@@ -125,48 +102,6 @@ public class AdvancedNetworkIntegrationTest {
         expect.expectMessage("Node failed to start!");
 
         HazelcastInstance hz2 = newHazelcastInstance(other);
-    }
-
-    private HazelcastInstance newHazelcastInstance(Config config) {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        instances.add(hz);
-        return hz;
-    }
-
-    private Config createCompleteMultiSocketConfig() {
-        Config config = smallInstanceConfig();
-        config.getAdvancedNetworkConfig().setEnabled(true)
-              .setMemberEndpointConfig(createServerSocketConfig(MEMBER_PORT))
-              .setClientEndpointConfig(createServerSocketConfig(CLIENT_PORT))
-              .addWanEndpointConfig(createServerSocketConfig(WAN1_PORT, "WAN1"))
-              .addWanEndpointConfig(createServerSocketConfig(WAN2_PORT, "WAN2"))
-              .setRestEndpointConfig(createRestServerSocketConfig(REST_PORT, "REST"))
-              .setMemcacheEndpointConfig(createServerSocketConfig(MEMCACHE_PORT));
-        return config;
-    }
-
-    private ServerSocketEndpointConfig createServerSocketConfig(int port) {
-        return createServerSocketConfig(port, null);
-    }
-
-    private ServerSocketEndpointConfig createServerSocketConfig(int port, String name) {
-        ServerSocketEndpointConfig serverSocketConfig = new ServerSocketEndpointConfig();
-        serverSocketConfig.setPort(port);
-        serverSocketConfig.getInterfaces().addInterface("127.0.0.1");
-        if (name != null) {
-            serverSocketConfig.setName(name);
-        }
-        return serverSocketConfig;
-    }
-
-    private RestServerEndpointConfig createRestServerSocketConfig(int port, String name) {
-        RestServerEndpointConfig serverSocketConfig = new RestServerEndpointConfig();
-        serverSocketConfig.setPort(port);
-        serverSocketConfig.getInterfaces().addInterface("127.0.0.1");
-        if (name != null) {
-            serverSocketConfig.setName(name);
-        }
-        return serverSocketConfig;
     }
 
     private void assertLocalPortsOpen(int... ports) {
