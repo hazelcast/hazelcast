@@ -163,6 +163,17 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDelete() throws Exception {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            map.delete(i);
+        }
+        LocalMapStats localMapStats = geMapStats();
+        assertEquals(100, localMapStats.getRemoveOperationCount());
+    }
+
+    @Test
     public void testRemove() throws Exception {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
