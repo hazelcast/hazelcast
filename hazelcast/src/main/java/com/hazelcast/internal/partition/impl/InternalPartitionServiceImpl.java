@@ -585,6 +585,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     void sendPartitionRuntimeState(Address target) {
+        if (!node.isRunning()) {
+            return;
+        }
         assert partitionStateManager.isInitialized();
         assert node.isMaster();
         assert areMigrationTasksAllowed();
