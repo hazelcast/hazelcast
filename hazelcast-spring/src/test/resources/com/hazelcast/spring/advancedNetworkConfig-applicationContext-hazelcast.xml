@@ -62,6 +62,7 @@
                         <hz:property name="snapshot.enabled">false</hz:property>
                         <hz:property name="group.password">pass</hz:property>
                     </hz:properties>
+                    <hz:endpoint>wan-tokyo</hz:endpoint>
                 </hz:wan-publisher>
                 <hz:wan-publisher group-name="istanbul"
                                   publisher-id="istanbulPublisherId"

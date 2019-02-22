@@ -1548,7 +1548,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleProperties(child, publisherBuilder);
                 } else if ("queue-full-behavior".equals(nodeName)
                         || "initial-publisher-state".equals(nodeName)
-                        || "queue-capacity".equals(nodeName)) {
+                        || "queue-capacity".equals(nodeName)
+                        || "endpoint".equals(nodeName)) {
                     publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                 } else if (AliasedDiscoveryConfigUtils.supports(nodeName)) {
                     handleAliasedDiscoveryStrategy(child, publisherBuilder, nodeName);
