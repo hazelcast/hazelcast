@@ -206,7 +206,7 @@ public class ClientScheduledFutureProxy<V>
             return toObject(data);
         } else {
             ClientMessage request = ScheduledExecutorGetResultFromPartitionCodec.encodeRequest(schedulerName, taskName);
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, partitionId).invoke();
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, partitionId, false).invoke();
             ClientMessage response = future.get(timeout, unit);
             Data data = ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(response).response;
             return toObject(data);

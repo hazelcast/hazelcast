@@ -101,7 +101,7 @@ public class CallbackAwareClientDelegatingFutureTest extends HazelcastTestSuppor
         createCache(timeoutMillis, error);
 
         ClientMessage getRequest = createGetRequest(1);
-        ClientInvocation invocation = new ClientInvocation(client, getRequest, null, 0);
+        ClientInvocation invocation = new ClientInvocation(client, getRequest, null, 0, false);
         ClientInvocationFuture invocationFuture = invocation.invoke();
 
         final AtomicBoolean responseCalled = new AtomicBoolean();

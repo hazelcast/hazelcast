@@ -99,6 +99,10 @@ public class ClientContext {
         this.queryCacheContext = client.getQueryCacheContext();
     }
 
+    public HazelcastProperties getProperties() {
+        return properties;
+    }
+
     public ClientQueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
     }

@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.hazelfast.Server;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -123,7 +124,9 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
             callIdSequence.complete();
             throw e;
         }
-        invocations.put(callId, invocation);
+        if(!(Thread.currentThread() instanceof Server.PartitionThread)){
+            invocations.put(callId, invocation);
+        }
         if (!alive) {
             invocation.notifyError(new HazelcastInstanceNotActiveException());
             return false;
@@ -142,7 +145,9 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         if (!deactivate(invocation.op)) {
             return false;
         }
-        invocations.remove(invocation.op.getCallId());
+        if(!(Thread.currentThread() instanceof Server.PartitionThread)) {
+            invocations.remove(invocation.op.getCallId());
+        }
         callIdSequence.complete();
         return true;
     }

@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.connection.ClientBlockingChannel;
+import com.hazelcast.client.connection.ClientBlockingChannelPool;
+import com.hazelcast.client.connection.ThreadLocalClientBlockingChannelPool;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
@@ -28,9 +31,10 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
-import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.SUPPORT_CONNECTIONS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
@@ -41,24 +45,35 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 public abstract class ClientProxy implements DistributedObject {
 
     protected final String name;
-
     private final String serviceName;
     private final ClientContext context;
     private final SerializationService serializationService;
+    protected final ClientBlockingChannelPool clientChannelPool;
+    protected final boolean supportConnectionsEnabled;
 
     protected ClientProxy(String serviceName, String name, ClientContext context) {
         this.serviceName = serviceName;
         this.name = name;
         this.context = context;
         this.serializationService = context.getSerializationService();
+
+        boolean smartClient = context.getClientConfig().getNetworkConfig().isSmartRouting();
+        this.supportConnectionsEnabled = context.getProperties().getBoolean(SUPPORT_CONNECTIONS) && smartClient;
+        //System.out.println("Support connections enabled:"+supportConnectionsEnabled);
+        if (supportConnectionsEnabled) {
+            this.clientChannelPool = new ThreadLocalClientBlockingChannelPool(
+                    context.getPartitionService(),
+                    context.getLoggingService());
+        } else {
+            this.clientChannelPool = null;
+        }
     }
 
-    protected final @Nonnull
-    String registerListener(ListenerMessageCodec codec, EventHandler handler) {
+    protected final String registerListener(ListenerMessageCodec codec, EventHandler handler) {
         return getContext().getListenerService().registerListener(codec, handler);
     }
 
-    protected final boolean deregisterListener(@Nonnull String registrationId) {
+    protected final boolean deregisterListener(String registrationId) {
         return getContext().getListenerService().deregisterListener(registrationId);
     }
 
@@ -89,7 +104,6 @@ public abstract class ClientProxy implements DistributedObject {
         return name;
     }
 
-    @Nonnull
     @Override
     public final String getName() {
         return name;
@@ -187,12 +201,29 @@ public abstract class ClientProxy implements DistributedObject {
         return invokeOnPartition(clientMessage, partitionId);
     }
 
-    protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId) {
-        try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
-            return (T) future.get();
-        } catch (Exception e) {
-            throw rethrow(e);
+    protected <T> T invokeOnPartition(ClientMessage request, int partitionId) {
+        if (supportConnectionsEnabled) {
+            ClientBlockingChannel channel = clientChannelPool.get(partitionId);
+
+            Throwable exception = null;
+            try {
+                request.setPartitionId(partitionId);
+                channel.write(request);
+                channel.flush();
+                return (T) channel.readResponse();
+            } catch (IOException e) {
+                exception = e;
+                throw rethrow(e);
+            } finally {
+                clientChannelPool.release(partitionId, channel, exception);
+            }
+        } else {
+            try {
+                final Future future = new ClientInvocation(getClient(), request, getName(), partitionId, false).invoke();
+                return (T) future.get();
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
         }
     }
 
@@ -207,7 +238,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage, int partitionId) throws InterruptedException {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, true).invoke();
             return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrowAllowInterrupted(e);

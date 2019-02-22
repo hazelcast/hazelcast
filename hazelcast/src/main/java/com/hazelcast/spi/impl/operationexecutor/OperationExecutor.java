@@ -160,7 +160,7 @@ public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTrack
      * @param op the {@link Operation} to run or execute.
      * @throws java.lang.NullPointerException if op is null.
      */
-    void runOrExecute(Operation op);
+    void runOrElseExecute(Operation op);
 
     /**
      * Checks if the {@link Operation} is allowed to run on the current thread.

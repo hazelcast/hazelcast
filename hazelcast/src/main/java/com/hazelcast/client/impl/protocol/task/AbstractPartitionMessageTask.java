@@ -22,8 +22,8 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.Executor;
 
@@ -67,6 +67,40 @@ public abstract class AbstractPartitionMessageTask<P>
                 .invoke();
 
         f.andThen(this, this);
+    }
+
+    public ClientMessage runBlocking() {
+        parameters = decodeClientMessage(clientMessage);
+        assert addressesDecodedWithTranslation() : formatWrongAddressInDecodedMessage();
+        // we need connection to open these parts
+//        Credentials credentials = endpoint.getCredentials();
+//        interceptBefore(credentials);
+//        checkPermissions(endpoint);
+
+        beforeProcess();
+        Operation op = prepareOperation();
+//       we need connection to open these parts
+//        op.setCallerUuid(endpoint.getUuid());
+        ICompletableFuture f = nodeEngine.getOperationService()
+                .createInvocationBuilder(getServiceName(), op, getPartitionId())
+                .setResultDeserialized(false)
+                .invoke();
+        try {
+            Object o = f.get();
+            beforeResponse();
+            if (o instanceof Throwable) {
+                return convertToMessage((Throwable) o);
+            } else {
+                return encodeResponse(o);
+            }
+        } catch (Throwable e) {
+            return convertToMessage(e);
+        } finally {
+            afterResponse();
+//       we need connection to open these parts
+//            interceptAfter(credentials);
+        }
+
     }
 
     protected abstract Operation prepareOperation();

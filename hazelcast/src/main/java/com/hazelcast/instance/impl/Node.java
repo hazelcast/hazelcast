@@ -41,6 +41,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.hazelfast.Server;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -94,6 +95,7 @@ import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -120,8 +122,13 @@ import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
 import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
+import static com.hazelcast.spi.properties.GroupProperty.SOCKET_BUFFER_DIRECT;
+import static com.hazelcast.spi.properties.GroupProperty.SOCKET_NO_DELAY;
+import static com.hazelcast.spi.properties.GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.SOCKET_SEND_BUFFER_SIZE;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -180,6 +187,7 @@ public class Node {
     private final HealthMonitor healthMonitor;
 
     private final Joiner joiner;
+    private final Server server;
 
     private ManagementCenterService managementCenterService;
 
@@ -250,6 +258,8 @@ public class Node {
             metricsRegistry.collectMetrics(nodeExtension);
 
             networkingService = nodeContext.createNetworkingService(this, serverSocketRegistry);
+
+            server = createServer();
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
@@ -271,6 +281,21 @@ public class Node {
             }
             throw rethrow(e);
         }
+    }
+
+    private Server createServer() {
+        int partitionThreadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
+        if (partitionThreadCount <= 0) {
+            partitionThreadCount = Runtime.getRuntime().availableProcessors();
+        }
+        return new Server(new Server.Context()
+                .node(this)
+                .partitionThreadCount(partitionThreadCount)
+                .receiveBufferSize(properties.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * 1024)
+                .sendBufferSize(properties.getInteger(SOCKET_SEND_BUFFER_SIZE) * 1024)
+                .tcpNoDelay(properties.getBoolean(SOCKET_NO_DELAY))
+                .directBuffers(properties.getBoolean(SOCKET_BUFFER_DIRECT))
+                .startPort(address.getPort() + 10000));
     }
 
     private boolean hasClientServerSocket() {
@@ -425,6 +450,11 @@ public class Node {
         hazelcastInstance.lifecycleService.fireLifecycleEvent(LifecycleState.STARTING);
         clusterService.sendLocalMembershipEvent();
         networkingService.start();
+        try {
+            server.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         if (join.getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(multicastService,
@@ -507,6 +537,11 @@ public class Node {
             if (state != NodeState.SHUT_DOWN) {
                 shuttingDown.compareAndSet(true, false);
             }
+        }
+
+        try {
+            server.stop();
+        } catch (IOException e) {
         }
     }
 
@@ -848,14 +883,14 @@ public class Node {
             return (Joiner) constructor.newInstance(this);
         } catch (ClassNotFoundException e) {
             String message = "Your Hazelcast network configuration has AWS discovery "
-                     + "enabled, but there is no Hazelcast AWS module on a classpath. " + LINE_SEPARATOR
-                     + "Hint: If you are using Maven then add this dependency into your pom.xml:" + LINE_SEPARATOR
-                     + "<dependency>" + LINE_SEPARATOR
-                     + "    <groupId>com.hazelcast</groupId>" + LINE_SEPARATOR
-                     + "    <artifactId>hazelcast-aws</artifactId>" + LINE_SEPARATOR
-                     + "    <version>insert hazelcast-aws version</version>" + LINE_SEPARATOR
-                     + "</dependency>" + LINE_SEPARATOR
-                     + " See https://github.com/hazelcast/hazelcast-aws for additional details";
+                    + "enabled, but there is no Hazelcast AWS module on a classpath. " + LINE_SEPARATOR
+                    + "Hint: If you are using Maven then add this dependency into your pom.xml:" + LINE_SEPARATOR
+                    + "<dependency>" + LINE_SEPARATOR
+                    + "    <groupId>com.hazelcast</groupId>" + LINE_SEPARATOR
+                    + "    <artifactId>hazelcast-aws</artifactId>" + LINE_SEPARATOR
+                    + "    <version>insert hazelcast-aws version</version>" + LINE_SEPARATOR
+                    + "</dependency>" + LINE_SEPARATOR
+                    + " See https://github.com/hazelcast/hazelcast-aws for additional details";
             throw new InvalidConfigurationException(message, e);
         } catch (Exception e) {
             throw rethrow(e);

@@ -68,6 +68,10 @@ public final class ClientProperty {
     public static final HazelcastProperty EVENT_QUEUE_CAPACITY
             = new HazelcastProperty("hazelcast.client.event.queue.capacity", 1000000);
 
+
+    public static final HazelcastProperty SUPPORT_CONNECTIONS
+            = new HazelcastProperty("hazelcast.client.support.connections", "true");
+
     /**
      * When an invocation gets an exception because :
      * - Member throws an exception.

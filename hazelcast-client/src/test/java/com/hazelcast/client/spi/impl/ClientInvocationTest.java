@@ -196,7 +196,7 @@ public class ClientInvocationTest extends ClientTestSupport {
 
         SerializationService serializationService = clientInstanceImpl.getSerializationService();
         ClientMessage request = MapGetCodec.encodeRequest("test", serializationService.toData("test"), getThreadId());
-        ClientInvocation invocation = new ClientInvocation(clientInstanceImpl, request, "map", 1);
+        ClientInvocation invocation = new ClientInvocation(clientInstanceImpl, request, "map", 1, false);
         spyInvocationService.invokeOnPartitionOwner(invocation, 1);
     }
 }

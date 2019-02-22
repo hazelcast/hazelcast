@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.connection.ClientBlockingChannel;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterAndGetCodec;
@@ -31,9 +32,11 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.spi.InternalCompletableFuture;
+
+import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -69,47 +72,87 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
 
     @Override
     public long addAndGet(long delta) {
-        return addAndGetAsync(delta).join();
+        ClientMessage request = AtomicLongAddAndGetCodec.encodeRequest(name, delta);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicLongAddAndGetCodec.decodeResponse(response).response;
     }
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        return compareAndSetAsync(expect, update).join();
+        ClientMessage request = AtomicLongCompareAndSetCodec.encodeRequest(name, expect, update);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicLongCompareAndSetCodec.decodeResponse(response).response;
     }
 
     @Override
     public long decrementAndGet() {
-        return decrementAndGetAsync().join();
+        ClientMessage request = AtomicLongDecrementAndGetCodec.encodeRequest(name);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicLongDecrementAndGetCodec.decodeResponse(response).response;
     }
 
     @Override
     public long get() {
-        return getAsync().join();
+        ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicLongGetCodec.decodeResponse(response).response;
     }
 
     @Override
     public long getAndAdd(long delta) {
-        return getAndAddAsync(delta).join();
+        ClientMessage request = AtomicLongGetAndAddCodec.encodeRequest(name, delta);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicLongGetAndAddCodec.decodeResponse(response).response;
     }
 
     @Override
     public long getAndSet(long newValue) {
-        return getAndSetAsync(newValue).join();
+        ClientMessage request = AtomicLongGetAndSetCodec.encodeRequest(name, newValue);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicLongGetAndSetCodec.decodeResponse(response).response;
+    }
+
+    public long pipelinedGet(int pipelineDepth) {
+        ClientBlockingChannel channel = clientChannelPool.get(partitionId);
+
+        Exception cause = null;
+        try {
+            for (int k = 0; k < pipelineDepth; k++) {
+                ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
+                request.setPartitionId(partitionId);
+                channel.write(request);
+            }
+            channel.flush();
+            for (int k = 0; k < pipelineDepth; k++) {
+                channel.readResponse();
+            }
+        } catch (IOException e) {
+            cause = e;
+            throw new RuntimeException(e);
+        } finally {
+            clientChannelPool.release(partitionId, channel, cause);
+        }
+        return 0;
     }
 
     @Override
     public long incrementAndGet() {
-        return incrementAndGetAsync().join();
+        ClientMessage request = AtomicLongIncrementAndGetCodec.encodeRequest(name);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicLongIncrementAndGetCodec.decodeResponse(response).response;
     }
 
     @Override
     public long getAndIncrement() {
-        return getAndIncrementAsync().join();
+        ClientMessage request = AtomicLongGetAndIncrementCodec.encodeRequest(name);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicLongGetAndIncrementCodec.decodeResponse(response).response;
     }
 
     @Override
     public void set(long newValue) {
-        setAsync(newValue).join();
+        ClientMessage request = AtomicLongSetCodec.encodeRequest(name, newValue);
+        invokeOnPartition(request);
     }
 
     @Override

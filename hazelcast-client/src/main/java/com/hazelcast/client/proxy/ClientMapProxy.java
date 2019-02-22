@@ -357,7 +357,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     private ClientInvocationFuture invokeOnKeyOwner(ClientMessage request, Data keyData) {
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId);
+        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId, false);
         return clientInvocation.invoke();
     }
 
@@ -713,7 +713,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     private <T> T invoke(ClientMessage clientMessage, Object key, long invocationTimeoutSeconds) {
         final int partitionId = getContext().getPartitionService().getPartitionId(key);
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, false);
             clientInvocation.setInvocationTimeoutMillis(invocationTimeoutSeconds);
             final Future future = clientInvocation.invoke();
             return (T) future.get();
@@ -1214,7 +1214,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             List<Data> keyList = entry.getValue();
             if (!keyList.isEmpty()) {
                 ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
-                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
+                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId, false).invoke());
             }
         }
 
@@ -1719,7 +1719,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
-            futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
+            futures.add(new ClientInvocation(getClient(), request, getName(), partitionId, false).invoke());
         }
         try {
             for (Future<?> future : futures) {
@@ -1808,7 +1808,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = MapEventJournalSubscribeCodec.encodeRequest(name);
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId, false).invoke();
         return new ClientDelegatingFuture<>(fut, getSerializationService(), message -> {
             ResponseParameters resp = MapEventJournalSubscribeCodec.decodeResponse(message);
             return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
@@ -1831,7 +1831,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         final SerializationService ss = getSerializationService();
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
-        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId, false).invoke();
         return new ClientDelegatingFuture<>(fut, ss, message -> {
             MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
             PortableReadResultSet<?> resultSet = new PortableReadResultSet<>(

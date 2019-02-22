@@ -60,7 +60,7 @@ final class ClientCacheHelper {
         ClientMessage request = CacheGetConfigCodec.encodeRequest(cacheName, simpleCacheName);
         try {
             int partitionId = client.getClientPartitionService().getPartitionId(cacheName);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, cacheName, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, cacheName, partitionId, false);
             Future<ClientMessage> future = clientInvocation.invoke();
             ClientMessage responseMessage = future.get();
             SerializationService serializationService = client.getSerializationService();
@@ -90,7 +90,7 @@ final class ClientCacheHelper {
 
             Data configData = client.getSerializationService().toData(newCacheConfig);
             ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, true);
-            ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId, false);
             Future<ClientMessage> future = clientInvocation.invoke();
             final ClientMessage response = future.get();
             final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
