@@ -702,7 +702,7 @@ public class ConfigXmlGenerator {
            .node("queue-capacity", p.getQueueCapacity())
            .appendProperties(p.getProperties());
         if (p.getEndpoint() != null) {
-            gen.node("endpoint-qualifier", p.getEndpoint());
+            gen.node("endpoint", p.getEndpoint());
         }
         wanReplicationSyncGenerator(gen, p.getWanSyncConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(p));

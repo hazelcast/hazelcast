@@ -2497,7 +2497,15 @@
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
-            <xs:element name="endpoint-qualifier" type="xs:string" minOccurs="0"/>
+            <xs:element name="endpoint" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Reference to the name of a WAN endpoint config or WAN server socket endpoint config.
+                        The network settings from the referenced endpoint configuration will setup the network
+                        configuration of connections to the target WAN cluster members.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="group-name" type="xs:string" use="required">

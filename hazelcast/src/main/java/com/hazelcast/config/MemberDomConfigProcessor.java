@@ -562,7 +562,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
         } else if ("wan-sync".equals(targetChildName)) {
             handleWanSync(publisherConfig.getWanSyncConfig(), targetChild);
-        } else if ("endpoint-qualifier".equals(targetChildName)) {
+        } else if ("endpoint".equals(targetChildName)) {
             publisherConfig.setEndpoint(getTextContent(targetChild));
         }
     }
