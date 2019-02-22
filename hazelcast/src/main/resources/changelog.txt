@@ -2,18 +2,18 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 
 Release 3.12
 
+- Introduced the new CP Subsystem which offers linearizable implementations of Hazelcast's concurrency APIs.
 - Added the new Blue-Green and Disaster Recovery for Java Clients feature.
+- Added the support for querying JSON strings.
 - Introduced the ability to share the Hot Restart `base-dir` among multiple members.
 - Added the support for adding/removing WAN publishers in a running cluster.
 - Added the ability to automatically remove the stale Hot Restart data.
 - Introduced a mechanism which allows to choose whether a new member joining to a cluster will apply the client permissions stored in its own configuration, or will use the ones defined in the cluster.
 - Introduced the ability to automatically change the cluster version after a rolling upgrade.
-- Introduced the new CP Subsystem which offers linearizable implementations of Hazelcast's concurrency APIs.
 - Added the ability to retrieve the names of client instances on the member side.
 - Introduced client attributes.
 - Introduced composite indexes.
 - Deprecated the original `ILock`, `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` implementations and introduced their implementations provided by CP Subsystem.
-
 
 Release 3.11
 
