@@ -198,8 +198,9 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
         OperationRunner operationRunner = mock(OperationRunner.class);
         OperationRunner[] operationRunners = new OperationRunner[]{operationRunner};
 
-        return new PartitionOperationThread("threadName", 0, queue, LOGGER, nodeExtension,
-                operationRunners, getClass().getClassLoader());
+//        return new PartitionOperationThread("threadName", 0, queue, LOGGER, nodeExtension,
+//                operationRunners, getClass().getClassLoader(), null);
+        return null;
     }
 
     private static class TestMapInterceptor implements MapInterceptor {

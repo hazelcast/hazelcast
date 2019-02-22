@@ -646,7 +646,7 @@ public abstract class Invocation<T> implements OperationResponseHandler {
         if (isAsync) {
             context.operationExecutor.execute(op);
         } else {
-            context.operationExecutor.runOrExecute(op);
+            context.operationExecutor.runOrElseExecute(op);
         }
     }
 

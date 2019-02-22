@@ -21,7 +21,6 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.io.IOException;
@@ -43,7 +42,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public class NioThread extends Thread implements OperationHostileThread {
+public class NioThread extends Thread {
 
     // WARNING: This value has significant effect on idle CPU usage!
     private static final int SELECT_WAIT_TIME_MILLIS

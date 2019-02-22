@@ -67,7 +67,7 @@ public final class GroupProperty {
      * Total number of partitions in the Hazelcast cluster.
      */
     public static final HazelcastProperty PARTITION_COUNT
-            = new HazelcastProperty("hazelcast.partition.count", 271);
+            = new HazelcastProperty("hazelcast.partition.count", 2710);
 
     /**
      * For more detail see {@link #PARTITION_OPERATION_THREAD_COUNT}.
@@ -135,6 +135,10 @@ public final class GroupProperty {
             }
         }
     });
+
+    public static final HazelcastProperty OPERATION_CALLER_RUNS
+            = new HazelcastProperty("hazelcast.operation.callerruns", false);
+
 
     /**
      * The number of generic operation handler threads per member.
@@ -296,7 +300,7 @@ public final class GroupProperty {
      * It is disabled by default.
      */
     public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
-            = new HazelcastProperty("hazelcast.io.write.through", false);
+            = new HazelcastProperty("hazelcast.io.write.through", true);
 
     /**
      * Property needed for concurrency detection so that write through can be done correctly.

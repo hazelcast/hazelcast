@@ -313,6 +313,11 @@ public final class OperationServiceImpl implements MetricsProvider, LiveOperatio
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op) {
+        return invokeOnPartition(op, false);
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op, boolean sync) {
         return new PartitionInvocation(
                 invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invoke();

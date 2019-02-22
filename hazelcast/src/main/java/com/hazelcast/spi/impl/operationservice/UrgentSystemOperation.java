@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
+import com.hazelcast.spi.impl.operationservice.OperationService;
+
 /**
  * An Marker interface that signals that an operation is an urgent System Operation.
  * <p/>

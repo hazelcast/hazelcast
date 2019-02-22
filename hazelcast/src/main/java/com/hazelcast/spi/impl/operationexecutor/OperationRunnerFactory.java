@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 /**
