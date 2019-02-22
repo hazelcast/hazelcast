@@ -321,7 +321,6 @@ public interface StageWithKeyAndWindow<T, K> {
      * @param <R> type of the aggregation result
      */
     @Nonnull
-    @SuppressWarnings("unchecked")
     default <T1, T2, R> StreamStage<TimestampedEntry<K, R>> aggregate3(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
             @Nonnull StreamStageWithKey<T2, ? extends K> stage2,

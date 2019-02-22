@@ -36,6 +36,12 @@ public class SessionWindowDefinition<T> extends WindowDefinitionBase {
         this.sessionTimeout = sessionTimeout;
     }
 
+    @Override
+    public SessionWindowDefinition setEarlyResultsPeriod(long earlyResultPeriod) {
+        super.setEarlyResultsPeriod(earlyResultPeriod);
+        return this;
+    }
+
     @Nonnull @Override
     public WindowKind kind() {
         return SESSION;

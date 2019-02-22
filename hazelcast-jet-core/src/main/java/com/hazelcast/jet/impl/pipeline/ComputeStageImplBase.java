@@ -279,8 +279,8 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                         transform,
                         fnAdapter.adaptKeyFn(keyFn),
                         fnAdapter.adaptAggregateOperation1(aggrOp),
-                        fnAdapter.adaptRollingAggregateOutputFn(mapToOutputFn)),
-                fnAdapter);
+                        fnAdapter.adaptRollingAggregateOutputFn(mapToOutputFn)
+        ), fnAdapter);
     }
 
     @Nonnull
@@ -290,8 +290,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                 this.transform,
                 fnAdapter.adaptAggregateOperation1(aggrOp),
                 fnAdapter.adaptRollingAggregateOutputFn((key, result) -> result));
-        return (RET) attach(transform,
-                fnAdapter);
+        return (RET) attach(transform, fnAdapter);
     }
 
     @Nonnull
@@ -300,7 +299,6 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     <K1, T1_IN, T1, R, RET> RET attachHashJoin(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K1, ? super T, ? super T1_IN, ? extends T1> joinClause,
@@ -342,7 +340,8 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
         checkSerializable(shouldLogFn, "shouldLogFn");
         checkSerializable(toStringFn, "toStringFn");
         return attach(new PeekTransform(transform, fnAdapter.adaptFilterFn(shouldLogFn),
-                fnAdapter.adaptToStringFn(toStringFn)), fnAdapter);
+                fnAdapter.adaptToStringFn(toStringFn)
+        ), fnAdapter);
     }
 
     @Nonnull
@@ -370,8 +369,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     public SinkStage drainTo(@Nonnull Sink<? super T> sink) {
         SinkImpl sinkImpl = (SinkImpl) sink;
-        SinkTransform<T> sinkTransform = new SinkTransform(
-                sinkImpl, transform, fnAdapter == ADAPT_TO_JET_EVENT);
+        SinkTransform<T> sinkTransform = new SinkTransform(sinkImpl, transform, fnAdapter == ADAPT_TO_JET_EVENT);
         SinkStageImpl output = new SinkStageImpl(sinkTransform, pipelineImpl);
         sinkImpl.onAssignToStage();
         pipelineImpl.connect(transform, sinkTransform);

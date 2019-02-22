@@ -101,6 +101,7 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
                     : buffer.isEmpty() ? eventTimeMapper.flatMapIdle()
                     : buffer.traverse().flatMap(t -> {
                         // if eventTimeMapper is not null, we know that T is TimestampedItem<?>
+                        @SuppressWarnings("unchecked")
                         TimestampedItem<T> t1 = (TimestampedItem<T>) t;
                         return eventTimeMapper.flatMapEvent(t1.item(), 0, t1.timestamp());
                     });

@@ -552,6 +552,9 @@ public final class Processors {
      * @param timestampKind the kind of timestamp extracted by {@code timestampFns}: either the
      *                      event timestamp or the frame timestamp
      * @param winPolicy definition of the window to compute
+     * @param earlyResultsPeriod the period (milliseconds) at which to emit the preliminary results of
+     *                           windows before the watermark has advanced past them. Zero means "don't
+     *                           emit early results"
      * @param aggrOp aggregate operation to perform on each group in a window
      * @param isLastStage if this is the last stage of multi-stage setup
      *

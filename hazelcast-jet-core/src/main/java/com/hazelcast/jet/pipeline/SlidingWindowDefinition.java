@@ -42,6 +42,12 @@ public class SlidingWindowDefinition extends WindowDefinitionBase {
         this.slideBy = slideBy;
     }
 
+    @Override
+    public SlidingWindowDefinition setEarlyResultsPeriod(long earlyResultPeriod) {
+        super.setEarlyResultsPeriod(earlyResultPeriod);
+        return this;
+    }
+
     @Nonnull @Override
     public WindowKind kind() {
         return SLIDING;

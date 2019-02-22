@@ -66,6 +66,20 @@ public class LongLongAccumulator {
         this.value2 = value2;
     }
 
+    /**
+     * Adds the supplied amount to the first value.
+     */
+    public void add1(long amount) {
+        this.value1 += amount;
+    }
+
+    /**
+     * Adds the supplied amount to the second value.
+     */
+    public void add2(long amount) {
+        this.value2 += amount;
+    }
+
     @Override
     public boolean equals(Object o) {
         return this == o ||
