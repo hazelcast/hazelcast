@@ -1453,7 +1453,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <properties>\n"
                 + "                <property name=\"propName1\">propValue1</property>\n"
                 + "            </properties>\n"
-                + "            <endpoint-qualifier>nyc-endpoint-qualifier</endpoint-qualifier>\n"
+                + "            <endpoint>nyc-endpoint</endpoint>\n"
                 + "        </wan-publisher>\n"
                 + "        <wan-consumer>\n"
                 + "            <class-name>ConsumerClassName</class-name>\n"
@@ -1488,7 +1488,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(15000, publisherConfig.getQueueCapacity());
         assertEquals(DISCARD_AFTER_MUTATION, publisherConfig.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
-        assertEquals("nyc-endpoint-qualifier", publisherConfig.getEndpoint());
+        assertEquals("nyc-endpoint", publisherConfig.getEndpoint());
 
         properties = publisherConfig.getProperties();
         assertNotNull(properties);
