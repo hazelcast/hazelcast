@@ -70,6 +70,15 @@ public final class PacketDispatcher implements Consumer<Packet> {
                 case EVENT:
                     eventService.accept(packet);
                     break;
+                case EXTENDED_BIND:
+                    // 3.11 members ignore EXTENDED_BINDS messages.
+                    //
+                    // Reasoning:
+                    // EXTENDED_BINDS were introduced in Hazelcast 3.12. Hazelcast 3.11 has no good way
+                    // to handle them. We can ignore them because 3.12 members send EXTENDED_BIND
+                    // immediately followed by the old BIND. So we ignore EXTENDED_BIND and then we process
+                    // the old BIND.
+                    break;
                 case BIND:
                     connectionManager.accept(packet);
                     break;
