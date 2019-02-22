@@ -16,90 +16,209 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.Job;
-import org.junit.Before;
+import com.hazelcast.jet.accumulator.LongLongAccumulator;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.TimestampedItem;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NavigableMap;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.Util.mapEventNewValue;
-import static com.hazelcast.jet.Util.mapPutEvents;
-import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static java.util.Collections.nCopies;
+import static java.lang.Long.max;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
+    static final int ASSERT_TIMEOUT_SECONDS = 10;
+    static final long EARLY_RESULTS_PERIOD = 200L;
+    private static final int SOURCE_EVENT_PERIOD_NANOS = 100_000;
 
-    StreamSourceStage<Integer> srcStage;
-
-    long maxLag;
-
-    // Windowing tests use input items as timestamps. This list contains items
-    // that will advance the watermark on all partitions enough to close all
-    // open windows.
-    List<Integer> closingItems;
-
-    private final String journaledSrcMapName = journaledMapName();
-    private List<String> inputKeys;
-
-    @Before
-    public void beforePipelineStreamTestSupport() {
-        HazelcastInstance hz = member.getHazelcastInstance();
-        int partitionCount = getPartitionService(hz).getPartitionCount();
-        itemCount = 16 * partitionCount;
-        inputKeys = IntStream.range(0, partitionCount)
-                             .mapToObj(i -> generateKeyForPartition(hz, i))
-                             .collect(toList());
-        closingItems = nCopies(inputKeys.size(), 16 * itemCount);
-        maxLag = itemCount / 2;
-        srcMap = jet().getMap(journaledSrcMapName);
-        srcStage = drawEventJournalValues(journaledSrcMapName);
+    StreamStage<Integer> sourceStageFromList(List<Integer> input) {
+        return sourceStageFromList(input, 0);
     }
 
-    StreamSourceStage<Integer> drawEventJournalValues(String mapName) {
-        return p.drawFrom(Sources.mapJournal(mapName, mapPutEvents(), mapEventNewValue(), START_FROM_OLDEST));
+    /**
+     * The returned stream stage emits the items from the supplied list of
+     * integers. It uses the integer as both timestamp and data.
+     * <p>
+     * The stage emits (1e9 / {@value SOURCE_EVENT_PERIOD_NANOS}) items per
+     * second.
+     * <p>
+     * If not emitting early results (earlyResultsPeriod == 0), the source
+     * stage will complete when it exhausts the input. This allows the
+     * entire Jet job to complete.
+     */
+    StreamStage<Integer> sourceStageFromList(List<Integer> input, long earlyResultsPeriod) {
+        boolean emittingEarlyResults = earlyResultsPeriod != 0;
+        StreamSource<Integer> source = SourceBuilder
+                .timestampedStream("sequence", x -> new LongLongAccumulator(System.nanoTime(), 0))
+                .<Integer>fillBufferFn((deadline_emittedCount, buf) -> {
+                    int emittedCount = (int) deadline_emittedCount.get2();
+                    if (emittedCount == input.size()) {
+                        if (!emittingEarlyResults) {
+                            buf.close();
+                        }
+                        return;
+                    }
+                    if (System.nanoTime() < deadline_emittedCount.get1()) {
+                        return;
+                    }
+                    int item = input.get(emittedCount);
+                    buf.add(item, (long) item);
+                    deadline_emittedCount.add1(SOURCE_EVENT_PERIOD_NANOS);
+                    deadline_emittedCount.add2(1);
+                })
+                .build();
+        return p.drawFrom(source).withNativeTimestamps(emittingEarlyResults ? 2 * itemCount : 0);
     }
 
-    void addToMapJournal(Map<String, Integer> map, List<Integer> items) {
-        Iterator<String> keyIter = inputKeys.iterator();
-        for (Integer item : items) {
-            if (!keyIter.hasNext()) {
-                keyIter = inputKeys.iterator();
-            }
-            map.put(keyIter.next(), item);
-        }
+    Stream<Integer> sinkStreamOfInt() {
+        return sinkList.stream().map(Integer.class::cast);
     }
 
-    void addToSrcMapJournal(List<Integer> items) {
-        addToMapJournal(srcMap, items);
+    @SuppressWarnings("unchecked")
+    <K, V> Stream<Entry<K, V>> sinkStreamOfEntry() {
+        return sinkList.stream().map(Entry.class::cast);
     }
 
-    Job executeAsync() {
-        return jet().newJob(p);
+    @SuppressWarnings("unchecked")
+    <T> Stream<TimestampedEntry<String, T>> sinkStreamOfTsEntry() {
+        return sinkList.stream().map(TimestampedEntry.class::cast);
     }
 
+    @SuppressWarnings("unchecked")
+    <T> Stream<TimestampedItem<T>> sinkStreamOfTsItem() {
+        return sinkList.stream().map(TimestampedItem.class::cast);
+    }
+
+    /**
+     * Uses {@code formatFn} to stringify each item of the given stream, sorts
+     * the strings, then outputs them line by line.
+     * <p>
+     * If you supply the optional {@code distinctKeyFn}, it will use it to
+     * eliminate the items with the same key, keeping the last one in the
+     * stream. Keeping the last duplicate item is the way to de-duplicate a
+     * stream of early window results.
+     */
     static <T, K> String streamToString(
             @Nonnull Stream<? extends T> stream,
-            @Nullable Function<? super T, ? extends K> distinctKeyFn,
-            @Nonnull Function<? super T, ? extends String> formatFn
+            @Nonnull Function<? super T, ? extends String> formatFn,
+            @Nullable Function<? super T, ? extends K> distinctKeyFn
     ) {
         if (distinctKeyFn != null) {
-            // Keeps the last duplicate item (as required to validate early window results)
             stream = stream.collect(toMap(distinctKeyFn, identity(), (t0, t1) -> t1))
                            .values().stream();
         }
         return stream.map(formatFn)
                      .sorted()
                      .collect(joining("\n"));
+    }
+
+    /**
+     * Uses {@code formatFn} to stringify each item of the given stream, sorts
+     * the strings, then outputs them line by line.
+     */
+    static <T> String streamToString(
+            @Nonnull Stream<? extends T> stream,
+            @Nonnull Function<? super T, ? extends String> formatFn
+    ) {
+        return streamToString(stream, formatFn, null);
+    }
+
+    /**
+     * Generates the expected results of sliding window aggregation. The input
+     * must be timestamped {@code int}s and the aggregate function is summing.
+     */
+    static class SlidingWindowSimulator {
+        // window end -> sum of integer items
+        final NavigableMap<Long, Long> windowSums = new TreeMap<>();
+        private final long winSize;
+        private final long frameSize;
+        private long topTimestamp;
+
+        SlidingWindowSimulator(SlidingWindowDefinition winDef) {
+            this.winSize = winDef.windowSize();
+            this.frameSize = winDef.slideBy();
+        }
+
+        void accept(long timestamp, int item) {
+            long frameStart = roundDown(timestamp, frameSize);
+            long earliestWindowEnd = frameStart + frameSize;
+            long latestWindowEnd = frameStart + winSize;
+            for (long winEnd = earliestWindowEnd; winEnd <= latestWindowEnd; winEnd += frameSize) {
+                windowSums.merge(winEnd, (long) item, Long::sum);
+            }
+            topTimestamp = max(topTimestamp, timestamp);
+        }
+
+        /**
+         * Uses the integers in the stream as both timestamps and data.
+         */
+        SlidingWindowSimulator acceptStream(Stream<Integer> input) {
+            input.forEach(i -> accept(i, i));
+            return this;
+        }
+
+        /**
+         * Returns a string representation of the aggregation output, one result
+         * per line.
+         */
+        String stringResults(Function<? super Entry<Long, Long>, ? extends String> formatFn) {
+            Stream<Entry<Long, Long>> winStream = windowSums.entrySet().stream();
+            return streamToString(winStream, formatFn, null);
+        }
+    }
+
+    /**
+     * Generates the expected results of session window aggregation. The input
+     * must be timestamped {@code int}s and the aggregate function is summing.
+     * The input must come in sorted by timestamp. The logic to detect session
+     * timeout assumes this.
+     */
+    static class SessionWindowSimulator {
+        final NavigableMap<Long, Long> windowSums = new TreeMap<>();
+        private final long sessionTimeout;
+        private final long expectedWindowSize;
+        private long prevTimestamp = Long.MIN_VALUE;
+
+        SessionWindowSimulator(SessionWindowDefinition winDef, long expectedWindowSize) {
+            this.sessionTimeout = winDef.sessionTimeout();
+            this.expectedWindowSize = expectedWindowSize;
+        }
+
+        void accept(long timestamp, int item) {
+            long winStart = (timestamp <= prevTimestamp + sessionTimeout)
+                    ? windowSums.lastKey()
+                    : timestamp;
+            windowSums.merge(winStart, (long) item, Long::sum);
+            prevTimestamp = timestamp;
+        }
+
+        /**
+         * Uses the integers in the stream as both timestamps and data.
+         */
+        SessionWindowSimulator acceptStream(Stream<Integer> input) {
+            input.forEach(i -> accept(i, i));
+            return this;
+        }
+
+        /**
+         * Returns a string representation of the aggregation output, one result
+         * per line.
+         */
+        String stringResults(Function<? super Entry<Long, Long>, ? extends String> formatFn) {
+            SortedMap<Long, Long> results = windowSums;
+            if (prevTimestamp % expectedWindowSize != expectedWindowSize - sessionTimeout - 1) {
+                results = results.headMap(windowSums.lastKey());
+            }
+            return streamToString(results.entrySet().stream(), formatFn, null);
+        }
     }
 }

@@ -61,23 +61,19 @@ import static org.junit.Assert.assertTrue;
 
 public class BatchAggregateTest extends PipelineTestSupport {
 
-    private BatchStage<Integer> srcStage;
+    private List<Integer> input;
 
     @Before
     public void before() {
-        srcStage = p.drawFrom(mapValuesSource(srcName));
+        input = sequence(itemCount);
     }
 
     @Test
     public void aggregate() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-
         // When
-        BatchStage<Set<Integer>> aggregated = srcStage.aggregate(toSet());
+        BatchStage<Set<Integer>> aggregated = sourceStageFromInput().aggregate(toSet());
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(toBag(singletonList(new HashSet<>(input))), sinkToBag());
@@ -85,29 +81,25 @@ public class BatchAggregateTest extends PipelineTestSupport {
 
     @Test
     public void aggregate2_withSeparateAggrOps() {
-        testAggregate2(stage1 -> srcStage.aggregate2(toList(), stage1, toList()));
+        testAggregate2(stage1 -> sourceStageFromInput().aggregate2(toList(), stage1, toList()));
     }
 
     @Test
     public void aggregate2_withAggrOp2() {
-        testAggregate2(stage1 -> srcStage.aggregate2(stage1, aggregateOperation2(toList(), toList())));
+        testAggregate2(stage1 -> sourceStageFromInput().aggregate2(stage1, aggregateOperation2(toList(), toList())));
     }
 
     private void testAggregate2(
             Function<BatchStage<String>, BatchStage<Tuple2<List<Integer>, List<String>>>> attachAggregatingStageFn
     ) {
         // Given
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, String> mapFn = i -> i + "-x";
-        putToBatchSrcMap(input);
-        String src1Name = randomMapName();
-        putToMap(jet().getMap(src1Name), input);
-        BatchStage<String> stage1 = p.drawFrom(mapValuesSource(src1Name)).map(mapFn);
+        BatchStage<String> stage1 = sourceStageFromInput().map(mapFn);
 
         // When
         BatchStage<Tuple2<List<Integer>, List<String>>> aggregated = attachAggregatingStageFn.apply(stage1);
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         Iterator<?> sinkIter = sinkList.iterator();
@@ -121,35 +113,33 @@ public class BatchAggregateTest extends PipelineTestSupport {
 
     @Test
     public void aggregate2_withSeparateAggrOps_withOutputFn() {
-        testAggregate2_withOutputFn(stage1 ->
-                srcStage.aggregate2(toList(), stage1, toList(), (r0, r1) -> r0.size() + r1.size()));
+        // When
+        BatchStage<Integer> aggregated = sourceStageFromInput().aggregate2(
+                toList(),
+                sourceStageFromInput(),
+                toList(),
+                (r0, r1) -> r0.size() + r1.size());
+
+        // Then
+        validateAggregated2(aggregated);
     }
 
     @Test
     public void aggregate2_withAggrOp2_with_finishFn() {
-        testAggregate2_withOutputFn(stage1 -> srcStage.aggregate2(stage1,
-                aggregateOperation2(toList(), toList(), (r0, r1) -> r0.size() + r1.size())));
+        // When
+        BatchStage<Integer> aggregated = sourceStageFromInput().aggregate2(
+                sourceStageFromInput(),
+                aggregateOperation2(toList(), toList(), (r0, r1) -> r0.size() + r1.size()));
+
+        // Then
+        validateAggregated2(aggregated);
     }
 
-    private void testAggregate2_withOutputFn(
-            Function<BatchStage<Integer>, BatchStage<Integer>> attachAggregatingStageFn
-    ) {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-        String src1Name = randomMapName();
-        putToMap(jet().getMap(src1Name), input);
-        BatchStage<Integer> stage1 = p.drawFrom(mapValuesSource(src1Name));
-
-        // When
-        BatchStage<Integer> aggregated = attachAggregatingStageFn.apply(stage1);
-
-        //Then
+    private void validateAggregated2(BatchStage<Integer> aggregated) {
         aggregated.drainTo(sink);
         execute();
         Iterator<?> sinkIter = sinkList.iterator();
         assertTrue(sinkIter.hasNext());
-        @SuppressWarnings("unchecked")
         int actual = (Integer) sinkIter.next();
         assertFalse(sinkIter.hasNext());
         assertEquals(2 * input.size(), actual);
@@ -157,13 +147,14 @@ public class BatchAggregateTest extends PipelineTestSupport {
 
     @Test
     public void aggregate3_withSeparateAggrOps() {
-        testAggregate3((stage1, stage2) -> srcStage.aggregate3(toList(), stage1, toList(), stage2, toList()));
+        testAggregate3((stage1, stage2) ->
+                sourceStageFromInput().aggregate3(toList(), stage1, toList(), stage2, toList()));
     }
 
     @Test
     public void aggregate3_withAggrOp3() {
-        testAggregate3((stage1, stage2) -> srcStage.aggregate3(stage1, stage2,
-                aggregateOperation3(toList(), toList(), toList())));
+        testAggregate3((stage1, stage2) ->
+                sourceStageFromInput().aggregate3(stage1, stage2, aggregateOperation3(toList(), toList(), toList())));
     }
 
     private void testAggregate3(
@@ -171,29 +162,23 @@ public class BatchAggregateTest extends PipelineTestSupport {
                     BatchStage<Tuple3<List<Integer>, List<String>, List<String>>>> attachAggregatingStageFn
     ) {
         // Given
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, String> mapFn1 = i -> i + "-a";
         DistributedFunction<Integer, String> mapFn2 = i -> i + "-b";
-        putToBatchSrcMap(input);
-        String src1Name = randomMapName();
-        String src2Name = randomMapName();
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
-        BatchStage<String> stage1 = p.drawFrom(mapValuesSource(src1Name)).map(mapFn1);
-        BatchStage<String> stage2 = p.drawFrom(mapValuesSource(src2Name)).map(mapFn2);
+        BatchStage<String> stage1 = sourceStageFromInput().map(mapFn1);
+        BatchStage<String> stage2 = sourceStageFromInput().map(mapFn2);
 
         // When
         BatchStage<Tuple3<List<Integer>, List<String>, List<String>>> aggregated =
                 attachAggregatingStageFn.apply(stage1, stage2);
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         Iterator<?> sinkIter = sinkList.iterator();
         assertTrue(sinkIter.hasNext());
         @SuppressWarnings("unchecked")
-        Tuple3<List<Integer>, List<String>, List<String>> actual = (Tuple3<List<Integer>, List<String>, List<String>>)
-                sinkIter.next();
+        Tuple3<List<Integer>, List<String>, List<String>> actual =
+                (Tuple3<List<Integer>, List<String>, List<String>>) sinkIter.next();
         assertFalse(sinkIter.hasNext());
         assertEquals(toBag(input), toBag(actual.f0()));
         assertEquals(toBag(input.stream().map(mapFn1).collect(Collectors.toList())), toBag(actual.f1()));
@@ -202,83 +187,71 @@ public class BatchAggregateTest extends PipelineTestSupport {
 
     @Test
     public void aggregate3_withSeparateAggrOps_withOutputFn() {
-        testAggregate3_withOutputFn((stage1, stage2) -> srcStage.aggregate3(
-                toList(), stage1, toList(), stage2, toList(), (r0, r1, r2) -> r0.size() + r1.size() + r2.size()));
+        // When
+        BatchStage<Integer> aggregated = sourceStageFromInput().aggregate3(
+                toList(),
+                sourceStageFromInput(),
+                toList(),
+                sourceStageFromInput(),
+                toList(),
+                (r0, r1, r2) -> r0.size() + r1.size() + r2.size());
+
+        // Then
+        validateAggregated3(aggregated);
     }
 
     @Test
     public void aggregate3_withAggrOp3_with_finishFn() {
-        testAggregate3_withOutputFn((stage1, stage2) -> srcStage.aggregate3(stage1, stage2, aggregateOperation3(
-                toList(), toList(), toList(), (r0, r1, r2) -> r0.size() + r1.size() + r2.size())));
+        // When
+        BatchStage<Integer> aggregated = sourceStageFromInput().aggregate3(
+                sourceStageFromInput(),
+                sourceStageFromInput(),
+                aggregateOperation3(toList(), toList(), toList(), (r0, r1, r2) -> r0.size() + r1.size() + r2.size()));
+
+        // Then
+        validateAggregated3(aggregated);
     }
 
-    private void testAggregate3_withOutputFn(
-            BiFunction<BatchStage<Integer>, BatchStage<Integer>, BatchStage<Integer>> attachAggregatingStageFn
-    ) {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-        String src1Name = randomMapName();
-        String src2Name = randomMapName();
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
-        BatchStage<Integer> stage1 = p.drawFrom(mapValuesSource(src1Name));
-        BatchStage<Integer> stage2 = p.drawFrom(mapValuesSource(src2Name));
-
-        // When
-        BatchStage<Integer> aggregated = attachAggregatingStageFn.apply(stage1, stage2);
-
-        //Then
+    private void validateAggregated3(BatchStage<Integer> aggregated) {
         aggregated.drainTo(sink);
         execute();
         Iterator<?> sinkIter = sinkList.iterator();
         assertTrue(sinkIter.hasNext());
-        @SuppressWarnings("unchecked")
         int actual = (Integer) sinkIter.next();
         assertFalse(sinkIter.hasNext());
         assertEquals(3 * input.size(), actual);
     }
 
     private class AggregateBuilderFixture {
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, String> mapFn1 = i -> i + "-a";
         DistributedFunction<Integer, String> mapFn2 = i -> i + "-b";
-        String src1Name = randomMapName();
-        String src2Name = randomMapName();
-        BatchStage<String> stage1 = p.drawFrom(mapValuesSource(src1Name)).map(mapFn1);
-        BatchStage<String> stage2 = p.drawFrom(mapValuesSource(src2Name)).map(mapFn2);
-        {
-            putToBatchSrcMap(input);
-            putToMap(jet().getMap(src1Name), input);
-            putToMap(jet().getMap(src2Name), input);
-        }
+        BatchStage<String> stage1 = sourceStageFromInput().map(mapFn1);
+        BatchStage<String> stage2 = sourceStageFromInput().map(mapFn2);
     }
 
     @Test
-    @SuppressWarnings("ConstantConditions")
     public void aggregateBuilder_withSeparateAggrOps() {
         // Given
         AggregateBuilderFixture fx = new AggregateBuilderFixture();
 
         // When
-        AggregateBuilder<List<Integer>> b = srcStage.aggregateBuilder(toList());
+        AggregateBuilder<List<Integer>> b = sourceStageFromInput().aggregateBuilder(toList());
         Tag<List<Integer>> tag0 = b.tag0();
         Tag<List<String>> tag1 = b.add(fx.stage1, toList());
         Tag<List<String>> tag2 = b.add(fx.stage2, toList());
         BatchStage<ItemsByTag> aggregated = b.build();
 
-        //Then
+        // Then
         validateAggrBuilder(fx, tag0, tag1, tag2, aggregated);
     }
 
     @Test
-    @SuppressWarnings("ConstantConditions")
     public void aggregateBuilder_with_complexAggrOp() {
         // Given
         AggregateBuilderFixture fx = new AggregateBuilderFixture();
 
         // When
-        AggregateBuilder1<Integer> b = srcStage.aggregateBuilder();
+        AggregateBuilder1<Integer> b = sourceStageFromInput().aggregateBuilder();
         Tag<Integer> tag0_in = b.tag0();
         Tag<String> tag1_in = b.add(fx.stage1);
         Tag<String> tag2_in = b.add(fx.stage2);
@@ -306,10 +279,10 @@ public class BatchAggregateTest extends PipelineTestSupport {
         assertTrue(sinkIter.hasNext());
         ItemsByTag actual = (ItemsByTag) sinkIter.next();
         assertFalse(sinkIter.hasNext());
-        assertEquals(toBag(fx.input), toBag(requireNonNull(actual.get(tag0))));
-        assertEquals(toBag(fx.input.stream().map(fx.mapFn1).collect(Collectors.toList())),
+        assertEquals(toBag(input), toBag(requireNonNull(actual.get(tag0))));
+        assertEquals(toBag(input.stream().map(fx.mapFn1).collect(Collectors.toList())),
                 toBag(requireNonNull(actual.get(tag1))));
-        assertEquals(toBag(fx.input.stream().map(fx.mapFn2).collect(Collectors.toList())),
+        assertEquals(toBag(input.stream().map(fx.mapFn2).collect(Collectors.toList())),
                 toBag(requireNonNull(actual.get(tag2))));
     }
 
@@ -317,23 +290,17 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @SuppressWarnings("ConstantConditions")
     public void aggregateBuilder_withSeparateAggrOps_withOutputFn() {
         // Given
-        List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-        String src1Name = randomMapName();
-        String src2Name = randomMapName();
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
-        BatchStage<Integer> stage1 = p.drawFrom(mapValuesSource(src1Name));
-        BatchStage<Integer> stage2 = p.drawFrom(mapValuesSource(src2Name));
+        BatchStage<Integer> stage1 = sourceStageFromInput();
+        BatchStage<Integer> stage2 = sourceStageFromInput();
 
         // When
-        AggregateBuilder<Long> b = srcStage.aggregateBuilder(counting());
+        AggregateBuilder<Long> b = sourceStageFromInput().aggregateBuilder(counting());
         Tag<Long> tag0 = b.tag0();
         Tag<Long> tag1 = b.add(stage1, counting());
         Tag<Long> tag2 = b.add(stage2, counting());
         BatchStage<Long> aggregated = b.build(ibt -> ibt.get(tag0) + ibt.get(tag1) + ibt.get(tag2));
 
-        //Then
+        // Then
         validateAggBuilder_withOutputFn(input, aggregated);
     }
 
@@ -341,17 +308,11 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @SuppressWarnings("ConstantConditions")
     public void aggregateBuilder_with_complexAggrOp_withOutputFn() {
         // Given
-        List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-        String src1Name = randomMapName();
-        String src2Name = randomMapName();
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
-        BatchStage<Integer> stage1 = p.drawFrom(mapValuesSource(src1Name));
-        BatchStage<Integer> stage2 = p.drawFrom(mapValuesSource(src2Name));
+        BatchStage<Integer> stage1 = sourceStageFromInput();
+        BatchStage<Integer> stage2 = sourceStageFromInput();
 
         // When
-        AggregateBuilder1<Integer> b = srcStage.aggregateBuilder();
+        AggregateBuilder1<Integer> b = sourceStageFromInput().aggregateBuilder();
         Tag<Integer> tag0_in = b.tag0();
         Tag<Integer> tag1_in = b.add(stage1);
         Tag<Integer> tag2_in = b.add(stage2);
@@ -364,7 +325,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
 
         BatchStage<Long> aggregated = b.build(aggrOp);
 
-        //Then
+        // Then
         validateAggBuilder_withOutputFn(input, aggregated);
     }
 
@@ -381,16 +342,14 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void groupAggregate() {
         // Given
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, Integer> keyFn = i -> i % 5;
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<Entry<Integer, Long>> aggregated = srcStage
+        BatchStage<Entry<Integer, Long>> aggregated = sourceStageFromInput()
                 .groupingKey(keyFn)
                 .aggregate(summingLong(i -> i));
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         Map<Integer, Long> expected = input.stream().collect(groupingBy(keyFn, Collectors.summingLong(i -> i)));
@@ -400,16 +359,14 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void groupAggregate_withOutputFn() {
         // Given
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, Integer> keyFn = i -> i % 5;
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<Entry<Integer, Long>> aggregated = srcStage
+        BatchStage<Entry<Integer, Long>> aggregated = sourceStageFromInput()
                 .groupingKey(keyFn)
                 .aggregate(summingLong(i -> i), (key, sum) -> entry(key, 3 * sum));
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         Map<Integer, Long> expected = input.stream().collect(groupingBy(keyFn, Collectors.summingLong(i -> 3 * i)));
@@ -436,23 +393,19 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 attachAggregatingStageFn
     ) {
         // Given
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, Integer> keyFn = i -> i / 5;
         DistributedFunction<Integer, Integer> mapFn1 = i -> 10 * i;
         Collector<Integer, ?, Long> collectOp = Collectors.summingLong(i -> i);
-        String src1Name = randomMapName();
-        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name))
-                                         .map(mapFn1);
-        putToBatchSrcMap(input);
-        putToMap(jet().getMap(src1Name), input);
+        BatchStage<Integer> srcStage0 = sourceStageFromInput();
+        BatchStage<Integer> srcStage1 = sourceStageFromInput().map(mapFn1);
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage0.groupingKey(keyFn);
         BatchStageWithKey<Integer, Integer> stage1 = srcStage1.groupingKey(keyFn);
         BatchStage<Entry<Integer, Tuple2<Long, Long>>> aggregated =
                 attachAggregatingStageFn.apply(stage0, stage1);
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         Map<Integer, Long> expected0 = input.stream()
@@ -494,24 +447,20 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 > attachAggregatingStageFn
     ) {
         // Given
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, Integer> keyFn = i -> i / 5;
         DistributedFunction<Integer, Integer> mapFn1 = i -> 10 * i;
         Collector<Integer, ?, Long> collectOp = Collectors.summingLong(i -> i);
         long a = 37;
         DistributedTriFunction<Integer, Long, Long, Long> outputFn = (k, v0, v1) -> v1 + a * (v0 + a * k);
-        String src1Name = randomMapName();
-        putToBatchSrcMap(input);
-        putToMap(jet().getMap(src1Name), input);
-        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name))
-                                         .map(mapFn1);
+        BatchStage<Integer> srcStage0 = sourceStageFromInput();
+        BatchStage<Integer> srcStage1 = sourceStageFromInput().map(mapFn1);
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage0.groupingKey(keyFn);
         BatchStageWithKey<Integer, Integer> stage1 = srcStage1.groupingKey(keyFn);
         BatchStage<Long> aggregated = attachAggregatingStageFn.apply(stage0, stage1, outputFn);
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         Map<Integer, Long> expectedAggr0 = input.stream()
@@ -552,29 +501,22 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 attachAggregatingStageFn
     ) {
         // Given
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, Integer> keyFn = i -> i / 5;
         DistributedFunction<Integer, Integer> mapFn1 = i -> 10 * i;
         DistributedFunction<Integer, Integer> mapFn2 = i -> 100 * i;
         Collector<Integer, ?, Long> collectOp = Collectors.summingLong(i -> i);
-        String src1Name = randomMapName();
-        String src2Name = randomMapName();
-        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name))
-                                         .map(mapFn1);
-        BatchStage<Integer> srcStage2 = p.drawFrom(mapValuesSource(src2Name))
-                                         .map(mapFn2);
-        putToBatchSrcMap(input);
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
+        BatchStage<Integer> srcStage0 = sourceStageFromInput();
+        BatchStage<Integer> srcStage1 = sourceStageFromInput().map(mapFn1);
+        BatchStage<Integer> srcStage2 = sourceStageFromInput().map(mapFn2);
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage0.groupingKey(keyFn);
         BatchStageWithKey<Integer, Integer> stage1 = srcStage1.groupingKey(keyFn);
         BatchStageWithKey<Integer, Integer> stage2 = srcStage2.groupingKey(keyFn);
         BatchStage<Entry<Integer, Tuple3<Long, Long, Long>>> aggregated =
                 attachAggregatingStageFn.apply(stage0, stage1, stage2);
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         Map<Integer, Long> expected0 = input.stream()
@@ -622,7 +564,6 @@ public class BatchAggregateTest extends PipelineTestSupport {
             > attachAggregatingStageFn
     ) {
         // Given
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, Integer> keyFn = i -> i / 5;
         DistributedFunction<Integer, Integer> mapFn1 = i -> 10 * i;
         DistributedFunction<Integer, Integer> mapFn2 = i -> 100 * i;
@@ -630,24 +571,18 @@ public class BatchAggregateTest extends PipelineTestSupport {
         long a = 37;
         DistributedQuadFunction<Integer, Long, Long, Long, Long> outputFn = (k, v0, v1, v2) ->
                 v2 + a * (v1 + a * (v0 + a * k));
-        String src1Name = randomMapName();
-        String src2Name = randomMapName();
-        putToBatchSrcMap(input);
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
-        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name))
-                                         .map(mapFn1);
-        BatchStage<Integer> srcStage2 = p.drawFrom(mapValuesSource(src2Name))
-                                         .map(mapFn2);
+        BatchStage<Integer> srcStage0 = sourceStageFromInput();
+        BatchStage<Integer> srcStage1 = sourceStageFromInput().map(mapFn1);
+        BatchStage<Integer> srcStage2 = sourceStageFromInput().map(mapFn2);
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = srcStage0.groupingKey(keyFn);
         BatchStageWithKey<Integer, Integer> stage1 = srcStage1.groupingKey(keyFn);
         BatchStageWithKey<Integer, Integer> stage2 = srcStage2.groupingKey(keyFn);
         BatchStage<Long> aggregated =
                 attachAggregatingStageFn.apply(stage0, stage1, stage2, outputFn);
 
-        //Then
+        // Then
         aggregated.drainTo(sink);
         execute();
         Map<Integer, Long> expectedAggr0 = input.stream()
@@ -673,23 +608,14 @@ public class BatchAggregateTest extends PipelineTestSupport {
     }
 
     private class GroupAggregateBuilderFixture {
-        List<Integer> input = sequence(itemCount);
         DistributedFunction<Integer, Integer> keyFn = i -> i / 5;
         DistributedFunction<Integer, Integer> mapFn1 = i -> 10 * i;
         DistributedFunction<Integer, Integer> mapFn2 = i -> 100 * i;
         AggregateOperation1<Integer, ?, Long> aggrOp = summingLong(i -> i);
         Collector<Integer, ?, Long> collectOp = Collectors.summingLong(i -> i);
-        String src1Name = randomMapName();
-        String src2Name = randomMapName();
-        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name))
-                                         .map(mapFn1);
-        BatchStage<Integer> srcStage2 = p.drawFrom(mapValuesSource(src2Name))
-                                         .map(mapFn2);
-        {
-            putToBatchSrcMap(input);
-            putToMap(jet().getMap(src1Name), input);
-            putToMap(jet().getMap(src2Name), input);
-        }
+        BatchStage<Integer> srcStage0 = sourceStageFromInput();
+        BatchStage<Integer> srcStage1 = sourceStageFromInput().map(mapFn1);
+        BatchStage<Integer> srcStage2 = sourceStageFromInput().map(mapFn2);
 
         @SuppressWarnings("ConstantConditions")
         DistributedBiFunction<Integer, ItemsByTag, Long> outputFn(
@@ -706,7 +632,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         GroupAggregateBuilderFixture fx = new GroupAggregateBuilderFixture();
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = fx.srcStage0.groupingKey(fx.keyFn);
         BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1.groupingKey(fx.keyFn);
         BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2.groupingKey(fx.keyFn);
         GroupAggregateBuilder<Integer, Long> b = stage0.aggregateBuilder(fx.aggrOp);
@@ -716,7 +642,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         DistributedBiFunction<Integer, ItemsByTag, Long> outputFn = fx.outputFn(tag0, tag1, tag2);
         BatchStage<Long> aggregated = b.build(outputFn);
 
-        //Then
+        // Then
         validateGroupAggrBuilder(fx, tag0, tag1, tag2, outputFn, aggregated);
     }
 
@@ -726,7 +652,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         GroupAggregateBuilderFixture fx = new GroupAggregateBuilderFixture();
 
         // When
-        BatchStageWithKey<Integer, Integer> stage0 = srcStage.groupingKey(fx.keyFn);
+        BatchStageWithKey<Integer, Integer> stage0 = fx.srcStage0.groupingKey(fx.keyFn);
         BatchStageWithKey<Integer, Integer> stage1 = fx.srcStage1.groupingKey(fx.keyFn);
         BatchStageWithKey<Integer, Integer> stage2 = fx.srcStage2.groupingKey(fx.keyFn);
 
@@ -743,7 +669,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         DistributedBiFunction<Integer, ItemsByTag, Long> outputFn = fx.outputFn(tag0, tag1, tag2);
         BatchStage<Long> aggregated = b.build(complexAggrOp, outputFn);
 
-        //Then
+        // Then
         validateGroupAggrBuilder(fx, tag0, tag1, tag2, outputFn, aggregated);
     }
 
@@ -755,14 +681,14 @@ public class BatchAggregateTest extends PipelineTestSupport {
     ) {
         aggregated.drainTo(sink);
         execute();
-        Map<Integer, Long> expectedAggr0 = fx.input.stream()
-                                                   .collect(groupingBy(fx.keyFn, fx.collectOp));
-        Map<Integer, Long> expectedAggr1 = fx.input.stream()
-                                                   .map(fx.mapFn1)
-                                                   .collect(groupingBy(fx.keyFn, fx.collectOp));
-        Map<Integer, Long> expectedAggr2 = fx.input.stream()
-                                                   .map(fx.mapFn2)
-                                                   .collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedAggr0 = input.stream()
+                                                .collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedAggr1 = input.stream()
+                                                .map(fx.mapFn1)
+                                                .collect(groupingBy(fx.keyFn, fx.collectOp));
+        Map<Integer, Long> expectedAggr2 = input.stream()
+                                                .map(fx.mapFn2)
+                                                .collect(groupingBy(fx.keyFn, fx.collectOp));
         Set<Integer> keys = new HashSet<>(expectedAggr0.keySet());
         keys.addAll(expectedAggr1.keySet());
         keys.addAll(expectedAggr2.keySet());
@@ -775,5 +701,16 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 )))
                 .collect(Collectors.toList());
         assertEquals(toBag(expectedOutput), sinkToBag());
+    }
+
+    private BatchStage<Integer> sourceStageFromInput() {
+        List<Integer> input = this.input;
+        BatchSource<Integer> source = SourceBuilder
+                .batch("sequence", x -> null)
+                .<Integer>fillBufferFn((x, buf) -> {
+                    input.forEach(buf::add);
+                    buf.close();
+                }).build();
+        return p.drawFrom(source);
     }
 }

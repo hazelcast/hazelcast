@@ -364,6 +364,7 @@ public class BatchStageTest extends PipelineTestSupport {
     @Test
     public void rollingAggregate_keyed() {
         // Given
+        itemCount = (int) roundUp(itemCount, 2);
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
 

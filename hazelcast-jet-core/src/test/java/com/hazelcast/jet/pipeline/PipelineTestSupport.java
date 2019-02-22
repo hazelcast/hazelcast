@@ -135,6 +135,14 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return IntStream.range(0, itemCount).boxed().collect(toList());
     }
 
+    static long roundDown(long value, long unit) {
+        return value - value % unit;
+    }
+
+    static long roundUp(long value, long unit) {
+        return roundDown(value + unit - 1, unit);
+    }
+
     static List<HazelcastInstance> createRemoteCluster(Config config, int size) {
         ArrayList<HazelcastInstance> instances = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
@@ -150,5 +158,4 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         clientConfig.getGroupConfig().setName(instance.getConfig().getGroupConfig().getName());
         return clientConfig;
     }
-
 }
