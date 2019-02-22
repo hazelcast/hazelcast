@@ -105,9 +105,11 @@
         ===== HAZELCAST MANAGEMENT CENTER CONFIGURATION =====
 
         The value for the element <management-center> is the URL where you deploy the Management Center.
-        It has two optional attributes:
+        It has three optional attributes:
         * enabled:
         Set to true to be able to use the Management Center. Its default value is false.
+        * scripting-enabled:
+        Set to true to allow scripting on the member, false to disallow.
         * update-interval:
         The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
         Its default value is 3 seconds. Hazelcast's Open Source edition provides the Management Center with monitoring
@@ -512,7 +514,7 @@
                 The name of the class implementing the com.hazelcast.spi.MemberAddressProvider interface.
             - <properties>:
                 The properties that will be provided when constructing the provided MemberAddressProvider. Hazelcast will
-                first try instatiating the provided class by invoking a constructor accepting a single
+                first try instantiating the provided class by invoking a constructor accepting a single
                 java.util.Properties instance. In the case where there is no such constructor and there are also
                 no properties defined by this configuration, Hazelcast will exceptionally try to use the no-arg
                 constructor.
@@ -525,12 +527,17 @@
         </outbound-ports>
         <reuse-address>false</reuse-address>
         <join>
-            <multicast enabled="true">
+            <multicast enabled="false">
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="false">
                 <interface>127.0.0.1</interface>
+                <required-member>10.0.0.1</required-member>
+                <member-list>
+                    <member>10.0.0.2</member>
+                    <member>10.0.0.3</member>
+                </member-list>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
@@ -564,6 +571,7 @@
                 <namespace>hazelcast</namespace>
             </eureka>
             <discovery-strategies>
+                <node-filter class="com.yourpackage.NodeFilter"/>
                 <discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
                     <properties>
                         <property name="provider">google-compute-engine</property>
@@ -1133,7 +1141,7 @@
         <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
         <statistics-enabled>true</statistics-enabled>
         <optimize-queries>true</optimize-queries>
-        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
+        <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <time-to-live-seconds>0</time-to-live-seconds>
@@ -1474,7 +1482,7 @@
                         class-name="com.example.cache.MyEntryEventFilterFactory"/>
             </cache-entry-listener>
         </cache-entry-listeners>
-        <in-memory-format>NATIVE</in-memory-format>
+        <in-memory-format>BINARY</in-memory-format>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
@@ -2221,14 +2229,14 @@
                 </endpoints>
             </all-permissions>
             <config-permission>
-                <actions>
-                    <action>all</action>
-                </actions>
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
             </config-permission>
             <transaction-permission>
-                <actions>
-                    <action>all</action>
-                </actions>
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
             </transaction-permission>
             <map-permission name="custom" principal="dev">
                 <endpoints>
