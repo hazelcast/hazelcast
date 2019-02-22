@@ -52,7 +52,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
         checkNotNegative(partitionId, "partitionId");
 
         ClientMessage clientRequest = (ClientMessage) request;
-        ClientInvocation clientInvocation = new ClientInvocation(client, clientRequest, null, partitionId);
+        ClientInvocation clientInvocation = new ClientInvocation(client, clientRequest, null, partitionId, false);
         return clientInvocation.invoke();
     }
 

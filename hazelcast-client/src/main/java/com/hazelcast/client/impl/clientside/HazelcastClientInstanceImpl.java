@@ -259,6 +259,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         cpSubsystem = new CPSubsystemImpl(this);
     }
 
+
+
     private ClusterConnectorService initClusterConnectorService() {
         ClusterConnectorServiceImpl service = new ClusterConnectorServiceImpl(this, connectionManager,
                 clientConnectionStrategy, clientDiscoveryService);

@@ -22,13 +22,17 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import static com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl.PARTITION_OPERATION_RUNNER_THREAD_LOCAL;
+
 /**
  * An {@link OperationThread} that executes Operations for a particular partition,
  * e.g. a map.get operation.
  */
 public final class PartitionOperationThread extends OperationThread {
 
-    private final OperationRunner[] partitionOperationRunners;
+    private final OperationRunner[] runners;
+    protected final OperationRunnerReference runnerReference;
+    private final PartitionLocks partitionLocks;
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionOperationThread(String name,
@@ -36,10 +40,13 @@ public final class PartitionOperationThread extends OperationThread {
                                     OperationQueue queue,
                                     ILogger logger,
                                     NodeExtension nodeExtension,
-                                    OperationRunner[] partitionOperationRunners,
+                                    OperationRunner[] runners,
+                                    PartitionLocks partitionLocks,
                                     ClassLoader configClassLoader) {
         super(name, threadId, queue, logger, nodeExtension, false, configClassLoader);
-        this.partitionOperationRunners = partitionOperationRunners;
+        this.runners = runners;
+        this.partitionLocks = partitionLocks;
+        this.runnerReference = PARTITION_OPERATION_RUNNER_THREAD_LOCAL.get();
     }
 
     /**
@@ -48,7 +55,7 @@ public final class PartitionOperationThread extends OperationThread {
      */
     @Override
     public OperationRunner operationRunner(int partitionId) {
-        return partitionOperationRunners[partitionId];
+        return runners[partitionId];
     }
 
     @Probe

@@ -598,7 +598,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private ClientInvocationFuture invokeOnPartitionOwner(ClientMessage request, int partitionId) {
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, getName(), partitionId, false);
             return clientInvocation.invoke();
         } catch (Exception e) {
             throw rethrow(e);

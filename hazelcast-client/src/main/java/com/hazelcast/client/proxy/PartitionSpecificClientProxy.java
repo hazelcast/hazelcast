@@ -35,7 +35,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  */
 abstract class PartitionSpecificClientProxy extends ClientProxy {
 
-    private int partitionId;
+    protected int partitionId;
 
     protected PartitionSpecificClientProxy(String serviceName, String objectName, ClientContext context) {
         super(serviceName, objectName, context);
@@ -58,7 +58,7 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
     protected <T> ClientDelegatingFuture<T> invokeOnPartitionAsync(ClientMessage clientMessage,
                                                                    ClientMessageDecoder clientMessageDecoder) {
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, false).invoke();
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);
@@ -67,7 +67,7 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
 
     protected <T> T invokeOnPartition(ClientMessage clientMessage, long invocationTimeoutSeconds) {
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, true);
             clientInvocation.setInvocationTimeoutMillis(invocationTimeoutSeconds);
             final Future future = clientInvocation.invoke();
             return (T) future.get();
@@ -79,7 +79,7 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage,
                                                  long invocationTimeoutSeconds) throws InterruptedException {
         try {
-            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, getName(), partitionId, true);
             clientInvocation.setInvocationTimeoutMillis(invocationTimeoutSeconds);
             final Future future = clientInvocation.invoke();
             return (T) future.get();

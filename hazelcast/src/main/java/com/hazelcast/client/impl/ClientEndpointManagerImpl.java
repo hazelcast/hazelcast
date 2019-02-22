@@ -75,7 +75,9 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     @Override
     public ClientEndpoint getEndpoint(Connection connection) {
-        checkNotNull(connection, "connection can't be null");
+        if (connection == null) {
+            return null;
+        }
 
         return endpoints.get(connection);
     }
