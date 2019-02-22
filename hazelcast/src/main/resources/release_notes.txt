@@ -3,7 +3,11 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ==== 3.12-BETA-1 ====
 
-1. New Features
+1. Breaking Changes
+
+* Support for JDK 6 and 7 has been dropped. The minimum Java version that Hazelcast supports now is Java 8. See the Supports JVMs section.
+
+2. New Features
 
 Hazelcast IMDG Enterprise New Features:
 
@@ -15,7 +19,7 @@ Hazelcast IMDG Open Source New Features:
 * **Querying JSON Strings:**  You can now query JSON strings stored inside your Hazelcast clusters. See the Querying JSON Strings section.
 * **Support for Multiple Endpoints When Configuring Member’s Networking:** Added the ability to configure the Hazelcast members with separate server sockets for different protocols. See the Advanced Network Configuration section.
 
-2. Enhancements
+3. Enhancements
 
 Hazelcast IMDG Enterprise Enhancements:
 
@@ -40,7 +44,7 @@ The following are the other improvements performed to solve the enhancement issu
 * The `IMap.removeAll()` method now supports `PartitionPredicate`. https://github.com/hazelcast/hazelcast/issues/12238[[#12238]]
 * Improved the diagnostics tool so that it automatically creates the configured directory for the diagnostic outputs. https://github.com/hazelcast/hazelcast/issues/11946[[#11946]]
 
-3. Fixes
+4. Fixes
 
 * Fixed an issue where the REST API was not handling the HTTP requests without headers correctly: when a client sends an HTTP request without headers to the Hazelcast REST API, the `HttpCommand` class was wrongly expecting an additional new line. [#14353]
 * Fixed an issue where `QueryCache` was not returning the copies of the found objects. [#14333]
@@ -51,7 +55,7 @@ The following are the other improvements performed to solve the enhancement issu
 * Fixed an issue where the `addIndex()` method was performing a full copy of entries when a new member joins the cluster, which is not needed. [#13964]
 * `PagingPredicate` with comparator was failing to serialize when sending from the client or member when the cluster size is more than 1. This has been fixed by making the `PagingPredicateQuery` comparator serializable. [#12208]
 
-4. Removed/Deprecated Features
+5. Removed/Deprecated Features
 
 * `ILock` interface and implementation of `ILock` has been deprecated, and `FencedLock` has been introduced.
 * The original implementations of `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` have been deprecated. Instead, the implementations provided by the CP Subsystem have been introduced.
