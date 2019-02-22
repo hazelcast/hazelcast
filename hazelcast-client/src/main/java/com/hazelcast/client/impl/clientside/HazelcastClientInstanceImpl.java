@@ -122,6 +122,7 @@ import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
@@ -160,6 +161,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.CONCURRENT_WINDOW_MS;
+import static com.hazelcast.client.spi.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
+import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
+import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -171,6 +176,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final short PROTOCOL_VERSION = ClientMessage.VERSION;
 
+    private final ConcurrencyDetection concurrencyDetection;
     private final HazelcastProperties properties;
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
@@ -229,10 +235,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
         logGroupPasswordInfo();
         ClassLoader classLoader = config.getClassLoader();
+        properties = new HazelcastProperties(config.getProperties());
+        concurrencyDetection = initConcurrencyDetection();
         clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
         lifecycleService = new LifecycleServiceImpl(this);
-        properties = new HazelcastProperties(config.getProperties());
         metricsRegistry = initMetricsRegistry();
         serializationService = clientExtension.createSerializationService((byte) -1);
         proxyManager = new ProxyManager(this);
@@ -259,6 +266,18 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
+    }
+
+    private ConcurrencyDetection initConcurrencyDetection() {
+        boolean writeThrough = properties.getBoolean(IO_WRITE_THROUGH_ENABLED);
+        boolean dynamicResponse = properties.getBoolean(RESPONSE_THREAD_DYNAMIC);
+        boolean backPressureEnabled = properties.getInteger(MAX_CONCURRENT_INVOCATIONS) < Integer.MAX_VALUE;
+
+        if (writeThrough || dynamicResponse || backPressureEnabled) {
+            return ConcurrencyDetection.createEnabled(properties.getInteger(CONCURRENT_WINDOW_MS));
+        } else {
+            return ConcurrencyDetection.createDisabled();
+        }
     }
 
     private ClusterConnectorService initClusterConnectorService() {
@@ -432,7 +451,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             try {
                 lifecycleService.terminate();
             } catch (Throwable t) {
-               ignore(t);
+                ignore(t);
             }
             rethrow(e);
         }
@@ -838,5 +857,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientQueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
+    }
+
+    public ConcurrencyDetection getConcurrencyDetection() {
+        return concurrencyDetection;
     }
 }

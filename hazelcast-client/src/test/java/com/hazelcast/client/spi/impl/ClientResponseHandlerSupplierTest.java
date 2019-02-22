@@ -96,7 +96,8 @@ public class ClientResponseHandlerSupplierTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) clientInstanceImpl.getInvocationService();
 
-        ClientResponseHandlerSupplier responseHandlerSupplier = new ClientResponseHandlerSupplier(invocationService);
+        ClientResponseHandlerSupplier responseHandlerSupplier =
+                new ClientResponseHandlerSupplier(invocationService, clientInstanceImpl.getConcurrencyDetection());
         return responseHandlerSupplier.get();
     }
 }

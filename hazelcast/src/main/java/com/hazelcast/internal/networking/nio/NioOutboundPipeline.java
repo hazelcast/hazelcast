@@ -19,11 +19,12 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
-import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
+import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.function.Supplier;
@@ -61,7 +62,7 @@ public final class NioOutboundPipeline
     private OutboundHandler[] handlers = new OutboundHandler[0];
     private ByteBuffer sendBuffer;
 
-    private final AtomicBoolean scheduled = new AtomicBoolean(false);
+    private final AtomicBoolean scheduled = new AtomicBoolean(true);
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
     @Probe(name = "normalFramesWritten")
@@ -75,13 +76,19 @@ public final class NioOutboundPipeline
     private long normalFramesWrittenLastPublish;
     private long priorityFramesWrittenLastPublish;
     private long processCountLastPublish;
+    private final ConcurrencyDetection concurrencyDetection;
+    private final boolean writeThroughEnabled;
 
     NioOutboundPipeline(NioChannel channel,
                         NioThread owner,
                         ChannelErrorHandler errorHandler,
                         ILogger logger,
-                        IOBalancer balancer) {
+                        IOBalancer balancer,
+                        ConcurrencyDetection concurrencyDetection,
+                        boolean writeThroughEnabled) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
+        this.concurrencyDetection = concurrencyDetection;
+        this.writeThroughEnabled = writeThroughEnabled;
     }
 
     @Override
@@ -159,6 +166,7 @@ public final class NioOutboundPipeline
         return frame;
     }
 
+
     /**
      * Makes sure this OutboundHandler is scheduled to be executed by the IO thread.
      * <p/>
@@ -168,18 +176,23 @@ public final class NioOutboundPipeline
      * If the OutboundHandler already is scheduled, the call is ignored.
      */
     private void schedule() {
-        if (scheduled.get()) {
-            // So this pipeline is still scheduled, we don't need to schedule it again
+        if (scheduled.get() || !scheduled.compareAndSet(false, true)) {
+            //  So this pipeline is still scheduled, we don't need to schedule it again
+            if (writeThroughEnabled) {
+                concurrencyDetection.onDetected();
+            }
             return;
         }
 
-        if (!scheduled.compareAndSet(false, true)) {
-            // Another thread already has scheduled this pipeline, we are done. It
-            // doesn't matter which thread does the scheduling, as long as it happens.
-            return;
+        if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
+            try {
+                process();
+            } catch (Throwable t) {
+                onError(t);
+            }
+        } else {
+            ownerAddTaskAndWakeup(this);
         }
-
-        addTaskAndWakeup(this);
     }
 
     @Override
@@ -206,6 +219,13 @@ public final class NioOutboundPipeline
 
         flushToSocket();
 
+        if (migrationRequested()) {
+            startMigration();
+            // we leave this method and the NioOutboundPipeline remains scheduled.
+            // So we don't need to worry about write-through
+            return;
+        }
+
         if (sendBuffer.remaining() > 0) {
             pipelineStatus = DIRTY;
         }
@@ -216,9 +236,8 @@ public final class NioOutboundPipeline
                 unschedule();
                 break;
             case DIRTY:
-                // pipeline is dirty, so lets register for an OP_WRITE to write
-                // more data.
-                registerOp(OP_WRITE);
+                // pipeline is dirty, so register for an OP_WRITE to write more data.
+                registerOpWrite();
                 break;
             case BLOCKED:
                 // pipeline is blocked; no point in receiving OP_WRITE events.
@@ -226,6 +245,22 @@ public final class NioOutboundPipeline
                 break;
             default:
                 throw new IllegalStateException();
+        }
+    }
+
+    private void registerOpWrite() throws IOException {
+        registerOp(OP_WRITE);
+
+        if (writeThroughEnabled && !(Thread.currentThread() instanceof NioThread)) {
+            // there was a write through. Changing the interested set of the selection key
+            // after the IO thread did a select, will not lead to the selector waking up. So
+            // if we don't wake up the selector explicitly, only after the selector.select(timeout)
+            // has expired the selectionKey will be seen. For more info see:
+            // https://stackoverflow.com/questions/11523471/java-selectionkey-interestopsint-not-thread-safe
+            owner.getSelector().wakeup();
+
+            // we also bump
+            concurrencyDetection.onDetected();
         }
     }
 
@@ -257,6 +292,9 @@ public final class NioOutboundPipeline
         // Frames are at risk not to be send.
         if (!scheduled.compareAndSet(false, true)) {
             //someone else managed to schedule this OutboundHandler, so we are done.
+            if (writeThroughEnabled) {
+                concurrencyDetection.onDetected();
+            }
             return;
         }
 
@@ -265,7 +303,11 @@ public final class NioOutboundPipeline
         // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
 
         // owner can't be null because this method is made by the owning io thread.
-        owner().addTask(this);
+        if (!writeThroughEnabled || Thread.currentThread().getClass() == NioThread.class) {
+            owner().addTask(this);
+        } else {
+            owner().addTaskAndWakeup(this);
+        }
     }
 
     private void flushToSocket() throws IOException {
@@ -374,7 +416,13 @@ public final class NioOutboundPipeline
 
     @Override
     public OutboundPipeline wakeup() {
-        addTaskAndWakeup(this);
+        // we only want to wake up this pipeline if it isn't scheduled. Otherwise we'll have
+        // multiple threads potentially messing around with the pipeline.
+        if (scheduled.compareAndSet(false, true)) {
+            // this will lead to the process method being called and as part of the process,
+            // the scheduled flag will be unset (if possible).
+            ownerAddTaskAndWakeup(this);
+        }
         return this;
     }
 }
