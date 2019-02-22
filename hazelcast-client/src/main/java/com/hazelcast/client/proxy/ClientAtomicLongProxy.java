@@ -33,7 +33,10 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.hazelfast.Client;
 import com.hazelcast.spi.InternalCompletableFuture;
+
+import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -82,9 +85,33 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
         return decrementAndGetAsync().join();
     }
 
+    private final static ThreadLocal<Client> threadLocal = new ThreadLocal<Client>();
+
     @Override
     public long get() {
-        return getAsync().join();
+        Client client = threadLocal.get();
+        if (client == null) {
+            client = new Client(new Client.Context()
+                    .hostname("10.0.0.146"));
+            client.start();
+            threadLocal.set(client);
+        }
+
+        try {
+            ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
+            request.setPartitionId(partitionId);
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+            client.write(request.buffer().byteArray());
+            client.flush();
+            client.readResponse();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return 0;
     }
 
     @Override

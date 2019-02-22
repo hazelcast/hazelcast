@@ -35,7 +35,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  */
 abstract class PartitionSpecificClientProxy extends ClientProxy {
 
-    private int partitionId;
+    protected int partitionId;
 
     protected PartitionSpecificClientProxy(String serviceName, String objectName, ClientContext context) {
         super(serviceName, objectName, context);

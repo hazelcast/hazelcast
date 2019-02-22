@@ -93,7 +93,9 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
+import com.hazelcast.hazelfast.Server;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -180,6 +182,7 @@ public class Node {
     private final HealthMonitor healthMonitor;
 
     private final Joiner joiner;
+    private final Server server;
 
     private ManagementCenterService managementCenterService;
 
@@ -250,6 +253,7 @@ public class Node {
             metricsRegistry.collectMetrics(nodeExtension);
 
             networkingService = nodeContext.createNetworkingService(this, serverSocketRegistry);
+            server = new Server(new Server.Context().node(this).objectPoolingEnabled(false));
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
@@ -425,6 +429,11 @@ public class Node {
         hazelcastInstance.lifecycleService.fireLifecycleEvent(LifecycleState.STARTING);
         clusterService.sendLocalMembershipEvent();
         networkingService.start();
+        try {
+            server.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         if (join.getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(multicastService,
@@ -507,6 +516,11 @@ public class Node {
             if (state != NodeState.SHUT_DOWN) {
                 shuttingDown.compareAndSet(true, false);
             }
+        }
+
+        try {
+            server.stop();
+        } catch (IOException e) {
         }
     }
 
