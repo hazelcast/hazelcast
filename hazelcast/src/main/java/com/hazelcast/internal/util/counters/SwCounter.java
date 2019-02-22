@@ -113,6 +113,11 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
+        public void set(long value) {
+            MEM.putOrderedLong(this, OFFSET, value);
+        }
+
+        @Override
         public long get() {
             return value;
         }
@@ -148,6 +153,11 @@ public abstract class SwCounter implements Counter {
             final long newValue = value + amount;
             COUNTER.lazySet(this, newValue);
             return newValue;
+        }
+
+        @Override
+        public void set(long value) {
+            COUNTER.lazySet(this, value);
         }
 
         @Override

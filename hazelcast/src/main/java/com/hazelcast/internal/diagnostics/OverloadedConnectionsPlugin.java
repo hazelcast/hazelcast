@@ -17,8 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.internal.networking.nio.NioChannel;
-import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.nio.AggregateEndpointManager;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
@@ -146,13 +144,13 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     }
 
     private Queue<OutboundFrame> getOutboundQueue(TcpIpConnection connection, boolean priority) {
-        if (connection.getChannel() instanceof NioChannel) {
-            NioChannel nioChannel = (NioChannel) connection.getChannel();
-            NioOutboundPipeline outboundPipeline = nioChannel.outboundPipeline();
-            return priority ? outboundPipeline.priorityWriteQueue : outboundPipeline.writeQueue;
-        } else {
+//        if (connection.getChannel() instanceof NioChannel) {
+//            NioChannel nioChannel = (NioChannel) connection.getChannel();
+//            NioOutboundPipeline outboundPipeline = nioChannel.outboundPipeline();
+//            return priority ? outboundPipeline.priorityWriteQueue : outboundPipeline.writeQueue;
+//        } else {
             return EMPTY_QUEUE;
-        }
+       // }
     }
 
     private void render(DiagnosticsLogWriter writer, TcpIpConnection connection, boolean priority, int sampleCount) {
