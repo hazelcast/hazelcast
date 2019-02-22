@@ -247,12 +247,12 @@ public abstract class AbstractProxySessionManager {
         private final long id;
         private final AtomicInteger acquireCount = new AtomicInteger();
 
+        private final long creationTime;
         private final long ttlMillis;
-        private volatile long accessTime;
 
         SessionState(long id, long ttlMillis) {
             this.id = id;
-            this.accessTime = Clock.currentTimeMillis();
+            this.creationTime = Clock.currentTimeMillis();
             this.ttlMillis = ttlMillis;
         }
 
@@ -265,7 +265,7 @@ public abstract class AbstractProxySessionManager {
         }
 
         private boolean isExpired(long timestamp) {
-            long expirationTime = accessTime + ttlMillis;
+            long expirationTime = creationTime + ttlMillis;
             if (expirationTime < 0) {
                 expirationTime = Long.MAX_VALUE;
             }

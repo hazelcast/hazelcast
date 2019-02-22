@@ -233,7 +233,9 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertNotEquals(sessionId, sessionManager.acquireSession(groupId));
+                long newSessionId = sessionManager.acquireSession(groupId);
+                sessionManager.releaseSession(groupId, newSessionId);
+                assertNotEquals(sessionId, newSessionId);
             }
         });
     }
