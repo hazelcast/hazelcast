@@ -111,9 +111,8 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
     }
 
-    public String readResourceToString(String s) throws IOException {
-        InputStream xmlInputStream = XmlYamlConfigBuilderEqualsTest.class.getClassLoader().getResourceAsStream
-                (s);
+    public String readResourceToString(String resource) throws IOException {
+        InputStream xmlInputStream = XmlYamlConfigBuilderEqualsTest.class.getClassLoader().getResourceAsStream(resource);
         return new String(IOUtil.toByteArray(xmlInputStream));
     }
 

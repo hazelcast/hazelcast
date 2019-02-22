@@ -15,7 +15,7 @@
 # This is a full example hazelcast.yaml that includes all the
 # configuration elements and attributes of a Hazelcast member.
 #
-# To use this, rename it to hazelcast.xml and place it in
+# To use this, rename it to hazelcast.yaml and place it in
 # the directory where you start your Hazelcast member.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
@@ -26,7 +26,7 @@ hazelcast:
   # You can use import to load different Hazelcast declarative configuration files you prepared.
   # You can import as many YAML files as you want and hence compose your Hazelcast configuration
   # out of those YAML files. If you want to use import, it should be placed at the top of your
-  # Hazelcast YAML file right after the hazelcast node.
+  # Hazelcast YAML file right after the "hazelcast" root node.
   #
   # Below is an example where the configuration files you want to include are located at your
   # Hazelcast working directory:
@@ -471,7 +471,7 @@ hazelcast:
   # * "member-address-provider":
   # IMPORTANT
   # This configuration is not intended to provide addresses of other cluster members with
-  # which the hazelcast instance will form a cluster. This is an SPI for advanced use in
+  # which the Hazelcast instance will form a cluster. This is an SPI for advanced use in
   # cases where the DefaultAddressPicker does not pick suitable addresses to bind to
   # and publish to other cluster members. For instance, this could allow easier
   # deployment in some cases when running on Docker, AWS or other cloud environments.
@@ -760,7 +760,7 @@ hazelcast:
   #
   # ===== HAZELCAST CARDINALITY ESTIMATOR SERVICE CONFIGURATION =====
   #
-  # Configuration element's name is "cardinality-estimator-service". It has the optional attribute "name" with which you
+  # Configuration element's name is "cardinality-estimator". It has the optional attribute "name" with which you
   # can specify the name of your estimator. Its default value is "default".
   # It has the following sub-elements:
   # * "backup-count":
@@ -2513,3 +2513,218 @@ hazelcast:
       replica-count: 2147483647
       quorum-ref: quorumRuleWithThreeNodes
       statistics-enabled: true
+
+  advanced-network:
+    enabled: false
+    join:
+      multicast:
+        enabled: true
+        loopbackModeEnabled: true
+        multicast-group: 1.2.3.4
+        multicast-port: 12345
+        multicast-timeout-seconds: 5
+        multicast-time-to-live: 10
+        trusted-interfaces:
+          - 10.10.1.*
+          - 10.10.2.*
+      tcp-ip:
+        enabled: false
+        connection-timeout-seconds: 123
+        required-member: dummy
+        member: dummy1,dummy2
+        interface: 127.0.0.10
+        members: dummy3,dummy4
+        member-list:
+          - dummy5
+          - dummy6
+      aws:
+        enabled: false
+        access-key: my-access-key
+        secret-key: my-secret-key
+        iam-role: dummy
+        # optional, default is us-east-1
+        region: us-west-1
+        # optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property
+        host-header: ec2.amazonaws.com
+        # optional, only instances belonging to this group will be discovered, default will try all running instances
+        security-group-name: hazelcast-sg
+        tag-key: type
+        tag-value: hz-nodes
+        use-public-ip: true
+      gcp:
+        enabled: false
+        zones: us-east1-b,us-east1-c
+      azure:
+        enabled: false
+        client-id: CLIENT_ID
+        client-secret: CLIENT_SECRET
+        tenant-id: TENANT_ID
+        subscription-id: SUB_ID
+        cluster-id: HZLCAST001
+        group-name: GROUP-NAME
+      kubernetes:
+        enabled: false
+        namespace: MY-KUBERNETES-NAMESPACE
+        service-name: MY-SERVICE-NAME
+        service-label-name: MY-SERVICE-LABEL-NAME
+        service-label-value: MY-SERVICE-LABEL-VALUE
+      eureka:
+        enabled: false
+        self-registration: true
+        namespace: hazelcast
+#       <discovery-strategies>
+#            <node-filter class="DummyFilterClass"/>
+#            <discovery-strategy class="DummyClass" enabled="true">
+#                <properties>
+#                    <property name="foo">bar</property>
+#                </properties>
+#            </discovery-strategy>
+#        </discovery-strategies>-->
+    interfaces:
+      enabled: true
+      interfaces:
+        - 10.10.1.*
+    failure-detector:
+      icmp:
+        enabled: false
+        timeout-milliseconds: 1000
+        fail-fast-on-startup: true
+        interval-milliseconds: 1000
+        max-attempts: 2
+        parallel-mode: true
+        ttl: 255
+    member-address-provider:
+      enabled: false
+      class-name: DummyMemberAddressProvider
+      properties:
+        foo: bar
+    member-server-socket-endpoint-config:
+      outbound-ports:
+        - 33000-35000
+        - 37000,37001,37002,37003
+        - 38000,38500-38600
+      interfaces:
+        enabled: true
+        interfaces:
+          - 10.10.1.*
+      ssl:
+        enabled: true
+        factory-class-name: com.hazelcast.examples.MySSLContextFactory
+        properties:
+          foo: bar
+      socket-interceptor:
+        enabled: true
+        class-name: com.hazelcast.examples.MySocketInterceptor
+        properties:
+          foo: bar
+      socket-options:
+        buffer-direct: true
+        tcp-no-delay: true
+        keep-alive: true
+        connect-timeout-seconds: 64
+        send-buffer-size-kb: 25
+        receive-buffer-size-kb: 33
+        linger-seconds: 99
+      port:
+        port-count: 100
+        auto-increment: true
+        port: 5701
+      public-address: dummy
+      # If the address should be reused. See NetworkConfig.setReuseAddress for more information.
+      reuse-address: true
+    client-server-socket-endpoint-config:
+      outbound-ports:
+        - 38000,38500-38600
+      interfaces:
+        enabled: false
+        interfaces:
+          - 10.10.1.*
+      ssl:
+        enabled: true
+        factory-class-name: com.hazelcast.examples.MySSLContextFactory
+        properties:
+          foo: bar
+      socket-interceptor:
+        enabled: true
+        class-name: com.hazelcast.examples.MySocketInterceptor
+        properties:
+          foo: bar
+      port:
+        port-count: 100
+        auto-increment: true
+        port: 9999
+      public-address: 10.10.0.10
+      reuse-address: true
+    rest-server-socket-endpoint-config:
+      name: internal-server-socket
+      interfaces:
+        enabled: false
+        interfaces:
+          - 10.10.1.*
+      port:
+        auto-increment: false
+        port: 8080
+      public-address: 192.168.1.10
+      reuse-address: true
+      endpoint-groups:
+        WAN:
+          enabled: true
+        CLUSTER_READ:
+          enabled: true
+        CLUSTER_WRITE:
+          enabled: false
+        HEALTH_CHECK:
+          enabled: true
+    wan-endpoint-config:
+      endpoint-tokyo:
+        ssl:
+          enabled: true
+          factory-class-name: com.hazelcast.examples.MySSLContextFactory
+          properties:
+            foo: bar
+      endpoint-london:
+        symmetric-encryption:
+          enabled: true
+          algorithm: Algorithm
+          salt: thesalt
+          password: thepassword
+          iteration-count: 1000
+    wan-server-socket-endpoint-config:
+      name: wan-server-socket-config
+      interfaces:
+        enabled: false
+        interfaces:
+          - 192.168.8.101
+          - 10.20.10.100
+    memcache-server-socket-endpoint-config:
+      name: memcache
+      port:
+        auto-increment: false
+        port-count: 10
+        port: 6000
+
+  cp-subsystem:
+    cp-member-count: 10
+    group-size: 3
+    session-time-to-live-seconds: 60
+    session-heartbeat-interval-seconds: 5
+    missing-cp-member-auto-removal-seconds: 120
+    fail-on-indeterminate-operation-state: false
+    raft-algorithm:
+      leader-election-timeout-in-millis: 2000
+      leader-heartbeat-period-in-millis: 5000
+      max-missed-leader-heartbeat-count: 5
+      append-request-max-entry-count: 50
+      commit-index-advance-count-to-snapshot: 1000
+      uncommitted-entry-count-to-reject-new-appends: 100
+      append-request-backoff-timeout-in-millis: 100
+    semaphores:
+      sem1:
+        jdk-compatible: true
+      sem2:
+        jdk-compatible: false
+    locks:
+      lock1:
+        lock-acquire-limit: 1
+      lock2:
+        lock-acquire-limit: 2
