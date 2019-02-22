@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class PipelineTest extends HazelcastTestSupport {
+public class PipeliningTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz;
 
@@ -44,13 +44,13 @@ public class PipelineTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor_whenNegativeDepth() {
-        new Pipeline<String>(0);
+        new Pipelining<String>(0);
     }
 
     @Test(expected = NullPointerException.class)
     public void add_whenNull() throws InterruptedException {
-        Pipeline<String> pipeline = new Pipeline<String>(1);
-        pipeline.add(null);
+        Pipelining<String> pipelining = new Pipelining<String>(1);
+        pipelining.add(null);
     }
 
     @Test
@@ -65,11 +65,11 @@ public class PipelineTest extends HazelcastTestSupport {
             map.put(k, item);
         }
 
-        Pipeline<String> pipeline = new Pipeline<String>(1);
+        Pipelining<String> pipelining = new Pipelining<String>(1);
         for (int k = 0; k < items; k++) {
-            pipeline.add(map.getAsync(k));
+            pipelining.add(map.getAsync(k));
         }
 
-        assertEquals(expected, pipeline.results());
+        assertEquals(expected, pipelining.results());
     }
 }
