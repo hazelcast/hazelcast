@@ -37,6 +37,7 @@ Hazelcast IMDG Open Source Enhancements:
 
 * **Client Instance Names and Attributes:** You can now retrieve the names of client instances on the member side. Moreover, client attributes have been introduced so that you can group your clients and/or perform special operations for specific clients. See the Defining Client Attributes section.
 * **Composite Indexes:** Introduced the ability to recognize the queries that use all the indexed properties and treat them as a composite, e.g., `foo = 1 and bar = 2 and foobar = 3`. See the Composite Indexes section.
+* **REST Endpoint Groups:** With this enhancement you can enable or disable the REST API completely, Memcache protocol and REST endpoint groups. See the Using the REST Endpoint Groups section.
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
