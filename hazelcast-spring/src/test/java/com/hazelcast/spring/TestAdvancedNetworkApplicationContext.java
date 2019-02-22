@@ -23,6 +23,8 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
@@ -45,6 +47,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertContainsAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
@@ -117,5 +120,17 @@ public class TestAdvancedNetworkApplicationContext {
         assertEquals(8080, restServerEndpointConfig.getPort());
         assertContainsAll(restServerEndpointConfig.getEnabledGroups(),
                 Arrays.asList(HEALTH_CHECK, CLUSTER_READ));
+
+        WanReplicationConfig testWan = config.getWanReplicationConfig("testWan");
+        WanPublisherConfig tokyoWanPublisherConfig = null;
+        for (WanPublisherConfig wanPublisherConfig : testWan.getWanPublisherConfigs()) {
+            if (wanPublisherConfig.getPublisherId().equals("tokyoPublisherId")) {
+                tokyoWanPublisherConfig = wanPublisherConfig;
+                break;
+            }
+        }
+
+        assertNotNull(tokyoWanPublisherConfig);
+        assertEquals("wan-tokyo", tokyoWanPublisherConfig.getEndpoint());
     }
 }
