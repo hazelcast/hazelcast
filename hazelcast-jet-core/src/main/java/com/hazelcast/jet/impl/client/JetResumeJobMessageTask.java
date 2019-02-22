@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetResumeJobMessageTask extends AbstractJetMessageTask<JetResumeJobCodec.RequestParameters> {
+public class JetResumeJobMessageTask extends AbstractJetMessageTask<JetResumeJobCodec.RequestParameters, Void> {
     protected JetResumeJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetResumeJobCodec::decodeRequest,
                 o -> JetResumeJobCodec.encodeResponse());

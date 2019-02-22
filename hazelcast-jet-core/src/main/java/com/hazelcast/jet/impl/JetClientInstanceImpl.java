@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec.ResponseParameters;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
@@ -47,7 +48,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -91,7 +91,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
         try {
             ClientMessage response = invocation.invoke().get();
-            Set<Long> jobs = serializationService.toObject(JetGetJobIdsCodec.decodeResponse(response).response);
+            List<Long> jobs = JetGetJobIdsCodec.decodeResponse(response).response;
             return jobs.stream().map(jobId -> new ClientJobProxy(this, jobId)).collect(toList());
         } catch (Throwable t) {
             throw rethrow(t);
@@ -125,7 +125,15 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     @Nonnull
     public ClusterMetadata getClusterMetadata() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetClusterMetadataCodec.encodeRequest(),
-                response -> JetGetClusterMetadataCodec.decodeResponse(response).response);
+                response -> {
+                    ResponseParameters parameters = JetGetClusterMetadataCodec.decodeResponse(response);
+                    ClusterMetadata metadata = new ClusterMetadata();
+                    metadata.setClusterTime(parameters.clusterTime);
+                    metadata.setName(parameters.name);
+                    metadata.setState(parameters.state);
+                    metadata.setVersion(parameters.version);
+                    return metadata;
+                });
     }
 
     /**

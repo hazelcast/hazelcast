@@ -29,12 +29,12 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.function.Function;
 
-abstract class AbstractJetMessageTask<P> extends AbstractInvocationMessageTask<P> implements ExecutionCallback {
+abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTask<P> implements ExecutionCallback {
     private final Function<ClientMessage, P> decoder;
-    private final Function<Object, ClientMessage> encoder;
+    private final Function<R, ClientMessage> encoder;
 
     protected AbstractJetMessageTask(ClientMessage clientMessage, Node node, Connection connection,
-                                     Function<ClientMessage, P> decoder, Function<Object, ClientMessage> encoder) {
+                                     Function<ClientMessage, P> decoder, Function<R, ClientMessage> encoder) {
         super(clientMessage, node, connection);
 
         this.decoder = decoder;
@@ -54,7 +54,7 @@ abstract class AbstractJetMessageTask<P> extends AbstractInvocationMessageTask<P
 
     @Override
     protected ClientMessage encodeResponse(Object o) {
-        return encoder.apply(o);
+        return encoder.apply((R) o);
     }
 
     @Override

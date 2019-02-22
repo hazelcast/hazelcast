@@ -79,7 +79,7 @@
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
         <hazelcast.version>3.12-SNAPSHOT</hazelcast.version>
-        <hazelcast.protocol.version>1.8.0-3</hazelcast.protocol.version>
+        <hazelcast.protocol.version>1.8.0-5</hazelcast.protocol.version>
 
         <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>

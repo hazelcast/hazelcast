@@ -32,7 +32,7 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
     private String name;
     private String version;
     private long clusterTime;
-    private ClusterState state;
+    private int state;
 
     public ClusterMetadata() {
     }
@@ -40,7 +40,7 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
     public ClusterMetadata(String name, Cluster cluster) {
         this.name = name;
         this.version = BuildInfoProvider.getBuildInfo().getJetBuildInfo().getVersion();
-        this.state = cluster.getClusterState();
+        this.state = cluster.getClusterState().ordinal();
         this.clusterTime = cluster.getClusterTime();
     }
 
@@ -52,6 +52,10 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
 
     @Nonnull
     public ClusterState getState() {
+        return ClusterState.values()[state];
+    }
+
+    public int getStateOrdinal() {
         return state;
     }
 
@@ -60,7 +64,6 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
         return version;
     }
 
-    @Nonnull
     public long getClusterTime() {
         return clusterTime;
     }
@@ -75,11 +78,27 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
         return JetInitDataSerializerHook.CLUSTER_METADATA;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public void setClusterTime(long clusterTime) {
+        this.clusterTime = clusterTime;
+    }
+
+    public void setState(int state) {
+        this.state = state;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(version);
-        out.writeObject(state);
+        out.writeInt(state);
         out.writeLong(clusterTime);
     }
 
@@ -87,7 +106,7 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         version = in.readUTF();
-        state = in.readObject();
+        state = in.readInt();
         clusterTime = in.readLong();
     }
 
@@ -97,7 +116,7 @@ public class ClusterMetadata implements IdentifiedDataSerializable {
                 "name='" + name + '\'' +
                 ", version='" + version + '\'' +
                 ", clusterTime=" + clusterTime +
-                ", state=" + state +
+                ", state=" + ClusterState.values()[state] +
                 '}';
     }
 

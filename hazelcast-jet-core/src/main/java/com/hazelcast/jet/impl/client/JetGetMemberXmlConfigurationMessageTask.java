@@ -25,11 +25,12 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
 public class JetGetMemberXmlConfigurationMessageTask
-        extends AbstractJetMessageTask<JetGetMemberXmlConfigurationCodec.RequestParameters> {
+        extends AbstractJetMessageTask<JetGetMemberXmlConfigurationCodec.RequestParameters, String> {
 
     protected JetGetMemberXmlConfigurationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetGetMemberXmlConfigurationCodec::decodeRequest,
-                o -> JetGetMemberXmlConfigurationCodec.encodeResponse((String) o));
+        super(clientMessage, node, connection,
+                JetGetMemberXmlConfigurationCodec::decodeRequest,
+                JetGetMemberXmlConfigurationCodec::encodeResponse);
     }
 
     @Override

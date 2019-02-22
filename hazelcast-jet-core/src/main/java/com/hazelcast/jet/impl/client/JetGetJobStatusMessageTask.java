@@ -19,28 +19,22 @@ package com.hazelcast.jet.impl.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.serialization.SerializationService;
 
-public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJobStatusCodec.RequestParameters> {
+public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJobStatusCodec.RequestParameters, JobStatus> {
 
     protected JetGetJobStatusMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetGetJobStatusCodec::decodeRequest,
-                o -> JetGetJobStatusCodec.encodeResponse((Data) o));
+        super(clientMessage, node, connection,
+                JetGetJobStatusCodec::decodeRequest,
+                response -> JetGetJobStatusCodec.encodeResponse(response.ordinal()));
     }
 
     @Override
     protected Operation prepareOperation() {
         return new GetJobStatusOperation(parameters.jobId);
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        sendResponse(serializationService.toData(response));
     }
 
     @Override

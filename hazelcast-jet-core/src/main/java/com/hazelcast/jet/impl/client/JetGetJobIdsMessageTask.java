@@ -21,25 +21,20 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.serialization.SerializationService;
 
-public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<JetGetJobIdsCodec.RequestParameters> {
+import java.util.List;
+
+public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<JetGetJobIdsCodec.RequestParameters, List<Long>> {
     protected JetGetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetGetJobIdsCodec::decodeRequest,
-                o -> JetGetJobIdsCodec.encodeResponse((Data) o));
+        super(clientMessage, node, connection,
+                JetGetJobIdsCodec::decodeRequest,
+                JetGetJobIdsCodec::encodeResponse);
     }
 
     @Override
     protected Operation prepareOperation() {
         return new GetJobIdsOperation();
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        sendResponse(serializationService.toData(response));
     }
 
     @Override

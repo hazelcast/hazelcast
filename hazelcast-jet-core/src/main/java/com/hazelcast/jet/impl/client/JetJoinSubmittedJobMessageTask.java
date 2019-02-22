@@ -21,15 +21,16 @@ import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-public class JetJoinSubmittedJobMessageTask extends AbstractJetMessageTask<JetJoinSubmittedJobCodec.RequestParameters> {
+public class JetJoinSubmittedJobMessageTask extends AbstractJetMessageTask<JetJoinSubmittedJobCodec.RequestParameters,
+        Void> {
     protected JetJoinSubmittedJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetJoinSubmittedJobCodec::decodeRequest,
-                o -> JetJoinSubmittedJobCodec.encodeResponse((Data) o));
+        super(clientMessage, node, connection,
+                JetJoinSubmittedJobCodec::decodeRequest,
+                t -> JetJoinSubmittedJobCodec.encodeResponse());
     }
 
     @Override

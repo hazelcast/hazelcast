@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTerminateJobCodec.RequestParameters> {
+public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTerminateJobCodec.RequestParameters, Void> {
     protected JetTerminateJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetTerminateJobCodec::decodeRequest,
                 o -> JetTerminateJobCodec.encodeResponse());

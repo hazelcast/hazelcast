@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJobCodec.RequestParameters> {
+public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJobCodec.RequestParameters, Void> {
     protected JetSubmitJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetSubmitJobCodec::decodeRequest,
                 o -> JetSubmitJobCodec.encodeResponse());

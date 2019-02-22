@@ -24,11 +24,12 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
 public class JetExistsDistributedObjectMessageTask
-        extends AbstractJetMessageTask<JetExistsDistributedObjectCodec.RequestParameters> {
+        extends AbstractJetMessageTask<JetExistsDistributedObjectCodec.RequestParameters, Boolean> {
 
     protected JetExistsDistributedObjectMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetExistsDistributedObjectCodec::decodeRequest,
-                o -> JetExistsDistributedObjectCodec.encodeResponse((Boolean) o));
+        super(clientMessage, node, connection,
+                JetExistsDistributedObjectCodec::decodeRequest,
+                JetExistsDistributedObjectCodec::encodeResponse);
     }
 
     @Override

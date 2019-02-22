@@ -22,7 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExportSnapshotCodec.RequestParameters> {
+public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExportSnapshotCodec.RequestParameters, Void> {
 
     JetExportSnapshotMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetExportSnapshotCodec::decodeRequest,

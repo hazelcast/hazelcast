@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
@@ -26,10 +25,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class JetGetJobSummaryListMessageTask extends AbstractJetMessageTask<JetGetJobSummaryListCodec.RequestParameters> {
+public class JetGetJobSummaryListMessageTask extends AbstractJetMessageTask<JetGetJobSummaryListCodec.RequestParameters,
+        Data> {
     protected JetGetJobSummaryListMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetGetJobSummaryListCodec::decodeRequest,
-                o -> JetGetJobIdsCodec.encodeResponse((Data) o));
+        super(clientMessage, node, connection,
+                JetGetJobSummaryListCodec::decodeRequest,
+                JetGetJobSummaryListCodec::encodeResponse);
     }
 
     @Override

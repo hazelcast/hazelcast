@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec.ResponseParameters;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
@@ -66,8 +67,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
         try {
             ClientMessage response = invocation(request, masterAddress()).invoke().get();
-            Data statusData = JetGetJobStatusCodec.decodeResponse(response).response;
-            return serializationService().toObject(statusData);
+            ResponseParameters parameters = JetGetJobStatusCodec.decodeResponse(response);
+            return JobStatus.values()[parameters.response];
         } catch (Exception e) {
             throw rethrow(e);
         }

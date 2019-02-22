@@ -19,20 +19,24 @@ package com.hazelcast.jet.impl.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.serialization.SerializationService;
 
 public class JetGetClusterMetadataMessageTask
-        extends AbstractJetMessageTask<JetGetClusterMetadataCodec.RequestParameters> {
+        extends AbstractJetMessageTask<JetGetClusterMetadataCodec.RequestParameters, ClusterMetadata> {
     protected JetGetClusterMetadataMessageTask(ClientMessage clientMessage,
                                                Node node,
                                                Connection connection) {
         super(clientMessage, node, connection,
                 JetGetClusterMetadataCodec::decodeRequest,
-                o -> JetGetClusterMetadataCodec.encodeResponse((Data) o));
+                o -> JetGetClusterMetadataCodec.encodeResponse(
+                        o.getName(),
+                        o.getVersion(),
+                        o.getClusterTime(),
+                        o.getStateOrdinal())
+        );
     }
 
     @Override
@@ -42,8 +46,7 @@ public class JetGetClusterMetadataMessageTask
 
     @Override
     public void onResponse(Object response) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        sendResponse(serializationService.toData(response));
+        sendResponse(response);
     }
 
     @Override

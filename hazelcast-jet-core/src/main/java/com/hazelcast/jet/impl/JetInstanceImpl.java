@@ -32,7 +32,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -59,7 +58,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
     @Nonnull @Override
     public List<Job> getJobs() {
         Address masterAddress = nodeEngine.getMasterAddress();
-        Future<Set<Long>> future = nodeEngine
+        Future<List<Long>> future = nodeEngine
                 .getOperationService()
                 .createInvocationBuilder(JetService.SERVICE_NAME, new GetJobIdsOperation(), masterAddress)
                 .invoke();

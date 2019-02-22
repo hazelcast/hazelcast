@@ -30,16 +30,16 @@ public interface JetCodecTemplate {
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void terminateJob(long jobId, int terminateMode);
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.INTEGER)
     Object getJobStatus(long jobId);
 
-    @Request(id = 4, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 4, retryable = true, response = ResponseMessageConst.LIST_LONG)
     Object getJobIds();
 
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID)
     void joinSubmittedJob(long jobId);
 
-    @Request(id = 6, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 6, retryable = true, response = ResponseMessageConst.LIST_LONG)
     Object getJobIdsByName(String name);
 
     @Request(id = 7, retryable = true, response = ResponseMessageConst.LONG)
@@ -63,7 +63,7 @@ public interface JetCodecTemplate {
     @Request(id = 13, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object existsDistributedObject(String serviceName, String objectName);
 
-    @Request(id = 14, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 14, retryable = true, response = ResponseMessageConst.CLUSTER_METADATA)
     Object getClusterMetadata();
 
     @Request(id = 15, retryable = true, response = ResponseMessageConst.STRING)

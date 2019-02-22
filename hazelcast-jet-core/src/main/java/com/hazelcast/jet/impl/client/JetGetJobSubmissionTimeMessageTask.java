@@ -24,11 +24,12 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
 public class JetGetJobSubmissionTimeMessageTask
-        extends AbstractJetMessageTask<JetGetJobSubmissionTimeCodec.RequestParameters> {
+        extends AbstractJetMessageTask<JetGetJobSubmissionTimeCodec.RequestParameters, Long> {
 
     protected JetGetJobSubmissionTimeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetGetJobSubmissionTimeCodec::decodeRequest,
-                o -> JetGetJobSubmissionTimeCodec.encodeResponse((long) o));
+        super(clientMessage, node, connection,
+                JetGetJobSubmissionTimeCodec::decodeRequest,
+                JetGetJobSubmissionTimeCodec::encodeResponse);
     }
 
     @Override

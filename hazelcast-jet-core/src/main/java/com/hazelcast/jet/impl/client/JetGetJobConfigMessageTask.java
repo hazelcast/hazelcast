@@ -25,11 +25,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<JetGetJobConfigCodec.RequestParameters> {
+public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<JetGetJobConfigCodec.RequestParameters, Data> {
 
     protected JetGetJobConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetGetJobConfigCodec::decodeRequest,
-                o -> JetGetJobConfigCodec.encodeResponse((Data) o));
+        super(clientMessage, node, connection,
+                JetGetJobConfigCodec::decodeRequest,
+                JetGetJobConfigCodec::encodeResponse);
     }
 
     @Override
