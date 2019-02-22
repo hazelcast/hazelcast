@@ -58,6 +58,10 @@ public final class OperationQueueImpl implements OperationQueue {
         return normalQueue.size() + priorityQueue.size();
     }
 
+    public boolean isEmpty() {
+        return normalQueue.isEmpty() && priorityQueue.isEmpty();
+    }
+
     @Override
     public void add(Object task, boolean priority) {
         checkNotNull(task, "task can't be null");

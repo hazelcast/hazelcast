@@ -194,7 +194,7 @@ public final class ClientProperty {
      * increased performance and reduced memory usage.
      */
     public static final HazelcastProperty RESPONSE_THREAD_DYNAMIC
-            = new HazelcastProperty("hazelcast.client.response.thread.dynamic", false);
+            = new HazelcastProperty("hazelcast.client.response.thread.dynamic", true);
 
     /**
      * Token to use when discovering cluster via hazelcast.cloud

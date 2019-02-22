@@ -19,10 +19,10 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
-import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
@@ -44,12 +45,23 @@ import static com.hazelcast.util.collection.ArrayUtils.append;
 import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
+import static java.lang.System.nanoTime;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_WRITE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class NioOutboundPipeline
         extends NioPipeline
         implements Supplier<OutboundFrame>, OutboundPipeline {
+
+    public static final long WRITE_THROUGH_DELAY_NS = MILLISECONDS.toNanos(100);
+    private static final boolean WRITE_THROUGH = Boolean.parseBoolean(System.getProperty("hazelcast.io.write.through", "true"));
+
+    {
+        System.out.println("WRITE_THROUGH:" + WRITE_THROUGH);
+    }
+
+    private final AtomicLong nextPossibleWriteThrough = new AtomicLong(nanoTime());
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
@@ -159,6 +171,7 @@ public final class NioOutboundPipeline
         return frame;
     }
 
+
     /**
      * Makes sure this OutboundHandler is scheduled to be executed by the IO thread.
      * <p/>
@@ -168,18 +181,34 @@ public final class NioOutboundPipeline
      * If the OutboundHandler already is scheduled, the call is ignored.
      */
     private void schedule() {
-        if (scheduled.get()) {
-            // So this pipeline is still scheduled, we don't need to schedule it again
+        boolean claimed = !scheduled.get() && scheduled.compareAndSet(false, true);
+
+        if (!claimed) {
+            //  So this pipeline is still scheduled, we don't need to schedule it again
+            if (WRITE_THROUGH) {
+                bumpWriteThroughTime();
+            }
             return;
         }
 
-        if (!scheduled.compareAndSet(false, true)) {
-            // Another thread already has scheduled this pipeline, we are done. It
-            // doesn't matter which thread does the scheduling, as long as it happens.
-            return;
+        boolean writeThrough = WRITE_THROUGH;
+        if (WRITE_THROUGH) {
+            writeThrough = nanoTime() - nextPossibleWriteThrough.get() > 0;
         }
 
-        addTaskAndWakeup(this);
+        if (writeThrough) {
+            try {
+                process();
+            } catch (Throwable t) {
+                onError(t);
+            }
+        } else {
+            addTaskAndWakeup(this);
+        }
+    }
+
+    private void bumpWriteThroughTime() {
+        nextPossibleWriteThrough.set(nanoTime() + WRITE_THROUGH_DELAY_NS);
     }
 
     @Override
@@ -206,6 +235,13 @@ public final class NioOutboundPipeline
 
         flushToSocket();
 
+        if (migrationRequested()) {
+            startMigration();
+            // we leave this method and the NioOutboundPipeline remains scheduled.
+            // So we don't need to worry about write-through
+            return;
+        }
+
         if (sendBuffer.remaining() > 0) {
             pipelineStatus = DIRTY;
         }
@@ -216,9 +252,8 @@ public final class NioOutboundPipeline
                 unschedule();
                 break;
             case DIRTY:
-                // pipeline is dirty, so lets register for an OP_WRITE to write
-                // more data.
-                registerOp(OP_WRITE);
+                // pipeline is dirty, so register for an OP_WRITE to write more data.
+                registerOpWrite();
                 break;
             case BLOCKED:
                 // pipeline is blocked; no point in receiving OP_WRITE events.
@@ -226,6 +261,20 @@ public final class NioOutboundPipeline
                 break;
             default:
                 throw new IllegalStateException();
+        }
+    }
+
+    private void registerOpWrite() throws IOException {
+        registerOp(OP_WRITE);
+
+        if (WRITE_THROUGH && !(Thread.currentThread() instanceof NioThread)) {
+            // there was a write through. Changing the interested set of the selection key
+            // after the IO thread did a select, will not lead to the selector waking up. So
+            // if we don't wake up the selector explicitly, only after the selector.select(timeout)
+            // has expired the selectionKey will be seen. For more info see:
+            // https://stackoverflow.com/questions/11523471/java-selectionkey-interestopsint-not-thread-safe
+            owner.getSelector().wakeup();
+            bumpWriteThroughTime();
         }
     }
 
@@ -265,7 +314,11 @@ public final class NioOutboundPipeline
         // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
 
         // owner can't be null because this method is made by the owning io thread.
-        owner().addTask(this);
+        if (!WRITE_THROUGH || Thread.currentThread().getClass() == NioThread.class) {
+            owner().addTask(this);
+        } else {
+            owner().addTaskAndWakeup(this);
+        }
     }
 
     private void flushToSocket() throws IOException {
@@ -374,6 +427,7 @@ public final class NioOutboundPipeline
 
     @Override
     public OutboundPipeline wakeup() {
+        // this one is broken because it should only be added if it isn't scheduled.
         addTaskAndWakeup(this);
         return this;
     }

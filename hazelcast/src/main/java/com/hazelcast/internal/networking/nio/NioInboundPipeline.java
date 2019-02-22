@@ -157,6 +157,11 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
             }
         } while (!cleanPipeline);
 
+        if (migrationRequested()) {
+            startMigration();
+            return;
+        }
+
         if (unregisterRead) {
             unregisterOp(OP_READ);
         }
