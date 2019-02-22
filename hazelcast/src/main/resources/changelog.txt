@@ -8,6 +8,7 @@ Release 3.12
 - Added the new Blue-Green and Disaster Recovery for Java Clients feature.
 - Added the support for querying JSON strings.
 - Introduced the ability to share the Hot Restart `base-dir` among multiple members.
+- Redesigned WAN Replication for more lower latencies and higher throughput.
 - Added the support for adding/removing WAN publishers in a running cluster.
 - Added the ability to automatically remove the stale Hot Restart data.
 - Introduced a mechanism which allows to choose whether a new member joining to a cluster will apply the client permissions stored in its own configuration, or will use the ones defined in the cluster.
