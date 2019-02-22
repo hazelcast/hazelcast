@@ -26,6 +26,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.util.function.Supplier;
 
 import java.io.IOException;
@@ -158,6 +159,7 @@ public final class NioOutboundPipeline
 
         return frame;
     }
+    private static final boolean WRITE_THROUGH = Boolean.parseBoolean(System.getProperty("hazelcast.io.write.through","true"));
 
     /**
      * Makes sure this OutboundHandler is scheduled to be executed by the IO thread.
@@ -172,14 +174,29 @@ public final class NioOutboundPipeline
             // So this pipeline is still scheduled, we don't need to schedule it again
             return;
         }
-
+        boolean writeThrough = WRITE_THROUGH;
+        if (WRITE_THROUGH) {
+            // todo: this needs to be pulled out.
+            if (Thread.currentThread() instanceof PartitionOperationThread) {
+                PartitionOperationThread op = (PartitionOperationThread) Thread.currentThread();
+                writeThrough = op.queue.isEmpty();
+            }
+        }
         if (!scheduled.compareAndSet(false, true)) {
             // Another thread already has scheduled this pipeline, we are done. It
             // doesn't matter which thread does the scheduling, as long as it happens.
             return;
         }
 
-        addTaskAndWakeup(this);
+        if(writeThrough) {
+            try {
+                process();
+            } catch (Throwable t) {
+                onError(t);
+            }
+        }else{
+            addTaskAndWakeup(this);
+        }
     }
 
     @Override
@@ -265,7 +282,11 @@ public final class NioOutboundPipeline
         // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
 
         // owner can't be null because this method is made by the owning io thread.
-        owner().addTask(this);
+        if(Thread.currentThread().getClass()==NioThread.class) {
+            owner().addTask(this);
+        }else{
+            owner().addTaskAndWakeup(this);
+        }
     }
 
     private void flushToSocket() throws IOException {
