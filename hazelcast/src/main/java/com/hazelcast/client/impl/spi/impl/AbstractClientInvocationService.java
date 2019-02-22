@@ -75,27 +75,19 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
         this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
-        this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this);
+        this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this, client.getConcurrencyDetection());
 
         HazelcastProperties properties = client.getProperties();
-        int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
-        long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
-        // clients needs to have a call id generator capable of determining how many
-        // pending calls there are. So backpressure needs to be on
-        this.callIdSequence = CallIdFactory
-                .newCallIdSequence(true, maxAllowedConcurrentInvocations, backofftimeoutMs);
+        this.callIdSequence = CallIdFactory.newCallIdSequence(
+                properties.getInteger(MAX_CONCURRENT_INVOCATIONS),
+                properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS),
+                client.getConcurrencyDetection());
 
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
-    @Override
-    public long concurrentInvocations() {
-        return callIdSequence.concurrentInvocations();
-    }
-
     private long initInvocationRetryPauseMillis() {
         return client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
-
     }
 
     private long initInvocationTimeoutMillis() {
