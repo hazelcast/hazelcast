@@ -53,7 +53,7 @@ public class JetConfigTest_loadFromClassPath {
         properties.setProperty("flow.control.period", "456");
         properties.setProperty("backup.count", "6");
         properties.setProperty("scale.up.delay.millis", "1234");
-        properties.setProperty("lossless.recovery.enabled", "true");
+        properties.setProperty("lossless.restart.enabled", "true");
 
         properties.setProperty("metrics.enabled", "false");
         properties.setProperty("metrics.jmxEnabled", "false");
@@ -66,7 +66,7 @@ public class JetConfigTest_loadFromClassPath {
         assertEquals(456, config.getInstanceConfig().getFlowControlPeriodMs());
         assertEquals(6, config.getInstanceConfig().getBackupCount());
         assertEquals(1234, config.getInstanceConfig().getScaleUpDelayMillis());
-        assertTrue(config.getInstanceConfig().isLosslessRecoveryEnabled());
+        assertTrue(config.getInstanceConfig().isLosslessRestartEnabled());
 
         MetricsConfig metricsConfig = config.getMetricsConfig();
         assertFalse(metricsConfig.isEnabled());

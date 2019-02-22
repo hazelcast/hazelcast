@@ -148,7 +148,7 @@
         <xs:attribute name="flow-control-period-ms" type="hz:parameterized-positive-integer"/>
         <xs:attribute name="backup-count" type="hz:parameterized-backup-count"/>
         <xs:attribute name="scale-up-delay-millis" type="parameterized-non-negative-long"/>
-        <xs:attribute name="lossless-recovery-enabled" type="hz:parameterized-boolean"/>
+        <xs:attribute name="lossless-restart-enabled" type="hz:parameterized-boolean"/>
     </xs:complexType>
 
     <xs:complexType name="edge-config">

@@ -47,7 +47,7 @@ public class InstanceConfig {
     private int flowControlPeriodMs = DEFAULT_FLOW_CONTROL_PERIOD_MS;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private long scaleUpDelayMillis = SCALE_UP_DELAY_MILLIS_DEFAULT;
-    private boolean losslessRecoveryEnabled;
+    private boolean losslessRestartEnabled;
 
     /**
      * Sets the number of threads each cluster member will use to execute Jet
@@ -140,23 +140,23 @@ public class InstanceConfig {
     }
 
     /**
-     * Returns if lossless recovery is enabled, see {@link
-     * #setLosslessRecoveryEnabled(boolean)}.
+     * Returns if lossless restart is enabled, see {@link
+     * #setLosslessRestartEnabled(boolean)}.
      */
-    public boolean isLosslessRecoveryEnabled() {
-        return losslessRecoveryEnabled;
+    public boolean isLosslessRestartEnabled() {
+        return losslessRestartEnabled;
     }
 
     /**
-     * Sets whether lossless job recovery is enabled for the node. With
-     * lossless recovery you can restart the whole cluster without losing the
-     * jobs and their state. The feature is implemented on top of the Hot
-     * Restart feature of Hazelcast IMDG which persists the data to disk.
+     * Sets whether lossless job restart is enabled for the node. With lossless
+     * restart you can restart the whole cluster without losing the jobs and
+     * their state. The feature is implemented on top of the Hot Restart
+     * feature of Hazelcast IMDG which persists the data to disk.
      * <p>
      * If enabled, you have to also configure Hot Restart:
      * <pre>{@code
      *    JetConfig jetConfig = new JetConfig();
-     *    jetConfig.getInstanceConfig().setLosslessRecoveryEnabled(true);
+     *    jetConfig.getInstanceConfig().setLosslessRestartEnabled(true);
      *    jetConfig.getHazelcastConfig().getHotRestartPersistenceConfig()
      *        .setEnabled(true)
      *        .setBaseDir(new File("/mnt/hot-restart"))
@@ -170,8 +170,8 @@ public class InstanceConfig {
      * Hazelcast Jet, the member will fail to start, you need Jet Enterprise to
      * run it and obtain a license from Hazelcast.
      */
-    public InstanceConfig setLosslessRecoveryEnabled(boolean enabled) {
-        this.losslessRecoveryEnabled = enabled;
+    public InstanceConfig setLosslessRestartEnabled(boolean enabled) {
+        this.losslessRestartEnabled = enabled;
         return this;
     }
 }

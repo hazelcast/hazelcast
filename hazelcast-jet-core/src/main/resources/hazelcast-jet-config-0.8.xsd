@@ -31,7 +31,7 @@
                             <xs:element name="flow-control-period" type="positive-int" minOccurs="0"/>
                             <xs:element name="backup-count" type="backup-count" minOccurs="0" />
                             <xs:element name="scale-up-delay-millis" type="non-negative-long" minOccurs="0" />
-                            <xs:element name="lossless-recovery-enabled" type="xs:boolean" minOccurs="0" />
+                            <xs:element name="lossless-restart-enabled" type="xs:boolean" minOccurs="0" />
                         </xs:all>
                     </xs:complexType>
                 </xs:element>

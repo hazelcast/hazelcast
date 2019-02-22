@@ -23,7 +23,7 @@
         <flow-control-period>50</flow-control-period>
         <backup-count>2</backup-count>
         <scale-up-delay-millis>1234</scale-up-delay-millis>
-        <lossless-recovery-enabled>true</lossless-recovery-enabled>
+        <lossless-restart-enabled>true</lossless-restart-enabled>
     </instance>
 
     <properties>

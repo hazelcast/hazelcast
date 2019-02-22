@@ -91,12 +91,12 @@ public class InstanceConfigTest {
     }
 
     @Test
-    public void when_losslessRecoveryEnabled_then_returnsEnabled() {
+    public void when_losslessRestartEnabled_then_returnsEnabled() {
         // When
         InstanceConfig config = new InstanceConfig();
-        config.setLosslessRecoveryEnabled(true);
+        config.setLosslessRestartEnabled(true);
 
         // Then
-        assertTrue(config.isLosslessRecoveryEnabled());
+        assertTrue(config.isLosslessRestartEnabled());
     }
 }

@@ -222,10 +222,10 @@ public class JobConfigTest extends JetTestSupport {
     }
 
     @Test
-    public void when_losslessRecoveryEnabled_then_openSourceMemberDoesNotStart() {
+    public void when_losslessRestartEnabled_then_openSourceMemberDoesNotStart() {
         // When
         JetConfig jetConfig = new JetConfig();
-        jetConfig.getInstanceConfig().setLosslessRecoveryEnabled(true);
+        jetConfig.getInstanceConfig().setLosslessRestartEnabled(true);
 
         // Then
         exception.expect(UnsupportedOperationException.class);
