@@ -227,7 +227,7 @@ public final class GroupProperty {
      * The default is 20 seconds. A value smaller than 1 disables the balancer.
      */
     public static final HazelcastProperty IO_BALANCER_INTERVAL_SECONDS
-            = new HazelcastProperty("hazelcast.io.balancer.interval.seconds", 20, SECONDS);
+            = new HazelcastProperty("hazelcast.io.balancer.interval.seconds", 0, SECONDS);
 
     @SuppressWarnings("checkstyle:constantname")
     public static final HazelcastProperty PREFER_IPv4_STACK
