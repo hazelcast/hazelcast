@@ -63,17 +63,20 @@ public class AdvancedNetworkClientIntegrationTest {
     private static final int CLUSTER_SIZE = 3;
     private static final int BASE_CLIENT_PORT = 9090;
 
-    HazelcastInstance[] instances = new HazelcastInstance[CLUSTER_SIZE];
+    private HazelcastInstance[] instances = new HazelcastInstance[CLUSTER_SIZE];
+    private HazelcastInstance client;
 
     @Before
     public void setup() {
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             instances[i] = Hazelcast.newHazelcastInstance(getConfig());
         }
+        assertClusterSizeEventually(CLUSTER_SIZE, instances);
     }
 
     @After
     public void tearDown() {
+        client.shutdown();
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             instances[i].getLifecycleService().terminate();
         }
@@ -81,7 +84,7 @@ public class AdvancedNetworkClientIntegrationTest {
 
     @Test
     public void clientSmokeTest() {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
         IMap<Integer, Integer> map = client.getMap("test");
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -91,7 +94,7 @@ public class AdvancedNetworkClientIntegrationTest {
 
     @Test
     public void testClientMembersList() {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
         Set<Member> clientViewOfMembers = client.getCluster().getMembers();
         Set<Member> members = instances[1].getCluster().getMembers();
 
@@ -107,7 +110,7 @@ public class AdvancedNetworkClientIntegrationTest {
 
     @Test
     public void testClientMembershipEvent() {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
         final AtomicReference<Member> memberAdded = new AtomicReference<Member>();
         final AtomicReference<Member> memberRemoved = new AtomicReference<Member>();
         Address removedMemberAddress = instances[2].getCluster().getLocalMember().getAddressMap().get(CLIENT);
@@ -142,7 +145,7 @@ public class AdvancedNetworkClientIntegrationTest {
 
     @Test
     public void testPartitions() {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
         Iterator<Partition> memberPartitions = instances[0].getPartitionService().getPartitions().iterator();
         Set<Partition> partitions = client.getPartitionService().getPartitions();
 
@@ -156,7 +159,7 @@ public class AdvancedNetworkClientIntegrationTest {
 
     @Test
     public void testGetScheduledFutures() throws Exception {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
         IScheduledExecutorService executorService = client.getScheduledExecutorService("test");
         Member targetMember = client.getCluster().getMembers().iterator().next();
 
@@ -172,7 +175,7 @@ public class AdvancedNetworkClientIntegrationTest {
 
     @Test
     public void testScheduleOnMember() throws Exception {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(getClientConfig());
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
         IScheduledExecutorService executorService = client.getScheduledExecutorService("test");
         Member targetMember = client.getCluster().getMembers().iterator().next();
 
@@ -207,9 +210,7 @@ public class AdvancedNetworkClientIntegrationTest {
         }
     }
 
-
-
-    Config getConfig() {
+    private Config getConfig() {
         Config config = smallInstanceConfig();
         config.getAdvancedNetworkConfig().setEnabled(true)
               .setClientEndpointConfig(new ServerSocketEndpointConfig().setPort(BASE_CLIENT_PORT));
@@ -220,7 +221,7 @@ public class AdvancedNetworkClientIntegrationTest {
         return config;
     }
 
-    ClientConfig getClientConfig() {
+    private ClientConfig getClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress("127.0.0.1:9090");
         return clientConfig;
