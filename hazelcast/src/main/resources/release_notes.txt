@@ -9,6 +9,11 @@ Hazelcast IMDG Enterprise New Features:
 
 * **Blue-Green and Disaster Recovery for Java Clients:** Introduced the support for Hazelcast Java clients to switch between alternative clusters. See the Blue Green Deployment and Disaster Recovery section.
 
+Hazelcast IMDG Open Source New Features:
+
+* **CP Subsystem:** Implementing the https://raft.github.io/[Raft consensus algorithm], Hazelcast introduces its CP subsystem which runs within a Hazelcast cluster and offers linearizable implementations of Hazelcast's concurrency APIs. See the CP Subsystem chapter.
+* **Querying JSON Strings:**  You can now query JSON strings stored inside your Hazelcast clusters. See the Querying JSON Strings section.
+
 2. Enhancements
 
 Hazelcast IMDG Enterprise Enhancements:
@@ -23,7 +28,6 @@ inside this base directory. This allows using the same configuration on all the 
 
 Hazelcast IMDG Open Source Enhancements:
 
-* **CP Subsystem:** Implementing the https://raft.github.io/[Raft consensus algorithm], Hazelcast introduces its CP subsystem which runs within a Hazelcast cluster and offers linearizable implementations of Hazelcast's concurrency APIs. See the CP Subsystem chapter.
 * **Client Instance Names and Attributes:** You can now retrieve the names of client instances on the member side. Moreover, client attributes have been introduced so that you can group your clients and/or perform special operations for specific clients. See the Defining Client Attributes section.
 * **Composite Indexes:** Introduced the ability to recognize the queries that use all the indexed properties and treat them as a composite, e.g., `foo = 1 and bar = 2 and foobar = 3`. See the Composite Indexes section.
 
