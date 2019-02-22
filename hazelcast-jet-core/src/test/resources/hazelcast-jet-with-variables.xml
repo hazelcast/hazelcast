@@ -24,6 +24,7 @@
         <flow-control-period>${flow.control.period}</flow-control-period>
         <backup-count>${backup.count}</backup-count>
         <scale-up-delay-millis>${scale.up.delay.millis}</scale-up-delay-millis>
+        <lossless-recovery-enabled>${lossless.recovery.enabled}</lossless-recovery-enabled>
     </instance>
 
     <properties>

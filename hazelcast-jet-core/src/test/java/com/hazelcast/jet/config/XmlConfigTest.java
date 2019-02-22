@@ -144,6 +144,7 @@ public class XmlConfigTest {
         properties.put("flow.control.period", "50");
         properties.put("backup.count", "2");
         properties.put("scale.up.delay.millis", "1234");
+        properties.put("lossless.recovery.enabled", "true");
         properties.put("metrics.enabled", "false");
         properties.put("metrics.jmxEnabled", "false");
         properties.put("metrics.retention", "124");
@@ -197,6 +198,7 @@ public class XmlConfigTest {
         assertEquals("backupCount", 2, jetConfig.getInstanceConfig().getBackupCount());
         assertEquals("flowControlMs", 50, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
         assertEquals("scaleUpDelayMillis", 1234, jetConfig.getInstanceConfig().getScaleUpDelayMillis());
+        assertTrue("losslessRecoveryEnabled", jetConfig.getInstanceConfig().isLosslessRecoveryEnabled());
 
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));

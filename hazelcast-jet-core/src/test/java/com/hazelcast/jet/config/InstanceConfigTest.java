@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -87,5 +88,15 @@ public class InstanceConfigTest {
 
         // Then
         assertEquals(123L, config.getScaleUpDelayMillis());
+    }
+
+    @Test
+    public void when_losslessRecoveryEnabled_then_returnsEnabled() {
+        // When
+        InstanceConfig config = new InstanceConfig();
+        config.setLosslessRecoveryEnabled(true);
+
+        // Then
+        assertTrue(config.isLosslessRecoveryEnabled());
     }
 }

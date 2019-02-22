@@ -28,6 +28,11 @@
         <!-- the delay after which auto-scaled jobs will restart if a new member is added to the
              cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled -->
         <scale-up-delay-millis>10000</scale-up-delay-millis>
+        <!-- Sets whether lossless job recovery is enabled for the node. With
+             lossless recovery you can restart the whole cluster without losing the
+             jobs and their state. The feature is implemented on top of the Hot
+             Restart feature of Hazelcast IMDG which persists the data to disk. -->
+        <lossless-recovery-enabled>false</lossless-recovery-enabled>
     </instance>
 
     <!-- custom properties which can be read in the user code -->

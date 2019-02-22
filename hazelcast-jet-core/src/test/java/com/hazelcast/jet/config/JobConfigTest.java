@@ -16,8 +16,11 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -33,7 +36,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-public class JobConfigTest {
+public class JobConfigTest extends JetTestSupport {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void when_setName_thenReturnsName() {
@@ -213,6 +219,18 @@ public class JobConfigTest {
         assertFalse(resourceConfig.isArchive());
         assertEquals(url, resourceConfig.getUrl());
         assertEquals("my.txt", resourceConfig.getId());
+    }
+
+    @Test
+    public void when_losslessRecoveryEnabled_then_openSourceMemberDoesNotStart() {
+        // When
+        JetConfig jetConfig = new JetConfig();
+        jetConfig.getInstanceConfig().setLosslessRecoveryEnabled(true);
+
+        // Then
+        exception.expect(UnsupportedOperationException.class);
+        exception.expectMessage("not available");
+        createJetMember(jetConfig);
     }
 
     private ResourceConfig assertAndGet(JobConfig config) {

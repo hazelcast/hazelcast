@@ -145,7 +145,7 @@ public final class Jet {
         hzConfig.getServicesConfig()
                 .addServiceConfig(new ServiceConfig()
                         // use the user service config for JetService only as a config object holder,
-                        // the service will be created by JetNodeExtension instead
+                        // the service will be created by JetNodeExtension
                         .setEnabled(false)
                         .setName(JetService.SERVICE_NAME)
                         .setClassName(JetService.class.getName())
@@ -156,19 +156,17 @@ public final class Jet {
                         .setClassName(JetMetricsService.class.getName())
                         .setConfigObject(jetConfig.getMetricsConfig()));
 
-        MapConfig metadataMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
+        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
                 .setStatisticsEnabled(false);
-        metadataMapConfig.getMergePolicyConfig().setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
-        boolean hotRestartEnabled = hzConfig.getHotRestartPersistenceConfig().isEnabled();
-        metadataMapConfig.getHotRestartConfig().setEnabled(hotRestartEnabled);
+        internalMapConfig.getMergePolicyConfig().setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
 
         HazelcastProperties properties = new HazelcastProperties(hzProperties);
-        MapConfig resultsMapConfig = new MapConfig(metadataMapConfig)
+        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
                 .setName(JOB_RESULTS_MAP_NAME)
                 .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
 
-        hzConfig.addMapConfig(metadataMapConfig)
+        hzConfig.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig);
 
         MetricsConfig metricsConfig = jetConfig.getMetricsConfig();

@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
 
@@ -30,6 +31,16 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
     public JetNodeExtension(Node node) {
         super(node);
         extCommon = new NodeExtensionCommon(node, new JetService(node));
+    }
+
+    @Override
+    public void beforeStart() {
+        JetConfig config = JetService.findJetServiceConfig(node.getConfig());
+        if (config.getInstanceConfig().isLosslessRecoveryEnabled()) {
+            throw new UnsupportedOperationException("Lossless Recovery is not available in the open-source version of " +
+                    "Hazelcast Jet");
+        }
+        super.beforeStart();
     }
 
     @Override

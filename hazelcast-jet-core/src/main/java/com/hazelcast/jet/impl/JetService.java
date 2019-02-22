@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
@@ -94,7 +95,7 @@ public class JetService
     @Override
     public void init(NodeEngine engine, Properties properties) {
         this.nodeEngine = (NodeEngineImpl) engine;
-        this.config = (JetConfig) engine.getConfig().getServicesConfig().getServiceConfig(SERVICE_NAME).getConfigObject();
+        this.config = findJetServiceConfig(engine.getConfig());
         this.sharedMigrationWatcher = new MigrationWatcher(engine.getHazelcastInstance());
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
         taskletExecutionService = new TaskletExecutionService(nodeEngine,
@@ -114,6 +115,10 @@ public class JetService
 
         logger.info("Setting number of cooperative threads and default parallelism to "
                 + config.getInstanceConfig().getCooperativeThreadCount());
+    }
+
+    static JetConfig findJetServiceConfig(Config hzConfig) {
+        return (JetConfig) hzConfig.getServicesConfig().getServiceConfig(SERVICE_NAME).getConfigObject();
     }
 
     /**

@@ -194,6 +194,9 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
                 case "scale-up-delay-millis":
                     instanceConfig.setScaleUpDelayMillis(longValue(node));
                     break;
+                case "lossless-recovery-enabled":
+                    instanceConfig.setLosslessRecoveryEnabled(booleanValue(node));
+                    break;
                 default:
                     throw new AssertionError("Unrecognized XML element: " + name);
             }
