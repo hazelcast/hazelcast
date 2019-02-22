@@ -15,6 +15,7 @@ Release 3.12
 - Introduced the ability to automatically change the cluster version after a rolling upgrade.
 - Added the ability to retrieve the names of client instances on the member side.
 - Introduced client attributes.
+- Added support for configuration in YAML.
 - Introduced composite indexes.
 - Deprecated the original `ILock`, `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` implementations and introduced their implementations provided by CP Subsystem.
 
