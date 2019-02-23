@@ -22,8 +22,10 @@ import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 public class GetClusterMetadataOperation extends Operation implements
         IdentifiedDataSerializable,
@@ -58,4 +60,11 @@ public class GetClusterMetadataOperation extends Operation implements
         return JetInitDataSerializerHook.GET_CLUSTER_METADATA_OP;
     }
 
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        // workaround for imdg problem that it retries invokeOnTarget if TargetNotMemberException is thrown
+        return throwable instanceof TargetNotMemberException
+                ? ExceptionAction.THROW_EXCEPTION
+                : super.onInvocationException(throwable);
+    }
 }

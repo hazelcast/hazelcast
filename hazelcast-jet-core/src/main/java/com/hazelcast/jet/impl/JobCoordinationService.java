@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -38,6 +39,7 @@ import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -51,11 +53,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -69,12 +73,12 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.util.executor.ExecutorType.CACHED;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -484,17 +488,42 @@ public class JobCoordinationService {
                 && !partitionService.hasOnGoingMigrationLocal();
     }
 
+    /**
+     * Returns {@code true} if all members except for the local member have
+     * state equal to the given {@code clusterState}. Ignores members that just
+     * left the cluster. Any failure when querying the state on any member
+     * causes the method to return {@code false}.
+     */
     private boolean allMembersHaveSameState(ClusterState clusterState) {
         // TODO remove once the issue is fixed on the imdg side
-        Set<Member> members = nodeEngine.getClusterService().getMembers();
-        List<Future<ClusterMetadata>> futures =
-                members.stream()
-                       .filter(member -> !member.localMember())
-                       .map(this::clusterMetadataAsync)
-                       .collect(toList());
-        return futures.stream()
-                      .map(future -> uncheckCall(future::get))
-                      .allMatch(metaData -> metaData.getState() == clusterState);
+        try {
+            Set<Member> members = nodeEngine.getClusterService().getMembers();
+            List<Future<ClusterMetadata>> futures =
+                    members.stream()
+                           .filter(member -> !member.localMember())
+                           .map(this::clusterMetadataAsync)
+                           .collect(toList());
+            return futures.stream()
+                          .map(future -> {
+                              try {
+                                  return future.get();
+                              } catch (ExecutionException e) {
+                                  if (e.getCause() instanceof MemberLeftException
+                                          || e.getCause() instanceof TargetNotMemberException) {
+                                      // ignore these exceptions
+                                      return null;
+                                  }
+                                  throw sneakyThrow(e);
+                              } catch (Exception e) {
+                                  throw sneakyThrow(e);
+                              }
+                          })
+                          .filter(Objects::nonNull)
+                          .allMatch(metaData -> metaData.getState() == clusterState);
+        } catch (Exception e) {
+            logger.warning("Exception during member state check", e);
+            return false;
+        }
     }
 
     private Future<ClusterMetadata> clusterMetadataAsync(Member member) {
