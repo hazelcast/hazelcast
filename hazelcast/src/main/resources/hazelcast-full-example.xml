@@ -105,9 +105,11 @@
         ===== HAZELCAST MANAGEMENT CENTER CONFIGURATION =====
 
         The value for the element <management-center> is the URL where you deploy the Management Center.
-        It has two optional attributes:
+        It has three optional attributes:
         * enabled:
         Set to true to be able to use the Management Center. Its default value is false.
+        * scripting-enabled:
+        Set to true to allow scripting on the member, false to disallow.
         * update-interval:
         The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
         Its default value is 3 seconds. Hazelcast's Open Source edition provides the Management Center with monitoring
@@ -492,7 +494,7 @@
         * <member-address-provider>:
         IMPORTANT
         This configuration is not intended to provide addresses of other cluster members with
-        which the hazelcast instance will form a cluster. This is an SPI for advanced use in
+        which the Hazelcast instance will form a cluster. This is an SPI for advanced use in
         cases where the DefaultAddressPicker does not pick suitable addresses to bind to
         and publish to other cluster members. For instance, this could allow easier
         deployment in some cases when running on Docker, AWS or other cloud environments.
@@ -512,7 +514,7 @@
                 The name of the class implementing the com.hazelcast.spi.MemberAddressProvider interface.
             - <properties>:
                 The properties that will be provided when constructing the provided MemberAddressProvider. Hazelcast will
-                first try instatiating the provided class by invoking a constructor accepting a single
+                first try instantiating the provided class by invoking a constructor accepting a single
                 java.util.Properties instance. In the case where there is no such constructor and there are also
                 no properties defined by this configuration, Hazelcast will exceptionally try to use the no-arg
                 constructor.
@@ -525,12 +527,17 @@
         </outbound-ports>
         <reuse-address>false</reuse-address>
         <join>
-            <multicast enabled="true">
+            <multicast enabled="false">
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="false">
                 <interface>127.0.0.1</interface>
+                <required-member>10.0.0.1</required-member>
+                <member-list>
+                    <member>10.0.0.2</member>
+                    <member>10.0.0.3</member>
+                </member-list>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
@@ -564,6 +571,7 @@
                 <namespace>hazelcast</namespace>
             </eureka>
             <discovery-strategies>
+                <node-filter class="com.yourpackage.NodeFilter"/>
                 <discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
                     <properties>
                         <property name="provider">google-compute-engine</property>
@@ -764,7 +772,7 @@
     <!--
     ===== HAZELCAST CARDINALITY ESTIMATOR SERVICE CONFIGURATION =====
 
-    Configuration element's name is <cardinality-estimator-service>. It has the optional attribute "name" with which you
+    Configuration element's name is <cardinality-estimator>. It has the optional attribute "name" with which you
     can specify the name of your estimator. Its default value is "default".
     It has the following sub-elements:
     * <backup-count>:
@@ -1133,7 +1141,7 @@
         <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
         <statistics-enabled>true</statistics-enabled>
         <optimize-queries>true</optimize-queries>
-        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
+        <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <time-to-live-seconds>0</time-to-live-seconds>
@@ -1474,7 +1482,7 @@
                         class-name="com.example.cache.MyEntryEventFilterFactory"/>
             </cache-entry-listener>
         </cache-entry-listeners>
-        <in-memory-format>NATIVE</in-memory-format>
+        <in-memory-format>BINARY</in-memory-format>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
@@ -2221,14 +2229,14 @@
                 </endpoints>
             </all-permissions>
             <config-permission>
-                <actions>
-                    <action>all</action>
-                </actions>
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
             </config-permission>
             <transaction-permission>
-                <actions>
-                    <action>all</action>
-                </actions>
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
             </transaction-permission>
             <map-permission name="custom" principal="dev">
                 <endpoints>
@@ -2530,5 +2538,229 @@
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
         <statistics-enabled>true</statistics-enabled>
     </pn-counter>
+
+    <advanced-network enabled="false">
+        <join>
+            <multicast enabled="true" loopbackModeEnabled="true">
+                <multicast-group>1.2.3.4</multicast-group>
+                <multicast-port>12345</multicast-port>
+                <multicast-timeout-seconds>5</multicast-timeout-seconds>
+                <multicast-time-to-live>10</multicast-time-to-live>
+                <trusted-interfaces>
+                    <interface>10.10.1.*</interface>
+                    <interface>10.10.2.*</interface>
+                </trusted-interfaces>
+            </multicast>
+            <tcp-ip enabled="false" connection-timeout-seconds="123">
+                <required-member>dummy</required-member>
+                <member>dummy1</member>
+                <member>dummy2</member>
+                <interface>127.0.0.10</interface>
+                <members>dummy3,dummy4</members>
+                <member-list>
+                    <member>dummy5</member>
+                    <member>dummy6</member>
+                </member-list>
+            </tcp-ip>
+            <aws enabled="false">
+                <access-key>my-access-key</access-key>
+                <secret-key>my-secret-key</secret-key>
+                <iam-role>dummy</iam-role>
+                <!--optional, default is us-east-1 -->
+                <region>us-west-1</region>
+                <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
+                <host-header>ec2.amazonaws.com</host-header>
+                <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
+                <security-group-name>hazelcast-sg</security-group-name>
+                <tag-key>type</tag-key>
+                <tag-value>hz-nodes</tag-value>
+                <use-public-ip>true</use-public-ip>
+            </aws>
+            <gcp enabled="false">
+                <zones>us-east1-b,us-east1-c</zones>
+            </gcp>
+            <azure enabled="false">
+                <client-id>CLIENT_ID</client-id>
+                <client-secret>CLIENT_SECRET</client-secret>
+                <tenant-id>TENANT_ID</tenant-id>
+                <subscription-id>SUB_ID</subscription-id>
+                <cluster-id>HZLCAST001</cluster-id>
+                <group-name>GROUP-NAME</group-name>
+            </azure>
+            <kubernetes enabled="false">
+                <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+                <service-name>MY-SERVICE-NAME</service-name>
+                <service-label-name>MY-SERVICE-LABEL-NAME</service-label-name>
+                <service-label-value>MY-SERVICE-LABEL-VALUE</service-label-value>
+            </kubernetes>
+            <eureka enabled="false">
+                <self-registration>true</self-registration>
+                <namespace>hazelcast</namespace>
+            </eureka>
+            <!--            <discovery-strategies>
+                            <node-filter class="DummyFilterClass"/>
+                            <discovery-strategy class="DummyClass" enabled="true">
+                                <properties>
+                                    <property name="foo">bar</property>
+                                </properties>
+                            </discovery-strategy>
+                        </discovery-strategies>-->
+        </join>
+        <member-address-provider enabled="false">
+            <class-name>DummyMemberAddressProvider</class-name>
+            <properties>
+                <property name="foo">bar</property>
+            </properties>
+        </member-address-provider>
+        <failure-detector>
+            <icmp enabled="false">
+                <timeout-milliseconds>1000</timeout-milliseconds>
+                <fail-fast-on-startup>true</fail-fast-on-startup>
+                <interval-milliseconds>1000</interval-milliseconds>
+                <max-attempts>2</max-attempts>
+                <parallel-mode>true</parallel-mode>
+                <ttl>255</ttl>
+            </icmp>
+        </failure-detector>
+        <!-- cluster protocol server socket -->
+        <member-server-socket-endpoint-config>
+            <outbound-ports>
+                <ports>33000-35000</ports>
+                <ports>37000,37001,37002,37003</ports>
+                <ports>38000,38500-38600</ports>
+            </outbound-ports>
+            <interfaces enabled="true">
+                <interface>10.10.1.*</interface>
+            </interfaces>
+            <ssl enabled="true">
+                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
+                <properties>
+                    <property name="foo">bar</property>
+                </properties>
+            </ssl>
+            <socket-interceptor enabled="true">
+                <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
+                <properties>
+                    <property name="foo">bar</property>
+                </properties>
+            </socket-interceptor>
+            <socket-options>
+                <buffer-direct>true</buffer-direct>
+                <tcp-no-delay>true</tcp-no-delay>
+                <keep-alive>true</keep-alive>
+                <connect-timeout-seconds>64</connect-timeout-seconds>
+                <send-buffer-size-kb>25</send-buffer-size-kb>
+                <receive-buffer-size-kb>33</receive-buffer-size-kb>
+                <linger-seconds>99</linger-seconds>
+            </socket-options>
+            <port auto-increment="true" port-count="100">5701</port>
+            <public-address>dummy</public-address>
+            <!-- If the address should be reused. See NetworkConfig.setReuseAddress for more information. -->
+            <reuse-address>true</reuse-address>
+        </member-server-socket-endpoint-config>
+        <!-- server socket listening for connections from hazelcast clients -->
+        <client-server-socket-endpoint-config>
+            <outbound-ports>
+                <ports>38000,38500-38600</ports>
+            </outbound-ports>
+            <interfaces enabled="false">
+                <interface>10.10.1.*</interface>
+            </interfaces>
+            <ssl enabled="true">
+                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
+                <properties>
+                    <property name="foo">bar</property>
+                </properties>
+            </ssl>
+            <socket-interceptor enabled="true">
+                <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
+                <properties>
+                    <property name="foo">bar</property>
+                </properties>
+            </socket-interceptor>
+            <port auto-increment="true" port-count="100">9999</port>
+            <public-address>10.10.0.10</public-address>
+            <reuse-address>true</reuse-address>
+        </client-server-socket-endpoint-config>
+        <!-- create a server socket for REST API -->
+        <rest-server-socket-endpoint-config name="internal-server-socket">
+            <interfaces enabled="false">
+                <interface>10.10.1.*</interface>
+            </interfaces>
+            <port auto-increment="false">8080</port>
+            <public-address>192.168.1.10</public-address>
+            <reuse-address>true</reuse-address>
+            <endpoint-groups>
+                <endpoint-group name="WAN" enabled="true"/>
+                <endpoint-group name="CLUSTER_READ" enabled="true"/>
+                <endpoint-group name="CLUSTER_WRITE" enabled="false"/>
+                <endpoint-group name="HEALTH_CHECK" enabled="true"/>
+            </endpoint-groups>
+        </rest-server-socket-endpoint-config>
+        <!-- specify SSL config to be used for outgoing connections -->
+        <wan-endpoint-config name="endpoint-tokyo">
+            <ssl enabled="true">
+                <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
+                <properties>
+                    <property name="foo">bar</property>
+                </properties>
+            </ssl>
+        </wan-endpoint-config>
+        <wan-endpoint-config name="endpoint-london">
+            <symmetric-encryption enabled="true">
+                <algorithm>Algorithm</algorithm>
+                <salt>thesalt</salt>
+                <password>thepassword</password>
+                <iteration-count>1000</iteration-count>
+            </symmetric-encryption>
+        </wan-endpoint-config>
+        <wan-server-socket-endpoint-config name="wan-server-socket-config">
+            <interfaces enabled="false">
+                <interface>192.168.8.101</interface>
+                <interface>10.20.10.100</interface>
+            </interfaces>
+        </wan-server-socket-endpoint-config>
+        <memcache-server-socket-endpoint-config name="memcache">
+            <port auto-increment="false" port-count="10">6000</port>
+        </memcache-server-socket-endpoint-config>
+    </advanced-network>
+
+    <cp-subsystem>
+        <cp-member-count>10</cp-member-count>
+        <group-size>3</group-size>
+        <session-time-to-live-seconds>60</session-time-to-live-seconds>
+        <session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
+        <missing-cp-member-auto-removal-seconds>120</missing-cp-member-auto-removal-seconds>
+        <fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+        <raft-algorithm>
+            <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
+            <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
+            <max-missed-leader-heartbeat-count>5</max-missed-leader-heartbeat-count>
+            <append-request-max-entry-count>50</append-request-max-entry-count>
+            <commit-index-advance-count-to-snapshot>1000</commit-index-advance-count-to-snapshot>
+            <uncommitted-entry-count-to-reject-new-appends>100</uncommitted-entry-count-to-reject-new-appends>
+            <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
+        </raft-algorithm>
+        <semaphores>
+            <cp-semaphore>
+                <name>sem1</name>
+                <jdk-compatible>true</jdk-compatible>
+            </cp-semaphore>
+            <cp-semaphore>
+                <name>sem2</name>
+                <jdk-compatible>false</jdk-compatible>
+            </cp-semaphore>
+        </semaphores>
+        <locks>
+            <fenced-lock>
+                <name>lock1</name>
+                <lock-acquire-limit>1</lock-acquire-limit>
+            </fenced-lock>
+            <fenced-lock>
+                <name>lock2</name>
+                <lock-acquire-limit>2</lock-acquire-limit>
+            </fenced-lock>
+        </locks>
+    </cp-subsystem>
 
 </hazelcast>
