@@ -511,6 +511,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void hashJoin() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -537,12 +538,14 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // sinkList: tuple2(0, "A-0000"), tuple2(1, "A-0001"), ...
         assertTrueEventually(() -> assertEquals(
                 expectedString,
-                streamToString(sinkList.stream().<Tuple2<Integer, String>>map(Tuple2.class::cast),
+                streamToString(
+                        sinkList.stream().map(t2 -> (Tuple2<Integer, String>) t2),
                         t2 -> formatFn.apply(t2.f0(), t2.f1()))
         ), ASSERT_TIMEOUT_SECONDS);
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void hashJoin2() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -577,12 +580,13 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // sinkList: tuple3(0, "A-0000", "B-0000"), tuple3(1, "A-0001", "B-0001"), ...
         assertTrueEventually(() -> assertEquals(
                 expectedString,
-                streamToString(sinkList.stream().<Tuple3<Integer, String, String>>map(Tuple3.class::cast),
+                streamToString(sinkList.stream().map(t3 -> (Tuple3<Integer, String, String>) t3),
                         t3 -> formatFn.apply(t3.f0(), t3.f1(), t3.f2()))
         ), ASSERT_TIMEOUT_SECONDS);
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void hashJoinBuilder() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -616,7 +620,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // sinkList: tuple2(0, ibt(tagA: "A-0000", tagB: "B-0000")), tuple2(1, ibt(tagA: "A-0001", tagB: "B-0001"))
         assertTrueEventually(() -> assertEquals(
                 expectedString,
-                streamToString(sinkList.stream().<Tuple2<Integer, ItemsByTag>>map(Tuple2.class::cast),
+                streamToString(sinkList.stream().map(t2 -> (Tuple2<Integer, ItemsByTag>) t2),
                         t2 -> formatFn.apply(t2.f0(), t2.f1().get(tagA), t2.f1().get(tagB)))
         ), ASSERT_TIMEOUT_SECONDS);
     }
