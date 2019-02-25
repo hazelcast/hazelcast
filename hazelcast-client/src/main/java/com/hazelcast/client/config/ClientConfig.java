@@ -1022,6 +1022,7 @@ public class ClientConfig {
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig addLabel(String label) {
+        Preconditions.isNotNull(label, "label");
         labels.add(label);
         return this;
     }
