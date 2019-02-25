@@ -89,7 +89,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
         TestSupport.verifyProcessor(createSupplier(asList(0, 1), 2000))
                    .disableProgressAssertion()
-                   .disableRunUntilCompleted(1000)
+                   .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
                    .expectOutput(asList(wm(10), 10, 10));
     }
@@ -114,7 +114,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
         TestSupport.verifyProcessor(createSupplier(asList(0, 1), 4000))
                    .disableProgressAssertion()
-                   .disableRunUntilCompleted(4000)
+                   .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
                    .outputChecker((e, a) -> new HashSet<>(e).equals(new HashSet<>(a)))
                    .expectOutput(asList(11, wm(11)));
@@ -126,7 +126,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
     public void when_allPartitionsIdle_then_idleMessageOutput() {
         TestSupport.verifyProcessor(createSupplier(asList(0, 1), 500))
                    .disableProgressAssertion()
-                   .disableRunUntilCompleted(1500)
+                   .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
                    .expectOutput(singletonList(IDLE_MESSAGE));
     }
@@ -170,7 +170,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
         TestSupport.verifyProcessor(createSupplier(singletonList(1), 2000))
                    .disableProgressAssertion()
-                   .disableRunUntilCompleted(4000)
+                   .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
                    .expectOutput(asList(wm(13), 13, IDLE_MESSAGE));
     }

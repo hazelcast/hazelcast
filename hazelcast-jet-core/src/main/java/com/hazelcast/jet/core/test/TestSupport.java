@@ -50,10 +50,13 @@ import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.subtractClamped;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -73,9 +76,10 @@ import static java.util.stream.Collectors.toMap;
  *
  *     <li>every time the inbox gets empty does snapshot or snapshot+restore
  *
- *     <li>{@link #disableCompleteCall() optionally} calls {@link Processor#complete()}
- *     until it returns {@code true} or calls it until {@link #disableRunUntilCompleted(long)
- *     specified timeout} elapses (for streaming sources)
+ *     <li>{@linkplain #disableCompleteCall() optionally} calls {@link
+ *     Processor#complete()} until it returns {@code true} or until the
+ *     {@linkplain #runUntilOutputMatches output matches} (for streaming
+ *     sources)
  *
  *     <li>does snapshot or snapshot+restore each time the {@code complete()}
  *     method returned {@code false} and made a progress
@@ -202,7 +206,8 @@ public final class TestSupport {
     private boolean callComplete = true;
     private JetInstance jetInstance;
     private long cooperativeTimeout = COOPERATIVE_TIME_LIMIT_MS_FAIL;
-    private long runUntilCompletedTimeout;
+    private long runUntilOutputMatchesTimeoutMillis = -1;
+    private long runUntilOutputMatchesExtraTimeMillis;
 
     private BiPredicate<? super List<?>, ? super List<?>> outputChecker = Objects::equals;
 
@@ -354,28 +359,29 @@ public final class TestSupport {
 
     /**
      * Normally, the {@code complete()} method is run repeatedly until it
-     * returns {@code true}. But in infinite source processors the method never
-     * returns {@code true}. To be able test such processors, this method
-     * allows you to disable the "run until completed" behavior and instead run
-     * the {@code complete()} for a specified time.
+     * returns {@code true}. This is suitable for processors processing the
+     * input or for batch sources. However, if you test a streaming source, the
+     * {@code complete()} method never returns {@code true}. To be able test
+     * such processors, this method allows you to change the behavior to run
+     * {@code complete()} until the output matches.
      * <p>
-     * If the timeout > 0, the {@code complete()} method is called repeatedly
-     * until the timeout elapses. After that, the output is compared using the
-     * {@link #outputChecker(BiPredicate) output checker}. The {@code
-     * complete()} method is also not allowed to return {@code true} in this
-     * case.
+     * The {@code extraTimeMillis} parameter specifies an extra time to call
+     * {@code complete()} after the output matches. It can be used to ensure
+     * that no more items are produced after the output matches.
      * <p>
-     * If the timeout is <= 0 (the default), {@code complete()} method is
-     * called until it returns {@code true}, after which the output is checked.
-     * <p>
-     * Has no effect if {@code complete()} call is {@link #disableCompleteCall()
-     * disabled}.
+     * Has no effect if calling {@code complete()} is {@linkplain
+     * #disableCompleteCall() disabled}.
      *
-     * @param timeoutMillis how long to wait until outputs match
+     * @param timeoutMillis maximum time to wait for the output to match
+     * @param extraTimeMillis for how long to call {@code complete()}
+     *                       after the output matches
      * @return {@code this} instance for fluent API
      */
-    public TestSupport disableRunUntilCompleted(long timeoutMillis) {
-        this.runUntilCompletedTimeout = timeoutMillis;
+    public TestSupport runUntilOutputMatches(long timeoutMillis, long extraTimeMillis) {
+        checkNotNegative(timeoutMillis, "timeoutMillis must be >= 0");
+        checkNotNegative(extraTimeMillis, "extraTimeMillis must be >= 0");
+        this.runUntilOutputMatchesTimeoutMillis = timeoutMillis;
+        this.runUntilOutputMatchesExtraTimeMillis = extraTimeMillis;
         return this;
     }
 
@@ -546,10 +552,10 @@ public final class TestSupport {
         // call the complete() method
         if (callComplete) {
             long completeStart = System.nanoTime();
+            long outputMatchedAt = Long.MAX_VALUE;
             boolean[] done = {false};
-            double elapsed;
             do {
-                checkTime("complete", isCooperative, () -> done[0] = processor[0].complete());
+                doCall("complete", isCooperative, () -> done[0] = processor[0].complete());
                 boolean madeProgress = done[0] || !outbox[0].queue(0).isEmpty();
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
                 outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
@@ -562,19 +568,36 @@ public final class TestSupport {
                             doRestoreEvery, restoreCount);
                 }
                 idleCount = idle(idler, idleCount, madeProgress);
-                if (runUntilCompletedTimeout > 0) {
-                    elapsed = toMillis(System.nanoTime() - completeStart);
-                    if (elapsed > runUntilCompletedTimeout) {
+                long now = System.nanoTime();
+                if (runUntilOutputMatchesTimeoutMillis >= 0) {
+                    try {
+                        asssertOutput(doSnapshots, doRestoreEvery, inboxLimit, actualOutputs);
+                        outputMatchedAt = Math.min(outputMatchedAt, now);
+                    } catch (AssertionError e) {
+                        if (outputMatchedAt < Long.MAX_VALUE) {
+                            throw new AssertionError("the output already matched, but doesn't match now", e);
+                        }
+                        // ignore the failure otherwise and continue calling complete()
+                    }
+                    long elapsedSinceStart = NANOSECONDS.toMillis(now - completeStart);
+                    long elapsedSinceMatch = NANOSECONDS.toMillis(subtractClamped(now, outputMatchedAt));
+                    if (elapsedSinceStart > runUntilOutputMatchesTimeoutMillis
+                            || elapsedSinceMatch > runUntilOutputMatchesExtraTimeMillis) {
                         break;
                     }
                 }
             } while (!done[0]);
-            assertTrue("complete returned true", !done[0] || runUntilCompletedTimeout <= 0);
+            assertTrue("complete returned true in a run-until-output-matches mode",
+                    !done[0] || runUntilOutputMatchesTimeoutMillis <= 0);
         }
 
         processor[0].close();
 
         // assert the outbox
+        asssertOutput(doSnapshots, doRestoreEvery, inboxLimit, actualOutputs);
+    }
+
+    private void asssertOutput(boolean doSnapshots, int doRestoreEvery, int inboxLimit, List<List<Object>> actualOutputs) {
         for (int i = 0; i < expectedOutputs.size(); i++) {
             List<?> expectedOutput = expectedOutputs.get(i);
             List<?> actualOutput = actualOutputs.get(i);
@@ -627,14 +650,14 @@ public final class TestSupport {
     private String processInbox(TestInbox inbox, int inboxOrdinal, boolean isCooperative, Processor[] processor) {
         if (inbox.peek() instanceof Watermark) {
             Watermark wm = ((Watermark) inbox.peek());
-            checkTime("tryProcessWatermark", isCooperative, () -> {
+            doCall("tryProcessWatermark", isCooperative, () -> {
                 if (processor[0].tryProcessWatermark(wm)) {
                     inbox.remove();
                 }
             });
             return "tryProcessWatermark";
         } else {
-            checkTime("process", isCooperative, () -> processor[0].process(inboxOrdinal, inbox));
+            doCall("process", isCooperative, () -> processor[0].process(inboxOrdinal, inbox));
             return "process";
         }
     }
@@ -672,7 +695,7 @@ public final class TestSupport {
         boolean[] done = {false};
         boolean isCooperative = processor[0].isCooperative();
         do {
-            checkTime("saveSnapshot", isCooperative, () -> done[0] = processor[0].saveToSnapshot());
+            doCall("saveSnapshot", isCooperative, () -> done[0] = processor[0].saveToSnapshot());
             assertTrue("saveToSnapshot() call without progress",
                     !assertProgress || done[0] || !outbox[0].snapshotQueue().isEmpty()
                             || !outbox[0].queue(0).isEmpty());
@@ -694,7 +717,7 @@ public final class TestSupport {
 
         int lastInboxSize = snapshotInbox.queue().size();
         while (!snapshotInbox.isEmpty()) {
-            checkTime("restoreSnapshot", isCooperative,
+            doCall("restoreSnapshot", isCooperative,
                     () -> processor[0].restoreFromSnapshot(snapshotInbox));
             assertTrue("restoreFromSnapshot() call without progress",
                     !assertProgress
@@ -704,7 +727,7 @@ public final class TestSupport {
             lastInboxSize = snapshotInbox.queue().size();
         }
         do {
-            checkTime("finishSnapshotRestore", isCooperative,
+            doCall("finishSnapshotRestore", isCooperative,
                     () -> done[0] = processor[0].finishSnapshotRestore());
             assertTrue("finishSnapshotRestore() call without progress",
                     !assertProgress || done[0] || !outbox[0].queue(0).isEmpty());
@@ -712,7 +735,7 @@ public final class TestSupport {
         } while (!done[0]);
     }
 
-    private void checkTime(String methodName, boolean isCooperative, Runnable r) {
+    private void doCall(String methodName, boolean isCooperative, Runnable r) {
         long start = System.nanoTime();
         r.run();
         long elapsed = System.nanoTime() - start;

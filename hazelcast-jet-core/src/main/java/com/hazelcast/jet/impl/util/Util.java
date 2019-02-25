@@ -272,6 +272,14 @@ public final class Util {
                 : sum;
     }
 
+    /**
+     * Calculates {@code a - b}, returns {@code Long.MAX_VALUE} if the result
+     * would overflow
+     *
+     * @param a the amount
+     * @param b the value to subtract
+     * @return {@code a - b}, clamped
+     */
     public static long subtractClamped(long a, long b) {
         long diff = a - b;
         return diffHadOverflow(a, b, diff)

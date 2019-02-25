@@ -44,7 +44,7 @@ public class MigrationWatcher {
      */
     public BooleanSupplier createWatcher() {
         int startChangeCount = changeCount.get();
-        return () -> changeCount.get() - startChangeCount > 0; // this is overflow-safe
+        return () -> changeCount.get() != startChangeCount;
     }
 
     public void deregister() {
