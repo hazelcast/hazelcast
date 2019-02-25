@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.datamodel.TimestampedItem;
+import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,8 +41,23 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
     static final long EARLY_RESULTS_PERIOD = 200L;
     private static final int SOURCE_EVENT_PERIOD_NANOS = 100_000;
 
-    StreamStage<Integer> sourceStageFromList(List<Integer> input) {
-        return sourceStageFromList(input, 0);
+    /**
+     * The returned stream stage emits all the items from the supplied list
+     * of integers. It uses the integer as both timestamp and data.
+     * <p>
+     * When it exhausts the input, the source completes. This allows the
+     * entire Jet job to complete.
+     *
+     */
+    StreamStage<Integer> streamStageFromList(List<Integer> input) {
+        StreamSource<Integer> source = SourceBuilder
+                .timestampedStream("sequence", x -> null)
+                .<Integer>fillBufferFn((x, buf) -> {
+                    input.forEach(i -> buf.add(i, i));
+                    buf.close();
+                })
+                .build();
+        return p.drawFrom(source).withNativeTimestamps(0);
     }
 
     /**
@@ -49,25 +65,15 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
      * integers. It uses the integer as both timestamp and data.
      * <p>
      * The stage emits (1e9 / {@value SOURCE_EVENT_PERIOD_NANOS}) items per
-     * second.
-     * <p>
-     * If not emitting early results (earlyResultsPeriod == 0), the source
-     * stage will complete when it exhausts the input. This allows the
-     * entire Jet job to complete.
+     * second. After it exhausts the input, it remains idle forever.
      */
-    StreamStage<Integer> sourceStageFromList(List<Integer> input, long earlyResultsPeriod) {
-        boolean emittingEarlyResults = earlyResultsPeriod != 0;
+    StreamStage<Integer> streamStageFromList(List<Integer> input, long earlyResultsPeriod) {
+        Preconditions.checkPositive(earlyResultsPeriod, "earlyResultsPeriod must greater than zero");
         StreamSource<Integer> source = SourceBuilder
                 .timestampedStream("sequence", x -> new LongLongAccumulator(System.nanoTime(), 0))
                 .<Integer>fillBufferFn((deadline_emittedCount, buf) -> {
                     int emittedCount = (int) deadline_emittedCount.get2();
-                    if (emittedCount == input.size()) {
-                        if (!emittingEarlyResults) {
-                            buf.close();
-                        }
-                        return;
-                    }
-                    if (System.nanoTime() < deadline_emittedCount.get1()) {
+                    if (emittedCount == input.size() || System.nanoTime() < deadline_emittedCount.get1()) {
                         return;
                     }
                     int item = input.get(emittedCount);
@@ -76,7 +82,7 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
                     deadline_emittedCount.add2(1);
                 })
                 .build();
-        return p.drawFrom(source).withNativeTimestamps(emittingEarlyResults ? 2 * itemCount : 0);
+        return p.drawFrom(source).withNativeTimestamps(2 * itemCount);
     }
 
     Stream<Integer> sinkStreamOfInt() {
