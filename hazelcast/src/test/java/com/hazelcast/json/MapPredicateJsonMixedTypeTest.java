@@ -125,7 +125,6 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/14517")
     public void testPortableWithSamePath() {
         IMap map = instance.getMap(randomMapName());
 
@@ -143,7 +142,7 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
     public static class Person implements Portable {
 
         private String name;
-        private int age;
+        private long age;
         private boolean onDuty;
 
         public Person() {
@@ -168,14 +167,14 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeUTF("name", this.name);
-            writer.writeInt("age", this.age);
+            writer.writeLong("age", this.age);
             writer.writeBoolean("onDuty", this.onDuty);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
             this.name = reader.readUTF("name");
-            this.age = reader.readInt("age");
+            this.age = reader.readLong("age");
             this.onDuty = reader.readBoolean("onDuty");
 
         }
