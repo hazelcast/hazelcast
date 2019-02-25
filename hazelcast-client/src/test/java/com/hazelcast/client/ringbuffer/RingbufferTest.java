@@ -16,12 +16,14 @@
 
 package com.hazelcast.client.ringbuffer;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.IdentifiedDataSerializableFactory;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.test.ringbuffer.filter.StartsWithStringFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
@@ -67,9 +69,14 @@ public class RingbufferTest extends HazelcastTestSupport {
         // Set operation timeout to larger than test timeout. So the tests do not pass accidentally because of retries.
         // The tests should depend on notifier system, not retrying.
         config.setProperty("hazelcast.operation.call.timeout.millis", "305000");
+        config.getSerializationConfig()
+              .addDataSerializableFactory(IdentifiedDataSerializableFactory.FACTORY_ID, new IdentifiedDataSerializableFactory());
 
         server = hazelcastFactory.newHazelcastInstance(config);
-        client = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSerializationConfig().addDataSerializableFactory(IdentifiedDataSerializableFactory.FACTORY_ID,
+                new IdentifiedDataSerializableFactory());
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         String name = "rb-" + randomString();
         serverRingbuffer = server.getRingbuffer(name);
@@ -228,7 +235,7 @@ public class RingbufferTest extends HazelcastTestSupport {
         serverRingbuffer.add("good3");
         serverRingbuffer.add("bad3");
 
-        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, new Filter());
+        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, new StartsWithStringFilter("good"));
 
         ReadResultSet rs = f.get();
         assertInstanceOf(PortableReadResultSet.class, rs);
@@ -252,7 +259,7 @@ public class RingbufferTest extends HazelcastTestSupport {
         serverRingbuffer.add("good4");
         serverRingbuffer.add("bad4");
 
-        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, new Filter());
+        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, new StartsWithStringFilter("good"));
 
         ReadResultSet rs = f.get();
         assertInstanceOf(PortableReadResultSet.class, rs);
@@ -261,12 +268,5 @@ public class RingbufferTest extends HazelcastTestSupport {
         assertEquals("good1", rs.get(0));
         assertEquals("good2", rs.get(1));
         assertEquals("good3", rs.get(2));
-    }
-
-    static class Filter implements IFunction<String, Boolean> {
-        @Override
-        public Boolean apply(String input) {
-            return input.startsWith("good");
-        }
     }
 }
