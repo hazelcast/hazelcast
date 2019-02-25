@@ -16,13 +16,17 @@
 
 package com.hazelcast.internal.yaml;
 
+import static com.hazelcast.internal.yaml.YamlUtil.constructPath;
+
 public abstract class AbstractYamlNode implements MutableYamlNode {
     private final YamlNode parent;
     private String nodeName;
+    private String path;
 
     AbstractYamlNode(YamlNode parent, String nodeName) {
         this.parent = parent;
         this.nodeName = nodeName;
+        this.path = constructPath(parent, nodeName);
     }
 
     @Override
@@ -33,10 +37,16 @@ public abstract class AbstractYamlNode implements MutableYamlNode {
     @Override
     public void setNodeName(String nodeName) {
         this.nodeName = nodeName;
+        this.path = constructPath(parent, nodeName);
     }
 
     @Override
     public YamlNode parent() {
         return parent;
+    }
+
+    @Override
+    public String path() {
+        return path;
     }
 }

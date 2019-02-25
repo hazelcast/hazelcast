@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
@@ -142,10 +143,12 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
         }
 
-        YamlNode imdgRoot = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.name().toLowerCase());
+        YamlNode imdgRoot = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.name);
         if (imdgRoot == null) {
             throw new InvalidConfigurationException("No mapping with hazelcast key is found in the provided configuration");
         }
+
+        YamlDomChecker.check(imdgRoot);
 
         Node w3cRootNode = asW3cNode(imdgRoot);
         replaceVariables(w3cRootNode);

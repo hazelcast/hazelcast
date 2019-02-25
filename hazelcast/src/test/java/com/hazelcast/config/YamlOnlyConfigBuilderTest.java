@@ -19,9 +19,12 @@ package com.hazelcast.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -42,6 +45,9 @@ import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class YamlOnlyConfigBuilderTest {
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     @Before
     public void assumeRunningOnJdk8() {
@@ -73,6 +79,40 @@ public class YamlOnlyConfigBuilderTest {
                 + "        cache-name:\n"
                 + "          predicate: {}\n";
 
+        buildConfig(yaml);
+    }
+
+    @Test
+    public void testNullInMapThrows() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    test:\n"
+                + "    query-caches: {}\n";
+
+        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/map/test"));
+        buildConfig(yaml);
+    }
+
+    @Test
+    public void testNullInSequenceThrows() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  listeners:\n"
+                + "    - com.package.SomeListener\n"
+                + "    -\n";
+
+        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/listeners"));
+        buildConfig(yaml);
+    }
+
+    @Test
+    public void testExplicitNullScalarThrows() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  instance-name: !!null";
+
+        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/instance-name"));
         buildConfig(yaml);
     }
 

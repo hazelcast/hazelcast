@@ -28,10 +28,13 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -54,6 +57,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest {
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     @Before
     public void init() throws Exception {
@@ -317,6 +323,41 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         assertInstanceOf(RoundRobinLB.class, config.getLoadBalancer());
     }
+
+    @Test
+    public void testNullInMapThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  group:\n"
+                + "  name: instanceName";
+
+        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group"));
+        buildConfig(yaml);
+    }
+
+    @Test
+    public void testNullInSequenceThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  client-labels:\n"
+                + "    - admin\n"
+                + "    -\n";
+
+        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/client-labels"));
+        buildConfig(yaml);
+    }
+
+    @Test
+    public void testExplicitNullScalarThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  group:\n"
+                + "   name: !!null";
+
+        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+        buildConfig(yaml);
+    }
+
 
     public static ClientConfig buildConfig(String yaml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());

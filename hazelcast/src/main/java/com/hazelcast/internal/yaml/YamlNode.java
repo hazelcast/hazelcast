@@ -36,4 +36,11 @@ public interface YamlNode {
      */
     String nodeName();
 
+    /**
+     * Returns the path of the node from the root of the YAML structure.
+     *
+     * @return the path of the node
+     */
+    String path();
+
 }
