@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.AbstractYamlConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
@@ -148,6 +149,8 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
             throw new InvalidConfigurationException("No mapping with hazelcast-client key is found in the provided "
                     + "configuration");
         }
+
+        YamlDomChecker.check(clientRoot);
 
         Node w3cRootNode = asW3cNode(clientRoot);
         replaceVariables(w3cRootNode);

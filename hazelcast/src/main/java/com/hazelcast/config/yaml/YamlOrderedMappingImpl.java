@@ -92,6 +92,11 @@ final class YamlOrderedMappingImpl implements YamlOrderedMapping {
     }
 
     @Override
+    public String path() {
+        return wrappedMapping.path();
+    }
+
+    @Override
     public YamlNode child(int index) {
         if (index >= randomAccessChildren.size()) {
             return null;

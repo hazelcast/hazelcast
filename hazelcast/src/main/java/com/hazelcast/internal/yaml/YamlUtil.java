@@ -18,10 +18,14 @@ package com.hazelcast.internal.yaml;
 
 import com.hazelcast.internal.util.JavaVersion;
 
+import java.util.regex.Pattern;
+
 /**
  * Utility class for working with YAML nodes.
  */
 public final class YamlUtil {
+    private static final Pattern NAME_APOSTROPHE_PATTERN = Pattern.compile("(.*[\\t\\s,;:]+.*)");
+
     private YamlUtil() {
     }
 
@@ -111,5 +115,25 @@ public final class YamlUtil {
         if (!JavaVersion.isAtLeast(JavaVersion.JAVA_1_8)) {
             throw new UnsupportedOperationException("Processing YAML documents requires Java 8 or higher version");
         }
+    }
+
+    /**
+     * Constructs the path of the node with the provided {@code parent}
+     * node and {@code nodeName}.
+     *
+     * @param parent    The parent node
+     * @param childName The name of the node the path is constructed for
+     * @return the constructed path of the node
+     */
+    public static String constructPath(YamlNode parent, String childName) {
+        if (childName != null) {
+            childName = NAME_APOSTROPHE_PATTERN.matcher(childName).replaceAll("\"$1\"");
+        }
+
+        if (parent != null && parent.path() != null) {
+            return parent.path() + "/" + childName;
+        }
+
+        return childName;
     }
 }
