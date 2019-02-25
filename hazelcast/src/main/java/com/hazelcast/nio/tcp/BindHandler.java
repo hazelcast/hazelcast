@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
@@ -88,6 +89,9 @@ final class BindHandler {
         // is created from an outbound port (eg 192.168.1.1:54003 --> 192.168.1.2:5701), but
         // in 192.168.1.2:5701's connectionsMap the connection must be registered with
         // key 192.168.1.1:5701.
+        assert (tcpIpEndpointManager.getEndpointQualifier() != EndpointQualifier.MEMBER
+                || connection.getType() == ConnectionType.MEMBER) : "When handling MEMBER connections, connection type"
+                + " must be already set";
         boolean isMemberConnection = connection.getType() == ConnectionType.MEMBER;
         return bind0(connection,
                 isMemberConnection ? null : new Address(connection.getRemoteSocketAddress()),

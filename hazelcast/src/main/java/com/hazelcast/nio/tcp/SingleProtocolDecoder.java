@@ -20,6 +20,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.nio.ConnectionType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
@@ -74,6 +75,8 @@ public class SingleProtocolDecoder
 
             String protocol = loadProtocol();
             if (protocol.equals(supportedProtocol.getDescriptor())) {
+                // initialize the connection
+                initConnection();
                 // replace this handler with the next one
                 channel.inboundPipeline().replace(this, inboundHandlers);
             } else {
@@ -95,6 +98,13 @@ public class SingleProtocolDecoder
         byte[] protocolBytes = new byte[PROTOCOL_LENGTH];
         src.get(protocolBytes);
         return bytesToString(protocolBytes);
+    }
+
+    private void initConnection() {
+        if (supportedProtocol == ProtocolType.MEMBER) {
+            TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
+            connection.setType(ConnectionType.MEMBER);
+        }
     }
 
     private boolean shouldSignalProtocolLoaded() {
