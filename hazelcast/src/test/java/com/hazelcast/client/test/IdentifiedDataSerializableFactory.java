@@ -20,6 +20,7 @@
 
 package com.hazelcast.client.test;
 
+import com.hazelcast.client.test.ringbuffer.filter.StartsWithStringFilter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -562,6 +563,8 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
                 return new Derived2DataSerializable();
             case 13:
                 return new CallableSignalsRunAndSleep();
+            case StartsWithStringFilter.CLASS_ID:
+                return new StartsWithStringFilter();
             default:
                 return null;
         }
