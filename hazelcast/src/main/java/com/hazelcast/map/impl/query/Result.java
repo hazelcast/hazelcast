@@ -31,7 +31,8 @@ import java.util.Map;
 public interface Result<T extends Result> extends IdentifiedDataSerializable {
 
     /**
-     * @return partition IDs of this result.
+     * Returns partition IDs associated with this result or {@code null} if this
+     * result is an empty/failure result.
      */
     Collection<Integer> getPartitionIds();
 

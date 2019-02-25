@@ -83,6 +83,7 @@ public class QueryRunner {
      * @param fetchSize   the soft limit for the number of items to be queried
      * @return the queried entries along with the next {@code tableIndex} to resume querying
      */
+    @SuppressWarnings("unchecked")
     public ResultSegment runPartitionScanQueryOnPartitionChunk(Query query, int partitionId, int tableIndex, int fetchSize) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
@@ -99,6 +100,7 @@ public class QueryRunner {
 
     // MIGRATION SAFE QUERYING -> MIGRATION STAMPS ARE VALIDATED (does not have to run on a partition thread)
     // full query = index query (if possible), then partition-scan query
+    @SuppressWarnings("unchecked")
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query) {
         int migrationStamp = getMigrationStamp();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
@@ -118,8 +120,12 @@ public class QueryRunner {
         Result result;
         if (entries == null) {
             result = runUsingPartitionScanSafely(query, predicate, initialPartitions, migrationStamp);
+            if (result == null) {
+                // full scan didn't work, returning empty result
+                result = populateEmptyResult(query, initialPartitions);
+            }
         } else {
-            result = populateResult(query, initialPartitions, entries);
+            result = populateNonEmptyResult(query, entries, initialPartitions);
         }
 
         updateStatistics(mapContainer);
@@ -143,6 +149,7 @@ public class QueryRunner {
      * @return the result of the query; if the result has {@code null} {@link
      * Result#getPartitionIds() partition IDs} this indicates a failure.
      */
+    @SuppressWarnings("unchecked")
     public Result runIndexQueryOnOwnedPartitions(Query query) {
         int migrationStamp = getMigrationStamp();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
@@ -165,7 +172,7 @@ public class QueryRunner {
             result = populateEmptyResult(query, initialPartitions);
         } else {
             // success
-            result = populateResult(query, initialPartitions, entries);
+            result = populateNonEmptyResult(query, entries, initialPartitions);
         }
 
         updateStatistics(mapContainer);
@@ -174,6 +181,7 @@ public class QueryRunner {
 
     // MIGRATION UNSAFE QUERYING - MIGRATION STAMPS ARE NOT VALIDATED, so assumes a run on partition-thread
     // for a single partition. If the index is global it won't be asked
+    @SuppressWarnings("unchecked")
     public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         List<Integer> partitions = singletonList(partitionId);
@@ -193,25 +201,14 @@ public class QueryRunner {
             partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
             result.completeConstruction(partitions);
         } else {
-            result = populateResult(query, partitions, entries);
+            result = populateNonEmptyResult(query, entries, partitions);
         }
 
         updateStatistics(mapContainer);
         return result;
     }
 
-    private Result populateResult(Query query, Collection<Integer> partitions, Collection<QueryableEntry> entries) {
-        if (entries != null) {
-            // if results have been returned and partition state has not changed, set the partition IDs
-            // so that caller is aware of partitions from which results were obtained.
-            return populateNonEmptyResult(query, entries, partitions);
-        } else {
-            // else: if fallback to full table scan also failed to return any results due to migrations,
-            // then return empty result set without any partition IDs set (so that it is ignored by callers).
-            return populateEmptyResult(query, partitions);
-        }
-    }
-
+    @SuppressWarnings("unchecked")
     Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
@@ -292,7 +289,8 @@ public class QueryRunner {
             result.completeConstruction(partitions);
             return result;
         }
-        return createResult(query, partitions);
+
+        return null;
     }
 
     private int getMigrationStamp() {
