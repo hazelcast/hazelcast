@@ -471,7 +471,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         }
     }
 
-    private static void assertPartitionStateVersionInitialized(HazelcastInstance instance) {
+    private static void assertPartitionStateVersionInitialized(final HazelcastInstance instance) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {

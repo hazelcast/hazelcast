@@ -666,7 +666,7 @@ public class MigrationManager {
         assert node.isMaster();
         assert partitionStateManager.isInitialized();
 
-        List<MigrationInfo> migrations = getCompletedMigrationsCopy();
+        final List<MigrationInfo> migrations = getCompletedMigrationsCopy();
         if (logger.isFineEnabled()) {
             logger.fine("Publishing completed migrations [" + migrations.size() + "]: " + migrations);
         }
