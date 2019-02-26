@@ -28,6 +28,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
@@ -295,6 +296,10 @@ public abstract class HazelcastTestSupport {
 
     public static Address getAddress(HazelcastInstance hz) {
         return getClusterService(hz).getThisAddress();
+    }
+
+    public static Address getAddress(HazelcastInstance hz, EndpointQualifier qualifier) {
+        return new Address(getClusterService(hz).getLocalMember().getSocketAddress(qualifier));
     }
 
     public static Packet toPacket(HazelcastInstance local, HazelcastInstance remote, Operation operation) {

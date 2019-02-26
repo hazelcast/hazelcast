@@ -24,9 +24,9 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.DefaultNodeContext;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.NodeContext;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.jmx.ManagementService;
 
 import java.util.ArrayList;
@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 
@@ -112,25 +113,25 @@ public class TestAwareInstanceFactory {
         unifiedJoinConfig.getMulticastConfig().setEnabled(false);
         TcpIpConfig unifiedTcpIpConfig = unifiedJoinConfig.getTcpIpConfig().setEnabled(true);
         for (HazelcastInstance member : members) {
-            unifiedTcpIpConfig.addMember("127.0.0.1:" + getPort(member));
+            unifiedTcpIpConfig.addMember("127.0.0.1:" + getPort(member, MEMBER));
         }
 
         // Prepare Advanced Networking - Will be disabled by default but properly configured if needed
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         ServerSocketEndpointConfig memberEndpointConfig
-                = (ServerSocketEndpointConfig) advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.MEMBER);
+                = (ServerSocketEndpointConfig) advancedNetworkConfig.getEndpointConfigs().get(MEMBER);
         memberEndpointConfig.setPort(PORT.getAndIncrement());
         JoinConfig advancedJoinConfig = advancedNetworkConfig.getJoin();
         advancedJoinConfig.getMulticastConfig().setEnabled(false);
         TcpIpConfig advancedTcpIpConfig = advancedJoinConfig.getTcpIpConfig().setEnabled(true);
         for (HazelcastInstance member : members) {
-            advancedTcpIpConfig.addMember("127.0.0.1:" + getPort(member));
+            advancedTcpIpConfig.addMember("127.0.0.1:" + getPort(member, MEMBER));
         }
 
         HazelcastInstance hz = HazelcastInstanceFactory.newHazelcastInstance(
                 config, config.getInstanceName(), nodeCtx);
         members.add(hz);
-        int nextPort = getPort(hz) + 1;
+        int nextPort = getPort(hz, MEMBER) + 1;
         int current;
         while (nextPort > (current = PORT.get())) {
             PORT.compareAndSet(current, nextPort);
@@ -164,7 +165,7 @@ public class TestAwareInstanceFactory {
         return list;
     }
 
-    protected static int getPort(HazelcastInstance hz) {
-        return getAddress(hz).getPort();
+    protected static int getPort(HazelcastInstance hz, EndpointQualifier qualifier) {
+        return getAddress(hz, qualifier).getPort();
     }
 }

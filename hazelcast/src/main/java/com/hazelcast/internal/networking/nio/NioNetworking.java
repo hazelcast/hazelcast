@@ -222,6 +222,7 @@ public final class NioNetworking implements Networking {
     public Channel register(EndpointQualifier endpointQualifier, ChannelInitializerProvider channelInitializerProvider,
                             SocketChannel socketChannel, boolean clientMode) throws IOException {
         ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
+        assert initializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
         NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, metricsRegistry, closeListenerExecutor);
 
         socketChannel.configureBlocking(false);

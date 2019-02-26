@@ -71,8 +71,6 @@ class TcpIpUnifiedEndpointManager
         return connections;
     }
 
-    //TODO (TK) Cache the values
-
     @Probe(name = "clientCount", level = MANDATORY)
     public int getCurrentClientConnectionsCount() {
         return getCurrentClientConnections().size();
