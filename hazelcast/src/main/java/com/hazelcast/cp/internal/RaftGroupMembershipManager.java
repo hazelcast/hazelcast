@@ -81,7 +81,7 @@ class RaftGroupMembershipManager {
     }
 
     void init() {
-        if (getLocalMember() == null) {
+        if (raftService.getLocalCPMember() == null) {
             return;
         }
 
@@ -97,10 +97,6 @@ class RaftGroupMembershipManager {
                 CHECK_LOCAL_RAFT_NODES_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
     }
 
-    private CPMemberInfo getLocalMember() {
-        return raftService.getMetadataGroupManager().getLocalCPMember();
-    }
-
     private boolean skipRunningTask() {
         return !raftService.getMetadataGroupManager().isMetadataGroupLeader();
     }
@@ -114,8 +110,11 @@ class RaftGroupMembershipManager {
                     continue;
                 }
 
-                if (raftNode.getStatus() == RaftNodeStatus.TERMINATED || raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
+                if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
                     raftService.destroyRaftNode(groupId);
+                    continue;
+                } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
+                    raftService.stepDownRaftNode(groupId);
                     continue;
                 }
 
