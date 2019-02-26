@@ -847,7 +847,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (data == null) {
             return false;
         }
-        final String[] strList = bytesToString(data).split("&");
+        final String[] strList = bytesToString(data).split("&", -1);
         return authenticate(command, strList[0], strList.length > 1 ? strList[1] : null);
     }
 

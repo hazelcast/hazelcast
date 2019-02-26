@@ -64,11 +64,6 @@ if [ -z "$GROUPNAME" ]; then
     GROUPNAME="dev"
 fi
 
-if [ -z "$PASSWORD" ]; then
-    echo "No password is defined, running script with default password: 'dev-pass'."
-    PASSWORD="dev-pass"
-fi
-
 if [ -z "$ADDRESS" ]; then
     echo "No specific ip address is defined, running script with default ip: '127.0.0.1'."
     ADDRESS="127.0.0.1"
@@ -81,6 +76,8 @@ if [ "$OPERATION" != "get-state" ] && [ "$OPERATION" != "change-state" ] && [ "$
     exit 0
 fi
 
+MSG_FORBIDDEN="Please make sure you provide valid group name (or valid username/password combination when the Hazelcast security is enabled)."
+
 if [ "$OPERATION" = "get-state" ]; then
     echo "Getting cluster state on ip ${ADDRESS} on port ${PORT}"
 	request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/state"
@@ -91,7 +88,7 @@ if [ "$OPERATION" = "get-state" ]; then
     	exit 0
     fi
 	if [ "$STATUS" = "forbidden" ];then
-        echo "Please make sure you provide valid user/pass.";
+        echo "$MSG_FORBIDDEN";
         exit 0
     fi
 	if [ "$STATUS" = "success" ];then
@@ -131,7 +128,7 @@ if [ "$OPERATION" = "change-state" ]; then
     fi
 
     if [ "$STATUS" = "forbidden" ];then
-        echo "Please make sure you provide valid user/pass.";
+        echo "$MSG_FORBIDDEN";
         exit 0
     fi
 
@@ -146,7 +143,7 @@ if [ "$OPERATION" = "change-state" ]; then
 fi
 
 if [ "$OPERATION" = "force-start" ]; then
-    echo "Force-start makes cluster operational if cluster start is blocked by problematic members. Please make sure you provide valid user/pass."
+    echo "Force-start makes cluster operational if cluster start is blocked by problematic members."
     echo "Starting cluster from member on ip ${ADDRESS} on port ${PORT}"
 
     request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/forceStart"
@@ -159,7 +156,7 @@ if [ "$OPERATION" = "force-start" ]; then
     fi
 
     if [ "$STATUS" = "forbidden" ];then
-        echo "Please make sure you provide valid user/pass.";
+        echo "$MSG_FORBIDDEN";
         exit 0
     fi
 
@@ -173,7 +170,7 @@ if [ "$OPERATION" = "force-start" ]; then
 fi
 
 if [ "$OPERATION" = "partial-start" ]; then
-    echo "Partial-start makes cluster operational by starting only a portion of available members if cluster start is blocked by problematic members. Please make sure you provide valid user/pass."
+    echo "Partial-start makes cluster operational by starting only a portion of available members if cluster start is blocked by problematic members."
     echo "Starting cluster from member on ip ${ADDRESS} on port ${PORT}"
 
     request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/partialStart"
@@ -186,7 +183,7 @@ if [ "$OPERATION" = "partial-start" ]; then
     fi
 
     if [ "$STATUS" = "forbidden" ];then
-        echo "Please make sure you provide valid user/pass.";
+        echo "$MSG_FORBIDDEN";
         exit 0
     fi
 
@@ -201,7 +198,7 @@ fi
 
 if [ "$OPERATION" = "shutdown" ]; then
 
-    echo "You are shutting down the cluster. Please make sure you provide valid user/pass."
+    echo "You are shutting down the cluster."
     echo "Shutting down from member on ip ${ADDRESS} on port ${PORT}"
 
     request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/clusterShutdown"
@@ -214,7 +211,7 @@ if [ "$OPERATION" = "shutdown" ]; then
     fi
 
     if [ "$STATUS" = "forbidden" ];then
-        echo "Wrong user/pass!";
+        echo "$MSG_FORBIDDEN";
         exit 0
     fi
 
@@ -237,7 +234,7 @@ if [ "$OPERATION" = "get-cluster-version" ]; then
     	exit 0
     fi
 	if [ "$STATUS" = "forbidden" ];then
-        echo "Please make sure you provide valid user/pass.";
+        echo "$MSG_FORBIDDEN";
         exit 0
     fi
 	if [ "$STATUS" = "success" ];then
@@ -273,7 +270,7 @@ if [ "$OPERATION" = "change-cluster-version" ]; then
     fi
 
     if [ "$STATUS" = "forbidden" ];then
-        echo "Please make sure you provide valid user/pass.";
+        echo "$MSG_FORBIDDEN";
         exit 0
     fi
 

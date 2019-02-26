@@ -75,7 +75,7 @@ HTTP_STATUS=$(echo "${HTTP_RESPONSE}" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
 
 if [ $HTTP_STATUS -ne 200 ]; then
     echo "Error while checking health of hazelcast cluster on ip ${ADDRESS} on port ${PORT}."
-    echo "Please check that cluster is running and that health check is enabled (property set to true: 'hazelcast.http.healthcheck.enabled' or 'hazelcast.rest.enabled')."
+    echo "Please check that cluster is running and that health check is enabled in REST API configuration."
     exit 1
 fi
 
