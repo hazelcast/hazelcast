@@ -37,7 +37,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
 public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
-    static final int ASSERT_TIMEOUT_SECONDS = 10;
+    static final int ASSERT_TIMEOUT_SECONDS = 30;
     static final long EARLY_RESULTS_PERIOD = 200L;
     private static final int SOURCE_EVENT_PERIOD_NANOS = 100_000;
 
