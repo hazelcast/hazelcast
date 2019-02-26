@@ -207,22 +207,22 @@ public class EventTimeMapper<T> {
                 throw new JetException("Neither timestampFn nor nativeEventTime specified");
             }
             long eventTime = timestampFn == null ? nativeEventTime : timestampFn.applyAsLong(event);
-            handleEventInt(now, partitionIndex, eventTime);
+            handleEventInternal(now, partitionIndex, eventTime);
             traverser.append(wrapFn.apply(event, eventTime));
         } else {
-            handleNoEventInt(now);
+            handleNoEventInternal(now);
         }
         return traverser;
     }
 
-    private void handleEventInt(long now, int partitionIndex, long eventTime) {
+    private void handleEventInternal(long now, int partitionIndex, long eventTime) {
         wmPolicies[partitionIndex].reportEvent(eventTime);
         markIdleAt[partitionIndex] = now + idleTimeoutNanos;
         allAreIdle = false;
-        handleNoEventInt(now);
+        handleNoEventInternal(now);
     }
 
-    private void handleNoEventInt(long now) {
+    private void handleNoEventInternal(long now) {
         long min = Long.MAX_VALUE;
         for (int i = 0; i < watermarks.length; i++) {
             if (idleTimeoutNanos > 0 && markIdleAt[i] <= now) {

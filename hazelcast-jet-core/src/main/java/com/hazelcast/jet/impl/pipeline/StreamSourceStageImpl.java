@@ -43,14 +43,14 @@ public class StreamSourceStageImpl<T> implements StreamSourceStage<T> {
             throw new JetException("The source doesn't support native timestamps");
         }
         StreamStageImpl<T> result = createStreamStage();
-        result.addTimestampsInt(null, allowedLag, true);
+        result.addTimestampsInternal(null, allowedLag, true);
         return result;
     }
 
     @Override
     public StreamStage<T> withTimestamps(@Nonnull DistributedToLongFunction<? super T> timestampFn, long allowedLag) {
         StreamStageImpl<T> result = createStreamStage();
-        result.addTimestampsInt(timestampFn, allowedLag, true);
+        result.addTimestampsInternal(timestampFn, allowedLag, true);
         return result;
     }
 

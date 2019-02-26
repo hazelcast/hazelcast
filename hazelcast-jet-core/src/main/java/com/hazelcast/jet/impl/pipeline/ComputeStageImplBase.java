@@ -95,14 +95,15 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     public StreamStage<T> addTimestamps(
             @Nonnull DistributedToLongFunction<? super T> timestampFn, long allowedLateness
     ) {
-        return addTimestampsInt(timestampFn, allowedLateness, false);
+        return addTimestampsInternal(timestampFn, allowedLateness, false);
     }
 
     @SuppressWarnings("unchecked")
-    StreamStage<T> addTimestampsInt(
+    StreamStage<T> addTimestampsInternal(
             @Nullable DistributedToLongFunction<? super T> timestampFn,
             long allowedLateness,
-            boolean tryAddToSource) {
+            boolean tryAddToSource
+    ) {
         checkSerializable(timestampFn, "timestampFn");
         checkFalse(hasJetEvents(), "This stage already has timestamps assigned to it");
 

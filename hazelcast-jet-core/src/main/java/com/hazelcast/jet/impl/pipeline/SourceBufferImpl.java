@@ -70,8 +70,12 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
         }
     }
 
-    public static class Timestamped<T> extends SourceBufferImpl<TimestampedItem<T>> implements TimestampedSourceBuffer<T> {
+    public static class Timestamped<T>
+            extends SourceBufferImpl<TimestampedItem<T>>
+            implements TimestampedSourceBuffer<T> {
+
         @Override
+        @SuppressWarnings("unchecked")
         public void add(@Nonnull T item, long timestamp) {
             addInternal(new TimestampedItem(timestamp, item));
         }
