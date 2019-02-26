@@ -68,7 +68,11 @@ public interface OperationService {
     /**
      * Invokes a set of operations on each partition.
      * <p>
-     * This method blocks until the operation completes.
+     * This method blocks until the operations complete.
+     * <p>
+     * If the operations have sync backups, this method will <b>not</b> wait for their completion.
+     * Instead, it will return once the operations are completed on primary replicas of the
+     * given {@code partitions}.
      *
      * @param serviceName      the name of the service.
      * @param operationFactory the factory responsible for creating operations
@@ -81,6 +85,10 @@ public interface OperationService {
 
     /**
      * Invokes a set of operations on selected set of all partitions in an async way.
+     * <p>
+     * If the operations have sync backups, the returned {@link ICompletableFuture} does <b>not</b>
+     * wait for their completion. Instead, the {@link ICompletableFuture} is completed once the
+     * operations are completed on primary replicas of the given {@code partitions}.
      *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
@@ -94,6 +102,9 @@ public interface OperationService {
      * Invokes a set of operations on selected set of partitions.
      * <p>
      * This method blocks until all operations complete.
+     * <p>
+     * If the operations have sync backups, this method will <b>not</b> wait for their completion.
+     * Instead, it will return once the operations are completed on primary replicas of the given {@code partitions}.
      *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
@@ -109,6 +120,10 @@ public interface OperationService {
 
     /**
      * Invokes a set of operations on selected set of partitions in an async way.
+     * <p>
+     * If the operations have sync backups, the returned {@link ICompletableFuture} does <b>not</b>
+     * wait for their completion. Instead, the {@link ICompletableFuture} is completed once the
+     * operations are completed on primary replicas of the given {@code partitions}.
      *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
@@ -124,6 +139,9 @@ public interface OperationService {
      * Invokes a set of operations on selected set of partitions.
      * <p>
      * This method blocks until all operations complete.
+     * <p>
+     * If the operations have sync backups, this method will <b>not</b> wait for their completion.
+     * Instead, it will return once the operations are completed on primary replicas of the given {@code partitions}.
      *
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
