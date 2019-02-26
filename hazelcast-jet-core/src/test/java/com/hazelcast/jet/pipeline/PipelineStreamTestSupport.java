@@ -21,8 +21,6 @@ import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.util.Preconditions;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -32,9 +30,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.lang.Long.max;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
 
 public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
     static final int ASSERT_TIMEOUT_SECONDS = 30;
@@ -85,15 +80,6 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
         return p.drawFrom(source).withNativeTimestamps(2 * itemCount);
     }
 
-    Stream<Integer> sinkStreamOfInt() {
-        return sinkList.stream().map(Integer.class::cast);
-    }
-
-    @SuppressWarnings("unchecked")
-    <K, V> Stream<Entry<K, V>> sinkStreamOfEntry() {
-        return sinkList.stream().map(Entry.class::cast);
-    }
-
     @SuppressWarnings("unchecked")
     <T> Stream<TimestampedEntry<String, T>> sinkStreamOfTsEntry() {
         return sinkList.stream().map(TimestampedEntry.class::cast);
@@ -102,40 +88,6 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
     @SuppressWarnings("unchecked")
     <T> Stream<TimestampedItem<T>> sinkStreamOfTsItem() {
         return sinkList.stream().map(TimestampedItem.class::cast);
-    }
-
-    /**
-     * Uses {@code formatFn} to stringify each item of the given stream, sorts
-     * the strings, then outputs them line by line.
-     * <p>
-     * If you supply the optional {@code distinctKeyFn}, it will use it to
-     * eliminate the items with the same key, keeping the last one in the
-     * stream. Keeping the last duplicate item is the way to de-duplicate a
-     * stream of early window results.
-     */
-    static <T, K> String streamToString(
-            @Nonnull Stream<? extends T> stream,
-            @Nonnull Function<? super T, ? extends String> formatFn,
-            @Nullable Function<? super T, ? extends K> distinctKeyFn
-    ) {
-        if (distinctKeyFn != null) {
-            stream = stream.collect(toMap(distinctKeyFn, identity(), (t0, t1) -> t1))
-                           .values().stream();
-        }
-        return stream.map(formatFn)
-                     .sorted()
-                     .collect(joining("\n"));
-    }
-
-    /**
-     * Uses {@code formatFn} to stringify each item of the given stream, sorts
-     * the strings, then outputs them line by line.
-     */
-    static <T> String streamToString(
-            @Nonnull Stream<? extends T> stream,
-            @Nonnull Function<? super T, ? extends String> formatFn
-    ) {
-        return streamToString(stream, formatFn, null);
     }
 
     /**

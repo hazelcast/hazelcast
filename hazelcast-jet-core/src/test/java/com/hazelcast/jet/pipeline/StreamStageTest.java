@@ -122,7 +122,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         execute();
         assertEquals(
                 streamToString(input.stream().filter(filterFn), formatFn),
-                streamToString(sinkStreamOfInt(), formatFn));
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
@@ -200,7 +200,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         execute();
         assertEquals(
                 streamToString(input.stream().filter(i -> i % 2 == acceptedRemainder), formatFn),
-                streamToString(sinkStreamOfInt(), formatFn));
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
@@ -222,7 +222,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         execute();
         assertEquals(
                 streamToString(input.stream().filter(r -> r % 2 == acceptedRemainder), formatFn),
-                streamToString(sinkStreamOfInt(), formatFn));
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
@@ -477,7 +477,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         execute();
         assertEquals(
                 streamToString(input.stream().flatMap(i -> Stream.of(i, i)), formatFn),
-                streamToString(sinkStreamOfInt(), formatFn));
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
@@ -620,7 +620,6 @@ public class StreamStageTest extends PipelineStreamTestSupport {
                 streamToString(sinkList.stream(), Object::toString));
     }
 
-
     @Test
     public void customTransform_keyed() {
         // Given
@@ -643,7 +642,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // Each processor emitted distinct keys it observed. If groupingKey isn't
         // correctly partitioning, multiple processors will observe the same keys.
-        assertEquals("0\n1", streamToString(sinkList.stream().map(Object::toString), identity()));
+        assertEquals("0\n1", streamToString(sinkStreamOf(Integer.class), Object::toString));
     }
 
     @Test
@@ -660,7 +659,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
                 streamToString(input.stream(), formatFn),
-                streamToString(sinkStreamOfInt(), formatFn));
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
@@ -680,6 +679,6 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         execute();
         assertEquals(
                 streamToString(input.stream().filter(filterFn), formatFn),
-                streamToString(sinkStreamOfInt(), formatFn));
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 }

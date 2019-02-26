@@ -25,45 +25,39 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.Before;
+import com.hazelcast.jet.function.TriFunction;
 import org.junit.Test;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.toCompletableFuture;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
-import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class BatchStageTest extends PipelineTestSupport {
-
-    private BatchStage<Integer> srcStage;
-
-    @Before
-    public void before() {
-        srcStage = p.drawFrom(mapValuesSource(srcName));
-    }
 
     @Test(expected = IllegalArgumentException.class)
     public void when_emptyPipelineToDag_then_exceptionInIterator() {
@@ -77,288 +71,304 @@ public class BatchStageTest extends PipelineTestSupport {
 
     @Test
     public void when_minimalPipeline_then_validDag() {
-        srcStage.drainTo(sink);
+        batchStageFromList(emptyList()).drainTo(sink);
         assertTrue(p.toDag().iterator().hasNext());
     }
 
     @Test
     public void setName() {
-        //Given
+        // Given
         String stageName = randomName();
+        BatchStage<Integer> stage = batchStageFromList(emptyList());
 
-        //When
-        srcStage.setName(stageName);
+        // When
+        stage.setName(stageName);
 
-        //Then
-        assertEquals(stageName, srcStage.name());
+        // Then
+        assertEquals(stageName, stage.name());
     }
 
     @Test
     public void setLocalParallelism() {
-        //Given
+        // Given
         int localParallelism = 10;
+        BatchStage<Integer> stage = batchStageFromList(emptyList());
 
-        //When
-        srcStage.setLocalParallelism(localParallelism);
+        // When
+        stage.setLocalParallelism(localParallelism);
 
-        //Then
-        assertEquals(localParallelism, transformOf(srcStage).localParallelism());
+        // Then
+        assertEquals(localParallelism, transformOf(stage).localParallelism());
     }
 
     @Test
     public void map() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
+        DistributedFunction<Integer, String> formatFn = i -> String.format("%04d-string", i);
 
         // When
-        BatchStage<String> mapped = srcStage.map(Object::toString);
+        BatchStage<String> mapped = batchStageFromList(input).map(formatFn);
 
         // Then
         mapped.drainTo(sink);
         execute();
-        List<String> expected = input.stream().map(String::valueOf).collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        assertEquals(streamToString(input.stream(), formatFn),
+                streamToString(sinkStreamOf(String.class), identity()));
     }
 
     @Test
     public void filter() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
         DistributedPredicate<Integer> filterFn = i -> i % 2 == 1;
 
         // When
-        BatchStage<Integer> filtered = srcStage.filter(filterFn);
+        BatchStage<Integer> filtered = batchStageFromList(input).filter(filterFn);
 
         // Then
         filtered.drainTo(sink);
         execute();
-        List<Integer> expected = input.stream()
-                                      .filter(filterFn)
-                                      .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Integer, String> formatFn = i -> String.format("%04d-string", i);
+        assertEquals(streamToString(input.stream().filter(filterFn), formatFn),
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
     public void flatMap() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<String> flatMapped = srcStage.flatMap(o -> traverseIterable(asList(o + "A", o + "B")));
+        BatchStage<Entry<Integer, String>> flatMapped = batchStageFromList(input)
+                .flatMap(i -> traverseItems(entry(i, "A"), entry(i, "B")));
 
         // Then
         flatMapped.drainTo(sink);
         execute();
-        List<String> expected = input.stream().flatMap(o -> Stream.of(o + "A", o + "B")).collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Entry<Integer, String>, String> formatFn = e -> String.format("%04d-%s", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(input.stream().flatMap(i -> Stream.of(entry(i, "A"), entry(i, "B"))), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
     }
 
     @Test
     public void mapUsingContext() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
+        DistributedBiFunction<String, Integer, String> formatFn = (s, i) -> String.format("%04d-%s", i, s);
+        String suffix = "-context";
 
         // When
-        BatchStage<String> mapped = srcStage.mapUsingContext(
-                ContextFactory.withCreateFn(i -> "-context"),
-                (suffix, r) -> r + suffix
+        BatchStage<String> mapped = batchStageFromList(input).mapUsingContext(
+                ContextFactory.withCreateFn(i -> suffix),
+                formatFn
         );
 
         // Then
         mapped.drainTo(sink);
         execute();
-        List<String> expected = input.stream().map(r -> r + "-context").collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        assertEquals(
+                streamToString(input.stream(), i -> formatFn.apply(suffix, i)),
+                streamToString(sinkStreamOf(String.class), identity()));
     }
 
     @Test
     public void mapUsingContext_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
+        DistributedBiFunction<Integer, String, String> formatFn = (i, s) -> String.format("%04d-%s", i, s);
+        String suffix = "-keyed-context";
 
         // When
-        BatchStage<String> mapped = srcStage.groupingKey(i -> i).mapUsingContext(
-                ContextFactory.withCreateFn(i -> "-keyed-context"),
-                (suffix, k, r) -> r + suffix
-        );
+        BatchStage<String> mapped = batchStageFromList(input)
+                .groupingKey(i -> i)
+                .mapUsingContext(
+                        ContextFactory.withCreateFn(i -> suffix),
+                        (context, k, i) -> formatFn.apply(i, context)
+                );
 
         // Then
         mapped.drainTo(sink);
         execute();
-        List<String> expected = input.stream().map(r -> r + "-keyed-context").collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        assertEquals(
+                streamToString(input.stream(), i -> formatFn.apply(i, suffix)),
+                streamToString(sinkStreamOf(String.class), identity()));
     }
 
     @Test
     public void filterUsingContext() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<Integer> mapped = srcStage.filterUsingContext(
+        BatchStage<Integer> mapped = batchStageFromList(input).filterUsingContext(
                 ContextFactory.withCreateFn(i -> 1),
-                (ctx, r) -> r % 2 == ctx);
+                (ctx, i) -> i % 2 == ctx);
 
         // Then
         mapped.drainTo(sink);
         execute();
-        List<Integer> expected = input.stream()
-                                      .filter(r -> r % 2 == 1)
-                                      .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Integer, String> formatFn = i -> String.format("%04d-string", i);
+        assertEquals(
+                streamToString(input.stream().filter(i -> i % 2 == 1), formatFn),
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
     public void filterUsingContext_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<Integer> mapped = srcStage.groupingKey(i -> i).filterUsingContext(
-                ContextFactory.withCreateFn(i -> 1),
-                (ctx, k, r) -> r % 2 == ctx);
+        BatchStage<Integer> mapped = batchStageFromList(input)
+                .groupingKey(i -> i)
+                .filterUsingContext(
+                        ContextFactory.withCreateFn(i -> 1),
+                        (ctx, k, r) -> r % 2 == ctx);
 
         // Then
         mapped.drainTo(sink);
         execute();
-        List<Integer> expected = input.stream()
-                .filter(r -> r % 2 == 1)
-                .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Integer, String> formatFn = i -> String.format("%04d-string", i);
+        assertEquals(
+                streamToString(input.stream().filter(i -> i % 2 == 1), formatFn),
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
     public void flatMapUsingContext() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<String> flatMapped = srcStage.flatMapUsingContext(
+        BatchStage<Entry<Integer, String>> flatMapped = batchStageFromList(input).flatMapUsingContext(
                 ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
-                (ctx, o) -> traverseIterable(asList(o + ctx.get(0), o + ctx.get(1))));
+                (ctx, i) -> traverseItems(entry(i, ctx.get(0)), entry(i, ctx.get(1))));
 
         // Then
         flatMapped.drainTo(sink);
         execute();
-        List<String> expected = input.stream().flatMap(o -> Stream.of(o + "A", o + "B")).collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Entry<Integer, String>, String> formatFn = e -> String.format("%04d-%s", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(input.stream().flatMap(i -> Stream.of(entry(i, "A"), entry(i, "B"))), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
     }
 
     @Test
     public void flatMapUsingContext_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<String> flatMapped = srcStage.groupingKey(i -> i).flatMapUsingContext(
-                ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
-                (ctx, k, o) -> traverseIterable(asList(o + ctx.get(0), o + ctx.get(1))));
+        BatchStage<Entry<Integer, String>> flatMapped = batchStageFromList(input)
+                .groupingKey(i -> i)
+                .flatMapUsingContext(
+                        ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
+                        (ctx, k, i) -> traverseItems(entry(i, ctx.get(0)), entry(i, ctx.get(1))));
 
         // Then
         flatMapped.drainTo(sink);
         execute();
-        List<String> expected = input.stream().flatMap(o -> Stream.of(o + "A", o + "B")).collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Entry<Integer, String>, String> formatFn = e -> String.format("%04d-%s", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(input.stream().flatMap(i -> Stream.of(entry(i, "A"), entry(i, "B"))), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
     }
 
     @Test
     public void mapUsingReplicatedMap() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
+        String prefix = "value-";
         String replicatedMapName = randomMapName();
         ReplicatedMap<Integer, String> replicatedMap = member.getReplicatedMap(replicatedMapName);
         for (int i : input) {
-            replicatedMap.put(i, String.valueOf(i));
+            replicatedMap.put(i, prefix + i);
         }
         for (JetInstance jet : allJetInstances()) {
             assertSizeEventually(itemCount, jet.getReplicatedMap(replicatedMapName));
         }
 
         // When
-        BatchStage<Entry<Integer, String>> stage =
-                srcStage.mapUsingReplicatedMap(replicatedMap, (m, r) -> entry(r, m.get(r)));
+        BatchStage<Entry<Integer, String>> stage = batchStageFromList(input)
+                .mapUsingReplicatedMap(replicatedMap, (m, i) -> entry(i, m.get(i)));
 
         // Then
         stage.drainTo(sink);
         execute();
-        List<Entry<Integer, String>> expected = input
-                .stream()
-                .map(i -> entry(i, String.valueOf(i)))
-                .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Entry<Integer, String>, String> formatFn =
+                e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(input.stream().map(i -> entry(i, prefix + i)), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
     }
 
     @Test
     public void mapUsingIMapAsync() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
+        String prefix = "value-";
         IMap<Integer, String> map = member.getMap(randomMapName());
         for (int i : input) {
-            map.put(i, String.valueOf(i));
+            map.put(i, prefix + i);
         }
 
         // When
-        BatchStage<Entry<Integer, String>> stage = srcStage.mapUsingIMapAsync(map, (m, r) ->
-                toCompletableFuture(m.getAsync(r)).thenApply(v -> entry(r, v)));
+        BatchStage<Entry<Integer, String>> stage = batchStageFromList(input)
+                .mapUsingIMapAsync(map,
+                        (m, i) -> toCompletableFuture(m.getAsync(i)).thenApply(v -> entry(i, v)));
 
         // Then
         stage.drainTo(sink);
         execute();
-        List<Entry<Integer, String>> expected = input
-                .stream()
-                .map(i -> entry(i, String.valueOf(i)))
-                .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Entry<Integer, String>, String> formatFn =
+                e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(input.stream().map(i -> entry(i, prefix + i)), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
     }
 
     @Test
     public void mapUsingIMapAsync_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
+        String prefix = "value-";
         IMap<Integer, String> map = member.getMap(randomMapName());
-        for (int integer : input) {
-            map.put(integer, String.valueOf(integer));
+        for (int i : input) {
+            map.put(i, prefix + i);
         }
 
         // When
-        BatchStage<Entry<Integer, String>> stage = srcStage.groupingKey(r -> r)
-                                                           .mapUsingIMapAsync(map, Util::entry);
+        BatchStage<Entry<Integer, String>> stage = batchStageFromList(input)
+                .groupingKey(i -> i)
+                .mapUsingIMapAsync(map, Util::entry);
 
         // Then
         stage.drainTo(sink);
         execute();
-        List<Entry<Integer, String>> expected = input.stream()
-                .map(i -> entry(i, String.valueOf(i)))
-                .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Entry<Integer, String>, String> formatFn =
+                e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(input.stream().map(i -> entry(i, prefix + i)), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
     }
 
     @Test
     public void rollingAggregate_global() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<Long> mapped = srcStage.rollingAggregate(counting());
+        BatchStage<Long> mapped = batchStageFromList(input).rollingAggregate(counting());
 
         // Then
         mapped.drainTo(sink);
         execute();
-        List<Long> expected = LongStream.range(1, itemCount + 1).boxed().collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Long, String> formatFn = i -> String.format("%04d", i);
+        assertEquals(
+                streamToString(LongStream.range(1, itemCount + 1).boxed(), formatFn),
+                streamToString(sinkStreamOf(Long.class), formatFn));
     }
 
     @Test
@@ -366,10 +376,9 @@ public class BatchStageTest extends PipelineTestSupport {
         // Given
         itemCount = (int) roundUp(itemCount, 2);
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<Entry<Integer, Long>> mapped = srcStage
+        BatchStage<Entry<Integer, Long>> mapped = batchStageFromList(input)
                 .groupingKey(i -> i % 2)
                 .rollingAggregate(counting());
 
@@ -377,30 +386,34 @@ public class BatchStageTest extends PipelineTestSupport {
         mapped.drainTo(sink);
         execute();
         assertEquals(0, itemCount % 2);
-        List<Entry<Integer, Long>> expected = LongStream.range(1, itemCount / 2 + 1)
-                                                        .boxed()
-                                                        .flatMap(i -> Stream.of(entry(0, i), entry(1, i)))
-                                                        .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Stream<Entry<Integer, Long>> expectedStream =
+                LongStream.range(1, itemCount / 2 + 1)
+                          .boxed()
+                          .flatMap(i -> Stream.of(entry(0, i), entry(1, i)));
+        Function<Entry<Integer, Long>, String> formatFn =
+                e -> String.format("(%04d, %04d)", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(expectedStream, formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
     }
 
     @Test
     public void merge() {
         // Given
-        String src1Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name));
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-        putToMap(jet().getMap(src1Name), input);
+        BatchStage<Integer> stage0 = batchStageFromList(input);
+        BatchStage<Integer> stage1 = batchStageFromList(input);
 
         // When
-        BatchStage<Integer> merged = srcStage.merge(srcStage1);
+        BatchStage<Integer> merged = stage0.merge(stage1);
 
         // Then
         merged.drainTo(sink);
         execute();
-        input.addAll(input);
-        assertEquals(toBag(input), sinkToBag());
+        Function<Integer, String> formatFn = i -> String.format("%04d", i);
+        assertEquals(
+                streamToString(input.stream().flatMap(i -> Stream.of(i, i)), formatFn),
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
@@ -410,17 +423,17 @@ public class BatchStageTest extends PipelineTestSupport {
                                        .map(i -> i % itemCount)
                                        .boxed().collect(toList());
         Collections.shuffle(input);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<Integer> distinct = srcStage.distinct();
+        BatchStage<Integer> distinct = batchStageFromList(input).distinct();
 
         // Then
         distinct.drainTo(sink);
         execute();
+        Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
-                toBag(IntStream.range(0, itemCount).boxed().collect(toList())),
-                sinkToBag());
+                streamToString(IntStream.range(0, itemCount).boxed(), formatFn),
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
@@ -429,170 +442,167 @@ public class BatchStageTest extends PipelineTestSupport {
         DistributedFunction<Integer, Integer> keyFn = i -> i / 2;
         List<Integer> input = IntStream.range(0, 2 * itemCount).boxed().collect(toList());
         Collections.shuffle(input);
-        putToBatchSrcMap(input);
 
         // When
-        BatchStage<Integer> distinct = srcStage.groupingKey(keyFn).distinct();
+        BatchStage<Integer> distinct = batchStageFromList(input)
+                .groupingKey(keyFn)
+                .distinct();
 
         // Then
         distinct.drainTo(sink);
         execute();
-        Map<Integer, Integer> sinkBag = sinkToBag();
+        Function<Integer, String> formatFn = i -> String.format("%04d", i);
         assertEquals(
-                toBag(input.stream().map(keyFn).distinct().collect(toList())),
-                toBag(sinkBag.keySet().stream().map(keyFn).collect(toList())));
+                streamToString(input.stream().map(keyFn).distinct(), formatFn),
+                streamToString(sinkStreamOf(Integer.class).map(keyFn), formatFn));
     }
 
     @Test
-    public void hashJoinTwo() {
+    public void hashJoin() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-        String enrichingName = HazelcastTestSupport.randomName();
-        IMap<Integer, String> enriching = jet().getMap(enrichingName);
-        input.forEach(i -> enriching.put(i, i + "A"));
-        BatchStage<Entry<Integer, String>> enrichingStage = p.drawFrom(Sources.map(enrichingName));
-        int filteredOutItem = 100;
+        String prefix = "value-";
+        BatchStage<Entry<Integer, String>> enrichingStage =
+                batchStageFromList(input).map(i -> entry(i, prefix + i));
 
         // When
-        BatchStage<Tuple2<Integer, String>> joined = srcStage.hashJoin(
+        BatchStage<Entry<Integer, String>> joined = batchStageFromList(input).hashJoin(
                 enrichingStage,
                 joinMapEntries(wholeItem()),
-                (t1, t2) -> t1 == filteredOutItem ? null : tuple2(t1, t2));
+                (i, enriching) -> entry(i, enriching));
 
         // Then
         joined.drainTo(sink);
         execute();
-        List<Tuple2<Integer, String>> expected = input.stream()
-                                                      .map(i -> tuple2(i, i + "A"))
-                                                      .filter(t -> t.f0() != filteredOutItem)
-                                                      .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Entry<Integer, String>, String> formatFn =
+                e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(input.stream().map(i -> tuple2(i, prefix + i)), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
     }
 
     @Test
-    public void hashJoinThree() {
+    @SuppressWarnings("unchecked")
+    public void hashJoin2() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-        String enriching1Name = HazelcastTestSupport.randomName();
-        String enriching2Name = HazelcastTestSupport.randomName();
-        BatchStage<Entry<Integer, String>> enrichingStage1 = p.drawFrom(Sources.map(enriching1Name));
-        BatchStage<Entry<Integer, String>> enrichingStage2 = p.drawFrom(Sources.map(enriching2Name));
-        IMap<Integer, String> enriching1 = jet().getMap(enriching1Name);
-        IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
-        input.forEach(i -> enriching1.put(i, i + "A"));
-        input.forEach(i -> enriching2.put(i, i + "B"));
-        int filteredOutItem = 100;
+        String prefix1 = "A-";
+        String prefix2 = "B-";
+        BatchStage<Entry<Integer, String>> enrichingStage1 =
+                batchStageFromList(input).map(i -> entry(i, prefix1 + i));
+        BatchStage<Entry<Integer, String>> enrichingStage2 =
+                batchStageFromList(input).map(i -> entry(i, prefix2 + i));
 
         // When
-        BatchStage<Tuple3<Integer, String, String>> joined = srcStage.hashJoin2(
+        BatchStage<Tuple3<Integer, String, String>> joined = batchStageFromList(input).hashJoin2(
                 enrichingStage1, joinMapEntries(wholeItem()),
                 enrichingStage2, joinMapEntries(wholeItem()),
-                (t1, t2, t3) -> t1 == filteredOutItem ? null : tuple3(t1, t2, t3)
+                (t1, t2, t3) -> tuple3(t1, t2, t3)
         );
 
         // Then
         joined.drainTo(sink);
         execute();
-        List<Tuple3<Integer, String, String>> expected = input.stream()
-                                                              .map(i -> tuple3(i, i + "A", i + "B"))
-                                                              .filter(t -> t.f0() != filteredOutItem)
-                                                              .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        Function<Tuple3<Integer, String, String>, String> formatFn =
+                t3 -> String.format("(%04d, %s, %s)", t3.f0(), t3.f1(), t3.f2());
+        assertEquals(
+                streamToString(input.stream().map(i -> tuple3(i, prefix1 + i, prefix2 + i)), formatFn),
+                streamToString(sinkList.stream().map(o -> (Tuple3<Integer, String, String>) o), formatFn)
+        );
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void hashJoinBuilder() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-        String enriching1Name = HazelcastTestSupport.randomName();
-        String enriching2Name = HazelcastTestSupport.randomName();
-        BatchStage<Entry<Integer, String>> enrichingStage1 = p.drawFrom(Sources.map(enriching1Name));
-        BatchStage<Entry<Integer, String>> enrichingStage2 = p.drawFrom(Sources.map(enriching2Name));
-        IMap<Integer, String> enriching1 = jet().getMap(enriching1Name);
-        IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
-        input.forEach(i -> enriching1.put(i, i + "A"));
-        input.forEach(i -> enriching2.put(i, i + "B"));
-        int filteredOutItem = 100;
+        String prefix1 = "A-";
+        String prefix2 = "B-";
+        BatchStage<Entry<Integer, String>> enrichingStage1 =
+                batchStageFromList(input).map(i -> entry(i, prefix1 + i));
+        BatchStage<Entry<Integer, String>> enrichingStage2 =
+                batchStageFromList(input).map(i -> entry(i, prefix2 + i));
 
         // When
-        HashJoinBuilder<Integer> b = srcStage.hashJoinBuilder();
+        HashJoinBuilder<Integer> b = batchStageFromList(input).hashJoinBuilder();
         Tag<String> tagA = b.add(enrichingStage1, joinMapEntries(wholeItem()));
         Tag<String> tagB = b.add(enrichingStage2, joinMapEntries(wholeItem()));
         GeneralStage<Tuple2<Integer, ItemsByTag>> joined =
-                b.build((t1, t2) -> t1 == filteredOutItem ? null : tuple2(t1, t2));
+                b.build((t1, t2) -> tuple2(t1, t2));
 
         // Then
         joined.drainTo(sink);
         execute();
-        List<Tuple2<Integer, ItemsByTag>> expected = input
-                .stream()
-                .map(i -> tuple2(i, itemsByTag(tagA, i + "A", tagB, i + "B")))
-                .filter(t -> t.f0() != filteredOutItem)
-                .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        TriFunction<Integer, String, String, String> formatFn =
+                (i, v1, v2) -> String.format("(%04d, %s, %s)", i, v1, v2);
+        assertEquals(
+                streamToString(input.stream(),
+                        i -> formatFn.apply(i, prefix1 + i, prefix2 + i)),
+                streamToString(sinkList.stream().map(o -> (Tuple2<Integer, ItemsByTag>) o),
+                        t2 -> formatFn.apply(t2.f0(), t2.f1().get(tagA), t2.f1().get(tagB)))
+        );
     }
 
     @Test
     public void peekIsTransparent() {
         // Given
-        List<Integer> input = sequence(50);
-        putToBatchSrcMap(input);
+        List<Integer> input = sequence(itemCount);
 
         // When
-        BatchStage<Integer> peeked = srcStage.peek();
+        BatchStage<Integer> peeked = batchStageFromList(input).peek();
 
         // Then
         peeked.drainTo(sink);
         execute();
-        assertEquals(toBag(input), sinkToBag());
+        Function<Integer, String> formatFn = i -> String.format("%04d", i);
+        assertEquals(
+                streamToString(input.stream(), formatFn),
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
     public void peekWithToStringFunctionIsTransparent() {
         // Given
-        List<Integer> input = sequence(50);
-        putToBatchSrcMap(input);
+        List<Integer> input = sequence(itemCount);
 
         // When
-        BatchStage<Integer> peeked = srcStage.peek(Object::toString);
+        BatchStage<Integer> peeked = batchStageFromList(input).peek(Object::toString);
 
         // Then
         peeked.drainTo(sink);
         execute();
-        assertEquals(toBag(input), sinkToBag());
+        Function<Integer, String> formatFn = i -> String.format("%04d", i);
+        assertEquals(
+                streamToString(input.stream(), formatFn),
+                streamToString(sinkStreamOf(Integer.class), formatFn));
     }
 
     @Test
     public void customTransform() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
+        DistributedFunction<Integer, String> formatFn = i -> String.format("%04d", i);
 
         // When
-        BatchStage<Object> custom = srcStage.customTransform("map", Processors.mapP(Object::toString));
+        BatchStage<String> custom = batchStageFromList(input)
+                .customTransform("map", Processors.mapP(formatFn));
 
         // Then
         custom.drainTo(sink);
         execute();
-        List<String> expected = input.stream()
-                                     .map(String::valueOf)
-                                     .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        assertEquals(
+                streamToString(input.stream(), formatFn),
+                streamToString(sinkStreamOf(String.class), identity()));
     }
 
     @Test
     public void customTransform_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToBatchSrcMap(input);
-
         DistributedFunction<Integer, Integer> extractKeyFn = i -> i % 2;
 
         // When
-        BatchStage<Object> custom = srcStage
+        BatchStage<Object> custom = batchStageFromList(input)
                 .groupingKey(extractKeyFn)
                 .customTransform("map", Processors.mapUsingContextP(
                         ContextFactory.withCreateFn(jet -> new HashSet<>()),
@@ -606,6 +616,6 @@ public class BatchStageTest extends PipelineTestSupport {
         execute();
         // Each processor emitted distinct keys it observed. If groupingKey isn't correctly partitioning,
         // multiple processors will observe the same keys and the counts won't match.
-        assertEquals(toBag(asList(0, 1)), sinkToBag());
+        assertEquals("0\n1", streamToString(sinkStreamOf(Integer.class), Object::toString));
     }
 }

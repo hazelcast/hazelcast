@@ -43,7 +43,6 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -89,13 +88,14 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         distinct.drainTo(sink);
         execute();
         assertEquals(
-                IntStream.range(0, itemCount)
-                         .mapToObj(i -> String.format("(%04d, %04d)", roundUp(i + 1, winSize), i))
-                         .distinct()
-                         .sorted()
-                         .collect(joining("\n")),
-                streamToString(this.<Integer>sinkStreamOfTsItem(), tsItem ->
-                        String.format("(%04d, %04d)", tsItem.timestamp(), tsItem.item()))
+                streamToString(
+                        IntStream.range(0, itemCount)
+                                 .mapToObj(i -> String.format("(%04d, %04d)", roundUp(i + 1, winSize), i))
+                                 .distinct(),
+                        identity()),
+                streamToString(
+                        this.<Integer>sinkStreamOfTsItem(),
+                        tsItem -> String.format("(%04d, %04d)", tsItem.timestamp(), tsItem.item()))
         );
     }
 

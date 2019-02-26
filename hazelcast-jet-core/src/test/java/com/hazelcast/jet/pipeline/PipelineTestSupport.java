@@ -26,10 +26,11 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 import org.junit.Before;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.cache.Cache;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,10 +38,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import static com.hazelcast.query.TruePredicate.truePredicate;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class PipelineTestSupport extends TestInClusterSupport {
@@ -83,6 +88,17 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return jet().newJob(p);
     }
 
+    BatchStage<Integer> batchStageFromList(List<Integer> input) {
+        BatchSource<Integer> source = SourceBuilder
+                .batch("sequence", x -> null)
+                .<Integer>fillBufferFn((x, buf) -> {
+                    input.forEach(buf::add);
+                    buf.close();
+                })
+                .build();
+        return p.drawFrom(source);
+    }
+
     static String journaledMapName() {
         return randomMapName(JOURNALED_MAP_PREFIX);
     }
@@ -113,14 +129,52 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         return Sinks.list(sinkName);
     }
 
+    <T> Stream<T> sinkStreamOf(Class<T> type) {
+        return sinkList.stream().map(type::cast);
+    }
+
+    @SuppressWarnings("unchecked")
+    <K, V> Stream<Entry<K, V>> sinkStreamOfEntry() {
+        return sinkList.stream().map(Entry.class::cast);
+    }
+
     @SuppressWarnings("unchecked")
     <T> Map<T, Integer> sinkToBag() {
         return toBag((List<T>) this.sinkList);
     }
 
-    static BatchSource<Integer> mapValuesSource(String srcName) {
-        return Sources.map(srcName, truePredicate(),
-                (DistributedFunction<Entry<String, Integer>, Integer>) Entry::getValue);
+    /**
+     * Uses {@code formatFn} to stringify each item of the given stream, sorts
+     * the strings, then outputs them line by line.
+     * <p>
+     * If you supply the optional {@code distinctKeyFn}, it will use it to
+     * eliminate the items with the same key, keeping the last one in the
+     * stream. Keeping the last duplicate item is the way to de-duplicate a
+     * stream of early window results.
+     */
+    static <T, K> String streamToString(
+            @Nonnull Stream<? extends T> stream,
+            @Nonnull Function<? super T, ? extends String> formatFn,
+            @Nullable Function<? super T, ? extends K> distinctKeyFn
+    ) {
+        if (distinctKeyFn != null) {
+            stream = stream.collect(toMap(distinctKeyFn, identity(), (t0, t1) -> t1))
+                           .values().stream();
+        }
+        return stream.map(formatFn)
+                     .sorted()
+                     .collect(joining("\n"));
+    }
+
+    /**
+     * Uses {@code formatFn} to stringify each item of the given stream, sorts
+     * the strings, then outputs them line by line.
+     */
+    static <T> String streamToString(
+            @Nonnull Stream<? extends T> stream,
+            @Nonnull Function<? super T, ? extends String> formatFn
+    ) {
+        return streamToString(stream, formatFn, null);
     }
 
     static <T> Map<T, Integer> toBag(Collection<T> coll) {
