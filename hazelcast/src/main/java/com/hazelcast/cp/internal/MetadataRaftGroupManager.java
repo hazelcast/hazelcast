@@ -1001,7 +1001,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         @Override
         public void run() {
-            if (shouldSkipOrReschedule()) {
+            if (shouldRescheduleOrSkip()) {
                 return;
             }
 
@@ -1050,17 +1050,16 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             scheduleRaftGroupMembershipManagementTasks();
         }
 
-        private boolean shouldSkipOrReschedule() {
-            if (isDiscoveryCompleted()) {
-                return true;
-            }
+        private boolean shouldRescheduleOrSkip() {
+            // When a node joins to the cluster, first, discoveryCompleted flag is set, then the join flag is set.
+            // Hence, we need to check these flags in the reverse order here.
 
             if (!nodeEngine.getClusterService().isJoined()) {
                 scheduleSelf();
                 return true;
             }
 
-            return false;
+            return isDiscoveryCompleted();
         }
 
         private boolean rescheduleIfCPMemberCountNotSatisfied(Collection<Member> members) {
@@ -1127,6 +1126,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         private void handleDiscoveryFailure() {
             if (terminateOnDiscoveryFailure) {
+                logger.warning("Terminating because of CP discovery failure...");
                 terminateNode();
             } else {
                 logger.warning("Cancelling CP subsystem discovery...");

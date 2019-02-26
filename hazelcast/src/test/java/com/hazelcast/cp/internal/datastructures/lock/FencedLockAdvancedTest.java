@@ -374,7 +374,10 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 RaftLockService service = getNodeEngineImpl(lockInstance).getService(RaftLockService.SERVICE_NAME);
-                RaftLock raftLock = service.getRegistryOrNull(lock.getGroupId()).getResourceOrNull(objectName);
+                RaftLockRegistry registry = service.getRegistryOrNull(lock.getGroupId());
+                assertNotNull(registry);
+                RaftLock raftLock = registry.getResourceOrNull(objectName);
+                assertNotNull(raftLock);
                 assertFalse(raftLock.getWaitKeys().isEmpty());
             }
         });
