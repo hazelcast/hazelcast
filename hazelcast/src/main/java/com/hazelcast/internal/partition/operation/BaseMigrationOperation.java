@@ -112,7 +112,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
             return;
         }
         InternalPartitionServiceImpl partitionService = getService();
-        if (!partitionService.applyCompletedMigrations(completedMigrations, partitionStateVersion, migrationInfo.getMaster())) {
+        if (!partitionService.applyCompletedMigrations(completedMigrations, migrationInfo.getMaster())) {
             throw new PartitionStateVersionMismatchException(partitionStateVersion, partitionService.getPartitionStateVersion());
         }
     }

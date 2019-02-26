@@ -79,6 +79,8 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
     private int sourceNewReplicaIndex;
     private int destinationCurrentReplicaIndex;
     private int destinationNewReplicaIndex;
+    private int initialPartitionVersion = -1;
+    private int partitionVersionIncrement;
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
     private volatile MigrationStatus status;
@@ -108,20 +110,12 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         return source != null ? source.address() : null;
     }
 
-    public String getSourceUuid() {
-        return source != null ? source.uuid() : null;
-    }
-
     public PartitionReplica getDestination() {
         return destination;
     }
 
     public Address getDestinationAddress() {
         return destination != null ? destination.address() : null;
-    }
-
-    public String getDestinationUuid() {
-        return destination != null ? destination.uuid() : null;
     }
 
     public int getPartitionId() {
@@ -157,10 +151,6 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         return processing.compareAndSet(false, true);
     }
 
-    public boolean isProcessing() {
-        return processing.get();
-    }
-
     public void doneProcessing() {
         processing.set(false);
     }
@@ -178,6 +168,43 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         return status != MigrationStatus.INVALID;
     }
 
+    public int getInitialPartitionVersion() {
+        return initialPartitionVersion;
+    }
+
+    public MigrationInfo setInitialPartitionVersion(int initialPartitionVersion) {
+        assert initialPartitionVersion > 0;
+        this.initialPartitionVersion = initialPartitionVersion;
+        return this;
+    }
+
+    public int getPartitionVersionIncrement() {
+        if (partitionVersionIncrement > 0) {
+            return partitionVersionIncrement;
+        }
+        int inc = 1;
+        if (sourceNewReplicaIndex > -1) {
+            inc++;
+        }
+        if (destinationCurrentReplicaIndex > -1) {
+            inc++;
+        }
+        return inc;
+    }
+
+    public MigrationInfo setPartitionVersionIncrement(int partitionVersionIncrement) {
+        assert partitionVersionIncrement > 0;
+        this.partitionVersionIncrement = partitionVersionIncrement;
+        return this;
+    }
+
+    public int getFinalPartitionVersion() {
+        if (initialPartitionVersion > 0) {
+            return initialPartitionVersion + getPartitionVersionIncrement();
+        }
+        throw new IllegalStateException("Initial partition version is not set!");
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(uuid);
@@ -193,6 +220,7 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         boolean hasSource = source != null;
         out.writeBoolean(hasSource);
         if (hasSource) {
+            // RU_COMPAT_3_11
             if (version.isGreaterOrEqual(Versions.V3_12)) {
                 out.writeObject(source);
             } else {
@@ -203,6 +231,7 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         boolean hasDestination = destination != null;
         out.writeBoolean(hasDestination);
         if (hasDestination) {
+            // RU_COMPAT_3_11
             if (version.isGreaterOrEqual(Versions.V3_12)) {
                 out.writeObject(destination);
             } else {
@@ -211,6 +240,12 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         }
 
         master.writeData(out);
+
+        // RU_COMPAT_3_11
+        if (version.isGreaterOrEqual(Versions.V3_12)) {
+            out.writeInt(initialPartitionVersion);
+            out.writeInt(partitionVersionIncrement);
+        }
     }
 
     private static void writePartitionReplicaLegacy(ObjectDataOutput out, PartitionReplica destination) throws IOException {
@@ -231,6 +266,7 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         Version version = in.getVersion();
         boolean hasSource = in.readBoolean();
         if (hasSource) {
+            // RU_COMPAT_3_11
             if (version.isGreaterOrEqual(Versions.V3_12)) {
                 source = in.readObject();
             } else {
@@ -240,6 +276,7 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
 
         boolean hasDestination = in.readBoolean();
         if (hasDestination) {
+            // RU_COMPAT_3_11
             if (version.isGreaterOrEqual(Versions.V3_12)) {
                 destination = in.readObject();
             } else {
@@ -249,6 +286,12 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
 
         master = new Address();
         master.readData(in);
+
+        // RU_COMPAT_3_11
+        if (version.isGreaterOrEqual(Versions.V3_12)) {
+            initialPartitionVersion = in.readInt();
+            partitionVersionIncrement = in.readInt();
+        }
     }
 
     private static PartitionReplica readPartitionReplicaLegacy(ObjectDataInput in) throws IOException {
@@ -290,6 +333,8 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         sb.append(", destinationCurrentReplicaIndex=").append(destinationCurrentReplicaIndex);
         sb.append(", destinationNewReplicaIndex=").append(destinationNewReplicaIndex);
         sb.append(", master=").append(master);
+        sb.append(", initialPartitionVersion=").append(initialPartitionVersion);
+        sb.append(", partitionVersionIncrement=").append(getPartitionVersionIncrement());
         sb.append(", processing=").append(processing);
         sb.append(", status=").append(status);
         sb.append('}');

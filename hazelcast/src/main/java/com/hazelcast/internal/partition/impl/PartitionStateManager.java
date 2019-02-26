@@ -343,14 +343,11 @@ public class PartitionStateManager {
     }
 
     void incrementVersion(int delta) {
-        if (delta >= 0) {
-            stateVersion.addAndGet(delta);
-        } else {
-            logger.warning("partition table version not incremented by " + delta);
-        }
+        assert delta > 0 : "Delta: " + delta;
+        stateVersion.addAndGet(delta);
     }
 
-    public void incrementVersion() {
+    void incrementVersion() {
         stateVersion.incrementAndGet();
     }
 

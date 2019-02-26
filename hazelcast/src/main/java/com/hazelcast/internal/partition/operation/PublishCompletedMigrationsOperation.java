@@ -41,23 +41,19 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
 
     private Collection<MigrationInfo> completedMigrations;
 
-    private int newPartitionStateVersion;
-
     private transient boolean success;
 
     public PublishCompletedMigrationsOperation() {
     }
 
-    public PublishCompletedMigrationsOperation(Collection<MigrationInfo> completedMigrations,
-            int newPartitionStateVersion) {
+    public PublishCompletedMigrationsOperation(Collection<MigrationInfo> completedMigrations) {
         this.completedMigrations = completedMigrations;
-        this.newPartitionStateVersion = newPartitionStateVersion;
     }
 
     @Override
     public void run() {
         InternalPartitionServiceImpl service = getService();
-        success = service.applyCompletedMigrations(completedMigrations, newPartitionStateVersion, getCallerAddress());
+        success = service.applyCompletedMigrations(completedMigrations, getCallerAddress());
     }
 
     @Override
@@ -89,7 +85,6 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
             migrationInfo.readData(in);
             completedMigrations.add(migrationInfo);
         }
-        newPartitionStateVersion = in.readInt();
     }
 
     @Override
@@ -100,7 +95,6 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
         for (MigrationInfo migrationInfo : completedMigrations) {
             migrationInfo.writeData(out);
         }
-        out.writeInt(newPartitionStateVersion);
     }
 
     @Override
