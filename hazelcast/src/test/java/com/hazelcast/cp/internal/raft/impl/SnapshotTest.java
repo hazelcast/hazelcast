@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.Endpoint;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.StaleAppendRequestException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
@@ -440,7 +439,7 @@ public class SnapshotTest extends HazelcastTestSupport {
         }
 
         final RaftNodeImpl newRaftNode1 = group.createNewRaftNode();
-        final ICompletableFuture f1 = leader.replicateMembershipChange(newRaftNode1.getLocalMember(), MembershipChangeMode.ADD);
+        final Future f1 = leader.replicateMembershipChange(newRaftNode1.getLocalMember(), MembershipChangeMode.ADD);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -617,7 +616,7 @@ public class SnapshotTest extends HazelcastTestSupport {
 
         final long lastLogIndex3 = getLastLogOrSnapshotEntry(leader).index();
 
-        ICompletableFuture f = leader.replicate(new ApplyRaftRunnable("after_membership_change_append"));
+        Future f = leader.replicate(new ApplyRaftRunnable("after_membership_change_append"));
 
         assertTrueEventually(new AssertTask() {
             @Override

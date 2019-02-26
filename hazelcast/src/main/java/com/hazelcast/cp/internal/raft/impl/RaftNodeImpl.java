@@ -321,6 +321,7 @@ public class RaftNodeImpl implements RaftNode {
 
     /**
      * Returns true if a new entry with the operation is allowed to be replicated.
+     * This method can be invoked only when the local Raft node is the leader.
      * <p/>
      * Replication is not allowed, when;
      * <ul>
@@ -347,7 +348,7 @@ public class RaftNodeImpl implements RaftNode {
         if (status == TERMINATING) {
             return false;
         } else if (status == UPDATING_GROUP_MEMBER_LIST) {
-            return !(operation instanceof RaftGroupCmd);
+            return state.lastGroupMembers().isKnownMember(getLocalMember()) && !(operation instanceof RaftGroupCmd);
         }
 
         if (operation instanceof UpdateRaftGroupMembersCmd) {
@@ -590,6 +591,13 @@ public class RaftNodeImpl implements RaftNode {
                 UpdateRaftGroupMembersCmd cmd = (UpdateRaftGroupMembersCmd) operation;
                 if (cmd.getMember().equals(localMember) && cmd.getMode() == MembershipChangeMode.REMOVE) {
                     setStatus(STEPPED_DOWN);
+                    // If I am the leader, I may have some waiting futures whose operations are already committed
+                    // but responses are not decided yet. When I leave the cluster after my shutdown, invocations
+                    // of those futures will receive MemberLeftException and retry. However, if I have an invocation
+                    // during the shutdown process, its future will not complete unless I notify it here.
+                    // Although LeaderDemotedException is designed for another case, we use it here since
+                    // invocations internally retry when they receive LeaderDemotedException.
+                    invalidateFuturesUntil(entry.index() - 1, new LeaderDemotedException(localMember, null));
                 } else {
                     setStatus(ACTIVE);
                 }
@@ -691,14 +699,14 @@ public class RaftNodeImpl implements RaftNode {
      * Invalidates futures registered with indexes {@code <= entryIndex}. Note that {@code entryIndex} is inclusive.
      * {@link StaleAppendRequestException} is set a result to futures.
      */
-    private void invalidateFuturesUntil(long entryIndex) {
+    private void invalidateFuturesUntil(long entryIndex, Object response) {
         int count = 0;
         Iterator<Entry<Long, SimpleCompletableFuture>> iterator = futures.entrySet().iterator();
         while (iterator.hasNext()) {
             Entry<Long, SimpleCompletableFuture> entry = iterator.next();
             long index = entry.getKey();
             if (index <= entryIndex) {
-                entry.getValue().setResult(new StaleAppendRequestException(state.leader()));
+                entry.getValue().setResult(response);
                 iterator.remove();
                 count++;
             }
@@ -791,7 +799,7 @@ public class RaftNodeImpl implements RaftNode {
         printMemberState();
 
         state.lastApplied(snapshot.index());
-        invalidateFuturesUntil(snapshot.index());
+        invalidateFuturesUntil(snapshot.index(), new StaleAppendRequestException(state.leader()));
         logger.info(snapshot + " is installed.");
 
         return true;
