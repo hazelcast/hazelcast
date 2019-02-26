@@ -74,7 +74,7 @@ public final class ContextFactories {
      * GeneralStageWithKey#mapUsingIMapAsync(IMap, DistributedBiFunction)}.
      * <p>
      * If you plan to use a sync method on the map, call {@link
-     * ContextFactory#nonCooperative()} on the returned factory.
+     * ContextFactory#toNonCooperative()} on the returned factory.
      *
      * @param mapName name of the map used as context
      * @param <K> key type
@@ -85,7 +85,7 @@ public final class ContextFactories {
     public static <K, V> ContextFactory<IMapJet<K, V>> iMapContext(@Nonnull String mapName) {
         return ContextFactory
                 .withCreateFn(jet -> jet.<K, V>getMap(mapName))
-                .shareLocally();
+                .withLocalSharing();
     }
 
 }

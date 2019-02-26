@@ -65,7 +65,7 @@ public class AsyncTransformUsingContextPTest {
     ) {
         ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "foo");
         if (!ordered) {
-            contextFactory = contextFactory.unorderedAsyncResponses();
+            contextFactory = contextFactory.withUnorderedAsyncResponses();
         }
         return flatMapUsingContextAsyncP(contextFactory, DistributedFunction.identity(), mapFn);
     }

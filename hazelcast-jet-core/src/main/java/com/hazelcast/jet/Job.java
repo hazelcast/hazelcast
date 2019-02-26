@@ -28,8 +28,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A Jet computation job created from a {@link DAG} or {@link Pipeline}.
- * Once submitted, Jet starts executing the job automatically.
+ * A Jet computation job created by submitting a {@link DAG} or {@link
+ * Pipeline}. Once submitted, Jet starts executing the job automatically.
  */
 public interface Job {
 
@@ -41,7 +41,7 @@ public interface Job {
     long getId();
 
     /**
-     * Returns the string representation of this job's ID
+     * Returns the string representation of this job's ID.
      */
     @Nonnull
     default String getIdString() {

@@ -43,6 +43,14 @@ import javax.annotation.Nonnull;
 public interface Pipeline {
 
     /**
+     * Creates a new, empty pipeline.
+     */
+    @Nonnull
+    static Pipeline create() {
+        return new PipelineImpl();
+    }
+
+    /**
      * Returns a pipeline stage that represents a bounded (batch) data source. It
      * has no upstream stages and emits the data (typically coming from an outside
      * source) to its downstream stages.
@@ -63,20 +71,6 @@ public interface Pipeline {
      */
     @Nonnull
     <T> StreamSourceStage<T> drawFrom(@Nonnull StreamSource<? extends T> source);
-
-    /**
-     * Attaches the supplied sink to two pipeline stages. Returns the
-     * {@code SinkStage} representing the sink. You need this method when you
-     * want to drain more than one stage to the same sink. In the typical case
-     * you'll use {@link GeneralStage#drainTo(Sink)} instead.
-     *
-     * @param <T> the type of data being drained to the sink
-     */
-    <T> SinkStage drainTo(
-            @Nonnull Sink<? super T> sink,
-            @Nonnull GeneralStage<? extends T> stage0,
-            @Nonnull GeneralStage<? extends T> stage1
-    );
 
     /**
      * Attaches the supplied sink to two or more pipeline stages. Returns the
@@ -100,14 +94,6 @@ public interface Pipeline {
      */
     @Nonnull
     DAG toDag();
-
-    /**
-     * Creates a new, empty pipeline.
-     */
-    @Nonnull
-    static Pipeline create() {
-        return new PipelineImpl();
-    }
 
     /**
      * Returns a DOT format (graphviz) representation of the Pipeline.

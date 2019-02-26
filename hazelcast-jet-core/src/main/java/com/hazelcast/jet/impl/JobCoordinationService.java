@@ -189,7 +189,7 @@ public class JobCoordinationService {
         // If there is no master context and job result at the same time, it means this is the first submission
         jobRepository.putNewJobRecord(jobRecord);
 
-        logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request from client");
+        logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
         nodeEngine.getExecutionService().execute(COORDINATOR_EXECUTOR_NAME, () -> tryStartJob(masterContext));
     }
 

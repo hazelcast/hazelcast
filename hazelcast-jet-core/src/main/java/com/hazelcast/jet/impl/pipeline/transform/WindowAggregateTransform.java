@@ -25,25 +25,28 @@ import com.hazelcast.jet.function.WindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.impl.util.ConstantFunction;
 import com.hazelcast.jet.pipeline.SessionWindowDefinition;
 import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
+import com.hazelcast.jet.impl.util.ConstantFunction;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSessionWindowP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.impl.pipeline.transform.AbstractTransform.Optimization.MEMORY;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
-import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
 import static java.util.Collections.nCopies;
 
 public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
+    private static final int MAX_WATERMARK_STRIDE = 100;
+    private static final int MIN_WMS_PER_SESSION = 100;
+
     @Nonnull
     private final AggregateOperation<A, ? extends R> aggrOp;
     @Nonnull
@@ -63,23 +66,47 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
         this.mapToOutputFn = mapToOutputFn;
     }
 
-    private static String createName(WindowDefinition wDef) {
-        return wDef.kind().name().toLowerCase() + "-window";
+    static String createName(WindowDefinition wDef) {
+        if (wDef instanceof SlidingWindowDefinition) {
+            return "sliding-window";
+        } else if (wDef instanceof SessionWindowDefinition) {
+            return "session-window";
+        } else {
+            throw new IllegalArgumentException(wDef.getClass().getName());
+        }
+    }
+
+    /**
+     * Returns the optimal watermark stride for this window definition.
+     * Watermarks that are more spaced out are better for performance, but they
+     * hurt the responsiveness of a windowed pipeline stage. The Planner will
+     * determine the actual stride, which may be an integer fraction of the
+     * value returned here.
+     */
+    static long preferredWatermarkStride(WindowDefinition wDef) {
+        if (wDef instanceof SlidingWindowDefinition) {
+            return ((SlidingWindowDefinition) wDef).slideBy();
+        } else if (wDef instanceof SessionWindowDefinition) {
+            long timeout = ((SessionWindowDefinition) wDef).sessionTimeout();
+            return Math.min(MAX_WATERMARK_STRIDE, Math.max(1, timeout / MIN_WMS_PER_SESSION));
+        } else {
+            throw new IllegalArgumentException(wDef.getClass().getName());
+        }
     }
 
     @Override
     public long preferredWatermarkStride() {
-        return wDef.preferredWatermarkStride();
+        return preferredWatermarkStride(wDef);
     }
 
     @Override
     public void addToDag(Planner p) {
-        if (wDef.kind() == SESSION) {
-            addSessionWindow(p, wDef.downcast());
+        if (wDef instanceof SessionWindowDefinition) {
+            addSessionWindow(p, (SessionWindowDefinition) wDef);
         } else if (aggrOp.combineFn() == null || wDef.earlyResultsPeriod() > 0 || getOptimization() == MEMORY) {
-            addSlidingWindowSingleStage(p, wDef.downcast());
+            addSlidingWindowSingleStage(p, (SlidingWindowDefinition) wDef);
         } else {
-            addSlidingWindowTwoStage(p, wDef.downcast());
+            addSlidingWindowTwoStage(p, (SlidingWindowDefinition) wDef);
         }
     }
 
@@ -101,7 +128,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
                         nCopies(aggrOp.arity(), new ConstantFunction<>(name().hashCode())),
                         nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
                         TimestampKind.EVENT,
-                        wDef.toSlidingWindowPolicy(),
+                        slidingWinPolicy(wDef.windowSize(), wDef.slideBy()),
                         wDef.earlyResultsPeriod(),
                         aggrOp,
                         mapToOutputFn.toKeyedWindowResultFn()
@@ -127,7 +154,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     //              | combineToSlidingWindowP | local parallelism = 1
     //               -------------------------
     private void addSlidingWindowTwoStage(Planner p, SlidingWindowDefinition wDef) {
-        SlidingWindowPolicy winPolicy = wDef.toSlidingWindowPolicy();
+        SlidingWindowPolicy winPolicy = slidingWinPolicy(wDef.windowSize(), wDef.slideBy());
         Vertex v1 = p.dag.newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(
                 nCopies(aggrOp.arity(), new ConstantFunction<>(name().hashCode())),
                 nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),

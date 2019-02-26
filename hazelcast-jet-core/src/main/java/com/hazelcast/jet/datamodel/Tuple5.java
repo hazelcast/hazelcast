@@ -52,7 +52,6 @@ public final class Tuple5<E0, E1, E2, E3, E4> {
         return new Tuple5<>(f0, f1, f2, f3, f4);
     }
 
-
     /**
      * Returns the value of the field 0.
      */

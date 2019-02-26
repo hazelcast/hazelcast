@@ -60,6 +60,15 @@ public final class Jet {
     }
 
     /**
+     * Creates a member of the Jet cluster with the configuration loaded from
+     * default location.
+     */
+    @Nonnull
+    public static JetInstance newJetInstance() {
+        return newJetInstance(JetConfig.loadDefault());
+    }
+
+    /**
      * Creates a member of the Jet cluster with the given configuration.
      */
     @Nonnull
@@ -67,15 +76,6 @@ public final class Jet {
         Preconditions.checkNotNull(config, "config");
         return newJetInstanceImpl(config, cfg ->
                 HazelcastInstanceFactory.newHazelcastInstance(cfg, cfg.getInstanceName(), new JetNodeContext()));
-    }
-
-    /**
-     * Creates a member of the Jet cluster with the configuration loaded from
-     * default location.
-     */
-    @Nonnull
-    public static JetInstance newJetInstance() {
-        return newJetInstance(JetConfig.loadDefault());
     }
 
     /**

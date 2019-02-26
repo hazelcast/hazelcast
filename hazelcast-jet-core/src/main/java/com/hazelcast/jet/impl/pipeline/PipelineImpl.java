@@ -68,16 +68,7 @@ public class PipelineImpl implements Pipeline {
         return new StreamSourceStageImpl<>(xform, this);
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> SinkStage drainTo(
-            @Nonnull Sink<? super T> sink,
-            @Nonnull GeneralStage<? extends T> stage0,
-            @Nonnull GeneralStage<? extends T> stage1
-    ) {
-        return drainTo(sink, stage0, stage1, (GeneralStage<? extends T>[]) NO_STAGES);
-    }
-
+    @Nonnull
     @Override
     public <T> SinkStage drainTo(
             @Nonnull Sink<? super T> sink,

@@ -35,6 +35,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSessionWindowP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
@@ -42,7 +43,6 @@ import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindow
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.pipeline.transform.AbstractTransform.Optimization.MEMORY;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
-import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
 import static java.util.Collections.nCopies;
 
 public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
@@ -70,22 +70,22 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
     }
 
     private static String createName(WindowDefinition wDef) {
-        return wDef.kind().name().toLowerCase() + "-window";
+        return WindowAggregateTransform.createName(wDef);
     }
 
     @Override
     public long preferredWatermarkStride() {
-        return wDef.preferredWatermarkStride();
+        return WindowAggregateTransform.preferredWatermarkStride(wDef);
     }
 
     @Override
     public void addToDag(Planner p) {
-        if (wDef.kind() == SESSION) {
-            addSessionWindow(p, wDef.downcast());
+        if (wDef instanceof SessionWindowDefinition) {
+            addSessionWindow(p, (SessionWindowDefinition) wDef);
         } else if (aggrOp.combineFn() == null || wDef.earlyResultsPeriod() > 0 || getOptimization() == MEMORY) {
-            addSlidingWindowSingleStage(p, wDef.downcast());
+            addSlidingWindowSingleStage(p, (SlidingWindowDefinition) wDef);
         } else {
-            addSlidingWindowTwoStage(p, wDef.downcast());
+            addSlidingWindowTwoStage(p, (SlidingWindowDefinition) wDef);
         }
     }
 
@@ -107,7 +107,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
                         keyFns,
                         nCopies(keyFns.size(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
                         TimestampKind.EVENT,
-                        wDef.toSlidingWindowPolicy(),
+                        slidingWinPolicy(wDef.windowSize(), wDef.slideBy()),
                         wDef.earlyResultsPeriod(),
                         aggrOp,
                         mapToOutputFn
@@ -133,7 +133,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
     //             | combineToSlidingWindowP |
     //              -------------------------
     private void addSlidingWindowTwoStage(Planner p, SlidingWindowDefinition wDef) {
-        SlidingWindowPolicy winPolicy = wDef.toSlidingWindowPolicy();
+        SlidingWindowPolicy winPolicy = slidingWinPolicy(wDef.windowSize(), wDef.slideBy());
         Vertex v1 = p.dag.newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(
                 keyFns,
                 nCopies(keyFns.size(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),

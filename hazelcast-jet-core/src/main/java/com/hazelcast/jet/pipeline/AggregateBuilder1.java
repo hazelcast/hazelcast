@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
  * Refer to the documentation of that method for more details.
  * <p>
  * <strong>Note:</strong> this is not a builder of {@code
- * AggregateOperation}. If that' s what you are looking for, go {@link
+ * AggregateOperation}. If that's what you are looking for, go {@link
  * AggregateOperation#withCreate here}.
  *
  * @param <T0> type of items in stage-0 (the one you obtained this builder from)

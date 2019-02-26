@@ -20,14 +20,16 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_CONFIG_DS_FACTORY;
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_CONFIG_DS_FACTORY_ID;
 
 /**
  * Hazelcast serializer hooks for the classes in the {@code
- * com.hazelcast.jet.config} package. This is not a public-facing API.
+ * com.hazelcast.jet.config} package. This is private API.
  */
+@PrivateApi
 public final class JetConfigDataSerializerHook implements DataSerializerHook {
 
     /**
@@ -58,5 +60,4 @@ public final class JetConfigDataSerializerHook implements DataSerializerHook {
             }
         }
     }
-
 }

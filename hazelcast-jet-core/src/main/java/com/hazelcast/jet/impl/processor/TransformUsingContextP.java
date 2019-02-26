@@ -61,7 +61,7 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
         this.flatMapFn = flatMapFn;
         this.contextObject = contextObject;
 
-        assert contextObject == null ^ contextFactory.isSharedLocally()
+        assert contextObject == null ^ contextFactory.hasLocalSharing()
                 : "if contextObject is shared, it must be non-null, or vice versa";
     }
 
@@ -72,7 +72,7 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
-        if (!contextFactory.isSharedLocally()) {
+        if (!contextFactory.hasLocalSharing()) {
             assert contextObject == null : "contextObject is not null: " + contextObject;
             contextObject = contextFactory.createFn().apply(context.jetInstance());
         }
@@ -94,7 +94,7 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
     public void close() {
         // close() might be called even if init() was not called.
         // Only destroy the context if is not shared (i.e. it is our own).
-        if (contextObject != null && !contextFactory.isSharedLocally()) {
+        if (contextObject != null && !contextFactory.hasLocalSharing()) {
             contextFactory.destroyFn().accept(contextObject);
         }
         contextObject = null;

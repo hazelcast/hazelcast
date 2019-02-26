@@ -46,7 +46,6 @@ public final class Tuple3<E0, E1, E2> {
         return new Tuple3<>(f0, f1, f2);
     }
 
-
     /**
      * Returns the value of the field 0.
      */

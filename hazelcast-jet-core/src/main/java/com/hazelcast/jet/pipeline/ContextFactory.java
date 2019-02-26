@@ -51,29 +51,29 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 public final class ContextFactory<C> implements Serializable {
 
     /**
-     * Default value for {{@link #maxPendingCallsPerProcessor(int)}}
+     * Default value for {@link #maxPendingCallsPerProcessor}.
      */
     public static final int MAX_PENDING_CALLS_DEFAULT = 256;
 
     /**
-     * Default value for {{@link #isCooperative()} (int)}}
+     * Default value for {@link #isCooperative}.
      */
     public static final boolean COOPERATIVE_DEFAULT = true;
 
     /**
-     * Default value for {{@link #shareLocally()}} }
+     * Default value for {@link #hasLocalSharing}.
      */
     public static final boolean SHARE_LOCALLY_DEFAULT = false;
 
     /**
-     * Default value for {{@link #unorderedAsyncResponses()}}}} }
+     * Default value for {@link #hasOrderedAsyncResponses}.
      */
     public static final boolean ORDERED_ASYNC_RESPONSES_DEFAULT = true;
 
     private final DistributedFunction<JetInstance, ? extends C> createFn;
     private final DistributedConsumer<? super C> destroyFn;
     private final boolean isCooperative;
-    private final boolean isSharedLocally;
+    private final boolean hasLocalSharing;
     private final int maxPendingCallsPerProcessor;
     private final boolean orderedAsyncResponses;
 
@@ -81,14 +81,14 @@ public final class ContextFactory<C> implements Serializable {
             DistributedFunction<JetInstance, ? extends C> createFn,
             DistributedConsumer<? super C> destroyFn,
             boolean isCooperative,
-            boolean isSharedLocally,
+            boolean hasLocalSharing,
             int maxPendingCallsPerProcessor,
             boolean orderedAsyncResponses
     ) {
         this.createFn = createFn;
         this.destroyFn = destroyFn;
         this.isCooperative = isCooperative;
-        this.isSharedLocally = isSharedLocally;
+        this.hasLocalSharing = hasLocalSharing;
         this.maxPendingCallsPerProcessor = maxPendingCallsPerProcessor;
         this.orderedAsyncResponses = orderedAsyncResponses;
     }
@@ -124,7 +124,7 @@ public final class ContextFactory<C> implements Serializable {
     @Nonnull
     public ContextFactory<C> withDestroyFn(@Nonnull DistributedConsumer<? super C> destroyFn) {
         checkSerializable(destroyFn, "destroyFn");
-        return new ContextFactory<>(createFn, destroyFn, isCooperative, isSharedLocally,
+        return new ContextFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
 
@@ -142,14 +142,14 @@ public final class ContextFactory<C> implements Serializable {
      * to {@code false}.
      */
     @Nonnull
-    public ContextFactory<C> nonCooperative() {
-        return new ContextFactory<>(createFn, destroyFn, false, isSharedLocally,
+    public ContextFactory<C> toNonCooperative() {
+        return new ContextFactory<>(createFn, destroyFn, false, hasLocalSharing,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
 
     /**
      * Returns a copy of this {@link ContextFactory} with the
-     * <em>shareLocally</em> flag set. If the pipeline doesn't have grouping,
+     * <em>localSharing</em> flag set. If the pipeline doesn't have grouping,
      * there will be:
      * <ul>
      *     <li>one context object per local processor, if flag is disabled
@@ -157,10 +157,11 @@ public final class ContextFactory<C> implements Serializable {
      *     sure the context object is <em>thread-safe</em> in this case.
      * </ul>
      *
-     * @return a copy of this factory with the {@code isSharedLocally} flag set.
+     * @return a copy of this factory with the {@code hasLocalSharing} flag
+     * set.
      */
     @Nonnull
-    public ContextFactory<C> shareLocally() {
+    public ContextFactory<C> withLocalSharing() {
         return new ContextFactory<>(createFn, destroyFn, isCooperative, true,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
@@ -183,9 +184,9 @@ public final class ContextFactory<C> implements Serializable {
      *      property set.
      */
     @Nonnull
-    public ContextFactory<C> maxPendingCallsPerProcessor(int maxPendingCallsPerProcessor) {
+    public ContextFactory<C> withMaxPendingCallsPerProcessor(int maxPendingCallsPerProcessor) {
         checkPositive(maxPendingCallsPerProcessor, "maxPendingCallsPerProcessor must be >= 1");
-        return new ContextFactory<>(createFn, destroyFn, isCooperative, isSharedLocally,
+        return new ContextFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
     }
 
@@ -224,8 +225,8 @@ public final class ContextFactory<C> implements Serializable {
      * @return a copy of this factory with the {@code unorderedAsyncResponses} flag set.
      */
     @Nonnull
-    public ContextFactory<C> unorderedAsyncResponses() {
-        return new ContextFactory<>(createFn, destroyFn, isCooperative, isSharedLocally,
+    public ContextFactory<C> withUnorderedAsyncResponses() {
+        return new ContextFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
                 maxPendingCallsPerProcessor, false);
     }
 
@@ -253,25 +254,25 @@ public final class ContextFactory<C> implements Serializable {
     }
 
     /**
-     * Returns the {@code isSharedLocally} flag.
+     * Returns the {@code hasLocalSharing} flag.
      */
-    public boolean isSharedLocally() {
-        return isSharedLocally;
+    public boolean hasLocalSharing() {
+        return hasLocalSharing;
     }
 
     /**
      * Returns the maximum pending calls per processor, see {@link
-     * #maxPendingCallsPerProcessor(int)}.
+     * #withMaxPendingCallsPerProcessor(int)}.
      */
-    public int getMaxPendingCallsPerProcessor() {
+    public int maxPendingCallsPerProcessor() {
         return maxPendingCallsPerProcessor;
     }
 
     /**
      * Tells whether the async responses are ordered, see {@link
-     * #unorderedAsyncResponses()}.
+     * #withUnorderedAsyncResponses()}.
      */
-    public boolean isOrderedAsyncResponses() {
+    public boolean hasOrderedAsyncResponses() {
         return orderedAsyncResponses;
     }
 }

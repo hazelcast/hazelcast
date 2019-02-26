@@ -79,7 +79,7 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
         this.callAsyncFn = callAsyncFn;
         this.contextObject = contextObject;
 
-        assert contextObject == null ^ contextFactory.isSharedLocally()
+        assert contextObject == null ^ contextFactory.hasLocalSharing()
                 : "if contextObject is shared, it must be non-null, or vice versa";
     }
 
@@ -90,11 +90,11 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
 
     @Override
     protected void init(@Nonnull Context context) {
-        if (!contextFactory.isSharedLocally()) {
+        if (!contextFactory.hasLocalSharing()) {
             assert contextObject == null : "contextObject is not null: " + contextObject;
             contextObject = contextFactory.createFn().apply(context.jetInstance());
         }
-        maxAsyncOps = contextFactory.getMaxPendingCallsPerProcessor();
+        maxAsyncOps = contextFactory.maxPendingCallsPerProcessor();
         queue = new ArrayDeque<>(maxAsyncOps);
     }
 
@@ -150,7 +150,7 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
     public void close() {
         // close() might be called even if init() was not called.
         // Only destroy the context if is not shared (i.e. it is our own).
-        if (contextObject != null && !contextFactory.isSharedLocally()) {
+        if (contextObject != null && !contextFactory.hasLocalSharing()) {
             contextFactory.destroyFn().accept(contextObject);
         }
         contextObject = null;

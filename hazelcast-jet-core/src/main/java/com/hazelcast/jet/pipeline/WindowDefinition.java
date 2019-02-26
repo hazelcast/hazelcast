@@ -19,43 +19,21 @@ package com.hazelcast.jet.pipeline;
 import javax.annotation.Nonnull;
 
 /**
- * The definition of the window for a windowed aggregation operation. The
- * enum {@link WindowKind} enumerates the kinds of window that Jet supports.
- * To obtain a window definition, use the factory methods provided in this
- * interface.
+ * The definition of the window for a windowed aggregation operation. To obtain
+ * a window definition, use the factory methods provided in this interface.
  */
-public interface WindowDefinition {
+public abstract class WindowDefinition {
 
-    /**
-     * Enumerates the kinds of window that Jet supports.
-     */
-    enum WindowKind {
-        /**
-         * A sliding window "slides" along the time axis in discrete steps. You can
-         * specify the size and the sliding step. The size of the window must be
-         * divisible by the sliding step.
-         */
-        SLIDING,
-        /**
-         * The session window captures bursts of events delimited by periods of
-         * quiescence. You can specify the duration of the quiet period that causes
-         * the window to close.
-         */
-        SESSION
-    }
-
-    /**
-     * Returns what kind of window this definition describes.
-     */
-    @Nonnull
-    WindowKind kind();
+    private long earlyResultPeriod;
 
     /**
      * Returns the {@linkplain #setEarlyResultsPeriod early results period} for
      * this window definition. A return value of zero means that the stage
      * won't emit early window results.
      */
-    long earlyResultsPeriod();
+    public long earlyResultsPeriod() {
+        return earlyResultPeriod;
+    }
 
     /**
      * Sets the period in milliseconds at which the windowed aggregation
@@ -82,31 +60,13 @@ public interface WindowDefinition {
      *                          results to the next one
      * @return {@code this}
      */
-    WindowDefinition setEarlyResultsPeriod(long earlyResultPeriod);
+    public WindowDefinition setEarlyResultsPeriod(long earlyResultPeriod) {
+        this.earlyResultPeriod = earlyResultPeriod;
+        return this;
+    }
 
     /**
-     * Returns this window definition downcast to the type determined through
-     * type inference at the call site. It will be an unchecked downcast and
-     * may fail at runtime with a {@code ClassCastException}.
-     *
-     * @param <W> The target type of the downcast
-     * @return this object, downcast into the inferred type
-     */
-    @Nonnull
-    <W extends WindowDefinition> W downcast();
-
-    /**
-     * Returns the optimal watermark stride for this window definition.
-     * Watermarks that are more spaced out are better for performance, but they
-     * hurt the responsiveness of a windowed pipeline stage. The Planner will
-     * determine the actual stride, which may be an integer fraction of the
-     * value returned here.
-     */
-    long preferredWatermarkStride();
-
-    /**
-     * Returns a {@link WindowKind#SLIDING sliding} window definition with the
-     * given parameters.
+     * Returns a sliding window definition with the given parameters.
      * <p>
      * Find more information in the Hazelcast Jet Reference Manual, Sliding and
      * Tumbling Window.
@@ -115,19 +75,19 @@ public interface WindowDefinition {
      * @param slideBy the size of the sliding step. Window size must be multiple of this number.
      */
     @Nonnull
-    static SlidingWindowDefinition sliding(long windowSize, long slideBy) {
+    public static SlidingWindowDefinition sliding(long windowSize, long slideBy) {
         return new SlidingWindowDefinition(windowSize, slideBy);
     }
 
     /**
      * Returns a tumbling window definition with the given parameters. Tumbling
-     * window is a special case of {@link WindowKind#SLIDING sliding} where the
-     * slide is equal to window size.
+     * window is a special case of sliding where the slide is equal to window
+     * size.
      *
      * @param windowSize the size of the window (size of the range of the timestamps it covers)
      */
     @Nonnull
-    static SlidingWindowDefinition tumbling(long windowSize) {
+    public static SlidingWindowDefinition tumbling(long windowSize) {
         return new SlidingWindowDefinition(windowSize, windowSize);
     }
 
@@ -167,7 +127,7 @@ public interface WindowDefinition {
      *                       successive timestamps included in a window.
      */
     @Nonnull
-    static SessionWindowDefinition session(long sessionTimeout) {
+    public static SessionWindowDefinition session(long sessionTimeout) {
         return new SessionWindowDefinition(sessionTimeout);
     }
 }

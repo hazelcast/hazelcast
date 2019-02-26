@@ -124,9 +124,9 @@ public class AsyncTransformUsingContextP_IntegrationTest extends JetTestSupport 
         sinkList = inst.getList(randomMapName("sinkList"));
         jobConfig = new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(0);
 
-        contextFactory = ContextFactory.withCreateFn(jet -> Executors.newFixedThreadPool(8)).shareLocally();
+        contextFactory = ContextFactory.withCreateFn(jet -> Executors.newFixedThreadPool(8)).withLocalSharing();
         if (!ordered) {
-            contextFactory = contextFactory.unorderedAsyncResponses();
+            contextFactory = contextFactory.withUnorderedAsyncResponses();
         }
     }
 

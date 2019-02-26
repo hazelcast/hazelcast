@@ -49,7 +49,7 @@ public final class ProcessorSupplierWithContext<C> implements ProcessorSupplier 
 
     @Override
     public void init(@Nonnull Context context) {
-        if (contextFactory.isSharedLocally()) {
+        if (contextFactory.hasLocalSharing()) {
             contextObject = contextFactory.createFn().apply(context.jetInstance());
         }
     }

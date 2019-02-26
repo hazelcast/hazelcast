@@ -21,14 +21,16 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.impl.connector.HazelcastWriters.ApplyFnEntryProcessor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY;
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY_ID;
 
 /**
  * A Java Service Provider hook for Hazelcast's Identified Data Serializable
- * mechanism.
+ * mechanism. This is private API.
  */
+@PrivateApi
 public final class JetDataSerializerHook implements DataSerializerHook {
 
     /**

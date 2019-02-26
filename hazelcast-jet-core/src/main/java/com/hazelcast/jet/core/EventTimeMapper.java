@@ -126,7 +126,7 @@ public class EventTimeMapper<T> {
 
     /**
      * Value to use as the {@code nativeEventTime} argument when calling
-     * {@link #flatMapEvent(Object, int, long)} whene there's no native event
+     * {@link #flatMapEvent(Object, int, long)} when there's no native event
      * time to supply.
      */
     public static final long NO_NATIVE_TIME = Long.MIN_VALUE;

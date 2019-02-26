@@ -16,20 +16,10 @@
 
 package com.hazelcast.jet.pipeline;
 
-import javax.annotation.Nonnull;
-
-import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
-
 /**
- * Represents the definition of a {@link
- * com.hazelcast.jet.pipeline.WindowDefinition.WindowKind#SESSION
- * session} window.
- *
- * @param <T> type of the stream item
+ * Represents the definition of a session window.
  */
-public class SessionWindowDefinition<T> extends WindowDefinitionBase {
-    private static final int MAX_WATERMARK_STRIDE = 100;
-    private static final int MIN_WMS_PER_SESSION = 100;
+public class SessionWindowDefinition extends WindowDefinition {
     private final long sessionTimeout;
 
     SessionWindowDefinition(long sessionTimeout) {
@@ -38,24 +28,7 @@ public class SessionWindowDefinition<T> extends WindowDefinitionBase {
 
     @Override
     public SessionWindowDefinition setEarlyResultsPeriod(long earlyResultPeriod) {
-        super.setEarlyResultsPeriod(earlyResultPeriod);
-        return this;
-    }
-
-    @Nonnull @Override
-    public WindowKind kind() {
-        return SESSION;
-    }
-
-    @Nonnull @Override
-    @SuppressWarnings("unchecked")
-    public SessionWindowDefinition<T> downcast() {
-        return this;
-    }
-
-    @Override
-    public long preferredWatermarkStride() {
-        return Math.min(MAX_WATERMARK_STRIDE, Math.max(1, sessionTimeout / MIN_WMS_PER_SESSION));
+        return (SessionWindowDefinition) super.setEarlyResultsPeriod(earlyResultPeriod);
     }
 
     /**

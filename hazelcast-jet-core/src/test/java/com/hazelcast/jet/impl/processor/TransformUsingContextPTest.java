@@ -50,7 +50,7 @@ public class TransformUsingContextPTest {
         ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "context-" + createCounter[0]++)
                                                               .withDestroyFn(ctx -> destroyCounter[0]++);
         if (share) {
-            contextFactory = contextFactory.shareLocally();
+            contextFactory = contextFactory.withLocalSharing();
         }
         ProcessorSupplier supplier = supplier(contextFactory, mapToContext());
 
@@ -94,7 +94,7 @@ public class TransformUsingContextPTest {
     private void testEqualCooperativity(boolean cooperative) throws Exception {
         ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "foo");
         if (!cooperative) {
-            contextFactory = contextFactory.nonCooperative();
+            contextFactory = contextFactory.toNonCooperative();
         }
 
         ProcessorSupplier supplier = supplier(contextFactory, mapToContext());

@@ -39,7 +39,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *  The primary use case for the projection function is enrichment from a
  *  map source, such as {@link Sources#map}.
  *  The enriching stream consists of map entries, but the result should
- *  contain just the vaules. In this case the projection function should be
+ *  contain just the values. In this case the projection function should be
  *  {@code Entry::getValue}. There is direct support for this case with the
  *  method {@link #joinMapEntries(DistributedFunction)}.
  *

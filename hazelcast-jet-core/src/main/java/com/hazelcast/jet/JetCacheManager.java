@@ -37,11 +37,11 @@ public interface JetCacheManager {
     /**
      * Returns the cache instance with the specified, optionally prefixed, cache
      * name:
-     * <pre>
-     * &lt;prefixed_cache_name&gt; = [&lt;uri_prefix&gt;/][&lt;cl_prefix&gt;/]&lt;simple_cache_name&gt;
-     * </pre>
+     * <pre>{@code
+     *      <prefixed_cache_name> = [<uri_prefix>/][<cl_prefix>/]<simple_cache_name>
+     * }</pre>
      * where {@code <simple_cache_name>} is the cache name without any prefix.
-     * <p>
+     *
      * @see com.hazelcast.cache.CacheUtil#getPrefixedCacheName(String, java.net.URI, ClassLoader)
      *
      * @param name the prefixed name of the cache
