@@ -23,6 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Metadata;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.IOException;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
@@ -115,7 +118,10 @@ public class JsonMetadataRecordStoreMutationObserver implements RecordStoreMutat
             } else {
                 valueMetadata = metadataInitializer.createFromObject(serializationService.toObject(updateValue));
             }
-        } catch (Throwable e) {
+        } catch (IOException e) {
+            // silently ignore exception. Json string is allowed to be invalid.
+            ignore(e);
+        } catch (Exception e) {
             throw rethrow(e);
         }
         if (valueMetadata != null) {
@@ -155,6 +161,9 @@ public class JsonMetadataRecordStoreMutationObserver implements RecordStoreMutat
                 metadata.setValueMetadata(valueMetadata);
                 return metadata;
             }
+            return null;
+        } catch (IOException e) {
+            // silently ignore exception. Json string is allowed to be invalid.
             return null;
         } catch (Exception e) {
             throw rethrow(e);

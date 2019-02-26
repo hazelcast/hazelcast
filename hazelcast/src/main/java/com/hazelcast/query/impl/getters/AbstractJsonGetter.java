@@ -132,6 +132,9 @@ public abstract class AbstractJsonGetter extends Getter {
                 }
             }
             return convertJsonTokenToValue(parser);
+        } catch (IOException e) {
+            // Just return null in case of exception. Json strings are allowed to be invalid.
+            return null;
         } finally {
             parser.close();
         }

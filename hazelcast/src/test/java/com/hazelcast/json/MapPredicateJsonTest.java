@@ -648,4 +648,59 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertTrue(vals.contains("one"));
         assertTrue(vals.contains("two"));
     }
+
+    @Test
+    public void testInvalidJsonDoesNotThrowException() {
+        IMap<HazelcastJsonValue, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        String invalidJsonString = "{ \"a: 1 }";
+        HazelcastJsonValue invalidHazelcastJsonValue = HazelcastJson.fromString(invalidJsonString);
+        map.put(invalidHazelcastJsonValue, invalidHazelcastJsonValue);
+        assertEquals(invalidJsonString, map.get(invalidHazelcastJsonValue).toJsonString());
+    }
+
+    @Test
+    public void testInvalidJsonValueDoesNotAffectQueryResultForOthers_value() {
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        String invalidJsonString = "{ \"a: 1 }";
+        String validString1 = "{ \"a\": 2 }";
+        String validString2 = "{ \"a\": 3 }";
+
+        HazelcastJsonValue invalidJson = HazelcastJson.fromString(invalidJsonString);
+        HazelcastJsonValue valid1 = HazelcastJson.fromString(validString1);
+        HazelcastJsonValue valid2 = HazelcastJson.fromString(validString2);
+
+        map.put(1, invalidJson);
+        map.put(2, valid1);
+        map.put(3, valid2);
+
+        Collection<HazelcastJsonValue> values = map.values(Predicates.greaterThan("a", 0));
+
+        // values should contain all values except invalidJson
+        assertEquals(2, values.size());
+        assertTrue(values.contains(valid1));
+        assertTrue(values.contains(valid2));
+    }
+
+    @Test
+    public void testInvalidJsonValueDoesNotAffectQueryResultForOthers_key() {
+        IMap<HazelcastJsonValue, Integer> map = instance.getMap(randomMapName());
+        String invalidJsonString = "{ \"a: 1 }";
+        String validString1 = "{ \"a\": 2 }";
+        String validString2 = "{ \"a\": 3 }";
+
+        HazelcastJsonValue invalidJson = HazelcastJson.fromString(invalidJsonString);
+        HazelcastJsonValue valid1 = HazelcastJson.fromString(validString1);
+        HazelcastJsonValue valid2 = HazelcastJson.fromString(validString2);
+
+        map.put(invalidJson, 1);
+        map.put(valid1, 2);
+        map.put(valid2, 3);
+
+        Collection<Integer> values = map.values(Predicates.greaterThan("__key.a", 0));
+
+        // values should contain all values except invalidJson
+        assertEquals(2, values.size());
+        assertTrue(values.contains(2));
+        assertTrue(values.contains(3));
+    }
 }
