@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetClusterMetadataCodec.ResponseParameters;
@@ -156,6 +158,13 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         return invokeRequestOnAnyMemberAndDecodeResponse(
                 JetExistsDistributedObjectCodec.encodeRequest(serviceName, objectName),
                 response -> JetExistsDistributedObjectCodec.decodeResponse(response).response
+        );
+    }
+
+    public List<DistributedObjectInfo> getDistributedObjects() {
+        return invokeRequestOnAnyMemberAndDecodeResponse(
+                ClientGetDistributedObjectsCodec.encodeRequest(),
+                response -> ClientGetDistributedObjectsCodec.decodeResponse(response).response
         );
     }
 
