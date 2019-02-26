@@ -87,6 +87,8 @@ public class ServiceConfigTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testYamlMissingParserClassThrows() {
+        assumeThatJDK8OrHigher();
+
         String yaml = ""
                 + "hazelcast:\n"
                 + "  services:\n"
