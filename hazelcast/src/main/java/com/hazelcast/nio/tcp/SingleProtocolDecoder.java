@@ -37,7 +37,7 @@ public class SingleProtocolDecoder
     private final InboundHandler[] inboundHandlers;
     private final MemberProtocolEncoder encoder;
 
-    SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next) {
+    public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next) {
         this(supportedProtocol, new InboundHandler[] {next}, null);
     }
 

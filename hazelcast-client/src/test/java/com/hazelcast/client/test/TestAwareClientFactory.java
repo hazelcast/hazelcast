@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.test.TestAwareInstanceFactory;
 
 import java.util.List;
@@ -54,7 +55,7 @@ public class TestAwareClientFactory extends TestAwareInstanceFactory {
         }
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
         for (HazelcastInstance member : members) {
-            networkConfig.addAddress("127.0.0.1:" + getPort(member));
+            networkConfig.addAddress("127.0.0.1:" + getPort(member, EndpointQualifier.CLIENT));
         }
         HazelcastInstance hz = HazelcastClient.newHazelcastClient(config);
         getOrInitInstances(perMethodClients).add(hz);

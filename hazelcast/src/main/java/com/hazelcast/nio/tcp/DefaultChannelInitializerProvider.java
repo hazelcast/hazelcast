@@ -35,14 +35,15 @@ public class DefaultChannelInitializerProvider implements ChannelInitializerProv
 
     protected final IOService ioService;
     private final ChannelInitializer uniChannelInitializer;
-    private final Map<EndpointQualifier, ChannelInitializer> initializerMap;
+    private final Config config;
+    private volatile Map<EndpointQualifier, ChannelInitializer> initializerMap;
 
 
     public DefaultChannelInitializerProvider(IOService ioService, Config config) {
         checkSslConfigAvailability(config);
         this.ioService = ioService;
         this.uniChannelInitializer = new UnifiedChannelInitializer(ioService);
-        initializerMap = buildInitializersMap(config);
+        this.config = config;
     }
 
     @Override
@@ -50,11 +51,12 @@ public class DefaultChannelInitializerProvider implements ChannelInitializerProv
         return initializerMap.isEmpty() ? provideUnifiedChannelInitializer() : initializerMap.get(qualifier);
     }
 
-    protected Map<EndpointQualifier, ChannelInitializer> buildInitializersMap(Config config) {
+    public void init() {
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         if (!advancedNetworkConfig.isEnabled()
                 || advancedNetworkConfig.getEndpointConfigs().isEmpty()) {
-            return Collections.emptyMap();
+            initializerMap = Collections.emptyMap();
+            return;
         }
 
         Map<EndpointQualifier, ChannelInitializer> map = new HashMap<EndpointQualifier, ChannelInitializer>();
@@ -83,7 +85,7 @@ public class DefaultChannelInitializerProvider implements ChannelInitializerProv
             }
         }
 
-        return map;
+        initializerMap = map;
     }
 
     protected ChannelInitializer provideUnifiedChannelInitializer() {

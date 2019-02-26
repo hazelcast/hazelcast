@@ -274,7 +274,9 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public ChannelInitializerProvider createChannelInitializerProvider(IOService ioService) {
-        return new DefaultChannelInitializerProvider(ioService, node.getConfig());
+        DefaultChannelInitializerProvider provider = new DefaultChannelInitializerProvider(ioService, node.getConfig());
+        provider.init();
+        return provider;
     }
 
     @Override

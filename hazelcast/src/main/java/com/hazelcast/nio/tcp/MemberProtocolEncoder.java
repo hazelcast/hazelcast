@@ -49,7 +49,7 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
      *                          upon match of protocol bytes
      */
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    MemberProtocolEncoder(OutboundHandler[] next) {
+    public MemberProtocolEncoder(OutboundHandler[] next) {
         this.outboundHandlers = next;
     }
 
