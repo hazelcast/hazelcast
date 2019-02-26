@@ -65,6 +65,7 @@ import java.util.logging.LogManager;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static java.util.Collections.emptyList;
 
 @Command(
         name = "jet",
@@ -181,10 +182,12 @@ public class JetCommandLine implements Callable<Void> {
             ) File file,
             @Parameters(index = "1..*",
                     paramLabel = "<arguments>",
-                    description = "arguments to pass to the supplied jar file",
-                    defaultValue = ""
+                    description = "arguments to pass to the supplied jar file"
             ) List<String> params
     ) throws Exception {
+        if (params == null) {
+            params = emptyList();
+        }
         this.verbosity.merge(verbosity);
         configureLogging();
         if (!file.exists()) {
