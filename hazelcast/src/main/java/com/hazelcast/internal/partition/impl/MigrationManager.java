@@ -982,8 +982,7 @@ public class MigrationManager {
                 processMigrationResult(partitionOwner, result);
             } catch (Throwable t) {
                 final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINE;
-                logger.log(level, "Error [" + t.getClass() + ": " + t.getMessage() + "] during " + migrationInfo, t);
-                logger.finest(t);
+                logger.log(level, "Error during " + migrationInfo, t);
                 migrationOperationFailed(partitionOwner);
             } finally {
                 stats.recordMigrationTaskTime(System.nanoTime() - start);

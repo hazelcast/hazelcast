@@ -944,8 +944,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     }
                     InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(migration.getPartitionId());
                     migrationManager.applyMigration(partition, migration);
-                    migrationManager.scheduleActiveMigrationFinalization(migration);
                 }
+                migrationManager.scheduleActiveMigrationFinalization(migration);
             }
 
             if (logger.isFineEnabled()) {
