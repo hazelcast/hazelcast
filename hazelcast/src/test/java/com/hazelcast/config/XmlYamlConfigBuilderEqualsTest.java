@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -25,6 +26,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -80,7 +85,51 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
 
         assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+    }
 
+    @Test
+    public void testFullExample() throws IOException {
+        String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
+        String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");
+
+        // remove imports to prevent the test from failing with importing non-existing files
+        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
+        fullExampleYaml = fullExampleYaml.replace("import:\n    - your-configuration-YAML-file", "");
+
+        // create file to the working directory needed for the EncryptionReplacer
+        createPasswordFile("password.txt", "h4z3lc4$t");
+
+        Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
+        Config yamlConfig = new InMemoryYamlConfig(fullExampleYaml);
+
+        sortClientPermissionConfigs(xmlConfig);
+        sortClientPermissionConfigs(yamlConfig);
+
+        String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
+        String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
+
+        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+    }
+
+    public String readResourceToString(String resource) throws IOException {
+        InputStream xmlInputStream = XmlYamlConfigBuilderEqualsTest.class.getClassLoader().getResourceAsStream(resource);
+        return new String(IOUtil.toByteArray(xmlInputStream));
+    }
+
+    private File createPasswordFile(String passwordFileName, String passwordFileContent) throws IOException {
+        File workDir = new File(".");
+        File file = new File(workDir, passwordFileName);
+        file.deleteOnExit();
+
+        if (passwordFileContent != null && passwordFileContent.length() > 0) {
+            PrintWriter out = new PrintWriter(file);
+            try {
+                out.print(passwordFileContent);
+            } finally {
+                IOUtil.closeResource(out);
+            }
+        }
+        return file;
     }
 
     private void sortClientPermissionConfigs(Config config) {
@@ -89,7 +138,6 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         Set<PermissionConfig> sorted = new TreeSet<PermissionConfig>(new PermissionConfigComparator());
         sorted.addAll(unsorted);
         securityConfig.setClientPermissionConfigs(sorted);
-
     }
 
     private static class PermissionConfigComparator implements Comparator<PermissionConfig> {
