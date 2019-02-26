@@ -36,6 +36,8 @@ import com.hazelcast.cp.internal.raftop.metadata.GetMembershipChangeScheduleOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
@@ -931,11 +933,16 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
     }
 
     @Test
-    public void when_cpMembersShutdownConcurrently_then_theyCompleteTheirShutdown() {
-        final HazelcastInstance[] instances = newInstances(5, 3, 0);
+    public void when_cpMembersShutdownConcurrently_then_theyCompleteTheirShutdown() throws ExecutionException, InterruptedException {
+        // When there are N CP members, we can perform concurrent shutdown in 2 steps.
+        // In the first step, we shut down N - 2 members concurrently.
+        // Once those members are done, we shutdown the last 2 CP members concurrently as well.
 
-        final Future[] futures = new Future[instances.length];
-        for (int i = 0; i < instances.length; i++) {
+        final HazelcastInstance[] instances = newInstances(7, 5, 0);
+
+        final int batchSize = 5;
+        Future[] futures = new Future[batchSize];
+        for (int i = 0; i < batchSize; i++) {
             final int ix = i;
             futures[i] = spawn(new Runnable() {
                 @Override
@@ -945,25 +952,60 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
             });
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (Future future : futures) {
-                    assertTrue(future.isDone());
-                    future.get();
-                }
-            }
-        });
-    }
+        for (Future f : futures) {
+            assertCompletesEventually(f);
+            f.get();
+        }
 
+        int remaining = instances.length - batchSize;
+        futures = new Future[remaining];
+        for (int i = 0; i < remaining; i++) {
+            final int ix = i;
+            futures[i] = spawn(new Runnable() {
+                @Override
+                public void run() {
+                    instances[batchSize + ix].shutdown();
+                }
+            });
+        }
+
+        for (Future f : futures) {
+            assertCompletesEventually(f);
+            f.get();
+        }
+    }
 
     @Test
     public void when_cpMembersShutdownSequentially_then_theyCompleteTheirShutdown() {
-        final HazelcastInstance[] instances = newInstances(5, 3, 0);
+        final HazelcastInstance[] instances = newInstances(5, 3, 2);
 
         for (HazelcastInstance instance : instances) {
             instance.shutdown();
         }
+    }
+
+    @Test
+    public void when_clusterIsShutdown_then_allCPMembersCompleteShutdown() {
+        final HazelcastInstance[] instances = newInstances(5, 3, 1);
+
+        final Node[] nodes = new Node[instances.length];
+        for (int i = 0; i < instances.length; i++) {
+            nodes[i] = getNode(instances[i]);
+        }
+
+        assertClusterSizeEventually(instances.length, instances);
+        waitAllForSafeState(instances);
+
+        instances[0].getCluster().shutdown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (int i = 0; i < instances.length; i++) {
+                    assertEquals(NodeState.SHUT_DOWN, nodes[i].getState());
+                }
+            }
+        });
     }
 
 }

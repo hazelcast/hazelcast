@@ -74,8 +74,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
-import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -919,16 +919,20 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         node.getNodeExtension().getInternalHotRestartService()
                 .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
         timeoutNanos -= (System.nanoTime() - startNanos);
-        shutdownNodes(timeoutNanos);
+
+        if (node.config.getCPSubsystemConfig().getCPMemberCount() == 0) {
+            shutdownNodesConcurrently(timeoutNanos);
+        } else {
+            shutdownNodesSerially(timeoutNanos);
+        }
     }
 
-    private void shutdownNodes(final long timeoutNanos) {
-        final Operation op = new ShutdownNodeOp();
-
-        logger.info("Sending shutting down operations to all members...");
-
+    private void shutdownNodesConcurrently(final long timeoutNanos) {
+        Operation op = new ShutdownNodeOp();
         Collection<Member> members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
-        final long startTime = System.nanoTime();
+        long startTime = System.nanoTime();
+
+        logger.info("Sending shut down operations to all members...");
 
         while ((System.nanoTime() - startTime) < timeoutNanos && !members.isEmpty()) {
             for (Member member : members) {
@@ -946,9 +950,36 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
         }
 
-        logger.info("Number of other nodes remaining: " + getSize(NON_LOCAL_MEMBER_SELECTOR) + ". Shutting down itself.");
+        logger.info("Number of other members remaining: " + getSize(NON_LOCAL_MEMBER_SELECTOR) + ". Shutting down itself.");
 
-        final HazelcastInstanceImpl hazelcastInstance = node.hazelcastInstance;
+        HazelcastInstanceImpl hazelcastInstance = node.hazelcastInstance;
+        hazelcastInstance.getLifecycleService().shutdown();
+    }
+
+    private void shutdownNodesSerially(final long timeoutNanos) {
+        Operation op = new ShutdownNodeOp();
+        long startTime = System.nanoTime();
+        Collection<Member> members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
+
+        logger.info("Sending shut down operations to other members one by one...");
+
+        while ((System.nanoTime() - startTime) < timeoutNanos && !members.isEmpty()) {
+            Member member = members.iterator().next();
+            nodeEngine.getOperationService().send(op, member.getAddress());
+            members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
+
+            try {
+                Thread.sleep(CLUSTER_SHUTDOWN_SLEEP_DURATION_IN_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warning("Shutdown sleep interrupted. ", e);
+                break;
+            }
+        }
+
+        logger.info("Number of other members remaining: " + getSize(NON_LOCAL_MEMBER_SELECTOR) + ". Shutting down itself.");
+
+        HazelcastInstanceImpl hazelcastInstance = node.hazelcastInstance;
         hazelcastInstance.getLifecycleService().shutdown();
     }
 

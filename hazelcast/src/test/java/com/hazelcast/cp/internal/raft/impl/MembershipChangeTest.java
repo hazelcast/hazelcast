@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.raft.impl;
 
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.Endpoint;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.exception.MemberAlreadyExistsException;
@@ -30,6 +29,8 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
+import com.hazelcast.cp.internal.raft.impl.testing.RaftRunnable;
+import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -42,6 +43,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.internal.raft.MembershipChangeMode.REMOVE;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
@@ -540,7 +542,7 @@ public class MembershipChangeTest extends HazelcastTestSupport {
 
         final RaftNodeImpl newRaftNode1 = group.createNewRaftNode();
         group.dropMessagesToMember(leader.getLocalMember(), newRaftNode1.getLocalMember(), AppendRequest.class);
-        final ICompletableFuture f1 = leader.replicateMembershipChange(newRaftNode1.getLocalMember(), MembershipChangeMode.ADD);
+        final Future f1 = leader.replicateMembershipChange(newRaftNode1.getLocalMember(), MembershipChangeMode.ADD);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -590,6 +592,41 @@ public class MembershipChangeTest extends HazelcastTestSupport {
                 assertEquals(leaderCommittedGroupMembers.index(), getCommittedGroupMembers(newRaftNode2).index());
             }
         });
+    }
+
+    @Test
+    public void when_leaderIsSteppingDown_then_itDoesNotAcceptNewAppends() throws ExecutionException, InterruptedException {
+        group = newGroupWithService(3, new RaftAlgorithmConfig(), true);
+        group.start();
+
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        group.dropMessagesToMember(leader.getLocalMember(), followers[0].getLocalMember(), AppendRequest.class);
+        group.dropMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
+
+        final Future f1 = leader.replicateMembershipChange(leader.getLocalMember(), REMOVE);
+        final Future f2 = leader.replicate(new PostponedResponseRaftRunnable());
+
+        assertFalse(f1.isDone());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(f2.isDone());
+            }
+        });
+
+        try {
+            f2.get();
+            fail();
+        } catch (CannotReplicateException ignored) {
+        }
+    }
+
+    static class PostponedResponseRaftRunnable implements RaftRunnable {
+        @Override
+        public Object run(Object service, long commitIndex) {
+            return PostponedResponse.INSTANCE;
+        }
     }
 
 }

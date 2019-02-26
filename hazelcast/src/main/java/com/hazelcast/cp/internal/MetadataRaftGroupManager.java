@@ -101,7 +101,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private final CPSubsystemConfig config;
 
     // these fields are related to the local CP member but they are not maintained within the Metadata CP group
-    private final AtomicReference<CPMemberInfo> localMember = new AtomicReference<CPMemberInfo>();
+    private final AtomicReference<CPMemberInfo> localCPMember = new AtomicReference<CPMemberInfo>();
     private final AtomicReference<RaftGroupId> metadataGroupIdRef = new AtomicReference<RaftGroupId>(INITIAL_METADATA_GROUP_ID);
     private final AtomicBoolean discoveryCompleted = new AtomicBoolean();
 
@@ -136,7 +136,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     void initPromotedCPMember(CPMemberInfo member) {
-        if (!localMember.compareAndSet(null, member)) {
+        if (!localCPMember.compareAndSet(null, member)) {
             return;
         }
 
@@ -168,7 +168,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         membershipChangeSchedule = null;
 
         metadataGroupIdRef.set(new RaftGroupId(METADATA_CP_GROUP_NAME, seed, 0));
-        localMember.set(null);
+        localCPMember.set(null);
         discoveryCompleted.set(false);
 
         scheduleDiscoverInitialCPMembersTask(false);
@@ -236,7 +236,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     CPMemberInfo getLocalCPMember() {
-        return localMember.get();
+        return localCPMember.get();
     }
 
     public RaftGroupId getMetadataGroupId() {
@@ -832,12 +832,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     // could return stale information
     boolean isMetadataGroupLeader() {
-        CPMemberInfo member = getLocalCPMember();
-        if (member == null) {
+        CPMemberInfo localCPMember = getLocalCPMember();
+        if (localCPMember == null) {
             return false;
         }
         RaftNode raftNode = raftService.getRaftNode(getMetadataGroupId());
-        return raftNode != null && !raftNode.isTerminatedOrSteppedDown() && member.equals(raftNode.getLeader());
+        return raftNode != null && !raftNode.isTerminatedOrSteppedDown() && localCPMember.equals(raftNode.getLeader());
     }
 
     /**
@@ -922,7 +922,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     void broadcastActiveCPMembers() {
-        if (!isMetadataGroupLeader()) {
+        if (!(isDiscoveryCompleted() && isMetadataGroupLeader())) {
             return;
         }
 
@@ -982,9 +982,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private class BroadcastActiveCPMembersTask implements Runnable {
         @Override
         public void run() {
-            if (!isMetadataGroupLeader()) {
-                return;
-            }
             broadcastActiveCPMembers();
         }
     }
@@ -1026,15 +1023,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             if (completeDiscoveryIfNotCPMember(discoveredCPMembers, localMemberCandidate)) {
                 return;
             }
-
-            // By default, we use the same member UUID for both AP and CP members.
-            // But it's not guaranteed to be same. For example;
-            // - During a split-brain merge, AP member UUID is renewed but CP member UUID remains the same.
-            // - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
-            // but instead generates a new UUID.
-            // We must set the local member before initializing the Metadata group
-            // so that the local RaftNode object will be created if I am a Metadata group member
-            localMember.set(localMemberCandidate);
 
             // we must update invocation manager's member list before making the first raft invocation
             updateInvocationManagerMembers(getMetadataGroupId().seed(), 0, discoveredCPMembers);
@@ -1108,17 +1096,23 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         private boolean commitMetadataRaftGroupInit(CPMemberInfo localCPMemberCandidate, List<CPMemberInfo> discoveredCPMembers) {
             List<CPMemberInfo> metadataMembers = discoveredCPMembers.subList(0, config.getGroupSize());
+            RaftGroupId metadataGroupId = getMetadataGroupId();
             try {
-                RaftGroupId metadataGroupId = getMetadataGroupId();
-                if (metadataMembers.contains(getLocalCPMember())) {
-                    raftService.createRaftNode(metadataGroupId, metadataMembers);
+                if (metadataMembers.contains(localCPMemberCandidate)) {
+                    raftService.createRaftNode(metadataGroupId, metadataMembers, localCPMemberCandidate);
                 }
 
-                RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers,
-                        metadataGroupId.seed());
+                RaftOp op = new InitMetadataRaftGroupOp(localCPMemberCandidate, discoveredCPMembers, metadataGroupId.seed());
                 raftService.getInvocationManager().invoke(metadataGroupId, op).get();
+                // By default, we use the same member UUID for both AP and CP members.
+                // But it's not guaranteed to be same. For example;
+                // - During a split-brain merge, AP member UUID is renewed but CP member UUID remains the same.
+                // - While promoting a member to CP when Hot Restart is enabled, CP member doesn't use the AP member's UUID
+                // but instead generates a new UUID.
+                localCPMember.set(localCPMemberCandidate);
             } catch (Exception e) {
                 logger.severe("Could not initialize METADATA CP group with CP members: " + metadataMembers, e);
+                raftService.destroyRaftNode(metadataGroupId);
                 return false;
             }
             return true;
