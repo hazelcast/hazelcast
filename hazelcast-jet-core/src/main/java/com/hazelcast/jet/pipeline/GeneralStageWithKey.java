@@ -218,15 +218,23 @@ public interface GeneralStageWithKey<T, K> {
     );
 
     /**
-     * Attaches a {@link #mapUsingContextAsync} stage where the context is a
-     * Hazelcast {@code IMap} with the supplied name. Jet will use the
-     * specified {@linkplain #keyFn() key function} to retrieve the value from
-     * the map and pass it to the mapping function you supply, as the second
-     * argument.
+     * Attaches a mapping stage where for each item a lookup in the
+     * {@code IMap} with the supplied name using the grouping key is performed
+     * and the result of the lookup is merged with the item and emitted.
      * <p>
-     * This stage is similar to {@link GeneralStage#mapUsingIMapAsync(String,
-     * DistributedBiFunction) stageWithoutKey.mapUsingIMap()}, but here Jet
-     * knows the key and uses it to partition and distribute the input in order
+     * If the result of the mapping is {@code null}, it emits nothing.
+     * Therefore this stage can be used to implement filtering semantics as well.
+     * <p>
+     * The mapping logic is equivalent to:
+     *
+     * <pre>{@code
+     * V value = map.get(groupingKey);
+     * return mapFn.apply(item, value);
+     * }</pre>
+     *
+     * This stage is similar to {@link GeneralStage#mapUsingIMap(IMap,
+     * DistributedFunction, DistributedBiFunction) stageWithoutKey.mapUsingIMap()},
+     * but here Jet knows the key and uses it to partition and distribute the input in order
      * to achieve data locality. The value it fetches from the {@code IMap} is
      * stored on the cluster member where the processing takes place. However,
      * if the map doesn't use the default partitioning strategy, the data
@@ -239,7 +247,7 @@ public interface GeneralStageWithKey<T, K> {
      * @return the newly attached stage
      */
     @Nonnull
-    default <V, R> GeneralStage<R> mapUsingIMapAsync(
+    default <V, R> GeneralStage<R> mapUsingIMap(
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
@@ -248,16 +256,23 @@ public interface GeneralStageWithKey<T, K> {
     }
 
     /**
-     * Attaches a {@link #mapUsingContext} stage where the context is a
-     * Hazelcast {@code IMap}. <strong>It is not necessarily the map you
-     * provide here</strong>, but a map with the same name in the Jet cluster
-     * that executes the pipeline. Jet will use the specified {@linkplain
-     * #keyFn() key function} to retrieve a value from the map and pass it to
-     * the mapping function you supply, as the second argument.
+     * Attaches a mapping stage where for each item a lookup in the
+     * supplied {@code IMap} using the grouping key is performed
+     * and the result of the lookup is merged with the item and emitted.
      * <p>
-     * This stage is similar to {@link GeneralStage#mapUsingIMapAsync(IMap,
-     * DistributedBiFunction) stageWithoutKey.mapUsingIMap()}, but here Jet
-     * knows the key and uses it to partition and distribute the input in order
+     * If the result of the mapping is {@code null}, it emits nothing.
+     * Therefore this stage can be used to implement filtering semantics as well.
+     * <p>
+     * The mapping logic is equivalent to:
+     *
+     * <pre>{@code
+     * V value = map.get(groupingKey);
+     * return mapFn.apply(item, value);
+     * }</pre>
+     *
+     * This stage is similar to {@link GeneralStage#mapUsingIMap(IMap,
+     * DistributedFunction, DistributedBiFunction) stageWithoutKey.mapUsingIMap()},
+     * but here Jet knows the key and uses it to partition and distribute the input in order
      * to achieve data locality. The value it fetches from the {@code IMap} is
      * stored on the cluster member where the processing takes place. However,
      * if the map doesn't use the default partitioning strategy, the data
@@ -270,11 +285,11 @@ public interface GeneralStageWithKey<T, K> {
      * @return the newly attached stage
      */
     @Nonnull
-    default <V, R> GeneralStage<R> mapUsingIMapAsync(
+    default <V, R> GeneralStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
             @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingIMapAsync(iMap.getName(), mapFn);
+        return mapUsingIMap(iMap.getName(), mapFn);
     }
 
     /**

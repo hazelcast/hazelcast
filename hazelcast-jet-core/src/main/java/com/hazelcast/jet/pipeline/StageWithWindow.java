@@ -64,8 +64,8 @@ public interface StageWithWindow<T> {
      * stage.
      * <p>
      * <b>Note:</b> make sure the extracted key is not-null, it would fail the
-     * job. Also make sure that it implements {@code equals()} and {@code
-     * hashCode()}.
+     * job otherwise. Also make sure that it implements {@code equals()} and
+     * {@code hashCode()}.
      *
      * @param keyFn function that extracts the grouping key
      * @param <K> type of the key

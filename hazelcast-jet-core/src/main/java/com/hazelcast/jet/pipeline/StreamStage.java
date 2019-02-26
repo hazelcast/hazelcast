@@ -114,33 +114,37 @@ public interface StreamStage<T> extends GeneralStage<T> {
     @Nonnull @Override
     default <K, V, R> StreamStage<R> mapUsingReplicatedMap(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super ReplicatedMap<K, V>, ? super T, ? extends R> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> lookupKeyFn,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingReplicatedMap(mapName, mapFn);
+        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingReplicatedMap(mapName, lookupKeyFn, mapFn);
     }
 
     @Nonnull @Override
     default <K, V, R> StreamStage<R> mapUsingReplicatedMap(
             @Nonnull ReplicatedMap<K, V> replicatedMap,
-            @Nonnull DistributedBiFunction<? super ReplicatedMap<K, V>, ? super T, ? extends R> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> lookupKeyFn,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingReplicatedMap(replicatedMap, mapFn);
+        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingReplicatedMap(replicatedMap, lookupKeyFn, mapFn);
     }
 
     @Nonnull @Override
-    default <K, V, R> StreamStage<R> mapUsingIMapAsync(
+    default <K, V, R> StreamStage<R> mapUsingIMap(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> lookupKeyFn,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMapAsync(mapName, mapFn);
+        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMap(mapName, lookupKeyFn, mapFn);
     }
 
     @Nonnull @Override
-    default <K, V, R> StreamStage<R> mapUsingIMapAsync(
+    default <K, V, R> StreamStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
-            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> lookupKeyFn,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMapAsync(iMap, mapFn);
+        return (StreamStage<R>) GeneralStage.super.<K, V, R>mapUsingIMap(iMap, lookupKeyFn, mapFn);
     }
 
     @Nonnull @Override

@@ -16,11 +16,9 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -36,6 +34,7 @@ import com.hazelcast.jet.function.DistributedTriFunction;
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.Util.toCompletableFuture;
 import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
 
 /**
@@ -239,11 +238,24 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
-     * Attaches a {@link #mapUsingContext} stage where the context is a
-     * Hazelcast {@code ReplicatedMap} with the supplied name. The mapping
-     * function will receive it as the first argument.
+     * Attaches a mapping stage where for each item a lookup in the
+     * {@code ReplicatedMap} with the supplied name is performed and the
+     * result of the lookup is merged with the item and emitted.
+     * <p>
+     * If the result of the mapping is {@code null}, it emits nothing.
+     * Therefore this stage can be used to implement filtering semantics as well.
+     * <p>
+     * The mapping logic is equivalent to:
+     *
+     * <pre>{@code
+     * K key = lookupKeyFn.apply(item);
+     * V value = replicatedMap.get(key);
+     * return mapFn.apply(item, value);
+     * }</pre>
      *
      * @param mapName name of the {@code ReplicatedMap}
+     * @param lookupKeyFn a function which returns the key to look up in the
+     *          map. Must not return null
      * @param mapFn the mapping function
      * @param <K> type of the key in the {@code ReplicatedMap}
      * @param <V> type of the value in the {@code ReplicatedMap}
@@ -253,19 +265,33 @@ public interface GeneralStage<T> extends Stage {
     @Nonnull
     default <K, V, R> GeneralStage<R> mapUsingReplicatedMap(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super ReplicatedMap<K, V>, ? super T, ? extends R> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> lookupKeyFn,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingContext(ContextFactories.replicatedMapContext(mapName), mapFn);
+        return mapUsingContext(ContextFactories.<K, V>replicatedMapContext(mapName),
+                (map, t) -> mapFn.apply(t, map.get(lookupKeyFn.apply(t)))
+        );
     }
 
     /**
-     * Attaches a {@link #mapUsingContext} stage where the context is a
-     * Hazelcast {@code ReplicatedMap}. <strong>It is not necessarily the
-     * map you provide here</strong>, but a replicated map with the same name
-     * in the Jet cluster that executes the pipeline. The mapping function
-     * will receive the replicated map as the first argument.
+     * Attaches a mapping stage where for each item a lookup in the
+     * supplied {@code ReplicatedMap} is performed and the result of the
+     * lookup is merged with the item and emitted.
+     * <p>
+     * If the result of the mapping is {@code null}, it emits nothing.
+     * Therefore this stage can be used to implement filtering semantics as well.
+     * <p>
+     * The mapping logic is equivalent to:
      *
-     * @param replicatedMap the {@code ReplicatedMap} to use as context
+     * <pre>{@code
+     * K key = lookupKeyFn.apply(item);
+     * V value = replicatedMap.get(key);
+     * return mapFn.apply(item, value);
+     * }</pre>
+     *
+     * @param replicatedMap the {@code ReplicatedMap} to lookup from
+     * @param lookupKeyFn a function which returns the key to look up in the
+     *          map. Must not return null
      * @param mapFn the mapping function
      * @param <K> type of the key in the {@code ReplicatedMap}
      * @param <V> type of the value in the {@code ReplicatedMap}
@@ -275,24 +301,34 @@ public interface GeneralStage<T> extends Stage {
     @Nonnull
     default <K, V, R> GeneralStage<R> mapUsingReplicatedMap(
             @Nonnull ReplicatedMap<K, V> replicatedMap,
-            @Nonnull DistributedBiFunction<? super ReplicatedMap<K, V>, ? super T, ? extends R> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> lookupKeyFn,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingReplicatedMap(replicatedMap.getName(), mapFn);
+        return mapUsingReplicatedMap(replicatedMap.getName(), lookupKeyFn, mapFn);
     }
 
     /**
-     * Attaches a {@link #mapUsingContextAsync} stage where the context is a
-     * Hazelcast {@code IMap} with the supplied name. The mapping function will
-     * receive it as the first argument.
+     * Attaches a mapping stage where for each item a lookup in the
+     * {@code IMap} with the supplied name is performed and the
+     * result of the lookup is merged with the item and emitted.
      * <p>
-     * The operations on {@link IMap} typically return Hazelcast's custom
-     * {@link com.hazelcast.core.ICompletableFuture}, not the standard {@link
-     * java.util.concurrent.CompletableFuture}. Use {@link
-     * Util#toCompletableFuture(ICompletableFuture)} to convert them.
+     * If the result of the mapping is {@code null}, it emits nothing.
+     * Therefore this stage can be used to implement filtering semantics as well.
      * <p>
-     * See also {@link GeneralStageWithKey#mapUsingIMapAsync}.
+     * The mapping logic is equivalent to:
+     *
+     * <pre>{@code
+     * K key = lookupKeyFn.apply(item);
+     * V value = map.get(key);
+     * return mapFn.apply(item, value);
+     * }</pre>
+     *
+     * See also {@link GeneralStageWithKey#mapUsingIMap} for a partitioned version of
+     * this operation.
      *
      * @param mapName name of the {@code IMap}
+     * @param lookupKeyFn a function which returns the key to look up in the
+     *          map. Must not return null
      * @param mapFn the mapping function
      * @param <K> type of the key in the {@code IMap}
      * @param <V> type of the value in the {@code IMap}
@@ -300,26 +336,38 @@ public interface GeneralStage<T> extends Stage {
      * @return the newly attached stage
      */
     @Nonnull
-    default <K, V, R> GeneralStage<R> mapUsingIMapAsync(
+    default <K, V, R> GeneralStage<R> mapUsingIMap(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> lookupKeyFn,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingContextAsync(ContextFactories.iMapContext(mapName), mapFn);
+        return mapUsingContextAsync(ContextFactories.<K, V>iMapContext(mapName), (map, t) ->
+            toCompletableFuture(map.getAsync(lookupKeyFn.apply(t))).thenApply(e -> mapFn.apply(t, e))
+        );
     }
 
     /**
-     * Attaches a {@link #mapUsingContextAsync} stage where the context is a
-     * Hazelcast {@code IMap}. The mapping function will receive the map as the
-     * first argument.
+     * Attaches a mapping stage where for each item a lookup in the
+     * supplied {@code IMap} is performed and the result of the
+     * lookup is merged with the item and emitted.
      * <p>
-     * The operations on {@link IMap} typically return Hazelcast's custom
-     * {@link com.hazelcast.core.ICompletableFuture}, not the standard {@link
-     * java.util.concurrent.CompletableFuture}. Use {@link
-     * Util#toCompletableFuture(ICompletableFuture)} to convert them.
+     * If the result of the mapping is {@code null}, it emits nothing.
+     * Therefore this stage can be used to implement filtering semantics as well.
      * <p>
-     * See also {@link GeneralStageWithKey#mapUsingIMapAsync}.
+     * The mapping logic is equivalent to:
      *
-     * @param iMap the {@code IMap} to use as the context
+     * <pre>{@code
+     * K key = lookupKeyFn.apply(item);
+     * V value = map.get(key);
+     * return mapFn.apply(item, value);
+     * }</pre>
+     *
+     * See also {@link GeneralStageWithKey#mapUsingIMap} for a partitioned version of
+     * this operation.
+     *
+     * @param iMap the {@code IMap} to lookup from
+     * @param lookupKeyFn a function which returns the key to look up in the
+     *          map. Must not return null
      * @param mapFn the mapping function
      * @param <K> type of the key in the {@code IMap}
      * @param <V> type of the value in the {@code IMap}
@@ -327,11 +375,12 @@ public interface GeneralStage<T> extends Stage {
      * @return the newly attached stage
      */
     @Nonnull
-    default <K, V, R> GeneralStage<R> mapUsingIMapAsync(
+    default <K, V, R> GeneralStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
-            @Nonnull DistributedBiFunction<? super IMap<K, V>, ? super T, ? extends CompletableFuture<R>> mapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> lookupKeyFn,
+            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingIMapAsync(iMap.getName(), mapFn);
+        return mapUsingIMap(iMap.getName(), lookupKeyFn, mapFn);
     }
 
     /**
@@ -426,8 +475,11 @@ public interface GeneralStage<T> extends Stage {
     /**
      * Specifies the function that will extract a key from the items in the
      * associated pipeline stage. This enables the operations that need the
-     * key, such as grouped aggregation. The key must not be null and must
-     * properly implement {@code equals()} and {@code hashCode()}.
+     * key, such as grouped aggregation.
+     * <p>
+     * <b>Note:</b> make sure the extracted key is not-null, it would fail the
+     * job otherwise. Also make sure that it implements {@code equals()} and
+     * {@code hashCode()}.
      *
      * @param keyFn function that extracts the grouping key
      * @param <K> type of the key

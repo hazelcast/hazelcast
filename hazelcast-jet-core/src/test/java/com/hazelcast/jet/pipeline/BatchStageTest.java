@@ -43,7 +43,6 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.Util.toCompletableFuture;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
@@ -292,7 +291,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<Entry<Integer, String>> stage = batchStageFromList(input)
-                .mapUsingReplicatedMap(replicatedMap, (m, i) -> entry(i, m.get(i)));
+                .mapUsingReplicatedMap(replicatedMap, DistributedFunction.identity(), Util::entry);
 
         // Then
         stage.drainTo(sink);
@@ -316,8 +315,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         BatchStage<Entry<Integer, String>> stage = batchStageFromList(input)
-                .mapUsingIMapAsync(map,
-                        (m, i) -> toCompletableFuture(m.getAsync(i)).thenApply(v -> entry(i, v)));
+                .mapUsingIMap(map, DistributedFunction.identity(), Util::entry);
 
         // Then
         stage.drainTo(sink);
@@ -342,7 +340,7 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         BatchStage<Entry<Integer, String>> stage = batchStageFromList(input)
                 .groupingKey(i -> i)
-                .mapUsingIMapAsync(map, Util::entry);
+                .mapUsingIMap(map, Util::entry);
 
         // Then
         stage.drainTo(sink);

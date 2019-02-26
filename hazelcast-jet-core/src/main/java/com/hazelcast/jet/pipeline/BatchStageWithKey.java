@@ -64,19 +64,19 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     BatchStage<T> distinct();
 
     @Nonnull @Override
-    default <V, R> BatchStage<R> mapUsingIMapAsync(
+    default <V, R> BatchStage<R> mapUsingIMap(
             @Nonnull String mapName,
             @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMapAsync(mapName, mapFn);
+        return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(mapName, mapFn);
     }
 
     @Nonnull @Override
-    default <V, R> BatchStage<R> mapUsingIMapAsync(
+    default <V, R> BatchStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
             @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
     ) {
-        return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMapAsync(iMap, mapFn);
+        return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(iMap, mapFn);
     }
 
     @Nonnull @Override
