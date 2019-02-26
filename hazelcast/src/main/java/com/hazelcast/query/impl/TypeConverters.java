@@ -22,11 +22,14 @@ import com.hazelcast.nio.serialization.Portable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.Date;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 public final class TypeConverters {
+
+    // FIXME: BigDecimal/Integer conversions
 
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
     public static final TypeConverter BIG_DECIMAL_CONVERTER = new BigDecimalConverter();
@@ -131,34 +134,75 @@ public final class TypeConverters {
     static class DoubleConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof Double) {
+            Class clazz = value.getClass();
+
+            if (clazz == Double.class) {
                 return value;
             }
+
+            if (value instanceof Number) {
+                Number number = (Number) value;
+
+                if (clazz == Long.class) {
+                    double doubleValue = number.doubleValue();
+                    if (number.longValue() == (long) doubleValue) {
+                        return doubleValue;
+                    }
+                } else if (clazz == Integer.class || clazz == Float.class || clazz == Short.class || clazz == Byte.class) {
+                    return number.doubleValue();
+                }
+
+                return value;
+            }
+
             if (value instanceof String) {
                 return Double.parseDouble((String) value);
             }
-            if (value instanceof Number) {
-                Number number = (Number) value;
-                return number.doubleValue();
-            }
-            throw new IllegalArgumentException("Cannot convert [" + value + "] to double");
+
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
     }
 
     static class LongConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof Long) {
+            Class clazz = value.getClass();
+
+            if (clazz == Long.class) {
                 return value;
             }
-            if (value instanceof String) {
-                return Long.parseLong((String) value);
-            }
+
             if (value instanceof Number) {
                 Number number = (Number) value;
-                return number.longValue();
+
+                if (clazz == Double.class) {
+                    long longValue = number.longValue();
+                    if (number.doubleValue() == (double) longValue) {
+                        return longValue;
+                    }
+                } else if (clazz == Float.class) {
+                    long longValue = number.longValue();
+                    if (number.floatValue() == (float) longValue) {
+                        return longValue;
+                    }
+                } else if (clazz == Integer.class || clazz == Short.class || clazz == Byte.class) {
+                    return number.longValue();
+                }
+
+                return value;
             }
-            throw new IllegalArgumentException("Cannot convert [" + value + "] to long");
+
+            if (value instanceof String) {
+                String string = (String) value;
+
+                try {
+                    return Long.parseLong(string);
+                } catch (NumberFormatException e) {
+                    return Double.parseDouble(string);
+                }
+            }
+
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
     }
 
@@ -218,17 +262,52 @@ public final class TypeConverters {
     static class IntegerConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof Integer) {
+            Class clazz = value.getClass();
+
+            if (clazz == Integer.class) {
                 return value;
             }
-            if (value instanceof String) {
-                return Integer.parseInt((String) value);
-            }
+
             if (value instanceof Number) {
                 Number number = (Number) value;
-                return number.intValue();
+
+                if (clazz == Long.class) {
+                    int intValue = number.intValue();
+                    if (number.longValue() == (long) intValue) {
+                        return intValue;
+                    }
+                } else if (clazz == Double.class) {
+                    int intValue = number.intValue();
+                    if (number.doubleValue() == (double) intValue) {
+                        return intValue;
+                    }
+                } else if (clazz == Float.class) {
+                    int intValue = number.intValue();
+                    if (number.floatValue() == (float) intValue) {
+                        return intValue;
+                    }
+                } else if (clazz == Short.class || clazz == Byte.class) {
+                    return number.intValue();
+                }
+
+                return value;
             }
-            throw new IllegalArgumentException("Cannot convert [" + value + "] to integer");
+
+            if (value instanceof String) {
+                String string = (String) value;
+
+                try {
+                    return Integer.parseInt(string);
+                } catch (NumberFormatException e1) {
+                    try {
+                        return Long.parseLong(string);
+                    } catch (NumberFormatException e2) {
+                        return Double.parseDouble(string);
+                    }
+                }
+            }
+
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
     }
 
@@ -245,34 +324,94 @@ public final class TypeConverters {
     static class FloatConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof Float) {
+            Class clazz = value.getClass();
+
+            if (clazz == Float.class) {
                 return value;
             }
-            if (value instanceof String) {
-                return Float.parseFloat((String) value);
-            }
+
             if (value instanceof Number) {
                 Number number = (Number) value;
-                return number.floatValue();
+
+                if (clazz == Long.class) {
+                    float floatValue = number.floatValue();
+                    if (number.longValue() == (long) floatValue) {
+                        return floatValue;
+                    }
+                } else if (clazz == Integer.class) {
+                    float floatValue = number.floatValue();
+                    if (number.intValue() == (int) floatValue) {
+                        return floatValue;
+                    }
+                } else if (clazz == Short.class || clazz == Byte.class) {
+                    return number.floatValue();
+                }
+
+                return value;
             }
-            throw new IllegalArgumentException("Cannot convert [" + value + "] to float");
+
+            if (value instanceof String) {
+                return Double.parseDouble((String) value);
+            }
+
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
     }
 
     static class ShortConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof Short) {
+            Class clazz = value.getClass();
+
+            if (clazz == Short.class) {
                 return value;
             }
-            if (value instanceof String) {
-                return Short.parseShort((String) value);
-            }
+
             if (value instanceof Number) {
                 Number number = (Number) value;
-                return number.shortValue();
+
+                if (clazz == Long.class) {
+                    short shortValue = number.shortValue();
+                    if (number.longValue() == (long) shortValue) {
+                        return shortValue;
+                    }
+                } else if (clazz == Double.class) {
+                    short shortValue = number.shortValue();
+                    if (number.doubleValue() == (double) shortValue) {
+                        return shortValue;
+                    }
+                } else if (clazz == Integer.class) {
+                    short shortValue = number.shortValue();
+                    if (number.intValue() == (int) shortValue) {
+                        return shortValue;
+                    }
+                } else if (clazz == Float.class) {
+                    short shortValue = number.shortValue();
+                    if (number.floatValue() == (float) shortValue) {
+                        return shortValue;
+                    }
+                } else if (clazz == Byte.class) {
+                    return number.shortValue();
+                }
+
+                return value;
             }
-            throw new IllegalArgumentException("Cannot convert [" + value + "] to short");
+
+            if (value instanceof String) {
+                String string = (String) value;
+
+                try {
+                    return Short.parseShort(string);
+                } catch (NumberFormatException e1) {
+                    try {
+                        return Long.parseLong(string);
+                    } catch (NumberFormatException e2) {
+                        return Double.parseDouble(string);
+                    }
+                }
+            }
+
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
     }
 
@@ -296,17 +435,60 @@ public final class TypeConverters {
     static class ByteConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof Byte) {
+            Class clazz = value.getClass();
+
+            if (clazz == Byte.class) {
                 return value;
             }
-            if (value instanceof String) {
-                return Byte.parseByte((String) value);
-            }
+
             if (value instanceof Number) {
                 Number number = (Number) value;
-                return number.byteValue();
+
+                if (clazz == Long.class) {
+                    byte byteValue = number.byteValue();
+                    if (number.longValue() == (long) byteValue) {
+                        return byteValue;
+                    }
+                } else if (clazz == Double.class) {
+                    byte byteValue = number.byteValue();
+                    if (number.doubleValue() == (double) byteValue) {
+                        return byteValue;
+                    }
+                } else if (clazz == Integer.class) {
+                    byte byteValue = number.byteValue();
+                    if (number.intValue() == (int) byteValue) {
+                        return byteValue;
+                    }
+                } else if (clazz == Float.class) {
+                    byte byteValue = number.byteValue();
+                    if (number.floatValue() == (float) byteValue) {
+                        return byteValue;
+                    }
+                } else if (clazz == Short.class) {
+                    byte byteValue = number.byteValue();
+                    if (number.shortValue() == (short) byteValue) {
+                        return byteValue;
+                    }
+                }
+
+                return value;
             }
-            throw new IllegalArgumentException("Cannot convert [" + value + "] to byte");
+
+            if (value instanceof String) {
+                String string = (String) value;
+
+                try {
+                    return Byte.parseByte(string);
+                } catch (NumberFormatException e1) {
+                    try {
+                        return Long.parseLong(string);
+                    } catch (NumberFormatException e2) {
+                        return Double.parseDouble(string);
+                    }
+                }
+            }
+
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
     }
 
@@ -324,8 +506,8 @@ public final class TypeConverters {
                 return (char) number.intValue();
             }
             if (value instanceof String) {
-                final String string = (String) value;
-                if (!string.isEmpty()) {
+                String string = (String) value;
+                if (string.length() == 1) {
                     return string.charAt(0);
                 }
             }
