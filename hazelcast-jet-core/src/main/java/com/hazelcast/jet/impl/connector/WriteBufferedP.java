@@ -22,27 +22,27 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
-    private final DistributedFunction<? super Context, B> createFn;
-    private final DistributedBiConsumer<? super B, ? super T> onReceiveFn;
-    private final DistributedConsumer<? super B> flushFn;
-    private final DistributedConsumer<? super B> destroyFn;
+    private final FunctionEx<? super Context, B> createFn;
+    private final BiConsumerEx<? super B, ? super T> onReceiveFn;
+    private final ConsumerEx<? super B> flushFn;
+    private final ConsumerEx<? super B> destroyFn;
 
     private B buffer;
 
     WriteBufferedP(
-            @Nonnull DistributedFunction<? super Context, B> createFn,
-            @Nonnull DistributedBiConsumer<? super B, ? super T> onReceiveFn,
-            @Nonnull DistributedConsumer<? super B> flushFn,
-            @Nonnull DistributedConsumer<? super B> destroyFn
+            @Nonnull FunctionEx<? super Context, B> createFn,
+            @Nonnull BiConsumerEx<? super B, ? super T> onReceiveFn,
+            @Nonnull ConsumerEx<? super B> flushFn,
+            @Nonnull ConsumerEx<? super B> destroyFn
     ) {
         this.createFn = createFn;
         this.onReceiveFn = onReceiveFn;
@@ -91,11 +91,11 @@ public final class WriteBufferedP<B, T> implements Processor {
      * This is private API. Call {@link SinkProcessors#writeBufferedP} instead.
      */
     @Nonnull
-    public static <B, T> DistributedSupplier<Processor> supplier(
-            @Nonnull DistributedFunction<? super Context, ? extends B> createFn,
-            @Nonnull DistributedBiConsumer<? super B, ? super T> onReceiveFn,
-            @Nonnull DistributedConsumer<? super B> flushFn,
-            @Nonnull DistributedConsumer<? super B> destroyFn
+    public static <B, T> SupplierEx<Processor> supplier(
+            @Nonnull FunctionEx<? super Context, ? extends B> createFn,
+            @Nonnull BiConsumerEx<? super B, ? super T> onReceiveFn,
+            @Nonnull ConsumerEx<? super B> flushFn,
+            @Nonnull ConsumerEx<? super B> destroyFn
     ) {
         return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn);
     }

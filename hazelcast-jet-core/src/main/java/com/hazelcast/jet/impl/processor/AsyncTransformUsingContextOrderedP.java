@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
@@ -52,7 +52,7 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithContext.supp
 public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractProcessor {
 
     private final ContextFactory<C> contextFactory;
-    private final DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
+    private final BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
 
     private C contextObject;
     // on the queue there is either:
@@ -73,7 +73,7 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
     private AsyncTransformUsingContextOrderedP(
             @Nonnull ContextFactory<C> contextFactory,
             @Nullable C contextObject,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
         this.contextFactory = contextFactory;
         this.callAsyncFn = callAsyncFn;
@@ -208,7 +208,7 @@ public final class AsyncTransformUsingContextOrderedP<C, T, R> extends AbstractP
      */
     public static <C, T, R> ProcessorSupplier supplier(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
         return supplierWithContext(contextFactory,
                 (ctxF, ctxO) -> new AsyncTransformUsingContextOrderedP<>(ctxF, ctxO, callAsyncFn)

@@ -25,8 +25,8 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiFunctionEx;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,11 +57,11 @@ public class BatchAggregateTest extends PipelineTestSupport {
     private static final int FACTOR_1 = 1_000;
     private static final int FACTOR_2 = 1_000_000;
 
-    private static final DistributedFunction<Entry<Integer, Long>, String> FORMAT_FN =
+    private static final FunctionEx<Entry<Integer, Long>, String> FORMAT_FN =
             e -> String.format("(%04d: %04d)", e.getKey(), e.getValue());
-    private static final DistributedBiFunction<Integer, Tuple2<Long, Long>, String> FORMAT_FN_2 =
+    private static final BiFunctionEx<Integer, Tuple2<Long, Long>, String> FORMAT_FN_2 =
             (key, t2) -> String.format("(%04d: %04d, %04d)", key, t2.f0(), t2.f1());
-    private static final DistributedBiFunction<Integer, Tuple3<Long, Long, Long>, String> FORMAT_FN_3 =
+    private static final BiFunctionEx<Integer, Tuple3<Long, Long, Long>, String> FORMAT_FN_3 =
             (key, t3) -> String.format("(%04d: %04d, %04d, %04d)", key, t3.f0(), t3.f1(), t3.f2());
 
     private List<Integer> input;
@@ -124,7 +124,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void aggregate2_withSeparateAggrOps_withOutputFn() {
         // Given
-        DistributedBiFunction<Long, Long, Long> outputFn = (a, b) -> 10_000 * a + b;
+        BiFunctionEx<Long, Long, Long> outputFn = (a, b) -> 10_000 * a + b;
 
         // When
         BatchStage<Long> aggregated = sourceStageFromInput().aggregate2(SUMMING,
@@ -144,7 +144,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void aggregate2_withAggrOp2_with_finishFn() {
         // Given
-        DistributedBiFunction<Long, Long, Long> outputFn = (a, b) -> 10_000 * a + b;
+        BiFunctionEx<Long, Long, Long> outputFn = (a, b) -> 10_000 * a + b;
 
         // When
         BatchStage<Long> aggregated = sourceStageFromInput().aggregate2(
@@ -233,8 +233,8 @@ public class BatchAggregateTest extends PipelineTestSupport {
     }
 
     private class AggregateBuilderFixture {
-        DistributedFunction<Integer, Integer> mapFn1 = i -> FACTOR_1 * i;
-        DistributedFunction<Integer, Integer> mapFn2 = i -> FACTOR_2 * i;
+        FunctionEx<Integer, Integer> mapFn1 = i -> FACTOR_1 * i;
+        FunctionEx<Integer, Integer> mapFn2 = i -> FACTOR_2 * i;
 
         BatchStage<Integer> stage1 = sourceStageFromInput().map(mapFn1);
         BatchStage<Integer> stage2 = sourceStageFromInput().map(mapFn2);
@@ -347,7 +347,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void groupAggregate() {
         // Given
-        DistributedFunction<Integer, Integer> keyFn = i -> i % 5;
+        FunctionEx<Integer, Integer> keyFn = i -> i % 5;
 
         // When
         BatchStage<Entry<Integer, Long>> aggregated = sourceStageFromInput()
@@ -366,7 +366,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void groupAggregate_withOutputFn() {
         // Given
-        DistributedFunction<Integer, Integer> keyFn = i -> i % 5;
+        FunctionEx<Integer, Integer> keyFn = i -> i % 5;
 
         // When
         BatchStage<String> aggregated = sourceStageFromInput()
@@ -383,9 +383,9 @@ public class BatchAggregateTest extends PipelineTestSupport {
     }
 
     private class GroupAggregateFixture {
-        final DistributedFunction<Integer, Integer> keyFn;
-        final DistributedFunction<Integer, Integer> mapFn1;
-        final DistributedFunction<Integer, Integer> mapFn2;
+        final FunctionEx<Integer, Integer> keyFn;
+        final FunctionEx<Integer, Integer> mapFn1;
+        final FunctionEx<Integer, Integer> mapFn2;
         final Collector<Integer, ?, Long> collectOp;
         final BatchStage<Integer> srcStage0;
 

@@ -19,26 +19,47 @@ package com.hazelcast.jet.function;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
 import java.io.Serializable;
-import java.util.function.ObjDoubleConsumer;
+import java.util.function.Consumer;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * {@code Serializable} variant of {@link ObjDoubleConsumer
- * java.util.function.ObjDoubleConsumer} which declares checked exception.
+ * {@code Serializable} variant of {@link Consumer java.util.function.Consumer}
+ * which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedObjDoubleConsumer<T> extends ObjDoubleConsumer<T>, Serializable {
+public interface ConsumerEx<T> extends Consumer<T>, Serializable {
 
     /**
-     * Exception-declaring version of {@link ObjDoubleConsumer#accept}.
+     * Exception-declaring version of {@link Consumer#accept}
      */
-    void acceptEx(T t, double value) throws Exception;
+    void acceptEx(T t) throws Exception;
 
     @Override
-    default void accept(T t, double value) {
+    default void accept(T t) {
         try {
-            acceptEx(t, value);
+            acceptEx(t);
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
+    }
+
+    /**
+     * {@code Serializable} variant of {@link Consumer#andThen(Consumer)
+     * java.util.function.Consumer#andThen(Consumer)}.
+     */
+    default ConsumerEx<T> andThen(ConsumerEx<? super T> after) {
+        checkNotNull(after, "after");
+        return t -> {
+            accept(t);
+            after.accept(t);
+        };
+    }
+
+    /**
+     * Returns a consumer that does nothing.
+     */
+    static <T> ConsumerEx<T> noop() {
+        return x -> { };
     }
 }

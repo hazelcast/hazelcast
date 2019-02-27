@@ -21,8 +21,8 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
@@ -47,8 +47,8 @@ public final class WriteJdbcP<T> implements Processor {
             new BackoffIdleStrategy(0, 0, SECONDS.toNanos(1), SECONDS.toNanos(10));
     private static final int BATCH_LIMIT = 50;
 
-    private final DistributedSupplier<? extends Connection> connectionSupplier;
-    private final DistributedBiConsumer<? super PreparedStatement, ? super T> bindFn;
+    private final SupplierEx<? extends Connection> connectionSupplier;
+    private final BiConsumerEx<? super PreparedStatement, ? super T> bindFn;
     private final String updateQuery;
 
     private ILogger logger;
@@ -61,8 +61,8 @@ public final class WriteJdbcP<T> implements Processor {
 
     private WriteJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
-            @Nonnull DistributedBiConsumer<? super PreparedStatement, ? super T> bindFn
+            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn
     ) {
         this.updateQuery = updateQuery;
         this.connectionSupplier = connectionSupplier;
@@ -74,8 +74,8 @@ public final class WriteJdbcP<T> implements Processor {
      */
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String updateQuery,
-            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
-            @Nonnull DistributedBiConsumer<? super PreparedStatement, ? super T> bindFn
+            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn
 
     ) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(() ->

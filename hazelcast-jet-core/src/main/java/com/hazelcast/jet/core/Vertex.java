@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -81,7 +81,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * @param name the unique name of the vertex. This name identifies the vertex in the snapshot
      * @param processorSupplier the simple, parameterless supplier of {@code Processor} instances
      */
-    public Vertex(@Nonnull String name, @Nonnull DistributedSupplier<? extends Processor> processorSupplier) {
+    public Vertex(@Nonnull String name, @Nonnull SupplierEx<? extends Processor> processorSupplier) {
         this(name, ProcessorMetaSupplier.of(processorSupplier));
     }
 

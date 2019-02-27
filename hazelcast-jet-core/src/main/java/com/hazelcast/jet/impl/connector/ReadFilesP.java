@@ -21,8 +21,8 @@ import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiFunctionEx;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -51,8 +51,8 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
     private final Path directory;
     private final String glob;
     private final boolean sharedFileSystem;
-    private final DistributedFunction<? super Path, ? extends Stream<R>> readFileFn;
-    private final DistributedBiFunction<? super String, ? super R, ? extends T> mapOutputFn;
+    private final FunctionEx<? super Path, ? extends Stream<R>> readFileFn;
+    private final BiFunctionEx<? super String, ? super R, ? extends T> mapOutputFn;
 
     private int processorIndex;
     private int parallelism;
@@ -63,8 +63,8 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
     private ReadFilesP(
             @Nonnull String directory,
             @Nonnull String glob, boolean sharedFileSystem,
-            @Nonnull DistributedFunction<? super Path, ? extends Stream<R>> readFileFn,
-            @Nonnull DistributedBiFunction<? super String, ? super R, ? extends T> mapOutputFn
+            @Nonnull FunctionEx<? super Path, ? extends Stream<R>> readFileFn,
+            @Nonnull BiFunctionEx<? super String, ? super R, ? extends T> mapOutputFn
     ) {
         this.directory = Paths.get(directory);
         this.glob = glob;
@@ -142,8 +142,8 @@ public final class ReadFilesP<R, T> extends AbstractProcessor {
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedFunction<? super Path, ? extends Stream<W>> readFileFn,
-            @Nonnull DistributedBiFunction<? super String, ? super W, ? extends T> mapOutputFn
+            @Nonnull FunctionEx<? super Path, ? extends Stream<W>> readFileFn,
+            @Nonnull BiFunctionEx<? super String, ? super W, ? extends T> mapOutputFn
     ) {
         return ProcessorMetaSupplier.of(() -> new ReadFilesP<>(
                 directory, glob, sharedFileSystem, readFileFn, mapOutputFn),

@@ -28,8 +28,8 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.kafka.KafkaSources;
@@ -308,11 +308,11 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
     private <T> StreamKafkaP<Integer, String, T> createProcessor(
             int numTopics,
-            @Nonnull DistributedFunction<ConsumerRecord<Integer, String>, T> projectionFn,
+            @Nonnull FunctionEx<ConsumerRecord<Integer, String>, T> projectionFn,
             long idleTimeoutMillis
     ) {
         assert numTopics == 1 || numTopics == 2;
-        DistributedToLongFunction<T> timestampFn = e ->
+        ToLongFunctionEx<T> timestampFn = e ->
                 e instanceof Entry ?
                         (int) ((Entry) e).getKey()
                         :

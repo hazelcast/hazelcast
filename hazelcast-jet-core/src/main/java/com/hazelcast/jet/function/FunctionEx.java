@@ -28,7 +28,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedFunction<T, R> extends Function<T, R>, Serializable {
+public interface FunctionEx<T, R> extends Function<T, R>, Serializable {
 
     /**
      * Exception-declaring version of {@link Function#apply}.
@@ -48,7 +48,7 @@ public interface DistributedFunction<T, R> extends Function<T, R>, Serializable 
      * {@code Serializable} variant of {@link Function#identity()
      * java.util.function.Function#identity()}.
      */
-    static <T> DistributedFunction<T, T> identity() {
+    static <T> FunctionEx<T, T> identity() {
         return t -> t;
     }
 
@@ -56,7 +56,7 @@ public interface DistributedFunction<T, R> extends Function<T, R>, Serializable 
      * {@code Serializable} variant of {@link Function#compose(Function)
      * java.util.function.Function#compose(Function)}.
      */
-    default <V> DistributedFunction<V, R> compose(DistributedFunction<? super V, ? extends T> before) {
+    default <V> FunctionEx<V, R> compose(FunctionEx<? super V, ? extends T> before) {
         checkNotNull(before, "before");
         return v -> apply(before.apply(v));
     }
@@ -65,7 +65,7 @@ public interface DistributedFunction<T, R> extends Function<T, R>, Serializable 
      * {@code Serializable} variant of {@link Function#andThen(Function)
      * java.util.function.Function#andThen(Function)}.
      */
-    default <V> DistributedFunction<T, V> andThen(DistributedFunction<? super R, ? extends V> after) {
+    default <V> FunctionEx<T, V> andThen(FunctionEx<? super R, ? extends V> after) {
         checkNotNull(after, "after");
         return t -> after.apply(apply(t));
     }

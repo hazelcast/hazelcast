@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.logging.ILogger;
@@ -42,7 +42,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  */
 public final class PeekWrappedP<T> extends ProcessorWrapper {
 
-    private final DistributedFunction<? super T, ? extends CharSequence> toStringFn;
+    private final FunctionEx<? super T, ? extends CharSequence> toStringFn;
     private final Predicate<? super T> shouldLogFn;
     private final LoggingInbox loggingInbox;
     private ILogger logger;
@@ -55,7 +55,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
 
     public PeekWrappedP(
             @Nonnull Processor wrapped,
-            @Nonnull DistributedFunction<? super T, ? extends CharSequence> toStringFn,
+            @Nonnull FunctionEx<? super T, ? extends CharSequence> toStringFn,
             @Nonnull Predicate<? super T> shouldLogFn,
             boolean peekInput, boolean peekOutput, boolean peekSnapshot
     ) {

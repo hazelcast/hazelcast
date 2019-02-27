@@ -27,7 +27,7 @@ import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.function.DistributedFunctions;
+import com.hazelcast.jet.function.Functions;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
@@ -70,9 +70,9 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.toSet;
 import static com.hazelcast.jet.aggregate.AggregateOperations.topN;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
-import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static com.hazelcast.jet.function.ComparatorEx.naturalOrder;
+import static com.hazelcast.jet.function.Functions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryValue;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -368,7 +368,7 @@ public class AggregateOperationsTest {
         combined.put(1, 3);
 
         validateOpWithoutDeduct(
-                toMap(DistributedFunctions.<Integer, Integer>entryKey(), entryValue(), Integer::sum),
+                toMap(Functions.<Integer, Integer>entryKey(), entryValue(), Integer::sum),
                 identity(), entry(1, 1), entry(1, 2),
                 acced, combined, combined);
     }

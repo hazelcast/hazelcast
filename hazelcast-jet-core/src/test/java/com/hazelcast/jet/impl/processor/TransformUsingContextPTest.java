@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
-import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
@@ -102,7 +102,7 @@ public class TransformUsingContextPTest {
         assertEquals(cooperative, supplier.get(1).iterator().next().isCooperative());
     }
 
-    private static <T> DistributedTriFunction<ResettableSingletonTraverser<T>, T, Object, Traverser<T>> mapToContext() {
+    private static <T> TriFunction<ResettableSingletonTraverser<T>, T, Object, Traverser<T>> mapToContext() {
         return (traverser, context, item) -> {
             traverser.accept(context);
             return traverser;

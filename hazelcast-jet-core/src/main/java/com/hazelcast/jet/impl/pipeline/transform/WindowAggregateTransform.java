@@ -20,14 +20,14 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.WindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 import com.hazelcast.jet.pipeline.SessionWindowDefinition;
 import com.hazelcast.jet.pipeline.SlidingWindowDefinition;
-import com.hazelcast.jet.impl.util.ConstantFunction;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
@@ -125,8 +125,8 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     private void addSlidingWindowSingleStage(Planner p, SlidingWindowDefinition wDef) {
         PlannerVertex pv = p.addVertex(this, name(), 1,
                 aggregateToSlidingWindowP(
-                        nCopies(aggrOp.arity(), new ConstantFunction<>(name().hashCode())),
-                        nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
+                        nCopies(aggrOp.arity(), new ConstantFunctionEx<>(name().hashCode())),
+                        nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
                         TimestampKind.EVENT,
                         slidingWinPolicy(wDef.windowSize(), wDef.slideBy()),
                         wDef.earlyResultsPeriod(),
@@ -156,8 +156,8 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
     private void addSlidingWindowTwoStage(Planner p, SlidingWindowDefinition wDef) {
         SlidingWindowPolicy winPolicy = slidingWinPolicy(wDef.windowSize(), wDef.slideBy());
         Vertex v1 = p.dag.newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(
-                nCopies(aggrOp.arity(), new ConstantFunction<>(name().hashCode())),
-                nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
+                nCopies(aggrOp.arity(), new ConstantFunctionEx<>(name().hashCode())),
+                nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
                 TimestampKind.EVENT,
                 winPolicy,
                 aggrOp
@@ -186,8 +186,8 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
                 aggregateToSessionWindowP(
                         wDef.sessionTimeout(),
                         wDef.earlyResultsPeriod(),
-                        nCopies(aggrOp.arity(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
-                        nCopies(aggrOp.arity(), new ConstantFunction<>(name().hashCode())),
+                        nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
+                        nCopies(aggrOp.arity(), new ConstantFunctionEx<>(name().hashCode())),
                         aggrOp,
                         mapToOutputFn.toKeyedWindowResultFn()));
         p.addEdges(this, pv.v, edge -> edge.distributed().allToOne(name().hashCode()));

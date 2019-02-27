@@ -29,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * java.util.function.BinaryOperator} which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedBinaryOperator<T> extends BinaryOperator<T>, Serializable {
+public interface BinaryOperatorEx<T> extends BinaryOperator<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link BinaryOperator#apply}.
@@ -49,7 +49,7 @@ public interface DistributedBinaryOperator<T> extends BinaryOperator<T>, Seriali
      * {@code Serializable} variant of {@link
      * BinaryOperator#minBy(Comparator) java.util.function.BinaryOperator#minBy(Comparator)}.
      */
-    static <T> DistributedBinaryOperator<T> minBy(Comparator<? super T> comparator) {
+    static <T> BinaryOperatorEx<T> minBy(Comparator<? super T> comparator) {
         checkNotNull(comparator, "comparator");
         return (l, r) -> comparator.compare(l, r) <= 0 ? l : r;
     }
@@ -58,7 +58,7 @@ public interface DistributedBinaryOperator<T> extends BinaryOperator<T>, Seriali
      * {@code Serializable} variant of {@link
      * BinaryOperator#maxBy(Comparator) java.util.function.BinaryOperator#maxBy(Comparator)}.
      */
-    static <T> DistributedBinaryOperator<T> maxBy(Comparator<? super T> comparator) {
+    static <T> BinaryOperatorEx<T> maxBy(Comparator<? super T> comparator) {
         checkNotNull(comparator, "comparator");
         return (l, r) -> comparator.compare(l, r) >= 0 ? l : r;
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 
 import javax.annotation.Nonnull;
 
@@ -36,7 +36,7 @@ public interface StreamSourceStage<T> {
     /**
      * Declares that the source will not assign any timestamp to the events it
      * emits. You can add them later using {@link
-     * GeneralStage#addTimestamps(DistributedToLongFunction, long) addTimestamps},
+     * GeneralStage#addTimestamps(ToLongFunctionEx, long) addTimestamps},
      * but the behavior is different &mdash; see the note there.
      */
     StreamStage<T> withoutTimestamps();
@@ -55,7 +55,7 @@ public interface StreamSourceStage<T> {
      * natively provide such timestamps (the {@link #withNativeTimestamps(long)}
      * option). If that is not appropriate, the events should carry their own
      * timestamp as a part of their data and you can use {@link
-     * #withTimestamps(DistributedToLongFunction, long)
+     * #withTimestamps(ToLongFunctionEx, long)
      * withTimestamps(timestampFn, allowedLag} to extract it.
      * <p>
      * <strong>Note 2:</strong> if the system time goes back (such as when
@@ -88,5 +88,5 @@ public interface StreamSourceStage<T> {
      *                   timestamp value observed so far. The time unit is
      *                   the same as the unit used by {@code timestampFn}
      */
-    StreamStage<T> withTimestamps(@Nonnull DistributedToLongFunction<? super T> timestampFn, long allowedLag);
+    StreamStage<T> withTimestamps(@Nonnull ToLongFunctionEx<? super T> timestampFn, long allowedLag);
 }

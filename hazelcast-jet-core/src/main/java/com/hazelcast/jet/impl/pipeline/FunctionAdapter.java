@@ -24,12 +24,12 @@ import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBiPredicate;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BiPredicateEx;
+import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.function.WindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
@@ -48,65 +48,65 @@ import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 public class FunctionAdapter {
 
     @Nonnull
-    <T, K> DistributedFunction<?, ? extends K> adaptKeyFn(@Nonnull DistributedFunction<? super T, ? extends K> keyFn) {
+    <T, K> FunctionEx<?, ? extends K> adaptKeyFn(@Nonnull FunctionEx<? super T, ? extends K> keyFn) {
         return keyFn;
     }
 
     @Nonnull
-    <T, R> DistributedFunction<?, ?> adaptMapFn(@Nonnull DistributedFunction<? super T, ? extends R> mapFn) {
+    <T, R> FunctionEx<?, ?> adaptMapFn(@Nonnull FunctionEx<? super T, ? extends R> mapFn) {
         return mapFn;
     }
 
     @Nonnull
-    <T> DistributedPredicate<?> adaptFilterFn(@Nonnull DistributedPredicate<? super T> filterFn) {
+    <T> PredicateEx<?> adaptFilterFn(@Nonnull PredicateEx<? super T> filterFn) {
         return filterFn;
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <T, R> DistributedFunction<?, ? extends Traverser<?>> adaptFlatMapFn(
-            @Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> flatMapFn
+    <T, R> FunctionEx<?, ? extends Traverser<?>> adaptFlatMapFn(
+            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return flatMapFn;
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, T, R> DistributedBiFunction<? super C, ?, ?> adaptMapUsingContextFn(
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+    <C, T, R> BiFunctionEx<? super C, ?, ?> adaptMapUsingContextFn(
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
         return mapFn;
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, T> DistributedBiPredicate<? super C, ?> adaptFilterUsingContextFn(
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    <C, T> BiPredicateEx<? super C, ?> adaptFilterUsingContextFn(
+            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     ) {
         return filterFn;
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, T, R> DistributedBiFunction<? super C, ?, ? extends Traverser<?>> adaptFlatMapUsingContextFn(
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    <C, T, R> BiFunctionEx<? super C, ?, ? extends Traverser<?>> adaptFlatMapUsingContextFn(
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return flatMapFn;
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, T, R> DistributedBiFunction<? super C, ?, ? extends CompletableFuture<Traverser<?>>>
+    <C, T, R> BiFunctionEx<? super C, ?, ? extends CompletableFuture<Traverser<?>>>
     adaptFlatMapUsingContextAsyncFn(
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
-        return (DistributedBiFunction) flatMapAsyncFn;
+        return (BiFunctionEx) flatMapAsyncFn;
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <T, R extends CharSequence> DistributedFunction<?, ? extends R> adaptToStringFn(
-            @Nonnull DistributedFunction<? super T, ? extends R> toStringFn
+    <T, R extends CharSequence> FunctionEx<?, ? extends R> adaptToStringFn(
+            @Nonnull FunctionEx<? super T, ? extends R> toStringFn
     ) {
         return toStringFn;
     }
@@ -119,16 +119,16 @@ public class FunctionAdapter {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    public <T, T1, R> DistributedBiFunction<?, ? super T1, ?> adaptHashJoinOutputFn(
-            @Nonnull DistributedBiFunction<? super T, ? super T1, ? extends R> mapToOutputFn
+    public <T, T1, R> BiFunctionEx<?, ? super T1, ?> adaptHashJoinOutputFn(
+            @Nonnull BiFunctionEx<? super T, ? super T1, ? extends R> mapToOutputFn
     ) {
         return mapToOutputFn;
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <T, T1, T2, R> DistributedTriFunction<?, ? super T1, ? super T2, ?> adaptHashJoinOutputFn(
-            @Nonnull DistributedTriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
+    <T, T1, T2, R> TriFunction<?, ? super T1, ? super T2, ?> adaptHashJoinOutputFn(
+            @Nonnull TriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
     ) {
         return mapToOutputFn;
     }
@@ -155,8 +155,8 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    <T, K, R, OUT> DistributedTriFunction<?, ? super K, ? super R, ?> adaptRollingAggregateOutputFn(
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+    <T, K, R, OUT> TriFunction<?, ? super K, ? super R, ?> adaptRollingAggregateOutputFn(
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return (t, k, r) -> mapToOutputFn.apply(k, r);
     }
@@ -225,65 +225,65 @@ public class FunctionAdapter {
 
 class JetEventFunctionAdapter extends FunctionAdapter {
     @Nonnull @Override
-    <T, K> DistributedFunction<? super JetEvent<T>, ? extends K> adaptKeyFn(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyFn
+    <T, K> FunctionEx<? super JetEvent<T>, ? extends K> adaptKeyFn(
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn
     ) {
         return e -> keyFn.apply(e.payload());
     }
 
     @Nonnull @Override
-    <T, R> DistributedFunction<? super JetEvent<T>, ?> adaptMapFn(
-            @Nonnull DistributedFunction<? super T, ? extends R> mapFn
+    <T, R> FunctionEx<? super JetEvent<T>, ?> adaptMapFn(
+            @Nonnull FunctionEx<? super T, ? extends R> mapFn
     ) {
         return e -> jetEvent(mapFn.apply(e.payload()), e.timestamp());
     }
 
     @Nonnull @Override
-    <T> DistributedPredicate<? super JetEvent<T>> adaptFilterFn(@Nonnull DistributedPredicate<? super T> filterFn) {
+    <T> PredicateEx<? super JetEvent<T>> adaptFilterFn(@Nonnull PredicateEx<? super T> filterFn) {
         return e -> filterFn.test(e.payload());
     }
 
     @Nonnull @Override
-    <T, R> DistributedFunction<? super JetEvent<T>, ? extends Traverser<?>> adaptFlatMapFn(
-            @Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> flatMapFn
+    <T, R> FunctionEx<? super JetEvent<T>, ? extends Traverser<?>> adaptFlatMapFn(
+            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return e -> flatMapFn.apply(e.payload()).map(r -> jetEvent(r, e.timestamp()));
     }
 
     @Nonnull @Override
-    <C, T, R> DistributedBiFunction<? super C, ? super JetEvent<T>, ? extends JetEvent<R>> adaptMapUsingContextFn(
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+    <C, T, R> BiFunctionEx<? super C, ? super JetEvent<T>, ? extends JetEvent<R>> adaptMapUsingContextFn(
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
         return (context, e) -> jetEvent(mapFn.apply(context, e.payload()), e.timestamp());
     }
 
     @Nonnull @Override
-    <C, T> DistributedBiPredicate<? super C, ? super JetEvent<T>> adaptFilterUsingContextFn(
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    <C, T> BiPredicateEx<? super C, ? super JetEvent<T>> adaptFilterUsingContextFn(
+            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     ) {
         return (context, e) -> filterFn.test(context, e.payload());
     }
 
     @Nonnull @Override
-    <C, T, R> DistributedBiFunction<? super C, ? super JetEvent<T>, ? extends Traverser<JetEvent<R>>>
+    <C, T, R> BiFunctionEx<? super C, ? super JetEvent<T>, ? extends Traverser<JetEvent<R>>>
     adaptFlatMapUsingContextFn(
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return (context, e) -> flatMapFn.apply(context, e.payload()).map(r -> jetEvent(r, e.timestamp()));
     }
 
     @Nonnull @Override
-    <C, T, R> DistributedBiFunction<? super C, ?, ? extends CompletableFuture<Traverser<?>>>
+    <C, T, R> BiFunctionEx<? super C, ?, ? extends CompletableFuture<Traverser<?>>>
     adaptFlatMapUsingContextAsyncFn(
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return (C context, JetEvent<T> e) ->
                 flatMapAsyncFn.apply(context, e.payload()).thenApply(trav -> trav.map(re -> jetEvent(re, e.timestamp())));
     }
 
     @Nonnull @Override
-    <T, STR extends CharSequence> DistributedFunction<? super JetEvent<T>, ? extends STR> adaptToStringFn(
-            @Nonnull DistributedFunction<? super T, ? extends STR> toStringFn
+    <T, STR extends CharSequence> FunctionEx<? super JetEvent<T>, ? extends STR> adaptToStringFn(
+            @Nonnull FunctionEx<? super T, ? extends STR> toStringFn
     ) {
         return e -> toStringFn.apply(e.payload());
     }
@@ -298,15 +298,15 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull @Override
-    public <T, T1, R> DistributedBiFunction<? super JetEvent<T>, ? super T1, ?> adaptHashJoinOutputFn(
-            @Nonnull DistributedBiFunction<? super T, ? super T1, ? extends R> mapToOutputFn
+    public <T, T1, R> BiFunctionEx<? super JetEvent<T>, ? super T1, ?> adaptHashJoinOutputFn(
+            @Nonnull BiFunctionEx<? super T, ? super T1, ? extends R> mapToOutputFn
     ) {
         return (e, t1) -> jetEvent(mapToOutputFn.apply(e.payload(), t1), e.timestamp());
     }
 
     @Nonnull @Override
-    <T, T1, T2, R> DistributedTriFunction<? super JetEvent<T>, ? super T1, ? super T2, ?> adaptHashJoinOutputFn(
-            @Nonnull DistributedTriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
+    <T, T1, T2, R> TriFunction<? super JetEvent<T>, ? super T1, ? super T2, ?> adaptHashJoinOutputFn(
+            @Nonnull TriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
     ) {
         return (e, t1, t2) -> jetEvent(mapToOutputFn.apply(e.payload(), t1, t2), e.timestamp());
     }
@@ -330,9 +330,9 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull @Override
-    <T, K, R, OUT> DistributedTriFunction<? super JetEvent<T>, ? super K, ? super R, ? extends JetEvent<OUT>>
+    <T, K, R, OUT> TriFunction<? super JetEvent<T>, ? super K, ? super R, ? extends JetEvent<OUT>>
     adaptRollingAggregateOutputFn(
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return (jetEvent, key, result) -> jetEvent(mapToOutputFn.apply(key, result), jetEvent.timestamp());
     }
@@ -349,8 +349,8 @@ class JetEventFunctionAdapter extends FunctionAdapter {
         } else if (aggrOp instanceof AggregateOperation3) {
             return adaptAggregateOperation3((AggregateOperation3) aggrOp);
         } else {
-            DistributedBiConsumer[] adaptedAccFns = new DistributedBiConsumer[aggrOp.arity()];
-            Arrays.setAll(adaptedAccFns, i -> adaptAccumulateFn((DistributedBiConsumer) aggrOp.accumulateFn(i)));
+            BiConsumerEx[] adaptedAccFns = new BiConsumerEx[aggrOp.arity()];
+            Arrays.setAll(adaptedAccFns, i -> adaptAccumulateFn((BiConsumerEx) aggrOp.accumulateFn(i)));
             return aggrOp.withAccumulateFns(adaptedAccFns);
         }
     }
@@ -381,8 +381,8 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull
-    private static <A, T> DistributedBiConsumer<? super A, ? super JetEvent<T>> adaptAccumulateFn(
-            @Nonnull DistributedBiConsumer<? super A, ? super T> accumulateFn
+    private static <A, T> BiConsumerEx<? super A, ? super JetEvent<T>> adaptAccumulateFn(
+            @Nonnull BiConsumerEx<? super A, ? super T> accumulateFn
     ) {
         return (acc, t) -> accumulateFn.accept(acc, t.payload());
     }

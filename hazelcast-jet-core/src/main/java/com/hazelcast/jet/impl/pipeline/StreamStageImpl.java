@@ -20,11 +20,11 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBiPredicate;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BiPredicateEx;
+import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.pipeline.BatchStage;
@@ -51,7 +51,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     }
 
     @Nonnull @Override
-    public <K> StreamStageWithKey<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn) {
+    public <K> StreamStageWithKey<T, K> groupingKey(@Nonnull FunctionEx<? super T, ? extends K> keyFn) {
         checkSerializable(keyFn, "keyFn");
         return new StreamStageWithKeyImpl<>(this, keyFn);
     }
@@ -62,18 +62,18 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     }
 
     @Nonnull @Override
-    public <R> StreamStage<R> map(@Nonnull DistributedFunction<? super T, ? extends R> mapFn) {
+    public <R> StreamStage<R> map(@Nonnull FunctionEx<? super T, ? extends R> mapFn) {
         return attachMap(mapFn);
     }
 
     @Nonnull @Override
-    public StreamStage<T> filter(@Nonnull DistributedPredicate<T> filterFn) {
+    public StreamStage<T> filter(@Nonnull PredicateEx<T> filterFn) {
         return attachFilter(filterFn);
     }
 
     @Nonnull @Override
     public <R> StreamStage<R> flatMap(
-            @Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return attachFlatMap(flatMapFn);
     }
@@ -81,7 +81,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     @Nonnull @Override
     public <C, R> StreamStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
         return attachMapUsingContext(contextFactory, mapFn);
     }
@@ -89,7 +89,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     @Nonnull @Override
     public <C, R> StreamStage<R> mapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
     ) {
         return attachFlatMapUsingContextAsync("map", contextFactory,
                 (c, t) -> mapAsyncFn.apply(c, t).thenApply(Traversers::singleton));
@@ -98,7 +98,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     @Nonnull @Override
     public <C> StreamStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     ) {
         return attachFilterUsingContext(contextFactory, filterFn);
     }
@@ -106,7 +106,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     @Nonnull @Override
     public <C> StreamStage<T> filterUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Boolean>> filterAsyncFn
     ) {
         return attachFlatMapUsingContextAsync("filter", contextFactory,
                 (c, t) -> filterAsyncFn.apply(c, t).thenApply(passed -> passed ? Traversers.singleton(t) : null));
@@ -115,7 +115,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     @Nonnull @Override
     public <C, R> StreamStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<R>> flatMapFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return attachFlatMapUsingContext(contextFactory, flatMapFn);
     }
@@ -123,7 +123,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     @Nonnull @Override
     public <C, R> StreamStage<R> flatMapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return attachFlatMapUsingContextAsync("flatMap", contextFactory, flatMapAsyncFn);
     }
@@ -142,7 +142,7 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     public <K, T1_IN, T1, R> StreamStage<R> hashJoin(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K, ? super T, ? super T1_IN, ? extends T1> joinClause1,
-            @Nonnull DistributedBiFunction<T, T1, R> mapToOutputFn
+            @Nonnull BiFunctionEx<T, T1, R> mapToOutputFn
     ) {
         return attachHashJoin(stage1, joinClause1, mapToOutputFn);
     }
@@ -153,15 +153,15 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
             @Nonnull JoinClause<K1, ? super T, ? super T1_IN, ? extends T1> joinClause1,
             @Nonnull BatchStage<T2_IN> stage2,
             @Nonnull JoinClause<K2, ? super T, ? super T2_IN, ? extends T2> joinClause2,
-            @Nonnull DistributedTriFunction<T, T1, T2, R> mapToOutputFn
+            @Nonnull TriFunction<T, T1, T2, R> mapToOutputFn
     ) {
         return attachHashJoin2(stage1, joinClause1, stage2, joinClause2, mapToOutputFn);
     }
 
     @Nonnull @Override
     public StreamStage<T> peek(
-            @Nonnull DistributedPredicate<? super T> shouldLogFn,
-            @Nonnull DistributedFunction<? super T, ? extends CharSequence> toStringFn
+            @Nonnull PredicateEx<? super T> shouldLogFn,
+            @Nonnull FunctionEx<? super T, ? extends CharSequence> toStringFn
     ) {
         return attachPeek(shouldLogFn, toStringFn);
     }

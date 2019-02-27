@@ -30,7 +30,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * java.util.function.Predicate} which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
+public interface PredicateEx<T> extends Predicate<T>, Serializable {
 
     /**
      * Exception-declaring version of {@link Predicate#test}.
@@ -50,7 +50,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * Returns a predicate that always evaluates to {@code true}.
      */
     @Nonnull
-    static <T> DistributedPredicate<T> alwaysTrue() {
+    static <T> PredicateEx<T> alwaysTrue() {
         return t -> true;
     }
 
@@ -58,7 +58,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * Returns a predicate that always evaluates to {@code false}.
      */
     @Nonnull
-    static <T> DistributedPredicate<T> alwaysFalse() {
+    static <T> PredicateEx<T> alwaysFalse() {
         return t -> false;
     }
 
@@ -67,7 +67,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@link Predicate#isEqual(Object) java.util.function.Predicate#isEqual(Object)}.
      */
     @Nonnull
-    static <T> DistributedPredicate<T> isEqual(Object other) {
+    static <T> PredicateEx<T> isEqual(Object other) {
         return other == null ? Objects::isNull : other::equals;
     }
 
@@ -76,7 +76,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@link Predicate#and(Predicate) java.util.function.Predicate#and(Predicate)}.
      */
     @Nonnull
-    default DistributedPredicate<T> and(DistributedPredicate<? super T> other) {
+    default PredicateEx<T> and(PredicateEx<? super T> other) {
         checkNotNull(other, "other");
         return t -> test(t) && other.test(t);
     }
@@ -86,7 +86,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@link Predicate#negate()}.
      */
     @Nonnull @Override
-    default DistributedPredicate<T> negate() {
+    default PredicateEx<T> negate() {
         return t -> !test(t);
     }
 
@@ -95,7 +95,7 @@ public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
      * {@link Predicate#or(Predicate) java.util.function.Predicate#or(Predicate)}.
      */
     @Nonnull
-    default DistributedPredicate<T> or(DistributedPredicate<? super T> other) {
+    default PredicateEx<T> or(PredicateEx<? super T> other) {
         checkNotNull(other, "other");
         return t -> test(t) || other.test(t);
     }

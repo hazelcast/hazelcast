@@ -17,8 +17,8 @@
 package com.hazelcast.jet.avro;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -53,8 +53,8 @@ public final class AvroProcessors {
             @Nonnull String directory,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedSupplier<? extends DatumReader<D>> datumReaderSupplier,
-            @Nonnull DistributedBiFunction<String, ? super D, T> mapOutputFn
+            @Nonnull SupplierEx<? extends DatumReader<D>> datumReaderSupplier,
+            @Nonnull BiFunctionEx<String, ? super D, T> mapOutputFn
     ) {
         return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem,
                 path -> {
@@ -71,8 +71,8 @@ public final class AvroProcessors {
     @Nonnull
     public static <D> ProcessorMetaSupplier writeFilesP(
             @Nonnull String directoryName,
-            @Nonnull DistributedSupplier<Schema> schemaSupplier,
-            @Nonnull DistributedSupplier<DatumWriter<D>> datumWriterSupplier
+            @Nonnull SupplierEx<Schema> schemaSupplier,
+            @Nonnull SupplierEx<DatumWriter<D>> datumWriterSupplier
     ) {
         return ProcessorMetaSupplier.of(
                 WriteBufferedP.<DataFileWriter<D>, D>supplier(
@@ -90,8 +90,8 @@ public final class AvroProcessors {
                     + "because we'll fail later when trying to create the file.")
     private static <D> DataFileWriter<D> createWriter(
             Path directory, int globalIndex,
-            DistributedSupplier<Schema> schemaSupplier,
-            DistributedSupplier<DatumWriter<D>> datumWriterSupplier
+            SupplierEx<Schema> schemaSupplier,
+            SupplierEx<DatumWriter<D>> datumWriterSupplier
     ) throws IOException {
         directory.toFile().mkdirs();
 

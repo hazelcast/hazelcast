@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
@@ -136,9 +136,9 @@ public final class TestProcessors {
         private RuntimeException initError;
         private RuntimeException getError;
         private RuntimeException closeError;
-        private final DistributedSupplier<ProcessorSupplier> supplierFn;
+        private final SupplierEx<ProcessorSupplier> supplierFn;
 
-        public MockPMS(DistributedSupplier<ProcessorSupplier> supplierFn) {
+        public MockPMS(SupplierEx<ProcessorSupplier> supplierFn) {
             this.supplierFn = supplierFn;
         }
 
@@ -203,12 +203,12 @@ public final class TestProcessors {
         private RuntimeException getError;
         private RuntimeException closeError;
 
-        private final DistributedSupplier<Processor> supplier;
+        private final SupplierEx<Processor> supplier;
         private final int nodeCount;
 
         private boolean initCalled;
 
-        MockPS(DistributedSupplier<Processor> supplier, int nodeCount) {
+        MockPS(SupplierEx<Processor> supplier, int nodeCount) {
             this.supplier = supplier;
             this.nodeCount = nodeCount;
         }

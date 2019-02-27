@@ -16,12 +16,21 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
+import java.io.Serializable;
+
 /**
  * Represents a three-arity function that accepts three arguments and
  * produces a result.
  */
 @FunctionalInterface
-public interface TriFunction<T0, T1, T2, R> {
+public interface TriFunction<T0, T1, T2, R> extends Serializable {
+
+    /**
+     * Exception-declaring variant of {@link #apply}.
+     */
+    R applyEx(T0 t0, T1 t1, T2 t2) throws Exception;
 
     /**
      * Applies this function to the given arguments.
@@ -31,5 +40,11 @@ public interface TriFunction<T0, T1, T2, R> {
      * @param t2 the third argument
      * @return the function result
      */
-    R apply(T0 t0, T1 t1, T2 t2);
+    default R apply(T0 t0, T1 t1, T2 t2) {
+        try {
+            return applyEx(t0, t1, t2);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

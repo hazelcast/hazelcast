@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
@@ -72,7 +72,7 @@ public final class ProcessorSupplierWithContext<C> implements ProcessorSupplier 
     @Nonnull
     public static <C> ProcessorSupplier supplierWithContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<ContextFactory<C>, C, Processor> createProcessorFn
+            @Nonnull BiFunctionEx<ContextFactory<C>, C, Processor> createProcessorFn
     ) {
         return new ProcessorSupplierWithContext<>(contextFactory, createProcessorFn);
     }

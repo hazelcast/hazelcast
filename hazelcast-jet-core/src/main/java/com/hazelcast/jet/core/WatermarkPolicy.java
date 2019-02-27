@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 
@@ -75,7 +75,7 @@ public interface WatermarkPolicy {
      *            and the watermark
      */
     @Nonnull
-    static DistributedSupplier<WatermarkPolicy> limitingLag(long lag) {
+    static SupplierEx<WatermarkPolicy> limitingLag(long lag) {
         checkNotNegative(lag, "lag must not be negative");
 
         return () -> new WatermarkPolicy() {

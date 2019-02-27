@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.processor.Processors.mapP;
-import static com.hazelcast.jet.function.DistributedFunction.identity;
+import static com.hazelcast.jet.function.FunctionEx.identity;
 import static java.util.Arrays.asList;
 
 public class MergeTransform<T> extends AbstractTransform {

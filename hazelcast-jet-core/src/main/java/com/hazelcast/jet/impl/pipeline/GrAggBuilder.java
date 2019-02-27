@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.transform.GroupTransform;
@@ -56,7 +56,7 @@ public class GrAggBuilder<K> {
     private final PipelineImpl pipelineImpl;
     private final WindowDefinition wDef;
     private final List<ComputeStageImplBase> upstreamStages = new ArrayList<>();
-    private final List<DistributedFunction<?, ? extends K>> keyFns = new ArrayList<>();
+    private final List<FunctionEx<?, ? extends K>> keyFns = new ArrayList<>();
 
     @SuppressWarnings("unchecked")
     public GrAggBuilder(BatchStageWithKey<?, K> stage0) {
@@ -96,7 +96,7 @@ public class GrAggBuilder<K> {
     @SuppressWarnings("unchecked")
     public <A, R, OUT> BatchStage<OUT> buildBatch(
             @Nonnull AggregateOperation<A, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, OUT> mapToOutputFn
     ) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
         List<Transform> upstreamTransforms = upstreamStages.stream().map(s -> s.transform).collect(toList());
@@ -115,8 +115,8 @@ public class GrAggBuilder<K> {
         JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
 
         // Avoided Stream API here due to static typing issues
-        List<DistributedFunction<?, ? extends K>> adaptedKeyFns = new ArrayList<>();
-        for (DistributedFunction keyFn : keyFns) {
+        List<FunctionEx<?, ? extends K>> adaptedKeyFns = new ArrayList<>();
+        for (FunctionEx keyFn : keyFns) {
             adaptedKeyFns.add(fnAdapter.adaptKeyFn(keyFn));
         }
 

@@ -20,10 +20,10 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedTriFunction;
-import com.hazelcast.jet.function.DistributedTriPredicate;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
@@ -36,7 +36,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
 
     StreamStageWithKeyImpl(
             @Nonnull StreamStageImpl<T> computeStage,
-            @Nonnull DistributedFunction<? super T, ? extends K> keyFn
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn
     ) {
         super(computeStage, keyFn);
     }
@@ -49,7 +49,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public <C, R> StreamStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
     ) {
         return attachMapUsingContext(contextFactory, mapFn);
     }
@@ -57,7 +57,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public <C, R> StreamStage<R> mapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
         return attachTransformUsingContextAsync("map", contextFactory,
                 (c, k, t) -> mapAsyncFn.apply(c, k, t).thenApply(Traversers::singleton));
@@ -66,7 +66,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public <C> StreamStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
+            @Nonnull TriPredicate<? super C, ? super K, ? super T> filterFn
     ) {
         return attachFilterUsingContext(contextFactory, filterFn);
     }
@@ -74,7 +74,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public <C> StreamStage<T> filterUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     ) {
         return attachTransformUsingContextAsync("filter", contextFactory,
                 (c, k, t) -> filterAsyncFn.apply(c, k, t).thenApply(passed -> passed ? Traversers.singleton(t) : null));
@@ -83,7 +83,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public <C, R> StreamStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return attachFlatMapUsingContext(contextFactory, flatMapFn);
     }
@@ -91,7 +91,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public <C, R> StreamStage<R> flatMapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     ) {
         return attachTransformUsingContextAsync("flatMap", contextFactory, flatMapAsyncFn);
@@ -100,7 +100,7 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     @Nonnull @Override
     public <R, OUT> StreamStage<OUT> rollingAggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return computeStage.attachRollingAggregate(keyFn(), aggrOp, mapToOutputFn);
     }

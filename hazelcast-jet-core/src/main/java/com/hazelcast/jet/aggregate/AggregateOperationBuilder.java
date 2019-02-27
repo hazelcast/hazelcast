@@ -17,9 +17,9 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation2Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation3Impl;
@@ -37,7 +37,7 @@ import static java.util.stream.IntStream.range;
 /**
  * A builder object that can be used to construct the definition of an
  * aggregate operation in a step-by-step manner. Please refer to
- * {@link AggregateOperation#withCreate(DistributedSupplier)
+ * {@link AggregateOperation#withCreate(SupplierEx)
  * AggregateOperation.withCreate()} for more details.
  *
  * @param <A> the type of the accumulator
@@ -45,9 +45,9 @@ import static java.util.stream.IntStream.range;
 public final class AggregateOperationBuilder<A> {
 
     @Nonnull
-    private final DistributedSupplier<A> createFn;
+    private final SupplierEx<A> createFn;
 
-    AggregateOperationBuilder(@Nonnull DistributedSupplier<A> createFn) {
+    AggregateOperationBuilder(@Nonnull SupplierEx<A> createFn) {
         this.createFn = createFn;
     }
 
@@ -56,7 +56,7 @@ public final class AggregateOperationBuilder<A> {
      * fixed-arity variant of the aggregate operation.
      * <p>
      * This method is synonymous with {@link #andAccumulate0(
-     * DistributedBiConsumer)}, but makes more sense when defining a
+     *BiConsumerEx)}, but makes more sense when defining a
      * simple, arity-1 aggregate operation.
      *
      * @param accumulateFn the {@code accumulate} primitive, parameters are
@@ -65,7 +65,7 @@ public final class AggregateOperationBuilder<A> {
      * @return a new builder object that captures the {@code T0} type parameter
      */
     @Nonnull
-    public <T> Arity1<T, A, Void> andAccumulate(@Nonnull DistributedBiConsumer<? super A, ? super T> accumulateFn) {
+    public <T> Arity1<T, A, Void> andAccumulate(@Nonnull BiConsumerEx<? super A, ? super T> accumulateFn) {
         checkSerializable(accumulateFn, "accumulateFn");
         return new Arity1<>(createFn, accumulateFn);
     }
@@ -79,7 +79,7 @@ public final class AggregateOperationBuilder<A> {
      * @return a new builder object that captures the {@code T0} type parameter
      */
     @Nonnull
-    public <T0> Arity1<T0, A, Void> andAccumulate0(@Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateFn0) {
+    public <T0> Arity1<T0, A, Void> andAccumulate0(@Nonnull BiConsumerEx<? super A, ? super T0> accumulateFn0) {
         checkSerializable(accumulateFn0, "accumulateFn0");
         return new Arity1<>(createFn, accumulateFn0);
     }
@@ -107,7 +107,7 @@ public final class AggregateOperationBuilder<A> {
      */
     @Nonnull
     public <T> VarArity<A, Void> andAccumulate(
-            @Nonnull Tag<T> tag, @Nonnull DistributedBiConsumer<? super A, ? super T> accumulateFn
+            @Nonnull Tag<T> tag, @Nonnull BiConsumerEx<? super A, ? super T> accumulateFn
     ) {
         checkSerializable(accumulateFn, "accumulateFn");
         return new VarArity<>(createFn, tag, accumulateFn);
@@ -116,7 +116,7 @@ public final class AggregateOperationBuilder<A> {
     /**
      * The arity-1 variant of the aggregate operation builder. Can be
      * raised to arity-2 by calling {@link #andAccumulate1(
-     * DistributedBiConsumer) andAccumulate1()}.
+     *BiConsumerEx) andAccumulate1()}.
      *
      * @param <T0> type of item in stream-0
      * @param <A> type of the accumulator
@@ -124,16 +124,16 @@ public final class AggregateOperationBuilder<A> {
      */
     public static class Arity1<T0, A, R> {
         @Nonnull
-        private final DistributedSupplier<A> createFn;
+        private final SupplierEx<A> createFn;
         @Nonnull
-        private final DistributedBiConsumer<? super A, ? super T0> accumulateFn0;
-        private DistributedBiConsumer<? super A, ? super A> combineFn;
-        private DistributedBiConsumer<? super A, ? super A> deductFn;
-        private DistributedFunction<? super A, ? extends R> exportFn;
+        private final BiConsumerEx<? super A, ? super T0> accumulateFn0;
+        private BiConsumerEx<? super A, ? super A> combineFn;
+        private BiConsumerEx<? super A, ? super A> deductFn;
+        private FunctionEx<? super A, ? extends R> exportFn;
 
         Arity1(
-                @Nonnull DistributedSupplier<A> createFn,
-                @Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateFn0
+                @Nonnull SupplierEx<A> createFn,
+                @Nonnull BiConsumerEx<? super A, ? super T0> accumulateFn0
         ) {
             this.createFn = createFn;
             this.accumulateFn0 = accumulateFn0;
@@ -149,7 +149,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <T1> Arity2<T0, T1, A, R> andAccumulate1(
-                @Nonnull DistributedBiConsumer<? super A, ? super T1> accumulateFn1
+                @Nonnull BiConsumerEx<? super A, ? super T1> accumulateFn1
         ) {
             checkSerializable(accumulateFn1, "accumulateFn1");
             return new Arity2<>(this, accumulateFn1);
@@ -159,7 +159,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity1<T0, A, R> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity1<T0, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
             checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
@@ -169,7 +169,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity1<T0, A, R> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity1<T0, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
             checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
@@ -180,7 +180,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R_NEW> Arity1<T0, A, R_NEW> andExport(
-                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFn
+                @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFn
         ) {
             checkSerializable(exportFn, "exportFn");
             @SuppressWarnings("unchecked")
@@ -199,7 +199,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public AggregateOperation1<T0, A, R> andFinish(
-                @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+                @Nonnull FunctionEx<? super A, ? extends R> finishFn
         ) {
             if (exportFn == null) {
                 throw new IllegalStateException(
@@ -222,7 +222,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R_NEW> AggregateOperation1<T0, A, R_NEW> andExportFinish(
-                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFinishFn
+                @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFinishFn
         ) {
             if (exportFn != null) {
                 throw new IllegalStateException("The export primitive is already registered. Call" +
@@ -237,7 +237,7 @@ public final class AggregateOperationBuilder<A> {
     /**
      * The arity-2 variant of the aggregate operation builder. Can be
      * raised to arity-3 by calling {@link #andAccumulate2(
-     * DistributedBiConsumer) andAccumulate2()}.
+     *BiConsumerEx) andAccumulate2()}.
      *
      * @param <T0> the type of item in stream-0
      * @param <T1> the type of item in stream-1
@@ -246,16 +246,16 @@ public final class AggregateOperationBuilder<A> {
      */
     public static class Arity2<T0, T1, A, R> {
         @Nonnull
-        private final DistributedSupplier<A> createFn;
+        private final SupplierEx<A> createFn;
         @Nonnull
-        private final DistributedBiConsumer<? super A, ? super T0> accumulateFn0;
+        private final BiConsumerEx<? super A, ? super T0> accumulateFn0;
         @Nonnull
-        private final DistributedBiConsumer<? super A, ? super T1> accumulateFn1;
-        private DistributedBiConsumer<? super A, ? super A> combineFn;
-        private DistributedBiConsumer<? super A, ? super A> deductFn;
-        private DistributedFunction<? super A, ? extends R> exportFn;
+        private final BiConsumerEx<? super A, ? super T1> accumulateFn1;
+        private BiConsumerEx<? super A, ? super A> combineFn;
+        private BiConsumerEx<? super A, ? super A> deductFn;
+        private FunctionEx<? super A, ? extends R> exportFn;
 
-        Arity2(@Nonnull Arity1<T0, A, R> step1, @Nonnull DistributedBiConsumer<? super A, ? super T1> accumulateFn1) {
+        Arity2(@Nonnull Arity1<T0, A, R> step1, @Nonnull BiConsumerEx<? super A, ? super T1> accumulateFn1) {
             this.createFn = step1.createFn;
             this.accumulateFn0 = step1.accumulateFn0;
             this.accumulateFn1 = accumulateFn1;
@@ -271,7 +271,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <T2> Arity3<T0, T1, T2, A, R> andAccumulate2(
-                @Nonnull DistributedBiConsumer<? super A, ? super T2> accumulateFn2
+                @Nonnull BiConsumerEx<? super A, ? super T2> accumulateFn2
         ) {
             checkSerializable(accumulateFn2, "accumulateFn2");
             return new Arity3<>(this, accumulateFn2);
@@ -281,7 +281,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity2<T0, T1, A, R> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity2<T0, T1, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
             checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
@@ -291,7 +291,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity2<T0, T1, A, R> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity2<T0, T1, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
             checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
@@ -302,7 +302,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R_NEW> Arity2<T0, T1, A, R_NEW> andExport(
-                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFn
+                @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFn
         ) {
             checkSerializable(exportFn, "exportFn");
             @SuppressWarnings("unchecked")
@@ -321,7 +321,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public AggregateOperation2<T0, T1, A, R> andFinish(
-                @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+                @Nonnull FunctionEx<? super A, ? extends R> finishFn
         ) {
             checkSerializable(finishFn, "finishFn");
             if (exportFn == null) {
@@ -344,7 +344,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R_NEW> AggregateOperation2<T0, T1, A, R_NEW> andExportFinish(
-                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFinishFn
+                @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFinishFn
         ) {
             return new AggregateOperation2Impl<>(createFn, accumulateFn0, accumulateFn1,
                     combineFn, deductFn, exportFinishFn, exportFinishFn);
@@ -362,18 +362,18 @@ public final class AggregateOperationBuilder<A> {
      */
     public static class Arity3<T0, T1, T2, A, R> {
         @Nonnull
-        private final DistributedSupplier<A> createFn;
+        private final SupplierEx<A> createFn;
         @Nonnull
-        private final DistributedBiConsumer<? super A, ? super T0> accumulateFn0;
+        private final BiConsumerEx<? super A, ? super T0> accumulateFn0;
         @Nonnull
-        private final DistributedBiConsumer<? super A, ? super T1> accumulateFn1;
+        private final BiConsumerEx<? super A, ? super T1> accumulateFn1;
         @Nonnull
-        private final DistributedBiConsumer<? super A, ? super T2> accumulateFn2;
-        private DistributedBiConsumer<? super A, ? super A> combineFn;
-        private DistributedBiConsumer<? super A, ? super A> deductFn;
-        private DistributedFunction<? super A, ? extends R> exportFn;
+        private final BiConsumerEx<? super A, ? super T2> accumulateFn2;
+        private BiConsumerEx<? super A, ? super A> combineFn;
+        private BiConsumerEx<? super A, ? super A> deductFn;
+        private FunctionEx<? super A, ? extends R> exportFn;
 
-        Arity3(Arity2<T0, T1, A, R> arity2, DistributedBiConsumer<? super A, ? super T2> accumulateFn2) {
+        Arity3(Arity2<T0, T1, A, R> arity2, BiConsumerEx<? super A, ? super T2> accumulateFn2) {
             this.createFn = arity2.createFn;
             this.accumulateFn0 = arity2.accumulateFn0;
             this.accumulateFn1 = arity2.accumulateFn1;
@@ -384,7 +384,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity3<T0, T1, T2, A, R> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity3<T0, T1, T2, A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
             checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
@@ -394,7 +394,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity3<T0, T1, T2, A, R> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity3<T0, T1, T2, A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
             checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
@@ -405,7 +405,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R_NEW> Arity3<T0, T1, T2, A, R_NEW> andExport(
-                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFn
+                @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFn
         ) {
             checkSerializable(exportFn, "exportFn");
             @SuppressWarnings("unchecked")
@@ -424,7 +424,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public AggregateOperation3<T0, T1, T2, A, R> andFinish(
-                @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+                @Nonnull FunctionEx<? super A, ? extends R> finishFn
         ) {
             if (exportFn == null) {
                 throw new IllegalStateException(
@@ -448,7 +448,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R_NEW> AggregateOperation3<T0, T1, T2, A, R_NEW> andExportFinish(
-                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFinishFn
+                @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFinishFn
         ) {
             checkSerializable(exportFinishFn, "exportFinishFn");
             return new AggregateOperation3Impl<>(createFn, accumulateFn0, accumulateFn1, accumulateFn2,
@@ -467,20 +467,20 @@ public final class AggregateOperationBuilder<A> {
      */
     public static class VarArity<A, R> {
         @Nonnull
-        private final DistributedSupplier<A> createFn;
-        private final Map<Integer, DistributedBiConsumer<? super A, ?>> accumulateFnsByTag = new HashMap<>();
-        private DistributedBiConsumer<? super A, ? super A> combineFn;
-        private DistributedBiConsumer<? super A, ? super A> deductFn;
-        private DistributedFunction<? super A, ? extends R> exportFn;
+        private final SupplierEx<A> createFn;
+        private final Map<Integer, BiConsumerEx<? super A, ?>> accumulateFnsByTag = new HashMap<>();
+        private BiConsumerEx<? super A, ? super A> combineFn;
+        private BiConsumerEx<? super A, ? super A> deductFn;
+        private FunctionEx<? super A, ? extends R> exportFn;
 
-        VarArity(@Nonnull DistributedSupplier<A> createFn) {
+        VarArity(@Nonnull SupplierEx<A> createFn) {
             this.createFn = createFn;
         }
 
         <T> VarArity(
-                @Nonnull DistributedSupplier<A> createFn,
+                @Nonnull SupplierEx<A> createFn,
                 @Nonnull Tag<T> tag,
-                @Nonnull DistributedBiConsumer<? super A, ? super T> accumulateFn
+                @Nonnull BiConsumerEx<? super A, ? super T> accumulateFn
         ) {
             this(createFn);
             accumulateFnsByTag.put(tag.index(), accumulateFn);
@@ -497,7 +497,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <T> VarArity<A, R> andAccumulate(
-                @Nonnull Tag<T> tag, @Nonnull DistributedBiConsumer<? super A, T> accumulateFn
+                @Nonnull Tag<T> tag, @Nonnull BiConsumerEx<? super A, T> accumulateFn
         ) {
             checkSerializable(accumulateFn, "accumulateFn");
             if (accumulateFnsByTag.putIfAbsent(tag.index(), accumulateFn) != null) {
@@ -510,7 +510,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public VarArity<A, R> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public VarArity<A, R> andCombine(@Nullable BiConsumerEx<? super A, ? super A> combineFn) {
             checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
@@ -520,7 +520,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public VarArity<A, R> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public VarArity<A, R> andDeduct(@Nullable BiConsumerEx<? super A, ? super A> deductFn) {
             checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
@@ -531,7 +531,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R_NEW> VarArity<A, R_NEW> andExport(
-                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFn
+                @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFn
         ) {
             checkSerializable(exportFn, "exportFn");
             @SuppressWarnings("unchecked")
@@ -550,7 +550,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public AggregateOperation<A, R> andFinish(
-                @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+                @Nonnull FunctionEx<? super A, ? extends R> finishFn
         ) {
             if (exportFn == null) {
                 throw new IllegalStateException(
@@ -573,7 +573,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R_NEW> AggregateOperation<A, R_NEW> andExportFinish(
-                @Nonnull DistributedFunction<? super A, ? extends R_NEW> exportFinishFn
+                @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFinishFn
         ) {
             if (exportFn != null) {
                 throw new IllegalStateException("The export primitive is already registered. Call" +
@@ -584,10 +584,10 @@ public final class AggregateOperationBuilder<A> {
                     createFn, packAccumulateFns(), combineFn, deductFn, exportFinishFn, exportFinishFn);
         }
 
-        private DistributedBiConsumer<? super A, ?>[] packAccumulateFns() {
+        private BiConsumerEx<? super A, ?>[] packAccumulateFns() {
             int size = accumulateFnsByTag.size();
             @SuppressWarnings("unchecked")
-            DistributedBiConsumer<? super A, ?>[] accFns = new DistributedBiConsumer[size];
+            BiConsumerEx<? super A, ?>[] accFns = new BiConsumerEx[size];
             for (int i = 0; i < size; i++) {
                 accFns[i] = accumulateFnsByTag.get(i);
                 if (accFns[i] == null) {

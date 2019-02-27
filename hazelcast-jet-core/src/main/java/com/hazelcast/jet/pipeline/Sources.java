@@ -30,9 +30,9 @@ import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
@@ -48,7 +48,6 @@ import javax.jms.Message;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
@@ -332,20 +331,20 @@ public final class Sources {
 
     /**
      * Convenience for {@link #map(String, Predicate, Projection)}
-     * which uses a {@link DistributedFunction} as the projection function.
+     * which uses a {@link FunctionEx} as the projection function.
      */
     @Nonnull
     public static <T, K, V> BatchSource<T> map(
             @Nonnull String mapName,
             @Nonnull Predicate<? super K, ? super V> predicate,
-            @Nonnull DistributedFunction<? super Map.Entry<K, V>, ? extends T> projectionFn
+            @Nonnull FunctionEx<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return batchFromProcessor("mapSource(" + mapName + ')', readMapP(mapName, predicate, projectionFn));
     }
 
     /**
      * Convenience for {@link #map(IMap, Predicate, Projection)} which uses a
-     * {@link DistributedFunction} as the projection function.
+     * {@link FunctionEx} as the projection function.
      * <p>
      * <strong>NOTE:</strong> Jet only remembers the name of the map you supply
      * and acquires a map with that name on the local cluster. If you supply a
@@ -356,7 +355,7 @@ public final class Sources {
     public static <T, K, V> BatchSource<T> map(
             @Nonnull IMap<? extends K, ? extends V> map,
             @Nonnull Predicate<? super K, ? super V> predicate,
-            @Nonnull DistributedFunction<? super Map.Entry<K, V>, ? extends T> projectionFn
+            @Nonnull FunctionEx<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return map(map.getName(), predicate, projectionFn);
     }
@@ -413,8 +412,8 @@ public final class Sources {
     @Nonnull
     public static <T, K, V> StreamSource<T> mapJournal(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("mapJournalSource(" + mapName + ')',
@@ -478,16 +477,16 @@ public final class Sources {
     @Nonnull
     public static <T, K, V> StreamSource<T> mapJournal(
             @Nonnull IMap<? extends K, ? extends V> map,
-            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return mapJournal(map.getName(), predicateFn, projectionFn, initialPos);
     }
 
     /**
-     * Convenience for {@link #mapJournal(String, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)}
+     * Convenience for {@link #mapJournal(String, PredicateEx,
+     * FunctionEx, JournalInitialPosition)}
      * which will pass only {@link EntryEventType#ADDED ADDED} and
      * {@link EntryEventType#UPDATED UPDATED} events and will project the
      * event's key and new value into a {@code Map.Entry}.
@@ -501,8 +500,8 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #mapJournal(IMap, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)}
+     * Convenience for {@link #mapJournal(IMap, PredicateEx,
+     * FunctionEx, JournalInitialPosition)}
      * which will pass only {@link EntryEventType#ADDED
      * ADDED} and {@link EntryEventType#UPDATED UPDATED}
      * events and will project the event's key and new value into a {@code
@@ -611,14 +610,14 @@ public final class Sources {
 
     /**
      * Convenience for {@link #remoteMap(String, ClientConfig, Predicate, Projection)}
-     * which use a {@link DistributedFunction} as the projection function.
+     * which use a {@link FunctionEx} as the projection function.
      */
     @Nonnull
     public static <T, K, V> BatchSource<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<? super K, ? super V> predicate,
-            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends T> projectionFn
+            @Nonnull FunctionEx<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
                 readRemoteMapP(mapName, clientConfig, predicate, projectionFn));
@@ -677,8 +676,8 @@ public final class Sources {
     public static <T, K, V> StreamSource<T> remoteMapJournal(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
@@ -687,7 +686,7 @@ public final class Sources {
 
     /**
      * Convenience for {@link #remoteMapJournal(String, ClientConfig,
-     * DistributedPredicate, DistributedFunction, JournalInitialPosition)}
+     * PredicateEx, FunctionEx, JournalInitialPosition)}
      * which will pass only {@link EntryEventType#ADDED ADDED}
      * and {@link EntryEventType#UPDATED UPDATED} events and will
      * project the event's key and new value into a {@code Map.Entry}.
@@ -777,8 +776,8 @@ public final class Sources {
     @Nonnull
     public static <T, K, V> StreamSource<T> cacheJournal(
             @Nonnull String cacheName,
-            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("cacheJournalSource(" + cacheName + ')',
@@ -786,8 +785,8 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #cacheJournal(String, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)}
+     * Convenience for {@link #cacheJournal(String, PredicateEx,
+     * FunctionEx, JournalInitialPosition)}
      * which will pass only {@link CacheEventType#CREATED
      * CREATED} and {@link CacheEventType#UPDATED UPDATED}
      * events and will project the event's key and new value into a {@code
@@ -879,8 +878,8 @@ public final class Sources {
     public static <T, K, V> StreamSource<T> remoteCacheJournal(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos
     ) {
         return streamFromProcessorWithWatermarks("remoteCacheJournalSource(" + cacheName + ')',
@@ -889,7 +888,7 @@ public final class Sources {
 
     /**
      * Convenience for {@link #remoteCacheJournal(String, ClientConfig,
-     * DistributedPredicate, DistributedFunction, JournalInitialPosition)}
+     * PredicateEx, FunctionEx, JournalInitialPosition)}
      * which will pass only
      * {@link CacheEventType#CREATED CREATED}
      * and {@link CacheEventType#UPDATED UPDATED}
@@ -1059,13 +1058,13 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #jmsQueueBuilder(DistributedSupplier)}. This
+     * Convenience for {@link #jmsQueueBuilder(SupplierEx)}. This
      * version creates a connection without any authentication parameters and
      * uses non-transacted sessions with {@code Session.AUTO_ACKNOWLEDGE} mode.
      * JMS {@link Message} objects are emitted to downstream.
      * <p>
      * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
-     * that case you can use {@linkplain #jmsQueueBuilder(DistributedSupplier)
+     * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx)
      * the builder} and add a projection.
      *
      * @param factorySupplier supplier to obtain JMS connection factory
@@ -1073,7 +1072,7 @@ public final class Sources {
      */
     @Nonnull
     public static StreamSource<Message> jmsQueue(
-            @Nonnull DistributedSupplier<? extends ConnectionFactory> factorySupplier,
+            @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier,
             @Nonnull String name
     ) {
         return jmsQueueBuilder(factorySupplier)
@@ -1102,18 +1101,18 @@ public final class Sources {
      * are available).
      */
     @Nonnull
-    public static JmsSourceBuilder jmsQueueBuilder(DistributedSupplier<? extends ConnectionFactory> factorySupplier) {
+    public static JmsSourceBuilder jmsQueueBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier) {
         return new JmsSourceBuilder(factorySupplier, false);
     }
 
     /**
-     * Convenience for {@link #jmsTopicBuilder(DistributedSupplier)}. This
+     * Convenience for {@link #jmsTopicBuilder(SupplierEx)}. This
      * version creates a connection without any authentication parameters and
      * uses non-transacted sessions with {@code Session.AUTO_ACKNOWLEDGE} mode.
      * JMS {@link Message} objects are emitted to downstream.
      * <p>
      * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
-     * that case you can use {@linkplain #jmsTopicBuilder(DistributedSupplier)
+     * that case you can use {@linkplain #jmsTopicBuilder(SupplierEx)
      * the builder} and add a projection.
      *
      * @param factorySupplier supplier to obtain JMS connection factory
@@ -1121,7 +1120,7 @@ public final class Sources {
      */
     @Nonnull
     public static StreamSource<Message> jmsTopic(
-            @Nonnull DistributedSupplier<? extends ConnectionFactory> factorySupplier,
+            @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier,
             @Nonnull String name
     ) {
         return jmsTopicBuilder(factorySupplier)
@@ -1157,7 +1156,7 @@ public final class Sources {
      * documentation for details.
      */
     @Nonnull
-    public static JmsSourceBuilder jmsTopicBuilder(DistributedSupplier<? extends ConnectionFactory> factorySupplier) {
+    public static JmsSourceBuilder jmsTopicBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier) {
         return new JmsSourceBuilder(factorySupplier, true);
     }
 
@@ -1174,7 +1173,7 @@ public final class Sources {
      * should be used to fetch a part of the whole result set specific to the
      * processor. If the table itself isn't partitioned by the same key, then
      * running multiple queries might not really be faster than using the
-     * {@linkplain #jdbc(String, String, DistributedFunction) simpler
+     * {@linkplain #jdbc(String, String, FunctionEx) simpler
      * version} of this method, do your own testing.
      * <p>
      * {@code createOutputFn} gets the {@link ResultSet} and creates desired
@@ -1212,17 +1211,17 @@ public final class Sources {
      * @param <T> type of output objects
      */
     public static <T> BatchSource<T> jdbc(
-            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
+            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
             @Nonnull ToResultSetFunction resultSetFn,
-            @Nonnull DistributedFunction<? super ResultSet, ? extends T> createOutputFn
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(connectionSupplier, resultSetFn, createOutputFn));
     }
 
     /**
-     * Convenience for {@link Sources#jdbc(DistributedSupplier,
-     * ToResultSetFunction, DistributedFunction)}.
+     * Convenience for {@link Sources#jdbc(SupplierEx,
+     * ToResultSetFunction, FunctionEx)}.
      * A non-distributed, single-worker source which fetches the whole resultSet
      * with a single query on single member.
      * <p>
@@ -1241,7 +1240,7 @@ public final class Sources {
     public static <T> BatchSource<T> jdbc(
             @Nonnull String connectionURL,
             @Nonnull String query,
-            @Nonnull DistributedFunction<? super ResultSet, ? extends T> createOutputFn
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(connectionURL, query, createOutputFn));

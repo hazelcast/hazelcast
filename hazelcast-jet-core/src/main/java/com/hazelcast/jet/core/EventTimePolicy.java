@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.function.DistributedObjLongBiFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.ObjLongBiFunction;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -67,9 +67,9 @@ public final class EventTimePolicy<T> implements Serializable {
      */
     public static final long DEFAULT_IDLE_TIMEOUT = 60_000L;
 
-    private static final DistributedObjLongBiFunction<?, ?> NO_WRAPPING = (event, timestamp) -> event;
+    private static final ObjLongBiFunction<?, ?> NO_WRAPPING = (event, timestamp) -> event;
 
-    private static final DistributedSupplier<WatermarkPolicy> NO_WATERMARKS = () -> new WatermarkPolicy() {
+    private static final SupplierEx<WatermarkPolicy> NO_WATERMARKS = () -> new WatermarkPolicy() {
         @Override
         public long reportEvent(long timestamp) {
             return Long.MIN_VALUE;
@@ -81,18 +81,18 @@ public final class EventTimePolicy<T> implements Serializable {
         }
     };
 
-    private final DistributedToLongFunction<? super T> timestampFn;
-    private final DistributedObjLongBiFunction<? super T, ?> wrapFn;
-    private final DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn;
+    private final ToLongFunctionEx<? super T> timestampFn;
+    private final ObjLongBiFunction<? super T, ?> wrapFn;
+    private final SupplierEx<? extends WatermarkPolicy> newWmPolicyFn;
     private final long watermarkThrottlingFrameSize;
     private final long watermarkThrottlingFrameOffset;
 
     private final long idleTimeoutMillis;
 
     private EventTimePolicy(
-            @Nullable DistributedToLongFunction<? super T> timestampFn,
-            @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
-            @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
+            @Nullable ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull ObjLongBiFunction<? super T, ?> wrapFn,
+            @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
             long watermarkThrottlingFrameSize,
             long watermarkThrottlingFrameOffset,
             long idleTimeoutMillis
@@ -126,9 +126,9 @@ public final class EventTimePolicy<T> implements Serializable {
      *      marked as <em>idle</em>. Use 0 to disable the feature.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
-            @Nullable DistributedToLongFunction<? super T> timestampFn,
-            @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
-            @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
+            @Nullable ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull ObjLongBiFunction<? super T, ?> wrapFn,
+            @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
             long watermarkThrottlingFrameSize,
             long watermarkThrottlingFrameOffset,
             long idleTimeoutMillis
@@ -153,8 +153,8 @@ public final class EventTimePolicy<T> implements Serializable {
      *      marked as <em>idle</em>.
      */
     public static <T> EventTimePolicy<T> eventTimePolicy(
-            @Nullable DistributedToLongFunction<? super T> timestampFn,
-            @Nonnull DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn,
+            @Nullable ToLongFunctionEx<? super T> timestampFn,
+            @Nonnull SupplierEx<? extends WatermarkPolicy> newWmPolicyFn,
             long watermarkThrottlingFrameSize,
             long watermarkThrottlingFrameOffset,
             long idleTimeoutMillis
@@ -174,15 +174,15 @@ public final class EventTimePolicy<T> implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> DistributedObjLongBiFunction<T, Object> noWrapping() {
-        return (DistributedObjLongBiFunction<T, Object>) NO_WRAPPING;
+    private static <T> ObjLongBiFunction<T, Object> noWrapping() {
+        return (ObjLongBiFunction<T, Object>) NO_WRAPPING;
     }
 
     /**
      * Returns the function that extracts the timestamp from the event.
      */
     @Nullable
-    public DistributedToLongFunction<? super T> timestampFn() {
+    public ToLongFunctionEx<? super T> timestampFn() {
         return timestampFn;
     }
 
@@ -191,7 +191,7 @@ public final class EventTimePolicy<T> implements Serializable {
      * into the emitted item.
      */
     @Nonnull
-    public DistributedObjLongBiFunction<? super T, ?> wrapFn() {
+    public ObjLongBiFunction<? super T, ?> wrapFn() {
         return wrapFn;
     }
 
@@ -199,7 +199,7 @@ public final class EventTimePolicy<T> implements Serializable {
      * Returns the factory of the watermark policy objects.
      */
     @Nonnull
-    public DistributedSupplier<? extends WatermarkPolicy> newWmPolicyFn() {
+    public SupplierEx<? extends WatermarkPolicy> newWmPolicyFn() {
         return newWmPolicyFn;
     }
 

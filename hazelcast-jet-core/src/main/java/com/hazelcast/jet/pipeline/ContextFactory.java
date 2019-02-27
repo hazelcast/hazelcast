@@ -18,8 +18,8 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ConsumerEx;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -70,16 +70,16 @@ public final class ContextFactory<C> implements Serializable {
      */
     public static final boolean ORDERED_ASYNC_RESPONSES_DEFAULT = true;
 
-    private final DistributedFunction<JetInstance, ? extends C> createFn;
-    private final DistributedConsumer<? super C> destroyFn;
+    private final FunctionEx<JetInstance, ? extends C> createFn;
+    private final ConsumerEx<? super C> destroyFn;
     private final boolean isCooperative;
     private final boolean hasLocalSharing;
     private final int maxPendingCallsPerProcessor;
     private final boolean orderedAsyncResponses;
 
     private ContextFactory(
-            DistributedFunction<JetInstance, ? extends C> createFn,
-            DistributedConsumer<? super C> destroyFn,
+            FunctionEx<JetInstance, ? extends C> createFn,
+            ConsumerEx<? super C> destroyFn,
             boolean isCooperative,
             boolean hasLocalSharing,
             int maxPendingCallsPerProcessor,
@@ -103,11 +103,11 @@ public final class ContextFactory<C> implements Serializable {
      */
     @Nonnull
     public static <C> ContextFactory<C> withCreateFn(
-            @Nonnull DistributedFunction<JetInstance, ? extends C> createContextFn
+            @Nonnull FunctionEx<JetInstance, ? extends C> createContextFn
     ) {
         checkSerializable(createContextFn, "createContextFn");
         return new ContextFactory<>(
-                createContextFn, DistributedConsumer.noop(), COOPERATIVE_DEFAULT, SHARE_LOCALLY_DEFAULT,
+                createContextFn, ConsumerEx.noop(), COOPERATIVE_DEFAULT, SHARE_LOCALLY_DEFAULT,
                 MAX_PENDING_CALLS_DEFAULT, ORDERED_ASYNC_RESPONSES_DEFAULT);
     }
 
@@ -122,7 +122,7 @@ public final class ContextFactory<C> implements Serializable {
      * @return a copy of this factory with the supplied destroy-function
      */
     @Nonnull
-    public ContextFactory<C> withDestroyFn(@Nonnull DistributedConsumer<? super C> destroyFn) {
+    public ContextFactory<C> withDestroyFn(@Nonnull ConsumerEx<? super C> destroyFn) {
         checkSerializable(destroyFn, "destroyFn");
         return new ContextFactory<>(createFn, destroyFn, isCooperative, hasLocalSharing,
                 maxPendingCallsPerProcessor, orderedAsyncResponses);
@@ -234,7 +234,7 @@ public final class ContextFactory<C> implements Serializable {
      * Returns the create-function.
      */
     @Nonnull
-    public DistributedFunction<JetInstance, ? extends C> createFn() {
+    public FunctionEx<JetInstance, ? extends C> createFn() {
         return createFn;
     }
 
@@ -242,7 +242,7 @@ public final class ContextFactory<C> implements Serializable {
      * Returns the destroy-function.
      */
     @Nonnull
-    public DistributedConsumer<? super C> destroyFn() {
+    public ConsumerEx<? super C> destroyFn() {
         return destroyFn;
     }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.datamodel.ItemsByTag;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.pipeline.BatchStageImpl;
 
 /**
@@ -47,7 +47,7 @@ public class HashJoinBuilder<T0> extends GeneralHashJoinBuilder<T0> {
      *
      * @return the new hash-join pipeline stage
      */
-    public <R> BatchStage<R> build(DistributedBiFunction<T0, ItemsByTag, R> mapToOutputFn) {
+    public <R> BatchStage<R> build(BiFunctionEx<T0, ItemsByTag, R> mapToOutputFn) {
         return (BatchStage<R>) build0(mapToOutputFn);
     }
 }

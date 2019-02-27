@@ -20,7 +20,7 @@ import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation
 import static com.hazelcast.jet.aggregate.AggregateOperations.toList;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -46,7 +46,7 @@ public class SlidingWindowP_CoGroupTest {
     @Test
     @SuppressWarnings("unchecked")
     public void test() {
-        DistributedSupplier supplier = Processors.aggregateToSlidingWindowP(
+        SupplierEx supplier = Processors.aggregateToSlidingWindowP(
                 asList(entryKey(), entryKey()),
                 asList(t -> 1L, t -> 1L),
                 TimestampKind.FRAME,

@@ -31,9 +31,9 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -70,8 +70,8 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextAsyncP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
-import static com.hazelcast.jet.function.DistributedFunction.identity;
-import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
+import static com.hazelcast.jet.function.FunctionEx.identity;
+import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
@@ -295,8 +295,8 @@ public class AsyncTransformUsingContextP_IntegrationTest extends JetTestSupport 
         assertResult(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);
     }
 
-    private <R> DistributedBiFunction<ExecutorService, Integer, CompletableFuture<R>> transformNotPartitionedFn(
-            DistributedFunction<Integer, R> transformFn
+    private <R> BiFunctionEx<ExecutorService, Integer, CompletableFuture<R>> transformNotPartitionedFn(
+            FunctionEx<Integer, R> transformFn
     ) {
         return (executor, item) -> {
             CompletableFuture<R> f = new CompletableFuture<>();
@@ -309,8 +309,8 @@ public class AsyncTransformUsingContextP_IntegrationTest extends JetTestSupport 
         };
     }
 
-    private <R> DistributedTriFunction<ExecutorService, Integer, Integer, CompletableFuture<R>> transformPartitionedFn(
-            DistributedFunction<Integer, R> transformFn
+    private <R> TriFunction<ExecutorService, Integer, Integer, CompletableFuture<R>> transformPartitionedFn(
+            FunctionEx<Integer, R> transformFn
     ) {
         return (executor, key, item) -> {
             assert key == item % 10 : "item=" + item + ", key=" + key;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.h2.tools.DeleteDbFiles;
@@ -122,8 +122,8 @@ public class WriteJdbcPTest extends PipelineTestSupport {
         }
     }
 
-    private static DistributedSupplier<Connection> failOnceConnectionSupplier() {
-        return new DistributedSupplier<Connection>() {
+    private static SupplierEx<Connection> failOnceConnectionSupplier() {
+        return new SupplierEx<Connection>() {
             boolean exceptionThrown;
 
             @Override
@@ -137,8 +137,8 @@ public class WriteJdbcPTest extends PipelineTestSupport {
         };
     }
 
-    private static DistributedBiConsumer<PreparedStatement, Person> failOnceBindFn() {
-        return new DistributedBiConsumer<PreparedStatement, Person>() {
+    private static BiConsumerEx<PreparedStatement, Person> failOnceBindFn() {
+        return new BiConsumerEx<PreparedStatement, Person>() {
             boolean exceptionThrown;
 
             @Override

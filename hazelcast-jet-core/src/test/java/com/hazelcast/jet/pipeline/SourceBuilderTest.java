@@ -18,7 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.datamodel.TimestampedItem;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -191,7 +191,7 @@ public class SourceBuilderTest extends PipelineTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            DistributedFunction<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
+            FunctionEx<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
 
             StreamSource<String> socketSource = SourceBuilder
                     .timestampedStream("socket-source-with-timestamps", ctx -> socketReader(localPort))
@@ -232,7 +232,7 @@ public class SourceBuilderTest extends PipelineTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            DistributedFunction<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
+            FunctionEx<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
 
             int lateness = 10;
             StreamSource<String> socketSource = SourceBuilder
@@ -272,7 +272,7 @@ public class SourceBuilderTest extends PipelineTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            DistributedFunction<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
+            FunctionEx<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
 
             StreamSource<String> socketSource = SourceBuilder
                     .timestampedStream("socket-source-with-timestamps", ctx -> socketReader(localPort))

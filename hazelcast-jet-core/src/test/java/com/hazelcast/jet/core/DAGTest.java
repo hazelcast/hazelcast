@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 public class DAGTest {
 
-    private static final DistributedSupplier<Processor> PROCESSOR_SUPPLIER = noopP();
+    private static final SupplierEx<Processor> PROCESSOR_SUPPLIER = noopP();
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();

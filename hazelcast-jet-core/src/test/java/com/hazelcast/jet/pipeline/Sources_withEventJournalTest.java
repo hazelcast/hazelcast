@@ -25,7 +25,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.IListJet;
-import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapPutEvents;
-import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static com.hazelcast.jet.function.Functions.entryValue;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -260,7 +260,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
         IMap<String, Integer> map = jet().getMap(mapName);
-        DistributedPredicate<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
+        PredicateEx<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
 
         // When
         StreamSource<Integer> source = Sources.mapJournal(
@@ -275,7 +275,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
         IMap<String, Integer> map = remoteHz.getMap(mapName);
-        DistributedPredicate<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
+        PredicateEx<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
 
         // When
         StreamSource<Integer> source = Sources.remoteMapJournal(
@@ -383,7 +383,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void cacheJournalByName_withPredicateAndProjectionFn() {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        DistributedPredicate<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
+        PredicateEx<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
         ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
 
         // When
@@ -399,7 +399,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void remoteCacheJournal_withPredicateAndProjectionFn() {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        DistributedPredicate<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
+        PredicateEx<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
         ICache<String, Integer> cache = remoteHz.getCacheManager().getCache(cacheName);
 
         // When

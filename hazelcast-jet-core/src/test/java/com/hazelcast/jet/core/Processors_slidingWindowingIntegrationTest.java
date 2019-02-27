@@ -25,8 +25,8 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
@@ -51,7 +51,7 @@ import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -86,8 +86,8 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         DAG dag = new DAG();
         boolean isBatchLocal = isBatch; // to prevent serialization of whole class
 
-        DistributedFunction<? super MyEvent, ?> keyFn = MyEvent::getKey;
-        DistributedToLongFunction<? super MyEvent> timestampFn = MyEvent::getTimestamp;
+        FunctionEx<? super MyEvent, ?> keyFn = MyEvent::getKey;
+        ToLongFunctionEx<? super MyEvent> timestampFn = MyEvent::getTimestamp;
 
         List<MyEvent> inputData = singletonList(new MyEvent(10, "a", 1L));
         Vertex source = dag.newVertex("source", () -> new EmitListP(inputData, isBatchLocal)).localParallelism(1);

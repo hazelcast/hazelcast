@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.impl.util.ConstantFunction;
+import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 
 import javax.annotation.Nonnull;
 
@@ -28,12 +28,12 @@ import static com.hazelcast.jet.core.processor.Processors.rollingAggregateP;
 
 public class GlobalRollingAggregateTransform<T, R> extends AbstractTransform {
     @Nonnull private final AggregateOperation1<? super T, ?, ? extends R> aggrOp;
-    @Nonnull private final DistributedTriFunction<? super T, Integer, ? super R, ? extends R> mapToOutputFn;
+    @Nonnull private final TriFunction<? super T, Integer, ? super R, ? extends R> mapToOutputFn;
 
     public GlobalRollingAggregateTransform(
             @Nonnull Transform upstream,
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull DistributedTriFunction<? super T, Integer, ? super R, ? extends R> mapToOutputFn
+            @Nonnull TriFunction<? super T, Integer, ? super R, ? extends R> mapToOutputFn
     ) {
         super("rolling-aggregate", upstream);
         this.aggrOp = aggrOp;
@@ -42,7 +42,7 @@ public class GlobalRollingAggregateTransform<T, R> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        ConstantFunction<T, Integer> keyFn = new ConstantFunction<>(name().hashCode());
+        ConstantFunctionEx<T, Integer> keyFn = new ConstantFunctionEx<>(name().hashCode());
         PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
                 rollingAggregateP(keyFn, aggrOp, mapToOutputFn));
         p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());

@@ -21,8 +21,8 @@ import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 
@@ -56,7 +56,7 @@ public final class Util {
      * {@link EntryEventType#ADDED ADDED} and {@link EntryEventType#UPDATED
      * UPDATED} events.
      */
-    public static <K, V> DistributedPredicate<EventJournalMapEvent<K, V>> mapPutEvents() {
+    public static <K, V> PredicateEx<EventJournalMapEvent<K, V>> mapPutEvents() {
         return e -> e.getType() == EntryEventType.ADDED || e.getType() == EntryEventType.UPDATED;
     }
 
@@ -66,7 +66,7 @@ public final class Util {
      * {@link CacheEventType#CREATED CREATED} and {@link CacheEventType#UPDATED
      * UPDATED} events.
      */
-    public static <K, V> DistributedPredicate<EventJournalCacheEvent<K, V>> cachePutEvents() {
+    public static <K, V> PredicateEx<EventJournalCacheEvent<K, V>> cachePutEvents() {
         return e -> e.getType() == CacheEventType.CREATED || e.getType() == CacheEventType.UPDATED;
     }
 
@@ -77,7 +77,7 @@ public final class Util {
      * @see Sources#mapJournal
      * @see Sources#remoteMapJournal
      */
-    public static <K, V> DistributedFunction<EventJournalMapEvent<K, V>, Entry<K, V>> mapEventToEntry() {
+    public static <K, V> FunctionEx<EventJournalMapEvent<K, V>, Entry<K, V>> mapEventToEntry() {
         return e -> entry(e.getKey(), e.getNewValue());
     }
 
@@ -88,7 +88,7 @@ public final class Util {
      * @see Sources#mapJournal
      * @see Sources#remoteMapJournal
      */
-    public static <K, V> DistributedFunction<EventJournalMapEvent<K, V>, V> mapEventNewValue() {
+    public static <K, V> FunctionEx<EventJournalMapEvent<K, V>, V> mapEventNewValue() {
         return EventJournalMapEvent::getNewValue;
     }
 
@@ -99,7 +99,7 @@ public final class Util {
      * @see Sources#cacheJournal
      * @see Sources#remoteCacheJournal
      */
-    public static <K, V> DistributedFunction<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
+    public static <K, V> FunctionEx<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
         return e -> entry(e.getKey(), e.getNewValue());
     }
 

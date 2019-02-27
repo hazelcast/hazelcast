@@ -28,8 +28,8 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -63,7 +63,7 @@ import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindow
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
@@ -145,7 +145,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         int numPartitions = 3;
         int elementsInPartition = 250;
-        DistributedSupplier<Processor> sup = () ->
+        SupplierEx<Processor> sup = () ->
                 new SequencesInPartitionsGeneratorP(numPartitions, elementsInPartition, true);
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
                               .localParallelism(1);
@@ -158,7 +158,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         if (twoStage) {
             Vertex aggregateStage1 = dag.newVertex("aggregateStage1", Processors.accumulateByFrameP(
-                    singletonList((DistributedFunction<? super Object, ?>) t -> ((Entry<Integer, Integer>) t).getKey()),
+                    singletonList((FunctionEx<? super Object, ?>) t -> ((Entry<Integer, Integer>) t).getKey()),
                     singletonList(t1 -> ((Entry<Integer, Integer>) t1).getValue()),
                     TimestampKind.EVENT,
                     wDef,
@@ -175,7 +175,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                .edge(between(aggregateStage2, map));
         } else {
             Vertex aggregate = dag.newVertex("aggregate", Processors.aggregateToSlidingWindowP(
-                    singletonList((DistributedFunction<Object, Integer>) t -> ((Entry<Integer, Integer>) t).getKey()),
+                    singletonList((FunctionEx<Object, Integer>) t -> ((Entry<Integer, Integer>) t).getKey()),
                     singletonList(t1 -> ((Entry<Integer, Integer>) t1).getValue()),
                     TimestampKind.EVENT,
                     wDef,
@@ -294,7 +294,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     public void when_jobRestartedGracefully_then_noOutputDuplicated() {
         DAG dag = new DAG();
         int elementsInPartition = 100;
-        DistributedSupplier<Processor> sup = () ->
+        SupplierEx<Processor> sup = () ->
                 new SequencesInPartitionsGeneratorP(3, elementsInPartition, true);
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
                               .localParallelism(1);

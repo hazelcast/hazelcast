@@ -17,8 +17,8 @@
 package com.hazelcast.jet.hadoop;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.hadoop.impl.ReadHdfsP;
 import com.hazelcast.jet.hadoop.impl.WriteHdfsP;
 import org.apache.hadoop.mapred.JobConf;
@@ -38,24 +38,24 @@ public final class HdfsProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link HdfsSources#hdfs(JobConf, DistributedBiFunction)}.
+     * {@link HdfsSources#hdfs(JobConf, BiFunctionEx)}.
      */
     @Nonnull
     public static <K, V, R> ReadHdfsP.MetaSupplier<K, V, R> readHdfsP(
-            @Nonnull JobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper
+            @Nonnull JobConf jobConf, @Nonnull BiFunctionEx<K, V, R> mapper
     ) {
         return new ReadHdfsP.MetaSupplier<>(asSerializable(jobConf), mapper);
     }
 
     /**
      * Returns a supplier of processors for
-     * {@link HdfsSinks#hdfs(JobConf, DistributedFunction, DistributedFunction)}.
+     * {@link HdfsSinks#hdfs(JobConf, FunctionEx, FunctionEx)}.
      */
     @Nonnull
     public static <E, K, V> ProcessorMetaSupplier writeHdfsP(
             @Nonnull JobConf jobConf,
-            @Nonnull DistributedFunction<? super E, K> extractKeyFn,
-            @Nonnull DistributedFunction<? super E, V> extractValueFn
+            @Nonnull FunctionEx<? super E, K> extractKeyFn,
+            @Nonnull FunctionEx<? super E, V> extractValueFn
     ) {
         return new WriteHdfsP.MetaSupplier<>(asSerializable(jobConf), extractKeyFn, extractValueFn);
     }

@@ -24,9 +24,9 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.After;
@@ -75,7 +75,7 @@ public class SlidingWindowPTest {
     @Parameter(1)
     public boolean singleStageProcessor;
 
-    private DistributedSupplier<Processor> supplier;
+    private SupplierEx<Processor> supplier;
     private SlidingWindowP lastSuppliedProcessor;
 
     @Parameters(name = "hasDeduct={0}, singleStageProcessor={1}")
@@ -99,9 +99,9 @@ public class SlidingWindowPTest {
                 .andDeduct(hasDeduct ? LongAccumulator::subtract : null)
                 .andExportFinish(LongAccumulator::get);
 
-        DistributedFunction<?, Long> keyFn = t -> KEY;
-        DistributedToLongFunction<Entry<Long, Long>> timestampFn = Entry::getKey;
-        DistributedSupplier<Processor> procSupplier = singleStageProcessor
+        FunctionEx<?, Long> keyFn = t -> KEY;
+        ToLongFunctionEx<Entry<Long, Long>> timestampFn = Entry::getKey;
+        SupplierEx<Processor> procSupplier = singleStageProcessor
                 ? aggregateToSlidingWindowP(
                         singletonList(keyFn),
                         singletonList(timestampFn),

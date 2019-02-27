@@ -19,8 +19,8 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -140,14 +140,14 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Factory method that wraps the given {@code Supplier<Processor>}
      * and uses it as the supplier of all {@code Processor} instances.
      * Specifically, returns a meta-supplier that will always return the
-     * result of calling {@link ProcessorSupplier#of(DistributedSupplier)}.
+     * result of calling {@link ProcessorSupplier#of(SupplierEx)}.
      *
      * @param procSupplier              the supplier of processors
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
      */
     @Nonnull
     static ProcessorMetaSupplier of(
-            @Nonnull DistributedSupplier<? extends Processor> procSupplier,
+            @Nonnull SupplierEx<? extends Processor> procSupplier,
             int preferredLocalParallelism
     ) {
         return of(ProcessorSupplier.of(procSupplier), preferredLocalParallelism);
@@ -157,12 +157,12 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Factory method that wraps the given {@code Supplier<Processor>}
      * and uses it as the supplier of all {@code Processor} instances.
      * Specifically, returns a meta-supplier that will always return the
-     * result of calling {@link ProcessorSupplier#of(DistributedSupplier)}.
+     * result of calling {@link ProcessorSupplier#of(SupplierEx)}.
      * The {@link #preferredLocalParallelism()} of the meta-supplier will be
      * {@link Vertex#LOCAL_PARALLELISM_USE_DEFAULT}.
      */
     @Nonnull
-    static ProcessorMetaSupplier of(@Nonnull DistributedSupplier<? extends Processor> procSupplier) {
+    static ProcessorMetaSupplier of(@Nonnull SupplierEx<? extends Processor> procSupplier) {
         return of(procSupplier, Vertex.LOCAL_PARALLELISM_USE_DEFAULT);
     }
 
@@ -176,7 +176,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @Nonnull
     static ProcessorMetaSupplier of(
-            @Nonnull DistributedFunction<? super Address, ? extends ProcessorSupplier> addressToSupplier,
+            @Nonnull FunctionEx<? super Address, ? extends ProcessorSupplier> addressToSupplier,
             int preferredLocalParallelism
     ) {
         Vertex.checkLocalParallelism(preferredLocalParallelism);
@@ -201,7 +201,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @Nonnull
     static ProcessorMetaSupplier of(
-            @Nonnull DistributedFunction<? super Address, ? extends ProcessorSupplier> addressToSupplier
+            @Nonnull FunctionEx<? super Address, ? extends ProcessorSupplier> addressToSupplier
     ) {
         return of(addressToSupplier, Vertex.LOCAL_PARALLELISM_USE_DEFAULT);
     }
@@ -222,12 +222,12 @@ public interface ProcessorMetaSupplier extends Serializable {
 
     /**
      * Variant of {@link #preferLocalParallelismOne(ProcessorSupplier)} where
-     * the supplied {@code DistributedSupplier<Processor>} will be
+     * the supplied {@code SupplierEx<Processor>} will be
      * wrapped into a {@link ProcessorSupplier}.
      */
     @Nonnull
     static ProcessorMetaSupplier preferLocalParallelismOne(
-            @Nonnull DistributedSupplier<? extends Processor> procSupplier
+            @Nonnull SupplierEx<? extends Processor> procSupplier
     ) {
         return of(ProcessorSupplier.of(procSupplier), 1);
     }

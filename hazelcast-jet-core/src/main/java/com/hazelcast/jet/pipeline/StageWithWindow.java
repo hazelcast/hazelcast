@@ -22,7 +22,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.WindowResult2Function;
 import com.hazelcast.jet.function.WindowResult3Function;
 import com.hazelcast.jet.function.WindowResultFunction;
@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
 import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.Functions.wholeItem;
 
 /**
  * Represents an intermediate step in the construction of a pipeline stage
@@ -72,7 +72,7 @@ public interface StageWithWindow<T> {
      */
     @Nonnull
     <K> StageWithKeyAndWindow<T, K> groupingKey(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyFn
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn
     );
 
     /**

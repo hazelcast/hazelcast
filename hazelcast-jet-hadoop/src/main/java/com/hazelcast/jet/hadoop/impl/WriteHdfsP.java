@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.hadoop.HdfsProcessors;
 import com.hazelcast.nio.Address;
 import org.apache.hadoop.mapred.JobContextImpl;
@@ -45,21 +45,21 @@ import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;
 
 /**
  * See {@link HdfsProcessors#writeHdfsP(
- * org.apache.hadoop.mapred.JobConf, DistributedFunction, DistributedFunction)}.
+ * org.apache.hadoop.mapred.JobConf, FunctionEx, FunctionEx)}.
  */
 public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
 
     private final RecordWriter<K, V> recordWriter;
     private final TaskAttemptContextImpl taskAttemptContext;
     private final OutputCommitter outputCommitter;
-    private final DistributedFunction<? super T, K> extractKeyFn;
-    private final DistributedFunction<? super T, V> extractValueFn;
+    private final FunctionEx<? super T, K> extractKeyFn;
+    private final FunctionEx<? super T, V> extractValueFn;
 
     private WriteHdfsP(RecordWriter<K, V> recordWriter,
                        TaskAttemptContextImpl taskAttemptContext,
                        OutputCommitter outputCommitter,
-                       DistributedFunction<? super T, K> extractKeyFn,
-                       DistributedFunction<? super T, V> extractValueFn
+                       FunctionEx<? super T, K> extractKeyFn,
+                       FunctionEx<? super T, V> extractValueFn
     ) {
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
@@ -94,15 +94,15 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final SerializableJobConf jobConf;
-        private final DistributedFunction<? super T, K> extractKeyFn;
-        private final DistributedFunction<? super T, V> extractValueFn;
+        private final FunctionEx<? super T, K> extractKeyFn;
+        private final FunctionEx<? super T, V> extractValueFn;
 
         private transient OutputCommitter outputCommitter;
         private transient JobContextImpl jobContext;
 
         public MetaSupplier(SerializableJobConf jobConf,
-                            DistributedFunction<? super T, K> extractKeyFn,
-                            DistributedFunction<? super T, V> extractValueFn
+                            FunctionEx<? super T, K> extractKeyFn,
+                            FunctionEx<? super T, V> extractValueFn
         ) {
             this.jobConf = jobConf;
             this.extractKeyFn = extractKeyFn;
@@ -129,7 +129,7 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         }
 
         @Override @Nonnull
-        public DistributedFunction<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+        public FunctionEx<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new Supplier<>(jobConf, extractKeyFn, extractValueFn);
         }
     }
@@ -139,16 +139,16 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final SerializableJobConf jobConf;
-        private final DistributedFunction<? super T, K> extractKeyFn;
-        private final DistributedFunction<? super T, V> extractValueFn;
+        private final FunctionEx<? super T, K> extractKeyFn;
+        private final FunctionEx<? super T, V> extractValueFn;
 
         private transient Context context;
         private transient OutputCommitter outputCommitter;
         private transient JobContextImpl jobContext;
 
         Supplier(SerializableJobConf jobConf,
-                 DistributedFunction<? super T, K> extractKeyFn,
-                 DistributedFunction<? super T, V> extractValueFn
+                 FunctionEx<? super T, K> extractKeyFn,
+                 FunctionEx<? super T, V> extractValueFn
         ) {
             this.jobConf = jobConf;
             this.extractKeyFn = extractKeyFn;

@@ -27,11 +27,11 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedQuadFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedTriFunction;
-import com.hazelcast.jet.function.DistributedTriPredicate;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.QuadFunction;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -66,7 +66,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull @Override
     default <V, R> BatchStage<R> mapUsingIMap(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
         return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(mapName, mapFn);
     }
@@ -74,7 +74,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull @Override
     default <V, R> BatchStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
-            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
         return (BatchStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(iMap, mapFn);
     }
@@ -82,44 +82,44 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull @Override
     <C, R> BatchStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
     );
 
     @Nonnull @Override
     <C, R> BatchStage<R> mapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     );
 
     @Nonnull @Override
     <C> BatchStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
+            @Nonnull TriPredicate<? super C, ? super K, ? super T> filterFn
     );
 
     @Nonnull @Override
     <C> BatchStage<T> filterUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     );
 
     @Nonnull @Override
     <C, R> BatchStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
 
     @Nonnull @Override
     <C, R> BatchStage<R> flatMapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     );
 
     @Nonnull @Override
     <R, OUT> BatchStage<OUT> rollingAggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
     );
 
     @Nonnull @Override
@@ -146,7 +146,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull
     <R, OUT> BatchStage<OUT> aggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn);
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn);
 
     /**
      * Attaches a stage that performs the given group-and-aggregate operation.
@@ -195,7 +195,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     <T1, R, OUT> BatchStage<OUT> aggregate2(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn);
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn);
 
     /**
      * Attaches a stage that performs the given cogroup-and-aggregate operation
@@ -253,7 +253,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull AggregateOperation1<? super T, ?, R0> aggrOp0,
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1,
-            @Nonnull DistributedTriFunction<? super K, ? super R0, ? super R1, OUT> mapToOutputFn
+            @Nonnull TriFunction<? super K, ? super R0, ? super R1, OUT> mapToOutputFn
     ) {
         return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2),
                 (key, tuple) -> mapToOutputFn.apply(key, tuple.f0(), tuple.f1()));
@@ -324,7 +324,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn);
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn);
 
     /**
      * Attaches a stage that performs the given cogroup-and-aggregate operation
@@ -395,7 +395,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
             @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2,
-            @Nonnull DistributedQuadFunction<? super K, ? super R0, ? super R1, ? super R2, ? extends OUT> mapToOutputFn
+            @Nonnull QuadFunction<? super K, ? super R0, ? super R1, ? super R2, ? extends OUT> mapToOutputFn
     ) {
         return aggregate3(stage1, stage2,
                 aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3),
@@ -543,7 +543,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
 
     @Nonnull @Override
     default <R> BatchStage<R> customTransform(@Nonnull String stageName,
-                                              @Nonnull DistributedSupplier<Processor> procSupplier
+                                              @Nonnull SupplierEx<Processor> procSupplier
     ) {
         return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
     }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.aggregate;
 
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
 
 import javax.annotation.Nonnull;
 
@@ -51,14 +51,14 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
      * item coming from stream-0.
      */
     @Nonnull
-    DistributedBiConsumer<? super A, ? super T0> accumulateFn0();
+    BiConsumerEx<? super A, ? super T0> accumulateFn0();
 
     /**
      * A primitive that updates the accumulator state to account for a new
      * item coming from stream-1.
      */
     @Nonnull
-    DistributedBiConsumer<? super A, ? super T1> accumulateFn1();
+    BiConsumerEx<? super A, ? super T1> accumulateFn1();
 
     /**
      * Returns a copy of this aggregate operation, but with the {@code
@@ -66,7 +66,7 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
      */
     @Nonnull
     <T0_NEW> AggregateOperation2<T0_NEW, T1, A, R> withAccumulateFn0(
-            @Nonnull DistributedBiConsumer<? super A, ? super T0_NEW> newAccFn0
+            @Nonnull BiConsumerEx<? super A, ? super T0_NEW> newAccFn0
     );
 
     /**
@@ -75,7 +75,7 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
      */
     @Nonnull
     <T1_NEW> AggregateOperation2<T0, T1_NEW, A, R> withAccumulateFn1(
-            @Nonnull DistributedBiConsumer<? super A, ? super T1_NEW> newAccFn1
+            @Nonnull BiConsumerEx<? super A, ? super T1_NEW> newAccFn1
     );
 
     // Narrows the return type
@@ -84,5 +84,5 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
 
     // Narrows the return type
     @Nonnull @Override
-    <R_NEW> AggregateOperation2<T0, T1, A, R_NEW> andThen(DistributedFunction<? super R, ? extends R_NEW> thenFn);
+    <R_NEW> AggregateOperation2<T0, T1, A, R_NEW> andThen(FunctionEx<? super R, ? extends R_NEW> thenFn);
 }

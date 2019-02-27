@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
@@ -33,7 +33,7 @@ public final class FileSinkBuilder<T> {
 
     private final String directoryName;
 
-    private DistributedFunction<? super T, String> toStringFn = Object::toString;
+    private FunctionEx<? super T, String> toStringFn = Object::toString;
     private Charset charset = StandardCharsets.UTF_8;
     private boolean append;
 
@@ -49,7 +49,7 @@ public final class FileSinkBuilder<T> {
      * Each item is followed with a platform-specific line separator. Default
      * value is {@link Object#toString}.
      */
-    public FileSinkBuilder<T> toStringFn(@Nonnull DistributedFunction<? super T, String> toStringFn) {
+    public FileSinkBuilder<T> toStringFn(@Nonnull FunctionEx<? super T, String> toStringFn) {
         this.toStringFn = toStringFn;
         return this;
     }

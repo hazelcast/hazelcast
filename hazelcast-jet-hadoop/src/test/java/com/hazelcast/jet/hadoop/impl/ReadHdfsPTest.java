@@ -21,7 +21,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -181,9 +181,9 @@ public class ReadHdfsPTest extends HdfsTestSupport {
         CUSTOM((k, v) -> v.toString()),
         CUSTOM_WITH_NULLS((k, v) -> parseInt(v.toString().substring(4, 5)) % 2 == 0 ? v.toString() : null);
 
-        private final DistributedBiFunction<?, Text, ?> mapper;
+        private final BiFunctionEx<?, Text, ?> mapper;
 
-        EMapperType(DistributedBiFunction<?, Text, ?> mapper) {
+        EMapperType(BiFunctionEx<?, Text, ?> mapper) {
             this.mapper = mapper;
         }
     }

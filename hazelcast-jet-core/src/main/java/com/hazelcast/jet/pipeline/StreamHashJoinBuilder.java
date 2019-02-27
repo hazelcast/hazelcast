@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.datamodel.ItemsByTag;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.pipeline.StreamStageImpl;
 
 /**
@@ -47,7 +47,7 @@ public class StreamHashJoinBuilder<T0> extends GeneralHashJoinBuilder<T0> {
      *
      * @return the new hash-join pipeline stage
      */
-    public <R> StreamStage<R> build(DistributedBiFunction<T0, ItemsByTag, R> mapToOutputFn) {
+    public <R> StreamStage<R> build(BiFunctionEx<T0, ItemsByTag, R> mapToOutputFn) {
         return (StreamStage<R>) build0(mapToOutputFn);
     }
 }

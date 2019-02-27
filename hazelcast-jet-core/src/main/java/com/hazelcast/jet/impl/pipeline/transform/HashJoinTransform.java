@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.processor.HashJoinCollectP;
@@ -41,15 +41,15 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
     @Nonnull
     private final List<Tag> tags;
     @Nullable
-    private final DistributedBiFunction mapToOutputBiFn;
+    private final BiFunctionEx mapToOutputBiFn;
     @Nullable
-    private final DistributedTriFunction mapToOutputTriFn;
+    private final TriFunction mapToOutputTriFn;
 
     public HashJoinTransform(
             @Nonnull List<Transform> upstream,
             @Nonnull List<JoinClause<?, ? super T0, ?, ?>> clauses,
             @Nonnull List<Tag> tags,
-            @Nonnull DistributedBiFunction mapToOutputBiFn
+            @Nonnull BiFunctionEx mapToOutputBiFn
     ) {
         super(upstream.size() + "-way hash-join", upstream);
         this.clauses = clauses;
@@ -62,7 +62,7 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
             @Nonnull List<Transform> upstream,
             @Nonnull List<JoinClause<?, ? super T0, ?, ?>> clauses,
             @Nonnull List<Tag> tags,
-            @Nonnull DistributedTriFunction<T0, T1, T2, R> mapToOutputTriFn
+            @Nonnull TriFunction<T0, T1, T2, R> mapToOutputTriFn
     ) {
         super(upstream.size() + "-way hash-join", upstream);
         this.clauses = clauses;
@@ -101,8 +101,8 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
                                   .collect(toList());
 
         List<Tag> tags = this.tags;
-        DistributedBiFunction mapToOutputBiFn = this.mapToOutputBiFn;
-        DistributedTriFunction mapToOutputTriFn = this.mapToOutputTriFn;
+        BiFunctionEx mapToOutputBiFn = this.mapToOutputBiFn;
+        TriFunction mapToOutputTriFn = this.mapToOutputTriFn;
         Vertex joiner = p.addVertex(this, name() + "-joiner", localParallelism(),
                 () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn)).v;
         p.dag.edge(from(primary.v, primary.nextAvailableOrdinal()).to(joiner, 0));
@@ -112,10 +112,10 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         for (Transform fromTransform : tailList(this.upstream())) {
             PlannerVertex fromPv = p.xform2vertex.get(fromTransform);
             JoinClause<?, ?, ?, ?> clause = this.clauses.get(collectorOrdinal - 1);
-            DistributedFunction<Object, Object> getKeyFn =
-                    (DistributedFunction<Object, Object>) clause.rightKeyFn();
-            DistributedFunction<Object, Object> projectFn =
-                    (DistributedFunction<Object, Object>) clause.rightProjectFn();
+            FunctionEx<Object, Object> getKeyFn =
+                    (FunctionEx<Object, Object>) clause.rightKeyFn();
+            FunctionEx<Object, Object> projectFn =
+                    (FunctionEx<Object, Object>) clause.rightProjectFn();
             Vertex collector = p.dag.newVertex(collectorName + collectorOrdinal,
                     () -> new HashJoinCollectP(getKeyFn, projectFn));
             collector.localParallelism(1);

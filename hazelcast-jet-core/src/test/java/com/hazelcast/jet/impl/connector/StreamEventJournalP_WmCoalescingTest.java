@@ -24,7 +24,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -175,7 +175,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .expectOutput(asList(wm(13), 13, IDLE_MESSAGE));
     }
 
-    public DistributedSupplier<Processor> createSupplier(List<Integer> assignedPartitions, long idleTimeout) {
+    public SupplierEx<Processor> createSupplier(List<Integer> assignedPartitions, long idleTimeout) {
         return () -> new StreamEventJournalP<>(map, assignedPartitions, e -> true,
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, false,
                 eventTimePolicy(Integer::intValue, limitingLag(0), 1, 0, idleTimeout));

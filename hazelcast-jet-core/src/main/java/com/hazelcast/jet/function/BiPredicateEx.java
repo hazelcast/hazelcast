@@ -19,26 +19,26 @@ package com.hazelcast.jet.function;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
 import java.io.Serializable;
-import java.util.function.DoublePredicate;
+import java.util.function.BiPredicate;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * {@code Serializable} variant of {@link DoublePredicate
- * java.util.function.DoublePredicate} which declares checked exception.
+ * {@code Serializable} variant of {@link BiPredicate
+ * java.util.function.BiPredicate} which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedDoublePredicate extends DoublePredicate, Serializable {
+public interface BiPredicateEx<T, U> extends BiPredicate<T, U>, Serializable {
 
     /**
-     * Exception-declaring version of {@link DoublePredicate#test}.
+     * Exception-declaring version of {@link BiPredicate#test}.
      */
-    boolean testEx(double value) throws Exception;
+    boolean testEx(T t, U u) throws Exception;
 
     @Override
-    default boolean test(double value) {
+    default boolean test(T t, U u) {
         try {
-            return testEx(value);
+            return testEx(t, u);
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
@@ -46,29 +46,28 @@ public interface DistributedDoublePredicate extends DoublePredicate, Serializabl
 
     /**
      * {@code Serializable} variant of {@link
-     * DoublePredicate#and(DoublePredicate)
-     * java.util.function.DoublePredicate#and(DoublePredicate)}.
+     * BiPredicate#and(BiPredicate) java.util.function.BiPredicate#and(BiPredicate)}.
      */
-    default DistributedDoublePredicate and(DistributedDoublePredicate other) {
+    default BiPredicateEx<T, U> and(BiPredicateEx<? super T, ? super U> other) {
         checkNotNull(other, "other");
-        return (value) -> test(value) && other.test(value);
-    }
-
-    /**
-     * {@code Serializable} variant of {@link DoublePredicate#negate()}.
-     */
-    @Override
-    default DistributedDoublePredicate negate() {
-        return v -> !test(v);
+        return (T t, U u) -> test(t, u) && other.test(t, u);
     }
 
     /**
      * {@code Serializable} variant of {@link
-     * DoublePredicate#or(DoublePredicate)
-     * java.util.function.DoublePredicate#or(DoublePredicate)}.
+     * BiPredicate#negate() java.util.function.BiPredicate#negate()}.
      */
-    default DistributedDoublePredicate or(DistributedDoublePredicate other) {
+    @Override
+    default BiPredicateEx<T, U> negate() {
+        return (T t, U u) -> !test(t, u);
+    }
+
+    /**
+     * {@code Serializable} variant of {@link
+     * BiPredicate#or(BiPredicate) java.util.function.BiPredicate#or(BiPredicate)}.
+     */
+    default BiPredicateEx<T, U> or(BiPredicateEx<? super T, ? super U> other) {
         checkNotNull(other, "other");
-        return (value) -> test(value) || other.test(value);
+        return (T t, U u) -> test(t, u) || other.test(t, u);
     }
 }

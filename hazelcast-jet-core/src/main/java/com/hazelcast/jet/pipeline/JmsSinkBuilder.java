@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 
@@ -41,14 +41,14 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class JmsSinkBuilder<T> {
 
-    private final DistributedSupplier<ConnectionFactory> factorySupplier;
+    private final SupplierEx<ConnectionFactory> factorySupplier;
     private final boolean isTopic;
 
-    private DistributedFunction<ConnectionFactory, Connection> connectionFn;
-    private DistributedFunction<Connection, Session> sessionFn;
-    private DistributedBiFunction<Session, T, Message> messageFn;
-    private DistributedBiConsumer<MessageProducer, Message> sendFn;
-    private DistributedConsumer<Session> flushFn;
+    private FunctionEx<ConnectionFactory, Connection> connectionFn;
+    private FunctionEx<Connection, Session> sessionFn;
+    private BiFunctionEx<Session, T, Message> messageFn;
+    private BiConsumerEx<MessageProducer, Message> sendFn;
+    private ConsumerEx<Session> flushFn;
 
     private String username;
     private String password;
@@ -59,7 +59,7 @@ public final class JmsSinkBuilder<T> {
     /**
      * Use {@link Sinks#jmsQueueBuilder} or {@link Sinks#jmsTopicBuilder}.
      */
-    JmsSinkBuilder(@Nonnull DistributedSupplier<ConnectionFactory> factorySupplier, boolean isTopic) {
+    JmsSinkBuilder(@Nonnull SupplierEx<ConnectionFactory> factorySupplier, boolean isTopic) {
         checkSerializable(factorySupplier, "factorySupplier");
         this.factorySupplier = factorySupplier;
         this.isTopic = isTopic;
@@ -85,7 +85,7 @@ public final class JmsSinkBuilder<T> {
      * ConnectionFactory#createConnection(username, password)} to create the
      * connection. See {@link #connectionParams(String, String)}.
      */
-    public JmsSinkBuilder<T> connectionFn(@Nonnull DistributedFunction<ConnectionFactory, Connection> connectionFn) {
+    public JmsSinkBuilder<T> connectionFn(@Nonnull FunctionEx<ConnectionFactory, Connection> connectionFn) {
         checkSerializable(connectionFn, "connectionFn");
         this.connectionFn = connectionFn;
         return this;
@@ -113,7 +113,7 @@ public final class JmsSinkBuilder<T> {
      * Connection#createSession(boolean transacted, int acknowledgeMode)} to
      * create the session. See {@link #sessionParams(boolean, int)}.
      */
-    public JmsSinkBuilder<T> sessionFn(@Nonnull DistributedFunction<Connection, Session> sessionFn) {
+    public JmsSinkBuilder<T> sessionFn(@Nonnull FunctionEx<Connection, Session> sessionFn) {
         checkSerializable(sessionFn, "sessionFn");
         this.sessionFn = sessionFn;
         return this;
@@ -134,7 +134,7 @@ public final class JmsSinkBuilder<T> {
      * item.toString()} into a {@link javax.jms.TextMessage}, unless the item
      * is already an instance of {@code javax.jms.Message}.
      */
-    public JmsSinkBuilder<T> messageFn(DistributedBiFunction<Session, T, Message> messageFn) {
+    public JmsSinkBuilder<T> messageFn(BiFunctionEx<Session, T, Message> messageFn) {
         checkSerializable(messageFn, "messageFn");
         this.messageFn = messageFn;
         return this;
@@ -146,7 +146,7 @@ public final class JmsSinkBuilder<T> {
      * If not provided, the builder creates a function which sends the message via
      * {@code MessageProducer#send(Message message)}.
      */
-    public JmsSinkBuilder<T> sendFn(DistributedBiConsumer<MessageProducer, Message> sendFn) {
+    public JmsSinkBuilder<T> sendFn(BiConsumerEx<MessageProducer, Message> sendFn) {
         checkSerializable(sendFn, "sendFn");
         this.sendFn = sendFn;
         return this;
@@ -158,7 +158,7 @@ public final class JmsSinkBuilder<T> {
      * <p>
      * If not provided, the builder creates a no-op consumer.
      */
-    public JmsSinkBuilder<T> flushFn(DistributedConsumer<Session> flushFn) {
+    public JmsSinkBuilder<T> flushFn(ConsumerEx<Session> flushFn) {
         checkSerializable(flushFn, "flushFn");
         this.flushFn = flushFn;
         return this;
@@ -188,12 +188,12 @@ public final class JmsSinkBuilder<T> {
             sendFn = MessageProducer::send;
         }
         if (flushFn == null) {
-            flushFn = DistributedConsumer.noop();
+            flushFn = ConsumerEx.noop();
         }
 
-        DistributedFunction<ConnectionFactory, Connection> connectionFnLocal = connectionFn;
-        DistributedSupplier<ConnectionFactory> factorySupplierLocal = factorySupplier;
-        DistributedSupplier<Connection> connectionSupplier = () -> connectionFnLocal.apply(factorySupplierLocal.get());
+        FunctionEx<ConnectionFactory, Connection> connectionFnLocal = connectionFn;
+        SupplierEx<ConnectionFactory> factorySupplierLocal = factorySupplier;
+        SupplierEx<Connection> connectionSupplier = () -> connectionFnLocal.apply(factorySupplierLocal.get());
         return new SinkImpl<>(sinkName(),
                 WriteJmsP.supplier(connectionSupplier, sessionFn, messageFn, sendFn, flushFn, destinationName, isTopic));
     }

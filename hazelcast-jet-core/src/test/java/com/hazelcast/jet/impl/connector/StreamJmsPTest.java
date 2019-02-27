@@ -20,8 +20,8 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ConsumerEx;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -109,12 +109,12 @@ public class StreamJmsPTest extends JetTestSupport {
         processorConnection = broker.createConnectionFactory().createConnection();
         processorConnection.start();
 
-        DistributedFunction<Connection, Session> sessionFn = c -> c.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        DistributedFunction<Session, MessageConsumer> consumerFn = s ->
+        FunctionEx<Connection, Session> sessionFn = c -> c.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        FunctionEx<Session, MessageConsumer> consumerFn = s ->
                 s.createConsumer(isQueue ? s.createQueue(destinationName) : s.createTopic(destinationName));
-        DistributedFunction<Message, String> textMessageFn = m -> ((TextMessage) m).getText();
+        FunctionEx<Message, String> textMessageFn = m -> ((TextMessage) m).getText();
         processor = new StreamJmsP<>(
-                processorConnection, sessionFn, consumerFn, DistributedConsumer.noop(), textMessageFn, noEventTime());
+                processorConnection, sessionFn, consumerFn, ConsumerEx.noop(), textMessageFn, noEventTime());
         outbox = new TestOutbox(1);
         Context ctx = new TestProcessorContext().setLogger(Logger.getLogger(StreamJmsP.class));
         processor.init(outbox, ctx);

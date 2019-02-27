@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
@@ -27,18 +27,18 @@ import static com.hazelcast.jet.core.processor.Processors.flatMapP;
 
 public class FlatMapTransform<T, R> extends AbstractTransform {
     @Nonnull
-    private DistributedFunction<? super T, ? extends Traverser<? extends R>> flatMapFn;
+    private FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn;
 
     public FlatMapTransform(
             @Nonnull Transform upstream,
-            @Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         super("flat-map", upstream);
         this.flatMapFn = flatMapFn;
     }
 
     @Nonnull
-    public DistributedFunction<? super T, ? extends Traverser<? extends R>> flatMapFn() {
+    public FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn() {
         return flatMapFn;
     }
 

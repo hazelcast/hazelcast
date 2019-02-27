@@ -16,12 +16,21 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
+import java.io.Serializable;
+
 /**
  * Represents a specialization of {@link java.util.function.BiFunction} where
  * the second argument is a {@code long}.
  **/
 @FunctionalInterface
-public interface ObjLongBiFunction<T, R> {
+public interface ObjLongBiFunction<T, R> extends Serializable {
+
+    /**
+     * Exception-declaring version of {@link ObjLongBiFunction#apply}.
+     */
+    R applyEx(T t, long u) throws Exception;
 
     /**
      * Applies this function to the given arguments.
@@ -30,5 +39,11 @@ public interface ObjLongBiFunction<T, R> {
      * @param u the second function argument
      * @return the function result
      */
-    R apply(T t, long u);
+    default R apply(T t, long u) {
+        try {
+            return applyEx(t, u);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

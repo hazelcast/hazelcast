@@ -19,10 +19,10 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
-import com.hazelcast.jet.impl.util.ConstantFunction;
+import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -35,7 +35,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 import static com.hazelcast.jet.core.Partitioner.defaultPartitioner;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.Functions.wholeItem;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
@@ -260,9 +260,9 @@ public class Edge implements IdentifiedDataSerializable {
      * the {@code extractKeyFn} function.
      */
     @Nonnull
-    public <T> Edge partitioned(@Nonnull DistributedFunction<T, ?> extractKeyFn) {
-        // optimization for DistributedFunctions#constantKey()
-        if (extractKeyFn instanceof ConstantFunction) {
+    public <T> Edge partitioned(@Nonnull FunctionEx<T, ?> extractKeyFn) {
+        // optimization for Functions#constantKey()
+        if (extractKeyFn instanceof ConstantFunctionEx) {
             return allToOne(extractKeyFn.apply(null));
         }
         return partitioned(extractKeyFn, defaultPartitioner());
@@ -275,7 +275,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public <T, K> Edge partitioned(
-            @Nonnull DistributedFunction<T, K> extractKeyFn,
+            @Nonnull FunctionEx<T, K> extractKeyFn,
             @Nonnull Partitioner<? super K> partitioner
     ) {
         checkSerializable(extractKeyFn, "extractKeyFn");
@@ -563,11 +563,11 @@ public class Edge implements IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final DistributedFunction<T, K> keyExtractor;
+        private final FunctionEx<T, K> keyExtractor;
         private final Partitioner<? super K> partitioner;
         private final String edgeDebugName;
 
-        KeyPartitioner(@Nonnull DistributedFunction<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner,
+        KeyPartitioner(@Nonnull FunctionEx<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner,
                        String edgeDebugName) {
             this.keyExtractor = keyExtractor;
             this.partitioner = partitioner;

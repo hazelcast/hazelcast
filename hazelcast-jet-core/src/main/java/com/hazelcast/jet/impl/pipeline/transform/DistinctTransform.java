@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.ContextFactory;
@@ -31,9 +31,9 @@ import static com.hazelcast.jet.core.processor.Processors.filterUsingContextP;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 
 public class DistinctTransform<T, K> extends AbstractTransform {
-    private final DistributedFunction<? super T, ? extends K> keyFn;
+    private final FunctionEx<? super T, ? extends K> keyFn;
 
-    public DistinctTransform(Transform upstream, DistributedFunction<? super T, ? extends K> keyFn) {
+    public DistinctTransform(Transform upstream, FunctionEx<? super T, ? extends K> keyFn) {
         super("distinct", upstream);
         this.keyFn = keyFn;
     }
@@ -49,7 +49,7 @@ public class DistinctTransform<T, K> extends AbstractTransform {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T, K> ProcessorSupplier distinctP(DistributedFunction<? super T, ? extends K> keyFn) {
+    private static <T, K> ProcessorSupplier distinctP(FunctionEx<? super T, ? extends K> keyFn) {
         return filterUsingContextP(ContextFactory.withCreateFn(jet -> new HashSet<>()),
                 (seenItems, item) -> seenItems.add(keyFn.apply((T) item)));
     }

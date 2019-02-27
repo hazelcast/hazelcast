@@ -23,7 +23,7 @@ import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import org.junit.Test;
 
 import java.util.List;
@@ -48,10 +48,10 @@ import static org.junit.Assert.assertEquals;
 
 public class WindowAggregateTest extends PipelineStreamTestSupport {
 
-    private static final DistributedBiFunction<Long, Tuple2<Long, Long>, String> FORMAT_FN_2 =
+    private static final BiFunctionEx<Long, Tuple2<Long, Long>, String> FORMAT_FN_2 =
             (timestamp, sums) -> String.format("(%04d: %04d, %04d)", timestamp, sums.f0(), sums.f1());
 
-    private static final DistributedBiFunction<Long, Tuple3<Long, Long, Long>, String> FORMAT_FN_3 =
+    private static final BiFunctionEx<Long, Tuple3<Long, Long, Long>, String> FORMAT_FN_3 =
             (timestamp, sums) -> String.format("(%04d: %04d, %04d, %04d)",
             timestamp, sums.f0(), sums.f1(), sums.f2());
 

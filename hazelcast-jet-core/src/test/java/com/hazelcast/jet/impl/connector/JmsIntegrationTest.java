@@ -19,8 +19,8 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.TimestampedItem;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -63,7 +63,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
     public static EmbeddedActiveMQBroker broker = new EmbeddedActiveMQBroker();
 
     private static final int MESSAGE_COUNT = 100;
-    private static final DistributedFunction<Message, String> TEXT_MESSAGE_FN = m -> ((TextMessage) m).getText();
+    private static final FunctionEx<Message, String> TEXT_MESSAGE_FN = m -> ((TextMessage) m).getText();
 
     private String destinationName = randomString();
     private Job job;
@@ -159,7 +159,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                 .connectionFn(ConnectionFactory::createConnection)
                 .sessionFn(connection -> connection.createSession(false, AUTO_ACKNOWLEDGE))
                 .consumerFn(session -> session.createConsumer(session.createQueue(queueName)))
-                .flushFn(DistributedConsumer.noop())
+                .flushFn(ConsumerEx.noop())
                 .build(TEXT_MESSAGE_FN);
 
         p.drawFrom(source).withoutTimestamps().drainTo(sink);
@@ -273,7 +273,7 @@ public class JmsIntegrationTest extends PipelineTestSupport {
                 .sessionFn(connection -> connection.createSession(false, AUTO_ACKNOWLEDGE))
                 .messageFn(Session::createTextMessage)
                 .sendFn(MessageProducer::send)
-                .flushFn(DistributedConsumer.noop())
+                .flushFn(ConsumerEx.noop())
                 .destinationName(destinationName)
                 .build();
 

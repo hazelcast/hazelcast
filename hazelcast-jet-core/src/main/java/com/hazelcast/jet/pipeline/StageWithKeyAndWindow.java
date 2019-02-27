@@ -23,7 +23,7 @@ import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.KeyedWindowResult2Function;
 import com.hazelcast.jet.function.KeyedWindowResult3Function;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
@@ -53,7 +53,7 @@ public interface StageWithKeyAndWindow<T, K> {
      * construct using this object.
      */
     @Nonnull
-    DistributedFunction<? super T, ? extends K> keyFn();
+    FunctionEx<? super T, ? extends K> keyFn();
 
     /**
      * Returns the definition of the window for the windowed aggregation

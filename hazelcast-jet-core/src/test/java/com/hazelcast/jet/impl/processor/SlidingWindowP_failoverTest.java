@@ -26,7 +26,7 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.impl.processor.SlidingWindowP.Keys;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -41,7 +41,7 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
@@ -59,7 +59,7 @@ public class SlidingWindowP_failoverTest {
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
         p = new SlidingWindowP<>(
                 singletonList(entryKey()),
-                singletonList((DistributedToLongFunction<Entry<?, Long>>) Entry::getValue),
+                singletonList((ToLongFunctionEx<Entry<?, Long>>) Entry::getValue),
                 wDef,
                 0L,
                 aggrOp,

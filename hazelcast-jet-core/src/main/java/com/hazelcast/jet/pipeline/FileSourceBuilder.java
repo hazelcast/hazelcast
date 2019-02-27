@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -85,7 +85,7 @@ public final class FileSourceBuilder {
     }
 
     /**
-     * Convenience for {@link FileSourceBuilder#build(DistributedBiFunction)}.
+     * Convenience for {@link FileSourceBuilder#build(BiFunctionEx)}.
      * Source emits lines to downstream without any transformation.
      */
     public BatchSource<String> build() {
@@ -109,13 +109,13 @@ public final class FileSourceBuilder {
      *                    line. Gets the filename and line as parameters
      * @param <T> the type of the items the source emits
      */
-    public <T> BatchSource<T> build(DistributedBiFunction<String, String, ? extends T> mapOutputFn) {
+    public <T> BatchSource<T> build(BiFunctionEx<String, String, ? extends T> mapOutputFn) {
         return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',
                 SourceProcessors.readFilesP(directory, charset, glob, sharedFileSystem, mapOutputFn));
     }
 
     /**
-     * Convenience for {@link FileSourceBuilder#buildWatcher(DistributedBiFunction)}.
+     * Convenience for {@link FileSourceBuilder#buildWatcher(BiFunctionEx)}.
      */
     public StreamSource<String> buildWatcher() {
         return buildWatcher((filename, line) -> line);
@@ -165,7 +165,7 @@ public final class FileSourceBuilder {
      *                    line. Gets the filename and line as parameters
      * @param <T> the type of the items the source emits
      */
-    public <T> StreamSource<T> buildWatcher(DistributedBiFunction<String, String, ? extends T> mapOutputFn) {
+    public <T> StreamSource<T> buildWatcher(BiFunctionEx<String, String, ? extends T> mapOutputFn) {
         return Sources.streamFromProcessor("fileWatcherSource(" + directory + '/' + glob + ')',
                 SourceProcessors.streamFilesP(directory, charset, glob, sharedFileSystem, mapOutputFn));
     }

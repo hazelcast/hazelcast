@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
 import com.hazelcast.jet.pipeline.StreamStage;
@@ -48,7 +48,7 @@ public class StreamSourceStageImpl<T> implements StreamSourceStage<T> {
     }
 
     @Override
-    public StreamStage<T> withTimestamps(@Nonnull DistributedToLongFunction<? super T> timestampFn, long allowedLag) {
+    public StreamStage<T> withTimestamps(@Nonnull ToLongFunctionEx<? super T> timestampFn, long allowedLag) {
         StreamStageImpl<T> result = createStreamStage();
         result.addTimestampsInternal(timestampFn, allowedLag, true);
         return result;

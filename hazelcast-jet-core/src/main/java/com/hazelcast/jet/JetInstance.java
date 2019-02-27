@@ -22,7 +22,7 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
@@ -259,7 +259,7 @@ public interface JetInstance {
      * Returns the replicated map instance with the specified name.
      *
      * A replicated map can be used for enriching a stream, see
-     * {@link GeneralStage#mapUsingReplicatedMap(String, DistributedBiFunction)}
+     * {@link GeneralStage#mapUsingReplicatedMap(String, BiFunctionEx)}
      *
      * @param name name of the distributed map
      * @return distributed map instance with the specified name

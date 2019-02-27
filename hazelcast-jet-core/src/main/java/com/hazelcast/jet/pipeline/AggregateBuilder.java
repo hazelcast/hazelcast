@@ -21,7 +21,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.pipeline.AggBuilder;
 import com.hazelcast.jet.impl.pipeline.AggBuilder.CreateOutStageFn;
 import com.hazelcast.jet.impl.pipeline.BatchStageImpl;
@@ -93,7 +93,7 @@ public class AggregateBuilder<R0> {
      */
     @Nonnull
     public <R> BatchStage<R> build(
-            @Nonnull DistributedFunction<? super ItemsByTag, ? extends R> finishFn
+            @Nonnull FunctionEx<? super ItemsByTag, ? extends R> finishFn
     ) {
         AggregateOperation<Object[], R> aggrOp = aggrOpBuilder.build(finishFn);
         CreateOutStageFn<R, BatchStage<R>> createOutStageFn = BatchStageImpl::new;

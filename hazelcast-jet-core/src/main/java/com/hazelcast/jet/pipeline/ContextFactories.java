@@ -19,8 +19,8 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.IMapJet;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
 
 import javax.annotation.Nonnull;
 
@@ -71,8 +71,8 @@ public final class ContextFactories {
      * the enriching dataset up-to-date.
      * <p>
      * Instead of using this factory, you can call {@link
-     * GeneralStage#mapUsingIMap(IMap, DistributedFunction, DistributedBiFunction)} or {@link
-     * GeneralStageWithKey#mapUsingIMap(IMap, DistributedBiFunction)}.
+     * GeneralStage#mapUsingIMap(IMap, FunctionEx, BiFunctionEx)} or {@link
+     * GeneralStageWithKey#mapUsingIMap(IMap, BiFunctionEx)}.
      * <p>
      * If you plan to use a sync method on the map, call {@link
      * ContextFactory#toNonCooperative()} on the returned factory.

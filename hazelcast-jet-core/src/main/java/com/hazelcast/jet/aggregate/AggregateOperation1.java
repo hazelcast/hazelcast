@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.aggregate;
 
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
 
 import javax.annotation.Nonnull;
 import java.util.stream.Collector;
@@ -41,7 +41,7 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
      * item.
      */
     @Nonnull
-    DistributedBiConsumer<? super A, ? super T> accumulateFn();
+    BiConsumerEx<? super A, ? super T> accumulateFn();
 
     /**
      * Returns a copy of this aggregate operation, but with the {@code
@@ -49,7 +49,7 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
      */
     @Nonnull
     <NEW_T> AggregateOperation1<NEW_T, A, R> withAccumulateFn(
-            DistributedBiConsumer<? super A, ? super NEW_T> accumulateFn
+            BiConsumerEx<? super A, ? super NEW_T> accumulateFn
     );
 
     // Narrows the return type
@@ -58,7 +58,7 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
 
     // Narrows the return type
     @Nonnull @Override
-    <R_NEW> AggregateOperation1<T, A, R_NEW> andThen(DistributedFunction<? super R, ? extends R_NEW> thenFn);
+    <R_NEW> AggregateOperation1<T, A, R_NEW> andThen(FunctionEx<? super R, ? extends R_NEW> thenFn);
 
     /**
      * Adapts this aggregate operation to a collector which can be passed to
@@ -66,7 +66,7 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
      */
     @Nonnull
     default Collector<T, A, R> toCollector() {
-        DistributedBiConsumer<? super A, ? super A> combineFn = combineFn();
+        BiConsumerEx<? super A, ? super A> combineFn = combineFn();
         if (combineFn == null) {
             throw new IllegalArgumentException("This aggregate operation doesn't implement combineFn()");
         }

@@ -17,9 +17,9 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.Functions.wholeItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -38,12 +38,12 @@ public class AggregateOperation1Test {
     public void when_build_then_allPartsThere() {
 
         // Given
-        DistributedSupplier<LongAccumulator> createFn = LongAccumulator::new;
-        DistributedBiConsumer<LongAccumulator, Object> accFn0 = (acc, item) -> acc.addAllowingOverflow(1);
-        DistributedBiConsumer<LongAccumulator, LongAccumulator> combineFn = LongAccumulator::addAllowingOverflow;
-        DistributedBiConsumer<LongAccumulator, LongAccumulator> deductFn = LongAccumulator::subtractAllowingOverflow;
-        DistributedFunction<LongAccumulator, Long> exportFn = acc -> 1L;
-        DistributedFunction<LongAccumulator, Long> finishFn = acc -> 2L;
+        SupplierEx<LongAccumulator> createFn = LongAccumulator::new;
+        BiConsumerEx<LongAccumulator, Object> accFn0 = (acc, item) -> acc.addAllowingOverflow(1);
+        BiConsumerEx<LongAccumulator, LongAccumulator> combineFn = LongAccumulator::addAllowingOverflow;
+        BiConsumerEx<LongAccumulator, LongAccumulator> deductFn = LongAccumulator::subtractAllowingOverflow;
+        FunctionEx<LongAccumulator, Long> exportFn = acc -> 1L;
+        FunctionEx<LongAccumulator, Long> finishFn = acc -> 2L;
 
         // When
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperation
@@ -67,7 +67,7 @@ public class AggregateOperation1Test {
     @Test
     public void accumulate0_synonymFor_accumulate() {
         // Given
-        DistributedBiConsumer<LongAccumulator, Object> accFn = (acc, item) -> acc.addAllowingOverflow(1);
+        BiConsumerEx<LongAccumulator, Object> accFn = (acc, item) -> acc.addAllowingOverflow(1);
 
         // When
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp1 = AggregateOperation
@@ -123,7 +123,7 @@ public class AggregateOperation1Test {
                 .andExportFinish(LongAccumulator::get);
         AggregateOperation1<LongAccumulator, LongAccumulator, Long> combiningAggrOp =
                 aggrOp.withCombiningAccumulateFn(wholeItem());
-        DistributedBiConsumer<? super LongAccumulator, ? super LongAccumulator> accFn = combiningAggrOp.accumulateFn();
+        BiConsumerEx<? super LongAccumulator, ? super LongAccumulator> accFn = combiningAggrOp.accumulateFn();
         LongAccumulator partialAcc1 = combiningAggrOp.createFn().get();
         LongAccumulator partialAcc2 = combiningAggrOp.createFn().get();
         LongAccumulator combinedAcc = combiningAggrOp.createFn().get();

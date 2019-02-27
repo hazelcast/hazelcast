@@ -22,9 +22,9 @@ import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.After;
@@ -58,13 +58,13 @@ public class SlidingWindowP_stage1Test {
     public ExpectedException exception = ExpectedException.none();
 
     private List<SlidingWindowP> suppliedProcessors = new ArrayList<>();
-    private DistributedSupplier<Processor> supplier;
+    private SupplierEx<Processor> supplier;
 
     @Before
     @SuppressWarnings("unchecked")
     public void before() {
-        DistributedFunction<Entry<Long, Long>, Object> keyFn = x -> KEY;
-        DistributedToLongFunction<Entry<Long, Long>> timestampFn = Entry::getKey;
+        FunctionEx<Entry<Long, Long>, Object> keyFn = x -> KEY;
+        ToLongFunctionEx<Entry<Long, Long>> timestampFn = Entry::getKey;
         supplier = () -> {
             SlidingWindowP res = (SlidingWindowP) Processors.accumulateByFrameP(
                     singletonList(keyFn),

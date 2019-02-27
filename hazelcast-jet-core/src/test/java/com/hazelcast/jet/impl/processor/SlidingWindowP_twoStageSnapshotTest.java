@@ -29,9 +29,9 @@ import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -70,8 +70,8 @@ public class SlidingWindowP_twoStageSnapshotTest {
 
     private SlidingWindowP<?, ?, ?, ?> lastSuppliedStage1Processor;
     private SlidingWindowP<?, ?, ?, ?> lastSuppliedStage2Processor;
-    private DistributedSupplier<SlidingWindowP> stage1Supplier;
-    private DistributedSupplier<SlidingWindowP> stage2Supplier;
+    private SupplierEx<SlidingWindowP> stage1Supplier;
+    private SupplierEx<SlidingWindowP> stage2Supplier;
 
     @Parameters(name = "simulateRestore={0}")
     public static Collection<Object> data() {
@@ -89,15 +89,15 @@ public class SlidingWindowP_twoStageSnapshotTest {
                 .andDeduct(LongAccumulator::subtract)
                 .andExportFinish(LongAccumulator::get);
 
-        DistributedSupplier<Processor> procSupplier1 = Processors.accumulateByFrameP(
-                singletonList((DistributedFunction<? super Entry<Long, Long>, ?>) t -> KEY),
-                singletonList((DistributedToLongFunction<? super Entry<Long, Long>>) Entry::getKey),
+        SupplierEx<Processor> procSupplier1 = Processors.accumulateByFrameP(
+                singletonList((FunctionEx<? super Entry<Long, Long>, ?>) t -> KEY),
+                singletonList((ToLongFunctionEx<? super Entry<Long, Long>>) Entry::getKey),
                 TimestampKind.EVENT,
                 windowDef,
                 ((AggregateOperation1<? super Entry<Long, Long>, LongAccumulator, ?>) aggrOp).withIdentityFinish()
         );
 
-        DistributedSupplier<Processor> procSupplier2 =
+        SupplierEx<Processor> procSupplier2 =
                 combineToSlidingWindowP(windowDef, aggrOp, TimestampedEntry::fromWindowResult);
 
         // new supplier to save the last supplied instance

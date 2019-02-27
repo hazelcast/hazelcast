@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 
 import java.util.Map.Entry;
 
@@ -41,7 +41,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *  The enriching stream consists of map entries, but the result should
  *  contain just the values. In this case the projection function should be
  *  {@code Entry::getValue}. There is direct support for this case with the
- *  method {@link #joinMapEntries(DistributedFunction)}.
+ *  method {@link #joinMapEntries(FunctionEx)}.
  *
  * @param <K> the type of the join key
  * @param <T0> the type of the left-hand stream item
@@ -49,14 +49,14 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * @param <T1_OUT> the result type of the right-hand projection function
  */
 public final class JoinClause<K, T0, T1, T1_OUT> {
-    private final DistributedFunction<? super T0, ? extends K> leftKeyFn;
-    private final DistributedFunction<? super T1, ? extends K> rightKeyFn;
-    private final DistributedFunction<? super T1, ? extends T1_OUT> rightProjectFn;
+    private final FunctionEx<? super T0, ? extends K> leftKeyFn;
+    private final FunctionEx<? super T1, ? extends K> rightKeyFn;
+    private final FunctionEx<? super T1, ? extends T1_OUT> rightProjectFn;
 
     private JoinClause(
-            DistributedFunction<? super T0, ? extends K> leftKeyFn,
-            DistributedFunction<? super T1, ? extends K> rightKeyFn,
-            DistributedFunction<? super T1, ? extends T1_OUT> rightProjectFn
+            FunctionEx<? super T0, ? extends K> leftKeyFn,
+            FunctionEx<? super T1, ? extends K> rightKeyFn,
+            FunctionEx<? super T1, ? extends T1_OUT> rightProjectFn
     ) {
         checkSerializable(leftKeyFn, "leftKeyFn");
         checkSerializable(rightKeyFn, "rightKeyFn");
@@ -72,10 +72,10 @@ public final class JoinClause<K, T0, T1, T1_OUT> {
      * projection function.
      */
     public static <K, T0, T1> JoinClause<K, T0, T1, T1> onKeys(
-            DistributedFunction<? super T0, ? extends K> leftKeyFn,
-            DistributedFunction<? super T1, ? extends K> rightKeyFn
+            FunctionEx<? super T0, ? extends K> leftKeyFn,
+            FunctionEx<? super T1, ? extends K> rightKeyFn
     ) {
-        return new JoinClause<>(leftKeyFn, rightKeyFn, DistributedFunction.identity());
+        return new JoinClause<>(leftKeyFn, rightKeyFn, FunctionEx.identity());
     }
 
     /**
@@ -89,7 +89,7 @@ public final class JoinClause<K, T0, T1, T1_OUT> {
      * @param <T1_OUT> the type of the enriching stream's entry value
      */
     public static <K, T0, T1_OUT> JoinClause<K, T0, Entry<K, T1_OUT>, T1_OUT> joinMapEntries(
-            DistributedFunction<? super T0, ? extends K> leftKeyFn
+            FunctionEx<? super T0, ? extends K> leftKeyFn
     ) {
         return new JoinClause<>(leftKeyFn, Entry::getKey, Entry::getValue);
     }
@@ -99,7 +99,7 @@ public final class JoinClause<K, T0, T1, T1_OUT> {
      * function replaced with the supplied one.
      */
     public <T1_NEW_OUT> JoinClause<K, T0, T1, T1_NEW_OUT> projecting(
-            DistributedFunction<? super T1, ? extends T1_NEW_OUT> rightProjectFn
+            FunctionEx<? super T1, ? extends T1_NEW_OUT> rightProjectFn
     ) {
         return new JoinClause<>(this.leftKeyFn, this.rightKeyFn, rightProjectFn);
     }
@@ -107,21 +107,21 @@ public final class JoinClause<K, T0, T1, T1_OUT> {
     /**
      * Returns the left-hand key extractor function.
      */
-    public DistributedFunction<? super T0, ? extends K> leftKeyFn() {
+    public FunctionEx<? super T0, ? extends K> leftKeyFn() {
         return leftKeyFn;
     }
 
     /**
      * Returns the right-hand key extractor function.
      */
-    public DistributedFunction<? super T1, ? extends K> rightKeyFn() {
+    public FunctionEx<? super T1, ? extends K> rightKeyFn() {
         return rightKeyFn;
     }
 
     /**
      * Returns the right-hand projection function.
      */
-    public DistributedFunction<? super T1, ? extends T1_OUT> rightProjectFn() {
+    public FunctionEx<? super T1, ? extends T1_OUT> rightProjectFn() {
         return rightProjectFn;
     }
 }

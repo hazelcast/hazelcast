@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.util.ThrottleWrappedP;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 
@@ -66,7 +66,7 @@ public final class TestUtil {
     }
 
     @Nonnull
-    public static ProcessorMetaSupplier throttle(@Nonnull DistributedSupplier<Processor> wrapped, long itemsPerSecond) {
+    public static ProcessorMetaSupplier throttle(@Nonnull SupplierEx<Processor> wrapped, long itemsPerSecond) {
         return new WrappingProcessorMetaSupplier(ProcessorMetaSupplier.of(wrapped), p -> new ThrottleWrappedP(p,
                 itemsPerSecond));
     }

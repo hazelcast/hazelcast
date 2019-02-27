@@ -19,25 +19,27 @@ package com.hazelcast.jet.function;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
 import java.io.Serializable;
+import java.util.function.Supplier;
 
 /**
- * {@code Serializable} variant of {@link TriFunction} which declares checked
- * exception.
+ * {@code Serializable} variant of {@link Supplier java.util.function.Supplier}
+ * which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedTriFunction<T0, T1, T2, R> extends TriFunction<T0, T1, T2, R>, Serializable {
+public interface SupplierEx<T> extends Supplier<T>, Serializable {
 
     /**
-     * Exception-declaring variant of {@link TriFunction#apply}.
+     * Exception-declaring version of {@link Supplier#get}.
      */
-    R applyEx(T0 t0, T1 t1, T2 t2) throws Exception;
+    T getEx() throws Exception;
 
     @Override
-    default R apply(T0 t0, T1 t1, T2 t2) {
+    default T get() {
         try {
-            return applyEx(t0, t1, t2);
+            return getEx();
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
     }
+
 }

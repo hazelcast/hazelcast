@@ -21,7 +21,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
@@ -208,7 +208,7 @@ public class ProcessorsTest {
 
     @Test
     public void aggregateByKey() {
-        DistributedFunction<Object, String> keyFn = Object::toString;
+        FunctionEx<Object, String> keyFn = Object::toString;
         TestSupport
                 .verifyProcessor(aggregateByKeyP(singletonList(keyFn), aggregateToListAndString(), Util::entry))
                 .disableSnapshots()
@@ -222,7 +222,7 @@ public class ProcessorsTest {
 
     @Test
     public void accumulateByKey() {
-        DistributedFunction<Object, String> keyFn = Object::toString;
+        FunctionEx<Object, String> keyFn = Object::toString;
         TestSupport
                 .verifyProcessor(Processors.accumulateByKeyP(singletonList(keyFn), aggregateToListAndString()))
                 .disableSnapshots()

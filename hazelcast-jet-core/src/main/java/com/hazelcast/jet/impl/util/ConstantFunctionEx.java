@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 
 /**
  * A function returning a constant.
@@ -24,10 +24,10 @@ import com.hazelcast.jet.function.DistributedFunction;
  * This is a trivial lambda, but we want to be able to do instanceof check on
  * it to be able to do some optimizations.
  */
-public class ConstantFunction<T, R> implements DistributedFunction<T, R> {
+public class ConstantFunctionEx<T, R> implements FunctionEx<T, R> {
     private final R key;
 
-    public ConstantFunction(R key) {
+    public ConstantFunctionEx(R key) {
         this.key = key;
     }
 

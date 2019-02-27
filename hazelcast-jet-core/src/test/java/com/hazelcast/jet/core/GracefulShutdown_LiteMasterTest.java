@@ -21,7 +21,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +52,7 @@ public class GracefulShutdown_LiteMasterTest extends JetTestSupport {
     public void test() {
         DummyStatefulP.parallelism = 2;
         DAG dag = new DAG();
-        dag.newVertex("v", (DistributedSupplier<Processor>) DummyStatefulP::new)
+        dag.newVertex("v", (SupplierEx<Processor>) DummyStatefulP::new)
            .localParallelism(DummyStatefulP.parallelism);
         Job job = instance.newJob(dag, new JobConfig()
                 .setSnapshotIntervalMillis(DAYS.toMillis(1))

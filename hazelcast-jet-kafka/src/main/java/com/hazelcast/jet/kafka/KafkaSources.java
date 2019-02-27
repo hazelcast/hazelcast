@@ -18,7 +18,7 @@ package com.hazelcast.jet.kafka;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
@@ -43,7 +43,7 @@ public final class KafkaSources {
     }
 
     /**
-     * Convenience for {@link #kafka(Properties, DistributedFunction, String...)}
+     * Convenience for {@link #kafka(Properties, FunctionEx, String...)}
      * wrapping the output in {@code Map.Entry}.
      */
     @Nonnull
@@ -116,7 +116,7 @@ public final class KafkaSources {
     @Nonnull
     public static <K, V, T> StreamSource<T> kafka(
             @Nonnull Properties properties,
-            @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
+            @Nonnull FunctionEx<ConsumerRecord<K, V>, T> projectionFn,
             @Nonnull String ... topics
     ) {
         checkPositive(topics.length, "At least one topic required");

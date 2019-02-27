@@ -19,7 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -80,14 +80,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Creates a vertex from a {@code Supplier<Processor>} and adds it to this DAG.
      *
-     * @see Vertex#Vertex(String, DistributedSupplier)
+     * @see Vertex#Vertex(String, SupplierEx)
      *
      * @param name the unique name of the vertex
      * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      */
     @Nonnull
     public Vertex newVertex(
-            @Nonnull String name, @Nonnull DistributedSupplier<? extends Processor> simpleSupplier
+            @Nonnull String name, @Nonnull SupplierEx<? extends Processor> simpleSupplier
     ) {
         return addVertex(new Vertex(name, simpleSupplier));
     }

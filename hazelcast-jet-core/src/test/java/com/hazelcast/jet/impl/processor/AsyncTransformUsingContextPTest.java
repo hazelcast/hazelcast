@@ -21,8 +21,8 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import org.junit.Rule;
@@ -60,14 +60,14 @@ public class AsyncTransformUsingContextPTest {
         return asList(true, false);
     }
 
-    private ProcessorSupplier getSupplier(DistributedBiFunction<? super String, ? super String,
-                    CompletableFuture<Traverser<String>>> mapFn
+    private ProcessorSupplier getSupplier(BiFunctionEx<? super String, ? super String,
+                            CompletableFuture<Traverser<String>>> mapFn
     ) {
         ContextFactory<String> contextFactory = ContextFactory.withCreateFn(jet -> "foo");
         if (!ordered) {
             contextFactory = contextFactory.withUnorderedAsyncResponses();
         }
-        return flatMapUsingContextAsyncP(contextFactory, DistributedFunction.identity(), mapFn);
+        return flatMapUsingContextAsyncP(contextFactory, FunctionEx.identity(), mapFn);
     }
 
     @Test

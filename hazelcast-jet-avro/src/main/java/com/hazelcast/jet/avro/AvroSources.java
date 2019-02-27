@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.avro;
 
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -67,7 +67,7 @@ public final class AvroSources {
     @Nonnull
     public static <D> AvroSourceBuilder<D> filesBuilder(
             @Nonnull String directory,
-            @Nonnull DistributedSupplier<? extends DatumReader<D>> datumReaderSupplier
+            @Nonnull SupplierEx<? extends DatumReader<D>> datumReaderSupplier
     ) {
         return new AvroSourceBuilder<>(directory, datumReaderSupplier);
     }
@@ -85,7 +85,7 @@ public final class AvroSources {
     }
 
     /**
-     * Convenience for {@link #filesBuilder(String, DistributedSupplier)} which
+     * Convenience for {@link #filesBuilder(String, SupplierEx)} which
      * reads all the files in the supplied directory as generic records and
      * emits the results of transforming each generic record with the supplied
      * mapping function.
@@ -93,7 +93,7 @@ public final class AvroSources {
     @Nonnull
     public static <D> BatchSource<D> files(
             @Nonnull String directory,
-            @Nonnull DistributedBiFunction<String, GenericRecord, D> mapOutputFn
+            @Nonnull BiFunctionEx<String, GenericRecord, D> mapOutputFn
     ) {
         return filesBuilder(directory, GenericDatumReader<GenericRecord>::new)
                 .build(mapOutputFn);

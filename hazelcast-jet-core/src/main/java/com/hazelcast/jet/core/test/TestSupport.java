@@ -24,7 +24,7 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
@@ -48,7 +48,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
 import static com.hazelcast.jet.core.test.JetAssert.assertFalse;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
-import static com.hazelcast.jet.function.DistributedFunction.identity;
+import static com.hazelcast.jet.function.FunctionEx.identity;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
@@ -218,7 +218,7 @@ public final class TestSupport {
     /**
      * @param supplier a processor supplier create processor instances
      */
-    public static TestSupport verifyProcessor(@Nonnull DistributedSupplier<Processor> supplier) {
+    public static TestSupport verifyProcessor(@Nonnull SupplierEx<Processor> supplier) {
         return new TestSupport(ProcessorMetaSupplier.of(supplier));
     }
 

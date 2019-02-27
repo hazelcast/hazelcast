@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 
@@ -93,7 +93,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
     private final Charset charset;
     private final PathMatcher glob;
     private final boolean sharedFileSystem;
-    private final DistributedBiFunction<? super String, ? super String, ? extends R> mapOutputFn;
+    private final BiFunctionEx<? super String, ? super String, ? extends R> mapOutputFn;
 
     private final Queue<Path> eventQueue = new ArrayDeque<>();
 
@@ -112,7 +112,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
             @Nonnull Charset charset,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedBiFunction<? super String, ? super String, ? extends R> mapOutputFn
+            @Nonnull BiFunctionEx<? super String, ? super String, ? extends R> mapOutputFn
     ) {
         this.watchedDirectory = Paths.get(watchedDirectory);
         this.charset = charset;
@@ -356,7 +356,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
             @Nonnull String charset,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedBiFunction<? super String, ? super String, ?> mapOutputFn
+            @Nonnull BiFunctionEx<? super String, ? super String, ?> mapOutputFn
     ) {
         return ProcessorMetaSupplier.of(() ->
                 new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob, sharedFileSystem, mapOutputFn), 2);

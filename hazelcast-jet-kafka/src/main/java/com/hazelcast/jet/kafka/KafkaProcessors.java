@@ -18,7 +18,7 @@ package com.hazelcast.jet.kafka;
 
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.kafka.impl.WriteKafkaP;
 import com.hazelcast.util.Preconditions;
@@ -42,11 +42,11 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for {@link
-     * KafkaSources#kafka(Properties, DistributedFunction, String...)}.
+     * KafkaSources#kafka(Properties, FunctionEx, String...)}.
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
-            @Nonnull DistributedFunction<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
+            @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull String... topics
     ) {
@@ -60,13 +60,13 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link KafkaSinks#kafka(Properties, String, DistributedFunction, DistributedFunction)}.
+     * {@link KafkaSinks#kafka(Properties, String, FunctionEx, FunctionEx)}.
      */
     public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
             @Nonnull Properties properties,
             @Nonnull String topic,
-            @Nonnull DistributedFunction<? super T, ? extends K> extractKeyFn,
-            @Nonnull DistributedFunction<? super T, ? extends V> extractValueFn
+            @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> extractValueFn
     ) {
         return writeKafkaP(properties, (T t) ->
                 new ProducerRecord<>(topic, extractKeyFn.apply(t), extractValueFn.apply(t))
@@ -75,11 +75,11 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link KafkaSinks#kafka(Properties, DistributedFunction)}.
+     * {@link KafkaSinks#kafka(Properties, FunctionEx)}.
      */
     public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
             @Nonnull Properties properties,
-            @Nonnull DistributedFunction<? super T, ? extends ProducerRecord<K, V>> toRecordFn
+            @Nonnull FunctionEx<? super T, ? extends ProducerRecord<K, V>> toRecordFn
     ) {
         return ProcessorMetaSupplier.of(new WriteKafkaP.Supplier<T, K, V>(properties, toRecordFn), 2);
     }

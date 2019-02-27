@@ -20,8 +20,8 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.GeneralStageWithKey;
 
 import javax.annotation.Nonnull;
@@ -47,9 +47,9 @@ public final class RollingAggregateP<T, K, A, R, OUT> extends AbstractProcessor 
     private Traverser<Entry<K, A>> snapshotTraverser;
 
     public RollingAggregateP(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn,
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
-            @Nonnull DistributedTriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         this.flatMapper = flatMapper(item -> {
             K key = keyFn.apply(item);

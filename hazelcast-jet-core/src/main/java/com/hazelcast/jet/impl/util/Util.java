@@ -29,7 +29,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
@@ -384,7 +384,7 @@ public final class Util {
     }
 
     public static <K, V> EntryProcessor<K, V> entryProcessor(
-            DistributedBiFunction<? super K, ? super V, ? extends V> remappingFunction
+            BiFunctionEx<? super K, ? super V, ? extends V> remappingFunction
     ) {
         return new AbstractEntryProcessor<K, V>() {
             @Override

@@ -36,11 +36,11 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBinaryOperator;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BinaryOperatorEx;
+import com.hazelcast.jet.function.ConsumerEx;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -95,9 +95,9 @@ public final class HazelcastWriters {
     public static <T, K, V> ProcessorMetaSupplier mergeMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig,
-            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
-            @Nonnull DistributedFunction<? super T, ? extends V> toValueFn,
-            @Nonnull DistributedBinaryOperator<V> mergeFn
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
+            @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toValueFn, "toValueFn");
@@ -117,8 +117,8 @@ public final class HazelcastWriters {
     public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String mapName,
             @Nullable ClientConfig clientConfig,
-            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
-            @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(updateFn, "updateFn");
@@ -136,8 +136,8 @@ public final class HazelcastWriters {
     private static final class UpdateMapContext<K, V, T> {
         private static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
-        private final DistributedFunction<? super T, ? extends K> toKeyFn;
-        private final DistributedBiFunction<? super V, ? super T, ? extends V> updateFn;
+        private final FunctionEx<? super T, ? extends K> toKeyFn;
+        private final BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
         private final boolean isLocal;
         private final IPartitionService memberPartitionService;
         private final ClientPartitionService clientPartitionService;
@@ -153,8 +153,8 @@ public final class HazelcastWriters {
         UpdateMapContext(
                 HazelcastInstance instance,
                 String mapName,
-                @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
-                @Nonnull DistributedBiFunction<? super V, ? super T, ? extends V> updateFn,
+                @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+                @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn,
                 boolean isLocal) {
             this.toKeyFn = toKeyFn;
             this.updateFn = updateFn;
@@ -265,8 +265,8 @@ public final class HazelcastWriters {
     public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig,
-            @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
-            @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn
     ) {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
@@ -301,7 +301,7 @@ public final class HazelcastWriters {
                         buffer.clear();
                     };
                 },
-                DistributedConsumer.noop()
+                ConsumerEx.noop()
         ));
     }
 
@@ -313,7 +313,7 @@ public final class HazelcastWriters {
                 instance -> procContext -> new ArrayMap(),
                 ArrayMap::add,
                 CacheFlush.flushToCache(name, isLocal),
-                DistributedConsumer.noop()
+                ConsumerEx.noop()
         ));
     }
 
@@ -335,7 +335,7 @@ public final class HazelcastWriters {
                         buffer.clear();
                     };
                 },
-                DistributedConsumer.noop()
+                ConsumerEx.noop()
         ));
     }
 
@@ -351,7 +351,7 @@ public final class HazelcastWriters {
     private static class CacheFlush {
 
         @SuppressWarnings("unchecked")
-        static DistributedFunction<HazelcastInstance, DistributedConsumer<ArrayMap>> flushToCache(
+        static FunctionEx<HazelcastInstance, ConsumerEx<ArrayMap>> flushToCache(
                 String name, boolean isLocal
         ) {
             return instance -> {
@@ -411,8 +411,8 @@ public final class HazelcastWriters {
 
         private final boolean isLocal;
         private final IMap<? super K, ? extends V> map;
-        private final DistributedFunction<? super T, ? extends K> toKeyFn;
-        private final DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn;
+        private final FunctionEx<? super T, ? extends K> toKeyFn;
+        private final FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn;
         private final AtomicReference<Throwable> lastError = new AtomicReference<>();
         private final ExecutionCallback callback = callbackOf(
                 response -> numConcurrentOps.decrementAndGet(),
@@ -426,8 +426,8 @@ public final class HazelcastWriters {
         private EntryProcessorWriter(
                 @Nonnull HazelcastInstance instance,
                 @Nonnull String name,
-                @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
-                @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn,
+                @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+                @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn,
                 boolean isLocal
         ) {
             this.map = instance.getMap(name);
@@ -495,8 +495,8 @@ public final class HazelcastWriters {
 
         private final String name;
         private final String clientXml;
-        private final DistributedFunction<? super T, ? extends K> toKeyFn;
-        private final DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn;
+        private final FunctionEx<? super T, ? extends K> toKeyFn;
+        private final FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn;
         private final boolean isLocal;
         private transient HazelcastInstance client;
         private transient HazelcastInstance instance;
@@ -504,8 +504,8 @@ public final class HazelcastWriters {
         private EntryProcessorWriterSupplier(
                 @Nonnull String name,
                 @Nullable String clientXml,
-                @Nonnull DistributedFunction<? super T, ? extends K> toKeyFn,
-                @Nonnull DistributedFunction<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn,
+                @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+                @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V>> toEntryProcessorFn,
                 boolean isLocal
         ) {
             this.name = name;
@@ -545,22 +545,22 @@ public final class HazelcastWriters {
         static final long serialVersionUID = 1L;
 
         private final String clientXml;
-        private final DistributedFunction<HazelcastInstance, DistributedConsumer<B>> instanceToFlushBufferFn;
-        private final DistributedFunction<HazelcastInstance, DistributedFunction<Processor.Context, B>>
+        private final FunctionEx<HazelcastInstance, ConsumerEx<B>> instanceToFlushBufferFn;
+        private final FunctionEx<HazelcastInstance, FunctionEx<Processor.Context, B>>
                 instanceToNewBufferFn;
-        private final DistributedBiConsumer<B, T> addToBufferFn;
-        private final DistributedConsumer<B> disposeBufferFn;
+        private final BiConsumerEx<B, T> addToBufferFn;
+        private final ConsumerEx<B> disposeBufferFn;
 
-        private transient DistributedFunction<Processor.Context, B> newBufferFn;
-        private transient DistributedConsumer<B> flushBufferFn;
+        private transient FunctionEx<Processor.Context, B> newBufferFn;
+        private transient ConsumerEx<B> flushBufferFn;
         private transient HazelcastInstance client;
 
         HazelcastWriterSupplier(
                 String clientXml,
-                DistributedFunction<HazelcastInstance, DistributedFunction<Processor.Context, B>> instanceToNewBufferFn,
-                DistributedBiConsumer<B, T> addToBufferFn,
-                DistributedFunction<HazelcastInstance, DistributedConsumer<B>> instanceToFlushBufferFn,
-                DistributedConsumer<B> disposeBufferFn
+                FunctionEx<HazelcastInstance, FunctionEx<Processor.Context, B>> instanceToNewBufferFn,
+                BiConsumerEx<B, T> addToBufferFn,
+                FunctionEx<HazelcastInstance, ConsumerEx<B>> instanceToFlushBufferFn,
+                ConsumerEx<B> disposeBufferFn
         ) {
             this.clientXml = clientXml;
             this.instanceToFlushBufferFn = instanceToFlushBufferFn;
@@ -605,7 +605,7 @@ public final class HazelcastWriters {
             implements EntryProcessor<K, V>, EntryBackupProcessor<K, V>, IdentifiedDataSerializable,
             SerializationServiceAware {
         private Map<Data, Object> keysToUpdate;
-        private DistributedBiFunction<? super V, ? super T, ? extends V> updateFn;
+        private BiFunctionEx<? super V, ? super T, ? extends V> updateFn;
         private SerializationService serializationService;
 
         public ApplyFnEntryProcessor() {
@@ -613,7 +613,7 @@ public final class HazelcastWriters {
 
         ApplyFnEntryProcessor(
                 Map<Data, Object> keysToUpdate,
-                DistributedBiFunction<? super V, ? super T, ? extends V> updateFn
+                BiFunctionEx<? super V, ? super T, ? extends V> updateFn
         ) {
             this.keysToUpdate = keysToUpdate;
             this.updateFn = updateFn;

@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.function;
 
-final class DistributedComparators {
+final class ComparatorsEx {
 
-    static final DistributedComparator<Comparable<Object>> NATURAL_ORDER = new NaturalOrderComparator();
-    static final DistributedComparator<Comparable<Object>> REVERSE_ORDER = new ReverseOrderComparator();
+    static final ComparatorEx<Comparable<Object>> NATURAL_ORDER = new NaturalOrderComparator();
+    static final ComparatorEx<Comparable<Object>> REVERSE_ORDER = new ReverseOrderComparator();
 
-    private DistributedComparators() {
+    private ComparatorsEx() {
     }
 
-    private static class NaturalOrderComparator implements DistributedComparator<Comparable<Object>> {
+    private static class NaturalOrderComparator implements ComparatorEx<Comparable<Object>> {
 
         @Override
         public int compareEx(Comparable<Object> left, Comparable<Object> right) {
@@ -32,12 +32,12 @@ final class DistributedComparators {
         }
 
         @Override
-        public DistributedComparator<Comparable<Object>> reversed() {
+        public ComparatorEx<Comparable<Object>> reversed() {
             return REVERSE_ORDER;
         }
     }
 
-    private static class ReverseOrderComparator implements DistributedComparator<Comparable<Object>> {
+    private static class ReverseOrderComparator implements ComparatorEx<Comparable<Object>> {
 
         @Override
         public int compareEx(Comparable<Object> left, Comparable<Object> right) {
@@ -45,12 +45,12 @@ final class DistributedComparators {
         }
 
         @Override
-        public DistributedComparator<Comparable<Object>> reversed() {
+        public ComparatorEx<Comparable<Object>> reversed() {
             return NATURAL_ORDER;
         }
     }
 
-    public static final class NullComparator<T> implements DistributedComparator<T> {
+    public static final class NullComparator<T> implements ComparatorEx<T> {
         private final boolean isNullFirst;
 
         @SuppressWarnings("unchecked")

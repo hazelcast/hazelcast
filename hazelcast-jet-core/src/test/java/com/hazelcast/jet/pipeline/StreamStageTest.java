@@ -27,9 +27,9 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import org.junit.Test;
@@ -49,7 +49,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.Functions.wholeItem;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
@@ -94,7 +94,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void map() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedFunction<Integer, String> mapFn = item -> String.format("%04d-x", item);
+        FunctionEx<Integer, String> mapFn = item -> String.format("%04d-x", item);
 
         // When
         StreamStage<String> mapped = streamStageFromList(input).map(mapFn);
@@ -111,7 +111,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void filter() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedPredicate<Integer> filterFn = i -> i % 2 == 1;
+        PredicateEx<Integer> filterFn = i -> i % 2 == 1;
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
 
         // When
@@ -129,7 +129,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void flatMap() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedFunction<Integer, Stream<String>> flatMapFn =
+        FunctionEx<Integer, Stream<String>> flatMapFn =
                 i -> Stream.of("A", "B").map(s -> String.format("%04d-%s", i, s));
 
         // When
@@ -148,7 +148,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void mapUsingContext() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedBiFunction<String, Integer, String> formatFn = (suffix, i) -> String.format("%04d%s", i, suffix);
+        BiFunctionEx<String, Integer, String> formatFn = (suffix, i) -> String.format("%04d%s", i, suffix);
         String suffix = "-context";
 
         // When
@@ -168,7 +168,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void mapUsingContext_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedBiFunction<String, Integer, String> formatFn = (suffix, i) -> String.format("%04d%s", i, suffix);
+        BiFunctionEx<String, Integer, String> formatFn = (suffix, i) -> String.format("%04d%s", i, suffix);
         String suffix = "-keyed-context";
 
         // When
@@ -229,7 +229,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void flatMapUsingContext() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedFunction<Integer, Stream<String>> flatMapFn =
+        FunctionEx<Integer, Stream<String>> flatMapFn =
                 i -> Stream.of("A", "B").map(s -> String.format("%04d-%s", i, s));
 
         // When
@@ -251,7 +251,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void flatMapUsingContext_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedFunction<Integer, Stream<String>> flatMapFn =
+        FunctionEx<Integer, Stream<String>> flatMapFn =
                 i -> Stream.of("A", "B").map(s -> String.format("%04d-%s", i, s));
 
         // When
@@ -283,7 +283,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Entry<Integer, String>> mapped = streamStageFromList(input)
-                .mapUsingReplicatedMap(map, DistributedFunction.identity(), Util::entry);
+                .mapUsingReplicatedMap(map, FunctionEx.identity(), Util::entry);
 
         // Then
         mapped.drainTo(sink);
@@ -311,7 +311,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<Entry<Integer, String>> mapped = streamStageFromList(input)
-                .mapUsingIMap(map, DistributedFunction.identity(), Util::entry);
+                .mapUsingIMap(map, FunctionEx.identity(), Util::entry);
 
         // Then
         mapped.drainTo(sink);
@@ -398,7 +398,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void rollingAggregate_keyed_withOutputFn() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedBiFunction<Integer, Long, String> formatFn =
+        BiFunctionEx<Integer, Long, String> formatFn =
                 (key, count) -> String.format("(%d, %04d)", key, count);
 
         // When
@@ -601,7 +601,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void customTransform() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedFunction<Integer, String> mapFn = item -> String.format("%04d-x", item);
+        FunctionEx<Integer, String> mapFn = item -> String.format("%04d-x", item);
 
         // When
         StreamStage<String> custom = streamStageFromList(input).customTransform("map",
@@ -623,7 +623,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void customTransform_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedFunction<Integer, Integer> extractKeyFn = i -> i % 2;
+        FunctionEx<Integer, Integer> extractKeyFn = i -> i % 2;
 
         // When
         StreamStage<Object> custom = streamStageFromList(input)
@@ -665,7 +665,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     public void peekWithToStringFunctionIsTransparent() {
         // Given
         List<Integer> input = sequence(itemCount);
-        DistributedPredicate<Integer> filterFn = i -> i % 2 == 1;
+        PredicateEx<Integer> filterFn = i -> i % 2 == 1;
         Function<Integer, String> formatFn = i -> String.format("%04d", i);
 
         // When

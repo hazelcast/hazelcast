@@ -17,12 +17,13 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.util.Preconditions;
 
@@ -32,23 +33,23 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
- * See {@link SinkBuilder#sinkBuilder(String, DistributedFunction)}.
+ * See {@link SinkBuilder#sinkBuilder(String, FunctionEx)}.
  *
  * @param <W> type of the writer object
  * @param <T> type of the items the sink will accept
  */
 public final class SinkBuilder<W, T> {
 
-    private final DistributedFunction<? super Processor.Context, ? extends W> createFn;
+    private final FunctionEx<? super Context, ? extends W> createFn;
     private final String name;
-    private DistributedBiConsumer<? super W, ? super T> receiveFn;
-    private DistributedConsumer<? super W> flushFn = DistributedConsumer.noop();
-    private DistributedConsumer<? super W> destroyFn = DistributedConsumer.noop();
+    private BiConsumerEx<? super W, ? super T> receiveFn;
+    private ConsumerEx<? super W> flushFn = ConsumerEx.noop();
+    private ConsumerEx<? super W> destroyFn = ConsumerEx.noop();
     private int preferredLocalParallelism = 1;
 
     private SinkBuilder(
             @Nonnull String name,
-            @Nonnull DistributedFunction<? super Processor.Context, ? extends W> createFn
+            @Nonnull FunctionEx<? super Context, ? extends W> createFn
     ) {
         checkSerializable(createFn, "createFn");
         this.name = name;
@@ -92,7 +93,7 @@ public final class SinkBuilder<W, T> {
     @Nonnull
     public static <W> SinkBuilder<W, Void> sinkBuilder(
             @Nonnull String name,
-            @Nonnull DistributedFunction<Processor.Context, ? extends W> createFn
+            @Nonnull FunctionEx<Context, ? extends W> createFn
     ) {
         return new SinkBuilder<>(name, createFn);
     }
@@ -109,7 +110,7 @@ public final class SinkBuilder<W, T> {
     @Nonnull
     @SuppressWarnings("unchecked")
     public <T_NEW> SinkBuilder<W, T_NEW> receiveFn(
-            @Nonnull DistributedBiConsumer<? super W, ? super T_NEW> receiveFn
+            @Nonnull BiConsumerEx<? super W, ? super T_NEW> receiveFn
     ) {
         checkSerializable(receiveFn, "receiveFn");
         SinkBuilder<W, T_NEW> newThis = (SinkBuilder<W, T_NEW>) this;
@@ -129,7 +130,7 @@ public final class SinkBuilder<W, T> {
      * @param flushFn the optional "flush the writer" function
      */
     @Nonnull
-    public SinkBuilder<W, T> flushFn(@Nonnull DistributedConsumer<? super W> flushFn) {
+    public SinkBuilder<W, T> flushFn(@Nonnull ConsumerEx<? super W> flushFn) {
         checkSerializable(flushFn, "flushFn");
         this.flushFn = flushFn;
         return this;
@@ -147,7 +148,7 @@ public final class SinkBuilder<W, T> {
      * @param destroyFn the optional "destroy the writer" function
      */
     @Nonnull
-    public SinkBuilder<W, T> destroyFn(@Nonnull DistributedConsumer<? super W> destroyFn) {
+    public SinkBuilder<W, T> destroyFn(@Nonnull ConsumerEx<? super W> destroyFn) {
         checkSerializable(destroyFn, "destroyFn");
         this.destroyFn = destroyFn;
         return this;
@@ -178,7 +179,7 @@ public final class SinkBuilder<W, T> {
     @Nonnull
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
-        DistributedSupplier<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn);
+        SupplierEx<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn);
         return new SinkImpl<>(name, ProcessorMetaSupplier.of(supplier, preferredLocalParallelism));
     }
 }

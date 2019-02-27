@@ -18,8 +18,8 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -30,7 +30,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.function.DistributedFunction.identity;
+import static com.hazelcast.jet.function.FunctionEx.identity;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.comparing;
@@ -93,7 +93,7 @@ public class CoAggregateOperationBuilder {
     @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     public <R> AggregateOperation<Object[], R> build(
-            @Nonnull DistributedFunction<? super ItemsByTag, ? extends R> exportFinishFn
+            @Nonnull FunctionEx<? super ItemsByTag, ? extends R> exportFinishFn
     ) {
         checkSerializable(exportFinishFn, "exportFinishFn");
         Tag[] tags = opsByTag.keySet().stream().sorted().toArray(Tag[]::new);
@@ -106,14 +106,14 @@ public class CoAggregateOperationBuilder {
         Stream<Entry<Tag, AggregateOperation1>> sorted = opsByTag.entrySet().stream()
                                                                  .sorted(comparing(Entry::getKey));
         List<AggregateOperation1> ops = sorted.map(Entry::getValue).collect(toList());
-        DistributedBiConsumer[] combineFns =
-                ops.stream().map(AggregateOperation::combineFn).toArray(DistributedBiConsumer[]::new);
-        DistributedBiConsumer[] deductFns =
-                ops.stream().map(AggregateOperation::deductFn).toArray(DistributedBiConsumer[]::new);
-        DistributedFunction[] exportFns =
-                ops.stream().map(AggregateOperation::exportFn).toArray(DistributedFunction[]::new);
-        DistributedFunction[] finishFns =
-                ops.stream().map(AggregateOperation::finishFn).toArray(DistributedFunction[]::new);
+        BiConsumerEx[] combineFns =
+                ops.stream().map(AggregateOperation::combineFn).toArray(BiConsumerEx[]::new);
+        BiConsumerEx[] deductFns =
+                ops.stream().map(AggregateOperation::deductFn).toArray(BiConsumerEx[]::new);
+        FunctionEx[] exportFns =
+                ops.stream().map(AggregateOperation::exportFn).toArray(FunctionEx[]::new);
+        FunctionEx[] finishFns =
+                ops.stream().map(AggregateOperation::finishFn).toArray(FunctionEx[]::new);
 
         AggregateOperationBuilder.VarArity<Object[], Void> b = AggregateOperation
                 .withCreate(() -> ops.stream().map(op -> op.createFn().get()).toArray())

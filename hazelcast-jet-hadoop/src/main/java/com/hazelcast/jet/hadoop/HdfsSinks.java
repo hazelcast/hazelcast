@@ -17,7 +17,7 @@
 package com.hazelcast.jet.hadoop;
 
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.apache.hadoop.mapred.JobConf;
@@ -64,15 +64,15 @@ public final class HdfsSinks {
     @Nonnull
     public static <E, K, V> Sink<E> hdfs(
             @Nonnull JobConf jobConf,
-            @Nonnull DistributedFunction<? super E, K> extractKeyF,
-            @Nonnull DistributedFunction<? super E, V> extractValueF
+            @Nonnull FunctionEx<? super E, K> extractKeyF,
+            @Nonnull FunctionEx<? super E, V> extractValueF
     ) {
         return Sinks.fromProcessor("writeHdfs", HdfsProcessors.writeHdfsP(jobConf, extractKeyF, extractValueF));
     }
 
     /**
-     * Convenience for {@link #hdfs(JobConf, DistributedFunction,
-     * DistributedFunction)} which expects {@code Map.Entry<K, V>} as
+     * Convenience for {@link #hdfs(JobConf, FunctionEx,
+     * FunctionEx)} which expects {@code Map.Entry<K, V>} as
      * input and extracts its key and value parts to be written to HDFS.
      */
     @Nonnull

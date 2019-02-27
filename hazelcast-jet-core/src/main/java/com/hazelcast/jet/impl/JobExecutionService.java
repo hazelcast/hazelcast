@@ -45,8 +45,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static com.hazelcast.jet.function.Functions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryValue;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;

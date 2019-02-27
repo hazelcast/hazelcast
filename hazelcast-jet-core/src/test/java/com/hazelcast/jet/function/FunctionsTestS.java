@@ -22,20 +22,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
-import static com.hazelcast.jet.function.DistributedPredicate.alwaysFalse;
-import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
+import static com.hazelcast.jet.function.Functions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryValue;
+import static com.hazelcast.jet.function.Functions.wholeItem;
+import static com.hazelcast.jet.function.PredicateEx.alwaysFalse;
+import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class DistributedFunctionsTest extends HazelcastTestSupport {
+public class FunctionsTestS extends HazelcastTestSupport {
 
     @Test
     public void constructor() {
-        assertUtilityConstructor(DistributedFunctions.class);
+        assertUtilityConstructor(Functions.class);
     }
 
     @Test
@@ -67,6 +67,6 @@ public class DistributedFunctionsTest extends HazelcastTestSupport {
     @Test
     public void when_noopConsumer() {
         // assert it's non-null and doesn't fail
-        DistributedConsumer.noop().accept(1);
+        ConsumerEx.noop().accept(1);
     }
 }

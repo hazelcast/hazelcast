@@ -19,16 +19,16 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
@@ -104,13 +104,13 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#map(String, Predicate, DistributedFunction)}.
+     * {@link Sources#map(String, Predicate, FunctionEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier readMapP(
             @Nonnull String mapName,
             @Nonnull Predicate<? super K, ? super V> predicate,
-            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends T> projectionFn
+            @Nonnull FunctionEx<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return ReadWithPartitionIteratorP.readMapSupplier(mapName, predicate, toProjection(projectionFn));
     }
@@ -131,13 +131,13 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#mapJournal(String, DistributedPredicate, DistributedFunction, JournalInitialPosition)}.
+     * {@link Sources#mapJournal(String, PredicateEx, FunctionEx, JournalInitialPosition)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamMapP(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
@@ -172,14 +172,14 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#remoteMap(String, ClientConfig, Predicate, DistributedFunction)}.
+     * {@link Sources#remoteMap(String, ClientConfig, Predicate, FunctionEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier readRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
             @Nonnull Predicate<? super K, ? super V> predicate,
-            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends T> projectionFn
+            @Nonnull FunctionEx<? super Entry<K, V>, ? extends T> projectionFn
     ) {
         return ReadWithPartitionIteratorP.readRemoteMapSupplier(
                 mapName, clientConfig, toProjection(projectionFn), predicate
@@ -203,15 +203,15 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link
-     * Sources#remoteMapJournal(String, ClientConfig, DistributedPredicate,
-     * DistributedFunction, JournalInitialPosition)}.
+     * Sources#remoteMapJournal(String, ClientConfig, PredicateEx,
+     * FunctionEx, JournalInitialPosition)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamRemoteMapP(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
@@ -244,13 +244,13 @@ public final class SourceProcessors {
     /**
      * Returns a supplier of processors for
      * {@link Sources#cacheJournal(String,
-     * DistributedPredicate, DistributedFunction, JournalInitialPosition)}.
+     * PredicateEx, FunctionEx, JournalInitialPosition)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamCacheP(
             @Nonnull String cacheName,
-            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
@@ -287,14 +287,14 @@ public final class SourceProcessors {
     /**
      * Returns a supplier of processors for {@link
      * Sources#remoteCacheJournal(String, ClientConfig,
-     * DistributedPredicate, DistributedFunction, JournalInitialPosition)}.
+     * PredicateEx, FunctionEx, JournalInitialPosition)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier streamRemoteCacheP(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicateFn,
-            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicateFn,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
@@ -341,7 +341,7 @@ public final class SourceProcessors {
             @Nonnull Charset charset,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedBiFunction<? super String, ? super String, ? extends R> mapOutputFn
+            @Nonnull BiFunctionEx<? super String, ? super String, ? extends R> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
@@ -361,7 +361,7 @@ public final class SourceProcessors {
             @Nonnull Charset charset,
             @Nonnull String glob,
             boolean sharedFileSystem,
-            @Nonnull DistributedBiFunction<? super String, ? super String, ?> mapOutputFn
+            @Nonnull BiFunctionEx<? super String, ? super String, ?> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
@@ -373,11 +373,11 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsQueueP(
-            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
-            @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn,
-            @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
-            @Nonnull DistributedConsumer<? super Session> flushFn,
-            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn,
+            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
+            @Nonnull FunctionEx<? super Connection, ? extends Session> sessionFn,
+            @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
+            @Nonnull ConsumerEx<? super Session> flushFn,
+            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         return ProcessorMetaSupplier.of(
                 StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy),
@@ -389,11 +389,11 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsTopicP(
-            @Nonnull DistributedSupplier<? extends Connection> connectionSupplier,
-            @Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn,
-            @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn,
-            @Nonnull DistributedConsumer<? super Session> flushFn,
-            @Nonnull DistributedFunction<? super Message, ? extends T> projectionFn,
+            @Nonnull SupplierEx<? extends Connection> connectionSupplier,
+            @Nonnull FunctionEx<? super Connection, ? extends Session> sessionFn,
+            @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
+            @Nonnull ConsumerEx<? super Session> flushFn,
+            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy));
@@ -401,12 +401,12 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link Sources#jdbc(
-     * DistributedSupplier, ToResultSetFunction, DistributedFunction)}.
+     * SupplierEx, ToResultSetFunction, FunctionEx)}.
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
-            @Nonnull DistributedSupplier<? extends java.sql.Connection> connectionSupplier,
+            @Nonnull SupplierEx<? extends java.sql.Connection> connectionSupplier,
             @Nonnull ToResultSetFunction resultSetFn,
-            @Nonnull DistributedFunction<? super ResultSet, ? extends T> mapOutputFn
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         checkSerializable(connectionSupplier, "connectionSupplier");
         checkSerializable(resultSetFn, "resultSetFn");
@@ -416,18 +416,18 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link
-     * Sources#jdbc(String, String, DistributedFunction)}.
+     * Sources#jdbc(String, String, FunctionEx)}.
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
             @Nonnull String connectionURL,
             @Nonnull String query,
-            @Nonnull DistributedFunction<? super ResultSet, ? extends T> mapOutputFn
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
         return ReadJdbcP.supplier(connectionURL, query, mapOutputFn);
     }
 
-    private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {
+    private static <I, O> Projection<I, O> toProjection(FunctionEx<I, O> projectionFn) {
         return new Projection<I, O>() {
             @Override public O transform(I input) {
                 return projectionFn.apply(input);
@@ -453,9 +453,9 @@ public final class SourceProcessors {
     @Nonnull
     @SuppressWarnings("unchecked")
     public static <S, T> ProcessorMetaSupplier convenientSourceP(
-            @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn,
-            @Nonnull DistributedBiConsumer<? super S, ? super SourceBuffer<T>> fillBufferFn,
-            @Nonnull DistributedConsumer<? super S> destroyFn,
+            @Nonnull FunctionEx<? super Context, ? extends S> createFn,
+            @Nonnull BiConsumerEx<? super S, ? super SourceBuffer<T>> fillBufferFn,
+            @Nonnull ConsumerEx<? super S> destroyFn,
             int preferredLocalParallelism
     ) {
         checkSerializable(createFn, "createFn");
@@ -493,10 +493,10 @@ public final class SourceProcessors {
     @Nonnull
     @SuppressWarnings("unchecked")
     public static <S, T> ProcessorMetaSupplier convenientTimestampedSourceP(
-            @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn,
-            @Nonnull DistributedBiConsumer<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn,
+            @Nonnull FunctionEx<? super Context, ? extends S> createFn,
+            @Nonnull BiConsumerEx<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            @Nonnull DistributedConsumer<? super S> destroyFn,
+            @Nonnull ConsumerEx<? super S> destroyFn,
             int preferredLocalParallelism
     ) {
         checkSerializable(createFn, "createFn");

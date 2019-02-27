@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.avro;
 
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import org.apache.avro.io.DatumReader;
 
@@ -42,14 +42,14 @@ public final class AvroSourceBuilder<D> {
     private String glob = GLOB_WILDCARD;
     private boolean sharedFileSystem;
 
-    private final DistributedSupplier<? extends DatumReader<D>> datumReaderSupplier;
+    private final SupplierEx<? extends DatumReader<D>> datumReaderSupplier;
 
     /**
      * Use {@link AvroSources#filesBuilder}.
      */
     AvroSourceBuilder(
             @Nonnull String directory,
-            @Nonnull DistributedSupplier<? extends DatumReader<D>> datumReaderSupplier
+            @Nonnull SupplierEx<? extends DatumReader<D>> datumReaderSupplier
     ) {
         this.directory = directory;
         this.datumReaderSupplier = datumReaderSupplier;
@@ -98,13 +98,13 @@ public final class AvroSourceBuilder<D> {
      *                    datumReader} as parameters
      * @param <T>         the type of the items the source emits
      */
-    public <T> BatchSource<T> build(@Nonnull DistributedBiFunction<String, ? super D, T> mapOutputFn) {
+    public <T> BatchSource<T> build(@Nonnull BiFunctionEx<String, ? super D, T> mapOutputFn) {
         return batchFromProcessor("avroFilesSource(" + new File(directory, glob) + ')',
                 AvroProcessors.readFilesP(directory, glob, sharedFileSystem, datumReaderSupplier, mapOutputFn));
     }
 
     /**
-     * Convenience for {@link AvroSourceBuilder#build(DistributedBiFunction)}.
+     * Convenience for {@link AvroSourceBuilder#build(BiFunctionEx)}.
      * Source emits records read by {@code datumReader} to downstream without
      * any transformation.
      */

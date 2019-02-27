@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.WindowResult;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.impl.processor.SessionWindowP.Keys;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -40,7 +40,7 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
@@ -58,7 +58,7 @@ public class SessionWindowP_failoverTest {
         p = new SessionWindowP<>(
                 5000,
                 0L,
-                singletonList((DistributedToLongFunction<Entry<?, Long>>) Entry::getValue),
+                singletonList((ToLongFunctionEx<Entry<?, Long>>) Entry::getValue),
                 singletonList(entryKey()),
                 aggrOp,
                 WindowResult::new);

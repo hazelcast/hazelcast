@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
@@ -27,14 +27,14 @@ import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
 
 public class PeekTransform<T> extends AbstractTransform {
     @Nonnull
-    public final DistributedPredicate<? super T> shouldLogFn;
+    public final PredicateEx<? super T> shouldLogFn;
     @Nonnull
-    public final DistributedFunction<? super T, ? extends CharSequence> toStringFn;
+    public final FunctionEx<? super T, ? extends CharSequence> toStringFn;
 
     public PeekTransform(
             @Nonnull Transform upstream,
-            @Nonnull DistributedPredicate<? super T> shouldLogFn,
-            @Nonnull DistributedFunction<? super T, ? extends CharSequence> toStringFn
+            @Nonnull PredicateEx<? super T> shouldLogFn,
+            @Nonnull FunctionEx<? super T, ? extends CharSequence> toStringFn
     ) {
         super("peek", upstream);
         this.shouldLogFn = shouldLogFn;

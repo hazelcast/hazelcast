@@ -19,26 +19,38 @@ package com.hazelcast.jet.function;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
 import java.io.Serializable;
-import java.util.function.IntToDoubleFunction;
+import java.util.function.BiFunction;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * {@code Serializable} variant of {@link IntToDoubleFunction
- * java.util.function.IntToDoubleFunction} which declares checked exception.
+ * {@code Serializable} variant of {@link BiFunction
+ * java.util.function.BiFunction} which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedIntToDoubleFunction extends IntToDoubleFunction, Serializable {
+public interface BiFunctionEx<T, U, R> extends BiFunction<T, U, R>, Serializable {
 
     /**
-     * Exception-declaring version of {@link IntToDoubleFunction#applyAsDouble}.
+     * Exception-declaring version of {@link BiFunction#apply}.
      */
-    double applyAsDoubleEx(int value) throws Exception;
+    R applyEx(T t, U u) throws Exception;
 
     @Override
-    default double applyAsDouble(int value) {
+    default R apply(T t, U u) {
         try {
-            return applyAsDoubleEx(value);
+            return applyEx(t, u);
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
+    }
+
+    /**
+     * {@code Serializable} variant of {@link
+     * BiFunction#andThen(java.util.function.Function)
+     * java.util.function.BiFunction#andThen(Function)}.
+     */
+    default <V> BiFunctionEx<T, U, V> andThen(FunctionEx<? super R, ? extends V> after) {
+        checkNotNull(after, "after");
+        return (t, u) -> after.apply(apply(t, u));
     }
 }

@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
@@ -124,7 +124,7 @@ public class Planner {
     }
 
     public PlannerVertex addVertex(Transform transform, String name, int localParallelism,
-                                   DistributedSupplier<Processor> procSupplier) {
+                                   SupplierEx<Processor> procSupplier) {
         return addVertex(transform, name, localParallelism, ProcessorMetaSupplier.of(procSupplier));
     }
 

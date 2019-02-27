@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.function.DistributedPredicate.alwaysTrue;
+import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

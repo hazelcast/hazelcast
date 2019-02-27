@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -33,7 +33,7 @@ import java.nio.file.StandardOpenOption;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
 
 /**
- * See {@link SinkProcessors#writeFileP(String, DistributedFunction, Charset, boolean)}.
+ * See {@link SinkProcessors#writeFileP(String, FunctionEx, Charset, boolean)}.
  * <p>
  * Since the work of this sink is file IO-intensive, {@link
  * com.hazelcast.jet.core.Vertex#localParallelism(int) local parallelism} of
@@ -46,11 +46,11 @@ public final class WriteFileP {
     private WriteFileP() { }
 
     /**
-     * Use {@link SinkProcessors#writeFileP(String, DistributedFunction, Charset, boolean)}
+     * Use {@link SinkProcessors#writeFileP(String, FunctionEx, Charset, boolean)}
      */
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String directoryName,
-            @Nonnull DistributedFunction<? super T, ? extends String> toStringFn,
+            @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
             @Nonnull String charset,
             boolean append) {
 

@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Before;
@@ -65,7 +65,7 @@ public class InsertWatermarksPTest {
     private TestOutbox outbox;
     private List<Object> resultToCheck = new ArrayList<>();
     private Context context;
-    private DistributedSupplier<WatermarkPolicy> wmPolicy = limitingLag(LAG);
+    private SupplierEx<WatermarkPolicy> wmPolicy = limitingLag(LAG);
     private long watermarkThrottlingFrameSize = 1;
 
     @Parameters(name = "outboxCapacity={0}")

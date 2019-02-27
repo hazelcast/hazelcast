@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.TestProcessors.Identity;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -150,7 +150,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_jobIsFailed_then_jobStatusIsCompletedEventually() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS((DistributedSupplier<Processor>)
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
                 () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
@@ -273,7 +273,7 @@ public class JobTest extends JetTestSupport {
     @Test
     public void when_jobIsFailed_then_trackedJobCanQueryJobResult() throws InterruptedException {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS((DistributedSupplier<Processor>)
+        DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
                 () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
@@ -729,9 +729,9 @@ public class JobTest extends JetTestSupport {
     private static final class PSThatWaitsOnInit implements ProcessorSupplier {
 
         public static volatile CountDownLatch initLatch;
-        private final DistributedSupplier<Processor> supplier;
+        private final SupplierEx<Processor> supplier;
 
-        PSThatWaitsOnInit(DistributedSupplier<Processor> supplier) {
+        PSThatWaitsOnInit(SupplierEx<Processor> supplier) {
             this.supplier = supplier;
         }
 

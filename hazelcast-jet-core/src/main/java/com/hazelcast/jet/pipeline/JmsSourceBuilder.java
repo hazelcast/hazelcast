@@ -18,9 +18,9 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 import javax.jms.Connection;
@@ -41,13 +41,13 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class JmsSourceBuilder {
 
-    private final DistributedSupplier<? extends ConnectionFactory> factorySupplier;
+    private final SupplierEx<? extends ConnectionFactory> factorySupplier;
     private final boolean isTopic;
 
-    private DistributedFunction<? super ConnectionFactory, ? extends Connection> connectionFn;
-    private DistributedFunction<? super Connection, ? extends Session> sessionFn;
-    private DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn;
-    private DistributedConsumer<? super Session> flushFn;
+    private FunctionEx<? super ConnectionFactory, ? extends Connection> connectionFn;
+    private FunctionEx<? super Connection, ? extends Session> sessionFn;
+    private FunctionEx<? super Session, ? extends MessageConsumer> consumerFn;
+    private ConsumerEx<? super Session> flushFn;
 
     private String username;
     private String password;
@@ -58,7 +58,7 @@ public final class JmsSourceBuilder {
     /**
      * Use {@link Sources#jmsQueueBuilder} of {@link Sources#jmsTopicBuilder}.
      */
-    JmsSourceBuilder(DistributedSupplier<? extends ConnectionFactory> factorySupplier, boolean isTopic) {
+    JmsSourceBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier, boolean isTopic) {
         checkSerializable(factorySupplier, "factorySupplier");
         this.factorySupplier = factorySupplier;
         this.isTopic = isTopic;
@@ -85,7 +85,7 @@ public final class JmsSourceBuilder {
      * connection. See {@link #connectionParams(String, String)}.
      */
     public JmsSourceBuilder connectionFn(
-            @Nonnull DistributedFunction<? super ConnectionFactory, ? extends Connection> connectionFn
+            @Nonnull FunctionEx<? super ConnectionFactory, ? extends Connection> connectionFn
     ) {
         checkSerializable(connectionFn, "connectionFn");
         this.connectionFn = connectionFn;
@@ -114,7 +114,7 @@ public final class JmsSourceBuilder {
      * Connection#createSession(boolean transacted, int acknowledgeMode)} to
      * create the session. See {@link #sessionParams(boolean, int)}.
      */
-    public JmsSourceBuilder sessionFn(@Nonnull DistributedFunction<? super Connection, ? extends Session> sessionFn) {
+    public JmsSourceBuilder sessionFn(@Nonnull FunctionEx<? super Connection, ? extends Session> sessionFn) {
         checkSerializable(sessionFn, "sessionFn");
         this.sessionFn = sessionFn;
         return this;
@@ -138,7 +138,7 @@ public final class JmsSourceBuilder {
      * {@link #destinationName(String)}.
      */
     public JmsSourceBuilder consumerFn(
-            @Nonnull DistributedFunction<? super Session, ? extends MessageConsumer> consumerFn
+            @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn
     ) {
         checkSerializable(consumerFn, "consumerFn");
         this.consumerFn = consumerFn;
@@ -150,7 +150,7 @@ public final class JmsSourceBuilder {
      * <p>
      * If not provided, the builder creates a no-op consumer.
      */
-    public JmsSourceBuilder flushFn(@Nonnull DistributedConsumer<? super Session> flushFn) {
+    public JmsSourceBuilder flushFn(@Nonnull ConsumerEx<? super Session> flushFn) {
         checkSerializable(flushFn, "flushFn");
         this.flushFn = flushFn;
         return this;
@@ -164,7 +164,7 @@ public final class JmsSourceBuilder {
      *                    message
      * @param <T> the type of the items the source emits
      */
-    public <T> StreamSource<T> build(@Nonnull DistributedFunction<? super Message, ? extends T> projectionFn) {
+    public <T> StreamSource<T> build(@Nonnull FunctionEx<? super Message, ? extends T> projectionFn) {
         String usernameLocal = username;
         String passwordLocal = password;
         boolean transactedLocal = transacted;
@@ -186,13 +186,13 @@ public final class JmsSourceBuilder {
                     : session.createQueue(nameLocal));
         }
         if (flushFn == null) {
-            flushFn = DistributedConsumer.noop();
+            flushFn = ConsumerEx.noop();
         }
 
-        DistributedFunction<? super ConnectionFactory, ? extends Connection> connectionFnLocal = connectionFn;
+        FunctionEx<? super ConnectionFactory, ? extends Connection> connectionFnLocal = connectionFn;
         @SuppressWarnings("UnnecessaryLocalVariable")
-        DistributedSupplier<? extends ConnectionFactory> factorySupplierLocal = factorySupplier;
-        DistributedSupplier<? extends Connection> connectionSupplier =
+        SupplierEx<? extends ConnectionFactory> factorySupplierLocal = factorySupplier;
+        SupplierEx<? extends Connection> connectionSupplier =
                 () -> connectionFnLocal.apply(factorySupplierLocal.get());
 
         Function<EventTimePolicy<? super T>, ProcessorMetaSupplier> metaSupplierFactory = policy ->
@@ -202,7 +202,7 @@ public final class JmsSourceBuilder {
     }
 
     /**
-     * Convenience for {@link JmsSourceBuilder#build(DistributedFunction)}.
+     * Convenience for {@link JmsSourceBuilder#build(FunctionEx)}.
      */
     public StreamSource<Message> build() {
         return build(message -> message);

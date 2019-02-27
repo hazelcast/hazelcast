@@ -18,7 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.pipeline.ComputeStageImplBase;
 import com.hazelcast.jet.impl.pipeline.FunctionAdapter;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
@@ -85,7 +85,7 @@ public abstract class GeneralHashJoinBuilder<T0> {
     }
 
     @SuppressWarnings("unchecked")
-    <R> GeneralStage<R> build0(DistributedBiFunction<T0, ItemsByTag, R> mapToOutputFn) {
+    <R> GeneralStage<R> build0(BiFunctionEx<T0, ItemsByTag, R> mapToOutputFn) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
         List<Entry<Tag<?>, TransformAndClause>> orderedClauses = clauses.entrySet().stream()
                                                                         .sorted(comparing(Entry::getKey))

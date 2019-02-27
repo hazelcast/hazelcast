@@ -23,8 +23,8 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.EventTimeMapper;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -65,7 +65,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     private final Properties properties;
     private final List<String> topics;
-    private final DistributedFunction<? super ConsumerRecord<K, V>, ? extends T> projectionFn;
+    private final FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn;
     private final EventTimeMapper<? super T> eventTimeMapper;
     private int totalParallelism;
     private boolean snapshottingEnabled;
@@ -87,7 +87,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     StreamKafkaP(
             @Nonnull Properties properties,
             @Nonnull List<String> topics,
-            @Nonnull DistributedFunction<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
+            @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.properties = properties;
@@ -291,10 +291,10 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     }
 
     @Nonnull
-    public static <K, V, T> DistributedSupplier<Processor> processorSupplier(
+    public static <K, V, T> SupplierEx<Processor> processorSupplier(
             @Nonnull Properties properties,
             @Nonnull List<String> topics,
-            @Nonnull DistributedFunction<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
+            @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         return () -> new StreamKafkaP<>(properties, topics, projectionFn, eventTimePolicy);

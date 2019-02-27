@@ -23,11 +23,11 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedTriFunction;
-import com.hazelcast.jet.function.DistributedTriPredicate;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -49,7 +49,7 @@ public interface GeneralStageWithKey<T, K> {
      * purpose of the key varies with the operation you apply.
      */
     @Nonnull
-    DistributedFunction<? super T, ? extends K> keyFn();
+    FunctionEx<? super T, ? extends K> keyFn();
 
     /**
      * Attaches a mapping stage which applies the given function to each input
@@ -82,7 +82,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C, R> GeneralStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
     );
 
     /**
@@ -104,7 +104,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C, R> GeneralStage<R> mapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     );
 
     /**
@@ -136,7 +136,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C> GeneralStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
+            @Nonnull TriPredicate<? super C, ? super K, ? super T> filterFn
     );
 
     /**
@@ -156,7 +156,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C> GeneralStage<T> filterUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     );
 
     /**
@@ -190,7 +190,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C, R> GeneralStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
 
     /**
@@ -213,7 +213,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <C, R> GeneralStage<R> flatMapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     );
 
@@ -233,7 +233,7 @@ public interface GeneralStageWithKey<T, K> {
      * }</pre>
      *
      * This stage is similar to {@link GeneralStage#mapUsingIMap(IMap,
-     * DistributedFunction, DistributedBiFunction) stageWithoutKey.mapUsingIMap()},
+     * FunctionEx, BiFunctionEx) stageWithoutKey.mapUsingIMap()},
      * but here Jet knows the key and uses it to partition and distribute the input in order
      * to achieve data locality. The value it fetches from the {@code IMap} is
      * stored on the cluster member where the processing takes place. However,
@@ -249,7 +249,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     default <V, R> GeneralStage<R> mapUsingIMap(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
         return mapUsingContextAsync(ContextFactories.<K, V>iMapContext(mapName),
                 (map, key, item) -> toCompletableFuture(map.getAsync(key)).thenApply(value -> mapFn.apply(item, value)));
@@ -271,7 +271,7 @@ public interface GeneralStageWithKey<T, K> {
      * }</pre>
      *
      * This stage is similar to {@link GeneralStage#mapUsingIMap(IMap,
-     * DistributedFunction, DistributedBiFunction) stageWithoutKey.mapUsingIMap()},
+     * FunctionEx, BiFunctionEx) stageWithoutKey.mapUsingIMap()},
      * but here Jet knows the key and uses it to partition and distribute the input in order
      * to achieve data locality. The value it fetches from the {@code IMap} is
      * stored on the cluster member where the processing takes place. However,
@@ -287,7 +287,7 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     default <V, R> GeneralStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
-            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
         return mapUsingIMap(iMap.getName(), mapFn);
     }
@@ -316,14 +316,14 @@ public interface GeneralStageWithKey<T, K> {
     @Nonnull
     <R, OUT> GeneralStage<OUT> rollingAggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
     );
 
     /**
      * A shortcut for:
      * <blockquote>
      *     {@link #rollingAggregate(AggregateOperation1,
-     *     DistributedBiFunction) aggregateRolling(aggrOp, Util::entry)}.
+     *     BiFunctionEx) aggregateRolling(aggrOp, Util::entry)}.
      * </blockquote>
      */
     @Nonnull
@@ -347,7 +347,7 @@ public interface GeneralStageWithKey<T, K> {
      * @param procSupplier the supplier of processors
      */
     @Nonnull
-    <R> GeneralStage<R> customTransform(@Nonnull String stageName, @Nonnull DistributedSupplier<Processor> procSupplier);
+    <R> GeneralStage<R> customTransform(@Nonnull String stageName, @Nonnull SupplierEx<Processor> procSupplier);
 
     /**
      * Attaches a stage with a custom transform based on the provided supplier

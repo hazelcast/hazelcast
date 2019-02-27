@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.aggregate;
 
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,51 +32,51 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
         implements AggregateOperation3<T0, T1, T2, A, R> {
 
     public AggregateOperation3Impl(
-            @Nonnull DistributedSupplier<A> createFn,
-            @Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateFn0,
-            @Nonnull DistributedBiConsumer<? super A, ? super T1> accumulateFn1,
-            @Nonnull DistributedBiConsumer<? super A, ? super T2> accumulateFn2,
-            @Nullable DistributedBiConsumer<? super A, ? super A> combineFn,
-            @Nullable DistributedBiConsumer<? super A, ? super A> deductFn,
-            @Nonnull DistributedFunction<? super A, ? extends R> exportFn,
-            @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+            @Nonnull SupplierEx<A> createFn,
+            @Nonnull BiConsumerEx<? super A, ? super T0> accumulateFn0,
+            @Nonnull BiConsumerEx<? super A, ? super T1> accumulateFn1,
+            @Nonnull BiConsumerEx<? super A, ? super T2> accumulateFn2,
+            @Nullable BiConsumerEx<? super A, ? super A> combineFn,
+            @Nullable BiConsumerEx<? super A, ? super A> deductFn,
+            @Nonnull FunctionEx<? super A, ? extends R> exportFn,
+            @Nonnull FunctionEx<? super A, ? extends R> finishFn
     ) {
         super(createFn, accumulateFns(accumulateFn0, accumulateFn1, accumulateFn2),
                 combineFn, deductFn, exportFn, finishFn);
     }
 
     private AggregateOperation3Impl(
-            @Nonnull DistributedSupplier<A> createFn,
-            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFns,
-            @Nullable DistributedBiConsumer<? super A, ? super A> combineFn,
-            @Nullable DistributedBiConsumer<? super A, ? super A> deductFn,
-            @Nonnull DistributedFunction<? super A, ? extends R> exportFn,
-            @Nonnull DistributedFunction<? super A, ? extends R> finishFn
+            @Nonnull SupplierEx<A> createFn,
+            @Nonnull BiConsumerEx<? super A, ?>[] accumulateFns,
+            @Nullable BiConsumerEx<? super A, ? super A> combineFn,
+            @Nullable BiConsumerEx<? super A, ? super A> deductFn,
+            @Nonnull FunctionEx<? super A, ? extends R> exportFn,
+            @Nonnull FunctionEx<? super A, ? extends R> finishFn
     ) {
         super(createFn, accumulateFns, combineFn, deductFn, exportFn, finishFn);
     }
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public DistributedBiConsumer<? super A, ? super T0> accumulateFn0() {
-        return (DistributedBiConsumer<? super A, ? super T0>) accumulateFns[0];
+    public BiConsumerEx<? super A, ? super T0> accumulateFn0() {
+        return (BiConsumerEx<? super A, ? super T0>) accumulateFns[0];
     }
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public DistributedBiConsumer<? super A, ? super T1> accumulateFn1() {
-        return (DistributedBiConsumer<? super A, ? super T1>) accumulateFns[1];
+    public BiConsumerEx<? super A, ? super T1> accumulateFn1() {
+        return (BiConsumerEx<? super A, ? super T1>) accumulateFns[1];
     }
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public DistributedBiConsumer<? super A, ? super T2> accumulateFn2() {
-        return (DistributedBiConsumer<? super A, ? super T2>) accumulateFns[2];
+    public BiConsumerEx<? super A, ? super T2> accumulateFn2() {
+        return (BiConsumerEx<? super A, ? super T2>) accumulateFns[2];
     }
 
     @Nonnull @Override
     public <T0_NEW> AggregateOperation3<T0_NEW, T1, T2, A, R> withAccumulateFn0(
-            @Nonnull DistributedBiConsumer<? super A, ? super T0_NEW> accumulateFn0
+            @Nonnull BiConsumerEx<? super A, ? super T0_NEW> accumulateFn0
     ) {
         checkSerializable(accumulateFn0, "accumulateFn0");
         return new AggregateOperation3Impl<>(
@@ -86,7 +86,7 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
 
     @Nonnull @Override
     public <T1_NEW> AggregateOperation3<T0, T1_NEW, T2, A, R> withAccumulateFn1(
-            @Nonnull DistributedBiConsumer<? super A, ? super T1_NEW> accumulateFn1
+            @Nonnull BiConsumerEx<? super A, ? super T1_NEW> accumulateFn1
     ) {
         checkSerializable(accumulateFn1, "accumulateFn1");
         return new AggregateOperation3Impl<>(
@@ -96,7 +96,7 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
 
     @Nonnull @Override
     public <T2_NEW> AggregateOperation3<T0, T1, T2_NEW, A, R> withAccumulateFn2(
-            @Nonnull DistributedBiConsumer<? super A, ? super T2_NEW> accumulateFn2
+            @Nonnull BiConsumerEx<? super A, ? super T2_NEW> accumulateFn2
     ) {
         checkSerializable(accumulateFn2, "accumulateFn2");
         return new AggregateOperation3Impl<>(
@@ -106,24 +106,24 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public <T> DistributedBiConsumer<? super A, T> accumulateFn(Tag<T> tag) {
+    public <T> BiConsumerEx<? super A, T> accumulateFn(Tag<T> tag) {
         if (tag.index() > 2) {
             throw new IllegalArgumentException(
                     "AggregateOperation3 only recognizes tags with index 0, 1 and 2, but asked for " + tag.index());
         }
-        return (DistributedBiConsumer<? super A, T>) accumulateFns[tag.index()];
+        return (BiConsumerEx<? super A, T>) accumulateFns[tag.index()];
     }
 
     @Nonnull @Override
     public AggregateOperation3<T0, T1, T2, A, A> withIdentityFinish() {
         return new AggregateOperation3Impl<>(
                 createFn(), accumulateFns, combineFn(), deductFn(),
-                unsupportedExportFn(), DistributedFunction.identity());
+                unsupportedExportFn(), FunctionEx.identity());
     }
 
     @Nonnull @Override
     public <R_NEW> AggregateOperation3<T0, T1, T2, A, R_NEW> andThen(
-            DistributedFunction<? super R, ? extends R_NEW> thenFn
+            FunctionEx<? super R, ? extends R_NEW> thenFn
     ) {
         return new AggregateOperation3Impl<>(
                 createFn(), accumulateFns, combineFn(), deductFn(),

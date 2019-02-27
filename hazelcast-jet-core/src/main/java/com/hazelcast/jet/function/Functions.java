@@ -23,18 +23,18 @@ import java.util.Map.Entry;
 /**
  * Factory methods for several common distributed functions.
  */
-public final class DistributedFunctions {
+public final class Functions {
 
-    private DistributedFunctions() {
+    private Functions() {
     }
 
     /**
-     * Synonym for {@link DistributedFunction#identity}, to be used as a
+     * Synonym for {@link FunctionEx#identity}, to be used as a
      * projection function (e.g., key extractor).
      */
     @Nonnull
-    public static <T> DistributedFunction<T, T> wholeItem() {
-        return DistributedFunction.identity();
+    public static <T> FunctionEx<T, T> wholeItem() {
+        return FunctionEx.identity();
     }
 
     /**
@@ -43,7 +43,7 @@ public final class DistributedFunctions {
      * @param <K> type of entry's key
      */
     @Nonnull
-    public static <K, V> DistributedFunction<Entry<K, V>, K> entryKey() {
+    public static <K, V> FunctionEx<Entry<K, V>, K> entryKey() {
         return Map.Entry::getKey;
     }
 
@@ -53,7 +53,7 @@ public final class DistributedFunctions {
      * @param <V> type of entry's value
      */
     @Nonnull
-    public static <K, V> DistributedFunction<Entry<K, V>, V> entryValue() {
+    public static <K, V> FunctionEx<Entry<K, V>, V> entryValue() {
         return Map.Entry::getValue;
     }
 }

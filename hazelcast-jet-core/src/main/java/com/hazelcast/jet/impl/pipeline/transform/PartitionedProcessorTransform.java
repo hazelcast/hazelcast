@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBiPredicate;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.ContextFactory;
@@ -35,13 +35,13 @@ import static com.hazelcast.jet.core.processor.Processors.mapUsingContextP;
 
 public final class PartitionedProcessorTransform<T, K> extends ProcessorTransform {
 
-    private final DistributedFunction<? super T, ? extends K> partitionKeyFn;
+    private final FunctionEx<? super T, ? extends K> partitionKeyFn;
 
     private PartitionedProcessorTransform(
             @Nonnull String name,
             @Nonnull Transform upstream,
             @Nonnull ProcessorMetaSupplier processorSupplier,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         super(name, upstream, processorSupplier);
         this.partitionKeyFn = partitionKeyFn;
@@ -51,7 +51,7 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
             @Nonnull String name,
             @Nonnull Transform upstream,
             @Nonnull ProcessorMetaSupplier processorSupplier,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>(name, upstream, processorSupplier, partitionKeyFn);
     }
@@ -59,8 +59,8 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
     public static <C, T, K, R> PartitionedProcessorTransform<T, K> mapUsingContextPartitionedTransform(
             @Nonnull Transform upstream,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn,
+            @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>("mapUsingPartitionedContext",
                 upstream, ProcessorMetaSupplier.of(mapUsingContextP(contextFactory, mapFn)), partitionKeyFn);
@@ -69,8 +69,8 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
     public static <C, T, K> PartitionedProcessorTransform<T, K> filterUsingPartitionedContextTransform(
             @Nonnull Transform upstream,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull BiPredicateEx<? super C, ? super T> filterFn,
+            @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>("filterUsingPartitionedContext",
                 upstream, ProcessorMetaSupplier.of(filterUsingContextP(contextFactory, filterFn)), partitionKeyFn);
@@ -79,8 +79,8 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
     public static <C, T, K, R> PartitionedProcessorTransform<T, K> flatMapUsingPartitionedContextTransform(
             @Nonnull Transform upstream,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn,
+            @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>("flatMapUsingPartitionedContext",
                 upstream, ProcessorMetaSupplier.of(flatMapUsingContextP(contextFactory, flatMapFn)), partitionKeyFn);
@@ -90,8 +90,8 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
             @Nonnull Transform upstream,
             @Nonnull String operationName,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn,
-            @Nonnull DistributedFunction<? super T, ? extends K> partitionKeyFn
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn,
+            @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
     ) {
         return new PartitionedProcessorTransform<>(operationName + "UsingPartitionedContextAsync", upstream,
                 ProcessorMetaSupplier.of(flatMapUsingContextAsyncP(contextFactory, partitionKeyFn, flatMapAsyncFn)),

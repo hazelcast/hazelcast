@@ -22,7 +22,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -90,7 +90,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends TestInClusterSu
                 () -> new MockP().nonCooperative().setInitError(RESTARTABLE_EXCEPTION));
     }
 
-    private void when_inProcessorMethod_then_jobRestarted(DistributedSupplier<Processor> supplier) {
+    private void when_inProcessorMethod_then_jobRestarted(SupplierEx<Processor> supplier) {
         DAG dag = new DAG();
         Vertex src = dag.newVertex("src", () -> new ListSource(1));
         Vertex v = dag.newVertex("v", new MockPS(supplier, MEMBER_COUNT));

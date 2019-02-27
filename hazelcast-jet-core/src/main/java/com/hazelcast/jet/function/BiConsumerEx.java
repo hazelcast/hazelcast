@@ -19,26 +19,40 @@ package com.hazelcast.jet.function;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
 import java.io.Serializable;
-import java.util.function.LongBinaryOperator;
+import java.util.function.BiConsumer;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * {@code Serializable} variant of {@link LongBinaryOperator
- * java.util.function.LongBinaryOperator} which declares checked exception.
+ * {@code Serializable} variant of {@link BiConsumer
+ * java.util.function.BiConsumer} which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedLongBinaryOperator extends LongBinaryOperator, Serializable {
+public interface BiConsumerEx<T, U> extends BiConsumer<T, U>, Serializable {
 
     /**
-     * Exception-declaring version of {@link LongBinaryOperator#applyAsLong}.
+     * Exception-declaring version of {@link BiConsumer#accept}.
      */
-    long applyAsLongEx(long left, long right) throws Exception;
+    void acceptEx(T t, U u) throws Exception;
 
     @Override
-    default long applyAsLong(long left, long right) {
+    default void accept(T t, U u) {
         try {
-            return applyAsLongEx(left, right);
+            acceptEx(t, u);
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
+    }
+
+    /**
+     * {@code Serializable} variant of
+     * {@link BiConsumer#andThen(BiConsumer) java.util.function.BiConsumer#andThen(BiConsumer)}.
+     */
+    default BiConsumerEx<T, U> andThen(BiConsumerEx<? super T, ? super U> after) {
+        checkNotNull(after, "after");
+        return (left, right) -> {
+            accept(left, right);
+            after.accept(left, right);
+        };
     }
 }

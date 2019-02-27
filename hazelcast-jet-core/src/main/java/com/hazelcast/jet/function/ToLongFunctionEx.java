@@ -19,22 +19,22 @@ package com.hazelcast.jet.function;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
 import java.io.Serializable;
-import java.util.function.IntToLongFunction;
+import java.util.function.ToLongFunction;
 
 /**
- * {@code Serializable} variant of {@link IntToLongFunction
- * java.util.function.IntToLongFunction} which declares checked exception.
+ * {@code Serializable} variant of {@link ToLongFunction
+ * java.util.function.ToLongFunction} which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedIntToLongFunction extends IntToLongFunction, Serializable {
+public interface ToLongFunctionEx<T> extends ToLongFunction<T>, Serializable {
 
     /**
-     * Exception-declaring version of {@link IntToLongFunction#applyAsLong}.
+     * Exception-declaring version of {@link ToLongFunction#applyAsLong}.
      */
-    long applyAsLongEx(int value) throws Exception;
+    long applyAsLongEx(T value) throws Exception;
 
     @Override
-    default long applyAsLong(int value) {
+    default long applyAsLong(T value) {
         try {
             return applyAsLongEx(value);
         } catch (Exception e) {

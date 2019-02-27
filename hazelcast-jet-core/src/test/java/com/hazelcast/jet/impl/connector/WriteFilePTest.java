@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -301,7 +301,7 @@ public class WriteFilePTest extends JetTestSupport {
         }
     }
 
-    private Pipeline buildPipeline(DistributedFunction<String, String> toStringFn, Charset charset, boolean append) {
+    private Pipeline buildPipeline(FunctionEx<String, String> toStringFn, Charset charset, boolean append) {
         if (toStringFn == null) {
             toStringFn = Object::toString;
         }

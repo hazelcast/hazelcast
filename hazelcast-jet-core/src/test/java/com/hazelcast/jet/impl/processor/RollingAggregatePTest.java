@@ -20,7 +20,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class RollingAggregatePTest {
 
     @Test
     public void rollingAggregate() {
-        DistributedSupplier<Processor> supplier = Processors.rollingAggregateP(
+        SupplierEx<Processor> supplier = Processors.rollingAggregateP(
                 Entry::getKey,
                 AggregateOperation
                         .withCreate(() -> new long[1])
@@ -63,7 +63,7 @@ public class RollingAggregatePTest {
 
     @Test
     public void rollingAggregate_withFiltering() {
-        DistributedSupplier<Processor> supplier = Processors.rollingAggregateP(
+        SupplierEx<Processor> supplier = Processors.rollingAggregateP(
                 Entry::getKey,
                 AggregateOperation
                         .withCreate(() -> new long[1])

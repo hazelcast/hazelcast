@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 
@@ -26,17 +26,17 @@ import static com.hazelcast.jet.core.processor.Processors.filterP;
 
 public class FilterTransform<T> extends AbstractTransform {
     @Nonnull
-    private DistributedPredicate<? super T> filterFn;
+    private PredicateEx<? super T> filterFn;
 
     public FilterTransform(
             @Nonnull Transform upstream,
-            @Nonnull DistributedPredicate<? super T> filterFn
+            @Nonnull PredicateEx<? super T> filterFn
     ) {
         super("filter", upstream);
         this.filterFn = filterFn;
     }
 
-    public DistributedPredicate<? super T> filterFn() {
+    public PredicateEx<? super T> filterFn() {
         return filterFn;
     }
 

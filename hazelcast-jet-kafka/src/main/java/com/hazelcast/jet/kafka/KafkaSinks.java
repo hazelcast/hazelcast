@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.kafka;
 
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -65,13 +65,13 @@ public final class KafkaSinks {
     @Nonnull
     public static <E, K, V> Sink<E> kafka(
             @Nonnull Properties properties,
-            @Nonnull DistributedFunction<? super E, ProducerRecord<K, V>> toRecordFn
+            @Nonnull FunctionEx<? super E, ProducerRecord<K, V>> toRecordFn
     ) {
         return Sinks.fromProcessor("writeKafka", writeKafkaP(properties, toRecordFn));
     }
 
     /**
-     * Convenience for {@link #kafka(Properties, DistributedFunction)} which creates
+     * Convenience for {@link #kafka(Properties, FunctionEx)} which creates
      * a {@code ProducerRecord} using the given topic and the given key and value
      * mapping functions
      *
@@ -89,14 +89,14 @@ public final class KafkaSinks {
     public static <E, K, V> Sink<E> kafka(
             @Nonnull Properties properties,
             @Nonnull String topic,
-            @Nonnull DistributedFunction<? super E, K> extractKeyFn,
-            @Nonnull DistributedFunction<? super E, V> extractValueFn
+            @Nonnull FunctionEx<? super E, K> extractKeyFn,
+            @Nonnull FunctionEx<? super E, V> extractValueFn
     ) {
         return Sinks.fromProcessor("writeKafka", writeKafkaP(properties, topic, extractKeyFn, extractValueFn));
     }
 
     /**
-     * Convenience for {@link #kafka(Properties, String, DistributedFunction, DistributedFunction)}
+     * Convenience for {@link #kafka(Properties, String, FunctionEx, FunctionEx)}
      * which expects {@code Map.Entry<K, V>} as input and extracts its key and value
      * parts to be published to Kafka.
      *

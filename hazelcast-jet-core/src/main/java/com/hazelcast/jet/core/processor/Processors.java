@@ -31,14 +31,14 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBiPredicate;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToLongFunction;
-import com.hazelcast.jet.function.DistributedTriFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BiPredicateEx;
+import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.PredicateEx;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextOrderedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextUnorderedP;
@@ -57,7 +57,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.TimestampKind.EVENT;
-import static com.hazelcast.jet.function.DistributedFunction.identity;
+import static com.hazelcast.jet.function.FunctionEx.identity;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -227,7 +227,7 @@ public final class Processors {
      * @param aggrOp the aggregate operation to perform
      */
     @Nonnull
-    public static <A, R> DistributedSupplier<Processor> aggregateP(
+    public static <A, R> SupplierEx<Processor> aggregateP(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
         // We should use the same constant key as the input edges do, but since
@@ -253,7 +253,7 @@ public final class Processors {
      * @param aggrOp the aggregate operation to perform
      */
     @Nonnull
-    public static <A, R> DistributedSupplier<Processor> accumulateP(@Nonnull AggregateOperation<A, R> aggrOp) {
+    public static <A, R> SupplierEx<Processor> accumulateP(@Nonnull AggregateOperation<A, R> aggrOp) {
         return () -> new GroupP<>(
                 // We should use the same constant key as the input edges do, but since
                 // the processor doesn't save the state, there's no need to.
@@ -280,7 +280,7 @@ public final class Processors {
      * @param aggrOp the aggregate operation to perform
      */
     @Nonnull
-    public static <A, R> DistributedSupplier<Processor> combineP(
+    public static <A, R> SupplierEx<Processor> combineP(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
         return () -> new GroupP<>(
@@ -316,10 +316,10 @@ public final class Processors {
      * @param <OUT> type of the item to emit
      */
     @Nonnull
-    public static <K, A, R, OUT> DistributedSupplier<Processor> aggregateByKeyP(
-            @Nonnull List<DistributedFunction<?, ? extends K>> keyFns,
+    public static <K, A, R, OUT> SupplierEx<Processor> aggregateByKeyP(
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
             @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, OUT> mapToOutputFn
     ) {
         return () -> new GroupP<>(keyFns, aggrOp, mapToOutputFn);
     }
@@ -346,8 +346,8 @@ public final class Processors {
      * @param <A> type of accumulator returned from {@code aggrOp.createAccumulatorFn()}
      */
     @Nonnull
-    public static <K, A> DistributedSupplier<Processor> accumulateByKeyP(
-            @Nonnull List<DistributedFunction<?, ? extends K>> getKeyFns,
+    public static <K, A> SupplierEx<Processor> accumulateByKeyP(
+            @Nonnull List<FunctionEx<?, ? extends K>> getKeyFns,
             @Nonnull AggregateOperation<A, ?> aggrOp
     ) {
         return () -> new GroupP<>(getKeyFns, aggrOp.withIdentityFinish(), Util::entry);
@@ -377,9 +377,9 @@ public final class Processors {
      * @param <OUT> type of the item to emit
      */
     @Nonnull
-    public static <K, A, R, OUT> DistributedSupplier<Processor> combineByKeyP(
+    public static <K, A, R, OUT> SupplierEx<Processor> combineByKeyP(
             @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, OUT> mapToOutputFn
     ) {
         return () -> new GroupP<>(
                 Entry::getKey,
@@ -422,9 +422,9 @@ public final class Processors {
      * done in previous execution.
      */
     @Nonnull
-    public static <K, A, R, OUT> DistributedSupplier<Processor> aggregateToSlidingWindowP(
-            @Nonnull List<DistributedFunction<?, ? extends K>> keyFns,
-            @Nonnull List<DistributedToLongFunction<?>> timestampFns,
+    public static <K, A, R, OUT> SupplierEx<Processor> aggregateToSlidingWindowP(
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
+            @Nonnull List<ToLongFunctionEx<?>> timestampFns,
             @Nonnull TimestampKind timestampKind,
             @Nonnull SlidingWindowPolicy winPolicy,
             long earlyResultsPeriod,
@@ -469,9 +469,9 @@ public final class Processors {
      *            createAccumulatorFn()}
      */
     @Nonnull
-    public static <K, A> DistributedSupplier<Processor> accumulateByFrameP(
-            @Nonnull List<DistributedFunction<?, ? extends K>> keyFns,
-            @Nonnull List<DistributedToLongFunction<?>> timestampFns,
+    public static <K, A> SupplierEx<Processor> accumulateByFrameP(
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
+            @Nonnull List<ToLongFunctionEx<?>> timestampFns,
             @Nonnull TimestampKind timestampKind,
             @Nonnull SlidingWindowPolicy winPolicy,
             @Nonnull AggregateOperation<A, ?> aggrOp
@@ -523,13 +523,13 @@ public final class Processors {
      * @param <OUT> type of the item to emit
      */
     @Nonnull
-    public static <K, A, R, OUT> DistributedSupplier<Processor> combineToSlidingWindowP(
+    public static <K, A, R, OUT> SupplierEx<Processor> combineToSlidingWindowP(
             @Nonnull SlidingWindowPolicy winPolicy,
             @Nonnull AggregateOperation<A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
-        DistributedFunction<TimestampedEntry<K, A>, K> keyFn = TimestampedEntry::getKey;
-        DistributedToLongFunction<TimestampedEntry<K, A>> timestampFn = TimestampedEntry::getTimestamp;
+        FunctionEx<TimestampedEntry<K, A>, K> keyFn = TimestampedEntry::getKey;
+        ToLongFunctionEx<TimestampedEntry<K, A>> timestampFn = TimestampedEntry::getTimestamp;
         return aggregateByKeyAndWindowP(
                 singletonList(keyFn),
                 singletonList(timestampFn),
@@ -563,9 +563,9 @@ public final class Processors {
      * @param <R> type of the aggregated result
      */
     @Nonnull
-    private static <K, A, R, OUT> DistributedSupplier<Processor> aggregateByKeyAndWindowP(
-            @Nonnull List<DistributedFunction<?, ? extends K>> keyFns,
-            @Nonnull List<DistributedToLongFunction<?>> timestampFns,
+    private static <K, A, R, OUT> SupplierEx<Processor> aggregateByKeyAndWindowP(
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
+            @Nonnull List<ToLongFunctionEx<?>> timestampFns,
             @Nonnull TimestampKind timestampKind,
             @Nonnull SlidingWindowPolicy winPolicy,
             long earlyResultsPeriod,
@@ -585,13 +585,13 @@ public final class Processors {
                 isLastStage);
     }
 
-    private static DistributedToLongFunction<Object> toFrameTimestampFn(
-            @Nonnull DistributedToLongFunction<?> timestampFnX,
+    private static ToLongFunctionEx<Object> toFrameTimestampFn(
+            @Nonnull ToLongFunctionEx<?> timestampFnX,
             @Nonnull TimestampKind timestampKind,
             @Nonnull SlidingWindowPolicy winPolicy
     ) {
         @SuppressWarnings("unchecked")
-        DistributedToLongFunction<Object> timestampFn = (DistributedToLongFunction<Object>) timestampFnX;
+        ToLongFunctionEx<Object> timestampFn = (ToLongFunctionEx<Object>) timestampFnX;
         return timestampKind == EVENT
                 ? item -> winPolicy.higherFrameTs(timestampFn.applyAsLong(item))
                 : item -> winPolicy.higherFrameTs(timestampFn.applyAsLong(item) - 1);
@@ -637,11 +637,11 @@ public final class Processors {
      * @param <R> type of the session window's result value
      */
     @Nonnull
-    public static <K, A, R, OUT> DistributedSupplier<Processor> aggregateToSessionWindowP(
+    public static <K, A, R, OUT> SupplierEx<Processor> aggregateToSessionWindowP(
             long sessionTimeout,
             long earlyResultsPeriod,
-            @Nonnull List<DistributedToLongFunction<?>> timestampFns,
-            @Nonnull List<DistributedFunction<?, ? extends K>> keyFns,
+            @Nonnull List<ToLongFunctionEx<?>> timestampFns,
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
             @Nonnull AggregateOperation<A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
@@ -672,7 +672,7 @@ public final class Processors {
      * @param <T> the type of the stream item
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> insertWatermarksP(
+    public static <T> SupplierEx<Processor> insertWatermarksP(
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         return () -> new InsertWatermarksP<>(eventTimePolicy);
@@ -691,8 +691,8 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, R> DistributedSupplier<Processor> mapP(
-            @Nonnull DistributedFunction<T, R> mapFn
+    public static <T, R> SupplierEx<Processor> mapP(
+            @Nonnull FunctionEx<T, R> mapFn
     ) {
         return () -> {
             final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
@@ -713,7 +713,7 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> filterP(@Nonnull DistributedPredicate<T> filterFn) {
+    public static <T> SupplierEx<Processor> filterP(@Nonnull PredicateEx<T> filterFn) {
         return () -> {
             final ResettableSingletonTraverser<T> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, T>(item -> {
@@ -736,8 +736,8 @@ public final class Processors {
      * @param <R> emitted item type
      */
     @Nonnull
-    public static <T, R> DistributedSupplier<Processor> flatMapP(
-            @Nonnull DistributedFunction<T, ? extends Traverser<? extends R>> flatMapFn
+    public static <T, R> SupplierEx<Processor> flatMapP(
+            @Nonnull FunctionEx<T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return () -> new TransformP<>(flatMapFn);
     }
@@ -768,7 +768,7 @@ public final class Processors {
     @Nonnull
     public static <C, T, R> ProcessorSupplier mapUsingContextP(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
         return TransformUsingContextP.<C, T, R>supplier(contextFactory, (singletonTraverser, context, item) -> {
             singletonTraverser.accept(mapFn.apply(context, item));
@@ -798,8 +798,8 @@ public final class Processors {
     @Nonnull
     public static <C, T, K, R> ProcessorSupplier mapUsingContextAsyncP(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedFunction<T, K> extractKeyFn,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<R>> mapAsyncFn
+            @Nonnull FunctionEx<T, K> extractKeyFn,
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
         return flatMapUsingContextAsyncP(contextFactory, extractKeyFn,
                 (c, t) -> mapAsyncFn.apply(c, t).thenApply(Traversers::singleton));
@@ -823,7 +823,7 @@ public final class Processors {
     @Nonnull
     public static <C, T> ProcessorSupplier filterUsingContextP(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     ) {
         return TransformUsingContextP.<C, T, T>supplier(contextFactory, (singletonTraverser, context, item) -> {
             singletonTraverser.accept(filterFn.test(context, item) ? item : null);
@@ -853,8 +853,8 @@ public final class Processors {
     @Nonnull
     public static <C, T, K> ProcessorSupplier filterUsingContextAsyncP(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedFunction<T, K> extractKeyFn,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+            @Nonnull FunctionEx<T, K> extractKeyFn,
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     ) {
         return flatMapUsingContextAsyncP(contextFactory, extractKeyFn,
                 (c, t) -> filterAsyncFn.apply(c, t).thenApply(passed -> passed ? Traversers.singleton(t) : null));
@@ -882,7 +882,7 @@ public final class Processors {
     @Nonnull
     public static <C, T, R> ProcessorSupplier flatMapUsingContextP(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return TransformUsingContextP.<C, T, R>supplier(contextFactory,
                 (singletonTraverser, context, item) -> flatMapFn.apply(context, item));
@@ -913,8 +913,8 @@ public final class Processors {
     @Nonnull
     public static <C, T, K, R> ProcessorSupplier flatMapUsingContextAsyncP(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedFunction<? super T, ? extends K> extractKeyFn,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn,
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return contextFactory.hasOrderedAsyncResponses()
                 ? AsyncTransformUsingContextOrderedP.supplier(contextFactory, flatMapAsyncFn)
@@ -944,10 +944,10 @@ public final class Processors {
      *                      and returns the output item
      */
     @Nonnull
-    public static <T, K, A, R, OUT> DistributedSupplier<Processor> rollingAggregateP(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
+    public static <T, K, A, R, OUT> SupplierEx<Processor> rollingAggregateP(
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn,
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
-            @Nonnull DistributedTriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull TriFunction<? super T, ? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return () -> new RollingAggregateP<T, K, A, R, OUT>(keyFn, aggrOp, mapToOutputFn);
     }
@@ -958,7 +958,7 @@ public final class Processors {
      * and completes immediately. It also swallows any restored snapshot data.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> noopP() {
+    public static SupplierEx<Processor> noopP() {
         return NoopP::new;
     }
 
@@ -973,7 +973,7 @@ public final class Processors {
 
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
-            inbox.drain(DistributedConsumer.noop());
+            inbox.drain(ConsumerEx.noop());
         }
 
         @Override
@@ -983,7 +983,7 @@ public final class Processors {
 
         @Override
         public void restoreFromSnapshot(@Nonnull Inbox inbox) {
-            inbox.drain(DistributedConsumer.noop());
+            inbox.drain(ConsumerEx.noop());
         }
     }
 }

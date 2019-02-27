@@ -28,8 +28,8 @@ import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
@@ -75,7 +75,7 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 public final class AsyncTransformUsingContextUnorderedP<C, T, K, R> extends AbstractProcessor {
 
     private final ContextFactory<C> contextFactory;
-    private final DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
+    private final BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
     private final Function<? super T, ? extends K> extractKeyFn;
 
     private C contextObject;
@@ -105,7 +105,7 @@ public final class AsyncTransformUsingContextUnorderedP<C, T, K, R> extends Abst
     private AsyncTransformUsingContextUnorderedP(
             @Nonnull ContextFactory<C> contextFactory,
             @Nullable C contextObject,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn,
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn,
             @Nonnull Function<? super T, ? extends K> extractKeyFn
     ) {
         assert contextObject == null ^ contextFactory.hasLocalSharing()
@@ -330,8 +330,8 @@ public final class AsyncTransformUsingContextUnorderedP<C, T, K, R> extends Abst
      */
     public static <C, T, K, R> ProcessorSupplier supplier(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn,
-            @Nonnull DistributedFunction<? super T, ? extends K> extractKeyFn
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn,
+            @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn
     ) {
         return supplierWithContext(contextFactory,
                 (ctxF, ctxO) -> new AsyncTransformUsingContextUnorderedP<>(ctxF, ctxO, callAsyncFn, extractKeyFn)

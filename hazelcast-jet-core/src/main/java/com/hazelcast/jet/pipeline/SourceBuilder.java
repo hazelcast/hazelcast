@@ -18,9 +18,9 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.ConsumerEx;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.util.Preconditions;
@@ -35,9 +35,9 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Top-level class for Jet source builders. Refer to the builder
  * factory methods listed below.
  *
- * @see #batch(String, DistributedFunction)
- * @see #timestampedStream(String, DistributedFunction)
- * @see #stream(String, DistributedFunction)
+ * @see #batch(String, FunctionEx)
+ * @see #timestampedStream(String, FunctionEx)
+ * @see #stream(String, FunctionEx)
  *
  * @param <S> type of the source state object
  */
@@ -46,8 +46,8 @@ public final class SourceBuilder<S> {
     // inner classes while not clashing with parameter names. Parameter names
     // are public API.
     private final String mName;
-    private final DistributedFunction<? super Processor.Context, ? extends S> mCreateFn;
-    private DistributedConsumer<? super S> mDestroyFn = DistributedConsumer.noop();
+    private final FunctionEx<? super Context, ? extends S> mCreateFn;
+    private ConsumerEx<? super S> mDestroyFn = ConsumerEx.noop();
     private int mPreferredLocalParallelism;
 
     /**
@@ -98,7 +98,7 @@ public final class SourceBuilder<S> {
 
     private SourceBuilder(
             @Nonnull String name,
-            @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn
+            @Nonnull FunctionEx<? super Context, ? extends S> createFn
     ) {
         this.mName = name;
         this.mCreateFn = createFn;
@@ -166,7 +166,7 @@ public final class SourceBuilder<S> {
      */
     @Nonnull
     public static <S> SourceBuilder<S>.Batch<Void> batch(
-            @Nonnull String name, @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn
+            @Nonnull String name, @Nonnull FunctionEx<? super Context, ? extends S> createFn
     ) {
         return new SourceBuilder<S>(name, createFn).new Batch<Void>();
     }
@@ -227,7 +227,7 @@ public final class SourceBuilder<S> {
      */
     @Nonnull
     public static <S> SourceBuilder<S>.Stream<Void> stream(
-            @Nonnull String name, @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn
+            @Nonnull String name, @Nonnull FunctionEx<? super Context, ? extends S> createFn
     ) {
         return new SourceBuilder<S>(name, createFn).new Stream<Void>();
     }
@@ -311,7 +311,7 @@ public final class SourceBuilder<S> {
     @Nonnull
     public static <S> SourceBuilder<S>.TimestampedStream<Void> timestampedStream(
             @Nonnull String name,
-            @Nonnull DistributedFunction<? super Processor.Context, ? extends S> createFn
+            @Nonnull FunctionEx<? super Context, ? extends S> createFn
     ) {
         return new SourceBuilder<S>(name, createFn).new TimestampedStream<Void>();
     }
@@ -326,7 +326,7 @@ public final class SourceBuilder<S> {
          * state object.
          */
         @Nonnull
-        public Base<T> destroyFn(@Nonnull DistributedConsumer<? super S> destroyFn) {
+        public Base<T> destroyFn(@Nonnull ConsumerEx<? super S> destroyFn) {
             mDestroyFn = destroyFn;
             return this;
         }
@@ -354,7 +354,7 @@ public final class SourceBuilder<S> {
     }
 
     private abstract class BaseNoTimestamps<T> extends Base<T> {
-        DistributedBiConsumer<? super S, ? super SourceBuffer<T>> fillBufferFn;
+        BiConsumerEx<? super S, ? super SourceBuffer<T>> fillBufferFn;
 
         private BaseNoTimestamps() {
         }
@@ -377,7 +377,7 @@ public final class SourceBuilder<S> {
         @Nonnull
         @SuppressWarnings("unchecked")
         public <T_NEW> BaseNoTimestamps<T_NEW> fillBufferFn(
-                @Nonnull DistributedBiConsumer<? super S, ? super SourceBuffer<T_NEW>> fillBufferFn
+                @Nonnull BiConsumerEx<? super S, ? super SourceBuffer<T_NEW>> fillBufferFn
         ) {
             BaseNoTimestamps<T_NEW> newThis = (BaseNoTimestamps<T_NEW>) this;
             newThis.fillBufferFn = fillBufferFn;
@@ -387,7 +387,7 @@ public final class SourceBuilder<S> {
 
     /**
      * A builder of a batch stream source.
-     * @see SourceBuilder#batch(String, DistributedFunction)
+     * @see SourceBuilder#batch(String, FunctionEx)
      *
      * @param <T>
      */
@@ -403,13 +403,13 @@ public final class SourceBuilder<S> {
          */
         @Override @Nonnull
         public <T_NEW> SourceBuilder<S>.Batch<T_NEW> fillBufferFn(
-                @Nonnull DistributedBiConsumer<? super S, ? super SourceBuffer<T_NEW>> fillBufferFn
+                @Nonnull BiConsumerEx<? super S, ? super SourceBuffer<T_NEW>> fillBufferFn
         ) {
             return (Batch<T_NEW>) super.fillBufferFn(fillBufferFn);
         }
 
         @Override @Nonnull
-        public Batch<T> destroyFn(@Nonnull DistributedConsumer<? super S> destroyFn) {
+        public Batch<T> destroyFn(@Nonnull ConsumerEx<? super S> destroyFn) {
             return (Batch<T>) super.destroyFn(destroyFn);
         }
 
@@ -431,7 +431,7 @@ public final class SourceBuilder<S> {
 
     /**
      * A builder of an unbounded stream source.
-     * @see SourceBuilder#stream(String, DistributedFunction)
+     * @see SourceBuilder#stream(String, FunctionEx)
      *
      * @param <T>
      */
@@ -441,13 +441,13 @@ public final class SourceBuilder<S> {
 
         @Override @Nonnull
         public <T_NEW> Stream<T_NEW> fillBufferFn(
-                @Nonnull DistributedBiConsumer<? super S, ? super SourceBuffer<T_NEW>> fillBufferFn
+                @Nonnull BiConsumerEx<? super S, ? super SourceBuffer<T_NEW>> fillBufferFn
         ) {
             return (Stream<T_NEW>) super.fillBufferFn(fillBufferFn);
         }
 
         @Override @Nonnull
-        public Stream<T> destroyFn(@Nonnull DistributedConsumer<? super S> pDestroyFn) {
+        public Stream<T> destroyFn(@Nonnull ConsumerEx<? super S> pDestroyFn) {
             return (Stream<T>) super.destroyFn(pDestroyFn);
         }
 
@@ -471,12 +471,12 @@ public final class SourceBuilder<S> {
 
     /**
      * A builder of an unbounded stream source with timestamps.
-     * @see SourceBuilder#timestampedStream(String, DistributedFunction)
+     * @see SourceBuilder#timestampedStream(String, FunctionEx)
      *
      * @param <T>
      */
     public final class TimestampedStream<T> extends Base<T> {
-        private DistributedBiConsumer<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn;
+        private BiConsumerEx<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn;
 
         private TimestampedStream() {
         }
@@ -502,7 +502,7 @@ public final class SourceBuilder<S> {
         @Nonnull
         @SuppressWarnings("unchecked")
         public <T_NEW> TimestampedStream<T_NEW> fillBufferFn(
-                @Nonnull DistributedBiConsumer<? super S, ? super TimestampedSourceBuffer<T_NEW>> fillBufferFn
+                @Nonnull BiConsumerEx<? super S, ? super TimestampedSourceBuffer<T_NEW>> fillBufferFn
         ) {
             TimestampedStream<T_NEW> newThis = (TimestampedStream<T_NEW>) this;
             newThis.fillBufferFn = fillBufferFn;
@@ -510,7 +510,7 @@ public final class SourceBuilder<S> {
         }
 
         @Override @Nonnull
-        public TimestampedStream<T> destroyFn(@Nonnull DistributedConsumer<? super S> pDestroyFn) {
+        public TimestampedStream<T> destroyFn(@Nonnull ConsumerEx<? super S> pDestroyFn) {
             return (TimestampedStream<T>) super.destroyFn(pDestroyFn);
         }
 

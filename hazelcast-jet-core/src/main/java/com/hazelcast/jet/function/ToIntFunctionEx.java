@@ -19,24 +19,24 @@ package com.hazelcast.jet.function;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
 import java.io.Serializable;
-import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
 
 /**
- * {@code Serializable} variant of {@link ToDoubleFunction
- * java.util.function.ToDoubleFunction} which declares checked exception.
+ * {@code Serializable} variant of {@link ToIntFunction
+ * java.util.function.ToIntFunction} which declares checked exception.
  */
 @FunctionalInterface
-public interface DistributedToDoubleFunction<T> extends ToDoubleFunction<T>, Serializable {
+public interface ToIntFunctionEx<T> extends ToIntFunction<T>, Serializable {
 
     /**
-     * Exception-declaring version of {@link ToDoubleFunction#applyAsDouble}.
+     * Exception-declaring version of {@link ToIntFunction#applyAsInt}.
      */
-    double applyAsDoubleEx(T value) throws Exception;
+    int applyAsIntEx(T value) throws Exception;
 
     @Override
-    default double applyAsDouble(T value) {
+    default int applyAsInt(T value) {
         try {
-            return applyAsDoubleEx(value);
+            return applyAsIntEx(value);
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }

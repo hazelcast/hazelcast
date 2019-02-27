@@ -30,7 +30,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -62,8 +62,8 @@ import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.core.processor.Processors.aggregateByKeyP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.Functions.entryKey;
+import static com.hazelcast.jet.function.Functions.wholeItem;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -167,7 +167,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         Vertex aggregateStage1 = dag.newVertex("aggregateStage1",
                 aggregateByKeyP(singletonList(wholeItem()), counting(), Util::entry));
         // (word, count) -> (word, count)
-        DistributedFunction<Entry, ?> getEntryKeyFn = Entry::getKey;
+        FunctionEx<Entry, ?> getEntryKeyFn = Entry::getKey;
         Vertex aggregateStage2 = dag.newVertex("aggregateStage2",
                 aggregateByKeyP(
                         singletonList(getEntryKeyFn),

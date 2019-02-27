@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -79,7 +79,7 @@ public interface ProcessorSupplier extends Serializable {
      * {@code Supplier<Processor>} to create all {@code Processor} instances.
      */
     @Nonnull
-    static ProcessorSupplier of(@Nonnull DistributedSupplier<? extends Processor> processorSupplier) {
+    static ProcessorSupplier of(@Nonnull SupplierEx<? extends Processor> processorSupplier) {
         return count -> Stream.generate(processorSupplier).limit(count).collect(toList());
     }
 

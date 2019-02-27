@@ -22,10 +22,10 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedTriFunction;
-import com.hazelcast.jet.function.DistributedTriPredicate;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.TriPredicate;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -51,7 +51,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull @Override
     default <V, R> StreamStage<R> mapUsingIMap(
             @Nonnull String mapName,
-            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
         return (StreamStage<R>) GeneralStageWithKey.super.<V, R>mapUsingIMap(mapName, mapFn);
     }
@@ -59,7 +59,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull @Override
     default <V, R> StreamStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
-            @Nonnull DistributedBiFunction<? super T, ? super V, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
         return (StreamStage<R>) GeneralStageWithKey.super.mapUsingIMap(iMap, mapFn);
     }
@@ -67,37 +67,37 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @Nonnull @Override
     <C, R> StreamStage<R> mapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends R> mapFn
     );
 
     @Nonnull @Override
     <C, R> StreamStage<R> mapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     );
 
     @Nonnull @Override
     <C> StreamStage<T> filterUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriPredicate<? super C, ? super K, ? super T> filterFn
+            @Nonnull TriPredicate<? super C, ? super K, ? super T> filterFn
     );
 
     @Nonnull @Override
     <C> StreamStage<T> filterUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Boolean>> filterAsyncFn
     );
 
     @Nonnull @Override
     <C, R> StreamStage<R> flatMapUsingContext(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull TriFunction<? super C, ? super K, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
 
     @Nonnull @Override
     <C, R> StreamStage<R> flatMapUsingContextAsync(
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedTriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
+            @Nonnull TriFunction<? super C, ? super K, ? super T, CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
     );
 
@@ -105,7 +105,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     @SuppressWarnings("unchecked")
     <R, OUT> StreamStage<OUT> rollingAggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
     );
 
     @Nonnull @Override
@@ -117,7 +117,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
 
     @Nonnull @Override
     default <R> StreamStage<R> customTransform(@Nonnull String stageName,
-                                               @Nonnull DistributedSupplier<Processor> procSupplier
+                                               @Nonnull SupplierEx<Processor> procSupplier
     ) {
         return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
     }

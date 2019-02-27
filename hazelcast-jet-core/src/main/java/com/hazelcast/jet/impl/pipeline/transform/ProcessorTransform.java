@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.DistributedBiFunction;
-import com.hazelcast.jet.function.DistributedBiPredicate;
+import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.ContextFactory;
@@ -55,7 +55,7 @@ public class ProcessorTransform extends AbstractTransform {
     public static <C, T, R> ProcessorTransform mapUsingContextTransform(
             @Nonnull Transform upstream,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
         return new ProcessorTransform("mapUsingContext", upstream,
                 ProcessorMetaSupplier.of(mapUsingContextP(contextFactory, mapFn)));
@@ -64,7 +64,7 @@ public class ProcessorTransform extends AbstractTransform {
     public static <C, T> ProcessorTransform filterUsingContextTransform(
             @Nonnull Transform upstream,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     ) {
         return new ProcessorTransform("filterUsingContext", upstream,
                 ProcessorMetaSupplier.of(filterUsingContextP(contextFactory, filterFn)));
@@ -73,7 +73,7 @@ public class ProcessorTransform extends AbstractTransform {
     public static <C, T, R> ProcessorTransform flatMapUsingContextTransform(
             @Nonnull Transform upstream,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return new ProcessorTransform("flatMapUsingContext", upstream,
                 ProcessorMetaSupplier.of(flatMapUsingContextP(contextFactory, flatMapFn)));
@@ -83,7 +83,7 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull Transform upstream,
             @Nonnull String operationName,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super C, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         // TODO use better key so that snapshots are local. Currently they will
         //      be sent to a random member. We keep it this way for simplicity:

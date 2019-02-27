@@ -20,8 +20,8 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.Planner;
@@ -40,7 +40,7 @@ import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSessionWindowP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static com.hazelcast.jet.impl.pipeline.transform.AbstractTransform.Optimization.MEMORY;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static java.util.Collections.nCopies;
@@ -49,7 +49,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
     @Nonnull
     private final WindowDefinition wDef;
     @Nonnull
-    private final List<DistributedFunction<?, ? extends K>> keyFns;
+    private final List<FunctionEx<?, ? extends K>> keyFns;
     @Nonnull
     private final AggregateOperation<?, ? extends R> aggrOp;
     @Nonnull
@@ -58,7 +58,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
     public WindowGroupTransform(
             @Nonnull List<Transform> upstream,
             @Nonnull WindowDefinition wDef,
-            @Nonnull List<DistributedFunction<?, ? extends K>> keyFns,
+            @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
             @Nonnull AggregateOperation<?, ? extends R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
@@ -105,7 +105,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
         PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
                 aggregateToSlidingWindowP(
                         keyFns,
-                        nCopies(keyFns.size(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
+                        nCopies(keyFns.size(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
                         TimestampKind.EVENT,
                         slidingWinPolicy(wDef.windowSize(), wDef.slideBy()),
                         wDef.earlyResultsPeriod(),
@@ -136,7 +136,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
         SlidingWindowPolicy winPolicy = slidingWinPolicy(wDef.windowSize(), wDef.slideBy());
         Vertex v1 = p.dag.newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(
                 keyFns,
-                nCopies(keyFns.size(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
+                nCopies(keyFns.size(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
                 TimestampKind.EVENT,
                 winPolicy,
                 aggrOp));
@@ -164,7 +164,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
                 aggregateToSessionWindowP(
                         wDef.sessionTimeout(),
                         wDef.earlyResultsPeriod(),
-                        nCopies(keyFns.size(), (DistributedToLongFunction<JetEvent>) JetEvent::timestamp),
+                        nCopies(keyFns.size(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
                         keyFns,
                         aggrOp,
                         mapToOutputFn

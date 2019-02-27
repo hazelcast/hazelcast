@@ -22,7 +22,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.pipeline.GrAggBuilder;
 
 import javax.annotation.Nonnull;
@@ -95,7 +95,7 @@ public class GroupAggregateBuilder<K, R0> {
      */
     @Nonnull
     public <OUT> BatchStage<OUT> build(
-            @Nonnull DistributedBiFunction<? super K, ItemsByTag, OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ItemsByTag, OUT> mapToOutputFn
     ) {
         AggregateOperation<Object[], ItemsByTag> aggrOp = aggrOpBuilder.build();
         return grAggBuilder.buildBatch(aggrOp, mapToOutputFn);

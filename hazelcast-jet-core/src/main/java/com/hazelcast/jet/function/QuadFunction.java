@@ -16,12 +16,21 @@
 
 package com.hazelcast.jet.function;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+
+import java.io.Serializable;
+
 /**
  * Represents a four-arity function that accepts four arguments and
  * produces a result.
  */
 @FunctionalInterface
-public interface QuadFunction<T0, T1, T2, T3, R> {
+public interface QuadFunction<T0, T1, T2, T3, R> extends Serializable {
+
+    /**
+     * Exception-declaring variant of {@link QuadFunction#apply}.
+     */
+    R applyEx(T0 t0, T1 t1, T2 t2, T3 t3) throws Exception;
 
     /**
      * Applies this function to the given arguments.
@@ -32,5 +41,11 @@ public interface QuadFunction<T0, T1, T2, T3, R> {
      * @param t3 the fourth argument
      * @return the function result
      */
-    R apply(T0 t0, T1 t1, T2 t2, T3 t3);
+    default R apply(T0 t0, T1 t1, T2 t2, T3 t3) {
+        try {
+            return applyEx(t0, t1, t2, t3);
+        } catch (Exception e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
+    }
 }

@@ -18,9 +18,9 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +30,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
 import static com.hazelcast.jet.datamodel.Tag.tag2;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.Functions.wholeItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -41,12 +41,12 @@ public class AggregateOperationTest {
     public void when_build_then_allPartsThere() {
 
         // Given
-        DistributedSupplier<LongAccumulator> createFn = LongAccumulator::new;
-        DistributedBiConsumer<LongAccumulator, Object> accFn0 = (acc, item) -> acc.add(1);
-        DistributedBiConsumer<LongAccumulator, Object> accFn1 = (acc, item) -> acc.add(10);
-        DistributedBiConsumer<LongAccumulator, LongAccumulator> combineFn = LongAccumulator::add;
-        DistributedBiConsumer<LongAccumulator, LongAccumulator> deductFn = LongAccumulator::subtract;
-        DistributedFunction<LongAccumulator, Long> finishFn = LongAccumulator::get;
+        SupplierEx<LongAccumulator> createFn = LongAccumulator::new;
+        BiConsumerEx<LongAccumulator, Object> accFn0 = (acc, item) -> acc.add(1);
+        BiConsumerEx<LongAccumulator, Object> accFn1 = (acc, item) -> acc.add(10);
+        BiConsumerEx<LongAccumulator, LongAccumulator> combineFn = LongAccumulator::add;
+        BiConsumerEx<LongAccumulator, LongAccumulator> deductFn = LongAccumulator::subtract;
+        FunctionEx<LongAccumulator, Long> finishFn = LongAccumulator::get;
 
         // When
         AggregateOperation<LongAccumulator, Long> aggrOp = AggregateOperation
@@ -106,7 +106,7 @@ public class AggregateOperationTest {
                 .andExportFinish(LongAccumulator::get);
         AggregateOperation1<LongAccumulator, LongAccumulator, Long> combiningAggrOp =
                 aggrOp.withCombiningAccumulateFn(wholeItem());
-        DistributedBiConsumer<? super LongAccumulator, ? super Object> accFn = combiningAggrOp.accumulateFn(tag0());
+        BiConsumerEx<? super LongAccumulator, ? super Object> accFn = combiningAggrOp.accumulateFn(tag0());
         LongAccumulator partialAcc1 = combiningAggrOp.createFn().get();
         LongAccumulator partialAcc2 = combiningAggrOp.createFn().get();
         LongAccumulator combinedAcc = combiningAggrOp.createFn().get();

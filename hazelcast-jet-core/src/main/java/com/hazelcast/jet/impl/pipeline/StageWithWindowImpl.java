@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.pipeline;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
-import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.WindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.transform.WindowAggregateTransform;
@@ -60,7 +60,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
 
     @Nonnull @Override
     public <K> StageWithKeyAndWindow<T, K> groupingKey(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyFn
+            @Nonnull FunctionEx<? super T, ? extends K> keyFn
     ) {
         return new StageWithKeyAndWindowImpl<>(streamStage, keyFn, wDef);
     }

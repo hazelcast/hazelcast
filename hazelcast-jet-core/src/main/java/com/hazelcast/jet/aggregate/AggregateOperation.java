@@ -17,9 +17,9 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
 
@@ -126,7 +126,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * should prefer Hazelcast custom serialization.
      */
     @Nonnull
-    DistributedSupplier<A> createFn();
+    SupplierEx<A> createFn();
 
     /**
      * A primitive that updates the accumulator state to account for a new
@@ -135,7 +135,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * registered with it, it will throw an exception.
      */
     @Nonnull
-    default <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(@Nonnull Tag<T> tag) {
+    default <T> BiConsumerEx<? super A, ? super T> accumulateFn(@Nonnull Tag<T> tag) {
         return accumulateFn(tag.index());
     }
 
@@ -146,7 +146,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * registered with it, it will throw an exception.
      */
     @Nonnull
-    <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(int index);
+    <T> BiConsumerEx<? super A, ? super T> accumulateFn(int index);
 
     /**
      * A primitive that accepts two accumulators and updates the state of the
@@ -156,7 +156,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * and may be {@code null}.
      */
     @Nullable
-    DistributedBiConsumer<? super A, ? super A> combineFn();
+    BiConsumerEx<? super A, ? super A> combineFn();
 
     /**
      * A primitive that accepts two accumulators and updates the state of the
@@ -189,7 +189,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * from the results.
      */
     @Nullable
-    DistributedBiConsumer<? super A, ? super A> deductFn();
+    BiConsumerEx<? super A, ? super A> deductFn();
 
     /**
      * A primitive that transforms the accumulator into a result of the
@@ -209,7 +209,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * for any accumulator it must return a non-null exported value.
      */
     @Nonnull
-    DistributedFunction<? super A, ? extends R> exportFn();
+    FunctionEx<? super A, ? extends R> exportFn();
 
     /**
      * A primitive that transforms the accumulator into a result of the
@@ -222,7 +222,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * for any accumulator it must return a non-null finished value.
      */
     @Nonnull
-    default DistributedFunction<? super A, ? extends R> finishFn() {
+    default FunctionEx<? super A, ? extends R> finishFn() {
         return exportFn();
     }
 
@@ -234,7 +234,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      */
     @Nonnull
     @SuppressWarnings("unchecked")
-    AggregateOperation<A, R> withAccumulateFns(DistributedBiConsumer... accumulateFns);
+    AggregateOperation<A, R> withAccumulateFns(BiConsumerEx... accumulateFns);
 
     /**
      * Returns a copy of this aggregate operation, but with the {@code finish}
@@ -258,9 +258,9 @@ public interface AggregateOperation<A, R> extends Serializable {
      */
     @Nonnull
     default <T> AggregateOperation1<T, A, R> withCombiningAccumulateFn(
-            @Nonnull DistributedFunction<T, A> getAccFn
+            @Nonnull FunctionEx<T, A> getAccFn
     ) {
-        DistributedBiConsumer<? super A, ? super A> combineFn =
+        BiConsumerEx<? super A, ? super A> combineFn =
                 Objects.requireNonNull(combineFn(), "The 'combine' primitive is missing");
         return new AggregateOperation1Impl<>(
                 createFn(),
@@ -283,7 +283,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * @param <R_NEW> the type of the returned aggregate operation's result
      */
     @Nonnull
-    <R_NEW> AggregateOperation<A, R_NEW> andThen(DistributedFunction<? super R, ? extends R_NEW> thenFn);
+    <R_NEW> AggregateOperation<A, R_NEW> andThen(FunctionEx<? super R, ? extends R_NEW> thenFn);
 
     /**
      * Returns a builder object, initialized with the supplied {@code create}
@@ -294,13 +294,13 @@ public interface AggregateOperation<A, R> extends Serializable {
      * aggregate operations:
      * <ul><li>
      *     For fixed arity use {@link
-     *     AggregateOperationBuilder#andAccumulate0(DistributedBiConsumer)
+     *     AggregateOperationBuilder#andAccumulate0(BiConsumerEx)
      *     andAccumulate0()}, optionally followed by {@code .andAccumulate1()},
      *     {@code .andAccumulate2()}. The return type of these methods changes as the
      *     static types of the contributing streams are captured.
      * </li><li>
      *     For variable arity use {@link AggregateOperationBuilder#andAccumulate(Tag,
-     *     DistributedBiConsumer) andAccumulate(tag)}.
+     *     BiConsumerEx) andAccumulate(tag)}.
      * </li></ul>
      * The {@link AggregateOperationBuilder.Arity1#andExportFinish
      * andExportFinish()} method returns the constructed aggregate operation.
@@ -316,7 +316,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      *         has just the {@code create} primitive defined
      */
     @Nonnull
-    static <A> AggregateOperationBuilder<A> withCreate(@Nonnull DistributedSupplier<A> createFn) {
+    static <A> AggregateOperationBuilder<A> withCreate(@Nonnull SupplierEx<A> createFn) {
         checkSerializable(createFn, "createFn");
         return new AggregateOperationBuilder<>(createFn);
     }

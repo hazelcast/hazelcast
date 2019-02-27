@@ -19,7 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.pipeline.GrAggBuilder;
 
 import javax.annotation.Nonnull;
@@ -81,13 +81,13 @@ public class GroupAggregateBuilder1<T0, K> {
     @Nonnull
     public <R, OUT> BatchStage<OUT> build(
             @Nonnull AggregateOperation<?, R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull BiFunctionEx<? super K, ? super R, OUT> mapToOutputFn
     ) {
         return grAggBuilder.buildBatch(aggrOp, mapToOutputFn);
     }
 
     /**
-     * Convenience for {@link #build(AggregateOperation, DistributedBiFunction)
+     * Convenience for {@link #build(AggregateOperation, BiFunctionEx)
      * build(aggrOp, mapToOutputFn)} which emits {@code Map.Entry}s as output.
      *
      * @param aggrOp the aggregate operation to perform.

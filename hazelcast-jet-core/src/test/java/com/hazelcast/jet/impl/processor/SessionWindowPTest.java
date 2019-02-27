@@ -22,8 +22,8 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.WindowResult;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.Functions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
@@ -53,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 public class SessionWindowPTest {
 
     private static final int SESSION_TIMEOUT = 10;
-    private DistributedSupplier<Processor> supplier;
+    private SupplierEx<Processor> supplier;
     private SessionWindowP<String, ?, Long, WindowResult<String, Long>> lastSuppliedProcessor;
 
     @Before
@@ -61,7 +61,7 @@ public class SessionWindowPTest {
         supplier = () -> lastSuppliedProcessor = new SessionWindowP<>(
                 SESSION_TIMEOUT,
                 0L,
-                singletonList((DistributedToLongFunction<Entry<Object, Long>>) Entry::getValue),
+                singletonList((ToLongFunctionEx<Entry<Object, Long>>) Entry::getValue),
                 singletonList(entryKey()),
                 AggregateOperations.counting(),
                 WindowResult::new);

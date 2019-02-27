@@ -36,8 +36,8 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.Address;
@@ -119,8 +119,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     StreamEventJournalP(
             @Nonnull EventJournalReader<? extends E> eventJournalReader,
             @Nonnull List<Integer> assignedPartitions,
-            @Nonnull DistributedPredicate<? super E> predicateFn,
-            @Nonnull DistributedFunction<? super E, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super E> predicateFn,
+            @Nonnull FunctionEx<? super E, ? extends T> projectionFn,
             @Nonnull JournalInitialPosition initialPos,
             boolean isRemoteReader,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
@@ -323,10 +323,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final String clientXml;
-        private final DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
+        private final FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                 eventJournalReaderSupplier;
-        private final DistributedPredicate<? super E> predicate;
-        private final DistributedFunction<? super E, ? extends T> projection;
+        private final PredicateEx<? super E> predicate;
+        private final FunctionEx<? super E, ? extends T> projection;
         private final JournalInitialPosition initialPos;
         private final EventTimePolicy<? super T> eventTimePolicy;
 
@@ -335,10 +335,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         ClusterMetaSupplier(
                 @Nullable ClientConfig clientConfig,
-                @Nonnull DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
+                @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                         eventJournalReaderSupplier,
-                @Nonnull DistributedPredicate<? super E> predicate,
-                @Nonnull DistributedFunction<? super E, ? extends T> projection,
+                @Nonnull PredicateEx<? super E> predicate,
+                @Nonnull FunctionEx<? super E, ? extends T> projection,
                 @Nonnull JournalInitialPosition initialPos,
                 @Nonnull EventTimePolicy<? super T> eventTimePolicy
         ) {
@@ -405,12 +405,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Nullable
         private final String clientXml;
         @Nonnull
-        private final DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
+        private final FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                 eventJournalReaderSupplier;
         @Nonnull
-        private final DistributedPredicate<? super E> predicate;
+        private final PredicateEx<? super E> predicate;
         @Nonnull
-        private final DistributedFunction<? super E, ? extends T> projection;
+        private final FunctionEx<? super E, ? extends T> projection;
         @Nonnull
         private final JournalInitialPosition initialPos;
         @Nonnull
@@ -422,10 +422,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         ClusterProcessorSupplier(
                 @Nonnull List<Integer> ownedPartitions,
                 @Nullable String clientXml,
-                @Nonnull DistributedFunction<? super HazelcastInstance, ? extends EventJournalReader<E>>
+                @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                         eventJournalReaderSupplier,
-                @Nonnull DistributedPredicate<? super E> predicate,
-                @Nonnull DistributedFunction<? super E, ? extends T> projection,
+                @Nonnull PredicateEx<? super E> predicate,
+                @Nonnull FunctionEx<? super E, ? extends T> projection,
                 @Nonnull JournalInitialPosition initialPos,
                 @Nonnull EventTimePolicy<? super T> eventTimePolicy
         ) {
@@ -474,8 +474,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     public static <K, V, T> ProcessorMetaSupplier streamMapSupplier(
             @Nonnull String mapName,
-            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicate,
-            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projection,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
@@ -491,8 +491,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<? super EventJournalMapEvent<K, V>> predicate,
-            @Nonnull DistributedFunction<? super EventJournalMapEvent<K, V>, ? extends T> projection,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
@@ -506,8 +506,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     public static <K, V, T> ProcessorMetaSupplier streamCacheSupplier(
             @Nonnull String cacheName,
-            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicate,
-            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
+            @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
@@ -522,8 +522,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     public static <K, V, T> ProcessorMetaSupplier streamRemoteCacheSupplier(
             @Nonnull String cacheName,
             @Nonnull ClientConfig clientConfig,
-            @Nonnull DistributedPredicate<? super EventJournalCacheEvent<K, V>> predicate,
-            @Nonnull DistributedFunction<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
+            @Nonnull PredicateEx<? super EventJournalCacheEvent<K, V>> predicate,
+            @Nonnull FunctionEx<? super EventJournalCacheEvent<K, V>, ? extends T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
         checkSerializable(predicate, "predicate");
