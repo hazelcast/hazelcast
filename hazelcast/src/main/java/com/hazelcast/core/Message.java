@@ -48,7 +48,7 @@ public class Message<E> extends EventObject {
     /**
      * Return the time when the message is published
      *
-     * @return the time when the message is published
+     * @return the time when the message is published in milliseconds since 1970.01.01.
      */
     public long getPublishTime() {
         return publishTime;
