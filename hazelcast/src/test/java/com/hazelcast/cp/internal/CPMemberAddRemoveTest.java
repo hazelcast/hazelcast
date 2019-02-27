@@ -652,12 +652,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         }, 5);
 
         instances[0].getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instances[0].getCPSubsystem().getLocalCPMember());
-            }
-        });
+        assertNotNull(instances[0].getCPSubsystem().getLocalCPMember());
         assertNotEquals(localCpMember, instances[0].getCPSubsystem().getLocalCPMember());
     }
 
