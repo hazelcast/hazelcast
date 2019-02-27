@@ -214,7 +214,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         if (!client.getLifecycleService().isRunning()) {
             throw new IllegalStateException("Client is being shutdown.");
         } else {
-            throw new IllegalStateException("No alternative cluster is found to connect.");
+            throw new IllegalStateException("Unable to connect to any cluster.");
         }
     }
 
