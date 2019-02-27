@@ -105,6 +105,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
@@ -150,11 +151,9 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.collection.InflatableSet;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -168,6 +167,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.proxy.ClientMessageUnpackingSet.toClientMessageUnpackingSet;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
@@ -250,10 +250,13 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     };
 
-    private ClientMessageDecoder eventJournalReadResponseDecoder;
-    private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
-    private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
+    private InternalSerializationService ss;
+    private IFunction<ClientMessage, K> toKeyFunction;
+    private IFunction<ClientMessage, Entry<K, V>> toEntryFunction;
     private ClientQueryCacheContext queryCacheContext;
+    private ClientMessageDecoder eventJournalReadResponseDecoder;
+    private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
+    private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
 
     public ClientMapProxy(String serviceName, String name, ClientContext context) {
         super(serviceName, name, context);
@@ -263,8 +266,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected void onInitialize() {
         super.onInitialize();
 
-        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
+        ss = ((InternalSerializationService) getContext().getSerializationService());
         queryCacheContext = getContext().getQueryCacheContext();
+        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
         eventJournalReadResponseDecoder = new ClientMessageDecoder() {
             @Override
             public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
@@ -272,7 +276,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 final PortableReadResultSet<?> resultSet = new PortableReadResultSet<Object>(
                         params.readCount, params.items, params.itemSeqs,
                         params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
-                resultSet.setSerializationService(getSerializationService());
+                resultSet.setSerializationService(ss);
                 return resultSet;
             }
         };
@@ -281,6 +285,20 @@ public class ClientMapProxy<K, V> extends ClientProxy
             public EventJournalInitialSubscriberState decodeClientMessage(ClientMessage message) {
                 final ResponseParameters resp = MapEventJournalSubscribeCodec.decodeResponse(message);
                 return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
+            }
+        };
+        toEntryFunction = new IFunction<ClientMessage, Entry<K, V>>() {
+            @Override
+            public Entry<K, V> apply(ClientMessage response) {
+                Data dataKey = response.getData();
+                Data dataValue = response.getData();
+                return new LazyMapEntry<K, V>(dataKey, dataValue, ss);
+            }
+        };
+        toKeyFunction = new IFunction<ClientMessage, K>() {
+            @Override
+            public K apply(ClientMessage response) {
+                return toObject(response.getData());
             }
         };
     }
@@ -465,7 +483,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
             }
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getSerializationService(), PUT_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<V>(future, ss, PUT_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -507,7 +525,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
 
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<Void>(future, getSerializationService(), SET_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<Void>(future, ss, SET_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -524,7 +542,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             Data keyData = toData(key);
             ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getSerializationService(), REMOVE_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<V>(future, ss, REMOVE_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1160,7 +1178,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     protected void loadAllInternal(boolean replaceExistingValues, Collection<?> keys) {
-        Collection<Data> dataKeys = objectToDataCollection(keys, getSerializationService());
+        Collection<Data> dataKeys = objectToDataCollection(keys, ss);
         ClientMessage request = MapLoadGivenKeysCodec.encodeRequest(name, dataKeys, replaceExistingValues);
         invoke(request);
     }
@@ -1168,15 +1186,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public Set<K> keySet() {
         ClientMessage request = MapKeySetCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
-        MapKeySetCodec.ResponseParameters resultParameters = MapKeySetCodec.decodeResponse(response);
-
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        for (Data data : resultParameters.response) {
-            K key = toObject(data);
-            setBuilder.add(key);
-        }
-        return setBuilder.build();
+        final ClientMessage response = invoke(request);
+        return newKeySet(response);
     }
 
     @Override
@@ -1253,22 +1264,22 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage request = MapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MapValuesCodec.ResponseParameters resultParameters = MapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList<V>(resultParameters.response, ss);
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
         ClientMessage request = MapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
+        return newEntrySet(response);
+    }
 
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        InternalSerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
-            setBuilder.add(entry);
-        }
-        return setBuilder.build();
+    private Set<Entry<K, V>> newEntrySet(final ClientMessage clientMessage) {
+        return toClientMessageUnpackingSet(clientMessage, toEntryFunction);
+    }
+
+    private Set<K> newKeySet(final ClientMessage clientMessage) {
+        return toClientMessageUnpackingSet(clientMessage, toKeyFunction);
     }
 
     @Override
@@ -1280,14 +1291,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage request = MapKeySetWithPredicateCodec.encodeRequest(name, toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
-
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        for (Data data : resultParameters.response) {
-            K key = toObject(data);
-            setBuilder.add(key);
-        }
-        return setBuilder.build();
+        return newKeySet(response);
     }
 
     @SuppressWarnings("unchecked")
@@ -1315,17 +1319,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
             return entrySetWithPagingPredicate(predicate);
         }
         ClientMessage request = MapEntriesWithPredicateCodec.encodeRequest(name, toData(predicate));
-
         ClientMessage response = invokeWithPredicate(request, predicate);
-        MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
-
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        InternalSerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
-            setBuilder.add(entry);
-        }
-        return setBuilder.build();
+        return newEntrySet(response);
     }
 
     @SuppressWarnings("unchecked")
@@ -1361,7 +1356,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapValuesWithPredicateCodec.ResponseParameters resultParameters = MapValuesWithPredicateCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList<V>(resultParameters.response, ss);
     }
 
     private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
@@ -1458,7 +1453,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            new ClientDelegatingFuture(future, getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER)
+            new ClientDelegatingFuture(future, ss, SUBMIT_TO_KEY_RESPONSE_DECODER)
                     .andThen(callback);
         } catch (Exception e) {
             throw rethrow(e);
@@ -1476,7 +1471,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture(future, getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER);
+            return new ClientDelegatingFuture(future, ss, SUBMIT_TO_KEY_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1545,7 +1540,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapProjectCodec.ResponseParameters resultParameters =
                 MapProjectCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<R>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList<R>(resultParameters.response, ss);
     }
 
     @Override
@@ -1558,7 +1553,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         MapProjectWithPredicateCodec.ResponseParameters resultParameters =
                 MapProjectWithPredicateCodec.decodeResponse(response);
 
-        return new UnmodifiableLazyList<R>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList<R>(resultParameters.response, ss);
     }
 
 
@@ -1809,7 +1804,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = MapEventJournalSubscribeCodec.encodeRequest(name);
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-        return new ClientDelegatingFuture<EventJournalInitialSubscriberState>(fut, getSerializationService(),
+        return new ClientDelegatingFuture<EventJournalInitialSubscriberState>(fut, ss,
                 eventJournalSubscribeResponseDecoder);
     }
 
@@ -1826,7 +1821,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
             throw new IllegalArgumentException("maxSize " + maxSize
                     + " must be greater or equal to minSize " + minSize);
         }
-        final SerializationService ss = getSerializationService();
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
@@ -1921,10 +1915,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
             return new MapEvent(name, member, eventType, numberOfAffectedEntries);
         }
 
-        private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData, Data mergingValueData,
-                                                  int eventType, Member member) {
-            return new DataAwareEntryEvent<K, V>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
-                    getSerializationService());
+        private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData,
+                                                  Data mergingValueData, int eventType, Member member) {
+            return new DataAwareEntryEvent<K, V>(member, eventType, name, keyData,
+                    valueData, oldValueData, mergingValueData, ss);
         }
 
         @Override
