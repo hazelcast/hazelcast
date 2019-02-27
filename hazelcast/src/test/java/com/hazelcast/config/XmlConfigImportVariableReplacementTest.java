@@ -580,7 +580,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
 
         Properties properties = new Properties();
         properties.put("variable", "foobar");
-        Config config = new UrlXmlConfig("file://" + file.getPath(), properties);
+        Config config = new UrlXmlConfig("file:///" + file.getPath(), properties);
 
         assertEquals("foobar", config.getProperty("prop"));
     }
