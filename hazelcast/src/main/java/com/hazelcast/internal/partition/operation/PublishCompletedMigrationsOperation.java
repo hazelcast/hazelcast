@@ -81,8 +81,7 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
         int len = in.readInt();
         completedMigrations = new ArrayList<MigrationInfo>(len);
         for (int i = 0; i < len; i++) {
-            MigrationInfo migrationInfo = new MigrationInfo();
-            migrationInfo.readData(in);
+            MigrationInfo migrationInfo = in.readObject();
             completedMigrations.add(migrationInfo);
         }
     }
@@ -93,7 +92,7 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
         int len = completedMigrations.size();
         out.writeInt(len);
         for (MigrationInfo migrationInfo : completedMigrations) {
-            migrationInfo.writeData(out);
+            out.writeObject(migrationInfo);
         }
     }
 
