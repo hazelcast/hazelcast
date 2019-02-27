@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
 import com.hazelcast.map.impl.MapService;
@@ -30,10 +28,11 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,53 +41,34 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class Invocation_EndpointManagerTest
         extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    private HazelcastInstance hz1;
-    private HazelcastInstance hz2;
-
-    @After
-    public void tearDown() {
-        if (hz1 != null) {
-            hz1.getLifecycleService().terminate();
-        }
-        if (hz2 != null) {
-            hz2.getLifecycleService().terminate();
-        }
-    }
+    private static final String EXPECTED_MSG = "NOOP";
 
     @Test
     public void testInvocation_whenEndpointManagerIsNoop() {
-        hz1 = Hazelcast.newHazelcastInstance(advancedNetworkConfig());
-        hz2 = Hazelcast.newHazelcastInstance(advancedNetworkConfig());
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
 
         String key = generateKeyOwnedBy(hz2);
         Data dataKey = getSerializationService(hz1).toData(key);
         Partition partition = hz1.getPartitionService().getPartition(key);
+
         Operation op = new GetOperation("test", dataKey);
-        InvocationBuilder builder = getNodeEngineImpl(hz1).getOperationService().createInvocationBuilder(MapService.SERVICE_NAME,
-                op, partition.getPartitionId());
+        InvocationBuilder builder
+                = getNodeEngineImpl(hz1).getOperationService()
+                                        .createInvocationBuilder(MapService.SERVICE_NAME, op, partition.getPartitionId());
         builder.setEndpointManager(new NoopEndpointManager());
         expected.expect(UnsupportedOperationException.class);
+        expected.expectMessage(EXPECTED_MSG);
         builder.invoke().join();
-    }
-
-    private Config advancedNetworkConfig() {
-        Config config = new Config();
-        config.getAdvancedNetworkConfig().setEnabled(true);
-        return config;
-    }
-
-    private Operation prepareRemoteOperation(HazelcastInstance target) {
-        String key = generateKeyOwnedBy(target);
-        Data dataKey = getSerializationService(target).toData(key);
-        return new GetOperation("test", dataKey);
     }
 
     class NoopEndpointManager implements EndpointManager {
@@ -115,12 +95,12 @@ public class Invocation_EndpointManagerTest
 
         @Override
         public Connection getOrConnect(Address address) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
         @Override
         public Connection getOrConnect(Address address, boolean silent) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
         @Override
