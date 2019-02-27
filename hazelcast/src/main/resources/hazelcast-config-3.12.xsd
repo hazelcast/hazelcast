@@ -4495,14 +4495,14 @@
             <xs:element name="cp-member-count" type="xs:unsignedInt" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of CP members to initialize the CP subsystem.
-                        It is 0 by default and the CP subsystem is disabled. The CP subsystem
-                        is enabled when a positive value is set. After the CP subsystem is
-                        initialized successfully, more CP members can be added at run-time
-                        and number of active CP members can go beyond the configured CP member
-                        count. Number of CP members can be smaller than total size
-                        of the Hazelcast cluster. For instance, one can run 5 CP members in a
-                        20-member Hazelcast cluster.
+                        Number of CP Members to initialize the CP Subsystem.
+                        It is 0 by default, meaning that the CP subsystem is disabled.
+                        The CP subsystem is enabled when a positive value is set.
+                        After the CP subsystem is initialized successfully, more CP members can
+                        be added at run-time and number of active CP members can go beyond
+                        the configured CP member count. Number of CP members can be smaller than
+                        total size of the Hazelcast cluster. For instance, you can run
+                        5 CP members in a 20-member Hazelcast cluster.
                         If set, must be greater than or equal to group-size.
                     </xs:documentation>
                 </xs:annotation>
@@ -4510,7 +4510,7 @@
             <xs:element name="group-size" type="cp-group-size" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of CP members for running CP groups. If set, it must be an odd
+                        Number of CP members to run CP groups. If set, it must be an odd
                         number between 3 and 7. Otherwise, cp-member-count is respected.
                         If set, must be smaller than or equal to cp-member-count.
                     </xs:documentation>
@@ -4519,8 +4519,8 @@
             <xs:element name="session-time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="60">
                 <xs:annotation>
                     <xs:documentation>
-                        Duration for a CP session to be kept alive after the last heartbeat it has
-                        received. The session will be closed if there is no new heartbeat during
+                        Duration for a CP session to be kept alive after the last received
+                        heartbeat. The session will be closed if there is no new heartbeat
                         this duration. Session TTL must be decided wisely. If a very low value is set,
                         CP session of a Hazelcast instance can be closed prematurely if the instance
                         temporarily loses connectivity to the CP subsystem because of a network
@@ -4568,6 +4568,9 @@
                         in the CP subsystem. This configuration also implies that no network
                         partition is expected to be longer than the configured duration.
                         Must be greater than or equal to session-time-to-live-seconds.
+                        If a missing CP member comes back alive after it is automatically
+                        removed from the CP subsystem with this feature, that CP member
+                        must be terminated manually.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4638,21 +4641,22 @@
             <xs:element name="leader-heartbeat-period-in-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="5000">
                 <xs:annotation>
                     <xs:documentation>
-                        Period for leader to send heartbeat messages to its followers
+                        Period in milliseconds for a leader to send heartbeat messages
+                        to its followers
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="max-missed-leader-heartbeat-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="5">
                 <xs:annotation>
                     <xs:documentation>
-                        Max number of missed leader heartbeats to trigger a new leader election
+                        Maximum number of missed leader heartbeats to trigger a new leader election
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="append-request-max-entry-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="50">
                 <xs:annotation>
                     <xs:documentation>
-                        Max entry count that can be sent in a single batch of append entries request
+                        Maximum number of entries that can be sent in a single batch of append entries request
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4660,7 +4664,7 @@
                         default="1000">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of commits to initiate a new snapshot after the last snapshot's index
+                        Number of new commits to initiate a new snapshot after the last snapshot
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4668,7 +4672,7 @@
                         default="100">
                 <xs:annotation>
                     <xs:documentation>
-                        Max number of uncommitted entries in the leader's Raft log before
+                        Maximum number of uncommitted entries in the leader's Raft log before
                         temporarily rejecting new requests of callers.
                     </xs:documentation>
                 </xs:annotation>
@@ -4677,9 +4681,10 @@
                         default="100">
                 <xs:annotation>
                     <xs:documentation>
-                        Timeout for append request backoff in millis. After the leader sends
-                        an append request to a follower, it will not send a subsequent append
-                        request until the responds to the former request or this timeout occurs.
+                        Timeout in milliseconds for append request backoff. After the leader
+                        sends an append request to a follower, it will not send a subsequent
+                        append request until the follower responds to the former request
+                        or this timeout occurs.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -4702,15 +4707,14 @@
                         When it is JDK compatible, just as in the Semaphore#release()
                         method, a permit can be released without acquiring it first, because
                         acquired permits are not bound to threads. However, there is no
-                        auto-cleanup of acquired permits upon Hazelcast server/client failures.
+                        auto-cleanup of acquired permits upon Hazelcast server / client failures.
                         If a permit holder fails, its permits must be released manually.
                         When JDK compatibility is disabled, a HazelcastInstance must
                         acquire permits before releasing them and it cannot release a permit
                         that it has mot acquired. It means, you can acquire a permit
                         from one thread and release it from another thread using the same
-                        HazelcastInstance, but not different instances of
-                        HazelcastInstance. In this mode, acquired permits are
-                        automatically released upon failure of the holder
+                        HazelcastInstance, but not different HazelcastInstances. In this mode,
+                        acquired permits are automatically released upon failure of the holder
                         HazelcastInstance. So there is a minor behavioral difference
                         to the Semaphore#release() method.
                         JDK compatibility is disabled by default.

@@ -37,10 +37,10 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * respect to the CAP principle, i.e., they always maintain linearizability
  * and prefer consistency over availability during network partitions.
  * <p>
- * Currently, the CP subsystem contains only implementations of Hazelcast's
- * concurrency APIs. These APIs do not maintain large state. For this reason,
+ * Currently, the CP subsystem contains only the implementations of Hazelcast's
+ * concurrency APIs. These APIs do not maintain large states. For this reason,
  * all members of a Hazelcast cluster do not take part in the CP subsystem.
- * Number of members that takes part in the CP subsystem is specified with
+ * The number of members that takes part in the CP subsystem is specified with
  * {@link CPSubsystemConfig#setCPMemberCount(int)}. Let's suppose the number of
  * CP members is configured as C. Then, when Hazelcast cluster starts,
  * the first C members form the CP subsystem. These members are called
@@ -53,19 +53,19 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * are committed & executed only after they are successfully replicated to
  * the majority of the CP members in a CP group. For instance, in a CP group of
  * 5 CP members, operations are committed when they are replicated to at least
- * 3 CP members. Size of CP groups are specified via
+ * 3 CP members. The size of CP groups are specified via
  * {@link CPSubsystemConfig#setGroupSize(int)} and each CP group contains
  * the same number of CP members.
  * <p>
- * Please note that size of CP groups do not have to be same with
- * the CP member count. Namely, number of CP members in the cluster can be
+ * Please note that the size of CP groups do not have to be same with
+ * the CP member count. Namely, number of CP members in the CP subsystem can be
  * larger than the configured CP group size. In this case, CP groups will be
- * formed by selecting CP members randomly. Please note that the current CP
+ * formed by selecting the CP members randomly. Please note that the current CP
  * subsystem implementation works only in memory without persisting any state
  * to disk. It means that a crashed CP member will not be able to recover by
  * reloading its previous state. Therefore, crashed CP members create a danger
- * for gradually losing majority of CP groups and eventually total loss of
- * availability of the CP subsystem. To prevent such kind of situations, failed
+ * for gradually losing majority of CP groups and eventually cause the total
+ * loss of availability of the CP subsystem. To prevent such situations, failed
  * CP members can be removed from the CP subsystem and replaced in CP groups
  * with other available CP members. This flexibility provides a good degree of
  * fault-tolerance at run-time. Please see {@link CPSubsystemConfig} and
@@ -73,7 +73,7 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * <p>
  * The CP subsystem runs 2 CP groups by default. The first one is
  * the Metadata group. It is an internal CP group which is responsible for
- * maintaining CP members and CP groups. It is be initialized during the
+ * managing the CP members and CP groups. It is be initialized during the
  * cluster startup process if the CP subsystem is enabled via
  * {@link CPSubsystemConfig#setCPMemberCount(int)} configuration.
  * The second group is the DEFAULT CP group, whose name is given in
@@ -89,27 +89,28 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * <p>
  * The current set of CP data structures have quite low memory overheads.
  * Moreover, related to the Raft consensus algorithm, each CP group makes
- * uses of internal heartbeat RPCs to maintain authority of the leader node
+ * uses of internal heartbeat RPCs to maintain authority of the leader member
  * and help lagging CP members to make progress. Last but not least, the new
- * CP lock and semaphore implementations rely on a brand-new session mechanism.
+ * CP lock and semaphore implementations rely on a brand new session mechanism.
  * In a nutshell, a Hazelcast server or a client starts a new session on the
  * corresponding CP group when it makes its very first lock or semaphore
  * acquire request, and then periodically commits session-heartbeats to this CP
  * group to indicate its liveliness. It means that if CP locks and semaphores
  * are distributed into multiple CP groups, there will be a session
- * management overhead. Please see {@link CPSession} for more details about CP
- * sessions. For the aforementioned reasons, we recommend developers to use
- * a minimal number of CP groups. For most use cases, the DEFAULT CP group
- * should be sufficient to maintain all CP data structure instances. Custom
- * CP groups could be created when throughput of the CP subsystem is needed
- * to be improved.
+ * management overhead. Please see {@link CPSession} for more details.
+ * For the aforementioned reasons, we recommend developers to use a minimal
+ * number of CP groups. For most use cases, the DEFAULT CP group should be
+ * sufficient to maintain all CP data structure instances. Custom CP groups
+ * could be created when throughput of the CP subsystem is needed to be
+ * improved.
  * <p>
- * <strong>CP data structure proxies differ from other data structure proxies in
- * one aspect, that is, if you call the {@link DistributedObject#destroy()} API
- * on a CP data structure proxy, that data structure is terminated
- * on the underlying CP and cannot be re-initialized on the same CP group.
- * For this reason, please make sure that you are completely done with
- * a CP data structure before destroying its proxy.</strong>
+ * <strong>The CP data structure proxies differ from the other Hazelcast data
+ * structure proxies in one aspect, that is, if you call the
+ * {@link DistributedObject#destroy()} API on a CP data structure proxy,
+ * that data structure is terminated on the underlying CP group and cannot be
+ * reinitialized on the same CP group until the CP group is force-destroyed.
+ * For this reason, please make sure that you are completely done with a CP
+ * data structure before destroying its proxy.</strong>
  *
  * @see CPSubsystemConfig
  * @see CPMember
@@ -212,12 +213,12 @@ public interface CPSubsystem {
     ISemaphore getSemaphore(String name);
 
     /**
-     * Returns the local CP member if this Hazelcast member is part of CP subsystem,
-     * returns null otherwise.
+     * Returns the local CP member if this Hazelcast member is part of
+     * the CP subsystem, returns null otherwise.
      * <p>
-     * This field is initialized when the CP subsystem discovery process
-     * is completed if the local Hazelcast member is one of the first
-     * {@link CPSubsystemConfig#getCPMemberCount()} members in the cluster.
+     * This field is initialized when the local Hazelcast member is one of
+     * the first {@link CPSubsystemConfig#getCPMemberCount()} members
+     * in the cluster and the CP subsystem discovery process is completed.
      *
      * @return local CP member if available, null otherwise
      */

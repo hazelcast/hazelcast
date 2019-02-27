@@ -139,20 +139,20 @@ public class CPSubsystemConfig {
 
     /**
      * Number of {@link CPMember}s to initialize the {@link CPSubsystem}.
-     * It is 0 by default and the CP subsystem is disabled. The CP subsystem
-     * is enabled when a positive value is set. After the CP subsystem is
-     * initialized successfully, more CP members can be added at run-time
-     * and number of active CP members can go beyond the configured CP member
-     * count. Number of CP members can be smaller than total size
-     * of the Hazelcast cluster. For instance, one can run 5 CP members in a
-     * 20-member Hazelcast cluster.
+     * It is 0 by default, meaning that the CP subsystem is disabled.
+     * The CP subsystem is enabled when a positive value is set.
+     * After the CP subsystem is initialized successfully, more CP members can
+     * be added at run-time and number of active CP members can go beyond
+     * the configured CP member count. Number of CP members can be smaller than
+     * total size of the Hazelcast cluster. For instance, you can run
+     * 5 CP members in a 20-member Hazelcast cluster.
      * <p>
      * If set, must be greater than or equal to {@link #groupSize}
      */
     private int cpMemberCount;
 
     /**
-     * Number of CP members for running CP groups. If set, it must be an odd
+     * Number of CP members to run CP groups. If set, it must be an odd
      * number between {@link #MIN_GROUP_SIZE} and {@link #MAX_GROUP_SIZE}.
      * Otherwise, {@link #cpMemberCount} is respected.
      * <p>
@@ -161,8 +161,8 @@ public class CPSubsystemConfig {
     private int groupSize;
 
     /**
-     * Duration for a CP session to be kept alive after the last heartbeat
-     * it has received. The session will be closed if there is no new heartbeat
+     * Duration for a CP session to be kept alive after the last received
+     * heartbeat. The session will be closed if there is no new heartbeat
      * during this duration. Session TTL must be decided wisely. If a very low
      * value is set, CP session of a Hazelcast instance can be closed
      * prematurely if the instance temporarily loses connectivity to the CP
@@ -211,6 +211,10 @@ public class CPSubsystemConfig {
      * safely replaced in its CP groups with other available CP members
      * in the CP subsystem. This configuration also implies that no network
      * partition is expected to be longer than the configured duration.
+     * <p>
+     * If a missing CP member comes back alive after it is automatically
+     * removed from the CP subsystem with this feature, that CP member
+     * must be terminated manually.
      * <p>
      * Must be greater than or equal to {@link #sessionTimeToLiveSeconds}
      */
