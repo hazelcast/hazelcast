@@ -332,4 +332,13 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
 
         assertEquals("foobar", config.getProperty("prop"));
     }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithClasspathConfig() {
+        System.setProperty("variable", "foobar");
+        ClientConfig config = new ClientClasspathXmlConfig("test-hazelcast-client-variable.xml");
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
 }

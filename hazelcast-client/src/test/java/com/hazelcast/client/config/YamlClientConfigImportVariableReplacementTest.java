@@ -326,4 +326,15 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
 
         assertEquals("foobar", config.getProperty("prop"));
     }
+
+    @Override
+    @Test
+    public void testReplaceVariablesWithClasspathConfig() {
+        Properties properties = new Properties();
+        properties.put("variable", "foobar");
+        ClientConfig config = new ClientClasspathYamlConfig("test-hazelcast-client-variable.yaml", properties);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
 }
