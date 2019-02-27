@@ -20,11 +20,11 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.session.CPSession;
-import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.lock.exception.LockAcquireLimitExceededException;
 import com.hazelcast.cp.lock.exception.LockOwnershipLostException;
+import com.hazelcast.cp.session.CPSession;
+import com.hazelcast.cp.session.CPSessionManagementService;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -87,6 +87,7 @@ import java.util.concurrent.locks.Lock;
  * once Client-1 comes back alive, its write request will be rejected
  * by the external service, and only Client-2 will be able to safely talk it.
  * <p>
+ * <pre>
  *                                                       CLIENT-1's session is expired.
  *                                                                    |
  * |------------------|               LOCK is acquired by CLIENT-1.   |     LOCK is acquired by CLIENT-2.
@@ -105,7 +106,8 @@ import java.util.concurrent.locks.Lock;
  * | EXTERNAL SERVICE | . . . . . . . . . . . . . . \/ |- - - - - - - - - - - - - - - - - \/ |+ + + + \/  + + + + + + \/  + + + +
  * |------------------|                                |                                     | write(A) fails.    write(B) ok.
  *                                                     | SERVICE belongs to CLIENT-1.        | SERVICE belongs to CLIENT-2.
- * <p>
+ * </pre>
+ *  <p>
  * You can read more about the fencing token idea in Martin Kleppmann's
  * "How to do distributed locking" blog post and Google's Chubby paper.
  * {@link FencedLock} integrates this idea with the good old {@link Lock}
