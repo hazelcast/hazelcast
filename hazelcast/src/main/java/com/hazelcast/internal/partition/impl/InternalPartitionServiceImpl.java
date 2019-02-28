@@ -1511,17 +1511,31 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             lock.lock();
             try {
                 processMigrations(allCompletedMigrations, allActiveMigrations);
+                Version version = node.getClusterService().getClusterVersion();
+                boolean version312plus = version.isGreaterOrEqual(Versions.V3_12);
 
                 if (newState != null) {
-                    maxVersion = Math.max(maxVersion, getPartitionStateVersion()) + 1;
-                    logger.info("Applying the most recent of partition state...");
+                    maxVersion = Math.max(maxVersion, getPartitionStateVersion());
+                    // RU_COMPAT_3_11
+                    if (version312plus) {
+                        for (MigrationInfo migration : allCompletedMigrations) {
+                            // Partition table version should be greater than or equal to
+                            // final partition version of the latest completed migration.
+                            maxVersion = Math.max(maxVersion, migration.getFinalPartitionVersion());
+                        }
+                    }
+                    // Increment version once more to make it greater than the most recent version.
+                    maxVersion++;
+                    logger.info("Applying the most recent of partition state with new version: " + maxVersion);
                     applyNewPartitionTable(newState.getPartitionTable(), maxVersion, allCompletedMigrations, thisAddress);
                 } else if (partitionStateManager.isInitialized()) {
-                    partitionStateManager.incrementVersion();
-                    node.getNodeExtension().onPartitionStateChange();
-
                     for (MigrationInfo migrationInfo : allCompletedMigrations) {
                         if (migrationManager.addCompletedMigration(migrationInfo)) {
+                            // RU_COMPAT_3_11
+                            if (version312plus) {
+                                // Increment partition table version due to completed migration.
+                                partitionStateManager.incrementVersion(migrationInfo.getPartitionVersionIncrement());
+                            }
                             if (logger.isFinestEnabled()) {
                                 logger.finest("Scheduling migration finalization after finding most recent partition table: "
                                         + migrationInfo);
@@ -1529,6 +1543,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                             migrationManager.scheduleActiveMigrationFinalization(migrationInfo);
                         }
                     }
+                    // Increment version once more to make it greater than the most recent version.
+                    partitionStateManager.incrementVersion();
+                    node.getNodeExtension().onPartitionStateChange();
                 }
                 shouldFetchPartitionTables = false;
             } finally {
@@ -1546,6 +1563,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             for (MigrationInfo activeMigration : allActiveMigrations) {
                 activeMigration.setStatus(MigrationStatus.FAILED);
+                activeMigration.setPartitionVersionIncrement(activeMigration.getPartitionVersionIncrement() + 1);
                 if (allCompletedMigrations.add(activeMigration)) {
                     logger.info("Marked active migration " + activeMigration + " as " + MigrationStatus.FAILED);
                 }
