@@ -4,7 +4,7 @@ This repository contains a plugin which provides the automatic Hazelcast member 
 
 ***NOTE:*** *hazelcast-cloud module has been renamed as hazelcast-aws module (starting with Hazelcast 3.7.3). If you want to use AWS Discovery, you should add the library hazelcast-aws JAR to your environment.*
 
-***NOTE:*** *hazelcast-aws 2.3+* is compatible with *hazelcast 3.11+*, for older hazelcast versions you need to use *hazelcast-aws 2.2*.
+***NOTE:*** *hazelcast-aws 2.4* is compatible with *hazelcast 3.12+*, *hazelcast-aws 2.3* is compatible with *hazelcast 3.11.x*, for older hazelcast versions you need to use *hazelcast-aws 2.2*.
 
 ## Requirements
 
