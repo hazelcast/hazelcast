@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
 
 public abstract class StreamSourceStageTestBase extends JetTestSupport {
 
-    protected static JetInstance[] instances;
+    protected static JetInstance instance;
     static final String JOURNALED_MAP_NAME = "journaledMap";
     private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
 
@@ -76,7 +76,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
                 .setEnabled(true));
         // use 1 partition for the map journal to have an item in each ption
         config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), "1");
-        instances = factory.newMembers(config, 2);
+        instance = factory.newMember(config);
     }
 
     @AfterClass
@@ -103,12 +103,13 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
             return;
         }
         stageWithTimestamps
+                .setLocalParallelism(1)
                 .peek()
                 .window(WindowDefinition.tumbling(1))
                 .aggregate(counting())
                 .peek()
                 .drainTo(Sinks.fromProcessor("s", ProcessorMetaSupplier.of(WatermarkLogger::new)));
-        Job job = instances[0].newJob(p);
+        Job job = instance.newJob(p);
 
         HashSet<Long> expectedWmsSet = new HashSet<>(expectedWms);
 

@@ -39,7 +39,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
     @BeforeClass
     public static void beforeClass1() {
-        IMap<Integer, Integer> sourceMap = instances[0].getMap(JOURNALED_MAP_NAME);
+        IMap<Integer, Integer> sourceMap = instance.getMap(JOURNALED_MAP_NAME);
         sourceMap.put(1, 1);
         sourceMap.put(2, 2);
     }
@@ -122,14 +122,14 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
     @Test
     public void test_withTimestampsButTimestampsNotUsed() {
-        IList sinkList = instances[0].getList("sinkList");
+        IList sinkList = instance.getList("sinkList");
 
         Pipeline p = Pipeline.create();
         p.drawFrom(createSourceJournal())
          .withIngestionTimestamps()
          .drainTo(Sinks.list(sinkList));
 
-        instances[0].newJob(p);
+        instance.newJob(p);
         assertTrueEventually(() -> assertEquals(Arrays.asList(1, 2), new ArrayList<>(sinkList)), 5);
     }
 
