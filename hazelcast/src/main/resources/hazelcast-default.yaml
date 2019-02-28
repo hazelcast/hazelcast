@@ -21,7 +21,6 @@
 hazelcast:
   group:
     name: dev
-    password: dev-pass
   management-center:
     enabled: false
     url: http://localhost:8080/hazelcast-mancenter
