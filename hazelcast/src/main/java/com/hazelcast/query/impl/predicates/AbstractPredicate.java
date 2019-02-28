@@ -60,20 +60,20 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
     public boolean apply(Map.Entry<K, V> mapEntry) {
         Object attributeValue = readAttributeValue(mapEntry);
         if (attributeValue instanceof MultiResult) {
-            return applyForMultiResult(mapEntry, (MultiResult) attributeValue);
+            return applyForMultiResult((MultiResult) attributeValue);
         } else if (attributeValue instanceof Collection || attributeValue instanceof Object[]) {
             throw new IllegalArgumentException(String.format("Cannot use %s predicate with an array or a collection attribute",
                     getClass().getSimpleName()));
         }
-        return convertAndApplyForSingleAttributeValue(mapEntry, attributeValue);
+        return convertAndApplyForSingleAttributeValue(attributeValue);
     }
 
-    private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
+    private boolean applyForMultiResult(MultiResult result) {
         List results = result.getResults();
         for (Object o : results) {
             Comparable entryValue = (Comparable) o;
             // it's enough if there's only one result in the MultiResult that satisfies the predicate
-            boolean satisfied = convertAndApplyForSingleAttributeValue(mapEntry, entryValue);
+            boolean satisfied = convertAndApplyForSingleAttributeValue(entryValue);
             if (satisfied) {
                 return true;
             }
@@ -81,14 +81,14 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
         return false;
     }
 
-    protected boolean convertAndApplyForSingleAttributeValue(Map.Entry mapEntry, Object attributeValue) {
+    private boolean convertAndApplyForSingleAttributeValue(Object attributeValue) {
         if (attributeValue instanceof JsonValue) {
             attributeValue = JsonGetter.convertFromJsonValue((JsonValue) attributeValue);
         }
-        return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
+        return applyForSingleAttributeValue((Comparable) attributeValue);
     }
 
-    protected abstract boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue);
+    protected abstract boolean applyForSingleAttributeValue(Comparable attributeValue);
 
     /**
      * Converts givenAttributeValue to the type of entryAttributeValue
@@ -136,12 +136,12 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
         }
     }
 
-    protected Object readAttributeValue(Map.Entry entry) {
+    private Object readAttributeValue(Map.Entry entry) {
         Extractable extractable = (Extractable) entry;
         return extractable.getAttributeValue(attributeName);
     }
 
-    protected Object convertEnumValue(Object attributeValue) {
+    Object convertEnumValue(Object attributeValue) {
         if (attributeValue != null && attributeValue.getClass().isEnum()) {
             attributeValue = attributeValue.toString();
         }

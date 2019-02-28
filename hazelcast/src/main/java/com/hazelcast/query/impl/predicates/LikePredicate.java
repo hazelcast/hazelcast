@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,7 +44,7 @@ public class LikePredicate extends AbstractPredicate {
     }
 
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         String attributeValueString = (String) attributeValue;
         if (attributeValueString == null) {
             return (expression == null);

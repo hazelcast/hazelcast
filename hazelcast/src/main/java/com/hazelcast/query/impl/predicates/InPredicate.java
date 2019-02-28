@@ -25,7 +25,6 @@ import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.util.SetUtil.createHashSet;
@@ -54,7 +53,7 @@ public class InPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
             return false;
         }
