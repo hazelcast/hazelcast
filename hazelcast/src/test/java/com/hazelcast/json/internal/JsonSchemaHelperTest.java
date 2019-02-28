@@ -130,6 +130,20 @@ public class JsonSchemaHelperTest extends AbstractJsonSchemaTest {
         assertEquals(Json.FALSE, found);
     }
 
+    @Test
+    public void testQueryToNonTerminalValueCreatesPattern() throws IOException {
+        JsonObject object = Json.object()
+                .add("a", Json.object()
+                        .add("x", 1)
+                        .add("y", 2))
+                .add("b", false);
+
+        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
+        JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("a"));
+        assertEquals(new JsonPattern(asList(0)), pattern);
+    }
+
     @Override
     protected InMemoryFormat getInMemoryFormay() {
         return inMemoryFormat;

@@ -141,11 +141,6 @@ public class JsonSchemaHelperNullTest extends AbstractJsonSchemaTest {
     // tests on nested object
 
     @Test
-    public void testNestedObject_givenInvalidPath_shouldCreateNullPattern_whenObject_pathMissingAttribute() throws IOException {
-        test_givenInvalidPattern_createNullPattern(NESTED_OBJECT, "b");
-    }
-
-    @Test
     public void testNestedObject_givenInvalidPath_shouldCreateNullPattern_whenObject_pathExtraAttribute() throws IOException {
         test_givenInvalidPattern_createNullPattern(NESTED_OBJECT, "b.ba.a");
     }
