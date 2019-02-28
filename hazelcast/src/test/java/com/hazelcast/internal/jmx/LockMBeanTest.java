@@ -102,14 +102,14 @@ public class LockMBeanTest extends HazelcastTestSupport {
 
     @Test
     public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_mustHaveRemainingLeaseBeforeItExpires() throws Exception {
-        lock.lock(1000, TimeUnit.MILLISECONDS);
+        lock.lock(10000, TimeUnit.MILLISECONDS);
         long startTime = Clock.currentTimeMillis();
 
         long remainingLeaseTime = getLongAttribute("remainingLeaseTime");
         long timePassed = Clock.currentTimeMillis() - startTime;
         boolean hasLeaseRemaining = remainingLeaseTime > 0;
 
-        assertTrue(hasLeaseRemaining || timePassed >= 1000);
+        assertTrue(hasLeaseRemaining || timePassed >= 10000);
     }
 
     @Test
