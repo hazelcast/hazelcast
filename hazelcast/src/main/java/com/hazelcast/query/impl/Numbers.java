@@ -27,79 +27,20 @@ public final class Numbers {
         Class rhsClass = rhs.getClass();
         assert lhsClass != rhsClass;
 
-        if (lhsClass == Long.class) {
-            if (rhsClass == Double.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
-            } else if (rhsClass == Integer.class) {
-                return lhs.longValue() == rhs.longValue();
-            } else if (rhsClass == Float.class) {
-                return lhs.floatValue() == rhs.floatValue();
-            } else if (rhsClass == Short.class) {
-                return lhs.longValue() == rhs.longValue();
-            } else if (rhsClass == Byte.class) {
-                return lhs.longValue() == rhs.longValue();
-            }
-        } else if (lhsClass == Double.class) {
-            if (rhsClass == Long.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
-            } else if (rhsClass == Integer.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
-            } else if (rhsClass == Float.class) {
+        if (isDoubleRepresentable(lhsClass)) {
+            if (isDoubleRepresentable(rhsClass)) {
                 // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
                 return Double.doubleToLongBits(lhs.doubleValue()) == Double.doubleToLongBits(rhs.doubleValue());
-            } else if (rhsClass == Short.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
-            } else if (rhsClass == Byte.class) {
+            } else if (isLongRepresentable(rhsClass)) {
+                // TODO invent a better method of comparing longs and doubles?
                 return lhs.doubleValue() == rhs.doubleValue();
             }
-        } else if (lhsClass == Integer.class) {
-            if (rhsClass == Long.class) {
+        } else if (isLongRepresentable(lhsClass)) {
+            if (isDoubleRepresentable(rhsClass)) {
+                // TODO invent a better method of comparing longs and doubles?
+                return lhs.doubleValue() == rhs.doubleValue();
+            } else if (isLongRepresentable(rhsClass)) {
                 return lhs.longValue() == rhs.longValue();
-            } else if (rhsClass == Double.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
-            } else if (rhsClass == Float.class) {
-                return lhs.floatValue() == rhs.floatValue();
-            } else if (rhsClass == Short.class) {
-                return lhs.intValue() == rhs.intValue();
-            } else if (rhsClass == Byte.class) {
-                return lhs.intValue() == rhs.intValue();
-            }
-        } else if (lhsClass == Float.class) {
-            if (rhsClass == Long.class) {
-                return lhs.floatValue() == rhs.floatValue();
-            } else if (rhsClass == Double.class) {
-                // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
-                return Double.doubleToLongBits(lhs.doubleValue()) == Double.doubleToLongBits(rhs.doubleValue());
-            } else if (rhsClass == Integer.class) {
-                return lhs.floatValue() == rhs.floatValue();
-            } else if (rhsClass == Short.class) {
-                return lhs.floatValue() == rhs.floatValue();
-            } else if (rhsClass == Byte.class) {
-                return lhs.floatValue() == rhs.floatValue();
-            }
-        } else if (lhsClass == Short.class) {
-            if (rhsClass == Long.class) {
-                return lhs.longValue() == rhs.longValue();
-            } else if (rhsClass == Double.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
-            } else if (rhsClass == Integer.class) {
-                return lhs.intValue() == rhs.intValue();
-            } else if (rhsClass == Float.class) {
-                return lhs.floatValue() == rhs.floatValue();
-            } else if (rhsClass == Byte.class) {
-                return lhs.shortValue() == rhs.shortValue();
-            }
-        } else if (lhsClass == Byte.class) {
-            if (rhsClass == Long.class) {
-                return lhs.longValue() == rhs.longValue();
-            } else if (rhsClass == Double.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
-            } else if (rhsClass == Integer.class) {
-                return lhs.intValue() == rhs.intValue();
-            } else if (rhsClass == Float.class) {
-                return lhs.floatValue() == rhs.floatValue();
-            } else if (rhsClass == Short.class) {
-                return lhs.shortValue() == rhs.shortValue();
             }
         }
 
@@ -204,6 +145,14 @@ public final class Numbers {
 
     private static int compare(short x, short y) {
         return x < y ? -1 : (x == y ? 0 : 1);
+    }
+
+    private static boolean isDoubleRepresentable(Class clazz) {
+        return clazz == Double.class || clazz == Float.class;
+    }
+
+    private static boolean isLongRepresentable(Class clazz) {
+        return clazz == Long.class || clazz == Integer.class || clazz == Short.class || clazz == Byte.class;
     }
 
 }
