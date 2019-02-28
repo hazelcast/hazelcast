@@ -127,6 +127,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             }
         }
 
+        int truncatedAppendRequestEntryCount = 0;
         LogEntry[] newEntries = null;
         // Process any new entries
         if (req.entryCount() > 0) {
@@ -148,16 +149,17 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                 // If an existing entry conflicts with a new one (same index but different terms),
                 // delete the existing entry and all that follow it (§5.3)
                 if (reqEntry.term() != localEntry.term()) {
-                    List<LogEntry> truncated = raftLog.truncateEntriesFrom(reqEntry.index());
+                    List<LogEntry> truncatedEntries = raftLog.truncateEntriesFrom(reqEntry.index());
                     if (logger.isFineEnabled()) {
-                        logger.warning("Truncated " + truncated.size() + " entries from entry index: " + reqEntry.index() + " => "
-                                + truncated);
+                        logger.warning("Truncated " + truncatedEntries.size() + " entries from entry index: "
+                                + reqEntry.index() + " => " + truncatedEntries);
                     } else {
-                        logger.warning("Truncated " + truncated.size() + " entries from entry index: " + reqEntry.index());
+                        logger.warning("Truncated " + truncatedEntries.size() + " entries from entry index: "
+                                + reqEntry.index());
                     }
 
                     raftNode.invalidateFuturesFrom(reqEntry.index());
-                    revertRaftGroupCmd(truncated);
+                    revertRaftGroupCmd(truncatedEntries);
 
                     newEntries = Arrays.copyOfRange(req.entries(), i, req.entryCount());
                     break;
@@ -165,6 +167,16 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             }
 
             if (newEntries != null && newEntries.length > 0) {
+                if (raftLog.availableCapacity() < newEntries.length) {
+                    if (logger.isFineEnabled()) {
+                        logger.warning("Truncating " + newEntries.length + " entries to " + raftLog.availableCapacity()
+                                + " to fit into the available capacity of the Raft log");
+                    }
+
+                    truncatedAppendRequestEntryCount = newEntries.length - raftLog.availableCapacity();
+                    newEntries = Arrays.copyOf(newEntries, raftLog.availableCapacity());
+                }
+
                 // Append any new entries not already in the log
                 if (logger.isFineEnabled()) {
                     logger.fine("Appending " + newEntries.length + " entries: " + Arrays.toString(newEntries));
@@ -174,11 +186,14 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             }
         }
 
-        long lastLogIndex = req.prevLogIndex() + req.entryCount();
+        // I cannot use raftLog.lastLogOrSnapshotIndex() for lastLogIndex because my log may contain
+        // some uncommitted entries from the previous leader and those entries will be truncated soon
+        // I can only send a response based on how many entries I have appended from this append request
+        long lastLogIndex = req.prevLogIndex() + req.entryCount() - truncatedAppendRequestEntryCount;
         long oldCommitIndex = state.commitIndex();
 
         // Update the commit index
-        if (req.leaderCommitIndex() > state.commitIndex()) {
+        if (req.leaderCommitIndex() > oldCommitIndex) {
             // If leaderCommit > commitIndex, set commitIndex = min(leaderCommit, index of last new entry)
             long newCommitIndex = min(req.leaderCommitIndex(), lastLogIndex);
             if (logger.isFineEnabled()) {

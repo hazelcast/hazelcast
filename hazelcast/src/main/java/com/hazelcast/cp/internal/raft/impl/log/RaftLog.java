@@ -146,8 +146,18 @@ public class RaftLog {
         return truncated;
     }
 
+    /**
+     * Returns the number of empty indices in the Raft log
+     */
+    public int availableCapacity() {
+        return (int) (logs.getCapacity() - logs.size());
+    }
+
+    /**
+     * Returns true if the Raft log contains empty indices for the requested amount
+     */
     public boolean checkAvailableCapacity(int requestedCapacity) {
-        return (logs.getCapacity() - logs.size()) >= requestedCapacity;
+        return availableCapacity() >= requestedCapacity;
     }
 
     /**
