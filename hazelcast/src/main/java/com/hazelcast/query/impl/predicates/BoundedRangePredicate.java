@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -69,7 +70,6 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
         return index.getRecords(from, fromInclusive, to, toInclusive);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected boolean applyForSingleAttributeValue(Comparable value) {
         if (value == null) {
@@ -78,13 +78,13 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
         Comparable convertedValue = (Comparable) convertEnumValue(value);
 
         Comparable from = convert(value, this.from);
-        int order = convertedValue.compareTo(from);
+        int order = Comparables.compare(convertedValue, from);
         if (order < 0 || !fromInclusive && order == 0) {
             return false;
         }
 
         Comparable to = convert(value, this.to);
-        order = convertedValue.compareTo(to);
+        order = Comparables.compare(convertedValue, to);
         return order < 0 || toInclusive && order == 0;
     }
 

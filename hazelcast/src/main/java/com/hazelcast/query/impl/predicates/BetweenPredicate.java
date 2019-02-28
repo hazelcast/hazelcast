@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
@@ -63,7 +64,8 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate implements Vis
             return false;
         }
         attributeValue = (Comparable) convertEnumValue(attributeValue);
-        return attributeValue.compareTo(fromConvertedValue) >= 0 && attributeValue.compareTo(toConvertedValue) <= 0;
+        return Comparables.compare(attributeValue, fromConvertedValue) >= 0
+                && Comparables.compare(attributeValue, toConvertedValue) <= 0;
     }
 
     @Override

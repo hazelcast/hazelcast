@@ -97,6 +97,7 @@ public interface Index {
      */
     Set<QueryableEntry> getRecords(Comparable value);
 
+    // FIXME: store canonical representation in the in-set
     /**
      * Produces a result set containing entries whose attribute values are equal
      * to at least one of the given values.

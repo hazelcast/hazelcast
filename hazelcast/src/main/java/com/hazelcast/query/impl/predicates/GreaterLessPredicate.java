@@ -56,7 +56,6 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         this.less = less;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {

@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.TypeConverters;
@@ -123,9 +124,8 @@ public class RangeVisitor extends AbstractVisitor {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static Order compare(Comparable lhs, Comparable rhs) {
-        int order = lhs.compareTo(rhs);
+        int order = Comparables.compare(lhs, rhs);
         if (order < 0) {
             return Order.LESS;
         } else if (order == 0) {
@@ -324,7 +324,7 @@ public class RangeVisitor extends AbstractVisitor {
             return this;
         }
 
-        @SuppressWarnings({"unchecked", "checkstyle:cyclomaticcomplexity"})
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         public Predicate generate(Predicate originalPredicate) {
             if (generated) {
                 return null;
@@ -344,7 +344,7 @@ public class RangeVisitor extends AbstractVisitor {
                 return new GreaterLessPredicate(attribute, to, toInclusive, true);
             } else if (to == null) {
                 return new GreaterLessPredicate(attribute, from, fromInclusive, false);
-            } else if (from == to || from.compareTo(to) == 0) {
+            } else if (from == to || Comparables.compare(from, to) == 0) {
                 // If from equals to, the predicate may be satisfiable only if
                 // both bounds are inclusive.
                 assert fromInclusive && toInclusive;
