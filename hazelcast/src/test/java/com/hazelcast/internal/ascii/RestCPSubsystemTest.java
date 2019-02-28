@@ -35,6 +35,7 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -54,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -124,9 +126,18 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void test_getMetadataCPGroupByName() throws IOException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
 
@@ -161,9 +172,18 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void test_getDefaultCPGroupByName() throws IOException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         instance1.getCPSubsystem().getAtomicLong("long1").set(5);
 
@@ -200,9 +220,18 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void test_getCustomCPGroupByName() throws IOException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         instance1.getCPSubsystem().getAtomicLong("long1@custom").set(5);
 
@@ -252,10 +281,19 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void test_getLocalCPMember() throws IOException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance4 = Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         ConnectionResponse response1 = new HTTPCommunicator(instance1).getLocalCPMember();
         ConnectionResponse response2 = new HTTPCommunicator(instance2).getLocalCPMember();
@@ -278,9 +316,18 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void test_getCPMembers() throws IOException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         ConnectionResponse response = new HTTPCommunicator(instance1).getCPMembers();
 
@@ -360,9 +407,16 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void test_removeCPMember() throws IOException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         CPMember crashedCPMember = instance3.getCPSubsystem().getLocalCPMember();
         instance3.getLifecycleService().terminate();
@@ -378,7 +432,14 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     public void test_removeCPMember_withInvalidCredentials() throws IOException {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         CPMember crashedCPMember = instance3.getCPSubsystem().getLocalCPMember();
         instance3.getLifecycleService().terminate();
@@ -404,8 +465,15 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     @Test
     public void test_removeCPMemberFromNonMaster() throws IOException {
         Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         CPMember crashedCPMember = instance2.getCPSubsystem().getLocalCPMember();
         instance2.getLifecycleService().terminate();
