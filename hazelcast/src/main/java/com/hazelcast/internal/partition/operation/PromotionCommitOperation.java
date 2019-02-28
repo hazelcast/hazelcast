@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -39,6 +40,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -249,15 +251,28 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         expectedMemberUuid = in.readUTF();
-        partitionState = new PartitionRuntimeState();
-        partitionState.readData(in);
+
+        Version version = in.getVersion();
+        // RU_COMPAT_3_11
+        if (version.isGreaterOrEqual(Versions.V3_12)) {
+            partitionState = in.readObject();
+        } else {
+            partitionState = new PartitionRuntimeState();
+            partitionState.readData(in);
+        }
 
         int len = in.readInt();
         if (len > 0) {
             promotions = new ArrayList<MigrationInfo>(len);
             for (int i = 0; i < len; i++) {
-                MigrationInfo migrationInfo = new MigrationInfo();
-                migrationInfo.readData(in);
+                MigrationInfo migrationInfo;
+                // RU_COMPAT_3_11
+                if (version.isGreaterOrEqual(Versions.V3_12)) {
+                    migrationInfo = in.readObject();
+                } else {
+                    migrationInfo = new MigrationInfo();
+                    migrationInfo.readData(in);
+                }
                 promotions.add(migrationInfo);
             }
         }
@@ -267,12 +282,24 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(expectedMemberUuid);
-        partitionState.writeData(out);
+
+        Version version = out.getVersion();
+        // RU_COMPAT_3_11
+        if (version.isGreaterOrEqual(Versions.V3_12)) {
+            out.writeObject(partitionState);
+        } else {
+            partitionState.writeData(out);
+        }
 
         int len = promotions.size();
         out.writeInt(len);
         for (MigrationInfo migrationInfo : promotions) {
-            migrationInfo.writeData(out);
+            // RU_COMPAT_3_11
+            if (version.isGreaterOrEqual(Versions.V3_12)) {
+                out.writeObject(migrationInfo);
+            } else {
+                migrationInfo.writeData(out);
+            }
         }
     }
 }
