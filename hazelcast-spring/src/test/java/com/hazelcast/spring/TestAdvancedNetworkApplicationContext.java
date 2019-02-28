@@ -28,6 +28,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -63,8 +64,9 @@ public class TestAdvancedNetworkApplicationContext {
     @BeforeClass
     @AfterClass
     public static void start() {
-        Hazelcast.shutdownAll();
+        HazelcastInstanceFactory.terminateAll();
     }
+
 
     @Before
     public void before() {
@@ -89,10 +91,10 @@ public class TestAdvancedNetworkApplicationContext {
 
         assertEquals(5700, memberEndpointConfig.getPort());
         assertEquals(99, memberEndpointConfig.getPortCount());
-        assertFalse(memberEndpointConfig.isPortAutoIncrement());
+        assertTrue(memberEndpointConfig.isPortAutoIncrement());
         assertTrue(memberEndpointConfig.getInterfaces().isEnabled());
         assertContains(memberEndpointConfig.getInterfaces().getInterfaces(), "127.0.0.1");
-        assertTrue(memberEndpointConfig.isReuseAddress());
+        assertFalse(memberEndpointConfig.isReuseAddress());
         assertTrue(memberEndpointConfig.getSocketInterceptorConfig().isEnabled());
         assertEquals("com.hazelcast.SocketInterceptor",
                 memberEndpointConfig.getSocketInterceptorConfig().getClassName());
@@ -118,6 +120,7 @@ public class TestAdvancedNetworkApplicationContext {
 
         RestServerEndpointConfig restServerEndpointConfig = advancedNetworkConfig.getRestEndpointConfig();
         assertEquals(8080, restServerEndpointConfig.getPort());
+        assertFalse(restServerEndpointConfig.isPortAutoIncrement());
         assertContainsAll(restServerEndpointConfig.getEnabledGroups(),
                 Arrays.asList(HEALTH_CHECK, CLUSTER_READ));
 
