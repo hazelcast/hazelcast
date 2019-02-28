@@ -28,6 +28,7 @@ import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -926,7 +927,10 @@ public class Node {
     }
 
     private void logGroupPasswordInfo() {
-        if (!isNullOrEmpty(config.getGroupConfig().getPassword())) {
+        String password = config.getGroupConfig().getPassword();
+        if (!(config.getSecurityConfig().isEnabled()
+                || isNullOrEmpty(password)
+                || GroupConfig.DEFAULT_GROUP_PASSWORD.equals(password))) {
             logger.info("A non-empty group password is configured for the Hazelcast member."
                     + " Since version 3.8.2, members with the same group name,"
                     + " but with different group passwords (that do not use authentication) form a cluster."
