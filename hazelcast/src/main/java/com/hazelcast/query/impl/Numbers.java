@@ -21,6 +21,7 @@ public final class Numbers {
     private Numbers() {
     }
 
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
     public static boolean equals(Number lhs, Number rhs) {
         Class lhsClass = lhs.getClass();
         Class rhsClass = rhs.getClass();
@@ -103,7 +104,7 @@ public final class Numbers {
         return lhs.equals(rhs);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:cyclomaticcomplexity", "checkstyle:methodlength", "checkstyle:returncount"})
     public static int compare(Comparable lhs, Comparable rhs) {
         Class lhsClass = lhs.getClass();
         Class rhsClass = rhs.getClass();

@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.Portable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
-import java.text.DecimalFormat;
 import java.util.Date;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
@@ -258,6 +257,7 @@ public final class TypeConverters {
     }
 
     static class IntegerConverter extends BaseTypeConverter {
+        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -357,6 +357,7 @@ public final class TypeConverters {
     }
 
     static class ShortConverter extends BaseTypeConverter {
+        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -431,6 +432,7 @@ public final class TypeConverters {
     }
 
     static class ByteConverter extends BaseTypeConverter {
+        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
