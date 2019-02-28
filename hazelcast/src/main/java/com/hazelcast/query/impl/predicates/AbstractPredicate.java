@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
@@ -26,7 +27,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.getters.JsonGetter;
+import com.hazelcast.query.impl.getters.AbstractJsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
@@ -83,7 +84,10 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
 
     private boolean convertAndApplyForSingleAttributeValue(Object attributeValue) {
         if (attributeValue instanceof JsonValue) {
-            attributeValue = JsonGetter.convertFromJsonValue((JsonValue) attributeValue);
+            if (attributeValue == NonTerminalJsonValue.INSTANCE) {
+                return false;
+            }
+            attributeValue = AbstractJsonGetter.convertFromJsonValue((JsonValue) attributeValue);
         }
         return applyForSingleAttributeValue((Comparable) attributeValue);
     }

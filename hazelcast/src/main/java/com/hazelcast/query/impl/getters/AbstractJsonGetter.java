@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.JsonTokenId;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.json.internal.JsonPattern;
 import com.hazelcast.json.internal.JsonSchemaHelper;
@@ -85,6 +86,8 @@ public abstract class AbstractJsonGetter extends Getter {
             return null;
         } else if (value.isString()) {
             return value.asString();
+        } else if (value == NonTerminalJsonValue.INSTANCE) {
+            return value;
         }
         throw new IllegalArgumentException("Unknown Json type: " + value);
     }
@@ -289,8 +292,10 @@ public abstract class AbstractJsonGetter extends Getter {
                 return true;
             case JsonTokenId.ID_FALSE:
                 return false;
-            default:
+            case JsonTokenId.ID_NULL:
                 return null;
+            default:
+                return NonTerminalJsonValue.INSTANCE;
         }
     }
 }

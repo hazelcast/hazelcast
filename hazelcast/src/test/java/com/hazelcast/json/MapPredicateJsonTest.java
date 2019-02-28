@@ -703,4 +703,56 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         assertTrue(values.contains(2));
         assertTrue(values.contains(3));
     }
+
+    @Test
+    public void testNonTerminalAttributeIs_queriedWithEqualsNull_shouldNotReturn() {
+        String jsonWithNonTerminalQueryField = Json.object()
+                .add("user", Json.object()
+                        .add("name", "abc")
+                        .add("age", 23))
+                .toString();
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, HazelcastJson.fromString(jsonWithNonTerminalQueryField));
+
+        Collection<Integer> keys = map.keySet(Predicates.equal("user", null));
+        assertEquals(0, keys.size());
+    }
+
+    @Test
+    public void testNonTerminalAttributeIs_queriedWithNotEqualsNull_shouldReturn() {
+        String jsonWithNonTerminalQueryField = Json.object()
+                .add("user", Json.object()
+                        .add("name", "abc")
+                        .add("age", 23))
+                .toString();
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, HazelcastJson.fromString(jsonWithNonTerminalQueryField));
+
+        Collection<Integer> keys = map.keySet(Predicates.notEqual("user", null));
+        assertEquals(1, keys.size());
+    }
+
+    @Test
+    public void testNullAttribute_queriedWithNotEqualsNull_shouldNotReturn() {
+        String jsonWithNonTerminalQueryField = Json.object()
+                .add("user", Json.NULL)
+                .toString();
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, HazelcastJson.fromString(jsonWithNonTerminalQueryField));
+
+        Collection<Integer> keys = map.keySet(Predicates.notEqual("user", null));
+        assertEquals(0, keys.size());
+    }
+
+    @Test
+    public void testNullAttribute_queriedWithEqualsNull_shouldReturn() {
+        String jsonWithNonTerminalQueryField = Json.object()
+                .add("user", Json.NULL)
+                .toString();
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+        map.put(1, HazelcastJson.fromString(jsonWithNonTerminalQueryField));
+
+        Collection<Integer> keys = map.keySet(Predicates.equal("user", null));
+        assertEquals(1, keys.size());
+    }
 }

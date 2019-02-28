@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.json.UTF8StreamJsonParser;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonReducedValueParser;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.internal.json.ParseException;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
@@ -91,11 +92,7 @@ public final class JsonSchemaHelper {
                 return null;
             }
         }
-        if (schemaNode.isTerminal()) {
-            return pattern;
-        } else {
-            return null;
-        }
+        return pattern;
     }
 
     /**
@@ -138,15 +135,19 @@ public final class JsonSchemaHelper {
                 return null;
             }
         }
-        if (schemaNode.isTerminal() && attributePath.getNext() == null) {
-            // at this point we are sure we found the value by pattern. So we have to be able to extract JsonValue.
-            // Otherwise, let the exceptions propagate
-            try {
-                JsonReducedValueParser valueParser = new JsonReducedValueParser();
-                int valuePos = ((JsonSchemaTerminalNode) schemaNode).getValueStartLocation();
-                return input.parseValue(valueParser, valuePos);
-            } catch (ParseException parseException) {
-                throw new HazelcastException(parseException);
+        if (attributePath.getNext() == null) {
+            if (schemaNode.isTerminal()) {
+                // at this point we are sure we found the value by pattern. So we have to be able to extract JsonValue.
+                // Otherwise, let the exceptions propagate
+                try {
+                    JsonReducedValueParser valueParser = new JsonReducedValueParser();
+                    int valuePos = ((JsonSchemaTerminalNode) schemaNode).getValueStartLocation();
+                    return input.parseValue(valueParser, valuePos);
+                } catch (ParseException parseException) {
+                    throw new HazelcastException(parseException);
+                }
+            } else {
+                return NonTerminalJsonValue.INSTANCE;
             }
         }
         return null;
