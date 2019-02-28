@@ -2,8 +2,8 @@
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
    	echo "parameters: "
-   	echo "	-o, --operation	    : Executes cluster-wide operation. Operation can be 'get-state','change-state','shutdown','force-start','get-cluster-version','change-cluster-version'."
-    echo "	-s, --state 	    : Updates state of the cluster to new state. New state can be 'active', 'frozen', 'passive'"
+   	echo "	-o, --operation	    : Executes cluster-wide operation. Operation can be 'get-state','change-state','shutdown','force-start','partial-start','get-cluster-version','change-cluster-version'."
+    echo "	-s, --state 	    : Updates state of the cluster to new state. New state can be 'active', 'frozen', 'passive', 'no_migration'."
     echo "	-a, --address  	    : Defines which ip address hazelcast is running. Default value is '127.0.0.1'."
    	echo "	-p, --port  	    : Defines which port hazelcast is running. Default value is '5701'."
    	echo "	-g, --groupname     : Defines groupname of the cluster. Default value is 'dev'."
