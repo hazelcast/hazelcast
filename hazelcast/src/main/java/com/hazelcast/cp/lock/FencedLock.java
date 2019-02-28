@@ -45,19 +45,19 @@ import java.util.concurrent.locks.Lock;
  * <p>
  * By default, {@link FencedLock} is reentrant. Once a caller acquires
  * the lock, it can acquire the lock reentrantly as many times as it wants
- * in a linearizable manner. Reentrancy behaviour can be configured via
+ * in a linearizable manner. You can configure the reentrancy behaviour via
  * {@link FencedLockConfig}. For instance, reentrancy can be disabled and
  * {@link FencedLock} can work as a non-reentrant mutex. One can also set
- * a custom reentrancy limit. When reentrancy limit is exceeded,
+ * a custom reentrancy limit. When the reentrancy limit is exceeded,
  * {@link FencedLock} does not block a lock call. Instead, it fails with
  * {@link LockAcquireLimitExceededException} or a specified return value.
  * Please check the locking methods to see details about the behaviour.
  * <p>
  * Distributed locks are unfortunately NOT EQUIVALENT to single-node mutexes
  * because of the complexities in distributed systems, such as uncertain
- * communication patterns and independent process failures. In an asynchronous
- * network, no lock service can guarantee mutual exclusion, because there is
- * no way to distinguish between a slow and a crashed process.
+ * communication patterns, and independent and partial failures.
+ * In an asynchronous network, no lock service can guarantee mutual exclusion,
+ * because there is no way to distinguish between a slow and a crashed process.
  * Consider the following scenario, where a Hazelcast client acquires
  * a {@link FencedLock}, then hits a long GC pause. Since it will not be able
  * to commit session heartbeats while paused, its CP session will be eventually
@@ -65,11 +65,11 @@ import java.util.concurrent.locks.Lock;
  * If the first client wakes up again, it may not immediately notice that it
  * has lost ownership of the lock. In this case, multiple clients think they
  * hold the lock. If they attempt to perform an operation on a shared resource,
- * they can break the system. To prevent such situations, one may choose to use
- * an infinite session timeout, but this time probably she is going to deal
- * with liveliness issues. Even if the first client crashes, requests sent by
- * 2 clients can be re-ordered in the network and hit the external resource in
- * reverse order.
+ * they can break the system. To prevent such situations, you can choose to use
+ * an infinite session timeout, but this time probably you are going to deal
+ * with liveliness issues. For the scenario above, even if the first client
+ * actually crashes, requests sent by 2 clients can be re-ordered in the network
+ * and hit the external resource in reverse order.
  * <p>
  * There is a simple solution for this problem. Lock holders are ordered by a
  * monotonic fencing token, which increments each time the lock is assigned to
@@ -77,9 +77,9 @@ import java.util.concurrent.locks.Lock;
  * resources to ensure sequential execution of side effects performed by lock
  * holders.
  * <p>
- * The following figure illustrates the idea. In this figure, Client-1 acquires
- * the lock first and receives 1 as its fencing token. Then, it passes this
- * token to the external service, which is our shared resource in this scenario.
+ * The following figure illustrates the idea. Client-1 acquires the lock first
+ * and receives 1 as its fencing token. Then, it passes this token to the
+ * external service, which is our shared resource in this scenario.
  * Just after that, Client-1 hits a long GC pause and eventually loses
  * ownership of the lock because it misses to commit CP session heartbeats.
  * Then, Client-2 chimes in and acquires the lock. Similar to Client-1,
@@ -110,14 +110,14 @@ import java.util.concurrent.locks.Lock;
  *  <p>
  * You can read more about the fencing token idea in Martin Kleppmann's
  * "How to do distributed locking" blog post and Google's Chubby paper.
- * {@link FencedLock} integrates this idea with the good old {@link Lock}
+ * {@link FencedLock} integrates this idea with the {@link Lock}
  * abstraction.
  * <p>
  * All of the API methods in the new {@link FencedLock} abstraction offer
- * the exactly-once execution semantics. For instance, even if
- * a {@link #lock()} call is internally retried because of a crashed CP member,
- * the lock is acquired only once. The same rule also applies to the other
- * methods in the API.
+ * exactly-once execution semantics. For instance, even if a {@link #lock()}
+ * call is internally retried because of a crashed CP member, the lock is
+ * acquired only once. The same rule also applies to the other methods
+ * in the API.
  *
  * @see FencedLockConfig
  * @see CPSessionManagementService

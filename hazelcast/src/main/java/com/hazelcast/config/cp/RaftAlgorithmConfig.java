@@ -70,37 +70,40 @@ public class RaftAlgorithmConfig {
     private long leaderElectionTimeoutInMillis = DEFAULT_LEADER_ELECTION_TIMEOUT_IN_MILLIS;
 
     /**
-     * Period for leader to send heartbeat messages to its followers
+     * Period in milliseconds for a leader to send heartbeat messages to
+     * its followers
      */
     private long leaderHeartbeatPeriodInMillis = DEFAULT_LEADER_HEARTBEAT_PERIOD_IN_MILLIS;
 
     /**
-     * Max number of missed leader heartbeats to trigger a new leader election
+     * Maximum number of missed leader heartbeats to trigger
+     * a new leader election
      */
     private int maxMissedLeaderHeartbeatCount = DEFAULT_MAX_MISSED_LEADER_HEARTBEAT_COUNT;
 
     /**
-     * Max entry count that can be sent in a single batch of
+     * Maximum number of entries that can be sent in a single batch of
      * append entries request
      */
     private int appendRequestMaxEntryCount = DEFAULT_APPEND_REQUEST_MAX_ENTRY_COUNT;
 
     /**
-     * Number of commits to initiate a new snapshot after
-     * the last snapshot's index
+     * Number of new commits to initiate a new snapshot after
+     * the last snapshot
      */
     private int commitIndexAdvanceCountToSnapshot = DEFAULT_COMMIT_INDEX_ADVANCE_COUNT_TO_SNAPSHOT;
 
     /**
-     * Max number of uncommitted entries in the leader's Raft log before
+     * Maximum number of uncommitted entries in the leader's Raft log before
      * temporarily rejecting new requests of callers.
      */
     private int uncommittedEntryCountToRejectNewAppends = DEFAULT_UNCOMMITTED_ENTRY_COUNT_TO_REJECT_NEW_APPENDS;
 
     /**
-     * Timeout for append request backoff in millis. After the leader sends
-     * an append request to a follower, it will not send a subsequent append
-     * request until the responds to the former request or this timeout occurs.
+     * Timeout in milliseconds for append request backoff. After the leader
+     * sends an append request to a follower, it will not send a subsequent
+     * append request until the follower responds to the former request
+     * or this timeout occurs.
      */
     private long appendRequestBackoffTimeoutInMillis = DEFAULT_APPEND_REQUEST_BACKOFF_TIMEOUT_IN_MILLIS;
 
