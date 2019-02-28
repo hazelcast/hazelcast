@@ -627,4 +627,82 @@ public class SnapshotTest extends HazelcastTestSupport {
 
         assertFalse(f.isDone());
     }
+
+    @Test
+    public void when_slowFollowerReceivesAppendRequestThatDoesNotFitIntoItsRaftLog_then_itTruncatesAppendRequestEntries()
+            throws ExecutionException, InterruptedException {
+        int appendRequestMaxEntryCount = 100;
+        final int commitIndexAdvanceCount = 100;
+        int uncommittedEntryCount = 10;
+
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig()
+                .setAppendRequestMaxEntryCount(appendRequestMaxEntryCount)
+                .setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCount)
+                .setUncommittedEntryCountToRejectNewAppends(uncommittedEntryCount);
+        group = newGroupWithService(5, config);
+        group.start();
+
+        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        final RaftNodeImpl slowFollower1 = followers[0];
+        final RaftNodeImpl slowFollower2 = followers[1];
+
+        int count = 1;
+        for (int i = 0; i < commitIndexAdvanceCount; i++) {
+            leader.replicate(new ApplyRaftRunnable("val" + (count++))).get();
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (RaftNodeImpl node : group.getNodes()) {
+                    assertTrue(getSnapshotEntry(node).index() > 0);
+                }
+            }
+        });
+
+        group.dropMessagesToMember(leader.getLocalMember(), slowFollower1.getLocalMember(), AppendRequest.class);
+
+        for (int i = 0; i < commitIndexAdvanceCount - 1; i++) {
+            leader.replicate(new ApplyRaftRunnable("val" + (count++))).get();
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(getCommitIndex(leader), getCommitIndex(slowFollower2));
+            }
+        });
+
+        // slowFollower2's log: [ <91 - 100 before snapshot>, <100 snapshot>, <101 - 199 committed> ]
+
+        group.dropMessagesToMember(leader.getLocalMember(), slowFollower2.getLocalMember(), AppendRequest.class);
+
+        for (int i = 0; i < commitIndexAdvanceCount / 2; i++) {
+            leader.replicate(new ApplyRaftRunnable("val" + (count++))).get();
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(getSnapshotEntry(leader).index() > commitIndexAdvanceCount);
+            }
+        });
+
+        // leader's log: [ <191 - 199 before snapshot>, <200 snapshot>, <201 - 249 committed> ]
+
+        group.allowMessagesToMember(leader.getLocalMember(), slowFollower2.getLocalMember(), AppendRequest.class);
+
+        // leader replicates 50 entries to slowFollower2 but slowFollower2 has only available capacity of 11 indices.
+        // so, slowFollower2 appends 11 of these 50 entries in the first AppendRequest, takes a snapshot,
+        // and receives another AppendRequest for the remaining entries...
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(getCommitIndex(leader), getCommitIndex(slowFollower2));
+                assertTrue(getSnapshotEntry(slowFollower2).index() > commitIndexAdvanceCount);
+            }
+        });
+    }
 }

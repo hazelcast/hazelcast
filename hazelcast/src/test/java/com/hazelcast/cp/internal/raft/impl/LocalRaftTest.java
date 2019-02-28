@@ -696,7 +696,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
         leader.replicate(new ApplyRaftRunnable("val1")).get();
 
         final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        final RaftNodeImpl followerWithLongerLog = followers[0];
+        final RaftNodeImpl followerWithLongestLog = followers[0];
         final long commitIndex = getCommitIndex(leader);
 
         assertTrueEventually(new AssertTask() {
@@ -717,7 +717,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(getLastLogOrSnapshotEntry(followerWithLongerLog).index() > commitIndex);
+                assertTrue(getLastLogOrSnapshotEntry(followerWithLongestLog).index() > commitIndex);
             }
         });
 
@@ -730,14 +730,15 @@ public class LocalRaftTest extends HazelcastTestSupport {
             }
         }, 10);
 
-        group.dropMessagesToMember(followerWithLongerLog.getLocalMember(), followers[1].getLocalMember(), VoteRequest.class);
-        group.dropMessagesToMember(followerWithLongerLog.getLocalMember(), followers[2].getLocalMember(), VoteRequest.class);
+        group.dropMessagesToMember(followerWithLongestLog.getLocalMember(), followers[1].getLocalMember(), VoteRequest.class);
+        group.dropMessagesToMember(followerWithLongestLog.getLocalMember(), followers[2].getLocalMember(), VoteRequest.class);
 
         group.terminateNode(leader.getLocalMember());
 
         RaftNodeImpl newLeader = group.waitUntilLeaderElected();
 
-        // followerWithLongerLog has 2 entries, other 3 followers have 1 entry and the 3 followers will elect their leaders
+        // followerWithLongestLog has 2 entries, other 3 followers have 1 entry
+        // and those 3 followers will elect a leader among themselves
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -745,7 +746,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
                 for (RaftNodeImpl raftNode : followers) {
                     Endpoint newLeader = getLeaderMember(raftNode);
                     assertNotEquals(leader.getLocalMember(), newLeader);
-                    assertNotEquals(followerWithLongerLog.getLocalMember(), newLeader);
+                    assertNotEquals(followerWithLongestLog.getLocalMember(), newLeader);
                 }
             }
         });
@@ -755,17 +756,17 @@ public class LocalRaftTest extends HazelcastTestSupport {
             assertEquals(commitIndex, getLastLogOrSnapshotEntry(followers[i]).index());
         }
 
-        // followerWithLongerLog has not truncated its extra log entry until the new leader appends a new entry
-        assertTrue(getLastLogOrSnapshotEntry(followerWithLongerLog).index() > commitIndex);
+        // followerWithLongestLog does not truncate its extra log entry until the new leader appends a new entry
+        assertTrue(getLastLogOrSnapshotEntry(followerWithLongestLog).index() > commitIndex);
 
         newLeader.replicate(new ApplyRaftRunnable("val3")).get();
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                for (RaftNodeImpl raftNode : followers) {
-                    assertEquals(2, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode);
+                for (RaftNodeImpl follower : followers) {
+                    assertEquals(2, getCommitIndex(follower));
+                    RaftDataService service = group.getService(follower);
                     assertEquals(2, service.size());
                     assertEquals("val1", service.get(1));
                     assertEquals("val3", service.get(2));
@@ -773,7 +774,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
             }
         });
 
-        assertEquals(2, getLastLogOrSnapshotEntry(followerWithLongerLog).index());
+        assertEquals(2, getLastLogOrSnapshotEntry(followerWithLongestLog).index());
     }
 
     @Test
