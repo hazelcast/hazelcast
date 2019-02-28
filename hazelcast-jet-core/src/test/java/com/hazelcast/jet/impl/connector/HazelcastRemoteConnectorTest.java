@@ -148,7 +148,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readRemoteMap_withPredicateAndDistributedFunction() {
+    public void when_readRemoteMap_withPredicateAndFunction() {
         populateMap(hz.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();

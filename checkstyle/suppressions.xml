@@ -46,9 +46,6 @@
     <!-- Exclude variations of JDK classes from Javadoc checks -->
     <suppress checks="Javadoc(Type|Method|Variable)" files="com[\\/]hazelcast[\\/]jet[\\/]function" />
 
-    <!-- Javadoc includes links to JDK classes -->
-    <suppress checks="UnusedImports" files="com[\\/]hazelcast[\\/]jet[\\/]stream[\\/]Distributed.+\.java" />
-
     <!-- Generated code in Client Protocol Templates -->
     <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]template[\\/].*Template\.java$"/>

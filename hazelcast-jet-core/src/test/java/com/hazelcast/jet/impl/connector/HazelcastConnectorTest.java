@@ -174,7 +174,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readMap_withPredicateAndDistributedFunction() {
+    public void when_readMap_withPredicateAndFunction() {
         IMapJet<Integer, Integer> sourceMap = jetInstance.getMap(sourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
 

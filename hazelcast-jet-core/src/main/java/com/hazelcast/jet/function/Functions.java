@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Factory methods for several common distributed functions.
+ * Factory methods for several common functions.
  */
 public final class Functions {
 
