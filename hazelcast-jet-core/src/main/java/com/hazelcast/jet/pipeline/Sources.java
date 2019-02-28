@@ -23,7 +23,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.GenericPredicates;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.EventTimeMapper;

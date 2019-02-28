@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.query.Predicate;
 

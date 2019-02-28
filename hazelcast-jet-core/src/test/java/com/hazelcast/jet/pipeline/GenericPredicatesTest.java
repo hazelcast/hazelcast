@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -30,23 +30,23 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.TestUtil.toData;
-import static com.hazelcast.jet.GenericPredicates.alwaysFalse;
-import static com.hazelcast.jet.GenericPredicates.alwaysTrue;
-import static com.hazelcast.jet.GenericPredicates.and;
-import static com.hazelcast.jet.GenericPredicates.between;
-import static com.hazelcast.jet.GenericPredicates.equal;
-import static com.hazelcast.jet.GenericPredicates.greaterEqual;
-import static com.hazelcast.jet.GenericPredicates.greaterThan;
-import static com.hazelcast.jet.GenericPredicates.ilike;
-import static com.hazelcast.jet.GenericPredicates.in;
-import static com.hazelcast.jet.GenericPredicates.instanceOf;
-import static com.hazelcast.jet.GenericPredicates.lessEqual;
-import static com.hazelcast.jet.GenericPredicates.lessThan;
-import static com.hazelcast.jet.GenericPredicates.like;
-import static com.hazelcast.jet.GenericPredicates.not;
-import static com.hazelcast.jet.GenericPredicates.notEqual;
-import static com.hazelcast.jet.GenericPredicates.or;
-import static com.hazelcast.jet.GenericPredicates.regex;
+import static com.hazelcast.jet.pipeline.GenericPredicates.alwaysFalse;
+import static com.hazelcast.jet.pipeline.GenericPredicates.alwaysTrue;
+import static com.hazelcast.jet.pipeline.GenericPredicates.and;
+import static com.hazelcast.jet.pipeline.GenericPredicates.between;
+import static com.hazelcast.jet.pipeline.GenericPredicates.equal;
+import static com.hazelcast.jet.pipeline.GenericPredicates.greaterEqual;
+import static com.hazelcast.jet.pipeline.GenericPredicates.greaterThan;
+import static com.hazelcast.jet.pipeline.GenericPredicates.ilike;
+import static com.hazelcast.jet.pipeline.GenericPredicates.in;
+import static com.hazelcast.jet.pipeline.GenericPredicates.instanceOf;
+import static com.hazelcast.jet.pipeline.GenericPredicates.lessEqual;
+import static com.hazelcast.jet.pipeline.GenericPredicates.lessThan;
+import static com.hazelcast.jet.pipeline.GenericPredicates.like;
+import static com.hazelcast.jet.pipeline.GenericPredicates.not;
+import static com.hazelcast.jet.pipeline.GenericPredicates.notEqual;
+import static com.hazelcast.jet.pipeline.GenericPredicates.or;
+import static com.hazelcast.jet.pipeline.GenericPredicates.regex;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
