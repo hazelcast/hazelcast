@@ -76,12 +76,6 @@ public class TcpIpJoinerOverAWS
     }
 
     @Override
-    protected int getConnTimeoutSeconds() {
-        AwsConfig awsConfig = fromDeprecatedAwsConfig(node.getConfig().getNetworkConfig().getJoin().getAwsConfig());
-        return awsConfig.getConnectionTimeoutSeconds();
-    }
-
-    @Override
     public String getType() {
         return "aws";
     }

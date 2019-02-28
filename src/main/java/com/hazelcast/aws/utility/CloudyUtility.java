@@ -30,8 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.config.AbstractXmlConfigHelper.childElements;
-import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
+import static com.hazelcast.config.DomConfigHelper.childElements;
+import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 import static java.lang.String.format;
 
 public final class CloudyUtility {
