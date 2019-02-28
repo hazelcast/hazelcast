@@ -45,7 +45,8 @@ public final class Numbers {
             } else if (rhsClass == Integer.class) {
                 return lhs.doubleValue() == rhs.doubleValue();
             } else if (rhsClass == Float.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
+                // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
+                return Double.doubleToLongBits(lhs.doubleValue()) == Double.doubleToLongBits(rhs.doubleValue());
             } else if (rhsClass == Short.class) {
                 return lhs.doubleValue() == rhs.doubleValue();
             } else if (rhsClass == Byte.class) {
@@ -67,7 +68,8 @@ public final class Numbers {
             if (rhsClass == Long.class) {
                 return lhs.floatValue() == rhs.floatValue();
             } else if (rhsClass == Double.class) {
-                return lhs.doubleValue() == rhs.doubleValue();
+                // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
+                return Double.doubleToLongBits(lhs.doubleValue()) == Double.doubleToLongBits(rhs.doubleValue());
             } else if (rhsClass == Integer.class) {
                 return lhs.floatValue() == rhs.floatValue();
             } else if (rhsClass == Short.class) {

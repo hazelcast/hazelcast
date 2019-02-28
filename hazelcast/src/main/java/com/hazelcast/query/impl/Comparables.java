@@ -22,6 +22,11 @@ public final class Comparables {
     }
 
     public static boolean equal(Comparable lhs, Comparable rhs) {
+        assert lhs != null;
+        if (rhs == null) {
+            return false;
+        }
+
         if (lhs.getClass() == rhs.getClass()) {
             return lhs.equals(rhs);
         }
