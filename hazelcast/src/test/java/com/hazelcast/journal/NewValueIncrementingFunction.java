@@ -16,7 +16,9 @@
 
 package com.hazelcast.journal;
 
-import com.hazelcast.projection.Projection;
+import com.hazelcast.util.function.Function;
+
+import java.io.Serializable;
 
 /**
  * Event journal event projection expecting an integer event value and
@@ -24,17 +26,17 @@ import com.hazelcast.projection.Projection;
  *
  * @param <EJ_TYPE> the type of the data-structure-specific event type
  */
-class NewValueIncrementingProjection<EJ_TYPE> extends Projection<EJ_TYPE, Integer> {
+class NewValueIncrementingFunction<EJ_TYPE> implements Function<EJ_TYPE, Integer>, Serializable {
     private final int delta;
     private final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalEventAdapter;
 
-    NewValueIncrementingProjection(int delta, EventJournalEventAdapter<String, Integer, EJ_TYPE> journalEventAdapter) {
+    NewValueIncrementingFunction(int delta, EventJournalEventAdapter<String, Integer, EJ_TYPE> journalEventAdapter) {
         this.delta = delta;
         this.journalEventAdapter = journalEventAdapter;
     }
 
     @Override
-    public Integer transform(EJ_TYPE input) {
+    public Integer apply(EJ_TYPE input) {
         return journalEventAdapter.getNewValue(input) + delta;
     }
 }

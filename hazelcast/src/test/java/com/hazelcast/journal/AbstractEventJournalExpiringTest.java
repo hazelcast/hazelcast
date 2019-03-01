@@ -21,11 +21,10 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.projection.Projections;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 
@@ -46,7 +45,7 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
 
     private int partitionId;
     private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<EJ_TYPE>();
-    private Projection<EJ_TYPE, EJ_TYPE> IDENTITY_PROJECTION = Projections.identity();
+    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
 
     private void init() {
         instances = createInstances();
@@ -92,7 +91,7 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
                                  final AtomicReference<Throwable> exception,
                                  long seq) {
         readFromEventJournal(context.dataAdapter, seq, 128, partitionId, TRUE_PREDICATE,
-                IDENTITY_PROJECTION).andThen(new ExecutionCallback<ReadResultSet<EJ_TYPE>>() {
+                IDENTITY_FUNCTION).andThen(new ExecutionCallback<ReadResultSet<EJ_TYPE>>() {
             @Override
             public void onResponse(ReadResultSet<EJ_TYPE> response) {
                 readFromJournal(context, exception, response.getNextSequenceToReadFrom());
@@ -148,7 +147,7 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
             int maxSize,
             int partitionId,
             Predicate<EJ_TYPE> predicate,
-            Projection<EJ_TYPE, PROJ_TYPE> projection) {
+            Function<EJ_TYPE, PROJ_TYPE> projection) {
         return adapter.readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 

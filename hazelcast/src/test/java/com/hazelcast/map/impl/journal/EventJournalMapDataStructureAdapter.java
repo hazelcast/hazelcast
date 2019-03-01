@@ -23,7 +23,6 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.journal.EventJournalMapEvent;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.ObjectNamespace;
 
@@ -102,7 +101,7 @@ public class EventJournalMapDataStructureAdapter<K, V>
     public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence, int minSize, int maxSize, int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
-            Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
+            com.hazelcast.util.function.Function<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
         return ((EventJournalReader<EventJournalMapEvent<K, V>>) map)
                 .readFromEventJournal(startSequence, minSize, maxSize, partitionId, predicate, projection);
     }

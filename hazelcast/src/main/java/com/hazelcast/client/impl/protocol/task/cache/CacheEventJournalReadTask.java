@@ -24,11 +24,11 @@ import com.hazelcast.client.impl.protocol.codec.CacheEventJournalReadCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 
 import java.security.Permission;
@@ -61,7 +61,7 @@ public class CacheEventJournalReadTask<K, V, T>
 
     @Override
     protected Operation prepareOperation() {
-        final Projection<? super EventJournalCacheEvent<K, V>, T> projection
+        final Function<? super EventJournalCacheEvent<K, V>, T> projection
                 = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalCacheEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
         return new CacheEventJournalReadOperation<K, V, T>(parameters.name,

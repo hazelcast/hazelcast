@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -33,7 +34,7 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
     MapEventJournalReadResultSetImpl(
             int minSize, int maxSize, SerializationService serializationService,
             final Predicate<? super EventJournalMapEvent<K, V>> predicate,
-            final Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection
+            final Function<? super EventJournalMapEvent<K, V>, ? extends T> projection
     ) {
         super(minSize, maxSize, serializationService,
                 predicate == null ? null : new Predicate<InternalEventJournalMapEvent>() {
@@ -69,9 +70,9 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
     @SerializableByConvention
     private static class ProjectionAdapter<K, V, T> extends Projection<InternalEventJournalMapEvent, T> {
 
-        private final Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection;
+        private final Function<? super EventJournalMapEvent<K, V>, ? extends T> projection;
 
-        ProjectionAdapter(Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
+        ProjectionAdapter(Function<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
             this.projection = projection;
         }
 
@@ -79,7 +80,7 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
         @SuppressWarnings("unchecked")
         @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
         public T transform(InternalEventJournalMapEvent e) {
-            return projection.transform((DeserializingEventJournalMapEvent<K, V>) e);
+            return projection.apply((DeserializingEventJournalMapEvent<K, V>) e);
         }
     }
 }

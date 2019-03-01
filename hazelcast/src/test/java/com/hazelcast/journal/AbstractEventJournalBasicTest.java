@@ -24,8 +24,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.journal.EventJournalEventAdapter.EventType;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.projection.Projections;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -36,6 +34,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.function.BiConsumer;
+import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 
@@ -68,13 +67,12 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTestSupport {
     private static final Random RANDOM = new Random();
-    private static final String LIMITED_DS = "limited";
 
     protected HazelcastInstance[] instances;
 
     private int partitionId;
     private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<EJ_TYPE>();
-    private Projection<EJ_TYPE, EJ_TYPE> IDENTITY_PROJECTION = Projections.identity();
+    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
     private boolean loadAllPublishesAdded = false;
 
     private void init() {
@@ -113,11 +111,11 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final CountDownLatch latch = new CountDownLatch(1);
 
         final ExecutionCallback<ReadResultSet<EJ_TYPE>> ec = addEventExecutionCallback(context, key, value, latch);
-        readFromEventJournal(context.dataAdapter, 0, 100, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
-        readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 1, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
-        readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 2, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
-        readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 3, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
-        readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 4, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
+        readFromEventJournal(context.dataAdapter, 0, 100, partitionId, TRUE_PREDICATE, IDENTITY_FUNCTION).andThen(ec);
+        readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 1, TRUE_PREDICATE, IDENTITY_FUNCTION).andThen(ec);
+        readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 2, TRUE_PREDICATE, IDENTITY_FUNCTION).andThen(ec);
+        readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 3, TRUE_PREDICATE, IDENTITY_FUNCTION).andThen(ec);
+        readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 4, TRUE_PREDICATE, IDENTITY_FUNCTION).andThen(ec);
 
         context.dataAdapter.put(key, value);
         assertOpenEventually(latch, 30);
@@ -147,7 +145,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         Thread consumer = new Thread(new Runnable() {
             @Override
             public void run() {
-                readFromEventJournal(context.dataAdapter, 0, 10, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
+                readFromEventJournal(context.dataAdapter, 0, 10, partitionId, TRUE_PREDICATE, IDENTITY_FUNCTION).andThen(ec);
             }
         });
 
@@ -321,7 +319,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final HashMap<String, Integer> removed = new HashMap<String, Integer>(count);
 
         final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
-        for (EJ_TYPE e : getAllEvents(context.dataAdapter, TRUE_PREDICATE, IDENTITY_PROJECTION)) {
+        for (EJ_TYPE e : getAllEvents(context.dataAdapter, TRUE_PREDICATE, IDENTITY_FUNCTION)) {
             switch (journalAdapter.getType(e)) {
                 case ADDED:
                     added.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
@@ -367,7 +365,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final Map<String, Integer> updatedTo = createHashMap(count);
 
         final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
-        for (EJ_TYPE e : getAllEvents(context.dataAdapter, TRUE_PREDICATE, IDENTITY_PROJECTION)) {
+        for (EJ_TYPE e : getAllEvents(context.dataAdapter, TRUE_PREDICATE, IDENTITY_FUNCTION)) {
             switch (journalAdapter.getType(e)) {
                 case UPDATED:
                     updatedFrom.put(journalAdapter.getKey(e), journalAdapter.getOldValue(e));
@@ -399,12 +397,12 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final NewValueParityPredicate<EJ_TYPE> evenPredicate = new NewValueParityPredicate<EJ_TYPE>(0, journalAdapter);
         final NewValueParityPredicate<EJ_TYPE> oddPredicate = new NewValueParityPredicate<EJ_TYPE>(1, journalAdapter);
 
-        for (EJ_TYPE e : getAllEvents(context.dataAdapter, evenPredicate, IDENTITY_PROJECTION)) {
+        for (EJ_TYPE e : getAllEvents(context.dataAdapter, evenPredicate, IDENTITY_FUNCTION)) {
             assertEquals(ADDED, journalAdapter.getType(e));
             evenMap.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
         }
 
-        for (EJ_TYPE e : getAllEvents(context.dataAdapter, oddPredicate, IDENTITY_PROJECTION)) {
+        for (EJ_TYPE e : getAllEvents(context.dataAdapter, oddPredicate, IDENTITY_FUNCTION)) {
             assertEquals(ADDED, journalAdapter.getType(e));
             oddMap.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
         }
@@ -438,7 +436,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
 
         final ReadResultSet<Integer> resultSet = getAllEvents(context.dataAdapter, TRUE_PREDICATE,
-                new NewValueIncrementingProjection<EJ_TYPE>(100, context.eventJournalAdapter));
+                new NewValueIncrementingFunction<EJ_TYPE>(100, context.eventJournalAdapter));
         final ArrayList<Integer> ints = new ArrayList<Integer>(count);
         for (Integer i : resultSet) {
             ints.add(i);
@@ -474,7 +472,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
         final int startSequence = 0;
         final ReadResultSet<EJ_TYPE> resultSet = readFromEventJournal(
-                context.dataAdapter, startSequence, 1, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).get();
+                context.dataAdapter, startSequence, 1, partitionId, TRUE_PREDICATE, IDENTITY_FUNCTION).get();
 
         assertEquals(1, resultSet.size());
         assertEquals(1, resultSet.readCount());
@@ -506,7 +504,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
         final int startSequence = 0;
         final ReadResultSet<EJ_TYPE> resultSet = readFromEventJournal(
-                context.dataAdapter, startSequence, 1, 0, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).get();
+                context.dataAdapter, startSequence, 1, 0, partitionId, TRUE_PREDICATE, IDENTITY_FUNCTION).get();
 
         assertEquals(1, resultSet.size());
         assertEquals(1, resultSet.readCount());
@@ -552,7 +550,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
                 t.printStackTrace();
             }
         };
-        readFromEventJournal(context.dataAdapter, startSequence, 1, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION)
+        readFromEventJournal(context.dataAdapter, startSequence, 1, partitionId, TRUE_PREDICATE, IDENTITY_FUNCTION)
                 .andThen(callback);
 
         context.dataAdapter.put(key, value);
@@ -655,7 +653,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
      */
     private <PROJ_TYPE> ReadResultSet<PROJ_TYPE> getAllEvents(EventJournalDataStructureAdapter<?, ?, EJ_TYPE> adapter,
                                                               Predicate<EJ_TYPE> predicate,
-                                                              Projection<EJ_TYPE, PROJ_TYPE> projection)
+                                                              Function<EJ_TYPE, PROJ_TYPE> projection)
             throws Exception {
         final EventJournalInitialSubscriberState state = subscribeToEventJournal(adapter, partitionId);
         return readFromEventJournal(
@@ -773,7 +771,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
             int maxSize,
             int partitionId,
             Predicate<EJ_TYPE> predicate,
-            Projection<EJ_TYPE, PROJ_TYPE> projection) {
+            Function<EJ_TYPE, PROJ_TYPE> projection) {
         return readFromEventJournal(adapter, startSequence, maxSize, 1, partitionId, predicate, projection);
     }
 
@@ -803,7 +801,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
             int minSize,
             int partitionId,
             Predicate<EJ_TYPE> predicate,
-            Projection<EJ_TYPE, PROJ_TYPE> projection) {
+            Function<EJ_TYPE, PROJ_TYPE> projection) {
         return adapter.readFromEventJournal(startSequence, minSize, maxSize, partitionId, predicate, projection);
     }
 
