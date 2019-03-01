@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -76,12 +75,7 @@ public class TaskletExecutionService {
     private int cooperativeThreadIndex;
     @Probe
     private final AtomicInteger blockingWorkerCount = new AtomicInteger();
-
-    // tri-state boolean:
-    // - null: not shut down
-    // - FALSE: shut down forcefully: break the execution loop, don't wait for tasklets to finish
-    // - TRUE: shut down gracefully: run normally, don't accept more tasklets
-    private final AtomicReference<Boolean> gracefulShutdown = new AtomicReference<>(null);
+    private volatile boolean isShutdown;
     private final Object lock = new Object();
 
     public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount) {
@@ -109,7 +103,7 @@ public class TaskletExecutionService {
     /**
      * Submits the tasklets for execution and returns a future which gets
      * completed when the execution of all the tasklets has completed. If an
-     * exception occurrs or the execution gets cancelled, the future will be
+     * exception occurs or the execution gets cancelled, the future will be
      * completed exceptionally, but only after all the tasklets have finished
      * executing. The returned future does not support cancellation, instead
      * the supplied {@code cancellationFuture} should be used.
@@ -123,9 +117,6 @@ public class TaskletExecutionService {
             @Nonnull CompletableFuture<Void> cancellationFuture,
             @Nonnull ClassLoader jobClassLoader
     ) {
-        if (gracefulShutdown.get() != null) {
-            throw new ShutdownInProgressException();
-        }
         final ExecutionTracker executionTracker = new ExecutionTracker(tasklets.size(), cancellationFuture);
         try {
             final Map<Boolean, List<Tasklet>> byCooperation =
@@ -138,14 +129,9 @@ public class TaskletExecutionService {
         return executionTracker.future;
     }
 
-    public void shutdown(boolean graceful) {
-        if (gracefulShutdown.compareAndSet(null, graceful)) {
-            if (graceful) {
-                blockingTaskletExecutor.shutdown();
-            } else {
-                blockingTaskletExecutor.shutdownNow();
-            }
-        }
+    public void shutdown() {
+        isShutdown = true;
+        blockingTaskletExecutor.shutdownNow();
     }
 
     private void submitBlockingTasklets(ExecutionTracker executionTracker, ClassLoader jobClassLoader,
@@ -203,7 +189,7 @@ public class TaskletExecutionService {
      * Blocks until all workers terminate (cooperative & blocking).
      */
     public void awaitWorkerTermination() {
-        assert gracefulShutdown.get() != null : "Not shut down";
+        assert isShutdown : "Not shut down";
         try {
             while (!blockingTaskletExecutor.awaitTermination(1, TimeUnit.MINUTES)) {
                 logger.warning("Blocking tasklet executor did not terminate in 1 minute");
@@ -251,7 +237,7 @@ public class TaskletExecutionService {
                     }
                 } while (!result.isDone()
                         && !tracker.executionTracker.executionCompletedExceptionally()
-                        && !Boolean.FALSE.equals(gracefulShutdown.get()));
+                        && !isShutdown);
             } catch (Throwable e) {
                 logger.warning("Exception in " + t, e);
                 tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
@@ -283,12 +269,7 @@ public class TaskletExecutionService {
             // capture thread once and prevent lambda allocation on each iteration
             Consumer<TaskletTracker> runTasklet = t -> runTasklet(Thread.currentThread(), t);
 
-            while (true) {
-                Boolean gracefulShutdownLocal = gracefulShutdown.get();
-                // exit condition
-                if (gracefulShutdownLocal != null && (!gracefulShutdownLocal || trackers.isEmpty())) {
-                    break;
-                }
+            while (!isShutdown) {
                 progressTracker.reset();
                 // use garbage-free iterator -- relies on implementation in COWArrayList that doesn't use an Iterator
                 trackers.forEach(runTasklet);
@@ -386,7 +367,7 @@ public class TaskletExecutionService {
                     e = new IllegalStateException("cancellationFuture should be completed exceptionally");
                 }
                 exception(e);
-                blockingFutures.forEach(f -> f.cancel(true)); // CompletableFuture.cancel ignores the flag
+                blockingFutures.forEach(f -> f.cancel(true));
             }));
         }
 
@@ -409,5 +390,4 @@ public class TaskletExecutionService {
             return executionException.get() != null;
         }
     }
-
 }

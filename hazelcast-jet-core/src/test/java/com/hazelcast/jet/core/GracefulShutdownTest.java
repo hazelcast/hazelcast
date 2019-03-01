@@ -22,14 +22,11 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRepository;
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.tcp.FirewallingNetworkingService.FirewallingEndpointManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,11 +49,8 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
-import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -171,63 +165,6 @@ public class GracefulShutdownTest extends JetTestSupport {
     }
 
     @Test
-    public void when_shutDownInProgressFromInit_then_restarts() {
-        setDelayTime(4000);
-        // delay the NotifyMemberShutdownOperation, this will delay the shutdown completion
-        delayOperationsFrom(hz(instances[1]), JetInitDataSerializerHook.FACTORY_ID,
-                singletonList(JetInitDataSerializerHook.NOTIFY_MEMBER_SHUTDOWN_OP));
-
-        // initiate a shutdown in the background
-        spawn(() -> instances[1].shutdown());
-
-        // submit a job, the init operation should fail with a ShutdownInProgressOperation.
-        // Unfortunately, we can't assert that.
-        DAG dag = new DAG();
-        dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
-        Job job = instances[0].newJob(dag);
-
-        // after that, the job should become RUNNING
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-    }
-
-    @Test
-    public void when_shutDownInProgressFromExecute_then_restarts() {
-        setDelayTime(4000);
-        // delay the NotifyMemberShutdownOperation, this will delay the shutdown completion
-        delayOperationsFrom(hz(instances[1]), JetInitDataSerializerHook.FACTORY_ID,
-                singletonList(JetInitDataSerializerHook.NOTIFY_MEMBER_SHUTDOWN_OP));
-        // also delay the StartExecutionOperation, this will delay the job start
-        delayOperationsFrom(hz(instances[0]), JetInitDataSerializerHook.FACTORY_ID,
-                singletonList(JetInitDataSerializerHook.START_EXECUTION_OP));
-
-        // submit a job, the execution will be delayed
-        DAG dag = new DAG();
-        dag.newVertex("v", MockP::new);
-        Future jobFuture = spawn(() -> instances[0].newJob(dag).join());
-
-        // initiate a shutdown in the background, the delayed StartExecutionOperation, once processed,
-        // will throw ShutdownInProgressException
-        sleepSeconds(1);
-        Future shutdownFuture = spawn(() -> instances[1].shutdown());
-
-        while (true) {
-            // Normally, the job completes immediately. But it should not complete before the
-            // shutdown completes.
-            boolean jobDone = jobFuture.isDone();
-            boolean shutdownDone = shutdownFuture.isDone();
-            if (shutdownDone) {
-                break;
-            } else {
-                assertFalse(jobDone);
-            }
-            sleepMillis(200);
-        }
-
-        // after that, the job should eventually complete
-        assertTrueEventually(() -> assertTrue(jobFuture.isDone()), 5);
-    }
-
-    @Test
     public void when_shutdownGracefulWhileRestartGraceful_then_restartsFromTerminalSnapshot() throws Exception {
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + "*");
         mapConfig.getMapStoreConfig()
@@ -273,13 +210,6 @@ public class GracefulShutdownTest extends JetTestSupport {
         Map<Integer, Integer> expected = IntStream.range(0, numItems).boxed()
                 .collect(Collectors.toMap(Function.identity(), item -> item < minCounter ? 2 : 1));
         assertEquals(expected, actual);
-    }
-
-    private void setDelayTime(long ms) {
-        for (JetInstance instance : instances) {
-            FirewallingEndpointManager cm = (FirewallingEndpointManager) getNode(instance).getEndpointManager();
-            cm.setDelayMillis(ms, ms);
-        }
     }
 
     private static final class EmitIntegersP extends AbstractProcessor {

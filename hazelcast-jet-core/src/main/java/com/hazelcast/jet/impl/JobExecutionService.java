@@ -21,10 +21,10 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
-import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
@@ -74,7 +74,6 @@ public class JobExecutionService {
     // does not guarantee at most one computation per key.
     // key: jobId
     private final ConcurrentHashMap<Long, JetClassLoader> classLoaders = new ConcurrentHashMap<>();
-    private volatile boolean isShutdown;
 
     JobExecutionService(NodeEngineImpl nodeEngine, TaskletExecutionService taskletExecutionService,
                         JobRepository jobRepository) {
@@ -110,11 +109,8 @@ public class JobExecutionService {
         return ctx != null ? ctx.senderMap() : null;
     }
 
-    public synchronized void shutdown(boolean graceful) {
-        isShutdown = true;
-        if (!graceful) {
-            cancelAllExecutions("shutdown", HazelcastInstanceNotActiveException::new);
-        }
+    public synchronized void shutdown() {
+        cancelAllExecutions("Node is shutting down", HazelcastInstanceNotActiveException::new);
     }
 
     public void reset() {
@@ -137,7 +133,7 @@ public class JobExecutionService {
      * Cancels executions that contain the left address as the coordinator or a
      * job participant
      */
-    void onMemberLeave(Address address) {
+    void onMemberRemoved(Address address) {
         executionContexts.values().stream()
              // note that coordinator might not be a participant (in case it is a lite member)
              .filter(exeCtx -> exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address))
@@ -184,12 +180,7 @@ public class JobExecutionService {
             long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
             Set<MemberInfo> participants, ExecutionPlan plan
     ) {
-        if (isShutdown) {
-            throw new ShutdownInProgressException();
-        }
-
         verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
-
         failIfNotRunning();
 
         if (!executionContextJobIds.add(jobId)) {
@@ -218,7 +209,8 @@ public class JobExecutionService {
         try {
             created.initialize(plan);
         } finally {
-            executionContexts.put(executionId, created);
+            ExecutionContext oldContext = executionContexts.put(executionId, created);
+            assert oldContext == null : "Duplicate ExecutionContext for execution " + Util.idToString(executionId);
         }
 
         // initial log entry with all of jobId, jobName, executionId
@@ -285,15 +277,15 @@ public class JobExecutionService {
         }
     }
 
-    public ExecutionContext assertExecutionContext(Address coordinator, long jobId, long executionId,
+    public ExecutionContext assertExecutionContext(Address callerAddress, long jobId, long executionId,
                                                    String callerOpName) {
         Address masterAddress = nodeEngine.getMasterAddress();
-        if (!coordinator.equals(masterAddress)) {
+        if (!callerAddress.equals(masterAddress)) {
             failIfNotRunning();
 
             throw new IllegalStateException(String.format(
-                    "Coordinator %s cannot do '%s' for %s: it is not the master, the master is %s",
-                    coordinator, callerOpName, jobIdAndExecutionId(jobId, executionId), masterAddress));
+                    "Caller %s cannot do '%s' for %s: it is not the master, the master is %s",
+                    callerAddress, callerOpName, jobIdAndExecutionId(jobId, executionId), masterAddress));
         }
 
         failIfNotRunning();
@@ -302,12 +294,12 @@ public class JobExecutionService {
         if (executionContext == null) {
             throw new TopologyChangedException(String.format(
                     "%s not found for coordinator %s for '%s'",
-                    jobIdAndExecutionId(jobId, executionId), coordinator, callerOpName));
-        } else if (!(executionContext.coordinator().equals(coordinator) && executionContext.jobId() == jobId)) {
+                    jobIdAndExecutionId(jobId, executionId), callerAddress, callerOpName));
+        } else if (!(executionContext.coordinator().equals(callerAddress) && executionContext.jobId() == jobId)) {
             throw new IllegalStateException(String.format(
                     "%s, originally from coordinator %s, cannot do '%s' by coordinator %s and execution %s",
                     executionContext.jobNameAndExecutionId(), executionContext.coordinator(),
-                    callerOpName, coordinator, idToString(executionId)));
+                    callerOpName, callerAddress, idToString(executionId)));
         }
 
         return executionContext;
@@ -332,13 +324,8 @@ public class JobExecutionService {
     }
 
     public CompletableFuture<Void> beginExecution(Address coordinator, long jobId, long executionId) {
-        if (isShutdown) {
-            throw new ShutdownInProgressException();
-        }
-
         ExecutionContext execCtx = assertExecutionContext(coordinator, jobId, executionId, "ExecuteJobOperation");
-        logger.info("Start execution of "
-                + execCtx.jobNameAndExecutionId() + " from coordinator " + coordinator);
+        logger.info("Start execution of " + execCtx.jobNameAndExecutionId() + " from coordinator " + coordinator);
         CompletableFuture<Void> future = execCtx.beginExecution();
         future.whenComplete(withTryCatch(logger, (i, e) -> {
             if (e instanceof CancellationException) {
@@ -351,5 +338,9 @@ public class JobExecutionService {
             }
         }));
         return future;
+    }
+
+    int numberOfExecutions() {
+        return executionContexts.size();
     }
 }

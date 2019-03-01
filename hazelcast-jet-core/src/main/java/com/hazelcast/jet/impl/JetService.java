@@ -122,34 +122,27 @@ public class JetService
     }
 
     /**
-     * Gracefully shuts down jobs on this member. Blocks until all are down.
+     * Tells master to gracefully shut terminate jobs on this member. Blocks
+     * until all are down.
      */
     void shutDownJobs() {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        if (!shutdownFuture.compareAndSet(null, future)) {
-            shutdownFuture.get().join();
-            return;
+        if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
+            notifyMasterWeAreShuttingDown(shutdownFuture.get());
         }
-        // this will prevent accepting more jobs
-        jobCoordinationService.shutdown();
-        jobExecutionService.shutdown(true);
-        taskletExecutionService.shutdown(true);
+        shutdownFuture.get().join();
 
-        notifyMasterWeAreShuttingDown(future);
-        // We initiated shutdown on this member, it won't accept any new jobs. After all
-        // tasklets running locally are done, we can continue the shutdown.
-        taskletExecutionService.awaitWorkerTermination();
-        future.join();
+        assert jobExecutionService.numberOfExecutions() == 0
+                : "numberOfExecutions should be zero, but is " + jobExecutionService.numberOfExecutions();
     }
 
-    private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> result) {
+    private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
         Operation op = new NotifyMemberShutdownOperation();
         nodeEngine.getOperationService()
                   .invokeOnTarget(JetService.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
                   .andThen(new ExecutionCallback<Object>() {
                       @Override
                       public void onResponse(Object response) {
-                          result.complete(null);
+                          future.complete(null);
                       }
 
                       @Override
@@ -158,7 +151,7 @@ public class JetService
                                   " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", t);
                           // recursive call
                           nodeEngine.getExecutionService().schedule(
-                                  () -> notifyMasterWeAreShuttingDown(result), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                                  () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
                       }
                   });
     }
@@ -169,9 +162,8 @@ public class JetService
             Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
         }
 
-        jobCoordinationService.shutdown();
-        jobExecutionService.shutdown(false);
-        taskletExecutionService.shutdown(false);
+        jobExecutionService.shutdown();
+        taskletExecutionService.shutdown();
         taskletExecutionService.awaitWorkerTermination();
         networking.shutdown();
     }
@@ -250,8 +242,8 @@ public class JetService
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        jobExecutionService.onMemberLeave(event.getMember().getAddress());
-        jobCoordinationService.onMemberLeave(event.getMember().getUuid());
+        jobExecutionService.onMemberRemoved(event.getMember().getAddress());
+        jobCoordinationService.onMemberRemoved(event.getMember().getUuid());
     }
 
     @Override

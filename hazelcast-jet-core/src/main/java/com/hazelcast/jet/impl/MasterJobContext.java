@@ -31,7 +31,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
-import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
@@ -519,11 +518,6 @@ public class MasterJobContext {
         // participants return a TopologyChangedException.
         return failures
                 .stream()
-                .peek(entry -> {
-                    if (entry.getValue() instanceof ShutdownInProgressException) {
-                        mc.coordinationService().addShuttingDownMember(entry.getKey().getUuid());
-                    }
-                })
                 .map(entry -> (Throwable) entry.getValue())
                 .filter(e -> !(e instanceof CancellationException
                         || e instanceof TerminatedWithSnapshotException

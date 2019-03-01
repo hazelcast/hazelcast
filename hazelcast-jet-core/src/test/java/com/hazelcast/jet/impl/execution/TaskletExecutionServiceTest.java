@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -90,7 +89,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
 
     @After
     public void after() {
-        es.shutdown(false);
+        es.shutdown();
     }
 
     @Test
@@ -154,20 +153,6 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
 
         // When - Then
         executeAndJoin(singletonList(t));
-    }
-
-    @Test
-    public void when_shutdown_then_submitFails() {
-        // Given
-        es.beginExecute(singletonList(new MockTasklet()), new CompletableFuture<>(), classLoaderMock);
-        es.beginExecute(singletonList(new MockTasklet()), new CompletableFuture<>(), classLoaderMock);
-
-        // When
-        es.shutdown(false);
-
-        // Then
-        exceptionRule.expect(ShutdownInProgressException.class);
-        es.beginExecute(singletonList(new MockTasklet()), new CompletableFuture<>(), classLoaderMock);
     }
 
     @Test

@@ -64,7 +64,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     @After
     public void shutdownFactory() {
         if (instanceFactory != null) {
-            instanceFactory.shutdownAll();
+            instanceFactory.terminateAll();
         }
     }
 

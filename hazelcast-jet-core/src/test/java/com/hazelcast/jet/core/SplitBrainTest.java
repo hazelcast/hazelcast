@@ -299,20 +299,16 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
         NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
         MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
-        DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
+        DAG dag = new DAG().vertex(new Vertex("test", processorSupplier).localParallelism(PARALLELISM));
         Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
         for (int i = 1; i < clusterSize; i++) {
             instances[i].shutdown();
         }
-
         NoOutputSourceP.proceedLatch.countDown();
-
         assertJobStatusEventually(job, NOT_RUNNING, 10);
-
         createJetMember(jetConfig);
-
         assertTrueAllTheTime(() -> assertStatusNotRunningOrStarting(job.getStatus()), 5);
     }
 

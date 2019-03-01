@@ -33,8 +33,8 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
-import com.hazelcast.jet.impl.exception.ShutdownInProgressException;
 import com.hazelcast.jet.impl.operation.GetClusterMetadataOperation;
+import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -81,6 +81,7 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.util.executor.ExecutorType.CACHED;
 import static java.util.Comparator.comparing;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -106,8 +107,14 @@ public class JobCoordinationService {
     private final JobRepository jobRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CompletableFuture<Void>> membersShuttingDown = new ConcurrentHashMap<>();
+    /**
+     * Map of {memberUuid; removeTime}.
+     *
+     * A collection of UUIDs of members which left the cluster and for which we
+     * didn't receive {@link NotifyMemberShutdownOperation}.
+     */
+    private final Map<String, Long> removedMembers = new ConcurrentHashMap<>();
     private final Object lock = new Object();
-    private volatile boolean isShutDown;
     private volatile boolean isClusterEnteringPassiveState;
     private volatile boolean jobsScanned;
 
@@ -209,12 +216,6 @@ public class JobCoordinationService {
         return masterContexts.values()
                              .stream()
                              .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
-    }
-
-    public void shutdown() {
-        synchronized (lock) {
-            isShutDown = true;
-        }
     }
 
     public CompletableFuture<Void> prepareForPassiveClusterState() {
@@ -425,23 +426,28 @@ public class JobCoordinationService {
         return jobs.values().stream().sorted(comparing(JobSummary::getSubmissionTime).reversed()).collect(toList());
     }
 
+    /**
+     * Add the given member to shutting down members. This will prevent
+     * submission of more executions until the member actually leaves the
+     * cluster. The returned future will complete when all executions of which
+     * the member is a participant terminate.
+     * <p>
+     * The method is idempotent, the {@link NotifyMemberShutdownOperation}
+     * which calls it can be retried.
+     */
     @Nonnull
     public CompletableFuture<Void> addShuttingDownMember(String uuid) {
-        /*
-        We come to this method when either ShutdownInProgressException or
-        NotifyMemberShutdownOperation is received. The
-        NotifyMemberShutdownOperation sends response only after all jobs the
-        shutting-down member runs have completed the terminal snapshot.
-        */
-        if (uuid.equals(nodeEngine.getLocalMember().getUuid())) {
-            shutdown();
-        }
         CompletableFuture<Void> future = new CompletableFuture<>();
         CompletableFuture<Void> oldFuture = membersShuttingDown.putIfAbsent(uuid, future);
         if (oldFuture != null) {
             return oldFuture;
         }
-        logger.fine("Added a shutting-down member: " + uuid);
+        if (removedMembers.containsKey(uuid)) {
+            logFine(logger, "NotifyMemberShutdownOperation received for a member that was already " +
+                    "removed from the cluster: %s", uuid);
+            return CompletableFuture.completedFuture(null);
+        }
+        logFine(logger, "Added a shutting-down member: %s", uuid);
         CompletableFuture[] futures = masterContexts.values().stream()
                                                     .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
                                                     .toArray(CompletableFuture[]::new);
@@ -532,6 +538,8 @@ public class JobCoordinationService {
     }
 
     void onMemberAdded(MemberImpl addedMember) {
+        // the member can re-join with the same UUID in certain scenarios
+        removedMembers.remove(addedMember.getUuid());
         if (addedMember.isLiteMember()) {
             return;
         }
@@ -540,11 +548,17 @@ public class JobCoordinationService {
         scheduleScaleUp(config.getInstanceConfig().getScaleUpDelayMillis());
     }
 
-    void onMemberLeave(String uuid) {
+    void onMemberRemoved(String uuid) {
         if (membersShuttingDown.remove(uuid) != null) {
             logFine(logger, "Removed a shutting-down member: %s, now shuttingDownMembers=%s",
                     uuid, membersShuttingDown.keySet());
+        } else {
+            removedMembers.put(uuid, System.nanoTime());
         }
+
+        // clean up old entries from removedMembers (the value is time when the member was removed)
+        long removeThreshold = System.nanoTime() - HOURS.toNanos(1);
+        removedMembers.entrySet().removeIf(en -> en.getValue() < removeThreshold);
     }
 
     boolean isQuorumPresent(int quorumSize) {
@@ -612,9 +626,6 @@ public class JobCoordinationService {
     }
 
     private void checkOperationalState() {
-        if (isShutDown) {
-            throw new ShutdownInProgressException();
-        }
         if (isClusterEnteringPassiveState) {
             throw new EnteringPassiveClusterStateException();
         }

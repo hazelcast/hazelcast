@@ -81,7 +81,7 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
     @Test
     public void when_jobRestartedForcefully_then_doesNotWaitForSnapshot() {
         Job job = setup(false);
-        assertEquals(2, NoOutputSourceP.initCount.get());
+        assertTrueEventually(() -> assertEquals(NODE_COUNT, NoOutputSourceP.initCount.get()), 10);
 
         // When
         SnapshotOperation.postponeResponses = true;
