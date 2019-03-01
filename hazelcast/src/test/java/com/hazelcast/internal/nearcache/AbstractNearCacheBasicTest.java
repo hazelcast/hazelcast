@@ -1400,7 +1400,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 // but we need to call this on every assert, since the Near Cache has a cooldown for TTL cleanups
                 context.nearCacheAdapter.get(0);
 
-                assertNearCacheSize(context, 1, "Expected the Near Cache to contain just the trigger entry");
+                long nearCacheSize = context.nearCache.size();
+                assertTrue(format("Expected the Near Cache to contain either only the trigger entry or no entry."
+                        + "Near Cache size is %d (%s)", nearCacheSize, context.stats), nearCacheSize <= 1);
                 assertEquals("Expected no Near Cache evictions", 0, context.stats.getEvictions());
                 assertTrue(format("Expected at least %d entries to be expired from the Near Cache", DEFAULT_RECORD_COUNT),
                         context.stats.getExpirations() >= DEFAULT_RECORD_COUNT);
