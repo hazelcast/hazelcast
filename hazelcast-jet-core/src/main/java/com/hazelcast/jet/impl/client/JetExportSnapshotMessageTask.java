@@ -18,11 +18,13 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExportSnapshotCodec.RequestParameters, Void> {
+public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExportSnapshotCodec.RequestParameters, Void>
+        implements BlockingMessageTask {
 
     JetExportSnapshotMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetExportSnapshotCodec::decodeRequest,

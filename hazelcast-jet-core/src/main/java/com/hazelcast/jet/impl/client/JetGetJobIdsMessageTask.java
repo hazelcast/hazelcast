@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.nio.Connection;
@@ -25,7 +26,8 @@ import com.hazelcast.spi.Operation;
 
 import java.util.List;
 
-public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<JetGetJobIdsCodec.RequestParameters, List<Long>> {
+public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<JetGetJobIdsCodec.RequestParameters, List<Long>>
+        implements BlockingMessageTask {
     protected JetGetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetGetJobIdsCodec::decodeRequest,

@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.nio.Connection;
@@ -25,8 +26,8 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-public class JetJoinSubmittedJobMessageTask extends AbstractJetMessageTask<JetJoinSubmittedJobCodec.RequestParameters,
-        Void> {
+public class JetJoinSubmittedJobMessageTask
+        extends AbstractJetMessageTask<JetJoinSubmittedJobCodec.RequestParameters, Void> implements BlockingMessageTask {
     protected JetJoinSubmittedJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetJoinSubmittedJobCodec::decodeRequest,

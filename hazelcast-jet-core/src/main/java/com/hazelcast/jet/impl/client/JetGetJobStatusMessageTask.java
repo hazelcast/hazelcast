@@ -18,13 +18,15 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJobStatusCodec.RequestParameters, JobStatus> {
+public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJobStatusCodec.RequestParameters, JobStatus>
+        implements BlockingMessageTask {
 
     protected JetGetJobStatusMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
