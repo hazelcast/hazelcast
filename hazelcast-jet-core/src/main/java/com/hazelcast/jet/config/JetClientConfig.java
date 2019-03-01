@@ -27,10 +27,9 @@ import com.hazelcast.client.config.ClientConfig;
 public class JetClientConfig extends ClientConfig {
 
     /**
-     * Creates a new config instance with default group name and password for Jet
+     * Creates a new config instance with default group name for Jet
      */
     public JetClientConfig() {
         getGroupConfig().setName(JetConfig.DEFAULT_GROUP_NAME);
-        getGroupConfig().setPassword(JetConfig.DEFAULT_GROUP_PASSWORD);
     }
 }

@@ -44,13 +44,6 @@ public class JetConfig {
      */
     public static final String DEFAULT_GROUP_NAME = "jet";
 
-    /**
-     * The default group password for a Jet cluster.
-     *
-     * See {@link com.hazelcast.config.GroupConfig}
-     */
-    public static final String DEFAULT_GROUP_PASSWORD = "jet-pass";
-
     private static final ILogger LOGGER = Logger.getLogger(JetConfig.class);
 
     private Config hazelcastConfig = defaultHazelcastConfig();
@@ -303,7 +296,6 @@ public class JetConfig {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(DEFAULT_JET_MULTICAST_PORT);
         config.getGroupConfig().setName(DEFAULT_GROUP_NAME);
-        config.getGroupConfig().setPassword(DEFAULT_GROUP_PASSWORD);
         return config;
     }
 }
