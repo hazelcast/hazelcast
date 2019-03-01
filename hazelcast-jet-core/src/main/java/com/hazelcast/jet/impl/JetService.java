@@ -187,8 +187,7 @@ public class JetService
     }
 
     public Operation createExportSnapshotOperation(long jobId, String name, boolean cancelJob) {
-        throw new UnsupportedOperationException("You need Hazelcast Jet Enterprise with Rolling Job Upgrades " +
-                "enabled to use this feature");
+        throw new UnsupportedOperationException("You need Hazelcast Jet Enterprise to use this feature");
     }
 
     public JetInstance getJetInstance() {
