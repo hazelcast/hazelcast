@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 public final class Numbers {
+    // TODO: check NaN, negative/positive infinities/zeros logic
 
     private Numbers() {
     }
@@ -29,8 +30,7 @@ public final class Numbers {
 
         if (isDoubleRepresentable(lhsClass)) {
             if (isDoubleRepresentable(rhsClass)) {
-                // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
-                return Double.doubleToLongBits(lhs.doubleValue()) == Double.doubleToLongBits(rhs.doubleValue());
+                return equal(lhs.doubleValue(), rhs.doubleValue());
             } else if (isLongRepresentable(rhsClass)) {
                 // TODO invent a better method of comparing longs and doubles?
                 return lhs.doubleValue() == rhs.doubleValue();
@@ -77,6 +77,28 @@ public final class Numbers {
         return lhs.compareTo(rhs);
     }
 
+    public static Comparable canonicalize(Comparable value) {
+        Class clazz = value.getClass();
+        assert value instanceof Number;
+
+        Number number = (Number) value;
+
+        if (isDoubleRepresentable(clazz)) {
+            double doubleValue = number.doubleValue();
+            long longValue = number.longValue();
+
+            if (equal(doubleValue, (double) longValue)) {
+                return longValue;
+            } else if (clazz == Float.class) {
+                return doubleValue;
+            }
+        } else if (isLongRepresentableExceptLong(clazz)) {
+            return number.longValue();
+        }
+
+        return value;
+    }
+
     private static boolean isDoubleRepresentable(Class clazz) {
         return clazz == Double.class || clazz == Float.class;
     }
@@ -85,8 +107,17 @@ public final class Numbers {
         return clazz == Long.class || clazz == Integer.class || clazz == Short.class || clazz == Byte.class;
     }
 
-    private static int compare(long x, long y) {
-        return x < y ? -1 : (x == y ? 0 : 1);
+    private static boolean isLongRepresentableExceptLong(Class clazz) {
+        return clazz == Integer.class || clazz == Short.class || clazz == Byte.class;
+    }
+
+    private static int compare(long lhs, long rhs) {
+        return lhs < rhs ? -1 : (lhs == rhs ? 0 : 1);
+    }
+
+    private static boolean equal(double lhs, double rhs) {
+        // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
+        return Double.doubleToLongBits(lhs) == Double.doubleToLongBits(rhs);
     }
 
 }

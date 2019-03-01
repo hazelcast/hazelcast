@@ -27,6 +27,12 @@ import java.util.Date;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 public final class TypeConverters {
+    // TODO: check NaN, negative/positive infinities/zeros logic
+
+    // TODO: separate conversion logic targeting different scenarios (?)
+    //   1. converting from query value
+    //   2. converting for canonicalized comparison (InPredicate)
+    //   3. converting for unordered index insertion and query
 
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
     public static final TypeConverter BIG_DECIMAL_CONVERTER = new BigDecimalConverter();

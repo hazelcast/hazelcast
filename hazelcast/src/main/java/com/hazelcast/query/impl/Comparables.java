@@ -51,4 +51,16 @@ public final class Comparables {
         return lhs.compareTo(rhs);
     }
 
+    public static Comparable canonicalize(Comparable value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Number) {
+            return Numbers.canonicalize(value);
+        }
+
+        return value;
+    }
+
 }
