@@ -58,7 +58,8 @@ public final class MapEventJournalFunctions {
     }
 
     @SerializableByConvention
-    private static class MapEventToEntryProjection<K, V> implements Function<EventJournalMapEvent<K, V>, Entry<K, V>>, Serializable {
+    private static class MapEventToEntryProjection<K, V>
+            implements Function<EventJournalMapEvent<K, V>, Entry<K, V>>, Serializable {
         private static final long serialVersionUID = 1L;
 
         @Override

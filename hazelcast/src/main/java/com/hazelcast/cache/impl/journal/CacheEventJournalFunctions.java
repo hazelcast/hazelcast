@@ -58,7 +58,8 @@ public final class CacheEventJournalFunctions {
     }
 
     @SerializableByConvention
-    private static class CacheEventToEntryProjection<K, V> implements Function<EventJournalCacheEvent<K, V>, Entry<K, V>>, Serializable {
+    private static class CacheEventToEntryProjection<K, V>
+            implements Function<EventJournalCacheEvent<K, V>, Entry<K, V>>, Serializable {
         private static final long serialVersionUID = 1L;
 
         @Override
