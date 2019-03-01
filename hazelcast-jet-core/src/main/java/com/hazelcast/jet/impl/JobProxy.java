@@ -128,7 +128,11 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Override
     protected Address masterAddress() {
-        return container().getMasterAddress();
+        Address masterAddress = container().getMasterAddress();
+        if (masterAddress == null) {
+            throw new IllegalStateException("Master address unknown: instance is not yet initialized or is shut down");
+        }
+        return masterAddress;
     }
 
     @Override
