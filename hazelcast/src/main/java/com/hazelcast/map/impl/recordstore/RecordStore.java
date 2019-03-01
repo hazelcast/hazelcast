@@ -408,6 +408,8 @@ public interface RecordStore<R extends Record> {
 
     Storage getStorage();
 
+    void sampleAndForceRemoveEntries(int entryCountToRemove);
+
     /**
      * Starts the map loader if there is a configured and enabled
      * {@link com.hazelcast.core.MapLoader} and the key loading has not already
@@ -473,7 +475,8 @@ public interface RecordStore<R extends Record> {
      * @param replaceExistingValues if the existing entries for the keys should
      *                              be replaced with the loaded values
      */
-    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
+    void loadAllFromStore(List<Data> keys,
+                          boolean replaceExistingValues);
 
     /**
      * Advances the state of the map key loader for this partition and sets the key
@@ -504,7 +507,8 @@ public interface RecordStore<R extends Record> {
      * @param onRecordStoreDestroy true if record-store will be destroyed,
      *                             otherwise false.
      */
-    void clearPartition(boolean onShutdown, boolean onRecordStoreDestroy);
+    void clearPartition(boolean onShutdown,
+                        boolean onRecordStoreDestroy);
 
     /**
      * Called by {@link IMap#clear()}.
