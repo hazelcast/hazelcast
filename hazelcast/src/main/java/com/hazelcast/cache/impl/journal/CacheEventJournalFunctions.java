@@ -18,11 +18,12 @@ package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
+import com.hazelcast.internal.journal.DeserializingEntry;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 
 import java.io.Serializable;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
 
 /**
@@ -34,36 +35,47 @@ public final class CacheEventJournalFunctions {
     private CacheEventJournalFunctions() { }
 
     public static <K, V> Predicate<EventJournalCacheEvent<K, V>> cachePutEvents() {
-        return new SerializablePredicate<EventJournalCacheEvent<K, V>>() {
-            @Override
-            public boolean test(EventJournalCacheEvent<K, V> e) {
-                return e.getType() == CacheEventType.CREATED || e.getType() == CacheEventType.UPDATED;
-            }
-        };
+        return new CachePutEventsPredicate<>();
     }
 
     public static <K, V> Function<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
-        return new SerializableFunction<EventJournalCacheEvent<K, V>, Entry<K, V>>() {
-            @Override
-            public Entry<K, V> apply(EventJournalCacheEvent<K, V> e) {
-                return entry(e.getKey(), e.getNewValue());
-            }
-        };
+        return new CacheEventToEntryProjection<>();
     }
 
+    @SuppressWarnings("unchecked")
     public static <K, V> Function<EventJournalCacheEvent<K, V>, V> cacheEventNewValue() {
-        return new SerializableFunction<EventJournalCacheEvent<K, V>, V>() {
-            @Override
-            public V apply(EventJournalCacheEvent<K, V> event) {
-                return event.getNewValue();
-            }
-        };
+        return new CacheEventNewValueProjection();
     }
 
-    private static <K, V> Entry<K, V> entry(K k, V v) {
-        return new SimpleImmutableEntry<>(k, v);
+    @SerializableByConvention
+    private static class CachePutEventsPredicate<K, V> implements Predicate<EventJournalCacheEvent<K, V>>, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public boolean test(EventJournalCacheEvent<K, V> e) {
+            return e.getType() == CacheEventType.CREATED || e.getType() == CacheEventType.UPDATED;
+        }
     }
 
-    private abstract static class SerializablePredicate<T> implements Predicate<T>, Serializable { }
-    private abstract static class SerializableFunction<T, R> implements Function<T, R>, Serializable { }
+    @SerializableByConvention
+    private static class CacheEventToEntryProjection<K, V> implements Function<EventJournalCacheEvent<K, V>, Entry<K, V>>, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Entry<K, V> apply(EventJournalCacheEvent<K, V> e) {
+            DeserializingEventJournalCacheEvent<K, V> casted = (DeserializingEventJournalCacheEvent<K, V>) e;
+            return new DeserializingEntry<K, V>(casted.getDataKey(), casted.getDataNewValue());
+        }
+    }
+
+    @SerializableByConvention
+    private static class CacheEventNewValueProjection implements Function, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Object apply(Object event) {
+            DeserializingEventJournalCacheEvent casted = (DeserializingEventJournalCacheEvent) event;
+            return casted.getDataNewValue();
+        }
+    }
 }
