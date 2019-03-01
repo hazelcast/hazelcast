@@ -63,11 +63,12 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         if (set == null) {
             set = createHashSet(values.length);
             for (Comparable value : values) {
-                set.add(Comparables.canonicalize(convert(attributeValue, value)));
+                Comparable converted = convert(attributeValue, value);
+                set.add(Comparables.canonicalizePreferringSpeed(converted));
             }
             convertedInValues = set;
         }
-        return set.contains(Comparables.canonicalize(attributeValue));
+        return set.contains(Comparables.canonicalizePreferringSpeed(attributeValue));
     }
 
     @Override

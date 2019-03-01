@@ -16,7 +16,21 @@
 
 package com.hazelcast.query.impl;
 
+import java.util.Comparator;
+
 public final class Comparables {
+
+    // TODO different canonicalization for on-heap and off-heap scenarios
+    // TODO move canonicalization to index level from index store level completely (?)
+
+    public static final Comparator<Comparable> COMPARATOR = new Comparator<Comparable>() {
+
+        @Override
+        public int compare(Comparable lhs, Comparable rhs) {
+            return Comparables.compare(lhs, rhs);
+        }
+
+    };
 
     private Comparables() {
     }
@@ -51,13 +65,17 @@ public final class Comparables {
         return lhs.compareTo(rhs);
     }
 
-    public static Comparable canonicalize(Comparable value) {
-        if (value == null) {
-            return null;
+    public static Comparable canonicalizePreferringSpeed(Comparable value) {
+        if (value instanceof Number) {
+            return Numbers.canonicalizePreferringSpeed(value);
         }
 
+        return value;
+    }
+
+    public static Comparable canonicalizePreferringSize(Comparable value) {
         if (value instanceof Number) {
-            return Numbers.canonicalize(value);
+            return Numbers.canonicalizePreferringSize(value);
         }
 
         return value;

@@ -35,7 +35,7 @@ import static java.util.Collections.emptySet;
 public class OrderedIndexStore extends BaseIndexStore {
 
     private final ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>> recordMap =
-            new ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>>();
+            new ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>>(Comparables.COMPARATOR);
 
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
@@ -64,6 +64,11 @@ public class OrderedIndexStore extends BaseIndexStore {
     @Override
     Object removeInternal(Comparable value, Data recordKey) {
         return removeFunctor.invoke(value, recordKey);
+    }
+
+    @Override
+    protected Comparable canonicalizeScalarForStorage(Comparable value) {
+        return value;
     }
 
     @Override
@@ -134,7 +139,7 @@ public class OrderedIndexStore extends BaseIndexStore {
                     break;
                 case NOT_EQUAL:
                     for (Map.Entry<Comparable, Map<Data, QueryableEntry>> entry : recordMap.entrySet()) {
-                        if (!searchedValue.equals(entry.getKey())) {
+                        if (!Comparables.equal(searchedValue, entry.getKey())) {
                             copyToMultiResultSet(results, entry.getValue());
                         }
                     }
@@ -151,12 +156,11 @@ public class OrderedIndexStore extends BaseIndexStore {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
         takeReadLock();
         try {
-            int order = from.compareTo(to);
+            int order = Comparables.compare(from, to);
             if (order == 0) {
                 if (!fromInclusive || !toInclusive) {
                     return emptySet();

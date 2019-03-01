@@ -162,7 +162,14 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         }
 
         CompositeValue that = (CompositeValue) o;
-        return Arrays.equals(components, that.components);
+        assert components.length == that.components.length;
+
+        for (int i = 0; i < components.length; ++i) {
+            if (!Comparables.equal(components[i], that.components[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -217,7 +224,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         if (rhs == NULL || rhs == NEGATIVE_INFINITY || rhs == POSITIVE_INFINITY) {
             return -signum(rhs.compareTo(lhs));
         } else {
-            return lhs.compareTo(rhs);
+            return Comparables.compare(lhs, rhs);
         }
     }
 

@@ -85,7 +85,7 @@ public final class Numbers {
         return lhs.compareTo(rhs);
     }
 
-    public static Comparable canonicalize(Comparable value) {
+    public static Comparable canonicalizePreferringSpeed(Comparable value) {
         Class clazz = value.getClass();
         assert value instanceof Number;
 
@@ -105,6 +105,40 @@ public final class Numbers {
         }
 
         return value;
+    }
+
+    public static Comparable canonicalizePreferringSize(Comparable value) {
+        Class clazz = value.getClass();
+        assert value instanceof Number;
+
+        Number number = (Number) value;
+
+        if (isDoubleRepresentable(clazz)) {
+            double doubleValue = number.doubleValue();
+            long longValue = number.longValue();
+
+            if (equal(doubleValue, (double) longValue)) {
+                return canonicalizeLongRepresentableForIndex(longValue);
+            } else if (clazz == Float.class) {
+                return doubleValue;
+            }
+        } else if (isLongRepresentable(clazz)) {
+            return canonicalizeLongRepresentableForIndex(number.longValue());
+        }
+
+        return value;
+    }
+
+    private static Comparable canonicalizeLongRepresentableForIndex(long value) {
+        if (value == (long) (byte) value) {
+            return (byte) value;
+        } else if (value == (long) (short) value) {
+            return (short) value;
+        } else if (value == (long) (int) value) {
+            return (int) value;
+        } else {
+            return value;
+        }
     }
 
     private static boolean isDoubleRepresentable(Class clazz) {

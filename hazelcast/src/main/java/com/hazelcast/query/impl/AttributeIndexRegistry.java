@@ -235,7 +235,8 @@ public class AttributeIndexRegistry {
 
             Set<Comparable> convertedValues = new HashSet<Comparable>();
             for (Comparable value : values) {
-                convertedValues.add(converter.convert(value));
+                Comparable converted = converter.convert(value);
+                convertedValues.add(Comparables.canonicalizePreferringSpeed(converted));
             }
 
             if (convertedValues.size() == 1) {

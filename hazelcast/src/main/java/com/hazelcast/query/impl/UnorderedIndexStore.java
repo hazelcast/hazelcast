@@ -63,6 +63,11 @@ public class UnorderedIndexStore extends BaseIndexStore {
     }
 
     @Override
+    protected Comparable canonicalizeScalarForStorage(Comparable value) {
+        return Comparables.canonicalizePreferringSize(value);
+    }
+
+    @Override
     public void clear() {
         takeWriteLock();
         try {
@@ -80,7 +85,7 @@ public class UnorderedIndexStore extends BaseIndexStore {
             if (value == NULL) {
                 return toSingleResultSet(recordsWithNullValue);
             } else {
-                return toSingleResultSet(recordMap.get(value));
+                return toSingleResultSet(recordMap.get(canonicalizeForLookup(value)));
             }
         } finally {
             releaseReadLock();
@@ -97,7 +102,7 @@ public class UnorderedIndexStore extends BaseIndexStore {
                 if (value == NULL) {
                     records = recordsWithNullValue;
                 } else {
-                    records = recordMap.get(value);
+                    records = recordMap.get(canonicalizeForLookup(value));
                 }
                 if (records != null) {
                     copyToMultiResultSet(results, records);
@@ -109,7 +114,6 @@ public class UnorderedIndexStore extends BaseIndexStore {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
         takeReadLock();
@@ -118,7 +122,7 @@ public class UnorderedIndexStore extends BaseIndexStore {
             for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
                 Comparable indexedValue = recordMapEntry.getKey();
                 boolean valid;
-                int result = value.compareTo(indexedValue);
+                int result = Comparables.compare(value, indexedValue);
                 switch (comparison) {
                     case LESS:
                         valid = result > 0;
@@ -151,18 +155,18 @@ public class UnorderedIndexStore extends BaseIndexStore {
         }
     }
 
-    @SuppressWarnings({"unchecked", "checkstyle:npathcomplexity"})
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
         takeReadLock();
         try {
             MultiResultSet results = createMultiResultSet();
-            if (from.compareTo(to) == 0) {
+            if (Comparables.compare(from, to) == 0) {
                 if (!fromInclusive || !toInclusive) {
                     return results;
                 }
 
-                Map<Data, QueryableEntry> records = recordMap.get(from);
+                Map<Data, QueryableEntry> records = recordMap.get(canonicalizeForLookup(from));
                 if (records != null) {
                     copyToMultiResultSet(results, records);
                 }
@@ -173,7 +177,7 @@ public class UnorderedIndexStore extends BaseIndexStore {
             int toBound = toInclusive ? 0 : -1;
             for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
                 Comparable value = recordMapEntry.getKey();
-                if (value.compareTo(from) >= fromBound && value.compareTo(to) <= toBound) {
+                if (Comparables.compare(value, from) >= fromBound && Comparables.compare(value, to) <= toBound) {
                     Map<Data, QueryableEntry> records = recordMapEntry.getValue();
                     if (records != null) {
                         copyToMultiResultSet(results, records);
@@ -306,6 +310,18 @@ public class UnorderedIndexStore extends BaseIndexStore {
             return oldValue;
         }
 
+    }
+
+    private static Comparable canonicalizeForLookup(Comparable value) {
+        if (value instanceof CompositeValue) {
+            Comparable[] components = ((CompositeValue) value).getComponents();
+            for (int i = 0; i < components.length; ++i) {
+                components[i] = Comparables.canonicalizePreferringSize(components[i]);
+            }
+            return value;
+        } else {
+            return Comparables.canonicalizePreferringSize(value);
+        }
     }
 
 }

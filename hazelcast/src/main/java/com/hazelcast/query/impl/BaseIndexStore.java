@@ -79,6 +79,8 @@ public abstract class BaseIndexStore implements IndexStore {
      */
     abstract Object removeInternal(Comparable value, Data recordKey);
 
+    protected abstract Comparable canonicalizeScalarForStorage(Comparable value);
+
     void takeWriteLock() {
         writeLock.lock();
     }
@@ -183,7 +185,7 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    private static Comparable sanitizeValue(Object input) {
+    private Comparable sanitizeValue(Object input) {
         if (input instanceof CompositeValue) {
             CompositeValue compositeValue = (CompositeValue) input;
             Comparable[] components = compositeValue.getComponents();
@@ -196,7 +198,7 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    private static Comparable sanitizeScalar(Object input) {
+    private Comparable sanitizeScalar(Object input) {
         if (input == null || input instanceof Comparable) {
             Comparable value = (Comparable) input;
             if (value == null) {
@@ -204,7 +206,7 @@ public abstract class BaseIndexStore implements IndexStore {
             } else if (value.getClass().isEnum()) {
                 value = TypeConverters.ENUM_CONVERTER.convert(value);
             }
-            return value;
+            return canonicalizeScalarForStorage(value);
         } else {
             throw new IllegalArgumentException("It is not allowed to use a type that is not Comparable: " + input.getClass());
         }
