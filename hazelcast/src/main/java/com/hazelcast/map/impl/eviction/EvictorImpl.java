@@ -122,7 +122,7 @@ public class EvictorImpl implements Evictor {
 
     protected Iterable<EntryView> getSamples(RecordStore recordStore) {
         Storage storage = recordStore.getStorage();
-        return (Iterable<EntryView>) storage.getRandomSamples(SAMPLE_COUNT);
+        return storage.getRandomSamples(SAMPLE_COUNT);
     }
 
     protected static long getNow() {
