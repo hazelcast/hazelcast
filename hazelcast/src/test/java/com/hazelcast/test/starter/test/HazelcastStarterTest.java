@@ -31,6 +31,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -81,17 +82,17 @@ public class HazelcastStarterTest {
     /**
      * Hazelcast 3.9 knows the {@link FirewallingConnectionManager}.
      */
+    // reason for ignore: The ConnectionManager interface got replaced
+    // by EndpointManager and NetworkingService in 3.12. This test is
+    // supposed to verify behavior for split-brain compatibility tests
+    // that needs a considerable effort to adapt
+    // FirewallingConnectionManager to 3.12's NetworkingService. This test
+    // therefore got ignored until the decisions is made whether or not
+    // to support split-brain compatibility tests with the recent changes.
+    @Ignore
     @Test
     public void testMemberWithConfig_withFirewallingConnectionManager() {
         testMemberWithConfig("3.9", true);
-    }
-
-    /**
-     * Hazelcast 3.7 doesn't know the {@link FirewallingConnectionManager}.
-     */
-    @Test
-    public void testMemberWithConfig_withoutFirewallingConnectionManager() {
-        testMemberWithConfig("3.7", false);
     }
 
     private void testMemberWithConfig(String version, boolean supportsFirewallingConnectionManager) {
