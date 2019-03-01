@@ -329,7 +329,7 @@ public class TypeConverterTest {
 
     @Test
     public void testCharConvert_whenPassedString_thenConvertToChar() {
-        Comparable value = "foo";
+        Comparable value = "f";
         Comparable expectedCharacter = 'f';
 
         Comparable actualCharacter = TypeConverters.CHAR_CONVERTER.convert(value);
