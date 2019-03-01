@@ -37,7 +37,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -149,10 +148,10 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     public void verifyFullScanFailureWhileMigratingInFlight() {
         Predicate predicate = new EqualPredicate("this", value) {
             @Override
-            protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+            protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
                 // start a new migration while executing a full scan
                 mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
-                return super.applyForSingleAttributeValue(mapEntry, attributeValue);
+                return super.applyForSingleAttributeValue(attributeValue);
             }
         };
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();

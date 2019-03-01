@@ -22,7 +22,6 @@ import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
@@ -72,7 +71,7 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
 
     @SuppressWarnings("unchecked")
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable value) {
+    protected boolean applyForSingleAttributeValue(Comparable value) {
         if (value == null) {
             return false;
         }
