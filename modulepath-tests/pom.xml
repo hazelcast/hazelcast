@@ -55,7 +55,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.0</version>
                 <configuration combine.self="override">
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <!--
                     Allow access to Operating system metrics:
                         open jdk.management/com.sun.management.internal
