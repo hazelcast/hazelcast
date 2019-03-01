@@ -27,7 +27,6 @@ import java.util.Date;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 public final class TypeConverters {
-    // TODO: check NaN, negative/positive infinities/zeros logic
 
     // TODO: separate conversion logic targeting different scenarios (?)
     //   1. converting from query value
@@ -180,12 +179,12 @@ public final class TypeConverters {
 
                 if (clazz == Double.class) {
                     long longValue = number.longValue();
-                    if (number.doubleValue() == (double) longValue) {
+                    if (Numbers.equal(number.doubleValue(), (double) longValue)) {
                         return longValue;
                     }
                 } else if (clazz == Float.class) {
                     long longValue = number.longValue();
-                    if (number.floatValue() == (float) longValue) {
+                    if (Numbers.equal(number.floatValue(), (float) longValue)) {
                         return longValue;
                     }
                 } else if (clazz == Integer.class || clazz == Short.class || clazz == Byte.class) {
@@ -282,12 +281,12 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Double.class) {
                     int intValue = number.intValue();
-                    if (number.doubleValue() == (double) intValue) {
+                    if (Numbers.equal(number.doubleValue(), (double) intValue)) {
                         return intValue;
                     }
                 } else if (clazz == Float.class) {
                     int intValue = number.intValue();
-                    if (number.floatValue() == (float) intValue) {
+                    if (Numbers.equal(number.floatValue(), (float) intValue)) {
                         return intValue;
                     }
                 } else if (clazz == Short.class || clazz == Byte.class) {
@@ -382,7 +381,7 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Double.class) {
                     short shortValue = number.shortValue();
-                    if (number.doubleValue() == (double) shortValue) {
+                    if (Numbers.equal(number.doubleValue(), (double) shortValue)) {
                         return shortValue;
                     }
                 } else if (clazz == Integer.class) {
@@ -392,7 +391,7 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Float.class) {
                     short shortValue = number.shortValue();
-                    if (number.floatValue() == (float) shortValue) {
+                    if (Numbers.equal(number.floatValue(), (float) shortValue)) {
                         return shortValue;
                     }
                 } else if (clazz == Byte.class) {
@@ -457,7 +456,7 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Double.class) {
                     byte byteValue = number.byteValue();
-                    if (number.doubleValue() == (double) byteValue) {
+                    if (Numbers.equal(number.doubleValue(), (double) byteValue)) {
                         return byteValue;
                     }
                 } else if (clazz == Integer.class) {
@@ -467,7 +466,7 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Float.class) {
                     byte byteValue = number.byteValue();
-                    if (number.floatValue() == (float) byteValue) {
+                    if (Numbers.equal(number.floatValue(), (float) byteValue)) {
                         return byteValue;
                     }
                 } else if (clazz == Short.class) {

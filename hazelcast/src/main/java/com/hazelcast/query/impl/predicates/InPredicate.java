@@ -37,8 +37,6 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 @BinaryInterface
 public class InPredicate extends AbstractIndexAwarePredicate {
 
-    // FIXME: store canonical representation in the in-set
-
     private static final long serialVersionUID = 1L;
 
     Comparable[] values;

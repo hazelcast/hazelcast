@@ -17,13 +17,12 @@
 package com.hazelcast.query.impl;
 
 public final class Numbers {
-    // TODO: check NaN, negative/positive infinities/zeros logic
 
     private Numbers() {
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
-    public static boolean equals(Number lhs, Number rhs) {
+    public static boolean equal(Number lhs, Number rhs) {
         Class lhsClass = lhs.getClass();
         Class rhsClass = rhs.getClass();
         assert lhsClass != rhsClass;
@@ -45,6 +44,16 @@ public final class Numbers {
         }
 
         return lhs.equals(rhs);
+    }
+
+    public static boolean equal(double lhs, double rhs) {
+        // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
+        return Double.doubleToLongBits(lhs) == Double.doubleToLongBits(rhs);
+    }
+
+    public static boolean equal(float lhs, float rhs) {
+        // exactly as Float.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
+        return Float.floatToIntBits(lhs) == Float.floatToIntBits(rhs);
     }
 
     @SuppressWarnings({"unchecked", "checkstyle:cyclomaticcomplexity", "checkstyle:methodlength", "checkstyle:returncount"})
@@ -113,11 +122,6 @@ public final class Numbers {
 
     private static int compare(long lhs, long rhs) {
         return lhs < rhs ? -1 : (lhs == rhs ? 0 : 1);
-    }
-
-    private static boolean equal(double lhs, double rhs) {
-        // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
-        return Double.doubleToLongBits(lhs) == Double.doubleToLongBits(rhs);
     }
 
 }

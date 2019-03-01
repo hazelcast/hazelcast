@@ -32,7 +32,7 @@ public final class Comparables {
         }
 
         if (lhs instanceof Number && rhs instanceof Number) {
-            return Numbers.equals((Number) lhs, (Number) rhs);
+            return Numbers.equal((Number) lhs, (Number) rhs);
         }
 
         return lhs.equals(rhs);
