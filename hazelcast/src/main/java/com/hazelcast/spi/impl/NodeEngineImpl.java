@@ -503,6 +503,7 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
+    // has to be public, it's used by Jet
     public interface JetPacketConsumer extends Consumer<Packet> {
     }
 

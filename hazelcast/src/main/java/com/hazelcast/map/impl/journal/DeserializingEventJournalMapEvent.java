@@ -30,7 +30,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 
 @SuppressFBWarnings(value = "EQ_DOESNT_OVERRIDE_EQUALS",
-        justification = "equality is checked by serialised data in superclass, not deserialised instances in this class")
+        justification = "equality is checked by serialized data in superclass, not deserialized instances in this class")
 public class DeserializingEventJournalMapEvent<K, V>
         extends InternalEventJournalMapEvent
         implements EventJournalMapEvent<K, V>, HazelcastInstanceAware {
