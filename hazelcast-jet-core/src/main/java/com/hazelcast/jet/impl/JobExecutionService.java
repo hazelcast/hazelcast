@@ -37,6 +37,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -45,8 +46,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.function.Functions.entryKey;
-import static com.hazelcast.jet.function.Functions.entryValue;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
@@ -101,7 +100,7 @@ public class JobExecutionService {
     Map<Long, ExecutionContext> getExecutionContextsFor(Address member) {
         return executionContexts.entrySet().stream()
                          .filter(entry -> entry.getValue().hasParticipant(member))
-                         .collect(toMap(entryKey(), entryValue()));
+                         .collect(toMap(Entry::getKey, Entry::getValue));
     }
 
     Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> getSenderMap(long executionId) {

@@ -91,7 +91,7 @@ class CoreSerializerHooks {
                 public JetEvent read(ObjectDataInput in) throws IOException {
                     Object payload = in.readObject();
                     long timestamp = in.readLong();
-                    return jetEvent(payload, timestamp);
+                    return jetEvent(timestamp, payload);
                 }
 
                 @Override

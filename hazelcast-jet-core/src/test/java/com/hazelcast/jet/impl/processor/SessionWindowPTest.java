@@ -21,9 +21,8 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.datamodel.WindowResult;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.SupplierEx;
-import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
@@ -32,10 +31,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
@@ -54,17 +55,17 @@ public class SessionWindowPTest {
 
     private static final int SESSION_TIMEOUT = 10;
     private SupplierEx<Processor> supplier;
-    private SessionWindowP<String, ?, Long, WindowResult<String, Long>> lastSuppliedProcessor;
+    private SessionWindowP<String, ?, Long, KeyedWindowResult<String, Long>> lastSuppliedProcessor;
 
     @Before
     public void before() {
         supplier = () -> lastSuppliedProcessor = new SessionWindowP<>(
                 SESSION_TIMEOUT,
                 0L,
-                singletonList((ToLongFunctionEx<Entry<Object, Long>>) Entry::getValue),
+                Collections.<ToLongFunction<Entry<?, Long>>>singletonList(Entry::getValue),
                 singletonList(entryKey()),
                 AggregateOperations.counting(),
-                WindowResult::new);
+                KeyedWindowResult::new);
     }
 
     @After
@@ -110,10 +111,8 @@ public class SessionWindowPTest {
 
     @Test
     public void when_batchProcessing_then_flushEverything() {
-        List<Object> inbox = new ArrayList<>();
-
         // Given
-        inbox.addAll(eventsWithKey("a"));
+        List<Object> inbox = new ArrayList<>(eventsWithKey("a"));
         // This watermark will cause the first session to be emitted, but not the second.
         // The second session will be emitted in complete()
         inbox.add(new Watermark(25));
@@ -121,9 +120,9 @@ public class SessionWindowPTest {
         verifyProcessor(supplier)
                 .input(inbox)
                 .expectOutput(asList(
-                        new WindowResult(1, 22, "a", 3),
+                        new KeyedWindowResult<>(1, 22, "a", 3, false),
                         new Watermark(25),
-                        new WindowResult(30, 50, "a", 3)));
+                        new KeyedWindowResult<>(30, 50, "a", 3, false)));
     }
 
     @Test
@@ -146,12 +145,13 @@ public class SessionWindowPTest {
                         entry("key", 10L)
                 ))
                 .expectOutput(asList(
-                        new WindowResult(0, 10, "key", 1L),
-                        new WindowResult(10, 20, "key", 1L)
+                        new KeyedWindowResult<>(0, 10, "key", 1L, false),
+                        new KeyedWindowResult<>(10, 20, "key", 1L, false)
                 ));
     }
 
     private void assertCorrectness(List<Object> events) {
+        @SuppressWarnings("unchecked")
         List<Object> expectedOutput = events.stream()
                                                .map(e -> ((Entry<String, Long>) e).getKey())
                                                .flatMap(SessionWindowPTest::expectedSessions)
@@ -232,10 +232,10 @@ public class SessionWindowPTest {
         ));
     }
 
-    private static Stream<WindowResult<String, Long>> expectedSessions(String key) {
+    private static Stream<KeyedWindowResult<String, Long>> expectedSessions(String key) {
         return Stream.of(
-                new WindowResult<>(1, 22, key, 3L),
-                new WindowResult<>(30, 50, key, 3L)
+                new KeyedWindowResult<>(1, 22, key, 3L, false),
+                new KeyedWindowResult<>(30, 50, key, 3L, false)
         );
     }
 }

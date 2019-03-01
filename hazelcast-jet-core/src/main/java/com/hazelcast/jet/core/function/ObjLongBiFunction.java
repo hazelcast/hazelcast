@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.function;
+package com.hazelcast.jet.core.function;
 
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 
@@ -23,6 +23,9 @@ import java.io.Serializable;
 /**
  * Represents a specialization of {@link java.util.function.BiFunction} where
  * the second argument is a {@code long}.
+ *
+ * @param <T> the type of the first argument to the function
+ * @param <R> the type of the result of the function
  **/
 @FunctionalInterface
 public interface ObjLongBiFunction<T, R> extends Serializable {

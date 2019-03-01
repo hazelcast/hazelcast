@@ -25,7 +25,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -91,11 +91,11 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Nonnull
     private final List<Function<Object, K>> keyFns;
     @Nonnull
-    private final AggregateOperation<A, R> aggrOp;
+    private final AggregateOperation<A, ? extends R> aggrOp;
     @Nonnull
     private final BiConsumer<? super A, ? super A> combineFn;
     @Nonnull
-    private final KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn;
+    private final KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn;
     @Nonnull
     private final FlatMapper<Watermark, Object> closedWindowFlatmapper;
     private ProcessingGuarantee processingGuarantee;
@@ -128,8 +128,8 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             long earlyResultsPeriod,
             @Nonnull List<? extends ToLongFunction<?>> timestampFns,
             @Nonnull List<? extends Function<?, ? extends K>> keyFns,
-            @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions " +
                 "provided for " + aggrOp.arity() + "-arity aggregate operation");
@@ -297,7 +297,8 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             @Override
             public OUT next() {
                 while (i < w.size) {
-                    OUT out = mapToOutputFn.apply(w.starts[i], w.ends[i], key, aggrOp.exportFn().apply(w.accs[i]));
+                    OUT out = mapToOutputFn.apply(
+                            w.starts[i], w.ends[i], key, aggrOp.exportFn().apply(w.accs[i]), true);
                     i++;
                     if (out != null) {
                         return out;
@@ -315,7 +316,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         List<OUT> results = new ArrayList<>();
         int i = 0;
         for (; i < w.size && w.ends[i] < wm; i++) {
-            OUT out = mapToOutputFn.apply(w.starts[i], w.ends[i], key, aggrOp.finishFn().apply(w.accs[i]));
+            OUT out = mapToOutputFn.apply(w.starts[i], w.ends[i], key, aggrOp.finishFn().apply(w.accs[i]), false);
             if (out != null) {
                 results.add(out);
             }

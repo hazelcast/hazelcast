@@ -80,6 +80,6 @@ public class AggregateBuilder1<T0> {
     @SuppressWarnings("unchecked")
     public <R> BatchStage<R> build(@Nonnull AggregateOperation<?, R> aggrOp) {
         CreateOutStageFn<R, BatchStage<R>> createOutStageFn = BatchStageImpl::new;
-        return aggBuilder.build(aggrOp, createOutStageFn, null);
+        return aggBuilder.build(aggrOp, createOutStageFn);
     }
 }

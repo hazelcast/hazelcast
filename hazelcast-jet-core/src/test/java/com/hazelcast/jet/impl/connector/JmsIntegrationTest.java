@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.datamodel.TimestampedItem;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.function.ConsumerEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
@@ -190,13 +190,13 @@ public class JmsIntegrationTest extends PipelineTestSupport {
         sendMessage(destinationName, false);
 
         assertTrueEventually(() -> {
-            long countSum = sinkList.stream().mapToLong(o -> ((TimestampedItem<Long>) o).item()).sum();
+            long countSum = sinkList.stream().mapToLong(o -> ((WindowResult<Long>) o).result()).sum();
             assertEquals(MESSAGE_COUNT, countSum);
 
             // There's no way to see the JetEvent's timestamp by the user code. In order to check
             // the native timestamp, we aggregate the events into tumbling(1) windows and check
             // the timestamps of the windows: we assert that it is around the current time.
-            long avgTime = (long) sinkList.stream().mapToLong(o -> ((TimestampedItem<Long>) o).timestamp())
+            long avgTime = (long) sinkList.stream().mapToLong(o -> ((WindowResult<Long>) o).end())
                                           .average().orElse(0);
             long tenMinutes = MINUTES.toMillis(1);
             long now = System.currentTimeMillis();

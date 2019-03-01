@@ -523,7 +523,6 @@ public final class SourceBuilder<S> {
          * Builds and returns the timestamped stream source.
          */
         @Nonnull
-        @SuppressWarnings("unchecked")
         public StreamSource<T> build() {
             Preconditions.checkNotNull(fillBufferFn, "fillBufferFn must be set");
             return new StreamSourceTransform<>(

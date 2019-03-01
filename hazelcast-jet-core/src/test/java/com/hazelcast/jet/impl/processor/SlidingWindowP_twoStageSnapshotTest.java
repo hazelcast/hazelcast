@@ -28,7 +28,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
@@ -94,11 +94,10 @@ public class SlidingWindowP_twoStageSnapshotTest {
                 singletonList((ToLongFunctionEx<? super Entry<Long, Long>>) Entry::getKey),
                 TimestampKind.EVENT,
                 windowDef,
-                ((AggregateOperation1<? super Entry<Long, Long>, LongAccumulator, ?>) aggrOp).withIdentityFinish()
+                aggrOp.withIdentityFinish()
         );
 
-        SupplierEx<Processor> procSupplier2 =
-                combineToSlidingWindowP(windowDef, aggrOp, TimestampedEntry::fromWindowResult);
+        SupplierEx<Processor> procSupplier2 = combineToSlidingWindowP(windowDef, aggrOp, KeyedWindowResult::new);
 
         // new supplier to save the last supplied instance
         stage1Supplier = () -> lastSuppliedStage1Processor = (SlidingWindowP<?, ?, ?, ?>) procSupplier1.get();
@@ -121,7 +120,8 @@ public class SlidingWindowP_twoStageSnapshotTest {
         TestOutbox stage1p2Outbox = newOutbox();
         TestOutbox stage2Outbox = newOutbox();
         TestInbox inbox = new TestInbox();
-        TestProcessorContext context = new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+        TestProcessorContext context = new TestProcessorContext()
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
 
         stage1p1.init(stage1p1Outbox, context);
         stage1p2.init(stage1p2Outbox, context);
@@ -204,8 +204,8 @@ public class SlidingWindowP_twoStageSnapshotTest {
                 p.slidingWindow == null || p.slidingWindow.isEmpty());
     }
 
-    private static TimestampedEntry<Long, ?> outboxFrame(long ts, long value) {
-        return new TimestampedEntry<>(ts, KEY, value);
+    private static KeyedWindowResult<Long, ?> outboxFrame(long ts, long value) {
+        return new KeyedWindowResult<>(ts - 4, ts, KEY, value);
     }
 
     private static String collectionToString(Collection<?> list) {

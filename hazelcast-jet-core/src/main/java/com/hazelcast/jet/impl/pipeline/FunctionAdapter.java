@@ -24,14 +24,12 @@ import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiConsumerEx;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.TriFunction;
-import com.hazelcast.jet.function.KeyedWindowResultFunction;
-import com.hazelcast.jet.function.WindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
@@ -63,7 +61,6 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     <T, R> FunctionEx<?, ? extends Traverser<?>> adaptFlatMapFn(
             @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
@@ -71,7 +68,6 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     <C, T, R> BiFunctionEx<? super C, ?, ?> adaptMapUsingContextFn(
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
@@ -79,7 +75,6 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     <C, T> BiPredicateEx<? super C, ?> adaptFilterUsingContextFn(
             @Nonnull BiPredicateEx<? super C, ? super T> filterFn
     ) {
@@ -87,7 +82,6 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     <C, T, R> BiFunctionEx<? super C, ?, ? extends Traverser<?>> adaptFlatMapUsingContextFn(
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
@@ -96,15 +90,13 @@ public class FunctionAdapter {
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    <C, T, R> BiFunctionEx<? super C, ?, ? extends CompletableFuture<Traverser<?>>>
-    adaptFlatMapUsingContextAsyncFn(
+    <C, T, R> BiFunctionEx<? super C, ?, ? extends CompletableFuture<Traverser<?>>> adaptFlatMapUsingContextAsyncFn(
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return (BiFunctionEx) flatMapAsyncFn;
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     <T, R extends CharSequence> FunctionEx<?, ? extends R> adaptToStringFn(
             @Nonnull FunctionEx<? super T, ? extends R> toStringFn
     ) {
@@ -118,7 +110,6 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     public <T, T1, R> BiFunctionEx<?, ? super T1, ?> adaptHashJoinOutputFn(
             @Nonnull BiFunctionEx<? super T, ? super T1, ? extends R> mapToOutputFn
     ) {
@@ -126,25 +117,10 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     <T, T1, T2, R> TriFunction<?, ? super T1, ? super T2, ?> adaptHashJoinOutputFn(
             @Nonnull TriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
     ) {
         return mapToOutputFn;
-    }
-
-    @Nonnull
-    <R, OUT> WindowResultFunction<? super R, ?> adaptWindowResultFn(
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> windowResultFn
-    ) {
-        return windowResultFn;
-    }
-
-    @Nonnull
-    <K, R, OUT> KeyedWindowResultFunction<? super K, ? super R, ?> adaptKeyedWindowResultFn(
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> keyedWindowResultFn
-    ) {
-        return keyedWindowResultFn;
     }
 
     @Nonnull
@@ -235,7 +211,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     <T, R> FunctionEx<? super JetEvent<T>, ?> adaptMapFn(
             @Nonnull FunctionEx<? super T, ? extends R> mapFn
     ) {
-        return e -> jetEvent(mapFn.apply(e.payload()), e.timestamp());
+        return e -> jetEvent(e.timestamp(), mapFn.apply(e.payload()));
     }
 
     @Nonnull @Override
@@ -247,14 +223,14 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     <T, R> FunctionEx<? super JetEvent<T>, ? extends Traverser<?>> adaptFlatMapFn(
             @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return e -> flatMapFn.apply(e.payload()).map(r -> jetEvent(r, e.timestamp()));
+        return e -> flatMapFn.apply(e.payload()).map(r -> jetEvent(e.timestamp(), r));
     }
 
     @Nonnull @Override
     <C, T, R> BiFunctionEx<? super C, ? super JetEvent<T>, ? extends JetEvent<R>> adaptMapUsingContextFn(
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
     ) {
-        return (context, e) -> jetEvent(mapFn.apply(context, e.payload()), e.timestamp());
+        return (context, e) -> jetEvent(e.timestamp(), mapFn.apply(context, e.payload()));
     }
 
     @Nonnull @Override
@@ -269,7 +245,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     adaptFlatMapUsingContextFn(
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        return (context, e) -> flatMapFn.apply(context, e.payload()).map(r -> jetEvent(r, e.timestamp()));
+        return (context, e) -> flatMapFn.apply(context, e.payload()).map(r -> jetEvent(e.timestamp(), r));
     }
 
     @Nonnull @Override
@@ -278,7 +254,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
             @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return (C context, JetEvent<T> e) ->
-                flatMapAsyncFn.apply(context, e.payload()).thenApply(trav -> trav.map(re -> jetEvent(re, e.timestamp())));
+                flatMapAsyncFn.apply(context, e.payload()).thenApply(trav -> trav.map(re -> jetEvent(e.timestamp(), re)));
     }
 
     @Nonnull @Override
@@ -301,32 +277,14 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     public <T, T1, R> BiFunctionEx<? super JetEvent<T>, ? super T1, ?> adaptHashJoinOutputFn(
             @Nonnull BiFunctionEx<? super T, ? super T1, ? extends R> mapToOutputFn
     ) {
-        return (e, t1) -> jetEvent(mapToOutputFn.apply(e.payload(), t1), e.timestamp());
+        return (e, t1) -> jetEvent(e.timestamp(), mapToOutputFn.apply(e.payload(), t1));
     }
 
     @Nonnull @Override
     <T, T1, T2, R> TriFunction<? super JetEvent<T>, ? super T1, ? super T2, ?> adaptHashJoinOutputFn(
             @Nonnull TriFunction<? super T, ? super T1, ? super T2, ? extends R> mapToOutputFn
     ) {
-        return (e, t1, t2) -> jetEvent(mapToOutputFn.apply(e.payload(), t1, t2), e.timestamp());
-    }
-
-    @Nonnull @Override
-    <R, OUT> WindowResultFunction<? super R, ? extends JetEvent<OUT>> adaptWindowResultFn(
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> windowResultFn
-    ) {
-        // use `winEnd - 1` for jetEvent, see https://github.com/hazelcast/hazelcast-jet/issues/898
-        return (winStart, winEnd, windowResult) ->
-                jetEvent(windowResultFn.apply(winStart, winEnd, windowResult), winEnd - 1);
-    }
-
-    @Nonnull @Override
-    <K, R, OUT> KeyedWindowResultFunction<? super K, ? super R, ? extends JetEvent<OUT>> adaptKeyedWindowResultFn(
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> keyedWindowResultFn
-    ) {
-        // use `winEnd - 1` for jetEvent, see https://github.com/hazelcast/hazelcast-jet/issues/898
-        return (winStart, winEnd, key, windowResult) ->
-                jetEvent(keyedWindowResultFn.apply(winStart, winEnd, key, windowResult), winEnd - 1);
+        return (e, t1, t2) -> jetEvent(e.timestamp(), mapToOutputFn.apply(e.payload(), t1, t2));
     }
 
     @Nonnull @Override
@@ -334,7 +292,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     adaptRollingAggregateOutputFn(
             @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        return (jetEvent, key, result) -> jetEvent(mapToOutputFn.apply(key, result), jetEvent.timestamp());
+        return (jetEvent, key, result) -> jetEvent(jetEvent.timestamp(), mapToOutputFn.apply(key, result));
     }
 
     @Nonnull

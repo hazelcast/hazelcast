@@ -55,8 +55,8 @@ public class DataModelSerializerHooksTest {
     @Parameters
     public static Collection<Object> data() {
         return asList(
-                new TimestampedEntry<>(1, "key", "value"),
-                new WindowResult<>(1, 2, "key", "value"),
+                new WindowResult<>(1, 2, "value", false),
+                new KeyedWindowResult<>(1, 2, "key", "value", true),
                 tuple2("value-0", "value-1"),
                 tuple3("value-0", "value-1", "value-2"),
                 tag0(),

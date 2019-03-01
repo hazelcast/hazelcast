@@ -20,9 +20,9 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
+import com.hazelcast.jet.datamodel.ItemsByTag;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import org.junit.Test;
@@ -40,7 +40,6 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
 import static com.hazelcast.jet.aggregate.AggregateOperations.mapping;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.Functions.wholeItem;
 import static com.hazelcast.jet.pipeline.WindowDefinition.session;
 import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
@@ -56,19 +55,22 @@ import static org.junit.Assert.assertEquals;
 
 public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
 
-    private static final Function<TimestampedEntry<String, Long>, Tuple2<Long, String>> TS_ENTRY_DISTINCT_FN =
-            tse -> tuple2(tse.getTimestamp(), tse.getKey());
+    private static final Function<KeyedWindowResult<String, Long>, Tuple2<Long, String>> TS_ENTRY_DISTINCT_FN =
+            kwr -> tuple2(kwr.end(), kwr.key());
 
-    private static final Function<TimestampedEntry<String, Long>, String> TS_ENTRY_FORMAT_FN =
-            tse -> String.format("(%04d %s: %04d)", tse.getTimestamp(), tse.getKey(), tse.getValue());
+    private static final Function<KeyedWindowResult<String, Long>, String> KWR_WIN_START_FORMAT_FN =
+            kwr -> String.format("(%04d %s: %04d)", kwr.start(), kwr.key(), kwr.result());
 
-    private static final Function<TimestampedEntry<String, Tuple2<Long, Long>>, String> TS_ENTRY_FORMAT_FN_2 =
-            tse -> String.format("(%04d %s: %04d, %04d)",
-                    tse.getTimestamp(), tse.getKey(), tse.getValue().f0(), tse.getValue().f1());
+    private static final Function<KeyedWindowResult<String, Long>, String> KWR_WIN_END_FORMAT_FN =
+            kwr -> String.format("(%04d %s: %04d)", kwr.end(), kwr.key(), kwr.result());
 
-    private static final Function<TimestampedEntry<String, Tuple3<Long, Long, Long>>, String> TS_ENTRY_FORMAT_FN_3 =
-            tse -> String.format("(%04d %s: %04d, %04d, %04d)",
-                    tse.getTimestamp(), tse.getKey(), tse.getValue().f0(), tse.getValue().f1(), tse.getValue().f2());
+    private static final Function<KeyedWindowResult<String, Tuple2<Long, Long>>, String> TS_ENTRY_FORMAT_FN_2 =
+            kwr -> String.format("(%04d %s: %04d, %04d)",
+                    kwr.end(), kwr.key(), kwr.result().f0(), kwr.result().f1());
+
+    private static final Function<KeyedWindowResult<String, Tuple3<Long, Long, Long>>, String> TS_ENTRY_FORMAT_FN_3 =
+            kwr -> String.format("(%04d %s: %04d, %04d, %04d)",
+                    kwr.end(), kwr.key(), kwr.result().f0(), kwr.result().f1(), kwr.result().f2());
 
     private static final Function<Entry<Long, Long>, String> MOCK_FORMAT_FN =
             e -> String.format("(%04d a: %04d)\n(%04d b: %04d)", e.getKey(), e.getValue(), e.getKey(), e.getValue());
@@ -133,7 +135,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 .window(tumbling(winSize));
 
         // When
-        StreamStage<TimestampedItem<Integer>> distinct = windowed.distinct();
+        StreamStage<KeyedWindowResult<Integer, Integer>> distinct = windowed.distinct();
 
         // Then
         distinct.drainTo(sink);
@@ -145,37 +147,8 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                          .sorted()
                          .collect(joining("\n")),
                 streamToString(
-                        this.<Integer>sinkStreamOfTsItem(),
-                        tsItem -> String.format("(%04d, %04d)", tsItem.timestamp(), tsItem.item() / 2))
-        );
-    }
-
-    @Test
-    public void distinct_withOutputFn() {
-        // Given
-        itemCount = (int) roundUp(itemCount, 2);
-        int winSize = itemCount / 2;
-        List<Integer> timestamps = sequence(itemCount);
-
-        StageWithKeyAndWindow<Integer, Integer> windowed = streamStageFromList(timestamps)
-                .groupingKey(i -> i / 2)
-                .window(tumbling(winSize));
-
-        // When
-        StreamStage<String> distinct = windowed.distinct(
-                (start, end, item) -> String.format("(%04d, %04d)", end, item / 2)
-        );
-
-        // Then
-        distinct.drainTo(sink);
-        execute();
-        assertEquals(
-                IntStream.range(0, itemCount)
-                         .mapToObj(i -> String.format("(%04d, %04d)", roundUp(i + 1, winSize), i / 2))
-                         .distinct()
-                         .sorted()
-                         .collect(joining("\n")),
-                streamToString(sinkList.stream().map(String.class::cast), identity())
+                        this.<Integer>sinkStreamOfWinResult(),
+                        wr -> String.format("(%04d, %04d)", wr.end(), wr.result() / 2))
         );
     }
 
@@ -197,7 +170,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 new SlidingWindowSimulator(wDef)
                         .acceptStream(fx.input.stream())
                         .stringResults(MOCK_FORMAT_FN),
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
+                streamToString(sinkStreamOfKeyedWinResult(), KWR_WIN_END_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
         );
     }
 
@@ -220,7 +193,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 .stringResults(MOCK_FORMAT_FN);
         assertTrueEventually(() -> assertEquals(
                 expectedString,
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
+                streamToString(sinkStreamOfKeyedWinResult(), KWR_WIN_END_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
         ), ASSERT_TIMEOUT_SECONDS);
     }
 
@@ -243,7 +216,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 new SlidingWindowSimulator(wDef)
                         .acceptStream(fx.input.stream())
                         .stringResults(MOCK_FORMAT_FN),
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
+                streamToString(sinkStreamOfKeyedWinResult(), KWR_WIN_END_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
         );
     }
 
@@ -267,7 +240,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 .stringResults(MOCK_FORMAT_FN);
         assertTrueEventually(() -> assertEquals(
                 expectedString,
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
+                streamToString(sinkStreamOfKeyedWinResult(), KWR_WIN_END_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
         ), ASSERT_TIMEOUT_SECONDS);
     }
 
@@ -283,13 +256,14 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         srcStage.groupingKey(Entry::getKey)
                 .window(sliding(2, 1))
                 .aggregate(mapping(Entry::getValue, AggregateOperations.toList()))
-                .map(TimestampedEntry::getValue)
+                .map(KeyedWindowResult::result)
                 .window(tumbling(1))
-                .aggregate(AggregateOperations.toList(),
-                        (start, end, listOfList) -> {
-                            listOfList.sort(comparing(l -> l.get(0)));
-                            return formatTsItem(end, listOfList.get(0), listOfList.get(1));
-                        })
+                .aggregate(AggregateOperations.toList())
+                .map(wr -> {
+                    List<List<String>> listOfList = wr.result();
+                    listOfList.sort(comparing(l -> l.get(0)));
+                    return formatTsItem(wr.end(), listOfList.get(0), listOfList.get(1));
+                })
                 .drainTo(sink);
 
         // Then
@@ -324,15 +298,15 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StageWithKeyAndWindow<Entry<String, Integer>, String> windowed = fx.newSourceStage().window(wDef);
 
         // Then
-        windowed.aggregate(SUMMING,
-                (start, end, key, sum) -> new TimestampedEntry<>(start, key, sum))
+        windowed.aggregate(SUMMING)
                 .drainTo(sink);
         execute();
+
         assertEquals(
                 new SessionWindowSimulator(wDef, sessionLength + sessionTimeout)
                         .acceptStream(fx.input.stream())
                         .stringResults(MOCK_FORMAT_FN),
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
+                streamToString(sinkStreamOfKeyedWinResult(), KWR_WIN_START_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
         );
     }
 
@@ -352,12 +326,9 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StageWithKeyAndWindow<Entry<String, Integer>, String> windowed = fx.newSourceStage().window(wDef);
 
         // Then
-        windowed.aggregate(SUMMING,
-                (start, end, key, sum) ->
-                        // suppress incomplete windows to get predictable results
-                        end - start != sessionLength + sessionTimeout - 1
-                                ? null
-                                : new TimestampedEntry<>(start, key, sum))
+        windowed.aggregate(SUMMING)
+                // suppress incomplete windows to get predictable results
+                .filter(wr -> wr.end() - wr.start() == sessionLength + sessionTimeout - 1)
                 .drainTo(sink);
         jet().newJob(p);
         String expectedString = new SessionWindowSimulator(wDef, sessionLength + sessionTimeout)
@@ -365,7 +336,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 .stringResults(MOCK_FORMAT_FN);
         assertTrueEventually(() -> assertEquals(
                 expectedString,
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
+                streamToString(sinkStreamOfKeyedWinResult(), KWR_WIN_START_FORMAT_FN, TS_ENTRY_DISTINCT_FN)
         ), ASSERT_TIMEOUT_SECONDS);
     }
 
@@ -378,14 +349,14 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StageWithKeyAndWindow<Entry<String, Integer>, String> stage0 = fx.newSourceStage().window(wDef);
 
         // When
-        StreamStage<TimestampedEntry<String, Tuple2<Long, Long>>> aggregated =
+        StreamStage<KeyedWindowResult<String, Tuple2<Long, Long>>> aggregated =
                 stage0.aggregate2(SUMMING, fx.newSourceStage(), SUMMING);
 
         // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString2,
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN_2));
+                streamToString(sinkStreamOfKeyedWinResult(), TS_ENTRY_FORMAT_FN_2));
     }
 
     @Test
@@ -395,51 +366,14 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StageWithKeyAndWindow<Entry<String, Integer>, String> stage0 = fx.newSourceStage().window(fx.tumblingWinDef);
 
         // When
-        StreamStage<TimestampedEntry<String, Tuple2<Long, Long>>> aggregated =
+        StreamStage<KeyedWindowResult<String, Tuple2<Long, Long>>> aggregated =
                 stage0.aggregate2(fx.newSourceStage(), aggregateOperation2(SUMMING, SUMMING));
 
         // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString2,
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN_2));
-    }
-
-    @Test
-    public void aggregate2_withSeparateAggrOps_withOutputFn() {
-        // Given
-        WindowTestFixture fx = new WindowTestFixture(false);
-        StageWithKeyAndWindow<Entry<String, Integer>, String> stage0 = fx.newSourceStage().window(fx.tumblingWinDef);
-
-        // When
-        StreamStage<String> aggregated = stage0.aggregate2(SUMMING,
-                fx.newSourceStage(), SUMMING, (start, end, key, sum0, sum1) ->
-                        TS_ENTRY_FORMAT_FN_2.apply(new TimestampedEntry<>(end, key, tuple2(sum0, sum1))));
-
-        // Then
-        aggregated.drainTo(sink);
-        execute();
-        assertEquals(fx.expectedString2,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
-    }
-
-    @Test
-    public void aggregate2_withAggrOp2_withOutputFn() {
-        // Given
-        WindowTestFixture fx = new WindowTestFixture(false);
-        StageWithKeyAndWindow<Entry<String, Integer>, String> stage0 = fx.newSourceStage().window(fx.tumblingWinDef);
-
-        // When
-        StreamStage<String> aggregated = stage0.aggregate2(
-                fx.newSourceStage(), aggregateOperation2(SUMMING, SUMMING),
-                (start, end, key, sums) -> TS_ENTRY_FORMAT_FN_2.apply(new TimestampedEntry<>(end, key, sums)));
-
-        // Then
-        aggregated.drainTo(sink);
-        execute();
-        assertEquals(fx.expectedString2,
-                streamToString(sinkList.stream().map(String.class::cast), identity())
-        );
+                streamToString(sinkStreamOfKeyedWinResult(), TS_ENTRY_FORMAT_FN_2));
     }
 
     @Test
@@ -449,14 +383,14 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StageWithKeyAndWindow<Entry<String, Integer>, String> stage0 = fx.newSourceStage().window(fx.tumblingWinDef);
 
         // When
-        StreamStage<TimestampedEntry<String, Tuple3<Long, Long, Long>>> aggregated =
+        StreamStage<KeyedWindowResult<String, Tuple3<Long, Long, Long>>> aggregated =
                 stage0.aggregate3(SUMMING, fx.newSourceStage(), SUMMING, fx.newSourceStage(), SUMMING);
 
         // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString3,
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN_3)
+                streamToString(sinkStreamOfKeyedWinResult(), TS_ENTRY_FORMAT_FN_3)
         );
     }
 
@@ -467,7 +401,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StageWithKeyAndWindow<Entry<String, Integer>, String> stage0 = fx.newSourceStage().window(fx.tumblingWinDef);
 
         // When
-        StreamStage<TimestampedEntry<String, Tuple3<Long, Long, Long>>> aggregated =
+        StreamStage<KeyedWindowResult<String, Tuple3<Long, Long, Long>>> aggregated =
                 stage0.aggregate3(fx.newSourceStage(), fx.newSourceStage(),
                         aggregateOperation3(SUMMING, SUMMING, SUMMING));
 
@@ -475,46 +409,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString3,
-                streamToString(sinkStreamOfTsEntry(), TS_ENTRY_FORMAT_FN_3));
-    }
-
-    @Test
-    public void aggregate3_withSeparateAggrOps_withOutputFn() {
-        // Given
-        WindowTestFixture fx = new WindowTestFixture(false);
-        StageWithKeyAndWindow<Entry<String, Integer>, String> stage0 = fx.newSourceStage().window(fx.tumblingWinDef);
-
-        // When
-        StreamStage<String> aggregated = stage0.aggregate3(SUMMING,
-                fx.newSourceStage(), SUMMING,
-                fx.newSourceStage(), SUMMING,
-                (start, end, key, sum0, sum1, sum2) ->
-                        TS_ENTRY_FORMAT_FN_3.apply(new TimestampedEntry<>(end, key, tuple3(sum0, sum1, sum2))));
-
-        // Then
-        aggregated.drainTo(sink);
-        execute();
-        assertEquals(fx.expectedString3,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
-    }
-
-    @Test
-    public void aggregate3_withAggrOp3_withOutputFn() {
-        // Given
-        WindowTestFixture fx = new WindowTestFixture(false);
-        StageWithKeyAndWindow<Entry<String, Integer>, String> stage0 = fx.newSourceStage().window(fx.tumblingWinDef);
-
-        // When
-        StreamStage<String> aggregated = stage0.aggregate3(
-                fx.newSourceStage(), fx.newSourceStage(),
-                aggregateOperation3(SUMMING, SUMMING, SUMMING),
-                (start, end, key, sums) -> TS_ENTRY_FORMAT_FN_3.apply(new TimestampedEntry<>(end, key, sums)));
-
-        // Then
-        aggregated.drainTo(sink);
-        execute();
-        assertEquals(fx.expectedString3,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
+                streamToString(sinkStreamOfKeyedWinResult(), TS_ENTRY_FORMAT_FN_3));
     }
 
     @Test
@@ -528,14 +423,14 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         WindowGroupAggregateBuilder<String, Long> b = stage0.window(fx.tumblingWinDef).aggregateBuilder(SUMMING);
         Tag<Long> tag0 = b.tag0();
         Tag<Long> tag1 = b.add(stage1, SUMMING);
-        StreamStage<String> aggregated = b.build((start, end, key, sums) ->
-                String.format("(%04d %s: %04d, %04d)", end, key, sums.get(tag0), sums.get(tag1)));
+        StreamStage<KeyedWindowResult<String, ItemsByTag>> aggregated = b.build();
 
         // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString2,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
+                streamToString(this.<ItemsByTag>sinkStreamOfKeyedWinResult(), wr -> String.format(
+                        "(%04d %s: %04d, %04d)", wr.end(), wr.key(), wr.result().get(tag0), wr.result().get(tag1))));
     }
 
     @Test
@@ -557,16 +452,13 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         Tag<Long> tag0 = b2.add(tag0_in, SUMMING);
         Tag<Long> tag1 = b2.add(tag1_in, SUMMING);
 
-        StreamStage<String> aggregated = b.build(
-                b2.build(),
-                (start, end, key, sums) ->
-                        String.format("(%04d %s: %04d, %04d)", end, key, sums.get(tag0), sums.get(tag1)));
+        StreamStage<KeyedWindowResult<String, ItemsByTag>> aggregated = b.build(b2.build());
 
         // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString2,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
+                streamToString(this.<ItemsByTag>sinkStreamOfKeyedWinResult(), wr -> String.format(
+                        "(%04d %s: %04d, %04d)", wr.end(), wr.key(), wr.result().get(tag0), wr.result().get(tag1))));
     }
-
 }

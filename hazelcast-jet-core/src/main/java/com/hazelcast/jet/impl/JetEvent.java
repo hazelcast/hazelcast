@@ -30,10 +30,10 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
  * @param <T> type of the wrapped event
  */
 public final class JetEvent<T> {
-    private final T payload;
     private final long timestamp;
+    private final T payload;
 
-    private JetEvent(@Nonnull T payload, long timestamp) {
+    private JetEvent(long timestamp, @Nonnull T payload) {
         this.timestamp = timestamp;
         this.payload = payload;
     }
@@ -42,11 +42,11 @@ public final class JetEvent<T> {
      * Creates a new {@code JetEvent} with the given components.
      */
     @Nullable
-    public static <T> JetEvent<T> jetEvent(@Nullable T payload, long timestamp) {
+    public static <T> JetEvent<T> jetEvent(long timestamp, @Nullable T payload) {
         if (payload == null) {
             return null;
         }
-        return new JetEvent<>(payload, timestamp);
+        return new JetEvent<>(timestamp, payload);
     }
 
     /**
@@ -78,8 +78,7 @@ public final class JetEvent<T> {
             return false;
         }
         JetEvent<?> jetEvent = (JetEvent<?>) o;
-        return timestamp == jetEvent.timestamp &&
-                Objects.equals(payload, jetEvent.payload);
+        return timestamp == jetEvent.timestamp && Objects.equals(payload, jetEvent.payload);
     }
 
     @Override

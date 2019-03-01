@@ -62,7 +62,6 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void addToDag(Planner p) {
         if (emitsWatermarks || eventTimePolicy == null) {
             // Reached when the source either emits both JetEvents and watermarks

@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Rule;
@@ -29,7 +30,6 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.jet.aggregate.AggregateOperations.toSet;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static java.util.Arrays.asList;
@@ -47,25 +47,30 @@ public class SlidingWindowP_FrameCombiningTest {
     public void when_multipleFrames_then_combine() {
         TestSupport
                 .verifyProcessor(
-                        combineToSlidingWindowP(slidingWinPolicy(8, 4), toSet(), TimestampedEntry::fromWindowResult))
+                        combineToSlidingWindowP(slidingWinPolicy(8, 4), AggregateOperations.<String>toSet(),
+                                (start, end, key, result, isEarly) -> result(end, result)))
                 .input(asList(
                         frame(2, set("a")),
                         frame(4, set("b")),
                         frame(6, set("c"))
                 ))
                 .expectOutput(asList(
-                        frame(4, set("a", "b")),
-                        frame(8, set("a", "b", "c")),
-                        frame(12, set("c"))
+                        result(4, set("a", "b")),
+                        result(8, set("a", "b", "c")),
+                        result(12, set("c"))
                 ));
     }
 
-    private <V> TimestampedEntry<Long, V> frame(long ts, V value) {
-        return new TimestampedEntry<>(ts, KEY, value);
+    private static <V> KeyedWindowResult<Long, V> frame(long ts, V value) {
+        return new KeyedWindowResult<>(0, ts, KEY, value);
     }
 
     @SafeVarargs
-    private final <E> Set<E> set(E ... elements) {
-        return new HashSet(asList(elements));
+    private static <E> Set<E> set(E... elements) {
+        return new HashSet<>(asList(elements));
+    }
+
+    private static String result(long winEnd, Set<String> result) {
+        return String.format("(%03d, %s: %s)", winEnd, KEY, result);
     }
 }

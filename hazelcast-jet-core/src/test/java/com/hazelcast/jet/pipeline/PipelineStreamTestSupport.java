@@ -17,8 +17,8 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.datamodel.TimestampedItem;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.util.Preconditions;
 
 import java.util.List;
@@ -81,13 +81,13 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
     }
 
     @SuppressWarnings("unchecked")
-    <T> Stream<TimestampedEntry<String, T>> sinkStreamOfTsEntry() {
-        return sinkList.stream().map(TimestampedEntry.class::cast);
+    <T> Stream<KeyedWindowResult<String, T>> sinkStreamOfKeyedWinResult() {
+        return sinkList.stream().map(KeyedWindowResult.class::cast);
     }
 
     @SuppressWarnings("unchecked")
-    <T> Stream<TimestampedItem<T>> sinkStreamOfTsItem() {
-        return sinkList.stream().map(TimestampedItem.class::cast);
+    <T> Stream<WindowResult<T>> sinkStreamOfWinResult() {
+        return sinkList.stream().map(WindowResult.class::cast);
     }
 
     /**

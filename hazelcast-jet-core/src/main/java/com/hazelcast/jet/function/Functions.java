@@ -43,7 +43,7 @@ public final class Functions {
      * @param <K> type of entry's key
      */
     @Nonnull
-    public static <K, V> FunctionEx<Entry<K, V>, K> entryKey() {
+    public static <K> FunctionEx<Entry<K, ?>, K> entryKey() {
         return Map.Entry::getKey;
     }
 
@@ -53,7 +53,7 @@ public final class Functions {
      * @param <V> type of entry's value
      */
     @Nonnull
-    public static <K, V> FunctionEx<Entry<K, V>, V> entryValue() {
+    public static <V> FunctionEx<Entry<?, V>, V> entryValue() {
         return Map.Entry::getValue;
     }
 }

@@ -30,16 +30,16 @@ import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
-import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextOrderedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingContextUnorderedP;
 import com.hazelcast.jet.impl.processor.GroupP;
@@ -408,8 +408,7 @@ public final class Processors {
      * result by combining the partial results of the frames belonging to it
      * and finally applying the {@code finish} aggregation primitive. After this
      * it deletes from storage all the frames that trail behind the emitted
-     * windows. The type of emitted items is {@link TimestampedEntry
-     * TimestampedEntry&lt;K, A>} so there is one item per key per window position.
+     * windows. In the output there is one item per key per window position.
      * <p>
      * <i>Behavior on job restart</i><br>
      * This processor saves its state to snapshot. After restart, it can
@@ -428,8 +427,8 @@ public final class Processors {
             @Nonnull TimestampKind timestampKind,
             @Nonnull SlidingWindowPolicy winPolicy,
             long earlyResultsPeriod,
-            @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return aggregateByKeyAndWindowP(
                 keyFns, timestampFns, timestampKind, winPolicy, earlyResultsPeriod, aggrOp, mapToOutputFn, true);
@@ -457,9 +456,8 @@ public final class Processors {
      * <p>
      * When the processor receives a watermark with a given {@code wmVal}, it
      * emits the current accumulated state of all frames with {@code
-     * timestamp <= wmVal} and deletes these frames from its storage.
-     * The type of emitted items is {@link TimestampedEntry
-     * TimestampedEntry&lt;K, A>} so there is one item per key per frame.
+     * timestamp <= wmVal} and deletes these frames from its storage. In the
+     * output there is one item per key per frame.
      * <p>
      * When a state snapshot is requested, the state is flushed to second-stage
      * processor and nothing is saved to snapshot.
@@ -483,7 +481,7 @@ public final class Processors {
                 winPolicy.toTumblingByFrame(),
                 0L,
                 aggrOp.withIdentityFinish(),
-                TimestampedEntry::fromWindowResult,
+                KeyedWindowResult::new,
                 false
         );
     }
@@ -525,18 +523,18 @@ public final class Processors {
     @Nonnull
     public static <K, A, R, OUT> SupplierEx<Processor> combineToSlidingWindowP(
             @Nonnull SlidingWindowPolicy winPolicy,
-            @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        FunctionEx<TimestampedEntry<K, A>, K> keyFn = TimestampedEntry::getKey;
-        ToLongFunctionEx<TimestampedEntry<K, A>> timestampFn = TimestampedEntry::getTimestamp;
+        FunctionEx<KeyedWindowResult<K, A>, K> keyFn = KeyedWindowResult::key;
+        ToLongFunctionEx<KeyedWindowResult<K, A>> timestampFn = KeyedWindowResult::end;
         return aggregateByKeyAndWindowP(
                 singletonList(keyFn),
                 singletonList(timestampFn),
                 TimestampKind.FRAME,
                 winPolicy,
                 0L,
-                aggrOp.withCombiningAccumulateFn(TimestampedEntry<Object, A>::getValue),
+                aggrOp.withCombiningAccumulateFn(KeyedWindowResult<Object, A>::result),
                 mapToOutputFn,
                 true
         );
@@ -569,8 +567,8 @@ public final class Processors {
             @Nonnull TimestampKind timestampKind,
             @Nonnull SlidingWindowPolicy winPolicy,
             long earlyResultsPeriod,
-            @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn,
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
             boolean isLastStage
     ) {
         return () -> new SlidingWindowP<>(
@@ -642,8 +640,8 @@ public final class Processors {
             long earlyResultsPeriod,
             @Nonnull List<ToLongFunctionEx<?>> timestampFns,
             @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
-            @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return () -> new SessionWindowP<>(
                 sessionTimeout, earlyResultsPeriod, timestampFns, keyFns, aggrOp, mapToOutputFn);

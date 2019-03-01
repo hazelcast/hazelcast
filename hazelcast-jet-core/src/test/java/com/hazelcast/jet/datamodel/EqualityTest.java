@@ -26,46 +26,48 @@ import org.junit.runner.RunWith;
 public class EqualityTest {
 
     @Test
-    public void testEqualsAndHashCode_whenItemsByTag() {
+    public void itemsByTag_equalsAndHashCode() {
         EqualsVerifier.forClass(ItemsByTag.class)
                       .suppress(Warning.STRICT_INHERITANCE)
                       .verify();
     }
 
     @Test
-    public void testEqualsAndHashCode_whenTag() {
+    public void tag_equalsAndHashCode() {
         EqualsVerifier.forClass(Tag.class).verify();
     }
 
     @Test
-    public void testEqualsAndHashCode_whenTimestampedEntry() {
-        EqualsVerifier.forClass(TimestampedEntry.class).verify();
-    }
-
-    @Test
-    public void testEqualsAndHashCode_whenTimestampedItem() {
+    public void timestampedItem_equalsAndHashCode() {
         EqualsVerifier.forClass(TimestampedItem.class).verify();
     }
 
     @Test
-    public void testEqualsAndHashCode_whenTuple2() {
+    public void tuple2_equalsAndHashCode() {
         EqualsVerifier.forClass(Tuple2.class)
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
     }
 
     @Test
-    public void testEqualsAndHashCode_whenTuple3() {
+    public void tuple3_equalsAndHashCode() {
         EqualsVerifier.forClass(Tuple3.class)
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
     }
 
     @Test
-    public void testEqualsAndHashCode_whenWindowResult() {
+    public void windowResult_equalsAndHashCode() {
         EqualsVerifier.forClass(WindowResult.class)
-                      .suppress(Warning.STRICT_INHERITANCE)
-                      .verify();
+                .usingGetClass()
+                .verify();
+    }
+
+    @Test
+    public void keyedWindowResult_equalsAndHashCode() {
+        EqualsVerifier.forClass(KeyedWindowResult.class)
+                .usingGetClass()
+                .verify();
     }
 
 }

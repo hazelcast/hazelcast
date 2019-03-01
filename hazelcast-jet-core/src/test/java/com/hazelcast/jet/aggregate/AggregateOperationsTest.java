@@ -27,7 +27,6 @@ import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.function.Functions;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
@@ -328,7 +327,7 @@ public class AggregateOperationsTest {
         combined.put(2, 2);
 
         validateOpWithoutDeduct(
-                toMap(entryKey(), entryValue()),
+                toMap(Entry::getKey, Entry::getValue),
                 identity(), entry(1, 1), entry(2, 2),
                 acced, combined, combined);
     }
@@ -336,7 +335,7 @@ public class AggregateOperationsTest {
     @Test
     public void when_toMapDuplicateAccumulate_then_fail() {
         AggregateOperation1<Entry<Integer, Integer>, Map<Integer, Integer>, Map<Integer, Integer>> op =
-                toMap(entryKey(), entryValue());
+                toMap(Entry::getKey, Entry::getValue);
 
         Map<Integer, Integer> acc = op.createFn().get();
         op.accumulateFn().accept(acc, entry(1, 1));
@@ -348,7 +347,7 @@ public class AggregateOperationsTest {
     @Test
     public void when_toMapDuplicateCombine_then_fail() {
         AggregateOperation1<Entry<Integer, Integer>, Map<Integer, Integer>, Map<Integer, Integer>> op =
-                toMap(entryKey(), entryValue());
+                toMap(Entry::getKey, Entry::getValue);
 
         Map<Integer, Integer> acc1 = op.createFn().get();
         op.accumulateFn().accept(acc1, entry(1, 1));
@@ -368,7 +367,7 @@ public class AggregateOperationsTest {
         combined.put(1, 3);
 
         validateOpWithoutDeduct(
-                toMap(Functions.<Integer, Integer>entryKey(), entryValue(), Integer::sum),
+                toMap(Entry::getKey, Entry::getValue, Integer::sum),
                 identity(), entry(1, 1), entry(1, 2),
                 acced, combined, combined);
     }
@@ -376,7 +375,7 @@ public class AggregateOperationsTest {
     @Test
     public void when_mappingWithoutDeduct() {
         validateOpWithoutDeduct(
-                mapping((Entry<?, Integer> e) -> e.getValue(), maxBy(naturalOrder())),
+                mapping(entryValue(), maxBy(naturalOrder())),
                 identity(),
                 entry("a", 1),
                 entry("b", 2),
@@ -389,7 +388,7 @@ public class AggregateOperationsTest {
     @Test
     public void when_mappingWithDeduct() {
         validateOp(
-                mapping((Entry<?, Long> e) -> e.getValue(), summingLong(i -> i)),
+                mapping(entryValue(), summingLong(i -> i)),
                 identity(),
                 entry("a", 1L),
                 entry("b", 2L),
@@ -402,7 +401,7 @@ public class AggregateOperationsTest {
     @Test
     public void when_mappingToNull_then_doNotAggregate() {
         validateOp(
-                mapping((Entry<?, Long> e) -> e.getValue(), summingLong(i -> i)),
+                mapping(entryValue(), summingLong(i -> i)),
                 identity(),
                 entry("a", null),
                 entry("b", 2L),

@@ -14,31 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.function;
+package com.hazelcast.jet.core.function;
 
-import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
+import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 
 /**
- * Represents the function you pass to a windowed group-and-aggregate
- * method in the Pipeline API, such as {@link StageWithKeyAndWindow#aggregate
- * stage.aggregate()}.
+ * Represents the function you pass to windowing processors
+ * such as {@link Processors#aggregateToSlidingWindowP aggregateToSlidingWindowP()}
+ * and {@link Processors#aggregateToSessionWindowP aggregateToSessionWindowP()} as
+ * {@code mapToOutputFn}.
  * It creates the item to emit based on the results of a single aggregate
  * operation performed for a particular window and a particular grouping
  * key.
- * <p>
- * The parameters are:
- * <ol><li>
- *     {@code winStart} and {@code winEnd}: the starting and ending timestamp
- *     of the window (the end timestamp is the exclusive upper bound)
- * </li><li>
- *     {@code key} the grouping key
- * </li><li>
- *     {@code windowResult} the result of the aggregate operation
- * </li></ol>
  *
  * @param <K> type of the key
  * @param <R> the type of aggregation result this function receives
@@ -47,6 +39,18 @@ import java.io.Serializable;
 @FunctionalInterface
 public interface KeyedWindowResultFunction<K, R, OUT> extends Serializable {
 
+    /***
+     * Applies the function to the given arguments
+     *
+     * @param winStart the inclusive lower timestamp of the window
+     * @param winEnd the exclusive upper timestamp of the window
+     * @param key the grouping key
+     * @param windowResult the result of the aggregate operation
+     * @param isEarly whether the result is an early result as specified by
+     *                {@link WindowDefinition#setEarlyResultsPeriod(long)}
+     * @return the function result
+     */
     @Nullable
-    OUT apply(long winStart, long winEnd, @Nonnull K key, @Nonnull R windowResult);
+    OUT apply(long winStart, long winEnd, @Nonnull K key, @Nonnull R windowResult, boolean isEarly);
+
 }

@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
@@ -109,8 +109,8 @@ public class SlidingWindowPTest {
                         winPolicy,
                         0L,
                         operation,
-                        TimestampedEntry::fromWindowResult)
-                : combineToSlidingWindowP(winPolicy, operation, TimestampedEntry::fromWindowResult);
+                KeyedWindowResult::new)
+                : combineToSlidingWindowP(winPolicy, operation, KeyedWindowResult::new);
 
         // new supplier to save the last supplied instance
         supplier = () -> lastSuppliedProcessor = (SlidingWindowP) procSupplier.get();
@@ -317,10 +317,10 @@ public class SlidingWindowPTest {
                 // frameTs is higher than any event timestamp in that frame;
                 // therefore we generate an event with frameTs - 1
                 ? entry(frameTs - 1, value)
-                : new TimestampedEntry<>(frameTs, KEY, new LongAccumulator(value));
+                : new KeyedWindowResult<>(frameTs - 4, frameTs, KEY, new LongAccumulator(value));
     }
 
-    private static TimestampedEntry<Long, ?> outboxFrame(long ts, long value) {
-        return new TimestampedEntry<>(ts, KEY, value);
+    private static KeyedWindowResult<Long, ?> outboxFrame(long ts, long value) {
+        return new KeyedWindowResult<>(ts - 4, ts, KEY, value);
     }
 }

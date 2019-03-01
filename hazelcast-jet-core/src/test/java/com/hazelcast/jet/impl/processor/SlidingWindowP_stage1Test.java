@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
@@ -61,7 +61,6 @@ public class SlidingWindowP_stage1Test {
     private SupplierEx<Processor> supplier;
 
     @Before
-    @SuppressWarnings("unchecked")
     public void before() {
         FunctionEx<Entry<Long, Long>, Object> keyFn = x -> KEY;
         ToLongFunctionEx<Entry<Long, Long>> timestampFn = Entry::getKey;
@@ -194,7 +193,7 @@ public class SlidingWindowP_stage1Test {
                 .expectOutput(singletonList(wm(16)));
     }
 
-    private static TimestampedEntry<Long, LongAccumulator> frame(long timestamp, long value) {
-        return new TimestampedEntry<>(timestamp, KEY, new LongAccumulator(value));
+    private static <V> KeyedWindowResult<Long, LongAccumulator> frame(long ts, long value) {
+        return new KeyedWindowResult<>(ts - 4, ts, KEY, new LongAccumulator(value));
     }
 }

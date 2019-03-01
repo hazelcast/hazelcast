@@ -19,13 +19,10 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
-import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.WindowResult2Function;
-import com.hazelcast.jet.function.WindowResult3Function;
-import com.hazelcast.jet.function.WindowResultFunction;
 
 import javax.annotation.Nonnull;
 
@@ -78,53 +75,22 @@ public interface StageWithWindow<T> {
     /**
      * Attaches a stage that passes through just the items that are distinct
      * within their window (no two items emitted for a window are equal). There
-     * is no guarantee among the items with the same key which one it will pass
-     * through. To create the item to emit, the stage calls the supplied {@code
-     * mapToOutputFn}.
-     *
-     * @param mapToOutputFn function that returns the items to emit
-     * @return the newly attached stage
-     */
-    @Nonnull
-    default <R> StreamStage<R> distinct(@Nonnull WindowResultFunction<? super T, ? extends R> mapToOutputFn) {
-        return groupingKey(wholeItem()).distinct(mapToOutputFn);
-    }
-
-    /**
-     * Attaches a stage that passes through just the items that are distinct
-     * within their window (no two items emitted for a window are equal). There
      * is no guarantee which one of the items with the same key will pass
-     * through. The stage emits results in the form of {@link TimestampedItem
-     * TimestampedItem(windowEnd, distinctItem)}.
+     * through. The stage emits results in the form of {@link WindowResult
+     * WindowResult(windowEnd, distinctItem)}.
      *
      * @return the newly attached stage
      */
     @Nonnull
-    default StreamStage<TimestampedItem<T>> distinct() {
-        return groupingKey(wholeItem()).distinct();
+    @SuppressWarnings("unchecked")
+    default StreamStage<WindowResult<T>> distinct() {
+        return (StreamStage<WindowResult<T>>) (StreamStage) groupingKey(wholeItem()).distinct();
     }
-
-    /**
-     * Attaches a stage that performs the given aggregate operation over all
-     * the items that belong to a given window. Once the window is complete,
-     * it invokes {@code mapToOutputFn} with the result of the aggregate
-     * operation and emits its return value as the window result.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     * @param aggrOp the aggregate operation to perform
-     * @param mapToOutputFn the function that creates the output item
-     * @param <R> the type of the result
-     */
-    @Nonnull
-    <R, OUT> StreamStage<OUT> aggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
-    );
 
     /**
      * Attaches a stage that performs the given aggregate operation over all
      * the items that belong to a given window. Once the window is complete, it
-     * emits a {@code TimestampedItem} with the result of the aggregate
+     * emits a {@code WindowResult} with the result of the aggregate
      * operation and the timestamp denoting the window's ending time.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
@@ -132,11 +98,9 @@ public interface StageWithWindow<T> {
      * @param <R> the type of the result
      */
     @Nonnull
-    default <R> StreamStage<TimestampedItem<R>> aggregate(
-            @Nonnull AggregateOperation1<? super T, ?, R> aggrOp
-    ) {
-        return aggregate(aggrOp, TimestampedItem::fromWindowResult);
-    }
+    <R> StreamStage<WindowResult<R>> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
+    );
 
     /**
      * Attaches a stage that performs the given aggregate operation over all
@@ -159,85 +123,22 @@ public interface StageWithWindow<T> {
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
-     * @param mapToOutputFn the function that creates the output item
      * @param <T1> type of items in {@code stage1}
      * @param <R> type of the aggregation result
-     * @param <OUT> type of the output item
      */
     @Nonnull
-    <T1, R, OUT> StreamStage<OUT> aggregate2(
+    <T1, R> StreamStage<WindowResult<R>> aggregate2(
             @Nonnull StreamStage<T1> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, ?, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn);
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp
+    );
 
     /**
-     * Attaches a stage that performs the given aggregate operation over all
-     * the items that belong to the same window. It receives the items from
-     * both this stage and {@code stage1}. Once a given window is complete, it
-     * emits a {@link TimestampedItem} with the result of the aggregate
-     * operation and the timestamp denoting the window's ending time.
-     * <p>
-     * This variant requires you to provide a two-input aggregate operation
-     * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
-     * example). If you can express your logic in terms of two single-input
-     * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate2(AggregateOperation1, StreamStage, AggregateOperation1)
-     * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
-     * API and you can use the already defined single-input operations. Use
-     * this variant only when you have the need to implement an aggregate
-     * operation that combines the input streams into the same accumulator.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     * @param aggrOp the aggregate operation to perform
-     * @param <T1> type of items in {@code stage1}
-     * @param <R> type of the result
-     */
-    @Nonnull
-    default <T1, R> StreamStage<TimestampedItem<R>> aggregate2(
-            @Nonnull StreamStage<T1> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, ?, R> aggrOp
-    ) {
-        return aggregate2(stage1, aggrOp, TimestampedItem::fromWindowResult);
-    }
-
-    /**
-     * Attaches a stage that performs the given co-aggregate operation over the
-     * items from both this stage and {@code stage1} you supply. It performs
-     * the aggregation separately for each input stage: {@code aggrOp0} on this
-     * stage and {@code aggrOp1} on {@code stage1}. Once it has received all
-     * the items belonging to a window, it calls the supplied {@code
-     * mapToOutputFn} with the aggregation results to create the item to emit.
-     * <p>
-     * The aggregating stage emits a single item for each completed window.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     * @param aggrOp0 aggregate operation to perform on this stage
-     * @param stage1 the other stage
-     * @param aggrOp1 aggregate operation to perform on the other stage
-     * @param mapToOutputFn function to apply to the aggregated results
-     * @param <T1> type of the items in the other stage
-     * @param <R0> type of the aggregated result for this stage
-     * @param <R1> type of the aggregated result for the other stage
-     * @param <OUT> the output item type
-     */
-    @Nonnull
-    default <T1, R0, R1, OUT> StreamStage<OUT> aggregate2(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
-            @Nonnull StreamStage<T1> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
-            @Nonnull WindowResult2Function<? super R0, ? super R1, ? extends OUT> mapToOutputFn
-    ) {
-        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2),
-                (start, end, r) -> mapToOutputFn.apply(start, end, r.f0(), r.f1()));
-    }
-
-    /**
-     * Attaches a stage that performs the given co-aggregate operation over the
-     * items from both this stage and {@code stage1} you supply. It performs
+     * Attaches a stage that performs the given co-aggregate operations over
+     * the items from this stage and {@code stage1} you supply. It performs
      * the aggregation separately for each input stage: {@code aggrOp0} on this
      * stage and {@code aggrOp1} on {@code stage1}. Once it has received all
      * the items belonging to a window, it emits a {@code
-     * TimestampedItem(Tuple2(result0, result1))}.
+     * WindowResult(Tuple2(result0, result1))}.
      * <p>
      * The aggregating stage emits a single item for each completed window.
      *
@@ -250,53 +151,19 @@ public interface StageWithWindow<T> {
      * @param <R1> type of the aggregated result for the other stage
      */
     @Nonnull
-    default <T1, R0, R1> StreamStage<TimestampedItem<Tuple2<R0, R1>>> aggregate2(
+    default <T1, R0, R1> StreamStage<WindowResult<Tuple2<R0, R1>>> aggregate2(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
             @Nonnull StreamStage<T1> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1
     ) {
-        AggregateOperation2<T, T1, ?, Tuple2<R0, R1>> aggrOp = aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2);
-        return aggregate2(stage1, aggrOp, (start, end, t2) -> new TimestampedItem<>(end, t2));
+        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2));
     }
-
-    /**
-     * Attaches a stage that performs the given aggregate operation over the
-     * items it receives from this stage as well as {@code stage1} and {@code
-     * stage2} you supply. Once a given window is complete, it invokes {@code
-     * mapToOutputFn} with the result of the aggregate operation and emits its
-     * return value as the window result.
-     * <p>
-     * This variant requires you to provide a three-input aggregate operation
-     * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
-     * example). If you can express your logic in terms of three single-input
-     * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate3(AggregateOperation1, StreamStage,
-     *      AggregateOperation1, StreamStage, AggregateOperation1)
-     * stage0.aggregate2(aggrOp0, stage1, aggrOp1, stage2, aggrOp2)} because it
-     * offers a simpler API and you can use the already defined single-input
-     * operations. Use this variant only when you have the need to implement an
-     * aggregate operation that combines the input streams into the same
-     * accumulator.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     * @param aggrOp the aggregate operation to perform
-     * @param <T1> type of items in {@code stage1}
-     * @param <T2> type of items in {@code stage2}
-     * @param <R> type of the result
-     * @param <OUT> type of the output item
-     */
-    @Nonnull
-    <T1, T2, R, OUT> StreamStage<OUT> aggregate3(
-            @Nonnull StreamStage<T1> stage1,
-            @Nonnull StreamStage<T2> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn);
 
     /**
      * Attaches a stage that performs the given aggregate operation over the
      * items it receives from this stage as well as {@code stage1} and {@code
      * stage2} you supply. Once a given window is complete, it emits a {@link
-     * TimestampedItem} with the result of the aggregate operation and the
+     * WindowResult} with the result of the aggregate operation and the
      * timestamp denoting the window's ending time.
      * <p>
      * This variant requires you to provide a three-input aggregate operation
@@ -312,54 +179,19 @@ public interface StageWithWindow<T> {
      * accumulator.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
+     * @param stage1 the first additional stage
+     * @param stage2 the second additional stage
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
      * @param <R> type of the result
      */
     @Nonnull
-    default <T1, T2, R> StreamStage<TimestampedItem<R>> aggregate3(
+    <T1, T2, R> StreamStage<WindowResult<R>> aggregate3(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull StreamStage<T2> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, R> aggrOp
-    ) {
-        return aggregate3(stage1, stage2, aggrOp, TimestampedItem::fromWindowResult);
-    }
-
-    /**
-     * Attaches a stage that performs the given aggregate operation over all
-     * the items that belong to the same window. It receives the items from
-     * both this stage and {@code stage1}. It performs the aggregation
-     * separately for each input stage: {@code aggrOp0} on this stage, {@code
-     * aggrOp1} on {@code stage1} and {@code aggrOp2} on {@code stage2}. Once a
-     * given window is complete, it invokes {@code mapToOutputFn} with the
-     * result of the aggregate operation and emits its return value as the
-     * window result.
-     * <p>
-     * The aggregating stage emits a single item for each completed window.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     *
-     * @param mapToOutputFn the function that creates the output item
-     * @param <T1> type of items in {@code stage1}
-     * @param <T2> type of items in {@code stage2}
-     * @param <R0> type of the result from stream-0
-     * @param <R1> type of the result from stream-1
-     * @param <R2> type of the result from stream-2
-     * @param <OUT> type of the output item
-     */
-    @Nonnull
-    default <T1, T2, R0, R1, R2, OUT> StreamStage<OUT> aggregate3(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
-            @Nonnull StreamStage<T1> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
-            @Nonnull StreamStage<T2> stage2,
-            @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2,
-            @Nonnull WindowResult3Function<? super R0, ? super R1, ? super R2, ? extends OUT> mapToOutputFn
-    ) {
-        return aggregate3(stage1, stage2, aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3),
-                (start, end, t3) -> mapToOutputFn.apply(start, end, t3.f0(), t3.f1(), t3.f2()));
-    }
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp
+    );
 
     /**
      * Attaches a stage that performs the given aggregate operation over all
@@ -368,12 +200,17 @@ public interface StageWithWindow<T> {
      * separately for each input stage: {@code aggrOp0} on this stage, {@code
      * aggrOp1} on {@code stage1} and {@code aggrOp2} on {@code stage2}. Once
      * it has received all the items belonging to a window, it emits a {@code
-     * TimestampedItem(Tuple3(result0, result1, result2))}.
+     * WindowResult(Tuple3(result0, result1, result2))}.
      * <p>
      * The aggregating stage emits a single item for each completed window.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      *
+     * @param aggrOp0 aggregate operation to perform on this stage
+     * @param stage1 the first additional stage
+     * @param aggrOp1 aggregate operation to perform on {@code stage1}
+     * @param stage2 the second additional stage
+     * @param aggrOp2 aggregate operation to perform on {@code stage2}
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
      * @param <R0> type of the result from stream-0
@@ -381,16 +218,14 @@ public interface StageWithWindow<T> {
      * @param <R2> type of the result from stream-2
      */
     @Nonnull
-    default <T1, T2, R0, R1, R2> StreamStage<TimestampedItem<Tuple3<R0, R1, R2>>> aggregate3(
+    default <T1, T2, R0, R1, R2> StreamStage<WindowResult<Tuple3<R0, R1, R2>>> aggregate3(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
             @Nonnull StreamStage<T1> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
             @Nonnull StreamStage<T2> stage2,
             @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2
     ) {
-        AggregateOperation3<T, T1, T2, ?, Tuple3<R0, R1, R2>> aggrOp =
-                aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3);
-        return aggregate3(stage1, stage2, aggrOp, (start, end, t3) -> new TimestampedItem<>(end, t3));
+        return aggregate3(stage1, stage2, aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3));
     }
 
     /**
@@ -398,21 +233,26 @@ public interface StageWithWindow<T> {
      * the data from several input stages. The current stage will be already
      * registered with the builder you get. You supply an aggregate operation
      * for each input stage and in the output you get the individual
-     * aggregation results in a {@code TimestampedItem(windowEnd, itemsByTag)}.
+     * aggregation results in a {@code WindowResult(windowEnd, itemsByTag)}.
      * Use the tag you get from {@link AggregateBuilder#add builder.add(stageN,
      * aggrOpN)} to retrieve the aggregated result for that stage. Use {@link
      * AggregateBuilder#tag0() builder.tag0()} as the tag of this stage. You
      * will also be able to supply a function to the builder that immediately
      * transforms the results to the desired output type.
      * <p>
+     * This builder is mainly intended to build a co-aggregation of four or
+     * more contributing stages. For up to three stages, prefer the direct
+     * {@code stage.aggregateN(...)} calls because they offer more static type
+     * safety.
+     * <p>
      * This example defines a 1-second sliding window and counts the items in
      * stage-0, sums those in stage-1 and takes the average of those in
      * stage-2:
      * <pre>{@code
      * Pipeline p = Pipeline.create();
-     * StreamStage<Long> stage0 = p.drawFrom(source0);
-     * StreamStage<Long> stage1 = p.drawFrom(source1);
-     * StreamStage<Long> stage2 = p.drawFrom(source2);
+     * StreamStage<Long> stage0 = p.drawFrom(source0).withNativeTimestamps(0L);;
+     * StreamStage<Long> stage1 = p.drawFrom(source1).withNativeTimestamps(0L);;
+     * StreamStage<Long> stage2 = p.drawFrom(source2).withNativeTimestamps(0L);;
      * WindowAggregateBuilder<Long> b = stage0
      *         .window(sliding(1000, 10))
      *         .aggregateBuilder(AggregateOperations.counting());
@@ -421,7 +261,7 @@ public interface StageWithWindow<T> {
      *         AggregateOperations.summingLong(Long::longValue));
      * Tag<Double> tag2 = b.add(stage2,
      *         AggregateOperations.averagingLong(Long::longValue));
-     * StreamStage<TimestampedItem<ItemsByTag>> aggregated = b.build();
+     * StreamStage<WindowResult<ItemsByTag>> aggregated = b.build();
      * aggregated.map(e -> String.format(
      *         "Timestamp %d, count of stage0: %d, sum of stage1: %d, average of stage2: %f",
      *         e.timestamp(), e.item().get(tag0), e.item().get(tag1), e.item().get(tag2))
@@ -463,26 +303,27 @@ public interface StageWithWindow<T> {
      * sliding window and counts the distinct strings across all streams:
      * <pre>{@code
      * Pipeline p = Pipeline.create();
-     * StreamStage<String> stage0 = p.drawFrom(source0);
-     * StreamStage<String> stage1 = p.drawFrom(source1);
-     * StreamStage<String> stage2 = p.drawFrom(source2);
+     * StreamStage<String> stage0 = p.drawFrom(source0).withNativeTimestamps(0L);;
+     * StreamStage<String> stage1 = p.drawFrom(source1).withNativeTimestamps(0L);;
+     * StreamStage<String> stage2 = p.drawFrom(source2).withNativeTimestamps(0L);;
      * WindowAggregateBuilder1<String> b = stage0
      *         .window(sliding(1000, 10))
      *         .aggregateBuilder();
      * Tag<String> tag0 = b.tag0();
      * Tag<String> tag1 = b.add(stage1);
      * Tag<String> tag2 = b.add(stage2);
-     * StreamStage<TimestampedItem<Integer>> aggregated = b.build(AggregateOperation
+     * StreamStage<WindowResult<Integer>> aggregated = b.build(AggregateOperation
      *         .withCreate(HashSet<String>::new)
      *         .andAccumulate(tag0, (acc, item) -> acc.add(item))
      *         .andAccumulate(tag1, (acc, item) -> acc.add(item))
      *         .andAccumulate(tag2, (acc, item) -> acc.add(item))
      *         .andCombine(HashSet::addAll)
-     *         .andFinish(HashSet::size));
+     *         .andExportFinish(HashSet::size));
      * }</pre>
      */
     @Nonnull
     default WindowAggregateBuilder1<T> aggregateBuilder() {
         return new WindowAggregateBuilder1<>(streamStage(), windowDefinition());
     }
+
 }

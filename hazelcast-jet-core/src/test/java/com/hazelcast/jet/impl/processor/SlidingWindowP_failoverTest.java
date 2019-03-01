@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.impl.processor.SlidingWindowP.Keys;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -63,7 +63,7 @@ public class SlidingWindowP_failoverTest {
                 wDef,
                 0L,
                 aggrOp,
-                TimestampedEntry::fromWindowResult,
+                KeyedWindowResult::new,
                 true);
 
         Outbox outbox = new TestOutbox(128);

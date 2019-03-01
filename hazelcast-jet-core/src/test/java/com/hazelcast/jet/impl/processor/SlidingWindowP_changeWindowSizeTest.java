@@ -20,15 +20,16 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.core.JetTestSupport.wm;
@@ -48,9 +49,9 @@ public class SlidingWindowP_changeWindowSizeTest {
                 slidingWinPolicy(3, 1),
                 slidingWinPolicy(2, 1),
                 asList(
-                        new TimestampedEntry(3, "key", 3L),
-                        new TimestampedEntry(4, "key", 5L),
-                        new TimestampedEntry(5, "key", 3L)
+                        result(3, "key", 3L),
+                        result(4, "key", 5L),
+                        result(5, "key", 3L)
                 ));
     }
 
@@ -60,10 +61,10 @@ public class SlidingWindowP_changeWindowSizeTest {
                 slidingWinPolicy(2, 1),
                 slidingWinPolicy(3, 1),
                 asList(
-                        new TimestampedEntry(3, "key", 3L),
-                        new TimestampedEntry(4, "key", 6L),
-                        new TimestampedEntry(5, "key", 5L),
-                        new TimestampedEntry(6, "key", 3L)
+                        result(3, "key", 3L),
+                        result(4, "key", 6L),
+                        result(5, "key", 5L),
+                        result(6, "key", 3L)
                 ));
     }
 
@@ -72,7 +73,7 @@ public class SlidingWindowP_changeWindowSizeTest {
         test(
                 tumblingWinPolicy(2),
                 tumblingWinPolicy(3),
-                singletonList(new TimestampedEntry(6, "key", 5L)));
+                singletonList(result(6, "key", 5L)));
     }
 
     @Test
@@ -81,8 +82,8 @@ public class SlidingWindowP_changeWindowSizeTest {
                 tumblingWinPolicy(3),
                 tumblingWinPolicy(2),
                 asList(
-                        new TimestampedEntry(4, "key", 3L),
-                        new TimestampedEntry(6, "key", 3L)
+                        result(4, "key", 3L),
+                        result(6, "key", 3L)
                 ));
     }
 
@@ -91,11 +92,14 @@ public class SlidingWindowP_changeWindowSizeTest {
         test(
                 tumblingWinPolicy(1),
                 tumblingWinPolicy(4),
-                singletonList(new TimestampedEntry(4, "key", 5L)));
+                singletonList(result(4, "key", 5L)));
     }
 
-    private static void test(SlidingWindowPolicy policy1, SlidingWindowPolicy policy2,
-                             @Nullable List expectedOutboxAfterRestore) throws Exception {
+    private static void test(
+            @Nonnull SlidingWindowPolicy policy1,
+            @Nonnull SlidingWindowPolicy policy2,
+            @Nullable List expectedOutboxAfterRestore
+    ) throws Exception {
         SlidingWindowP p = createProcessor(policy1);
         TestOutbox outbox = new TestOutbox(new int[]{1024}, 1024);
         p.init(outbox, new TestProcessorContext());
@@ -126,13 +130,18 @@ public class SlidingWindowP_changeWindowSizeTest {
     }
 
     private static SlidingWindowP createProcessor(SlidingWindowPolicy winPolicy) {
+        List<Function<Integer, String>> keyFns = singletonList((Integer t) -> "key");
         return new SlidingWindowP<>(
-                singletonList((Integer t) -> "key"),
+                keyFns,
                 singletonList((Integer t) -> winPolicy.higherFrameTs(t)),
                 winPolicy,
                 0L,
                 summingLong((Integer t) -> t),
-                TimestampedEntry::fromWindowResult,
+                (start, end, key, result, isEarly) -> result(end, key, result),
                 true);
+    }
+
+    private static String result(long winEnd, String key, long result) {
+        return String.format("(%03d, %s: %d)", winEnd, key, result);
     }
 }

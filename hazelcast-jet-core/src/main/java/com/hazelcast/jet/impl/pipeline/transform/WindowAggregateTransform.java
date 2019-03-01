@@ -20,8 +20,9 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.function.ToLongFunctionEx;
-import com.hazelcast.jet.function.WindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
@@ -39,31 +40,31 @@ import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSessionWindowP;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
+import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 import static com.hazelcast.jet.impl.pipeline.transform.AbstractTransform.Optimization.MEMORY;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static java.util.Collections.nCopies;
 
-public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
+public class WindowAggregateTransform<A, R> extends AbstractTransform {
     private static final int MAX_WATERMARK_STRIDE = 100;
     private static final int MIN_WMS_PER_SESSION = 100;
+    private static final KeyedWindowResultFunction JET_EVENT_WINDOW_RESULT_FN =
+            (start, end, ignoredKey, result, isEarly) ->
+                    jetEvent(end - 1, new WindowResult<>(start, end, result, isEarly));
 
     @Nonnull
     private final AggregateOperation<A, ? extends R> aggrOp;
     @Nonnull
     private final WindowDefinition wDef;
-    @Nonnull
-    private final WindowResultFunction<? super R, ? extends OUT> mapToOutputFn;
 
     public WindowAggregateTransform(
             @Nonnull List<Transform> upstream,
             @Nonnull WindowDefinition wDef,
-            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp
     ) {
         super(createName(wDef), upstream);
         this.aggrOp = aggrOp;
         this.wDef = wDef;
-        this.mapToOutputFn = mapToOutputFn;
     }
 
     static String createName(WindowDefinition wDef) {
@@ -131,7 +132,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
                         slidingWinPolicy(wDef.windowSize(), wDef.slideBy()),
                         wDef.earlyResultsPeriod(),
                         aggrOp,
-                        mapToOutputFn.toKeyedWindowResultFn()
+                        jetEventOfWindowResultFn()
                 ));
         p.addEdges(this, pv.v, edge -> edge.distributed().allToOne(name().hashCode()));
     }
@@ -164,7 +165,7 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
         ));
         v1.localParallelism(localParallelism());
         PlannerVertex pv2 = p.addVertex(this, name(), 1,
-                combineToSlidingWindowP(winPolicy, aggrOp, mapToOutputFn.toKeyedWindowResultFn()));
+                combineToSlidingWindowP(winPolicy, aggrOp, jetEventOfWindowResultFn()));
         p.addEdges(this, v1);
         p.dag.edge(between(v1, pv2.v).distributed().allToOne(name().hashCode()));
     }
@@ -189,7 +190,12 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
                         nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
                         nCopies(aggrOp.arity(), new ConstantFunctionEx<>(name().hashCode())),
                         aggrOp,
-                        mapToOutputFn.toKeyedWindowResultFn()));
+                        jetEventOfWindowResultFn()));
         p.addEdges(this, pv.v, edge -> edge.distributed().allToOne(name().hashCode()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, R> KeyedWindowResultFunction<K, R, JetEvent<R>> jetEventOfWindowResultFn() {
+        return JET_EVENT_WINDOW_RESULT_FN;
     }
 }

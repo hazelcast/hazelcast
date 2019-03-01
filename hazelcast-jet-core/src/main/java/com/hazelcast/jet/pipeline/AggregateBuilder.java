@@ -97,7 +97,7 @@ public class AggregateBuilder<R0> {
     ) {
         AggregateOperation<Object[], R> aggrOp = aggrOpBuilder.build(finishFn);
         CreateOutStageFn<R, BatchStage<R>> createOutStageFn = BatchStageImpl::new;
-        return aggBuilder.build(aggrOp, createOutStageFn, null);
+        return aggBuilder.build(aggrOp, createOutStageFn);
     }
 
     /**
@@ -113,6 +113,6 @@ public class AggregateBuilder<R0> {
     public BatchStage<ItemsByTag> build() {
         AggregateOperation<Object[], ItemsByTag> aggrOp = aggrOpBuilder.build();
         CreateOutStageFn<ItemsByTag, BatchStage<ItemsByTag>> createOutStageFn = BatchStageImpl::new;
-        return aggBuilder.build(aggrOp, createOutStageFn, null);
+        return aggBuilder.build(aggrOp, createOutStageFn);
     }
 }

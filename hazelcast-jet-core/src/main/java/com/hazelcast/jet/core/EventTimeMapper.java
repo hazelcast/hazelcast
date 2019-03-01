@@ -18,7 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.function.ObjLongBiFunction;
+import com.hazelcast.jet.core.function.ObjLongBiFunction;
 import com.hazelcast.jet.pipeline.Sources;
 
 import javax.annotation.Nonnull;

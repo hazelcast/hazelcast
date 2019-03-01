@@ -20,9 +20,10 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
-import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
@@ -41,32 +42,34 @@ import static com.hazelcast.jet.core.processor.Processors.aggregateToSessionWind
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.function.Functions.entryKey;
+import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 import static com.hazelcast.jet.impl.pipeline.transform.AbstractTransform.Optimization.MEMORY;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static java.util.Collections.nCopies;
 
-public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
+public class WindowGroupTransform<K, R> extends AbstractTransform {
+
+    private static final KeyedWindowResultFunction JET_EVENT_KEYED_WINDOW_RESULT_FN =
+            (winStart, winEnd, key, windowResult, isEarly) ->
+                    jetEvent(winEnd - 1, new KeyedWindowResult<>(winStart, winEnd, key, windowResult, isEarly));
+
     @Nonnull
     private final WindowDefinition wDef;
     @Nonnull
     private final List<FunctionEx<?, ? extends K>> keyFns;
     @Nonnull
     private final AggregateOperation<?, ? extends R> aggrOp;
-    @Nonnull
-    private final KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn;
 
     public WindowGroupTransform(
             @Nonnull List<Transform> upstream,
             @Nonnull WindowDefinition wDef,
             @Nonnull List<FunctionEx<?, ? extends K>> keyFns,
-            @Nonnull AggregateOperation<?, ? extends R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull AggregateOperation<?, ? extends R> aggrOp
     ) {
         super(createName(wDef), upstream);
         this.wDef = wDef;
         this.keyFns = keyFns;
         this.aggrOp = aggrOp;
-        this.mapToOutputFn = mapToOutputFn;
     }
 
     private static String createName(WindowDefinition wDef) {
@@ -110,7 +113,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
                         slidingWinPolicy(wDef.windowSize(), wDef.slideBy()),
                         wDef.earlyResultsPeriod(),
                         aggrOp,
-                        mapToOutputFn
+                        jetEventOfKeyedWindowResultFn()
                 ));
         p.addEdges(this, pv.v, (e, ord) -> e.distributed().partitioned(keyFns.get(ord)));
     }
@@ -142,7 +145,7 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
                 aggrOp));
         v1.localParallelism(localParallelism());
         PlannerVertex pv2 = p.addVertex(this, name(), localParallelism(),
-                combineToSlidingWindowP(winPolicy, aggrOp, mapToOutputFn));
+                combineToSlidingWindowP(winPolicy, aggrOp, jetEventOfKeyedWindowResultFn()));
         p.addEdges(this, v1, (e, ord) -> e.partitioned(keyFns.get(ord), HASH_CODE));
         p.dag.edge(between(v1, pv2.v).distributed().partitioned(entryKey()));
     }
@@ -167,8 +170,14 @@ public class WindowGroupTransform<K, R, OUT> extends AbstractTransform {
                         nCopies(keyFns.size(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
                         keyFns,
                         aggrOp,
-                        mapToOutputFn
+                        jetEventOfKeyedWindowResultFn()
                 ));
         p.addEdges(this, pv.v, (e, ord) -> e.distributed().partitioned(keyFns.get(ord)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, R> KeyedWindowResultFunction<K, R, JetEvent<? extends KeyedWindowResult<K, ? extends R>>>
+    jetEventOfKeyedWindowResultFn() {
+        return JET_EVENT_KEYED_WINDOW_RESULT_FN;
     }
 }

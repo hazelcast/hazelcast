@@ -19,10 +19,11 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
+import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.function.BiFunctionEx;
 import org.junit.Test;
 
@@ -82,7 +83,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .window(tumbling(winSize));
 
         // When
-        StreamStage<TimestampedItem<Integer>> distinct = windowed.distinct();
+        StreamStage<WindowResult<Integer>> distinct = windowed.distinct();
 
         // Then
         distinct.drainTo(sink);
@@ -94,8 +95,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                                  .distinct(),
                         identity()),
                 streamToString(
-                        this.<Integer>sinkStreamOfTsItem(),
-                        tsItem -> String.format("(%04d, %04d)", tsItem.timestamp(), tsItem.item()))
+                        this.<Integer>sinkStreamOfWinResult(),
+                        wr -> String.format("(%04d, %04d)", wr.end(), wr.result()))
         );
     }
 
@@ -121,8 +122,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 new SlidingWindowSimulator(wDef)
                         .acceptStream(input.stream())
                         .stringResults(e -> formatFn.apply(e.getKey(), e.getValue())),
-                streamToString(this.<Long>sinkStreamOfTsItem(),
-                        tsItem -> formatFn.apply(tsItem.timestamp(), tsItem.item()))
+                streamToString(this.<Long>sinkStreamOfWinResult(),
+                        wr -> formatFn.apply(wr.end(), wr.result()))
         );
     }
 
@@ -149,9 +150,9 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stringResults(e -> formatFn.apply(e.getKey(), e.getValue()));
         assertTrueEventually(() -> assertEquals(
                 expectedString,
-                streamToString(this.<Long>sinkStreamOfTsItem(),
-                        tsItem -> formatFn.apply(tsItem.timestamp(), tsItem.item()),
-                        TimestampedItem::timestamp
+                streamToString(this.<Long>sinkStreamOfWinResult(),
+                        wr -> formatFn.apply(wr.end(), wr.result()),
+                        WindowResult::end
                 )),
                 ASSERT_TIMEOUT_SECONDS);
     }
@@ -169,7 +170,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         // When
         SlidingWindowDefinition wDef = sliding(winSize, slideBy);
-        StreamStage<TimestampedItem<Long>> aggregated = stage.window(wDef)
+        StreamStage<WindowResult<Long>> aggregated = stage.window(wDef)
                                                              .aggregate(summingLong(i -> i));
 
         // Then
@@ -179,8 +180,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 new SlidingWindowSimulator(wDef)
                         .acceptStream(input.stream())
                         .stringResults(e -> formatFn.apply(e.getKey(), e.getValue())),
-                streamToString(this.<Long>sinkStreamOfTsItem(),
-                        tsItem -> formatFn.apply(tsItem.timestamp(), tsItem.item()))
+                streamToString(this.<Long>sinkStreamOfWinResult(),
+                        wr -> formatFn.apply(wr.end(), wr.result()))
         );
     }
 
@@ -197,7 +198,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         // When
         SlidingWindowDefinition wDef = sliding(winSize, slideBy).setEarlyResultsPeriod(EARLY_RESULTS_PERIOD);
-        StreamStage<TimestampedItem<Long>> aggregated = stage.window(wDef)
+        StreamStage<WindowResult<Long>> aggregated = stage.window(wDef)
                                                              .aggregate(summingLong(i -> i));
 
         // Then
@@ -208,9 +209,9 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 .stringResults(e -> formatFn.apply(e.getKey(), e.getValue()));
         assertTrueEventually(() -> assertEquals(
                 expectedString,
-                streamToString(this.<Long>sinkStreamOfTsItem(),
-                        tsItem -> formatFn.apply(tsItem.timestamp(), tsItem.item()),
-                        TimestampedItem::timestamp
+                streamToString(this.<Long>sinkStreamOfWinResult(),
+                        wr -> formatFn.apply(wr.end(), wr.result()),
+                        WindowResult::end
                 )),
                 ASSERT_TIMEOUT_SECONDS);
     }
@@ -231,8 +232,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StageWithWindow<Integer> windowed = streamStageFromList(input).window(wDef);
 
         // Then
-        windowed.aggregate(summingLong(i -> i),
-                (start, end, sum) -> new TimestampedItem<>(start, sum))
+        windowed.aggregate(summingLong(i -> i))
                 .drainTo(sink);
         execute();
 
@@ -241,8 +241,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                         .acceptStream(input.stream())
                         .stringResults(e -> formatFn.apply(e.getKey(), e.getValue())),
                 streamToString(
-                        this.<Long>sinkStreamOfTsItem(),
-                        tsItem -> formatFn.apply(tsItem.timestamp(), tsItem.item()))
+                        this.<Long>sinkStreamOfWinResult(),
+                        wr -> formatFn.apply(wr.start(), wr.result()))
         );
     }
 
@@ -264,11 +264,9 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         StageWithWindow<Integer> windowed = stage.window(wDef);
 
         // Then
-        windowed.aggregate(summingLong(i -> i),
+        windowed.aggregate(summingLong(i -> i))
                 // suppress incomplete windows to get predictable results
-                (start, end, sum) -> end - start != sessionLength + sessionTimeout - 1
-                        ? null
-                        : new TimestampedItem<>(start, sum))
+                .filter(wr -> wr.end() - wr.start() == sessionLength + sessionTimeout - 1)
                 .drainTo(sink);
         jet().newJob(p);
 
@@ -278,9 +276,9 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         assertTrueEventually(() -> assertEquals(
                 expectedString,
                 streamToString(
-                        this.<Long>sinkStreamOfTsItem(),
-                        tsItem -> formatFn.apply(tsItem.timestamp(), tsItem.item()),
-                        TimestampedItem::timestamp
+                        this.<Long>sinkStreamOfWinResult(),
+                        wr -> formatFn.apply(wr.start(), wr.result()),
+                        WindowResult::end
                 )),
                 ASSERT_TIMEOUT_SECONDS);
     }
@@ -292,13 +290,13 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
     @Test
     public void when_sessionWinWithEarlyResults_then_emitRepeatedly() {
-        assertEarlyResultsEmittedRepeatedly(session(9));
+        assertEarlyResultsEmittedRepeatedly(session(10));
     }
 
     private void assertEarlyResultsEmittedRepeatedly(WindowDefinition wDef) {
         // Given
         long earlyResultPeriod = 50;
-        StreamStage<Integer> srcStage = streamStageFromList(singletonList(1), earlyResultPeriod);
+        StreamStage<Integer> srcStage = streamStageFromList(singletonList(0), earlyResultPeriod);
 
         // When
         StageWithWindow<Integer> stage = srcStage.window(wDef.setEarlyResultsPeriod(earlyResultPeriod));
@@ -307,38 +305,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         stage.aggregate(counting()).drainTo(Sinks.list(sinkList));
         jet().newJob(p);
         assertTrueEventually(() -> assertGreaterOrEquals("sinkList.size()", sinkList.size(), 10));
-        TimestampedItem expected = new TimestampedItem<>(10L, 1L);
+        WindowResult<Long> expected = new WindowResult<>(0L, 10L, 1L, true);
         sinkList.forEach(it -> assertEquals(expected, it));
-    }
-
-    @Test
-    public void when_slidingWindow_outputFnReturnsNull_then_filteredOut() {
-        // Given
-        StreamStage<Integer> stage = streamStageFromList(sequence(itemCount));
-
-        // When
-        StreamStage<Object> aggregated = stage.window(sliding(2, 1))
-                                              .aggregate(counting(), (x, y, z) -> null);
-
-        // Then
-        aggregated.drainTo(sink);
-        jet().newJob(p);
-        assertTrueFiveSeconds(() -> assertEquals(0, sinkList.size()));
-    }
-
-    @Test
-    public void when_sessionWindow_outputFnReturnsNull_then_filteredOut() {
-        // Given
-        StreamStage<Integer> stage = streamStageFromList(sequence(itemCount));
-
-        // When
-        StreamStage<Object> aggregated = stage.window(session(1))
-                                              .aggregate(counting(), (x, y, z) -> null);
-
-        // Then
-        aggregated.drainTo(sink);
-        jet().newJob(p);
-        assertTrueFiveSeconds(() -> assertEquals(0, sinkList.size()));
     }
 
     private class CoAggregateFixture {
@@ -367,7 +335,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         CoAggregateFixture fx = new CoAggregateFixture();
 
         // When
-        StreamStage<TimestampedItem<Tuple2<Long, Long>>> aggregated =
+        StreamStage<WindowResult<Tuple2<Long, Long>>> aggregated =
                 fx.stage0.aggregate2(SUMMING, fx.newStage(), SUMMING);
 
         //Then
@@ -375,8 +343,8 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(
-                        this.<Tuple2<Long, Long>>sinkStreamOfTsItem(),
-                        tsItem -> FORMAT_FN_2.apply(tsItem.timestamp(), tsItem.item())
+                        this.<Tuple2<Long, Long>>sinkStreamOfWinResult(),
+                        wr -> FORMAT_FN_2.apply(wr.end(), wr.result())
                 ));
     }
 
@@ -386,7 +354,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         CoAggregateFixture fx = new CoAggregateFixture();
 
         // When
-        StreamStage<TimestampedItem<Tuple2<Long, Long>>> aggregated =
+        StreamStage<WindowResult<Tuple2<Long, Long>>> aggregated =
                 fx.stage0.aggregate2(fx.newStage(), aggregateOperation2(SUMMING, SUMMING));
 
         //Then
@@ -394,43 +362,9 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         execute();
         assertEquals(fx.expectedString2,
                 streamToString(
-                        this.<Tuple2<Long, Long>>sinkStreamOfTsItem(),
-                        tsItem -> FORMAT_FN_2.apply(tsItem.timestamp(), tsItem.item())
+                        this.<Tuple2<Long, Long>>sinkStreamOfWinResult(),
+                        wr -> FORMAT_FN_2.apply(wr.end(), wr.result())
                 ));
-    }
-
-    @Test
-    public void aggregate2_withSeparateAggrOps_withOutputFn() {
-        // Given
-        CoAggregateFixture fx = new CoAggregateFixture();
-
-        // When
-        StreamStage<String> aggregated = fx.stage0.aggregate2(SUMMING, fx.newStage(), SUMMING,
-                (start, end, sum0, sum1) -> FORMAT_FN_2.apply(end, tuple2(sum0, sum1)));
-
-        // Then
-        aggregated.drainTo(sink);
-        execute();
-        assertEquals(fx.expectedString2,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
-    }
-
-    @Test
-    public void aggregate2_withAggrOp2_withOutputFn() {
-        // Given
-        CoAggregateFixture fx = new CoAggregateFixture();
-
-        // When
-        StreamStage<String> aggregated = fx.stage0.aggregate2(
-                fx.newStage(),
-                aggregateOperation2(SUMMING, SUMMING),
-                (start, end, sums) -> FORMAT_FN_2.apply(end, sums));
-
-        // Then
-        aggregated.drainTo(sink);
-        execute();
-        assertEquals(fx.expectedString2,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
     }
 
     @Test
@@ -439,15 +373,15 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         CoAggregateFixture fx = new CoAggregateFixture();
 
         // When
-        StreamStage<TimestampedItem<Tuple3<Long, Long, Long>>> aggregated =
+        StreamStage<WindowResult<Tuple3<Long, Long, Long>>> aggregated =
                 fx.stage0.aggregate3(SUMMING, fx.newStage(), SUMMING, fx.newStage(), SUMMING);
 
         // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString3,
-                streamToString(this.<Tuple3<Long, Long, Long>>sinkStreamOfTsItem(),
-                        tsItem -> FORMAT_FN_3.apply(tsItem.timestamp(), tsItem.item())
+                streamToString(this.<Tuple3<Long, Long, Long>>sinkStreamOfWinResult(),
+                        wr -> FORMAT_FN_3.apply(wr.end(), wr.result())
                 ));
     }
 
@@ -457,7 +391,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         CoAggregateFixture fx = new CoAggregateFixture();
 
         // When
-        StreamStage<TimestampedItem<Tuple3<Long, Long, Long>>> aggregated =
+        StreamStage<WindowResult<Tuple3<Long, Long, Long>>> aggregated =
                 fx.stage0.aggregate3(fx.newStage(), fx.newStage(),
                         aggregateOperation3(SUMMING, SUMMING, SUMMING));
 
@@ -465,45 +399,9 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString3,
-                streamToString(this.<Tuple3<Long, Long, Long>>sinkStreamOfTsItem(),
-                        tsItem -> FORMAT_FN_3.apply(tsItem.timestamp(), tsItem.item())
+                streamToString(this.<Tuple3<Long, Long, Long>>sinkStreamOfWinResult(),
+                        wr -> FORMAT_FN_3.apply(wr.end(), wr.result())
                 ));
-    }
-
-    @Test
-    public void aggregate3_withSeparateAggrOps_withOutputFn() {
-        // Given
-        CoAggregateFixture fx = new CoAggregateFixture();
-
-        // When
-        StreamStage<String> aggregated = fx.stage0.aggregate3(SUMMING,
-                fx.newStage(), SUMMING,
-                fx.newStage(), SUMMING,
-                (start, end, sum0, sum1, sum2) -> FORMAT_FN_3.apply(end, tuple3(sum0, sum1, sum2)));
-
-        // Then
-        aggregated.drainTo(sink);
-        execute();
-        assertEquals(fx.expectedString3,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
-    }
-
-    @Test
-    public void aggregate3_withAggrOp3_withOutputFn() {
-        // Given
-        CoAggregateFixture fx = new CoAggregateFixture();
-
-        // When
-        StreamStage<String> aggregated = fx.stage0.aggregate3(
-                fx.newStage(), fx.newStage(),
-                aggregateOperation3(SUMMING, SUMMING, SUMMING),
-                (start, end, sums) -> FORMAT_FN_3.apply(end, sums));
-
-        // Then
-        aggregated.drainTo(sink);
-        execute();
-        assertEquals(fx.expectedString3,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
     }
 
     @Test
@@ -515,14 +413,14 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         WindowAggregateBuilder<Long> b = fx.stage0.aggregateBuilder(SUMMING);
         Tag<Long> tag0 = b.tag0();
         Tag<Long> tag1 = b.add(fx.newStage(), SUMMING);
-        StreamStage<String> aggregated = b.build((start, end, sums) ->
-                FORMAT_FN_2.apply(end, tuple2(sums.get(tag0), sums.get(tag1))));
+        StreamStage<WindowResult<ItemsByTag>> aggregated = b.build();
 
         // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString2,
-                streamToString(sinkList.stream().map(String.class::cast), identity()));
+                streamToString(this.<ItemsByTag>sinkStreamOfWinResult(),
+                        wr -> FORMAT_FN_2.apply(wr.end(), tuple2(wr.result().get(tag0), wr.result().get(tag1)))));
     }
 
     @Test
@@ -539,14 +437,14 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         Tag<Long> tag0 = b2.add(tag0_in, SUMMING);
         Tag<Long> tag1 = b2.add(tag1_in, SUMMING);
 
-        StreamStage<String> aggregated = b.build(b2.build(),
-                (start, end, sums) -> FORMAT_FN_2.apply(end, tuple2(sums.get(tag0), sums.get(tag1))));
+        StreamStage<WindowResult<ItemsByTag>> aggregated = b.build(b2.build());
 
         // Then
         aggregated.drainTo(sink);
         execute();
         assertEquals(fx.expectedString2,
-                streamToString(sinkList.stream().map(String.class::cast), identity())
+                streamToString(this.<ItemsByTag>sinkStreamOfWinResult(),
+                        wr -> FORMAT_FN_2.apply(wr.end(), tuple2(wr.result().get(tag0), wr.result().get(tag1))))
         );
     }
 }

@@ -17,81 +17,86 @@
 package com.hazelcast.jet.datamodel;
 
 import javax.annotation.Nonnull;
-import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
- * Holds the result of a group-and-aggregate operation performed in a time
+ * Holds the result of an aggregate operation performed over a time
  * window.
  *
- * @param <K> type of key
  * @param <R> type of aggregated result
  */
-public class WindowResult<K, R> implements Map.Entry<K, R> {
+public class WindowResult<R> {
     private final long start;
     private final long end;
-    private final K key;
     private final R result;
+    private final boolean isEarly;
 
     /**
-     * @param start {@link #getStart()}
-     * @param end {@link #getEnd()}
-     * @param key {@link #getKey()}
-     * @param result {@link #getValue()}
+     * @param start  start time of the window
+     * @param end    end time of the window
+     * @param result result of aggregation
+     * @param isEarly whether this is an early result, to be followed by the final one
      */
-    public WindowResult(long start, long end, @Nonnull K key, @Nonnull R result) {
+    public WindowResult(long start, long end, @Nonnull R result, boolean isEarly) {
         this.start = start;
         this.end = end;
-        this.key = key;
         this.result = result;
+        this.isEarly = isEarly;
+    }
+
+    /**
+     * Constructs a window result that is not early.
+     *
+     * @param start  start time of the window
+     * @param end    end time of the window
+     * @param result result of aggregation
+     */
+    public WindowResult(long start, long end, @Nonnull R result) {
+        this(start, end, result, false);
     }
 
     /**
      * Returns the starting timestamp of the window.
      */
-    public long getStart() {
+    public long start() {
         return start;
     }
 
     /**
      * Returns the ending timestamp of the window.
      */
-    public long getEnd() {
+    public long end() {
         return end;
-    }
-
-    /**
-     * Returns the key.
-     */
-    @Nonnull @Override
-    public K getKey() {
-        return key;
     }
 
     /**
      * Returns the aggregated result.
      */
-    @Nonnull @Override
-    public R getValue() {
+    @Nonnull
+    public R result() {
         return result;
     }
 
-    @Override
-    public R setValue(R value) {
-        throw new UnsupportedOperationException("setValue called on the immutable WindowResult");
+    /**
+     * Returns whether this is an early window result, to be followed by the
+     * final one.
+     */
+    public boolean isEarly() {
+        return isEarly;
     }
 
     @Override
     public boolean equals(Object obj) {
         WindowResult that;
         return this == obj
-                || obj instanceof WindowResult
-                    && this.start == (that = (WindowResult) obj).start
-                    && this.end == that.end
-                    && Objects.equals(this.key, that.key)
-                    && Objects.equals(this.result, that.result);
+                || obj != null
+                && obj.getClass() == getClass()
+                && this.start == (that = (WindowResult) obj).start
+                && this.end == that.end
+                && this.isEarly == that.isEarly
+                && Objects.equals(this.result, that.result);
     }
 
     @Override
@@ -99,7 +104,7 @@ public class WindowResult<K, R> implements Map.Entry<K, R> {
         int hc = 17;
         hc = 73 * hc + Long.hashCode(start);
         hc = 73 * hc + Long.hashCode(end);
-        hc = 73 * hc + Objects.hashCode(key);
+        hc = 73 * hc + Boolean.hashCode(isEarly);
         hc = 73 * hc + Objects.hashCode(result);
         return hc;
     }
@@ -107,6 +112,7 @@ public class WindowResult<K, R> implements Map.Entry<K, R> {
     @Override
     public String toString() {
         return String.format(
-                "WindowResult{start=%s, end=%s, key='%s', value='%s'}", toLocalTime(start), toLocalTime(end), key, result);
+                "WindowResult{start=%s, end=%s, value='%s', isEarly=%s}",
+                toLocalTime(start), toLocalTime(end), result, isEarly);
     }
 }

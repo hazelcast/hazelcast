@@ -34,7 +34,7 @@ import java.util.Set;
  * and {@code ItemsByTag} has a variable number of tag-indexed fields whose
  * whose static type is encoded in the tags.
  */
-public class ItemsByTag {
+public final class ItemsByTag {
     static final Object NONE = new Object();
 
     private final Map<Tag<?>, Object> map = new HashMap<>();

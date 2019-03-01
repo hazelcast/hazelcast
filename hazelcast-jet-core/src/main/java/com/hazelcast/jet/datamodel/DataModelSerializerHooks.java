@@ -80,34 +80,36 @@ class DataModelSerializerHooks {
         }
     }
 
-    public static final class TimestampedEntryHook implements SerializerHook<TimestampedEntry> {
+    public static final class WindowResultHook implements SerializerHook<WindowResult> {
 
         @Override
-        public Class<TimestampedEntry> getSerializationType() {
-            return TimestampedEntry.class;
+        public Class<WindowResult> getSerializationType() {
+            return WindowResult.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<TimestampedEntry>() {
+            return new StreamSerializer<WindowResult>() {
                 @Override
-                public void write(ObjectDataOutput out, TimestampedEntry object) throws IOException {
-                    out.writeLong(object.getTimestamp());
-                    out.writeObject(object.getKey());
-                    out.writeObject(object.getValue());
+                public void write(ObjectDataOutput out, WindowResult wr) throws IOException {
+                    out.writeLong(wr.start());
+                    out.writeLong(wr.end());
+                    out.writeBoolean(wr.isEarly());
+                    out.writeObject(wr.result());
                 }
 
                 @Override
-                public TimestampedEntry read(ObjectDataInput in) throws IOException {
-                    long timestamp = in.readLong();
-                    Object key = in.readObject();
-                    Object value = in.readObject();
-                    return new TimestampedEntry<>(timestamp, key, value);
+                public WindowResult read(ObjectDataInput in) throws IOException {
+                    long start = in.readLong();
+                    long end = in.readLong();
+                    boolean isEarly = in.readBoolean();
+                    Object result = in.readObject();
+                    return new WindowResult<>(start, end, result, isEarly);
                 }
 
                 @Override
                 public int getTypeId() {
-                    return SerializerHookConstants.TIMESTAMPED_ENTRY;
+                    return SerializerHookConstants.WINDOW_RESULT;
                 }
 
                 @Override
@@ -121,36 +123,38 @@ class DataModelSerializerHooks {
         }
     }
 
-    public static final class WindowResultHook implements SerializerHook<WindowResult> {
+    public static final class KeyedWindowResultHook implements SerializerHook<KeyedWindowResult> {
 
         @Override
-        public Class<WindowResult> getSerializationType() {
-            return WindowResult.class;
+        public Class<KeyedWindowResult> getSerializationType() {
+            return KeyedWindowResult.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<WindowResult>() {
+            return new StreamSerializer<KeyedWindowResult>() {
                 @Override
-                public void write(ObjectDataOutput out, WindowResult object) throws IOException {
-                    out.writeObject(object.getKey());
-                    out.writeLong(object.getStart());
-                    out.writeLong(object.getEnd());
-                    out.writeObject(object.getValue());
+                public void write(ObjectDataOutput out, KeyedWindowResult kwr) throws IOException {
+                    out.writeLong(kwr.start());
+                    out.writeLong(kwr.end());
+                    out.writeBoolean(kwr.isEarly());
+                    out.writeObject(kwr.key());
+                    out.writeObject(kwr.result());
                 }
 
                 @Override
-                public WindowResult read(ObjectDataInput in) throws IOException {
-                    Object key = in.readObject();
+                public KeyedWindowResult read(ObjectDataInput in) throws IOException {
                     long start = in.readLong();
                     long end = in.readLong();
+                    boolean isEarly = in.readBoolean();
+                    Object key = in.readObject();
                     Object result = in.readObject();
-                    return new WindowResult<>(start, end, key, result);
+                    return new KeyedWindowResult<>(start, end, key, result, isEarly);
                 }
 
                 @Override
                 public int getTypeId() {
-                    return SerializerHookConstants.WINDOW_RESULT;
+                    return SerializerHookConstants.KEYED_WINDOW_RESULT;
                 }
 
                 @Override

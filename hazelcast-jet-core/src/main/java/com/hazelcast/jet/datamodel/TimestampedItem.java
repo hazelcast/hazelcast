@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.datamodel;
 
-import com.hazelcast.jet.function.WindowResultFunction;
-
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Objects;
@@ -82,13 +80,12 @@ public final class TimestampedItem<T> implements Serializable {
 
 
     /**
-     * This method matches the shape of the functional interface {@link
-     * WindowResultFunction}.
-     * <p>
-     * Constructs a {@code TimestampedItem} using the window end time as the
-     * timestamp.
+     * Constructs a {@link TimestampedItem} from a {@link WindowResult} using
+     * the window end time as the timestamp.
      */
-    public static <V> TimestampedItem<V> fromWindowResult(long winStart, long winEnd, @Nonnull V value) {
-        return new TimestampedItem<>(winEnd, value);
+    public static <T> TimestampedItem<T> fromWindowResult(
+            @Nonnull WindowResult<? extends T> winResult
+    ) {
+        return new TimestampedItem<>(winResult.end(), winResult.result());
     }
 }

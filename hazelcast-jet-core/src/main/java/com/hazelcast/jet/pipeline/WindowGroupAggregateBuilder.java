@@ -20,9 +20,8 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
 import com.hazelcast.jet.datamodel.ItemsByTag;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
-import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.pipeline.GrAggBuilder;
 
 import javax.annotation.Nonnull;
@@ -56,10 +55,9 @@ public class WindowGroupAggregateBuilder<K, R0> {
     }
 
     /**
-     * Returns the tag corresponding to the pipeline stage this builder
-     * was obtained from. Use this tag to refer to this stage when building
-     * the {@code AggregateOperation} that you'll pass to {@link #build
-     * build(aggrOp)}.
+     * Returns the tag corresponding to the pipeline stage this builder was
+     * obtained from. Use this tag to refer to this stage when extracting the
+     * results from the aggregated stage.
      */
     @Nonnull
     public Tag<R0> tag0() {
@@ -85,29 +83,12 @@ public class WindowGroupAggregateBuilder<K, R0> {
      * Creates and returns a pipeline stage that performs a windowed
      * cogroup-and-aggregate operation on the stages registered with this
      * builder object. The composite aggregate operation places the results of
-     * the individual aggregate operations in an {@code ItemsByTag} and the
-     * {@code mapToOutputFn} you supply transforms it to the final result to
-     * emit. Use the tags you got from this builder in the implementation of
-     * {@code mapToOutputFn} to access the results.
-     *
-     * @param mapToOutputFn function that transforms the aggregation result into the output item
-     * @param <OUT> the output item type
+     * the individual aggregate operations in an {@code ItemsByTag}. Use the
+     * tags you got from this builder to access the results.
      */
     @Nonnull
-    public <OUT> StreamStage<OUT> build(
-            @Nonnull KeyedWindowResultFunction<? super K, ItemsByTag, OUT> mapToOutputFn
-    ) {
+    public StreamStage<KeyedWindowResult<K, ItemsByTag>> build() {
         AggregateOperation<Object[], ItemsByTag> aggrOp = aggrOpBuilder.build();
-        return grAggBuilder.buildStream(aggrOp, mapToOutputFn);
-    }
-
-    /**
-     * Convenience for {@link #build(KeyedWindowResultFunction)} which results
-     * in a stage that emits {@link TimestampedEntry}s. The timestamp of the
-     * entry corresponds to the timestamp of the window's end.
-     */
-    @Nonnull
-    public StreamStage<TimestampedEntry<K, ItemsByTag>> build() {
-        return build(TimestampedEntry::fromWindowResult);
+        return grAggBuilder.buildStream(aggrOp);
     }
 }

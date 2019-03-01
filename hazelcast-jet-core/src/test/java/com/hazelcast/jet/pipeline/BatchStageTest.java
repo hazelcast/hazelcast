@@ -31,6 +31,7 @@ import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.TriFunction;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -477,6 +478,25 @@ public class BatchStageTest extends PipelineTestSupport {
         assertEquals(
                 streamToString(input.stream().map(i -> tuple2(i, prefix + i)), formatFn),
                 streamToString(sinkStreamOfEntry(), formatFn));
+
+    }
+
+    @Test
+    public void hashJoin_when_outputFnReturnsNull_then_filteredOut() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BatchStage<Entry<Integer, String>> enrichingStage = batchStageFromList(input).map(i -> entry(i, "dud"));
+
+        // When
+        BatchStage<Entry<Integer, String>> joined = batchStageFromList(input).hashJoin(
+                enrichingStage,
+                joinMapEntries(wholeItem()),
+                (i, enriching) -> null);
+
+        // Then
+        joined.drainTo(sink);
+        execute();
+        assertEquals(emptyList(), new ArrayList<>(sinkList));
     }
 
     @Test

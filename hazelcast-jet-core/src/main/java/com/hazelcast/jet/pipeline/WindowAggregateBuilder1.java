@@ -18,8 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.datamodel.TimestampedItem;
-import com.hazelcast.jet.function.WindowResultFunction;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.pipeline.AggBuilder;
 import com.hazelcast.jet.impl.pipeline.AggBuilder.CreateOutStageFn;
 import com.hazelcast.jet.impl.pipeline.StreamStageImpl;
@@ -76,32 +75,12 @@ public class WindowAggregateBuilder1<T0> {
      * the tags you registered with this builder.
      *
      * @param aggrOp        the aggregate operation to perform
-     * @param mapToOutputFn a function that creates the output item from the aggregation result
      * @param <R>           the type of the aggregation result
-     * @param <OUT>         the type of the output item
      * @return a new stage representing the co-aggregation
      */
     @Nonnull
-    public <R, OUT> StreamStage<OUT> build(
-            @Nonnull AggregateOperation<?, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
-    ) {
-        CreateOutStageFn<OUT, StreamStage<OUT>> createOutStageFn = StreamStageImpl::new;
-        return aggBuilder.build(aggrOp, createOutStageFn, mapToOutputFn);
-    }
-
-    /**
-     * Convenience for {@link #build(AggregateOperation, WindowResultFunction)
-     * build(aggrOp, mapToOutputFn)} which emits {@code TimestampedItem}s as output.
-     * The timestamp corresponds to the window's end.
-     *
-     * @param aggrOp the aggregate operation to perform.
-     * @param <A>    the type of items in the pipeline stage this builder was obtained from
-     * @param <R>    the type of the aggregation result
-     * @return a new stage representing the co-group-and-aggregate operation
-     */
-    @Nonnull
-    public <A, R> StreamStage<TimestampedItem<R>> build(@Nonnull AggregateOperation<A, R> aggrOp) {
-        return build(aggrOp, TimestampedItem::fromWindowResult);
+    public <A, R> StreamStage<WindowResult<R>> build(@Nonnull AggregateOperation<A, R> aggrOp) {
+        CreateOutStageFn<WindowResult<R>, StreamStage<WindowResult<R>>> createOutStageFn = StreamStageImpl::new;
+        return aggBuilder.build(aggrOp, createOutStageFn);
     }
 }

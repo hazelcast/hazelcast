@@ -21,8 +21,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.datamodel.TimestampedItem;
-import com.hazelcast.jet.function.WindowResultFunction;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.pipeline.AggBuilder;
 import com.hazelcast.jet.impl.pipeline.AggBuilder.CreateOutStageFn;
 import com.hazelcast.jet.impl.pipeline.StreamStageImpl;
@@ -87,34 +86,15 @@ public class WindowAggregateBuilder<R0> {
      * Creates and returns a pipeline stage that performs a windowed
      * co-aggregation of the stages registered with this builder object. The
      * composite aggregate operation places the results of the individual
-     * aggregate operations in an {@code ItemsByTag} and the {@code
-     * mapToOutputFn} you supply transforms it to the final result to emit. Use
-     * the tags you got from this builder in the implementation of {@code
-     * mapToOutputFn} to access the results.
-     *
-     * @param mapToOutputFn the function that transforms the results into the output items
-     * @param <OUT> the output item type
-     *
-     * @return a new stage representing the co-aggregation
-     */
-    @Nonnull
-    public <OUT> StreamStage<OUT> build(
-            @Nonnull WindowResultFunction<? super ItemsByTag, ? extends OUT> mapToOutputFn
-    ) {
-        AggregateOperation<Object[], ItemsByTag> aggrOp = aggrOpBuilder.build();
-        CreateOutStageFn<OUT, StreamStage<OUT>> createOutStageFn = StreamStageImpl::new;
-        return aggBuilder.build(aggrOp, createOutStageFn, mapToOutputFn);
-    }
-
-    /**
-     * Convenience for {@link #build(WindowResultFunction) build(mapToOutputFn)}
-     * which emits {@code TimestampedItem}s as output. The timestamp corresponds
-     * to the window's end.
+     * aggregate operations in an {@code ItemsByTag}.
      *
      * @return a new stage representing the cogroup-and-aggregate operation
      */
     @Nonnull
-    public StreamStage<TimestampedItem<ItemsByTag>> build() {
-        return build(TimestampedItem::fromWindowResult);
+    public StreamStage<WindowResult<ItemsByTag>> build() {
+        AggregateOperation<Object[], ItemsByTag> aggrOp = aggrOpBuilder.build();
+        CreateOutStageFn<WindowResult<ItemsByTag>, StreamStage<WindowResult<ItemsByTag>>> createOutStageFn =
+                StreamStageImpl::new;
+        return aggBuilder.build(aggrOp, createOutStageFn);
     }
 }

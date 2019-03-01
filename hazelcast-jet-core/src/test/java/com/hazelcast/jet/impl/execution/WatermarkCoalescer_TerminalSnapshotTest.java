@@ -26,7 +26,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.SinkBuilder;
@@ -104,9 +104,9 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
                 .window(WindowDefinition.sliding(1, 1))
                 .aggregate(AggregateOperations.counting()).setLocalParallelism(PARTITION_COUNT)
                 .drainTo(SinkBuilder.sinkBuilder("throwing", ctx -> "").
-                        <TimestampedEntry<String, Long>>receiveFn((w, e) -> {
-                            if (e.getValue() != COUNT) {
-                                throw new RuntimeException("Received unexpected item " + e + ", expected count is "
+                        <KeyedWindowResult<String, Long>>receiveFn((w, kwr) -> {
+                            if (kwr.result() != COUNT) {
+                                throw new RuntimeException("Received unexpected item " + kwr + ", expected count is "
                                         + COUNT);
                             }
                         }).build());

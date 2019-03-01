@@ -19,9 +19,8 @@ package com.hazelcast.jet.impl.pipeline;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.FunctionEx;
-import com.hazelcast.jet.function.KeyedWindowResultFunction;
-import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.impl.pipeline.transform.WindowGroupTransform;
 import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
@@ -35,7 +34,6 @@ import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation2;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation3;
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -60,97 +58,63 @@ public class StageWithKeyAndWindowImpl<T, K>
         return wDef;
     }
 
-    public <R, OUT> StreamStage<OUT> aggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+    @Nonnull @Override
+    public <R> StreamStage<KeyedWindowResult<K, R>> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
         ensureJetEvents(computeStage, "This pipeline stage");
-        checkSerializable(mapToOutputFn, "mapToOutputFn");
-        return attachAggregate(aggrOp, mapToOutputFn);
-    }
-
-    // This method was extracted in order to capture the wildcard parameter A.
-    private <A, R, OUT> StreamStage<OUT> attachAggregate(
-            @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
-    ) {
         JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
-        return computeStage.attach(new WindowGroupTransform<K, R, JetEvent<OUT>>(
+        return computeStage.attach(new WindowGroupTransform<K, R>(
                         singletonList(computeStage.transform),
                         wDef,
                         singletonList(fnAdapter.adaptKeyFn(keyFn())),
-                        fnAdapter.adaptAggregateOperation1(aggrOp),
-                        fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
+                        fnAdapter.adaptAggregateOperation1(aggrOp)
                 ),
                 fnAdapter);
     }
 
     @Nonnull @Override
-    public <T1, R, OUT> StreamStage<OUT> aggregate2(
+    public <T1, R> StreamStage<KeyedWindowResult<K, R>> aggregate2(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp
     ) {
         ensureJetEvents(computeStage, "This pipeline stage");
         ensureJetEvents(((StageWithGroupingBase) stage1).computeStage, "stage1");
-        checkSerializable(mapToOutputFn, "mapToOutputFn");
-        return attachAggregate2(stage1, aggrOp, mapToOutputFn);
-    }
-
-    // This method was extracted in order to capture the wildcard parameter A.
-    private <T1, A, R, OUT> StreamStage<OUT> attachAggregate2(
-            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
-    ) {
         Transform upstream1 = ((StageWithGroupingBase) stage1).computeStage.transform;
         JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
-        return computeStage.attach(new WindowGroupTransform<K, R, JetEvent<OUT>>(
+        return computeStage.attach(new WindowGroupTransform<K, R>(
                         asList(computeStage.transform, upstream1),
                         wDef,
                         asList(fnAdapter.adaptKeyFn(keyFn()),
                                 fnAdapter.adaptKeyFn(stage1.keyFn())),
-                        adaptAggregateOperation2(aggrOp),
-                        fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
+                        adaptAggregateOperation2(aggrOp)
                 ),
                 fnAdapter);
     }
 
     @Nonnull @Override
-    public <T1, T2, R, OUT> StreamStage<OUT> aggregate3(
+    public <T1, T2, R> StreamStage<KeyedWindowResult<K, R>> aggregate3(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
             @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp
     ) {
         ComputeStageImplBase stageImpl1 = ((StageWithGroupingBase) stage1).computeStage;
         ComputeStageImplBase stageImpl2 = ((StageWithGroupingBase) stage2).computeStage;
         ensureJetEvents(computeStage, "This pipeline stage");
         ensureJetEvents(stageImpl1, "stage1");
         ensureJetEvents(stageImpl2, "stage2");
-        checkSerializable(mapToOutputFn, "mapToOutputFn");
-        return attachAggregate3(stage1, stage2, aggrOp, mapToOutputFn);
-    }
-
-    // This method was extracted in order to capture the wildcard parameter A.
-    private <T1, T2, A, R, OUT> StreamStage<OUT> attachAggregate3(
-            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
-            @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
-    ) {
         Transform transform1 = ((StageWithGroupingBase) stage1).computeStage.transform;
         Transform transform2 = ((StageWithGroupingBase) stage2).computeStage.transform;
         JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
-        return computeStage.attach(new WindowGroupTransform<K, R, JetEvent<OUT>>(
+        return computeStage.attach(new WindowGroupTransform<K, R>(
                         asList(computeStage.transform, transform1, transform2),
                         wDef,
                         asList(fnAdapter.adaptKeyFn(keyFn()),
                                 fnAdapter.adaptKeyFn(stage1.keyFn()),
                                 fnAdapter.adaptKeyFn(stage2.keyFn())),
-                        adaptAggregateOperation3(aggrOp),
-                        fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
+                        adaptAggregateOperation3(aggrOp)
                 ),
                 fnAdapter);
     }
+
 }
