@@ -21,9 +21,10 @@ import com.hazelcast.spi.annotation.Beta;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
@@ -77,17 +78,9 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 @Beta
 public class Pipelining<E> {
 
-    // we are using a caller runs executor to prevent having the overhead of creating a task and kicking an executor.
-    // the only thing that gets executed in future callback is the return of the license to the semaphore.
-    private static final Executor EXECUTOR = new Executor() {
-        @Override
-        public void execute(Runnable command) {
-            command.run();
-        }
-    };
-
-    private final Semaphore semaphore;
+    private final AtomicInteger permits = new AtomicInteger();
     private final List<ICompletableFuture<E>> futures = new ArrayList<ICompletableFuture<E>>();
+    private Thread thread;
 
     /**
      * Creates a Pipelining with the given depth.
@@ -98,7 +91,7 @@ public class Pipelining<E> {
      */
     public Pipelining(int depth) {
         checkPositive(depth, "depth must be positive");
-        this.semaphore = new Semaphore(depth);
+        this.permits.set(depth);
     }
 
     /**
@@ -132,20 +125,54 @@ public class Pipelining<E> {
      */
     public ICompletableFuture<E> add(ICompletableFuture<E> future) throws InterruptedException {
         checkNotNull(future, "future can't be null");
+        this.thread = Thread.currentThread();
 
-        semaphore.acquire();
+        down();
         futures.add(future);
         future.andThen(new ExecutionCallback<E>() {
             @Override
             public void onResponse(E response) {
-                semaphore.release();
+                up();
             }
 
             @Override
             public void onFailure(Throwable t) {
-                semaphore.release();
+                up();
             }
-        }, EXECUTOR);
+        }, CALLER_RUNS);
         return future;
+    }
+
+    private void down() throws InterruptedException {
+        for (; ; ) {
+            int current = permits.get();
+            int update = current - 1;
+            if (!permits.compareAndSet(current, update)) {
+                // we failed to cas, so lets try again.
+                continue;
+            }
+
+            while (permits.get() == -1) {
+                LockSupport.park();
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+            }
+
+            return;
+        }
+    }
+
+    private void up() {
+        for (; ; ) {
+            int current = permits.get();
+            int update = current + 1;
+            if (permits.compareAndSet(current, update)) {
+                if (current == -1) {
+                    LockSupport.unpark(thread);
+                }
+                return;
+            }
+        }
     }
 }
