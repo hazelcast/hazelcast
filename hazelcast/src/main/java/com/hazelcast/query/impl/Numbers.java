@@ -162,6 +162,7 @@ public final class Numbers {
         return lhs < rhs ? -1 : (lhs == rhs ? 0 : +1);
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private static int compareLongWithDouble(long l, double d) {
         if (d > -0x1p53 && d < +0x1p53) {
             // All long values in this range are exactly representable as doubles.
@@ -207,6 +208,7 @@ public final class Numbers {
     /**
      * @see #compareLongWithDouble(long, double)
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     private static boolean equalLongAndDouble(long l, double d) {
         if (d > -0x1p53 && d < +0x1p53) {
             return equalDoubles((double) l, d);
