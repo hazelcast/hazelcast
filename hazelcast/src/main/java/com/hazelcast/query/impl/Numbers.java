@@ -18,6 +18,8 @@ package com.hazelcast.query.impl;
 
 public final class Numbers {
 
+    private static final long NEGATIVE_ZERO = Double.doubleToRawLongBits(-0.0);
+
     private Numbers() {
     }
 
@@ -28,15 +30,13 @@ public final class Numbers {
 
         if (isDoubleRepresentable(lhsClass)) {
             if (isDoubleRepresentable(rhsClass)) {
-                return equal(lhs.doubleValue(), rhs.doubleValue());
+                return equalDoubles(lhs.doubleValue(), rhs.doubleValue());
             } else if (isLongRepresentable(rhsClass)) {
-                // TODO invent a better method of comparing longs and doubles?
-                return lhs.doubleValue() == rhs.doubleValue();
+                return equalLongAndDouble(rhs.longValue(), lhs.doubleValue());
             }
         } else if (isLongRepresentable(lhsClass)) {
             if (isDoubleRepresentable(rhsClass)) {
-                // TODO invent a better method of comparing longs and doubles?
-                return lhs.doubleValue() == rhs.doubleValue();
+                return equalLongAndDouble(lhs.longValue(), rhs.doubleValue());
             } else if (isLongRepresentable(rhsClass)) {
                 return lhs.longValue() == rhs.longValue();
             }
@@ -45,12 +45,12 @@ public final class Numbers {
         return lhs.equals(rhs);
     }
 
-    public static boolean equal(double lhs, double rhs) {
+    public static boolean equalDoubles(double lhs, double rhs) {
         // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
         return Double.doubleToLongBits(lhs) == Double.doubleToLongBits(rhs);
     }
 
-    public static boolean equal(float lhs, float rhs) {
+    public static boolean equalFloats(float lhs, float rhs) {
         // exactly as Float.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
         return Float.floatToIntBits(lhs) == Float.floatToIntBits(rhs);
     }
@@ -70,15 +70,13 @@ public final class Numbers {
             if (isDoubleRepresentable(rhsClass)) {
                 return Double.compare(lhsNumber.doubleValue(), rhsNumber.doubleValue());
             } else if (isLongRepresentable(rhsClass)) {
-                // TODO invent a better method of comparing longs and doubles?
-                return Double.compare(lhsNumber.doubleValue(), rhsNumber.doubleValue());
+                return -Integer.signum(compareLongWithDouble(rhsNumber.longValue(), lhsNumber.doubleValue()));
             }
         } else if (isLongRepresentable(lhsClass)) {
             if (isDoubleRepresentable(rhsClass)) {
-                // TODO invent a better method of comparing longs and doubles?
-                return Double.compare(lhsNumber.doubleValue(), rhsNumber.doubleValue());
+                return compareLongWithDouble(lhsNumber.longValue(), rhsNumber.doubleValue());
             } else if (isLongRepresentable(rhsClass)) {
-                return compare(lhsNumber.longValue(), rhsNumber.longValue());
+                return compareLongs(lhsNumber.longValue(), rhsNumber.longValue());
             }
         }
 
@@ -95,7 +93,7 @@ public final class Numbers {
             double doubleValue = number.doubleValue();
             long longValue = number.longValue();
 
-            if (equal(doubleValue, (double) longValue)) {
+            if (equalDoubles(doubleValue, (double) longValue)) {
                 return longValue;
             } else if (clazz == Float.class) {
                 return doubleValue;
@@ -117,19 +115,26 @@ public final class Numbers {
             double doubleValue = number.doubleValue();
             long longValue = number.longValue();
 
-            if (equal(doubleValue, (double) longValue)) {
-                return canonicalizeLongRepresentableForIndex(longValue);
+            if (equalDoubles(doubleValue, (double) longValue)) {
+                return canonicalizeLongRepresentablePreferringSize(longValue);
             } else if (clazz == Float.class) {
                 return doubleValue;
             }
         } else if (isLongRepresentable(clazz)) {
-            return canonicalizeLongRepresentableForIndex(number.longValue());
+            return canonicalizeLongRepresentablePreferringSize(number.longValue());
         }
 
         return value;
     }
 
-    private static Comparable canonicalizeLongRepresentableForIndex(long value) {
+    private static Comparable canonicalizeLongRepresentablePreferringSize(long value) {
+        // TODO
+        // off-heap overhead is 13 bytes, 12 for the NativeMemoryData + 1 for
+        // the pooling manager, allocation granularity is powers of 2.
+        //
+        // on-heap overhead is 12 bytes for the object header, allocation
+        // granularity is mod 8.
+
         if (value == (long) (byte) value) {
             return (byte) value;
         } else if (value == (long) (short) value) {
@@ -153,8 +158,77 @@ public final class Numbers {
         return clazz == Integer.class || clazz == Short.class || clazz == Byte.class;
     }
 
-    private static int compare(long lhs, long rhs) {
+    private static int compareLongs(long lhs, long rhs) {
         return lhs < rhs ? -1 : (lhs == rhs ? 0 : +1);
+    }
+
+    private static int compareLongWithDouble(long l, double d) {
+        if (d > -0x1p53 && d < +0x1p53) {
+            // All long values in this range are exactly representable as doubles.
+            // 2^53 itself is excluded to ensure the correct ordering of 2^53 + 1
+            // long value, 2^53 and 2^53 + 1 are the same value when represented
+            // as double and that's the first integer value having this property.
+            return Double.compare((double) l, d);
+        }
+
+        // Only special (infinities, NaNs, zeros) and integer double values are
+        // left: starting from 2^52, doubles can represent only integer values
+        // with increasing gaps between them.
+
+        if (d <= -0x1p63) {
+            //  -92233720368547_76000 (0x1p63) < -92233720368547_75808 (-2^63 = Long.MIN_VALUE)
+            // the next representable double value is -92233720368547_74800.
+            return +1;
+        }
+
+        if (d >= +0x1p63) {
+            // 92233720368547_75807 (2^63 - 1 = Long.MAX_VALUE) < 92233720368547_76000 (0x1p63)
+            // the previous representable double value is 92233720368547_74800.
+            return -1;
+        }
+
+        // Infinities are gone at this point.
+
+        if (Double.isNaN(d)) {
+            // NaN is ordered by Double.compareTo as the biggest number in the
+            // world.
+            return -1;
+        }
+
+        if (l == 0 && Double.doubleToRawLongBits(d) == NEGATIVE_ZERO) {
+            return +1;
+        }
+
+        // All remaining double values are integer and less than 2^63 in
+        // magnitude, so we may just cast them to long.
+        return compareLongs(l, (long) d);
+    }
+
+    /**
+     * @see #compareLongWithDouble(long, double)
+     */
+    private static boolean equalLongAndDouble(long l, double d) {
+        if (d > -0x1p53 && d < +0x1p53) {
+            return equalDoubles((double) l, d);
+        }
+
+        if (d <= -0x1p63) {
+            return false;
+        }
+
+        if (d >= +0x1p63) {
+            return false;
+        }
+
+        if (Double.isNaN(d)) {
+            return false;
+        }
+
+        if (Double.doubleToRawLongBits(d) == NEGATIVE_ZERO) {
+            return false;
+        }
+
+        return l == (long) d;
     }
 
 }

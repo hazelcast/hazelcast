@@ -57,6 +57,7 @@ public final class TypeConverters {
     }
 
     public abstract static class BaseTypeConverter implements TypeConverter {
+
         abstract Comparable convertInternal(Comparable value);
 
         public final Comparable convert(Comparable value) {
@@ -65,9 +66,11 @@ public final class TypeConverters {
             }
             return convertInternal(value);
         }
+
     }
 
     static class EnumConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             String enumString = value.toString();
@@ -77,9 +80,11 @@ public final class TypeConverters {
             }
             return enumString;
         }
+
     }
 
     static class SqlDateConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof java.util.Date) {
@@ -94,9 +99,11 @@ public final class TypeConverters {
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to java.sql.Date");
         }
+
     }
 
     static class SqlTimestampConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Timestamp) {
@@ -114,9 +121,11 @@ public final class TypeConverters {
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to java.sql.Timestamp");
         }
+
     }
 
     static class DateConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Date) {
@@ -131,9 +140,11 @@ public final class TypeConverters {
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to java.util.Date");
         }
+
     }
 
     static class DoubleConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -163,9 +174,11 @@ public final class TypeConverters {
 
             throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
+
     }
 
     static class LongConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -179,12 +192,12 @@ public final class TypeConverters {
 
                 if (clazz == Double.class) {
                     long longValue = number.longValue();
-                    if (Numbers.equal(number.doubleValue(), (double) longValue)) {
+                    if (Numbers.equalDoubles(number.doubleValue(), (double) longValue)) {
                         return longValue;
                     }
                 } else if (clazz == Float.class) {
                     long longValue = number.longValue();
-                    if (Numbers.equal(number.floatValue(), (float) longValue)) {
+                    if (Numbers.equalFloats(number.floatValue(), (float) longValue)) {
                         return longValue;
                     }
                 } else if (clazz == Integer.class || clazz == Short.class || clazz == Byte.class) {
@@ -206,9 +219,11 @@ public final class TypeConverters {
 
             throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
+
     }
 
     static class BigIntegerConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof BigInteger) {
@@ -227,9 +242,11 @@ public final class TypeConverters {
             }
             return new BigInteger(value.toString());
         }
+
     }
 
     static class BigDecimalConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof BigDecimal) {
@@ -259,9 +276,11 @@ public final class TypeConverters {
         private boolean isIntegralDataType(Comparable value) {
             return value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long;
         }
+
     }
 
     static class IntegerConverter extends BaseTypeConverter {
+
         @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
         @Override
         Comparable convertInternal(Comparable value) {
@@ -281,12 +300,12 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Double.class) {
                     int intValue = number.intValue();
-                    if (Numbers.equal(number.doubleValue(), (double) intValue)) {
+                    if (Numbers.equalDoubles(number.doubleValue(), (double) intValue)) {
                         return intValue;
                     }
                 } else if (clazz == Float.class) {
                     int intValue = number.intValue();
-                    if (Numbers.equal(number.floatValue(), (float) intValue)) {
+                    if (Numbers.equalFloats(number.floatValue(), (float) intValue)) {
                         return intValue;
                     }
                 } else if (clazz == Short.class || clazz == Byte.class) {
@@ -312,9 +331,11 @@ public final class TypeConverters {
 
             throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
+
     }
 
     static class StringConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof String) {
@@ -322,9 +343,11 @@ public final class TypeConverters {
             }
             return value.toString();
         }
+
     }
 
     static class FloatConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -359,9 +382,11 @@ public final class TypeConverters {
 
             throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
+
     }
 
     static class ShortConverter extends BaseTypeConverter {
+
         @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
         @Override
         Comparable convertInternal(Comparable value) {
@@ -381,7 +406,7 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Double.class) {
                     short shortValue = number.shortValue();
-                    if (Numbers.equal(number.doubleValue(), (double) shortValue)) {
+                    if (Numbers.equalDoubles(number.doubleValue(), (double) shortValue)) {
                         return shortValue;
                     }
                 } else if (clazz == Integer.class) {
@@ -391,7 +416,7 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Float.class) {
                     short shortValue = number.shortValue();
-                    if (Numbers.equal(number.floatValue(), (float) shortValue)) {
+                    if (Numbers.equalFloats(number.floatValue(), (float) shortValue)) {
                         return shortValue;
                     }
                 } else if (clazz == Byte.class) {
@@ -417,9 +442,11 @@ public final class TypeConverters {
 
             throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
+
     }
 
     static class BooleanConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Boolean) {
@@ -434,9 +461,11 @@ public final class TypeConverters {
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to boolean");
         }
+
     }
 
     static class ByteConverter extends BaseTypeConverter {
+
         @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
         @Override
         Comparable convertInternal(Comparable value) {
@@ -456,7 +485,7 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Double.class) {
                     byte byteValue = number.byteValue();
-                    if (Numbers.equal(number.doubleValue(), (double) byteValue)) {
+                    if (Numbers.equalDoubles(number.doubleValue(), (double) byteValue)) {
                         return byteValue;
                     }
                 } else if (clazz == Integer.class) {
@@ -466,7 +495,7 @@ public final class TypeConverters {
                     }
                 } else if (clazz == Float.class) {
                     byte byteValue = number.byteValue();
-                    if (Numbers.equal(number.floatValue(), (float) byteValue)) {
+                    if (Numbers.equalFloats(number.floatValue(), (float) byteValue)) {
                         return byteValue;
                     }
                 } else if (clazz == Short.class) {
@@ -495,9 +524,11 @@ public final class TypeConverters {
 
             throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
         }
+
     }
 
     static class CharConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value.getClass() == char.class) {
@@ -518,9 +549,11 @@ public final class TypeConverters {
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to char");
         }
+
     }
 
     static class PortableConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Portable) {
@@ -528,5 +561,7 @@ public final class TypeConverters {
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "]");
         }
+
     }
+
 }
