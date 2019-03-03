@@ -85,6 +85,9 @@ public abstract class AbstractClientConfigImportVariableReplacementTest extends 
     @Test
     public abstract void testImportGroupConfigFromClassPath();
 
+    @Test
+    public abstract void testReplaceVariablesUseSystemProperties() throws Exception;
+
     protected static File createConfigFile(String filename, String suffix) throws IOException {
         File file = createTempFile(filename, suffix);
         file.setWritable(true);

@@ -576,6 +576,26 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         assertEquals("foobar", config.getProperty("prop"));
     }
 
+    @Override
+    @Test
+    public void testReplaceVariablesUseSystemProperties() {
+        String configYaml = ""
+                + "hazelcast:\n"
+                + "  properties:\n"
+                + "    prop: ${variable}";
+
+        System.setProperty("variable", "foobar");
+        Config config = buildConfig(configYaml);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    private static Config buildConfig(String yaml) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
+        YamlConfigBuilder configBuilder = new YamlConfigBuilder(bis);
+        return configBuilder.build();
+    }
+
     private static Config buildConfig(String yaml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlConfigBuilder configBuilder = new YamlConfigBuilder(bis);

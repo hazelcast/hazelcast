@@ -313,4 +313,17 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         assertEquals("cluster1pass", groupConfig.getPassword());
     }
 
+    @Override
+    @Test
+    public void testReplaceVariablesUseSystemProperties() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  properties:\n"
+                + "    prop: ${variable}";
+
+        System.setProperty("variable", "foobar");
+        ClientConfig config = buildConfig(yaml);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
 }

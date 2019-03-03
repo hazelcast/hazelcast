@@ -48,7 +48,7 @@ import static com.hazelcast.util.StringUtil.isNullOrEmpty;
  */
 public abstract class AbstractYamlConfigBuilder {
     private final Set<String> currentlyImportedFiles = new HashSet<String>();
-    private Properties properties;
+    private Properties properties = System.getProperties();
 
     /**
      * Imports external YAML documents into the provided main YAML document.

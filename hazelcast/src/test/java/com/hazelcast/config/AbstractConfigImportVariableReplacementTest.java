@@ -145,6 +145,9 @@ public abstract class AbstractConfigImportVariableReplacementTest {
     @Test
     public abstract void testReplaceVariablesWithUrlConfig() throws Exception;
 
+    @Test
+    public abstract void testReplaceVariablesUseSystemProperties() throws Exception;
+
     protected void expectInvalid() {
         InvalidConfigurationTest.expectInvalid(rule);
     }

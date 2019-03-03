@@ -317,4 +317,19 @@ public class XmlClientConfigImportVariableReplacementTest extends AbstractClient
         assertEquals("cluster1", groupConfig.getName());
         assertEquals("cluster1pass", groupConfig.getPassword());
     }
+
+    @Override
+    @Test
+    public void testReplaceVariablesUseSystemProperties() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        System.setProperty("variable", "foobar");
+        ClientConfig config = buildConfig(xml);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
 }

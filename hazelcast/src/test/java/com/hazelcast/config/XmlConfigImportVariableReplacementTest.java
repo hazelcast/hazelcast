@@ -585,6 +585,27 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         assertEquals("foobar", config.getProperty("prop"));
     }
 
+    @Override
+    @Test
+    public void testReplaceVariablesUseSystemProperties() {
+        String configXml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name=\"prop\">${variable}</property>\n"
+                + "    </properties>\n"
+                + HAZELCAST_END_TAG;
+
+        System.setProperty("variable", "foobar");
+        Config config = buildConfig(configXml);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    private static Config buildConfig(String xml) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        return configBuilder.build();
+    }
+
     private static Config buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
