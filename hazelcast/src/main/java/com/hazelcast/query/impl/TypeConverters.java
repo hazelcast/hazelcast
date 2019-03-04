@@ -28,11 +28,6 @@ import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 public final class TypeConverters {
 
-    // TODO: separate conversion logic targeting different scenarios (?)
-    //   1. converting from query value
-    //   2. converting for canonicalized comparison (InPredicate)
-    //   3. converting for unordered index insertion and query
-
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
     public static final TypeConverter BIG_DECIMAL_CONVERTER = new BigDecimalConverter();
     public static final TypeConverter DOUBLE_CONVERTER = new DoubleConverter();

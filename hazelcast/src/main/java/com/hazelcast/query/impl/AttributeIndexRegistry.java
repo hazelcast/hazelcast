@@ -162,7 +162,7 @@ public class AttributeIndexRegistry {
      * <p>
      * Exposed as a package-private class only for testing purposes.
      */
-    static class FirstComponentDecorator implements InternalIndex {
+    static final class FirstComponentDecorator implements InternalIndex {
 
         // See CompositeValue docs for more details on what is going on in the
         // index querying methods.
@@ -236,7 +236,7 @@ public class AttributeIndexRegistry {
             Set<Comparable> convertedValues = new HashSet<Comparable>();
             for (Comparable value : values) {
                 Comparable converted = converter.convert(value);
-                convertedValues.add(Comparables.canonicalizePreferringSpeed(converted));
+                convertedValues.add(canonicalizeScalarForHashLookup(converted));
             }
 
             if (convertedValues.size() == 1) {
@@ -291,6 +291,11 @@ public class AttributeIndexRegistry {
         @Override
         public void destroy() {
             throw newUnsupportedException();
+        }
+
+        @Override
+        public Comparable canonicalizeScalarForHashLookup(Comparable value) {
+            return delegate.canonicalizeScalarForHashLookup(value);
         }
 
         @Override

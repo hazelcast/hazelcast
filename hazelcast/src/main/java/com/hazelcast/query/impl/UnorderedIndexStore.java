@@ -63,8 +63,46 @@ public class UnorderedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    protected Comparable canonicalizeScalarForStorage(Comparable value) {
-        return Comparables.canonicalizePreferringSize(value);
+    public Comparable canonicalizeScalarForHashLookup(Comparable value) {
+        return canonicalizeScalarForStorage(value);
+    }
+
+    @Override
+    public Comparable canonicalizeScalarForStorage(Comparable value) {
+        // On-heap overhead is 12 bytes for the object header, allocation
+        // granularity is mod 8.
+
+        if (!(value instanceof Number)) {
+            return value;
+        }
+
+        Class clazz = value.getClass();
+        Number number = (Number) value;
+
+        if (clazz == Double.class) {
+            double doubleValue = number.doubleValue();
+
+            long longValue = number.longValue();
+            if (Numbers.equalDoubles(doubleValue, (double) longValue)) {
+                return canonicalizeLongRepresentable(longValue);
+            }
+
+            float floatValue = number.floatValue();
+            if (doubleValue == (double) floatValue) {
+                return floatValue;
+            }
+        } else if (clazz == Float.class) {
+            float floatValue = number.floatValue();
+
+            long longValue = number.longValue();
+            if (Numbers.equalFloats(floatValue, (float) longValue)) {
+                return canonicalizeLongRepresentable(longValue);
+            }
+        } else if (Numbers.isLongRepresentable(clazz)) {
+            return canonicalizeLongRepresentable(number.longValue());
+        }
+
+        return value;
     }
 
     @Override
@@ -85,7 +123,7 @@ public class UnorderedIndexStore extends BaseIndexStore {
             if (value == NULL) {
                 return toSingleResultSet(recordsWithNullValue);
             } else {
-                return toSingleResultSet(recordMap.get(canonicalizeForLookup(value)));
+                return toSingleResultSet(recordMap.get(canonicalize(value)));
             }
         } finally {
             releaseReadLock();
@@ -102,7 +140,8 @@ public class UnorderedIndexStore extends BaseIndexStore {
                 if (value == NULL) {
                     records = recordsWithNullValue;
                 } else {
-                    records = recordMap.get(canonicalizeForLookup(value));
+                    // value is already canonicalized by the associated index
+                    records = recordMap.get(value);
                 }
                 if (records != null) {
                     copyToMultiResultSet(results, records);
@@ -166,7 +205,7 @@ public class UnorderedIndexStore extends BaseIndexStore {
                     return results;
                 }
 
-                Map<Data, QueryableEntry> records = recordMap.get(canonicalizeForLookup(from));
+                Map<Data, QueryableEntry> records = recordMap.get(canonicalize(from));
                 if (records != null) {
                     copyToMultiResultSet(results, records);
                 }
@@ -312,15 +351,23 @@ public class UnorderedIndexStore extends BaseIndexStore {
 
     }
 
-    private static Comparable canonicalizeForLookup(Comparable value) {
+    private Comparable canonicalize(Comparable value) {
         if (value instanceof CompositeValue) {
             Comparable[] components = ((CompositeValue) value).getComponents();
             for (int i = 0; i < components.length; ++i) {
-                components[i] = Comparables.canonicalizePreferringSize(components[i]);
+                components[i] = canonicalizeScalarForStorage(components[i]);
             }
             return value;
         } else {
-            return Comparables.canonicalizePreferringSize(value);
+            return canonicalizeScalarForStorage(value);
+        }
+    }
+
+    private static Comparable canonicalizeLongRepresentable(long value) {
+        if (value == (long) (int) value) {
+            return (int) value;
+        } else {
+            return value;
         }
     }
 

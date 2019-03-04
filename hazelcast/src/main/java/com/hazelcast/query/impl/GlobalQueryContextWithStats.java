@@ -158,6 +158,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public Comparable canonicalizeScalarForHashLookup(Comparable value) {
+            return delegate.canonicalizeScalarForHashLookup(value);
+        }
+
+        @Override
         public boolean hasPartitionIndexed(int partitionId) {
             return delegate.hasPartitionIndexed(partitionId);
         }

@@ -52,6 +52,8 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
+    abstract Comparable canonicalizeScalarForStorage(Comparable value);
+
     /**
      * Associates the given value in this index store with the given record.
      * <p>
@@ -78,8 +80,6 @@ public abstract class BaseIndexStore implements IndexStore {
      * operation, if there was any, {@code null} otherwise.
      */
     abstract Object removeInternal(Comparable value, Data recordKey);
-
-    protected abstract Comparable canonicalizeScalarForStorage(Comparable value);
 
     void takeWriteLock() {
         writeLock.lock();

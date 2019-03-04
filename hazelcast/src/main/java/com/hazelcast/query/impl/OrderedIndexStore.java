@@ -67,7 +67,12 @@ public class OrderedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    protected Comparable canonicalizeScalarForStorage(Comparable value) {
+    public Comparable canonicalizeScalarForHashLookup(Comparable value) {
+        return Comparables.canonicalizeForHashLookup(value);
+    }
+
+    @Override
+    public Comparable canonicalizeScalarForStorage(Comparable value) {
         return value;
     }
 

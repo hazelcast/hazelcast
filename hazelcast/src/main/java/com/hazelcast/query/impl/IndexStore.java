@@ -27,6 +27,9 @@ import java.util.Set;
  */
 public interface IndexStore {
 
+    // TODO separate canonicalization for composite values (?)
+    Comparable canonicalizeScalarForHashLookup(Comparable value);
+
     /**
      * Inserts the given entry into this index store under the given value
      * acting as an index key.

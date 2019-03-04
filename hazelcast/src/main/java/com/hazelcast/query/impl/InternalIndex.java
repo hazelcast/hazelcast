@@ -23,6 +23,8 @@ import com.hazelcast.monitor.impl.PerIndexStats;
  */
 public interface InternalIndex extends Index {
 
+    Comparable canonicalizeScalarForHashLookup(Comparable value);
+
     /**
      * Returns {@code true} if the given partition is indexed by this index,
      * {@code false} otherwise.

@@ -20,9 +20,6 @@ import java.util.Comparator;
 
 public final class Comparables {
 
-    // TODO different canonicalization for on-heap and off-heap scenarios
-    // TODO move canonicalization to index level from index store level completely (?)
-
     public static final Comparator<Comparable> COMPARATOR = new Comparator<Comparable>() {
 
         @Override
@@ -65,17 +62,9 @@ public final class Comparables {
         return lhs.compareTo(rhs);
     }
 
-    public static Comparable canonicalizePreferringSpeed(Comparable value) {
+    public static Comparable canonicalizeForHashLookup(Comparable value) {
         if (value instanceof Number) {
-            return Numbers.canonicalizePreferringSpeed(value);
-        }
-
-        return value;
-    }
-
-    public static Comparable canonicalizePreferringSize(Comparable value) {
-        if (value instanceof Number) {
-            return Numbers.canonicalizePreferringSize(value);
+            return Numbers.canonicalizeForHashLookup(value);
         }
 
         return value;

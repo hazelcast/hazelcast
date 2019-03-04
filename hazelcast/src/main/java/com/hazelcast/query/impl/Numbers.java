@@ -45,16 +45,6 @@ public final class Numbers {
         return lhs.equals(rhs);
     }
 
-    public static boolean equalDoubles(double lhs, double rhs) {
-        // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
-        return Double.doubleToLongBits(lhs) == Double.doubleToLongBits(rhs);
-    }
-
-    public static boolean equalFloats(float lhs, float rhs) {
-        // exactly as Float.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
-        return Float.floatToIntBits(lhs) == Float.floatToIntBits(rhs);
-    }
-
     @SuppressWarnings("unchecked")
     public static int compare(Comparable lhs, Comparable rhs) {
         Class lhsClass = lhs.getClass();
@@ -83,7 +73,7 @@ public final class Numbers {
         return lhs.compareTo(rhs);
     }
 
-    public static Comparable canonicalizePreferringSpeed(Comparable value) {
+    public static Comparable canonicalizeForHashLookup(Comparable value) {
         Class clazz = value.getClass();
         assert value instanceof Number;
 
@@ -105,52 +95,21 @@ public final class Numbers {
         return value;
     }
 
-    public static Comparable canonicalizePreferringSize(Comparable value) {
-        Class clazz = value.getClass();
-        assert value instanceof Number;
-
-        Number number = (Number) value;
-
-        if (isDoubleRepresentable(clazz)) {
-            double doubleValue = number.doubleValue();
-            long longValue = number.longValue();
-
-            if (equalDoubles(doubleValue, (double) longValue)) {
-                return canonicalizeLongRepresentablePreferringSize(longValue);
-            } else if (clazz == Float.class) {
-                return doubleValue;
-            }
-        } else if (isLongRepresentable(clazz)) {
-            return canonicalizeLongRepresentablePreferringSize(number.longValue());
-        }
-
-        return value;
+    public static boolean equalDoubles(double lhs, double rhs) {
+        // exactly as Double.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
+        return Double.doubleToLongBits(lhs) == Double.doubleToLongBits(rhs);
     }
 
-    private static Comparable canonicalizeLongRepresentablePreferringSize(long value) {
-        // TODO
-        // off-heap overhead is 13 bytes, 12 for the NativeMemoryData + 1 for
-        // the pooling manager, allocation granularity is powers of 2.
-        //
-        // on-heap overhead is 12 bytes for the object header, allocation
-        // granularity is mod 8.
-
-        if (value == (long) (byte) value) {
-            return (byte) value;
-        } else if (value == (long) (short) value) {
-            return (short) value;
-        } else if (value == (long) (int) value) {
-            return (int) value;
-        } else {
-            return value;
-        }
+    public static boolean equalFloats(float lhs, float rhs) {
+        // exactly as Float.equals does it, see https://github.com/hazelcast/hazelcast/issues/6188
+        return Float.floatToIntBits(lhs) == Float.floatToIntBits(rhs);
     }
 
-    private static boolean isDoubleRepresentable(Class clazz) {
+    public static boolean isDoubleRepresentable(Class clazz) {
         return clazz == Double.class || clazz == Float.class;
     }
 
-    private static boolean isLongRepresentable(Class clazz) {
+    public static boolean isLongRepresentable(Class clazz) {
         return clazz == Long.class || clazz == Integer.class || clazz == Short.class || clazz == Byte.class;
     }
 
