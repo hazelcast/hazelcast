@@ -31,6 +31,7 @@ import com.hazelcast.cp.internal.raft.impl.util.SimpleCompletableFuture;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -98,6 +99,10 @@ public class RaftInvocationManager {
     }
 
     private void checkCPSubsystemEnabled() {
+        // RU_COMPAT_3_11
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_12)) {
+            throw new UnsupportedOperationException("CP Subsystem is not available before version 3.12!");
+        }
         if (raftService.getConfig().getCPMemberCount() == 0) {
             throw new HazelcastException("CP Subsystem is not enabled!");
         }

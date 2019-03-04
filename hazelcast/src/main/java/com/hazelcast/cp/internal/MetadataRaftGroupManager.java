@@ -33,6 +33,7 @@ import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
 import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -1043,6 +1044,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             // Hence, we need to check these flags in the reverse order here.
 
             if (!nodeEngine.getClusterService().isJoined()) {
+                scheduleSelf();
+                return true;
+            }
+
+            // RU_COMPAT_3_11
+            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_12)) {
+                logger.fine("Cannot start initial CP members discovery since cluster version is less than 3.12.");
                 scheduleSelf();
                 return true;
             }

@@ -56,6 +56,7 @@ import com.hazelcast.cp.internal.raftop.metadata.RaftServicePreJoinOp;
 import com.hazelcast.cp.internal.raftop.metadata.RemoveCPMemberOp;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.GracefulShutdownAwareService;
 import com.hazelcast.spi.ManagedService;
@@ -450,6 +451,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public Operation getPreJoinOperation() {
+        // RU_COMPAT_3_11
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_12)) {
+            return null;
+        }
+        if (config.getCPMemberCount() == 0) {
+            return null;
+        }
         boolean master = nodeEngine.getClusterService().isMaster();
         boolean discoveryCompleted = metadataGroupManager.isDiscoveryCompleted();
         RaftGroupId metadataGroupId = metadataGroupManager.getMetadataGroupId();
