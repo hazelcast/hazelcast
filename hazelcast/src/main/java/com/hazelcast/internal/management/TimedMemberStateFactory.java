@@ -28,6 +28,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
+import com.hazelcast.cp.CPMember;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
@@ -169,6 +170,14 @@ public class TimedMemberStateFactory {
             serializableClientEndPoints.add(new ClientEndPointDTO(client));
         }
         memberState.setClients(serializableClientEndPoints);
+
+        memberState.setUuid(node.getThisUuid());
+        if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
+            memberState.setCpMemberUuid(null);
+        } else {
+            CPMember localCPMember = instance.getCPSubsystem().getLocalCPMember();
+            memberState.setCpMemberUuid(localCPMember != null ? localCPMember.getUuid() : null);
+        }
 
         Address thisAddress = node.getThisAddress();
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());

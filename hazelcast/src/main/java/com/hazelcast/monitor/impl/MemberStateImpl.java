@@ -60,6 +60,8 @@ import static com.hazelcast.util.JsonUtil.getString;
 public class MemberStateImpl implements MemberState {
 
     private String address;
+    private String uuid;
+    private String cpMemberUuid;
     private Map<EndpointQualifier, Address> endpoints = new HashMap<EndpointQualifier, Address>();
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
     private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
@@ -158,6 +160,24 @@ public class MemberStateImpl implements MemberState {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    @Override
+    public String getCpMemberUuid() {
+        return cpMemberUuid;
+    }
+
+    public void setCpMemberUuid(String cpMemberUuid) {
+        this.cpMemberUuid = cpMemberUuid;
     }
 
     public Map<EndpointQualifier, Address> getEndpoints() {
@@ -300,6 +320,8 @@ public class MemberStateImpl implements MemberState {
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
+        root.add("uuid", uuid);
+        root.add("cpMemberUuid", cpMemberUuid);
 
         final JsonArray endpoints = new JsonArray();
         for (Entry<EndpointQualifier, Address> entry : this.endpoints.entrySet()) {
@@ -371,6 +393,8 @@ public class MemberStateImpl implements MemberState {
     @SuppressWarnings("checkstyle:methodlength")
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
+        uuid = getString(json, "uuid", null);
+        cpMemberUuid = getString(json, "cpMemberUuid", null);
 
         JsonArray endpoints = getArray(json, "endpoints");
         for (JsonValue obj : endpoints) {
@@ -501,6 +525,8 @@ public class MemberStateImpl implements MemberState {
     public String toString() {
         return "MemberStateImpl{"
                 + "address=" + address
+                + ", uuid=" + uuid
+                + ", cpMemberUuid=" + cpMemberUuid
                 + ", runtimeProps=" + runtimeProps
                 + ", mapStats=" + mapStats
                 + ", multiMapStats=" + multiMapStats

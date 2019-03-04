@@ -31,6 +31,21 @@ public interface MemberState extends JsonSerializable {
 
     String getAddress();
 
+    /**
+     * Returns the UUID of this member.
+     *
+     * @return the UUID of this member.
+     */
+    String getUuid();
+
+    /**
+     * Returns the local CP member's UUID if this Hazelcast
+     * member is part of the CP subsystem, returns null otherwise.
+     *
+     * @return local CP member's UUID if available, null otherwise
+     */
+    String getCpMemberUuid();
+
     Map<String, Long> getRuntimeProps();
 
     LocalMapStats getLocalMapStats(String mapName);
