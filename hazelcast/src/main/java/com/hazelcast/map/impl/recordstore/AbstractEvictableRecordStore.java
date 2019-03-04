@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
@@ -166,6 +167,21 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     public void evictEntries(Data excludedKey) {
         if (shouldEvict()) {
             mapContainer.getEvictor().evict(this, excludedKey);
+        }
+    }
+
+    @Override
+    public void sampleAndForceRemoveEntries(int entryCountToRemove) {
+        Queue<Data> keysToRemove = new LinkedList<Data>();
+        Iterable<EntryView> sample = storage.getRandomSamples(entryCountToRemove);
+        for (EntryView entryView : sample) {
+            Data dataKey = storage.extractRecordFromLazy(entryView).getKey();
+            keysToRemove.add(dataKey);
+        }
+
+        Data dataKey;
+        while ((dataKey = keysToRemove.poll()) != null) {
+            evict(dataKey, true);
         }
     }
 
