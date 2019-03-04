@@ -17,6 +17,7 @@
 package com.hazelcast.cp;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 
@@ -104,6 +105,36 @@ import java.util.Collection;
  * additional 4 regular Hazelcast members should exist in the cluster.
  * New Hazelcast members can be started to satisfy
  * {@link CPSubsystemConfig#getCPMemberCount()}.
+ * <p>
+ * <strong>There is a subtle point about graceful shutdown of CP members.
+ * If there are N CP members in the cluster, {@link HazelcastInstance#shutdown()}
+ * can be called on N-2 CP members concurrently. Once these N-2 CP members
+ * complete their shutdown, the remaining 2 CP members must be shut down
+ * serially.
+ * <p>
+ * Even though the shutdown API is called concurrently on multiple members,
+ * the Metadata CP group handles shutdown requests serially. Therefore,
+ * it would be simpler to shut down CP members one by one, by calling
+ * {@link HazelcastInstance#shutdown()} on the next CP member once the current
+ * CP member completes its shutdown.
+ * <p>
+ * The reason behind this limitation is, each shutdown request internally
+ * requires a Raft commit to the Metadata CP group. A CP member proceeds to
+ * shutdown after it receives a response of its commit to the Metadata CP
+ * group. To be able to perform a Raft commit, the Metadata CP group must have
+ * its majority available. When there are only 2 CP members left after graceful
+ * shutdowns, the majority of the Metadata CP group becomes 2. If the last 2 CP
+ * members shut down concurrently, one of them is likely to perform its Raft
+ * commit faster than the other one and leave the cluster before the other CP
+ * member completes its Raft commit. In this case, the last CP member waits for
+ * a response of its commit attempt on the Metadata group, and times out
+ * eventually. This situation causes an unnecessary delay on shutdown process
+ * of the last CP member. On the other hand, when the last 2 CP members shut
+ * down serially, the N-1th member receives response of its commit after its
+ * shutdown request is committed also on the last CP member. Then, the last CP
+ * member checks its local data to notice that it is the last CP member alive,
+ * and proceeds its shutdown without attempting a Raft commit on the Metadata
+ * CP group.</strong>
  *
  * @see CPMember
  * @see CPSubsystemConfig

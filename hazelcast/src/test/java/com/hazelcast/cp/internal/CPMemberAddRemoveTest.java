@@ -929,15 +929,18 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
     @Test
     public void when_cpMembersShutdownConcurrently_then_theyCompleteTheirShutdown() throws ExecutionException, InterruptedException {
-        // When there are N CP members, we can perform concurrent shutdown in 2 steps.
+        // When there are N CP members, we can perform partially-concurrent shutdown in 2 steps:
         // In the first step, we shut down N - 2 members concurrently.
-        // Once those members are done, we shutdown the last 2 CP members concurrently as well.
+        // Once those members are done, we shutdown the last 2 CP members serially.
+        // The last 2 CP members must be shutdown serially because if both of them shutdown at the same time,
+        // one of them can commit its leave to the Metadata group and terminate before the other one performs its commit.
+        // In this case, the last member hangs since there is no available majority of the Metadata group anymore.
 
         final HazelcastInstance[] instances = newInstances(7, 5, 0);
 
-        final int batchSize = 5;
-        Future[] futures = new Future[batchSize];
-        for (int i = 0; i < batchSize; i++) {
+        final int concurrent = 5;
+        Future[] futures = new Future[concurrent];
+        for (int i = 0; i < concurrent; i++) {
             final int ix = i;
             futures[i] = spawn(new Runnable() {
                 @Override
@@ -952,21 +955,8 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
             f.get();
         }
 
-        int remaining = instances.length - batchSize;
-        futures = new Future[remaining];
-        for (int i = 0; i < remaining; i++) {
-            final int ix = i;
-            futures[i] = spawn(new Runnable() {
-                @Override
-                public void run() {
-                    instances[batchSize + ix].shutdown();
-                }
-            });
-        }
-
-        for (Future f : futures) {
-            assertCompletesEventually(f);
-            f.get();
+        for (int i = 0, remaining = (instances.length - concurrent); i < remaining; i++) {
+            instances[concurrent + i].shutdown();
         }
     }
 
