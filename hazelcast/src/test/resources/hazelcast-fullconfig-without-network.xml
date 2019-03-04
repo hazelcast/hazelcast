@@ -520,6 +520,10 @@
                 <cache-entry-listener-factory class-name="com.example.cache.MyEntryListenerFactory"/>
                 <cache-entry-event-filter-factory class-name="com.example.cache.MyEntryEventFilterFactory"/>
             </cache-entry-listener>
+            <cache-entry-listener>
+                <cache-entry-listener-factory class-name="com.example.cache.MyEntryListenerFactory2"/>
+                <cache-entry-event-filter-factory class-name="com.example.cache.MyEntryEventFilterFactory2"/>
+            </cache-entry-listener>
         </cache-entry-listeners>
         <in-memory-format>OBJECT</in-memory-format>
         <backup-count>2</backup-count>

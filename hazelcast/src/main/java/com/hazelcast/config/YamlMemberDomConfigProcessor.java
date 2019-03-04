@@ -598,6 +598,13 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
+    protected void cacheListenerHandle(Node n, CacheSimpleConfig cacheSimpleConfig) {
+        for (Node listenerNode : childElements(n)) {
+            handleCacheEntryListenerNode(cacheSimpleConfig, listenerNode);
+        }
+    }
+
+    @Override
     protected void handleItemListeners(Node n, Function<ItemListenerConfig, Void> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
             NamedNodeMap attrs = listenerNode.getAttributes();

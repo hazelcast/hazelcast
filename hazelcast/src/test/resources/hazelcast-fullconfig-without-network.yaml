@@ -521,13 +521,16 @@ hazelcast:
           time-unit: MICROSECONDS
 
       cache-entry-listeners:
-        cache-entry-listener:
-          old-value-required: true
+        - old-value-required: true
           synchronous: true
           cache-entry-listener-factory:
             class-name: com.example.cache.MyEntryListenerFactory
           cache-entry-event-filter-factory:
             class-name: com.example.cache.MyEntryEventFilterFactory
+        - cache-entry-listener-factory:
+            class-name: com.example.cache.MyEntryListenerFactory2
+          cache-entry-event-filter-factory:
+            class-name: com.example.cache.MyEntryEventFilterFactory2
       in-memory-format: OBJECT
       backup-count: 2
       async-backup-count: 2
