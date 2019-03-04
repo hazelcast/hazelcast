@@ -491,7 +491,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
                     upperCaseInternal(getTextContent(maxSizePolicy))));
         }
-        msc.setSize(getIntegerValue("max-size", attributes.getNamedItem("max-size").getNodeValue()));
+        msc.setSize(getIntegerValue("max-size", getTextContent(attributes.getNamedItem("max-size"))));
     }
 
     @Override
