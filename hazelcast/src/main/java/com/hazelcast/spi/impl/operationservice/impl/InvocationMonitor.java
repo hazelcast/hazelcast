@@ -193,6 +193,10 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
         scheduler.execute(new OnMemberLeftTask(member, memberListVersion));
     }
 
+    void onEndpointLeft(Address endpoint) {
+        scheduler.execute(new OnEndpointLeftTask(endpoint));
+    }
+
     void execute(Runnable runnable) {
         scheduler.execute(runnable);
     }
@@ -338,6 +342,25 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
                 logger.log(logLevel, "Invocations:" + invocationCount
                         + " timeouts:" + invocationTimeouts
                         + " backup-timeouts:" + backupTimeouts);
+            }
+        }
+    }
+
+    private final class OnEndpointLeftTask extends MonitorTask {
+        private final Address endpoint;
+
+        private OnEndpointLeftTask(Address endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        @Override
+        public void run0() {
+            heartbeatPerMember.remove(endpoint);
+
+            for (Invocation invocation : invocationRegistry) {
+                if (endpoint.equals(invocation.getTargetAddress())) {
+                    invocation.notifyError(new MemberLeftException("Endpoint " + endpoint + " has "));
+                }
             }
         }
     }

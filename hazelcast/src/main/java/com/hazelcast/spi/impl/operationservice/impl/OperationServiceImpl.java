@@ -444,6 +444,10 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         invocationMonitor.onMemberLeft(member);
     }
 
+    public void onEndpointLeft(Address endpoint) {
+        invocationMonitor.onEndpointLeft(endpoint);
+    }
+
     public void reset() {
         Throwable cause = new LocalMemberResetException(node.getLocalMember() + " has reset.");
         invocationRegistry.reset(cause);

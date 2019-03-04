@@ -17,9 +17,9 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
@@ -278,6 +278,14 @@ class MockNetworkingService
                 if (!ns.mapConnections.remove(endPoint, connection)) {
                     return;
                 }
+
+                NetworkingService remoteNetworkingService = connection.remoteNodeEngine.getNode().getNetworkingService();
+                Connection remoteConnection = remoteNetworkingService.getEndpointManager(MEMBER)
+                                                                     .getConnection(connection.localEndpoint);
+                if (remoteConnection != null) {
+                    remoteConnection.close("Connection closed by the other side", null);
+                }
+
                 ns.logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
                 fireConnectionRemovedEvent(connection, endPoint);
             }
