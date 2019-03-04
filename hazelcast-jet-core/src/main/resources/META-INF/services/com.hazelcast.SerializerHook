@@ -22,7 +22,6 @@ com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongLongAccHook
 com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongDoubleAccHook
 com.hazelcast.jet.core.CoreSerializerHooks$WatermarkHook
 com.hazelcast.jet.core.CoreSerializerHooks$JetEventHook
-com.hazelcast.jet.datamodel.DataModelSerializerHooks$TimestampedItemHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$WindowResultHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$KeyedWindowResultHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple2Hook

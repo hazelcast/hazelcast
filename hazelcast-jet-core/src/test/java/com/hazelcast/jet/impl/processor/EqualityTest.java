@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 public class EqualityTest {
 
     @Test
-    public void testEqualsAndHashCode_whenSnapshotKey() {
+    public void snapshotKey_equasAndHashCode() {
         EqualsVerifier.forClass(SnapshotKey.class)
                       .usingGetClass()
                       .suppress(Warning.NONFINAL_FIELDS)

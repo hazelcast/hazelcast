@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.impl.pipeline.TimestampedItem;
+import com.hazelcast.jet.impl.JetEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -100,10 +100,10 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
                     eventTimeMapper == null ? buffer.traverse()
                     : buffer.isEmpty() ? eventTimeMapper.flatMapIdle()
                     : buffer.traverse().flatMap(t -> {
-                        // if eventTimeMapper is not null, we know that T is TimestampedItem<?>
+                        // if eventTimeMapper is not null, we know that T is JetEvent<T>
                         @SuppressWarnings("unchecked")
-                        TimestampedItem<T> t1 = (TimestampedItem<T>) t;
-                        return eventTimeMapper.flatMapEvent(t1.item(), 0, t1.timestamp());
+                        JetEvent<T> t1 = (JetEvent<T>) t;
+                        return eventTimeMapper.flatMapEvent(t1.payload(), 0, t1.timestamp());
                     });
         }
         boolean bufferEmpty = emitFromTraverser(traverser);

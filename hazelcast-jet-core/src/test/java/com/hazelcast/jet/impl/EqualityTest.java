@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.pipeline;
+package com.hazelcast.jet.impl;
 
-import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.Test;
@@ -26,12 +25,7 @@ import org.junit.runner.RunWith;
 public class EqualityTest {
 
     @Test
-    public void timestampedItem_equalsAndHashCode() {
-        EqualsVerifier.forClass(TimestampedItem.class).verify();
-    }
-
-    @Test
-    public void testEqualsAndHashCode_whenJetEvent() {
+    public void jetEvent_equalsAndHashCode() {
         EqualsVerifier.forClass(JetEvent.class).verify();
     }
 
