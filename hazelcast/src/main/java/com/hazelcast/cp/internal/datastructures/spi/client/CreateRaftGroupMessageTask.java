@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.datastructures.spi.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
+import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.instance.Node;
@@ -29,7 +30,8 @@ import java.security.Permission;
 /**
  * Client message task for Raft group creation
  */
-public class CreateRaftGroupMessageTask extends AbstractMessageTask<CPGroupCreateCPGroupCodec.RequestParameters> {
+public class CreateRaftGroupMessageTask extends AbstractMessageTask<CPGroupCreateCPGroupCodec.RequestParameters>
+        implements BlockingMessageTask {
 
     public CreateRaftGroupMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -74,6 +76,6 @@ public class CreateRaftGroupMessageTask extends AbstractMessageTask<CPGroupCreat
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {parameters.proxyName};
+        return new Object[]{parameters.proxyName};
     }
 }
