@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
@@ -148,5 +149,9 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
             // cache statistics are not supported on clients yet
             ignore(e);
         }
+    }
+
+    public static ICacheService getCacheService(HazelcastInstance instance) {
+        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -35,6 +36,8 @@ import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.io.Closeable;
 
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
@@ -50,6 +53,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
     protected transient ICacheService cacheService;
     protected transient ICacheRecordStore recordStore;
     protected transient CacheWanEventPublisher wanEventPublisher;
+    protected transient Closeable tenantContext;
 
     protected CacheOperation() {
     }
@@ -73,6 +77,11 @@ public abstract class CacheOperation extends AbstractNamedOperation
         cacheService = getService();
         try {
             recordStore = getOrCreateStoreIfAllowed();
+            // establish tenant application's thread-local context for this cache operation
+            CacheConfig<?, ?> cacheConfig = cacheService.getCacheConfig(name);
+            if (cacheConfig != null) {
+                tenantContext = cacheConfig.getTenantControl().setTenant(true);
+            }
         } catch (CacheNotExistsException e) {
             dispose();
             rethrowOrSwallowIfBackup(e);
@@ -86,6 +95,13 @@ public abstract class CacheOperation extends AbstractNamedOperation
         }
 
         beforeRunInternal();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (tenantContext != null) {
+            tenantContext.close();
+        }
     }
 
     /**
