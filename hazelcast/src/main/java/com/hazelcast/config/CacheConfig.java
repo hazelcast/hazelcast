@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -43,6 +44,7 @@ import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +53,7 @@ import java.util.Set;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
+import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -87,6 +90,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      */
     private boolean disablePerEntryInvalidationEvents;
 
+    private TenantControl tenantControl = NOOP_TENANT_CONTROL;
 
     public CacheConfig() {
     }
@@ -517,6 +521,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         out.writeObject(wanReplicationRef);
         // SUPER
         writeKeyValueTypes(out);
+        writeTenant(out);
         writeFactories(out);
 
         out.writeBoolean(isReadThrough);
@@ -554,7 +559,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
 
         // SUPER
         readKeyValueTypes(in);
-        readFactories(in);
+        readTenant(in);
+        Closeable tenantContext = tenantControl.setTenant(false);
+        try {
+            readFactories(in);
+        } finally {
+            tenantContext.close();
+        }
 
         isReadThrough = in.readBoolean();
         isWriteThrough = in.readBoolean();
@@ -567,8 +578,16 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         quorumName = in.readUTF();
 
         final boolean listNotEmpty = in.readBoolean();
-        if (listNotEmpty) {
-            readListenerConfigurations(in);
+        // set the thread-context and class loading context for this cache's tenant application
+        // This way keyType/valueType/ loader factories and listeners can be CDI / EJB / JPA objects
+        // and class loading is guaranteed to work
+        tenantContext = tenantControl.setTenant(false);
+        try {
+            if (listNotEmpty) {
+                readListenerConfigurations(in);
+            }
+        } finally {
+            tenantContext.close();
         }
 
         mergePolicy = in.readUTF();
@@ -622,6 +641,20 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
                 + '}';
     }
 
+    public TenantControl getTenantControl() {
+        return tenantControl;
+    }
+
+    public void setTenantControl(TenantControl tenantControl) {
+        this.tenantControl = tenantControl;
+    }
+
+    protected void writeTenant(ObjectDataOutput out) throws IOException {
+    }
+
+    protected void readTenant(ObjectDataInput in) throws IOException {
+    }
+
     protected void writeKeyValueTypes(ObjectDataOutput out) throws IOException {
         out.writeObject(getKeyType());
         out.writeObject(getValueType());
@@ -671,6 +704,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      * @return          the target config
      */
     public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
+        target.setTenantControl(getTenantControl());
         target.setAsyncBackupCount(getAsyncBackupCount());
         target.setBackupCount(getBackupCount());
         target.setDisablePerEntryInvalidationEvents(isDisablePerEntryInvalidationEvents());

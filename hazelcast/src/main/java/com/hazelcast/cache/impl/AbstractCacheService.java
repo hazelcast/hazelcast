@@ -25,6 +25,7 @@ import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
+import com.hazelcast.cache.impl.tenantcontrol.CacheDestroyEventContext;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -50,12 +51,14 @@ import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.ServiceLoader;
 import com.hazelcast.wan.WanReplicationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -76,6 +79,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
+import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.singleton;
 
@@ -83,6 +87,7 @@ import static java.util.Collections.singleton;
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
         PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ClusterStateListener {
 
+    public static final String TENANT_CONTROL = "com.hazelcast.spi.tenantcontrol.TenantControl";
     private static final String SETUP_REF = "setupRef";
 
     /**
@@ -396,6 +401,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     public CacheConfig deleteCacheConfig(String cacheNameWithPrefix) {
         CacheConfig config = configs.remove(cacheNameWithPrefix);
         if (config != null) {
+            // decouple this cache from the tenant
+            // the tenant will unregister it's event listeners so the tenant itself
+            // can be garbage collected
+            config.getTenantControl().unregister();
             logger.info("Removed cache config: " + config);
         }
         return config;
@@ -474,10 +483,35 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         }
         try {
             // Set name explicitly, because found config might have a wildcard name.
-            return new CacheConfig(cacheSimpleConfig).setName(simpleName);
+            CacheConfig cacheConfig = new CacheConfig(cacheSimpleConfig).setName(simpleName);
+            setTenantControl(cacheConfig);
+            return cacheConfig;
         } catch (Exception e) {
             throw new CacheException(e);
         }
+    }
+
+    @Override
+    public void setTenantControl(CacheConfig cacheConfig) {
+        if (!NOOP_TENANT_CONTROL.equals(cacheConfig.getTenantControl())) {
+            // a tenant control has already been explicitly set for the cache config
+            return;
+        }
+        // associate cache config with the current thread's tenant
+        // and add hook so when the tenant is destroyed, so is the cache config
+        TenantControl tenantControl = null;
+        try {
+            tenantControl = ServiceLoader.load(TenantControl.class, TENANT_CONTROL, nodeEngine.getConfigClassLoader());
+        } catch (Exception e) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Could not load service provider for TenantControl", e);
+            }
+        }
+        if (tenantControl == null) {
+            tenantControl = NOOP_TENANT_CONTROL;
+        }
+        cacheConfig.setTenantControl(tenantControl.saveCurrentTenant(
+                new CacheDestroyEventContext(cacheConfig.getName())));
     }
 
     @Override

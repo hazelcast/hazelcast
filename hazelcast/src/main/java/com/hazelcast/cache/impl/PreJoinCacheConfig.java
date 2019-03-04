@@ -23,9 +23,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
+
+import static com.hazelcast.internal.cluster.Versions.V3_12;
 
 /**
  * This subclass of {@link CacheConfig} is used to communicate cache configurations in pre-join cache operations when cluster
@@ -69,6 +72,21 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
             throws IOException {
         setKeyClassName(in.readUTF());
         setValueClassName(in.readUTF());
+    }
+
+    @Override
+    protected void writeTenant(ObjectDataOutput out) throws IOException {
+        if (out.getVersion().isGreaterOrEqual(V3_12)) {
+            out.writeObject(getTenantControl());
+        }
+    }
+
+    @Override
+    protected void readTenant(ObjectDataInput in) throws IOException {
+        if (in.getVersion().isGreaterOrEqual(V3_12)) {
+            TenantControl tc = in.readObject();
+            setTenantControl(tc);
+        }
     }
 
     @Override
