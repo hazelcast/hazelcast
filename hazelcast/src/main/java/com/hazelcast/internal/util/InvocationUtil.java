@@ -30,7 +30,6 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -188,18 +187,6 @@ public final class InvocationUtil {
                     }
                 });
             }
-        }
-    }
-
-    private static class SimpleCompletableFuture<T> extends AbstractCompletableFuture<T> {
-
-        SimpleCompletableFuture(NodeEngine nodeEngine) {
-            super(nodeEngine, nodeEngine.getLogger(InvocationUtil.class));
-        }
-
-        @Override
-        public boolean setResult(Object result) {
-            return super.setResult(result);
         }
     }
 

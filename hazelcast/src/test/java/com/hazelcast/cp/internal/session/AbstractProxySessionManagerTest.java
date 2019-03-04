@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
-import com.hazelcast.cp.internal.raft.impl.util.SimpleCompletableFuture;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 import org.junit.Test;
