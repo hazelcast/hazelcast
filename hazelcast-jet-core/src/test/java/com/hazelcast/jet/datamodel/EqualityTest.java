@@ -38,11 +38,6 @@ public class EqualityTest {
     }
 
     @Test
-    public void timestampedItem_equalsAndHashCode() {
-        EqualsVerifier.forClass(TimestampedItem.class).verify();
-    }
-
-    @Test
     public void tuple2_equalsAndHashCode() {
         EqualsVerifier.forClass(Tuple2.class)
                       .suppress(Warning.NONFINAL_FIELDS)

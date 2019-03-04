@@ -26,6 +26,11 @@ import org.junit.runner.RunWith;
 public class EqualityTest {
 
     @Test
+    public void timestampedItem_equalsAndHashCode() {
+        EqualsVerifier.forClass(TimestampedItem.class).verify();
+    }
+
+    @Test
     public void testEqualsAndHashCode_whenJetEvent() {
         EqualsVerifier.forClass(JetEvent.class).verify();
     }

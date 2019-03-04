@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.datamodel;
+package com.hazelcast.jet.impl.pipeline;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -23,10 +23,7 @@ import java.util.Objects;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
- * Represents a data item with the event timestamp added to it. Used in the
- * Pipeline API as the default data type to emit from global windowed
- * aggregation stages (those that aggregate all the data in a window, without
- * grouping).
+ * Represents a data item with the event timestamp added to it.
  *
  * @param <T> type of the item
  */
@@ -79,13 +76,4 @@ public final class TimestampedItem<T> implements Serializable {
     }
 
 
-    /**
-     * Constructs a {@link TimestampedItem} from a {@link WindowResult} using
-     * the window end time as the timestamp.
-     */
-    public static <T> TimestampedItem<T> fromWindowResult(
-            @Nonnull WindowResult<? extends T> winResult
-    ) {
-        return new TimestampedItem<>(winResult.end(), winResult.result());
-    }
 }

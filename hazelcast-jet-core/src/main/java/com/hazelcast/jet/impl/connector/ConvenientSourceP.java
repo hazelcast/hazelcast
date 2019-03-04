@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.datamodel.TimestampedItem;
+import com.hazelcast.jet.impl.pipeline.TimestampedItem;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
