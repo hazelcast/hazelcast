@@ -59,6 +59,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.GracefulShutdownAwareService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
@@ -326,9 +327,9 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return future;
     }
 
-    private SimpleCompletableFuture<Void> newCompletableFuture() {
+    private <T> SimpleCompletableFuture<T> newCompletableFuture() {
         ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
-        return new SimpleCompletableFuture<Void>(executor, logger);
+        return new SimpleCompletableFuture<T>(executor, logger);
     }
 
     @Override
@@ -682,14 +683,11 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     public RaftGroupId createRaftGroupForProxy(String name) {
         String groupName = getGroupNameForProxy(name);
-        checkFalse(groupName.equalsIgnoreCase(METADATA_CP_GROUP_NAME), "CP data structures cannot run on the METADATA CP group!");
-
         try {
-            RaftGroupId groupId = getGroupIdForProxy(name);
-            if (groupId != null) {
-                return groupId;
+            CPGroupInfo groupInfo = getGroupInfoForProxy(groupName).join();
+            if (groupInfo != null) {
+                return groupInfo.id();
             }
-
             return invocationManager.createRaftGroup(groupName).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -699,11 +697,42 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
     }
 
-    private RaftGroupId getGroupIdForProxy(String name) {
-        String groupName = getGroupNameForProxy(name);
+    public InternalCompletableFuture<RaftGroupId> createRaftGroupForProxyAsync(String name) {
+        final String groupName = getGroupNameForProxy(name);
+        final SimpleCompletableFuture<RaftGroupId> future = newCompletableFuture();
+
+        InternalCompletableFuture<CPGroupInfo> groupIdFuture = getGroupInfoForProxy(groupName);
+        groupIdFuture.andThen(new ExecutionCallback<CPGroupInfo>() {
+            @Override
+            public void onResponse(CPGroupInfo response) {
+                if (response != null) {
+                    future.setResult(response.id());
+                } else {
+                    invocationManager.createRaftGroup(groupName).andThen(new ExecutionCallback<RaftGroupId>() {
+                        @Override
+                        public void onResponse(RaftGroupId response) {
+                            future.setResult(response);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            complete(future, t);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                complete(future, t);
+            }
+        });
+        return future;
+    }
+
+    private InternalCompletableFuture<CPGroupInfo> getGroupInfoForProxy(String groupName) {
         RaftOp op = new GetActiveRaftGroupByNameOp(groupName);
-        CPGroupInfo group = invocationManager.<CPGroupInfo>invoke(getMetadataGroupId(), op).join();
-        return group != null ? group.id() : null;
+        return invocationManager.invoke(getMetadataGroupId(), op);
     }
 
     private ICompletableFuture<Void> invokeTriggerRemoveMember(CPMemberInfo member) {
@@ -745,6 +774,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         checkTrue(name.indexOf("@", i + 1) == -1, "Custom group name must be specified at most once");
         String groupName = name.substring(i + 1).trim();
         checkTrue(groupName.length() > 0, "Custom CP group name cannot be empty string");
+        checkFalse(groupName.equalsIgnoreCase(METADATA_CP_GROUP_NAME), "CP data structures cannot run on the METADATA CP group!");
         return groupName;
     }
 

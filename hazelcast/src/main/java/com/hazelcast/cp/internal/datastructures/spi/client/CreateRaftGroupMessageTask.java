@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.spi.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.instance.Node;
@@ -31,7 +31,7 @@ import java.security.Permission;
  * Client message task for Raft group creation
  */
 public class CreateRaftGroupMessageTask extends AbstractMessageTask<CPGroupCreateCPGroupCodec.RequestParameters>
-        implements BlockingMessageTask {
+        implements ExecutionCallback {
 
     public CreateRaftGroupMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -40,8 +40,17 @@ public class CreateRaftGroupMessageTask extends AbstractMessageTask<CPGroupCreat
     @Override
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        RaftGroupId groupId = service.createRaftGroupForProxy(parameters.proxyName);
-        sendResponse(groupId);
+        service.createRaftGroupForProxyAsync(parameters.proxyName).andThen(this);
+    }
+
+    @Override
+    public void onResponse(Object response) {
+        sendResponse(response);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        handleProcessingFailure(t);
     }
 
     @Override
