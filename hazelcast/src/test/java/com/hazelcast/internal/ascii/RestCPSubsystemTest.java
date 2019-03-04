@@ -18,6 +18,8 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.RestApiConfig;
+import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -34,7 +36,6 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -71,8 +72,10 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
-        config.setProperty(GroupProperty.HTTP_HEALTHCHECK_ENABLED.getName(), "true");
+        RestApiConfig restApiConfig = new RestApiConfig()
+                .setEnabled(true)
+                .enableGroups(RestEndpointGroup.CLUSTER_WRITE);
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
 
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
@@ -484,18 +487,32 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_promoteAPMemberToCPMember() throws IOException, ExecutionException, InterruptedException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        Hazelcast.newHazelcastInstance(config);
-        Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance4 = Hazelcast.newHazelcastInstance(config);
+    public void test_promoteAPMemberToCPMember() throws ExecutionException, InterruptedException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance4 = Hazelcast.newHazelcastInstance(config);
 
-        ConnectionResponse response = new HTTPCommunicator(instance4).promoteCPMember(groupName, groupPassword);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
+                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
-        assertEquals(200, response.responseCode);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ConnectionResponse response = new HTTPCommunicator(instance4).promoteCPMember(groupName, groupPassword);
+                assertEquals(200, response.responseCode);
+            }
+        });
 
         Collection<CPMember> cpMembers = instance1.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().get();
         assertEquals(4, cpMembers.size());
+        assertNotNull(instance4.getCPSubsystem().getLocalCPMember());
     }
 
     @Test
@@ -515,9 +532,16 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
 
     @Test
     public void test_promoteExistingCPMember() throws IOException, ExecutionException, InterruptedException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
+            }
+        });
 
         ConnectionResponse response = new HTTPCommunicator(instance1).promoteCPMember(groupName, groupPassword);
 
