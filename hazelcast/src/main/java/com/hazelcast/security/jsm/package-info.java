@@ -15,8 +15,8 @@
  */
 
 /**
- * Contains Hazelcast client permissions.
+ * Contains Java Security Manager permissions.
  *
- * @see com.hazelcast.security.jsm
+ * @see com.hazelcast.security.permission
  */
-package com.hazelcast.security.permission;
+package com.hazelcast.security.jsm;
