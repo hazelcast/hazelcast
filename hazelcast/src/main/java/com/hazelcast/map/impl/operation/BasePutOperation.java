@@ -29,7 +29,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    protected transient Data dataOldValue;
+    protected transient Object oldValue;
     protected transient Data dataMergingValue;
     protected transient EntryEventType eventType;
     protected transient boolean putTransient;
@@ -51,7 +51,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         Record record = recordStore.getRecord(dataKey);
         Object value = isPostProcessing(recordStore) ? record.getValue() : dataValue;
         mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(),
-                dataKey, dataOldValue, value, dataMergingValue);
+                dataKey, oldValue, value, dataMergingValue);
         invalidateNearCache(dataKey);
         publishWanUpdate(dataKey, value);
         evict(dataKey);
@@ -59,7 +59,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     private EntryEventType getEventType() {
         if (eventType == null) {
-            eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
+            eventType = oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         }
         return eventType;
     }

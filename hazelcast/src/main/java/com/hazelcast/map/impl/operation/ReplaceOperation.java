@@ -34,7 +34,7 @@ public class ReplaceOperation extends BasePutOperation implements MutatingOperat
     @Override
     public void run() {
         Object oldValue = recordStore.replace(dataKey, dataValue);
-        dataOldValue = mapServiceContext.toData(oldValue);
+        this.oldValue = mapServiceContext.toData(oldValue);
         successful = oldValue != null;
     }
 
@@ -53,7 +53,7 @@ public class ReplaceOperation extends BasePutOperation implements MutatingOperat
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return oldValue;
     }
 
     @Override

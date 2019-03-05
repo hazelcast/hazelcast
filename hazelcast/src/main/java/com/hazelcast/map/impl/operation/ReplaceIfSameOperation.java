@@ -41,7 +41,7 @@ public class ReplaceIfSameOperation extends BasePutOperation implements Mutating
     public void run() {
         successful = recordStore.replace(dataKey, expect, dataValue);
         if (successful) {
-            dataOldValue = expect;
+            oldValue = expect;
         }
     }
 

@@ -89,7 +89,7 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
-    public int doFilter(EventFilter filter, Data dataKey, Object dataOldValue, Object dataValue, EntryEventType eventType,
+    public int doFilter(EventFilter filter, Data dataKey, Object oldValue, Object dataValue, EntryEventType eventType,
                         String mapNameOrNull) {
         if (filter instanceof MapPartitionLostEventFilter) {
             return FILTER_DOES_NOT_MATCH;
@@ -122,7 +122,7 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
         }
 
         if (filter instanceof QueryEventFilter) {
-            int effectiveEventType = processQueryEventFilterWithAlternativeEventType(filter, eventType, dataKey, dataOldValue,
+            int effectiveEventType = processQueryEventFilterWithAlternativeEventType(filter, eventType, dataKey, oldValue,
                     dataValue, mapNameOrNull);
             if (effectiveEventType == FILTER_DOES_NOT_MATCH) {
                 return FILTER_DOES_NOT_MATCH;
