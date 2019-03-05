@@ -18,8 +18,6 @@ package com.hazelcast.query.impl;
 
 public final class Numbers {
 
-    private static final long NEGATIVE_ZERO = Double.doubleToRawLongBits(-0.0);
-
     private Numbers() {
     }
 
@@ -131,9 +129,9 @@ public final class Numbers {
             return Double.compare((double) l, d);
         }
 
-        // Only special (infinities, NaNs, zeros) and integer double values are
-        // left: starting from 2^52, doubles can represent only integer values
-        // with increasing gaps between them.
+        // Only infinities, NaNs and integer double values are left: starting
+        // from 2^52, doubles can represent only integer values with increasing
+        // gaps between them.
 
         if (d <= -0x1p63) {
             //  -92233720368547_76000 (0x1p63) < -92233720368547_75808 (-2^63 = Long.MIN_VALUE)
@@ -150,13 +148,9 @@ public final class Numbers {
         // Infinities are gone at this point.
 
         if (Double.isNaN(d)) {
-            // NaN is ordered by Double.compareTo as the biggest number in the
-            // world.
+            // NaNs are ordered by Double.compareTo as the biggest numbers in
+            // the world.
             return -1;
-        }
-
-        if (l == 0 && Double.doubleToRawLongBits(d) == NEGATIVE_ZERO) {
-            return +1;
         }
 
         // All remaining double values are integer and less than 2^63 in
@@ -182,10 +176,6 @@ public final class Numbers {
         }
 
         if (Double.isNaN(d)) {
-            return false;
-        }
-
-        if (Double.doubleToRawLongBits(d) == NEGATIVE_ZERO) {
             return false;
         }
 

@@ -34,6 +34,7 @@ public final class Comparables {
 
     public static boolean equal(Comparable lhs, Comparable rhs) {
         assert lhs != null;
+
         if (rhs == null) {
             return false;
         }
@@ -51,6 +52,9 @@ public final class Comparables {
 
     @SuppressWarnings("unchecked")
     public static int compare(Comparable lhs, Comparable rhs) {
+        assert lhs != null;
+        assert rhs != null;
+
         if (lhs.getClass() == rhs.getClass()) {
             return lhs.compareTo(rhs);
         }
