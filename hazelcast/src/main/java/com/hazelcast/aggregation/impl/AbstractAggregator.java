@@ -17,6 +17,7 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.getters.MultiResult;
 
@@ -73,7 +74,7 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
                 }
                 accumulateExtracted(entry, results.get(i));
             }
-        } else {
+        } else if (extractedValue != NonTerminalJsonValue.INSTANCE) {
             accumulateExtracted(entry, extractedValue);
         }
     }
