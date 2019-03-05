@@ -47,12 +47,12 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
     DiscoveryNode discoveryNode;
 
     @Mock
-    private DefaultKubernetesClient client;
+    private KubernetesClient client;
 
     @Before
     public void setup()
             throws Exception {
-        PowerMockito.whenNew(DefaultKubernetesClient.class).withAnyArguments().thenReturn(client);
+        PowerMockito.whenNew(KubernetesClient.class).withAnyArguments().thenReturn(client);
     }
 
     @Test

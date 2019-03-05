@@ -94,12 +94,12 @@ final class HazelcastKubernetesDiscoveryStrategy
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
                 + "kubernetes-master: " + kubernetesMaster + "}");
 
-        client = buildKubernetesClient(kubernetesMaster, apiToken, caCertificate);
+        client = buildKubernetesClient(namespace, kubernetesMaster, apiToken, caCertificate);
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns, port, serviceDnsTimeout);
         } else {
             endpointResolver = new KubernetesApiEndpointResolver(logger, serviceName, port, serviceLabel, serviceLabelValue,
-                    namespace, resolveNotReadyAddresses, client);
+                    resolveNotReadyAddresses, client);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
     }
@@ -136,7 +136,7 @@ final class HazelcastKubernetesDiscoveryStrategy
             if (podName == null) {
                 podName = InetAddress.getLocalHost().getHostName();
             }
-            String zone = client.zone(namespace, podName);
+            String zone = client.zone(podName);
             if (zone != null) {
                 return zone;
             }
@@ -239,8 +239,9 @@ final class HazelcastKubernetesDiscoveryStrategy
         }
     }
 
-    private KubernetesClient buildKubernetesClient(String kubernetesMaster, String accessToken, String caCertificate) {
-        return new RetryKubernetesClient(new DefaultKubernetesClient(kubernetesMaster, accessToken, caCertificate));
+    private KubernetesClient buildKubernetesClient(String namespace, String kubernetesMaster, String accessToken,
+                                                   String caCertificate) {
+        return new KubernetesClient(namespace, kubernetesMaster, accessToken, caCertificate);
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")

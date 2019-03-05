@@ -17,8 +17,7 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.kubernetes.KubernetesClient.Endpoints;
-import com.hazelcast.kubernetes.KubernetesClient.EntrypointAddress;
+import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -34,19 +33,17 @@ class KubernetesApiEndpointResolver
     private final String serviceName;
     private final String serviceLabel;
     private final String serviceLabelValue;
-    private final String namespace;
     private final Boolean resolveNotReadyAddresses;
     private final int port;
     private final KubernetesClient client;
 
     KubernetesApiEndpointResolver(ILogger logger, String serviceName, int port, String serviceLabel, String serviceLabelValue,
-                                  String namespace, Boolean resolveNotReadyAddresses, KubernetesClient client) {
+                                  Boolean resolveNotReadyAddresses, KubernetesClient client) {
 
         super(logger);
 
         this.serviceName = serviceName;
         this.port = port;
-        this.namespace = namespace;
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
         this.resolveNotReadyAddresses = resolveNotReadyAddresses;
@@ -56,49 +53,50 @@ class KubernetesApiEndpointResolver
     @Override
     List<DiscoveryNode> resolve() {
         if (serviceName != null && !serviceName.isEmpty()) {
-            return getSimpleDiscoveryNodes(client.endpointsByName(namespace, serviceName));
+            return getSimpleDiscoveryNodes(client.endpointsByName(serviceName));
         } else if (serviceLabel != null && !serviceLabel.isEmpty()) {
-            return getSimpleDiscoveryNodes(client.endpointsByLabel(namespace, serviceLabel, serviceLabelValue));
+            return getSimpleDiscoveryNodes(client.endpointsByLabel(serviceLabel, serviceLabelValue));
         }
-        return getSimpleDiscoveryNodes(client.endpoints(namespace));
+        return getSimpleDiscoveryNodes(client.endpoints());
     }
 
-    private List<DiscoveryNode> getSimpleDiscoveryNodes(Endpoints endpoints) {
+    private List<DiscoveryNode> getSimpleDiscoveryNodes(List<Endpoint> endpoints) {
         List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
-        resolveNotReadyAddresses(discoveredNodes, endpoints.getNotReadyAddresses());
-        resolveAddresses(discoveredNodes, endpoints.getAddresses());
+        for (Endpoint address : endpoints) {
+            addAddress(discoveredNodes, address);
+        }
         return discoveredNodes;
     }
 
-    private void resolveNotReadyAddresses(List<DiscoveryNode> discoveredNodes, List<EntrypointAddress> notReadyAddresses) {
-        if (Boolean.TRUE.equals(resolveNotReadyAddresses)) {
-            resolveAddresses(discoveredNodes, notReadyAddresses);
+    private void addAddress(List<DiscoveryNode> discoveredNodes, Endpoint endpoint) {
+        if (Boolean.TRUE.equals(resolveNotReadyAddresses) || endpoint.isReady()) {
+            Address privateAddress = createAddress(endpoint.getPrivateAddress());
+            Address publicAddress = createAddress(endpoint.getPublicAddress());
+            discoveredNodes
+                    .add(new SimpleDiscoveryNode(privateAddress, publicAddress, endpoint.getAdditionalProperties()));
+            if (logger.isFinestEnabled()) {
+                logger.finest(String.format("Found node service with addresses (private, public): %s, %s ", privateAddress,
+                        publicAddress));
+            }
         }
     }
 
-    private void resolveAddresses(List<DiscoveryNode> discoveredNodes, List<EntrypointAddress> addresses) {
-        for (EntrypointAddress address : addresses) {
-            addAddress(discoveredNodes, address);
+    private Address createAddress(KubernetesClient.EndpointAddress address) {
+        if (address == null) {
+            return null;
         }
-    }
-
-    private void addAddress(List<DiscoveryNode> discoveredNodes, EntrypointAddress entrypointAddress) {
-        String ip = entrypointAddress.getIp();
+        String ip = address.getIp();
         InetAddress inetAddress = mapAddress(ip);
-        int port = port(entrypointAddress);
-        Address address = new Address(inetAddress, port);
-        discoveredNodes.add(new SimpleDiscoveryNode(address, entrypointAddress.getAdditionalProperties()));
-        if (logger.isFinestEnabled()) {
-            logger.finest("Found node service with address: " + address);
-        }
+        int port = port(address);
+        return new Address(inetAddress, port);
     }
 
-    private int port(EntrypointAddress entrypointAddress) {
+    private int port(KubernetesClient.EndpointAddress address) {
         if (this.port > 0) {
             return this.port;
         }
-        if (entrypointAddress.getPort() != null) {
-            return entrypointAddress.getPort();
+        if (address.getPort() != null) {
+            return address.getPort();
         }
         return NetworkConfig.DEFAULT_PORT;
     }
