@@ -25,9 +25,12 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -35,6 +38,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.hazelcast.client.config.YamlClientConfigBuilderTest.buildConfig;
 import static org.junit.Assert.assertEquals;
@@ -44,6 +48,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class YamlClientConfigImportVariableReplacementTest extends AbstractClientConfigImportVariableReplacementTest {
+    @Rule
+    public ExpectedException rule = ExpectedException.none();
 
     @Before
     public void assumeRunningOnJdk8() {
@@ -335,6 +341,141 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         ClientConfig config = new ClientClasspathYamlConfig("test-hazelcast-client-variable.yaml", properties);
 
         assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Test
+    public void testImportRedefinesSameConfigScalarThrows() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast-client:\n"
+                + "  group:\n"
+                + "    name: name1";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name: name2";
+
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+
+        buildConfig(yaml, "config.location", file.getAbsolutePath());
+    }
+
+    @Test
+    public void testImportSameScalarConfig() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast-client:\n"
+                + "  group:\n"
+                + "    name: name";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name: name";
+
+        ClientConfig config = buildConfig(yaml, "config.location", file.getAbsolutePath());
+        assertEquals("name", config.getGroupConfig().getName());
+    }
+
+    @Test
+    public void testImportNodeScalarVsSequenceThrows() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast-client:\n"
+                + "  group:\n"
+                + "    name: name1";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name:\n"
+                + "      - seqName: {}";
+
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+
+        buildConfig(yaml, "config.location", file.getAbsolutePath());
+    }
+
+    @Test
+    public void testImportNodeScalarVsMappingThrows() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast-client:\n"
+                + "  group:\n"
+                + "    name: name1";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name: {}";
+
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+
+        buildConfig(yaml, "config.location", file.getAbsolutePath());
+    }
+
+    @Test
+    public void testImportNodeSequenceVsMappingThrows() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast-client:\n"
+                + "  group:\n"
+                + "    name:\n"
+                + "      - seqname";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name: {}";
+
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client/group/name"));
+
+        buildConfig(yaml, "config.location", file.getAbsolutePath());
+    }
+
+    @Test
+    public void testImportNodeSequenceVsSequenceMerges() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast-client:\n"
+                + "  client-labels:\n"
+                + "    - label1\n";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  client-labels:\n"
+                + "    - label2\n";
+
+        ClientConfig config = buildConfig(yaml, "config.location", file.getAbsolutePath());
+        Set<String> labels = config.getLabels();
+        assertEquals(2, labels.size());
+        assertTrue(labels.contains("label1"));
+        assertTrue(labels.contains("label2"));
     }
 
 }

@@ -103,6 +103,10 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]yaml[\\/]ScalarTextNodeAdapter"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]yaml[\\/]ElementAdapter"/>
 
+    <!-- YAML -->
+    <suppress checks="BooleanExpressionComplexity" files="com[\\/]hazelcast[\\/]internal[\\/]yaml[\\/]YamlUtil"/>
+
+
     <!-- Concurrent -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]concurrent[\\/]"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]concurrent[\\/]atomiclong[\\/]AtomicLongProxy"/>

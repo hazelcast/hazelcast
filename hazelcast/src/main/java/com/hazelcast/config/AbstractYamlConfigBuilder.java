@@ -20,11 +20,12 @@ import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
 import com.hazelcast.config.yaml.ElementAdapter;
 import com.hazelcast.internal.yaml.MutableYamlMapping;
+import com.hazelcast.internal.yaml.MutableYamlSequence;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
-import com.hazelcast.internal.yaml.YamlMappingImpl;
 import com.hazelcast.internal.yaml.YamlNameNodePair;
 import com.hazelcast.internal.yaml.YamlNode;
+import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
 import org.w3c.dom.Node;
 
@@ -41,6 +42,11 @@ import static com.hazelcast.config.DomConfigHelper.getAttribute;
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
 import static com.hazelcast.internal.yaml.YamlUtil.asMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
+import static com.hazelcast.internal.yaml.YamlUtil.asSequence;
+import static com.hazelcast.internal.yaml.YamlUtil.isMapping;
+import static com.hazelcast.internal.yaml.YamlUtil.isOfSameType;
+import static com.hazelcast.internal.yaml.YamlUtil.isScalar;
+import static com.hazelcast.internal.yaml.YamlUtil.isSequence;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
@@ -122,16 +128,50 @@ public abstract class AbstractYamlConfigBuilder {
             return;
         }
 
-        YamlMapping sourceAsMapping = asMapping(source);
-        YamlMapping targetAsMapping = asMapping(target);
+        checkAmbiguousConfiguration(source, target);
 
+        if (isMapping(source)) {
+            mergeMappingNodes(asMapping(source), asMapping(target));
+        } else if (isSequence(source)) {
+            mergeSequenceNodes(asSequence(source), asSequence(target));
+        }
+    }
+
+    private void checkAmbiguousConfiguration(YamlNode source, YamlNode target) {
+        if (!isOfSameType(source, target)) {
+            String message = String.format("Ambiguous configuration of '%s': node types differ in the already loaded and imported"
+                            + " configuration. Type of already loaded node: %s, type of imported node: %s",
+                    target.path(), target.getClass().getSimpleName(), source.getClass().getSimpleName());
+            throw new InvalidConfigurationException(message);
+        }
+
+        if (isScalar(source) && isScalar(target)) {
+            Object sourceValue = ((YamlScalar) source).nodeValue();
+            Object targetValue = ((YamlScalar) target).nodeValue();
+            if (!targetValue.equals(sourceValue)) {
+                throw new InvalidConfigurationException(
+                        String.format("Ambiguous configuration of '%s': current and imported values "
+                                + "differ. Current value: %s, imported value: %s", target.path(), targetValue, sourceValue));
+            }
+        }
+    }
+
+    private void mergeSequenceNodes(YamlSequence sourceAsSequence, YamlSequence targetAsSequence) {
+        for (YamlNode sourceChild : sourceAsSequence.children()) {
+            if (targetAsSequence instanceof MutableYamlSequence) {
+                ((MutableYamlSequence) targetAsSequence).addChild(sourceChild);
+            }
+        }
+    }
+
+    private void mergeMappingNodes(YamlMapping sourceAsMapping, YamlMapping targetAsMapping) {
         for (YamlNode sourceChild : sourceAsMapping.children()) {
             YamlNode targetChild = targetAsMapping.child(sourceChild.nodeName());
             if (targetChild != null) {
                 merge(sourceChild, targetChild);
             } else {
                 if (targetAsMapping instanceof MutableYamlMapping) {
-                    ((YamlMappingImpl) targetAsMapping).addChild(sourceChild.nodeName(), sourceChild);
+                    ((MutableYamlMapping) targetAsMapping).addChild(sourceChild.nodeName(), sourceChild);
                 }
             }
         }

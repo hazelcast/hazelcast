@@ -136,4 +136,47 @@ public final class YamlUtil {
 
         return childName;
     }
+
+    /**
+     * Checks if the provided {@code node} is a mapping
+     *
+     * @param node The node to check
+     * @return {@code true} if the provided node is a mapping
+     */
+    public static boolean isMapping(YamlNode node) {
+        return node instanceof YamlMapping;
+    }
+
+    /**
+     * Checks if the provided {@code node} is a sequence
+     *
+     * @param node The node to check
+     * @return {@code true} if the provided node is a sequence
+     */
+    public static boolean isSequence(YamlNode node) {
+        return node instanceof YamlSequence;
+    }
+
+    /**
+     * Checks if the provided {@code node} is a scalar
+     *
+     * @param node The node to check
+     * @return {@code true} if the provided node is a scalar
+     */
+    public static boolean isScalar(YamlNode node) {
+        return node instanceof YamlScalar;
+    }
+
+    /**
+     * Checks if the two provided {@code nodes} are of the same type
+     *
+     * @param left  The left-side node of the check
+     * @param right The right-side node of the check
+     * @return {@code true} if the provided nodes are of the same type
+     */
+    public static boolean isOfSameType(YamlNode left, YamlNode right) {
+        return left instanceof YamlMapping && right instanceof YamlMapping
+                || left instanceof YamlSequence && right instanceof YamlSequence
+                || left instanceof YamlScalar && right instanceof YamlScalar;
+    }
 }
