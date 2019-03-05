@@ -444,11 +444,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         invocationMonitor.onMemberLeft(member);
     }
 
-    /**
-     * Cleans up heartbeats and fails invocations for the given endpoint.
-     *
-     * @param endpoint the endpoint that has left
-     */
+    @Override
     public void onEndpointLeft(Address endpoint) {
         invocationMonitor.onEndpointLeft(endpoint);
     }

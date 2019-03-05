@@ -187,7 +187,7 @@ public class MockConnection implements Connection {
     public String toString() {
         return "MockConnection{"
                 + "localEndpoint=" + localEndpoint
-                + ", remoteNodeEngine=" + remoteNodeEngine
+                + ", remoteEndpoint=" + remoteEndpoint
                 + ", alive=" + isAlive() + '}';
     }
 }
