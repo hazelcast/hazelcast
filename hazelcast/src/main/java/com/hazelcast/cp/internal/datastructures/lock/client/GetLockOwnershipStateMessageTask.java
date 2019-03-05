@@ -26,6 +26,8 @@ import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.GetLockOwnershipStateOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.LockPermission;
 
 import java.security.Permission;
 
@@ -66,7 +68,7 @@ public class GetLockOwnershipStateMessageTask extends AbstractMessageTask<CPFenc
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new LockPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override

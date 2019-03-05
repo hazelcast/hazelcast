@@ -21,11 +21,13 @@ import com.hazelcast.client.impl.protocol.codec.CPAtomicRefApplyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.AtomicReferencePermission;
 
 import java.security.Permission;
 
@@ -60,12 +62,12 @@ public class ApplyMessageTask extends AbstractMessageTask<CPAtomicRefApplyCodec.
 
     @Override
     public String getServiceName() {
-        return RaftAtomicLongService.SERVICE_NAME;
+        return RaftAtomicRefService.SERVICE_NAME;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new AtomicReferencePermission(parameters.name, ActionConstants.ACTION_MODIFY);
     }
 
     @Override
@@ -75,12 +77,20 @@ public class ApplyMessageTask extends AbstractMessageTask<CPAtomicRefApplyCodec.
 
     @Override
     public String getMethodName() {
+        if (parameters.alter) {
+            if (parameters.returnValueType == ReturnValueType.RETURN_OLD_VALUE.value()) {
+                return "getAndAlter";
+            } else if (parameters.returnValueType == ReturnValueType.RETURN_NEW_VALUE.value()) {
+                return "alterAndGet";
+            }
+            return "alter";
+        }
         return "apply";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters.function};
     }
 
     @Override

@@ -706,6 +706,11 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:atomic-long-permission>
+                    <hz:atomic-reference-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:atomic-reference-permission>
                     <hz:countdown-latch-permission name="*">
                         <hz:actions>
                             <hz:action>all</hz:action>

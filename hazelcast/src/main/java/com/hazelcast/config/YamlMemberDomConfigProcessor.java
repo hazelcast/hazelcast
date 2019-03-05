@@ -82,6 +82,8 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 type = PermissionConfig.PermissionType.LOCK;
             } else if ("atomic-long".equals(nodeName)) {
                 type = PermissionConfig.PermissionType.ATOMIC_LONG;
+            } else if ("atomic-reference".equals(nodeName)) {
+                type = PermissionConfig.PermissionType.ATOMIC_REFERENCE;
             } else if ("countdown-latch".equals(nodeName)) {
                 type = PermissionConfig.PermissionType.COUNTDOWN_LATCH;
             } else if ("semaphore".equals(nodeName)) {

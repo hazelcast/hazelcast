@@ -26,6 +26,8 @@ import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.ReleasePermitsOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SemaphorePermission;
 
 import java.security.Permission;
 
@@ -66,7 +68,7 @@ public class ReleasePermitsMessageTask extends AbstractMessageTask<CPSemaphoreRe
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SemaphorePermission(parameters.name, ActionConstants.ACTION_RELEASE);
     }
 
     @Override
@@ -81,7 +83,7 @@ public class ReleasePermitsMessageTask extends AbstractMessageTask<CPSemaphoreRe
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters.permits};
     }
 
     @Override

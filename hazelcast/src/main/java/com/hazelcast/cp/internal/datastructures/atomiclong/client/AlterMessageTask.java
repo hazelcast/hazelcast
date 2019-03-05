@@ -27,6 +27,8 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp.AlterResultType;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.AtomicLongPermission;
 
 import java.security.Permission;
 
@@ -67,7 +69,7 @@ public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new AtomicLongPermission(parameters.name, ActionConstants.ACTION_MODIFY);
     }
 
     @Override
@@ -77,12 +79,18 @@ public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec
 
     @Override
     public String getMethodName() {
+        if (parameters.returnValueType == AlterResultType.OLD_VALUE.value()) {
+            return "getAndAlter";
+        }
+        if (parameters.returnValueType == AlterResultType.NEW_VALUE.value()) {
+            return "alterAndGet";
+        }
         return "alter";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters.function};
     }
 
     @Override

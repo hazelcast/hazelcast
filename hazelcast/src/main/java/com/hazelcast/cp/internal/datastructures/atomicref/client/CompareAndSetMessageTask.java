@@ -26,6 +26,8 @@ import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.CompareAndSetOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.AtomicReferencePermission;
 
 import java.security.Permission;
 
@@ -63,7 +65,7 @@ public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicRefCom
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new AtomicReferencePermission(parameters.name, ActionConstants.ACTION_MODIFY);
     }
 
     @Override
@@ -78,7 +80,7 @@ public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicRefCom
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters.oldValue, parameters.newValue};
     }
 
     @Override

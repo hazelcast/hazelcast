@@ -25,6 +25,8 @@ import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatc
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetCountOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CountDownLatchPermission;
 
 import java.security.Permission;
 
@@ -63,7 +65,7 @@ public class GetCountMessageTask extends AbstractMessageTask<CPCountDownLatchGet
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CountDownLatchPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override

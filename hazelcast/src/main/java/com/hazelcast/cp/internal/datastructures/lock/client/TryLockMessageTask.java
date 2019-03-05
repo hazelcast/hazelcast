@@ -26,8 +26,11 @@ import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.TryLockOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.LockPermission;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client message task for {@link TryLockOp}
@@ -64,7 +67,7 @@ public class TryLockMessageTask extends AbstractMessageTask<CPFencedLockTryLockC
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new LockPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }
 
     @Override
@@ -79,7 +82,7 @@ public class TryLockMessageTask extends AbstractMessageTask<CPFencedLockTryLockC
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters.timeoutMs, TimeUnit.MILLISECONDS};
     }
 
     @Override

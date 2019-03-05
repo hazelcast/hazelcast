@@ -25,6 +25,8 @@ import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.SetOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.AtomicReferencePermission;
 
 import java.security.Permission;
 
@@ -63,7 +65,7 @@ public class SetMessageTask extends AbstractMessageTask<CPAtomicRefSetCodec.Requ
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new AtomicReferencePermission(parameters.name, ActionConstants.ACTION_MODIFY);
     }
 
     @Override
@@ -73,12 +75,12 @@ public class SetMessageTask extends AbstractMessageTask<CPAtomicRefSetCodec.Requ
 
     @Override
     public String getMethodName() {
-        return "set";
+        return parameters.returnOldValue ? "getAndSet" : "set";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters.newValue};
     }
 
     @Override

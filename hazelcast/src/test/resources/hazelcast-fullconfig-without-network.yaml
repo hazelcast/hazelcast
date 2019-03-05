@@ -681,6 +681,11 @@ hazelcast:
           principal: "*"
           actions:
             - all
+      atomic-reference:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
       transaction:
         principal: deployer
       pn-counter:

@@ -2759,6 +2759,8 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 type = PermissionConfig.PermissionType.LOCK;
             } else if ("atomic-long-permission".equals(nodeName)) {
                 type = PermissionConfig.PermissionType.ATOMIC_LONG;
+            } else if ("atomic-reference-permission".equals(nodeName)) {
+                type = PermissionConfig.PermissionType.ATOMIC_REFERENCE;
             } else if ("countdown-latch-permission".equals(nodeName)) {
                 type = PermissionConfig.PermissionType.COUNTDOWN_LATCH;
             } else if ("semaphore-permission".equals(nodeName)) {
