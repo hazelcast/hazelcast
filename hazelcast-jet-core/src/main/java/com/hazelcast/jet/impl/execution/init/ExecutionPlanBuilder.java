@@ -78,8 +78,7 @@ public final class ExecutionPlanBuilder {
             final Vertex vertex = dag.getVertex(entry.getKey());
             final ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
             final int vertexId = entry.getValue();
-            final int localParallelism = determineParallelism(vertex,
-                    metaSupplier.preferredLocalParallelism(), defaultParallelism);
+            final int localParallelism = determineParallelism(vertex, defaultParallelism);
             final int totalParallelism = localParallelism * clusterSize;
             final List<EdgeDef> inbound = toEdgeDefs(dag.getInboundEdges(vertex.getName()), defaultEdgeConfig,
                     e -> vertexIdMap.get(e.getSourceName()), isJobDistributed);
@@ -115,8 +114,9 @@ public final class ExecutionPlanBuilder {
         return vertexIdMap;
     }
 
-    private static int determineParallelism(Vertex vertex, int preferredLocalParallelism, int defaultParallelism) {
+    private static int determineParallelism(Vertex vertex, int defaultParallelism) {
         int localParallelism = vertex.getLocalParallelism();
+        int preferredLocalParallelism = vertex.getMetaSupplier().preferredLocalParallelism();
         Vertex.checkLocalParallelism(preferredLocalParallelism);
         Vertex.checkLocalParallelism(localParallelism);
         return localParallelism != LOCAL_PARALLELISM_USE_DEFAULT

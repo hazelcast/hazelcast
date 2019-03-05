@@ -163,6 +163,8 @@ public class WindowAggregateTransform<A, R> extends AbstractTransform {
                 winPolicy,
                 aggrOp
         ));
+        // We use requested parallelism for 1st stage: edge to it is local-unicast, each processor
+        // can process part of the input which will be combined into one result in 2nd stage.
         v1.localParallelism(localParallelism());
         PlannerVertex pv2 = p.addVertex(this, name(), 1,
                 combineToSlidingWindowP(winPolicy, aggrOp, jetEventOfWindowResultFn()));
@@ -183,7 +185,7 @@ public class WindowAggregateTransform<A, R> extends AbstractTransform {
     //            | aggregateToSessionWindowP | local parallelism = 1
     //             ---------------------------
     private void addSessionWindow(Planner p, SessionWindowDefinition wDef) {
-        PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
+        PlannerVertex pv = p.addVertex(this, name(), 1,
                 aggregateToSessionWindowP(
                         wDef.sessionTimeout(),
                         wDef.earlyResultsPeriod(),
