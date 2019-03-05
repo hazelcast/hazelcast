@@ -165,6 +165,7 @@ public class NumbersTest {
 
         // 1.100000000000000088817841970012523233890533447265625 != 1.10000002384185791015625
         assertNotEqualCanonicalization(1.1, 1.1F);
+        assertNotEqualCanonicalization(Math.nextUp(0.0), Math.nextUp(0.0F), 0);
     }
 
     private static void assertEqual(Number lhs, Number rhs) {
@@ -204,7 +205,7 @@ public class NumbersTest {
         for (int i = 1; i < values.length; ++i) {
             Comparable actual = canonicalizeForHashLookup(values[i]);
             assertNotEquals(unexpected, actual);
-            assertNotEquals(unexpected.hashCode(), actual.hashCode());
+            // not checking for hash code values since they may be the same
         }
     }
 
