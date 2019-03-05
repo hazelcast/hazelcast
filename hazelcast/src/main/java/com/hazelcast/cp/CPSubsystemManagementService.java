@@ -17,6 +17,7 @@
 package com.hazelcast.cp;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 
@@ -25,7 +26,7 @@ import java.util.Collection;
 /**
  * The public API for managing CP members and groups.
  *
- * Unlike dynamic nature of Hazelcast clusters, the CP subsystem requires
+ * Unlike the dynamic nature of Hazelcast clusters, the CP subsystem requires
  * manual intervention while expanding / shrinking its size, or when
  * a CP member crashes or becomes unreachable. When a CP member becomes
  * unreachable, it cannot be automatically removed from the CP subsystem
@@ -35,9 +36,9 @@ import java.util.Collection;
  * without persisting any state to disk. It means that a crashed CP member
  * will not be able to recover by reloading its previous state. Therefore,
  * crashed CP members create a danger for gradually losing majority of
- * CP groups and eventually total loss of availability of the CP subsystem.
- * To prevent such kind of situations, {@link CPSubsystemManagementService}
- * offers APIs for dynamic management of CP members.
+ * CP groups and eventually total loss of the availability of the CP subsystem.
+ * To prevent such situations, {@link CPSubsystemManagementService} offers
+ * APIs for dynamic management of CP members.
  * <p>
  * The CP subsystem relies on Hazelcast's failure detectors to test
  * reachability of CP members. Before removing a CP member from
@@ -48,23 +49,24 @@ import java.util.Collection;
  * a single membership change at a time. When multiple CP members are shutting
  * down concurrently, their shutdown process is executed serially. First,
  * the Metadata CP group creates a membership change plan for CP groups. Then,
- * scheduled changes are applied to CP groups one by one. After all removals
- * are done, the shutting down CP member is removed the active CP members list
- * and its shutdown process is completed.
+ * the scheduled changes are applied to the CP groups one by one.
+ * After all removals are done, the shutting down CP member is removed from
+ * the active CP members list and its shutdown process is completed.
  * <p>
  * When a CP member is being shut down, it is replaced with another available
  * CP member in all of its CP groups, including the Metadata group, in order to
- * not to decrease or more importantly not to lose majority of CP groups.
+ * not to decrease or more importantly not to lose the majority of CP groups.
  * If there is no available CP member to replace a shutting down CP member in a
- * CP group, that group's size will be reduced by 1 and its majority value will
- * be recalculated.
+ * CP group, that group's size is reduced by 1 and its majority value is
+ * recalculated.
  * <p>
- * A new CP member can be added to the CP subsystem to either increase number
- * of available CP members for new CP groups or to fulfill missing slots in
- * existing CP groups. After the initial Hazelcast cluster startup is done,
- * an existing Hazelcast member can be be promoted to the CP member role.
- * This new CP member will automatically join to CP groups that has missing
- * members, and majority value of these CP groups will be recalculated.
+ * A new CP member can be added to the CP subsystem to either increase
+ * the number of available CP members for new CP groups or to fulfill
+ * the missing slots in the existing CP groups. After the initial Hazelcast
+ * cluster startup is done, an existing Hazelcast member can be be promoted to
+ * the CP member role. This new CP member automatically joins to CP groups that
+ * have missing members, and the majority value of these CP groups is
+ * recalculated.
  * <p>
  * A CP member may crash due to hardware problems or a defect in user code,
  * or it may become unreachable because of connection problems, such as network
@@ -77,9 +79,9 @@ import java.util.Collection;
  * the unreachable CP member should be terminated to prevent any accidental
  * communication with the rest of the CP subsystem.
  * <p>
- * When majority of a CP group is lost for any reason, that CP group cannot
+ * When the majority of a CP group is lost for any reason, that CP group cannot
  * make progress anymore. Even a new CP member cannot join to this CP group,
- * because all membership changes also go through the Raft consensus algorithm.
+ * because membership changes also go through the Raft consensus algorithm.
  * For this reason, the only option is to force-destroy the CP group via the
  * {@link #forceDestroyCPGroup(String)} API. When this API is used, the CP
  * group is terminated non-gracefully, without the Raft algorithm mechanics.
@@ -89,13 +91,13 @@ import java.util.Collection;
  * set of CP members. Losing majority of a CP group can be likened to
  * partition-loss scenario of AP Hazelcast.
  * <p>
- * Please note that CP groups that have lost their majority must be
+ * Please note that the CP groups that have lost their majority must be
  * force-destroyed immediately, because they can block the Metadata CP group
  * to perform membership changes.
  * <p>
- * Loss of majority of the Metadata CP group is the doomsday scenario for the
- * CP subsystem. It is a fatal failure and the only solution is to reset the
- * whole CP subsystem state via the {@link #restart()} API. To be able to
+ * Loss of the majority of the Metadata CP group is the doomsday scenario for
+ * the CP subsystem. It is a fatal failure and the only solution is to reset
+ * the whole CP subsystem state via the {@link #restart()} API. To be able to
  * reset the CP subsystem, the initial size of the CP subsystem must be
  * satisfied, which is defined by {@link CPSubsystemConfig#getCPMemberCount()}.
  * For instance, {@link CPSubsystemConfig#getCPMemberCount()} is 5 and only 1
@@ -103,6 +105,36 @@ import java.util.Collection;
  * additional 4 regular Hazelcast members should exist in the cluster.
  * New Hazelcast members can be started to satisfy
  * {@link CPSubsystemConfig#getCPMemberCount()}.
+ * <p>
+ * <strong>There is a subtle point about graceful shutdown of CP members.
+ * If there are N CP members in the cluster, {@link HazelcastInstance#shutdown()}
+ * can be called on N-2 CP members concurrently. Once these N-2 CP members
+ * complete their shutdown, the remaining 2 CP members must be shut down
+ * serially.
+ * <p>
+ * Even though the shutdown API is called concurrently on multiple members,
+ * the Metadata CP group handles shutdown requests serially. Therefore,
+ * it would be simpler to shut down CP members one by one, by calling
+ * {@link HazelcastInstance#shutdown()} on the next CP member once the current
+ * CP member completes its shutdown.
+ * <p>
+ * The reason behind this limitation is, each shutdown request internally
+ * requires a Raft commit to the Metadata CP group. A CP member proceeds to
+ * shutdown after it receives a response of its commit to the Metadata CP
+ * group. To be able to perform a Raft commit, the Metadata CP group must have
+ * its majority available. When there are only 2 CP members left after graceful
+ * shutdowns, the majority of the Metadata CP group becomes 2. If the last 2 CP
+ * members shut down concurrently, one of them is likely to perform its Raft
+ * commit faster than the other one and leave the cluster before the other CP
+ * member completes its Raft commit. In this case, the last CP member waits for
+ * a response of its commit attempt on the Metadata group, and times out
+ * eventually. This situation causes an unnecessary delay on shutdown process
+ * of the last CP member. On the other hand, when the last 2 CP members shut
+ * down serially, the N-1th member receives response of its commit after its
+ * shutdown request is committed also on the last CP member. Then, the last CP
+ * member checks its local data to notice that it is the last CP member alive,
+ * and proceeds its shutdown without attempting a Raft commit on the Metadata
+ * CP group.</strong>
  *
  * @see CPMember
  * @see CPSubsystemConfig
@@ -125,13 +157,13 @@ public interface CPSubsystemManagementService {
      * the Raft algorithm mechanics. This method must be used only when
      * a CP group loses its majority and cannot make progress anymore.
      * Normally, membership changes in CP groups, such as CP member promotion
-     * or removal, are done via the Raft consensus algorithm mechanics.
-     * However, when a CP group loses its majority, it will not be able to
-     * commit any new operation. Therefore, this method ungracefully terminates
-     * remaining members of the given CP group. It also performs a Raft commit
-     * to the Metadata CP group to update status of the destroyed group.
+     * or removal, are done via the Raft consensus algorithm. However, when
+     * a CP group loses its majority, it will not be able to commit any new
+     * operation. Therefore, this method ungracefully terminates the remaining
+     * members of the given CP group. It also performs a Raft commit to
+     * the Metadata CP group in order to update status of the destroyed group.
      * Once a CP group id is destroyed, all CP data structure proxies created
-     * before the destroy will fail with {@link CPGroupDestroyedException}.
+     * before the destroy fails with {@link CPGroupDestroyedException}.
      * <p>
      * Once a CP group is destroyed, it can be created again with a new set of
      * CP members.
@@ -151,7 +183,7 @@ public interface CPSubsystemManagementService {
      * <p>
      * This method is idempotent.
      * If the local member is already in the active CP members list, then this
-     * method will have no effect. When the current member is promoted to CP
+     * method has no effect. When the current member is promoted to a CP
      * member, its member UUID is assigned as CP member UUID.
      * <p>
      * Once the returned {@code Future} object is completed, the promoted CP
@@ -186,7 +218,7 @@ public interface CPSubsystemManagementService {
      * <p>
      * Before removing a CP member from the CP subsystem, please make sure that
      * it is declared as unreachable by Hazelcast's failure detector and removed
-     * from Hazelcast's member list. The behaviour is undefined when a running
+     * from Hazelcast's member list. The behavior is undefined when a running
      * CP member is removed from the CP subsystem.
      *
      * @throws IllegalStateException When another CP member is being removed
@@ -197,13 +229,13 @@ public interface CPSubsystemManagementService {
     ICompletableFuture<Void> removeCPMember(String cpMemberUuid);
 
     /**
-     * Wipes & resets the whole CP subsystem and initializes it
+     * Wipes and resets the whole CP subsystem and initializes it
      * as if the Hazelcast cluster is starting up initially.
      * This method must be used only when the Metadata CP group loses
      * its majority and cannot make progress anymore.
      * <p>
-     * After this method is called, all CP state and data will be wiped
-     * and CP members will start with empty state.
+     * After this method is called, all CP state and data are wiped
+     * and the CP members start with empty state.
      * <p>
      * This method can be invoked only from the Hazelcast master member.
      * <p>

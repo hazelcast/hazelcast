@@ -27,7 +27,6 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -54,7 +53,7 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate implements Vis
     }
 
     @Override
-    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable attributeValue) {
+    protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
             return false;
         }

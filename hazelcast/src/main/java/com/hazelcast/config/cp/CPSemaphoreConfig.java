@@ -33,7 +33,7 @@ public class CPSemaphoreConfig {
 
 
     /**
-     * Name of the CP semaphore
+     * Name of the CP ISemaphore
      */
     private String name;
 
@@ -42,17 +42,16 @@ public class CPSemaphoreConfig {
      * When it is JDK compatible, just as in the {@link Semaphore#release()}
      * method, a permit can be released without acquiring it first, because
      * acquired permits are not bound to threads. However, there is no
-     * auto-cleanup of acquired permits upon Hazelcast server/client failures.
+     * auto-cleanup of acquired permits upon Hazelcast server / client failures.
      * If a permit holder fails, its permits must be released manually.
      * When JDK compatibility is disabled, a {@link HazelcastInstance} must
      * acquire permits before releasing them and it cannot release a permit
      * that it has not acquired. It means, you can acquire a permit
      * from one thread and release it from another thread using the same
-     * {@link HazelcastInstance}, but not different instances of
-     * {@link HazelcastInstance}. In this mode, acquired permits are
-     * automatically released upon failure of the holder
-     * {@link HazelcastInstance}. So there is a minor behavioral difference
-     * to the {@link Semaphore#release()} method.
+     * {@link HazelcastInstance}, but not different {@link HazelcastInstance}s.
+     * In this mode, acquired permits are automatically released upon failure
+     * of the holder {@link HazelcastInstance}. So there is a minor behavioral
+     * difference to the {@link Semaphore#release()} method.
      * <p>
      * JDK compatibility is disabled by default.
      */

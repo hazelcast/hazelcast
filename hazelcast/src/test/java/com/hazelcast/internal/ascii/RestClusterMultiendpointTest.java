@@ -19,17 +19,29 @@ package com.hazelcast.internal.ascii;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RestServerEndpointConfig;
+import org.junit.Ignore;
 
 public class RestClusterMultiendpointTest
         extends RestClusterTest {
 
     @Override
+    protected Config createConfig() {
+        Config c = new Config();
+        AdvancedNetworkConfig anc = c.getAdvancedNetworkConfig();
+        anc.setEnabled(true);
+        return c;
+    }
+
+    @Override
     protected Config createConfigWithRestEnabled() {
-        Config config = new Config();
-        AdvancedNetworkConfig anc = config.getAdvancedNetworkConfig();
-        anc.setEnabled(true)
-           .setRestEndpointConfig(new RestServerEndpointConfig().enableAllGroups());
+        Config config = createConfig();
+        config.getAdvancedNetworkConfig().setRestEndpointConfig(new RestServerEndpointConfig().enableAllGroups());
         return config;
     }
 
+    @Override
+    @Ignore("There is no port set for multi-endpoint when REST is disabled")
+    public void testDisabledRest()
+            throws Exception {
+    }
 }

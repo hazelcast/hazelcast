@@ -101,6 +101,8 @@
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
 
+        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+
         <jsr107.api.version>1.1.0</jsr107.api.version>
         <jsr107.tck.version>1.1.0</jsr107.tck.version>
 
@@ -245,7 +247,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <useFile>false</useFile>
                     <trimStackTrace>false</trimStackTrace>
                     <runOrder>failedfirst</runOrder>
@@ -288,7 +289,6 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration combine.self="override">
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>
                         ${vmHeapSettings}
                         ${javaModuleArgs}
@@ -382,7 +382,6 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration combine.self="override">
-                                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
                                     <!-- 1C means 1 process per cpu core -->
@@ -430,7 +429,6 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration combine.self="override">
-                                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
                                     <argLine>
                                         ${vmHeapSettings}
@@ -478,7 +476,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
@@ -511,7 +508,6 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
                                 ${vmHeapSettings}
@@ -575,7 +571,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <testFailureIgnore>true</testFailureIgnore>
@@ -654,7 +649,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <testFailureIgnore>true</testFailureIgnore>
@@ -680,7 +674,6 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -915,7 +908,6 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <parallel>none</parallel>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <argLine>
@@ -947,7 +939,6 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -987,7 +978,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <trimStackTrace>false</trimStackTrace>
                             <parallel>none</parallel>
@@ -1021,7 +1011,6 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven.failsafe.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 ${vmHeapSettings}
                                 ${javaModuleArgs}
@@ -1157,7 +1146,6 @@
                                     <value>com.hazelcast.test.compatibility.SamplingRunListener</value>
                                 </property>
                             </properties>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <trimStackTrace>false</trimStackTrace>
                             <runOrder>failedfirst</runOrder>
                             <argLine>
@@ -1232,6 +1220,20 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
             <version>${jsr107.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <version>${snakeyaml.engine.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>

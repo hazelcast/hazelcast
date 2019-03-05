@@ -571,7 +571,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
         Properties properties = new Properties();
         properties.put("variable", "foobar");
-        Config config = new UrlYamlConfig("file://" + file.getPath(), properties);
+        Config config = new UrlYamlConfig("file:///" + file.getPath(), properties);
 
         assertEquals("foobar", config.getProperty("prop"));
     }

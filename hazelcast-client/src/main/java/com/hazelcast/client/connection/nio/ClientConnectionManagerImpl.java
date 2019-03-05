@@ -676,19 +676,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     if (!checkFailoverSupportIfNeeded()) {
                         onFailure(new IllegalStateException("Cluster does not support failover. "
                                 + "This feature is available in Hazelcast Enterprise"));
+                        return;
                     }
-                    clusterPartitionCount = result.partitionCount;
-                    clusterId = result.clusterId;
-                    connection.setConnectedServerVersion(result.serverHazelcastVersion);
-                    connection.setRemoteEndpoint(result.address);
-                    if (asOwner) {
-                        connection.setIsAuthenticatedAsOwner();
-                        ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
-                        setPrincipal(principal);
-                        ownerConnectionAddress = connection.getEndPoint();
-                        logger.info("Setting " + connection + " as owner with principal " + principal);
-
-                    }
+                    handleSuccessResult(result);
                     onAuthenticated();
                     future.onSuccess(connection);
                     break;
@@ -696,11 +686,31 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     onFailure(new AuthenticationException("Invalid credentials! Principal: " + principal));
                     break;
                 case NOT_ALLOWED_IN_CLUSTER:
-                    onFailure(new ClientNotAllowedInClusterException("Client is blacklisted from this cluster"));
+                    onFailure(new ClientNotAllowedInClusterException("Client is not allowed in the cluster"));
                     break;
                 default:
                     onFailure(new AuthenticationException("Authentication status code not supported. status: "
                             + authenticationStatus));
+            }
+        }
+
+        private void handleSuccessResult(ClientAuthenticationCodec.ResponseParameters result) {
+            if (result.partitionCountExist) {
+                clusterPartitionCount = result.partitionCount;
+            }
+            if (result.clusterIdExist) {
+                clusterId = result.clusterId;
+            }
+            if (result.serverHazelcastVersionExist) {
+                connection.setConnectedServerVersion(result.serverHazelcastVersion);
+            }
+            connection.setRemoteEndpoint(result.address);
+            if (asOwner) {
+                connection.setIsAuthenticatedAsOwner();
+                ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
+                setPrincipal(principal);
+                ownerConnectionAddress = connection.getEndPoint();
+                logger.info("Setting " + connection + " as owner with principal " + principal);
             }
         }
 
@@ -715,7 +725,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             try {
                 return ClientIsFailoverSupportedCodec.decodeResponse(isFailoverFuture.get()).response;
             } catch (Exception e) {
-                e.printStackTrace();
                 return false;
             }
         }

@@ -34,7 +34,7 @@ public interface CPSessionManagementService {
 
     /**
      * If a Hazelcast instance that owns a CP session crashes, its CP session
-     * is not terminated immediately. Instead, the session will be closed after
+     * is not terminated immediately. Instead, the session is closed after
      * {@link CPSubsystemConfig#getSessionTimeToLiveSeconds()} passes.
      * If it is known for sure that the session owner is not partitioned and
      * definitely crashed, this method can be used for closing the session and

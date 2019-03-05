@@ -27,8 +27,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Map;
-
 import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.parseOutCompositeIndexComponents;
 import static org.junit.Assert.assertEquals;
@@ -123,7 +121,7 @@ public class AttributeCanonicalizationTest {
         }
 
         @Override
-        protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+        protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
             return false;
         }
 

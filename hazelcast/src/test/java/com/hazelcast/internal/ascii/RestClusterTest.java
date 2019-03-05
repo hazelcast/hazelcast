@@ -40,7 +40,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
-import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterStateEventually;
@@ -70,8 +69,12 @@ public class RestClusterTest {
         factory.terminateAll();
     }
 
+    protected Config createConfig() {
+        return new Config();
+    }
+
     protected Config createConfigWithRestEnabled() {
-        Config config = new Config();
+        Config config = createConfig();
         RestApiConfig restApiConfig = new RestApiConfig().setEnabled(true).enableAllGroups();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
         return config;
@@ -85,13 +88,14 @@ public class RestClusterTest {
     @Test
     public void testDisabledRest() throws Exception {
         // REST should be disabled by default
-        HazelcastInstance instance = factory.newHazelcastInstance(new Config());
+        HazelcastInstance instance = factory.newHazelcastInstance(createConfig());
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
         try {
             communicator.getClusterInfo();
             fail("Rest is disabled. Not expected to reach here!");
-        } catch (SocketException ignored) {
+        } catch (IOException ignored) {
+            // ignored
         }
     }
 
@@ -298,7 +302,7 @@ public class RestClusterTest {
         assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, communicator.getClusterHealthResponseCode("/unknown-parameter"));
     }
 
-    @Test(expected = SocketException.class)
+    @Test(expected = IOException.class)
     public void fail_with_deactivatedHealthCheck() throws Exception {
         // Healthcheck REST URL is deactivated by default - no passed config on purpose
         HazelcastInstance instance = factory.newHazelcastInstance(null);

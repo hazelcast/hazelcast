@@ -29,7 +29,6 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -168,10 +167,8 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         }
 
         @Override
-        protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
-            QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
-            Object val = queryableEntry.getAttributeValue(attributeName);
-            return val.equals("hand");
+        protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
+            return attributeValue.equals("hand");
         }
 
         @Override
