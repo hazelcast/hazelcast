@@ -27,7 +27,6 @@ import java.util.Set;
  */
 public interface IndexStore {
 
-    // TODO separate canonicalization for composite values (?)
     Comparable canonicalizeScalarForHashLookup(Comparable value);
 
     /**

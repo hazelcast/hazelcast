@@ -163,6 +163,7 @@ public class NumbersTest {
         assertEqualCanonicalization(11.0, 11L, 11.0F, 11, (short) 11, (byte) 11);
         assertEqualCanonicalization(0.25, 0.25F);
 
+        // 1.100000000000000088817841970012523233890533447265625 != 1.10000002384185791015625
         assertNotEqualCanonicalization(1.1, 1.1F);
     }
 
