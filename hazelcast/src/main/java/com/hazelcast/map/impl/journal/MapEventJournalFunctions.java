@@ -35,11 +35,11 @@ public final class MapEventJournalFunctions {
     private MapEventJournalFunctions() { }
 
     public static <K, V> Predicate<EventJournalMapEvent<K, V>> mapPutEvents() {
-        return new MapPutEventsPredicate<>();
+        return new MapPutEventsPredicate<K, V>();
     }
 
     public static <K, V> Function<EventJournalMapEvent<K, V>, Entry<K, V>> mapEventToEntry() {
-        return new MapEventToEntryProjection<>();
+        return new MapEventToEntryProjection<K, V>();
     }
 
     @SuppressWarnings("unchecked")

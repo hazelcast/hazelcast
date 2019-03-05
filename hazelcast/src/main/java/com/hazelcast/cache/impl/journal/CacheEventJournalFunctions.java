@@ -35,11 +35,11 @@ public final class CacheEventJournalFunctions {
     private CacheEventJournalFunctions() { }
 
     public static <K, V> Predicate<EventJournalCacheEvent<K, V>> cachePutEvents() {
-        return new CachePutEventsPredicate<>();
+        return new CachePutEventsPredicate<K, V>();
     }
 
     public static <K, V> Function<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
-        return new CacheEventToEntryProjection<>();
+        return new CacheEventToEntryProjection<K, V>();
     }
 
     @SuppressWarnings("unchecked")

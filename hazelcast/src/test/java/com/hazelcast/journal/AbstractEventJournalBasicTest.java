@@ -72,7 +72,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
 
     private int partitionId;
     private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<EJ_TYPE>();
-    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
+    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<EJ_TYPE>();
     private boolean loadAllPublishesAdded = false;
 
     private void init() {

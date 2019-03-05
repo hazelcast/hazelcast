@@ -54,7 +54,7 @@ public final class EventJournalDataSerializerHook implements DataSerializerHook 
                     case EVENT_JOURNAL_INITIAL_SUBSCRIBER_STATE:
                         return new EventJournalInitialSubscriberState();
                     case DESERIALIZING_ENTRY:
-                        return new DeserializingEntry<>();
+                        return new DeserializingEntry();
                     default:
                         return null;
                 }

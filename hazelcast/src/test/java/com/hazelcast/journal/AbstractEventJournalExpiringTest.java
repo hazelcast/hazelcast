@@ -45,7 +45,7 @@ public abstract class AbstractEventJournalExpiringTest<EJ_TYPE> extends Hazelcas
 
     private int partitionId;
     private TruePredicate<EJ_TYPE> TRUE_PREDICATE = new TruePredicate<EJ_TYPE>();
-    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<>();
+    private Function<EJ_TYPE, EJ_TYPE> IDENTITY_FUNCTION = new IdentityFunction<EJ_TYPE>();
 
     private void init() {
         instances = createInstances();
