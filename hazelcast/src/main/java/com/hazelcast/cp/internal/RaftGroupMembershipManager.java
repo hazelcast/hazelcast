@@ -26,7 +26,6 @@ import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.exception.MismatchingGroupMembersCommitIndexException;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
-import com.hazelcast.cp.internal.raft.impl.util.SimpleCompletableFuture;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteDestroyRaftGroupsOp;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteRaftGroupMembershipChangesOp;
 import com.hazelcast.cp.internal.raftop.metadata.DestroyRaftNodesOp;
@@ -34,6 +33,7 @@ import com.hazelcast.cp.internal.raftop.metadata.GetDestroyingRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetMembershipChangeScheduleOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -51,11 +51,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -277,7 +275,7 @@ class RaftGroupMembershipManager {
             final CPGroupId groupId = change.getGroupId();
             ICompletableFuture<Long> future;
             if (change.getMemberToAdd() == null) {
-                future = newCompletedFuture(change.getMembersCommitIndex());
+                future = new SimpleCompletedFuture<Long>(change.getMembersCommitIndex());
             } else {
                 logger.fine("Adding " + change.getMemberToAdd() + " to " + groupId);
 
@@ -330,14 +328,6 @@ class RaftGroupMembershipManager {
                     latch.countDown();
                 }
             });
-        }
-
-        private ICompletableFuture<Long> newCompletedFuture(long idx) {
-            Executor executor = nodeEngine.getExecutionService().getExecutor(ASYNC_EXECUTOR);
-            ILogger logger = nodeEngine.getLogger(getClass());
-            SimpleCompletableFuture<Long> f = new SimpleCompletableFuture<Long>(executor, logger);
-            f.setResult(idx);
-            return f;
         }
 
         private long getMemberAddCommitIndex(Map<CPGroupId, Tuple2<Long, Long>> changedGroups, CPGroupMembershipChange change,
