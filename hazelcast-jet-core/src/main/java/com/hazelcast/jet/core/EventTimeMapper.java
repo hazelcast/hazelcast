@@ -202,17 +202,21 @@ public class EventTimeMapper<T> {
     Traverser<Object> flatMapEvent(long now, @Nullable T event, int partitionIndex, long nativeEventTime) {
         assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all " +
                 "items from the traverser before you call this method again.";
-        if (event != null) {
-            if (timestampFn == null && nativeEventTime == NO_NATIVE_TIME) {
+        if (event == null) {
+            handleNoEventInternal(now);
+            return traverser;
+        }
+        long eventTime;
+        if (timestampFn != null) {
+            eventTime = timestampFn.applyAsLong(event);
+        } else {
+            eventTime = nativeEventTime;
+            if (eventTime == NO_NATIVE_TIME) {
                 throw new JetException("Neither timestampFn nor nativeEventTime specified");
             }
-            long eventTime = timestampFn == null ? nativeEventTime : timestampFn.applyAsLong(event);
-            handleEventInternal(now, partitionIndex, eventTime);
-            traverser.append(wrapFn.apply(event, eventTime));
-        } else {
-            handleNoEventInternal(now);
         }
-        return traverser;
+        handleEventInternal(now, partitionIndex, eventTime);
+        return traverser.append(wrapFn.apply(event, eventTime));
     }
 
     private void handleEventInternal(long now, int partitionIndex, long eventTime) {

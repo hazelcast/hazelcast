@@ -91,7 +91,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
             @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
             @Nonnull ConsumerEx<? super Session> flushFn,
             @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy) {
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
+    ) {
         return new Supplier<>(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn, eventTimePolicy);
     }
 
@@ -104,7 +105,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
                 .peek(item -> flushFn.accept(session));
     }
 
-    private long handleJmsTimestamp(Message msg) {
+    private static long handleJmsTimestamp(Message msg) {
         try {
             // as per `getJMSTimestamp` javadoc, it can return 0 if the timestamp was optimized away
             return msg.getJMSTimestamp() == 0 ? EventTimeMapper.NO_NATIVE_TIME : msg.getJMSTimestamp();

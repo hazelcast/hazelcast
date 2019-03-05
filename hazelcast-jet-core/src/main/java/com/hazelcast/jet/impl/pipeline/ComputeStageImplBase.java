@@ -18,14 +18,11 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
-import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
@@ -38,7 +35,6 @@ import com.hazelcast.jet.impl.pipeline.transform.MergeTransform;
 import com.hazelcast.jet.impl.pipeline.transform.PeekTransform;
 import com.hazelcast.jet.impl.pipeline.transform.RollingAggregateTransform;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
-import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.pipeline.BatchStage;
@@ -50,7 +46,6 @@ import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
@@ -68,7 +63,7 @@ import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatM
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingContextTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.mapUsingContextTransform;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -92,32 +87,15 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
-    public StreamStage<T> addTimestamps(
-            @Nonnull ToLongFunctionEx<? super T> timestampFn, long allowedLateness
-    ) {
-        return addTimestampsInternal(timestampFn, allowedLateness, false);
-    }
-
-    @SuppressWarnings("unchecked")
-    StreamStage<T> addTimestampsInternal(
-            @Nullable ToLongFunctionEx<? super T> timestampFn,
-            long allowedLateness,
-            boolean tryAddToSource
-    ) {
+    public StreamStage<T> addTimestamps(@Nonnull ToLongFunctionEx<? super T> timestampFn, long allowedLateness) {
+        checkTrue(fnAdapter.equals(DO_NOT_ADAPT), "This stage already has timestamps assigned to it");
         checkSerializable(timestampFn, "timestampFn");
-        checkFalse(hasJetEvents(), "This stage already has timestamps assigned to it");
-
-        SupplierEx<WatermarkPolicy> wmPolicy = limitingLag(allowedLateness);
-        EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
-                timestampFn, (item, ts) -> jetEvent(ts, item), wmPolicy, 0, 0, DEFAULT_IDLE_TIMEOUT
-        );
-
-        if (tryAddToSource && transform instanceof StreamSourceTransform) {
-            ((StreamSourceTransform<T>) transform).setEventTimePolicy(eventTimePolicy);
-            this.fnAdapter = ADAPT_TO_JET_EVENT;
-            return (StreamStage<T>) this;
-        }
-        TimestampTransform<T> tsTransform = new TimestampTransform<>(transform, eventTimePolicy);
+        TimestampTransform<T> tsTransform = new TimestampTransform<>(transform, eventTimePolicy(
+                timestampFn,
+                (item, ts) -> jetEvent(ts, item),
+                limitingLag(allowedLateness),
+                0, 0, DEFAULT_IDLE_TIMEOUT
+        ));
         pipelineImpl.connect(transform, tsTransform);
         return new StreamStageImpl<>(tsTransform, ADAPT_TO_JET_EVENT, pipelineImpl);
     }
@@ -379,10 +357,6 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     @Nonnull
     abstract <RET> RET attach(@Nonnull AbstractTransform transform, @Nonnull FunctionAdapter fnAdapter);
-
-    private boolean hasJetEvents() {
-        return fnAdapter.equals(ADAPT_TO_JET_EVENT);
-    }
 
     static void ensureJetEvents(@Nonnull ComputeStageImplBase stage, @Nonnull String name) {
         if (stage.fnAdapter != ADAPT_TO_JET_EVENT) {

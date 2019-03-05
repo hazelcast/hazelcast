@@ -102,8 +102,8 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
                     : buffer.traverse().flatMap(t -> {
                         // if eventTimeMapper is not null, we know that T is JetEvent<T>
                         @SuppressWarnings("unchecked")
-                        JetEvent<T> t1 = (JetEvent<T>) t;
-                        return eventTimeMapper.flatMapEvent(t1.payload(), 0, t1.timestamp());
+                        JetEvent<T> je = (JetEvent<T>) t;
+                        return eventTimeMapper.flatMapEvent(je.payload(), 0, je.timestamp());
                     });
         }
         boolean bufferEmpty = emitFromTraverser(traverser);
