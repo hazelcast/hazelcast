@@ -36,6 +36,7 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -90,6 +91,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
@@ -128,6 +130,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     // client UUID -> last authentication correlation ID
     private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
             = new ConcurrentHashMap<String, AtomicLong>();
+
+    // client Address -> member Address, only used when advanced network config is enabled
+    private final Map<Address, Address> clientMemberAddressMap = new ConcurrentHashMap<Address, Address>();
 
     private volatile ClientSelector clientSelector = ClientSelectors.any();
 
@@ -340,12 +345,27 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
+        if (advancedNetworkConfigEnabled) {
+            final Map<EndpointQualifier, Address> newMemberAddressMap = event.getMember().getAddressMap();
+            final Address memberAddress = newMemberAddressMap.get(MEMBER);
+            final Address clientAddress = newMemberAddressMap.get(CLIENT);
+            if (clientAddress != null) {
+                clientMemberAddressMap.put(clientAddress, memberAddress);
+            }
+        }
     }
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
         if (event.getMember().localMember()) {
             return;
+        }
+
+        if (advancedNetworkConfigEnabled) {
+            final Address clientAddress = event.getMember().getAddressMap().get(CLIENT);
+            if (clientAddress != null) {
+                clientMemberAddressMap.remove(clientAddress);
+            }
         }
 
         final String deadMemberUuid = event.getMember().getUuid();
@@ -666,10 +686,20 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         if (!advancedNetworkConfigEnabled) {
             return clientAddress;
         }
+
+        // clientMemberAddressMap is maintained in memberAdded/Removed
+        Address memberAddress = clientMemberAddressMap.get(clientAddress);
+        if (memberAddress != null) {
+            return memberAddress;
+        }
+
+        // lookup all members in membership manager
         Set<Member> clusterMembers = node.getClusterService().getMembers();
         for (Member member : clusterMembers) {
             if (member.getAddressMap().get(CLIENT).equals(clientAddress)) {
-                return member.getAddress();
+                memberAddress = member.getAddress();
+                clientMemberAddressMap.put(clientAddress, memberAddress);
+                return memberAddress;
             }
         }
         throw new TargetNotMemberException("Could not locate member with client address " + clientAddress);
