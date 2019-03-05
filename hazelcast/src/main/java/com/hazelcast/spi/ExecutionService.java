@@ -23,6 +23,7 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -102,6 +103,8 @@ public interface ExecutionService {
     String MAP_LOAD_ALL_KEYS_EXECUTOR = "hz:map-loadAllKeys";
 
     ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type);
+
+    ManagedExecutorService register(String name, int poolSize, int queueCapacity, ThreadFactory threadFactory);
 
     ManagedExecutorService getExecutor(String name);
 

@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.internal.util.executor.UnblockableThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.CancellationException;
@@ -147,7 +148,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     @Override
-    public V get() throws InterruptedException, ExecutionException {
+    public final V get() throws InterruptedException, ExecutionException {
         Object response = registerWaiter(Thread.currentThread(), null);
         if (response != VOID) {
             // no registration was done since a value is available.
@@ -171,7 +172,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     @Override
-    public V get(final long timeout, final TimeUnit unit)
+    public final V get(final long timeout, final TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         Object response = registerWaiter(Thread.currentThread(), null);
         if (response != VOID) {
@@ -295,6 +296,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
      * is the response.
      */
     private Object registerWaiter(Object waiter, Executor executor) {
+        assert !(waiter instanceof UnblockableThread) : "Waiting for response on this thread is illegal";
         WaitNode waitNode = null;
         for (; ; ) {
             final Object oldState = state;

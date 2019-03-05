@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
+public class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
     private final String threadNamePrefix;
     private final AtomicInteger idGen = new AtomicInteger(0);
@@ -41,12 +41,16 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
             id = idGen.incrementAndGet();
         }
         String name = threadNamePrefix + id;
+        return createThread(r, name, id);
+    }
+
+    protected ManagedThread createThread(Runnable r, String name, int id) {
         return new ManagedThread(r, name, id);
     }
 
-    private class ManagedThread extends HazelcastManagedThread {
+    protected class ManagedThread extends HazelcastManagedThread {
 
-        protected final int id;
+        private final int id;
 
         public ManagedThread(Runnable target, String name, int id) {
             super(target, name);

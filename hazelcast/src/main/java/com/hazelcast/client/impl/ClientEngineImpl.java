@@ -70,6 +70,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.internal.util.executor.PoolExecutorUnblockableThreadFactory;
 
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
@@ -92,6 +93,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.util.SetUtil.createHashSet;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
 /**
  * Class that requests, listeners from client handled in node side.
@@ -182,9 +184,14 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         }
         logger.finest("Creating new client executor with threadCount=" + threadCount);
 
+        String name = ExecutionService.CLIENT_EXECUTOR;
+        ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+        String hzName = nodeEngine.getHazelcastInstance().getName();
+        String internalName = name.substring("hz:".length());
+        String threadNamePrefix = createThreadPoolName(hzName, internalName);
+        PoolExecutorUnblockableThreadFactory factory = new PoolExecutorUnblockableThreadFactory(threadNamePrefix, classLoader);
         return executionService.register(ExecutionService.CLIENT_EXECUTOR,
-                threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
-                ExecutorType.CONCRETE);
+                threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE, factory);
     }
 
     private Executor newClientQueryExecutor() {
