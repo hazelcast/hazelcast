@@ -120,6 +120,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     private HazelcastInstance testClusterShutdownWithSingleMember(ClusterState clusterState) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         HazelcastInstance[] instances = factory.newInstances();
+        assertClusterSizeEventually(4, instances);
 
         HazelcastInstance hz1 = instances[0];
         Node[] nodes = getNodes(instances);
@@ -135,6 +136,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     private void testClusterShutdownWithMultipleMembers(int clusterSize, int nodeCountToTriggerShutdown) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         HazelcastInstance[] instances = factory.newInstances();
+        assertClusterSizeEventually(clusterSize, instances);
 
         instances[0].getCluster().changeClusterState(ClusterState.PASSIVE);
         Node[] nodes = getNodes(instances);
