@@ -31,6 +31,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -39,9 +40,10 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.util.HashUtil;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -58,11 +60,10 @@ public final class ClientPartitionServiceImpl
     private static final long INITIAL_DELAY = 10;
 
     private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
-    private final ConcurrentHashMap<Integer, Address> partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
     private final ClientExecutionServiceImpl clientExecutionService;
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
-
+    private volatile Map<Integer, Address> partitions = Collections.emptyMap();
     private volatile int partitionCount;
     private volatile int lastPartitionStateVersion = -1;
     private final Object lock = new Object();
@@ -90,7 +91,7 @@ public final class ClientPartitionServiceImpl
         }
     }
 
-    public void refreshPartitions() {
+    void refreshPartitions() {
         try {
             // use internal execution service for all partition refresh process (do not use the user executor thread)
             clientExecutionService.execute(new RefreshTask());
@@ -115,8 +116,15 @@ public final class ClientPartitionServiceImpl
     }
 
     private void waitForPartitionsFetchedOnce() {
-        while ((partitions.isEmpty() || partitionCount == 0) && client.getConnectionManager().isAlive()) {
-            if (isClusterFormedByOnlyLiteMembers()) {
+        while (partitions.isEmpty() && client.getConnectionManager().isAlive()) {
+            ClientClusterService clusterService = client.getClientClusterService();
+            Collection<Member> memberList = clusterService.getMemberList();
+            if (memberList.isEmpty()) {
+                //if member list is empty we will return without waiting
+                //getPartitionOwner method will return null as a result
+                break;
+            }
+            if (isClusterFormedByOnlyLiteMembers(memberList)) {
                 throw new NoDataMemberInClusterException(
                         "Partitions can't be assigned since all nodes in the cluster are lite members");
             }
@@ -136,37 +144,39 @@ public final class ClientPartitionServiceImpl
         }
     }
 
-    private boolean isClusterFormedByOnlyLiteMembers() {
-        final ClientClusterService clusterService = client.getClientClusterService();
-        return clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).isEmpty();
+    private boolean isClusterFormedByOnlyLiteMembers(Collection<Member> memberList) {
+        return MemberSelectingCollection.count(memberList, MemberSelectors.DATA_MEMBER_SELECTOR) == 0;
     }
 
-    private boolean processPartitionResponse(Collection<Map.Entry<Address, List<Integer>>> partitions,
-                                             int partitionStateVersion,
-                                             boolean partitionStateVersionExist) {
+    private void processPartitionResponse(Collection<Map.Entry<Address, List<Integer>>> partitions,
+                                          int partitionStateVersion,
+                                          boolean partitionStateVersionExist) {
         synchronized (lock) {
             if (!partitionStateVersionExist || partitionStateVersion > lastPartitionStateVersion) {
+                Map<Integer, Address> newPartitions = new HashMap<Integer, Address>();
                 for (Map.Entry<Address, List<Integer>> entry : partitions) {
                     Address address = entry.getKey();
                     for (Integer partition : entry.getValue()) {
-                        this.partitions.put(partition, address);
+                        newPartitions.put(partition, address);
                     }
                 }
-                partitionCount = this.partitions.size();
+                this.partitions = Collections.unmodifiableMap(newPartitions);
+                if (partitionCount == 0) {
+                    partitionCount = this.partitions.size();
+                }
                 lastPartitionStateVersion = partitionStateVersion;
                 if (logger.isFinestEnabled()) {
                     logger.finest("Processed partition response. partitionStateVersion : "
                             + (partitionStateVersionExist ? partitionStateVersion : "NotAvailable")
-                            + ", partitionCount :" + partitionCount);
+                            + ", partitionCount :" + this.partitions.size());
                 }
-            }
 
+            }
         }
-        return partitionCount > 0;
     }
 
     public void stop() {
-        partitions.clear();
+        partitions = Collections.emptyMap();
     }
 
     @Override
@@ -193,7 +203,9 @@ public final class ClientPartitionServiceImpl
 
     @Override
     public int getPartitionCount() {
-        waitForPartitionsFetchedOnce();
+        if (partitionCount == 0) {
+            waitForPartitionsFetchedOnce();
+        }
         return partitionCount;
     }
 
@@ -203,13 +215,8 @@ public final class ClientPartitionServiceImpl
     }
 
     @Override
-    public boolean isPartitionCountConsistent(int partitionCount) {
-        return this.partitionCount == 0 || partitionCount == this.partitionCount;
-    }
-
-    @Override
     public void beforeClusterSwitch(CandidateClusterContext context) {
-        partitions.clear();
+        partitions = Collections.emptyMap();
     }
 
     private final class PartitionImpl implements Partition {
