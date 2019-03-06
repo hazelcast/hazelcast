@@ -162,10 +162,13 @@ public class NumbersTest {
         assertEqualCanonicalization(0.0, 0L, 0.0F, 0, (short) 0, (byte) 0);
         assertEqualCanonicalization(11.0, 11L, 11.0F, 11, (short) 11, (byte) 11);
         assertEqualCanonicalization(0.25, 0.25F);
+        assertEqualCanonicalization(Double.NaN, Float.NaN);
 
         // 1.100000000000000088817841970012523233890533447265625 != 1.10000002384185791015625
         assertNotEqualCanonicalization(1.1, 1.1F);
         assertNotEqualCanonicalization(Math.nextUp(0.0), Math.nextUp(0.0F), 0);
+        assertNotEqualCanonicalization(-0.0, 0);
+        assertNotEqualCanonicalization(Double.NaN, 0);
     }
 
     private static void assertEqual(Number lhs, Number rhs) {

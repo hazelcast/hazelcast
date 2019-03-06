@@ -20,11 +20,11 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
 
-public final class MaxByAggregator<I> extends AbstractAggregator<I, Comparable, I>
-        implements IdentifiedDataSerializable {
+public final class MaxByAggregator<I> extends AbstractAggregator<I, Comparable, I> implements IdentifiedDataSerializable {
 
     private Comparable maxValue;
     private I maxEntry;
@@ -49,9 +49,10 @@ public final class MaxByAggregator<I> extends AbstractAggregator<I, Comparable, 
         if (otherValue == null) {
             return false;
         }
-        return maxValue == null || maxValue.compareTo(otherValue) < 0;
+        return maxValue == null || Comparables.compare(maxValue, otherValue) < 0;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void combine(Aggregator aggregator) {
         MaxByAggregator<I> maxAggregator = (MaxByAggregator<I>) aggregator;
@@ -90,4 +91,5 @@ public final class MaxByAggregator<I> extends AbstractAggregator<I, Comparable, 
         this.maxValue = in.readObject();
         this.maxEntry = in.readObject();
     }
+
 }

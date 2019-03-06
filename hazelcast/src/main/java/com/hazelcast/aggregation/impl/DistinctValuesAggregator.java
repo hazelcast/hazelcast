@@ -20,13 +20,18 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, R, Set<R>> implements IdentifiedDataSerializable {
-    Set<R> values = new HashSet<R>();
+
+    Map<Object, R> values = new HashMap<Object, R>();
 
     public DistinctValuesAggregator() {
         super();
@@ -38,18 +43,19 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
 
     @Override
     public void accumulateExtracted(I entry, R value) {
-        values.add(value);
+        values.put(canonicalize(value), value);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void combine(Aggregator aggregator) {
         DistinctValuesAggregator distinctValuesAggregator = (DistinctValuesAggregator) aggregator;
-        this.values.addAll(distinctValuesAggregator.values);
+        this.values.putAll(distinctValuesAggregator.values);
     }
 
     @Override
     public Set<R> aggregate() {
-        return values;
+        return new SetView<R>(values);
     }
 
     @Override
@@ -66,7 +72,7 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(attributePath);
         out.writeInt(values.size());
-        for (Object value : values) {
+        for (Object value : values.values()) {
             out.writeObject(value);
         }
     }
@@ -75,10 +81,102 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
     public void readData(ObjectDataInput in) throws IOException {
         this.attributePath = in.readUTF();
         int count = in.readInt();
-        this.values = new HashSet<R>(count);
+        this.values = new HashMap<Object, R>(count);
         for (int i = 0; i < count; i++) {
-            values.add((R) in.readObject());
+            R value = in.readObject();
+            values.put(canonicalize(value), value);
         }
+    }
+
+    private static Object canonicalize(Object value) {
+        if (value instanceof Comparable) {
+            return Comparables.canonicalizeForHashLookup((Comparable) value);
+        }
+
+        return value;
+    }
+
+    @SuppressWarnings("NullableProblems")
+    private static class SetView<R> implements Set<R> {
+
+        private final Map<Object, R> map;
+
+        public SetView(Map<Object, R> map) {
+            this.map = map;
+        }
+
+        @Override
+        public int size() {
+            return map.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return map.isEmpty();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return map.containsKey(canonicalize(o));
+        }
+
+        @Override
+        public Iterator<R> iterator() {
+            return map.values().iterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return map.values().toArray();
+        }
+
+        @SuppressWarnings("SuspiciousToArrayCall")
+        @Override
+        public <T> T[] toArray(T[] a) {
+            return map.values().toArray(a);
+        }
+
+        @Override
+        public boolean add(R r) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            for (Object value : c) {
+                if (!contains(value)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends R> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+
     }
 
 }

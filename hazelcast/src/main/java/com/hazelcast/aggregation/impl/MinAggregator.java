@@ -20,6 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
 
@@ -47,13 +48,14 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
         if (otherValue == null) {
             return false;
         }
-        return min == null || min.compareTo(otherValue) > 0;
+        return min == null || Comparables.compare(min, otherValue) > 0;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void combine(Aggregator aggregator) {
-        MinAggregator maxAggregator = (MinAggregator) aggregator;
-        R valueFromOtherAggregator = (R) maxAggregator.min;
+        MinAggregator minAggregator = (MinAggregator) aggregator;
+        R valueFromOtherAggregator = (R) minAggregator.min;
         if (isCurrentlyGreaterThan(valueFromOtherAggregator)) {
             this.min = valueFromOtherAggregator;
         }
@@ -85,4 +87,5 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
         this.attributePath = in.readUTF();
         this.min = in.readObject();
     }
+
 }

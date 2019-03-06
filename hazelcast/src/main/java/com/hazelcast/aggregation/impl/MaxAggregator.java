@@ -20,6 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
 
@@ -47,9 +48,10 @@ public final class MaxAggregator<I, R extends Comparable> extends AbstractAggreg
         if (otherValue == null) {
             return false;
         }
-        return max == null || max.compareTo(otherValue) < 0;
+        return max == null || Comparables.compare(max, otherValue) < 0;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void combine(Aggregator aggregator) {
         MaxAggregator maxAggregator = (MaxAggregator) aggregator;
@@ -85,4 +87,5 @@ public final class MaxAggregator<I, R extends Comparable> extends AbstractAggreg
         this.attributePath = in.readUTF();
         this.max = in.readObject();
     }
+
 }
