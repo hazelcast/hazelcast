@@ -19,15 +19,15 @@ package com.hazelcast.test;
 public class DefaultTaskProgress implements TaskProgress {
     private final long timestamp = System.currentTimeMillis();
     private final int total;
-    private final int replicated;
+    private final int done;
     private final float progress;
     private final boolean completed;
 
-    public DefaultTaskProgress(int total, int replicated) {
+    public DefaultTaskProgress(int total, int done) {
         this.total = total;
-        this.replicated = replicated;
-        this.progress = ((float) replicated) / total;
-        this.completed = total == replicated;
+        this.done = done;
+        this.progress = ((float) done) / total;
+        this.completed = total == done;
     }
 
     @Override
@@ -47,8 +47,6 @@ public class DefaultTaskProgress implements TaskProgress {
 
     @Override
     public String getProgressString() {
-        return new StringBuilder()
-                .append(replicated).append("/").append(total).append("=").append(progress * 100).append("%")
-                .toString();
+        return String.format("%d/%d=%.2f%%", done, total, progress * 100);
     }
 }

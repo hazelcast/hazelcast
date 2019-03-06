@@ -1370,8 +1370,7 @@ public abstract class HazelcastTestSupport {
                 if (progress.isCompleted()) {
                     return;
                 }
-                long lastProgressTimestampCompare = lastProgressTimestamp;
-                boolean toleranceExceeded = progress.timestamp() > lastProgressTimestampCompare
+                boolean toleranceExceeded = progress.timestamp() > lastProgressTimestamp
                         + SECONDS.toMillis(stallToleranceSeconds);
 
                 // we store current progress if the task advanced or the tolerance exceeded
@@ -1390,12 +1389,12 @@ public abstract class HazelcastTestSupport {
                         String elapsedMillisPadded = String.format("%1$5s", elapsedMillis);
                         sb.append("\t")
                           .append(elapsedMillisPadded).append("ms: ")
-                          .append(progress.getProgressString())
+                          .append(historicProgress.getProgressString())
                           .append("\n");
                     }
                     LOGGER.severe(sb.toString());
                     fail("Stall tolerance " + stallToleranceSeconds
-                            + " seconds has been exceeded without completing the task. " + message);
+                            + " seconds has been exceeded without completing the task. " + message != null ? message : "");
                 }
 
                 sleepMillis(sleepMillis);
