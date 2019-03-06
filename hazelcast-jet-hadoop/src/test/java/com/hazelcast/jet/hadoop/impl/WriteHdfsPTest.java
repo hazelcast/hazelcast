@@ -44,6 +44,7 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
+import org.apache.hadoop.mapred.lib.LazyOutputFormat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -67,13 +68,14 @@ public class WriteHdfsPTest extends HdfsTestSupport {
     public static Collection<Object[]> parameters() {
         return Arrays.asList(
                 new Object[]{TextOutputFormat.class, TextInputFormat.class},
+                new Object[]{LazyOutputFormat.class, TextInputFormat.class},
                 new Object[]{SequenceFileOutputFormat.class, SequenceFileInputFormat.class}
         );
     }
 
     @Test
     public void testWriteFile() throws Exception {
-        int messageCount = 20;
+        int messageCount = 320;
         String mapName = randomMapName();
         JetInstance instance = createJetMember();
         createJetMember();
@@ -90,12 +92,18 @@ public class WriteHdfsPTest extends HdfsTestSupport {
         conf.setOutputKeyClass(IntWritable.class);
         conf.setOutputValueClass(IntWritable.class);
 
+        if (outputFormatClass.equals(LazyOutputFormat.class)) {
+            LazyOutputFormat.setOutputFormatClass(conf, TextOutputFormat.class);
+        }
+
         FileOutputFormat.setOutputPath(conf, path);
 
 
         Pipeline p = Pipeline.create();
         p.drawFrom(Sources.map(mapName))
-         .drainTo(HdfsSinks.hdfs(conf));
+         .drainTo(HdfsSinks.hdfs(conf))
+         // we use higher value to increase the race chance for LazyOutputFormat
+         .setLocalParallelism(8);
 
         Future<Void> future = instance.newJob(p).getFuture();
         assertCompletesEventually(future);
