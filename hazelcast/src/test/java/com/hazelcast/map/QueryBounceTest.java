@@ -25,11 +25,9 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.jitter.JitterRule;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -47,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 public class QueryBounceTest {
 
     private static final String TEST_MAP_NAME = "employees";
-    private static final int COUNT_ENTRIES = 100000;
+    private static final int COUNT_ENTRIES = 10000;
     private static final int CONCURRENCY = 10;
 
     @Rule
@@ -58,52 +56,33 @@ public class QueryBounceTest {
     @Rule
     public JitterRule jitterRule = new JitterRule();
 
-    @Rule
-    public TestName testName = new TestName();
-
-    @Before
-    public void setup() {
-        IMap<String, SampleTestObjects.Employee> map;
-        if (testName.getMethodName().contains("Indexes")) {
-            map = getMapWithIndexes();
-        } else {
-            map = getMap();
-        }
-        populateMap(map);
-    }
-
     @Test
     public void testQuery() {
-        prepareAndRunQueryTasks();
+        prepareAndRunQueryTasks(false);
     }
 
     @Test
     public void testQueryWithIndexes() {
-        prepareAndRunQueryTasks();
+        prepareAndRunQueryTasks(true);
     }
 
     protected Config getConfig() {
         return smallInstanceConfig();
     }
 
-    private void prepareAndRunQueryTasks() {
+    private void prepareAndRunQueryTasks(boolean withIndexes) {
+        IMap<String, SampleTestObjects.Employee> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
+        if (withIndexes) {
+            map.addIndex("id", false);
+            map.addIndex("age", true);
+        }
+        populateMap(map);
+
         QueryRunnable[] testTasks = new QueryRunnable[CONCURRENCY];
         for (int i = 0; i < CONCURRENCY; i++) {
             testTasks[i] = new QueryRunnable(bounceMemberRule.getNextTestDriver());
         }
         bounceMemberRule.testRepeatedly(testTasks, MINUTES.toSeconds(3));
-    }
-
-    private IMap<String, SampleTestObjects.Employee> getMap() {
-        return bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
-    }
-
-    // obtain a reference to test map from 0-th member with indexes created for Employee attributes
-    private IMap<String, SampleTestObjects.Employee> getMapWithIndexes() {
-        IMap<String, SampleTestObjects.Employee> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
-        map.addIndex("id", false);
-        map.addIndex("age", true);
-        return map;
     }
 
     private void populateMap(IMap<String, SampleTestObjects.Employee> map) {
