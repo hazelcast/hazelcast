@@ -111,12 +111,12 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         waitTimeouts.remove(Tuple2.of(name, invocationUid));
     }
 
-    final void expireWaitKey(String name, UUID invocationUid, List<Long> commitIndices) {
+    final void expireWaitKey(String name, UUID invocationUid, List<W> expired) {
         removeWaitKey(name, invocationUid);
 
         BlockingResource<W> resource = getResourceOrNull(name);
         if (resource != null) {
-            resource.expireWaitKey(invocationUid, commitIndices);
+            resource.expireWaitKeys(invocationUid, expired);
         }
     }
 
@@ -165,21 +165,19 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         return sessions;
     }
 
-    final Collection<Long> destroyResource(String name) {
+    final Collection<W> destroyResource(String name) {
         destroyedNames.add(name);
         BlockingResource<W> resource = resources.remove(name);
         if (resource == null) {
             return null;
         }
 
-        Collection<W> waitKeys = resource.getAllWaitKeys();
-        Collection<Long> indices = new ArrayList<Long>(waitKeys.size());
-        for (W key : waitKeys) {
-            indices.add(key.commitIndex());
+        Collection<W> keys = resource.getAllWaitKeys();
+        for (W key : keys) {
             waitTimeouts.remove(Tuple2.of(name, key.invocationUid()));
         }
 
-        return indices;
+        return keys;
     }
 
     public final CPGroupId getGroupId() {

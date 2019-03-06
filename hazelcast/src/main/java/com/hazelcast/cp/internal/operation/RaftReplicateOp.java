@@ -72,10 +72,7 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
         replicate(raftNode).andThen(this);
     }
 
-    ICompletableFuture replicate(RaftNode raftNode) {
-        RaftOp op = getRaftOp();
-        return raftNode.replicate(op);
-    }
+    protected abstract ICompletableFuture replicate(RaftNode raftNode);
 
     @Override
     public void onResponse(Object response) {
@@ -86,8 +83,6 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
     public void onFailure(Throwable t) {
         sendResponse(t);
     }
-
-    protected abstract RaftOp getRaftOp();
 
     @Override
     public final boolean returnsResponse() {

@@ -20,9 +20,16 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchBasicTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class RaftCountDownLatchClientBasicTest extends RaftCountDownLatchBasicTest {
 
     private HazelcastInstance client;

@@ -95,10 +95,10 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
         return true;
     }
 
-    boolean await(long commitIndex, UUID invocationUid, boolean wait) {
+    boolean await(AwaitInvocationKey key, boolean wait) {
         boolean success = (getRemainingCount() == 0);
         if (!success && wait) {
-            addWaitKey(invocationUid, new AwaitInvocationKey(commitIndex, invocationUid));
+            addWaitKey(key.invocationUid(), key);
         }
 
         return success;

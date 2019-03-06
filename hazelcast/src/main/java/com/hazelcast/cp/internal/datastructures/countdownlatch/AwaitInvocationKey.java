@@ -18,49 +18,29 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKey;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Represents a {@link ICountDownLatch#await(long, TimeUnit)}} invocation
  */
-public class AwaitInvocationKey implements WaitKey, IdentifiedDataSerializable {
-
-    private long commitIndex;
-    private UUID invocationUid;
+public class AwaitInvocationKey extends WaitKey implements IdentifiedDataSerializable {
 
     AwaitInvocationKey() {
     }
 
-    AwaitInvocationKey(long commitIndex, UUID invocationUid) {
-        checkNotNull(invocationUid);
-        this.commitIndex = commitIndex;
-        this.invocationUid = invocationUid;
+    public AwaitInvocationKey(long commitIndex, UUID invocationUid, Address callerAddress, long callId) {
+        super(commitIndex, invocationUid, callerAddress, callId);
     }
 
     @Override
     public long sessionId() {
         return NO_SESSION_ID;
-    }
-
-    @Override
-    public long commitIndex() {
-        return commitIndex;
-    }
-
-    @Override
-    public UUID invocationUid() {
-        return invocationUid;
     }
 
     @Override
@@ -71,18 +51,6 @@ public class AwaitInvocationKey implements WaitKey, IdentifiedDataSerializable {
     @Override
     public int getId() {
         return RaftCountDownLatchDataSerializerHook.AWAIT_INVOCATION_KEY;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(commitIndex);
-        writeUUID(out, invocationUid);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        commitIndex = in.readLong();
-        invocationUid = readUUID(in);
     }
 
     @Override
@@ -99,18 +67,27 @@ public class AwaitInvocationKey implements WaitKey, IdentifiedDataSerializable {
         if (commitIndex != that.commitIndex) {
             return false;
         }
-        return invocationUid.equals(that.invocationUid);
+        if (!invocationUid.equals(that.invocationUid)) {
+            return false;
+        }
+        if (!callerAddress.equals(that.callerAddress)) {
+            return false;
+        }
+        return callId == that.callId;
     }
 
     @Override
     public int hashCode() {
         int result = (int) (commitIndex ^ (commitIndex >>> 32));
         result = 31 * result + invocationUid.hashCode();
+        result = 31 * result + callerAddress.hashCode();
+        result = 31 * result + (int) (callId ^ (callId >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
-        return "AwaitInvocationKey{" + "commitIndex=" + commitIndex + ", invocationUid=" + invocationUid + '}';
+        return "AwaitInvocationKey{" + "commitIndex=" + commitIndex + ", invocationUid=" + invocationUid + ", callerAddress="
+                + callerAddress + ", callId=" + callId + '}';
     }
 }

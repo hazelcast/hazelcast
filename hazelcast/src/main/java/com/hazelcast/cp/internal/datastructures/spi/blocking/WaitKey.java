@@ -17,8 +17,17 @@
 package com.hazelcast.cp.internal.datastructures.spi.blocking;
 
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
+import java.io.IOException;
 import java.util.UUID;
+
+import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
+import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * This abstraction is used when an operation does not return a response
@@ -26,7 +35,24 @@ import java.util.UUID;
  * or timeout. Future completions of such operations are represented with
  * implementations of this interface.
  */
-public interface WaitKey {
+public abstract class WaitKey implements DataSerializable {
+
+    protected long commitIndex;
+    protected UUID invocationUid;
+    protected Address callerAddress;
+    protected long callId;
+
+    public WaitKey() {
+    }
+
+    public WaitKey(long commitIndex, UUID invocationUid, Address callerAddress, long callId) {
+        checkNotNull(invocationUid);
+        checkNotNull(callerAddress);
+        this.commitIndex = commitIndex;
+        this.invocationUid = invocationUid;
+        this.callerAddress = callerAddress;
+        this.callId = callId;
+    }
 
     /**
      * Returns id of the session to which the corresponding operation is
@@ -34,16 +60,51 @@ public interface WaitKey {
      * Returns {@link AbstractProxySessionManager#NO_SESSION_ID} if no session
      *         is attached.
      */
-    long sessionId();
+    public abstract long sessionId();
 
     /**
      * Returns commit index of the operation that has not returned a response
      * at the time of its commit.
      */
-    long commitIndex();
+    public final long commitIndex() {
+        return commitIndex;
+    }
 
     /**
      * Returns unique id of the committed operation which is provided by the caller.
      */
-    UUID invocationUid();
+    public final UUID invocationUid() {
+        return invocationUid;
+    }
+
+    /**
+     * Returns address of the caller which created this wait key
+     */
+    public final Address callerAddress() {
+        return callerAddress;
+    }
+
+    /**
+     * Returns the call id which created this wait key
+     */
+    public final long callId() {
+        return callId;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(commitIndex);
+        writeUUID(out, invocationUid);
+        out.writeObject(callerAddress);
+        out.writeLong(callId);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        commitIndex = in.readLong();
+        invocationUid = readUUID(in);
+        callerAddress = in.readObject();
+        callId = in.readLong();
+    }
+
 }

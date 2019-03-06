@@ -68,30 +68,31 @@ public class RaftSemaphoreService extends AbstractBlockingService<AcquireInvocat
         return registry != null ? registry.availablePermits(name) : 0;
     }
 
-    public boolean acquirePermits(CPGroupId groupId, long commitIndex, String name, SemaphoreEndpoint endpoint,
-                                  UUID invocationUid, int permits, long timeoutMs) {
-        heartbeatSession(groupId, endpoint.sessionId());
-        AcquireInvocationKey key = new AcquireInvocationKey(commitIndex, endpoint, invocationUid, permits);
+    public boolean acquirePermits(CPGroupId groupId, String name, AcquireInvocationKey key, long timeoutMs) {
+        heartbeatSession(groupId, key.sessionId());
         AcquireResult result = getOrInitRegistry(groupId).acquire(name, key, timeoutMs);
 
-        boolean success = result.acquired > 0;
+        boolean success = (result.acquired > 0);
         if (logger.isFineEnabled()) {
             if (success) {
-                logger.fine("Semaphore[" + name + "] in " + groupId + " acquired permits: " + permits + " by <" + endpoint + ", "
-                        + invocationUid + "> at commit index: " + commitIndex);
+                logger.fine("Semaphore[" + name + "] in " + groupId + " acquired permits: " + key.permits() + " by <"
+                        + key.endpoint() + ", " + key.invocationUid() + "> at commit index: " + key.commitIndex());
             } else if (timeoutMs != 0) {
-                logger.fine("Semaphore[" + name + "] in " + groupId + " wait key added for permits: " + permits + " by <"
-                        + endpoint + ", " + invocationUid + "> at commit index: " + commitIndex);
+                logger.fine("Semaphore[" + name + "] in " + groupId + " wait key added for permits: " + key.permits() + " by <"
+                        + key.endpoint() + ", " + key.invocationUid() + "> at commit index: " + key.commitIndex());
             } else {
-                logger.fine("Semaphore[" + name + "] in " + groupId + " not acquired permits: " + permits + " by <" + endpoint
-                        + ", " + invocationUid + "> at commit index: " + commitIndex);
+                logger.fine("Semaphore[" + name + "] in " + groupId + " not acquired permits: " + key.permits() + " by <"
+                        + key.endpoint() + ", " + key.invocationUid() + "> at commit index: " + key.commitIndex());
             }
         }
 
         notifyCancelledWaitKeys(groupId, name, result.cancelled);
 
         if (!success) {
-            scheduleTimeout(groupId, name, invocationUid, timeoutMs);
+            scheduleTimeout(groupId, name, key.invocationUid(), timeoutMs);
+            if (timeoutMs != 0) {
+                addLiveOperation(key);
+            }
         }
 
         return success;
@@ -147,12 +148,12 @@ public class RaftSemaphoreService extends AbstractBlockingService<AcquireInvocat
         return result.success;
     }
 
-    private void notifyCancelledWaitKeys(CPGroupId groupId, String name, Collection<AcquireInvocationKey> waitKeys) {
-        if (waitKeys.isEmpty()) {
+    private void notifyCancelledWaitKeys(CPGroupId groupId, String name, Collection<AcquireInvocationKey> keys) {
+        if (keys.isEmpty()) {
             return;
         }
 
-        notifyWaitKeys(groupId, name, waitKeys, new WaitKeyCancelledException());
+        notifyWaitKeys(groupId, name, keys, new WaitKeyCancelledException());
     }
 
     @Override

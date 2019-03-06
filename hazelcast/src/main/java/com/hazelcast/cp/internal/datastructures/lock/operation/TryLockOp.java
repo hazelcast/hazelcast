@@ -17,13 +17,15 @@
 package com.hazelcast.cp.internal.datastructures.lock.operation;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.datastructures.lock.LockEndpoint;
 import com.hazelcast.cp.internal.datastructures.lock.AcquireResult;
+import com.hazelcast.cp.internal.datastructures.lock.LockInvocationKey;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
+import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -37,9 +39,11 @@ import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.Acquir
  *
  * @see com.hazelcast.cp.internal.datastructures.lock.RaftLock#acquire(LockEndpoint, long, UUID, boolean)
  */
-public class TryLockOp extends AbstractLockOp implements IndeterminateOperationStateAware {
+public class TryLockOp extends AbstractLockOp implements CallerAware, IndeterminateOperationStateAware {
 
     private long timeoutMs;
+    private Address callerAddress;
+    private long callId;
 
     public TryLockOp() {
     }
@@ -52,14 +56,20 @@ public class TryLockOp extends AbstractLockOp implements IndeterminateOperationS
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         RaftLockService service = getService();
-        LockEndpoint endpoint = getLockEndpoint();
-        AcquireResult result = service.tryAcquire(groupId, commitIndex, name, endpoint, invocationUid, timeoutMs);
+        LockInvocationKey key = new LockInvocationKey(commitIndex, invocationUid, callerAddress, callId, getLockEndpoint());
+        AcquireResult result = service.tryAcquire(groupId, name, key, timeoutMs);
         if (result.status() == WAIT_KEY_ADDED) {
             return PostponedResponse.INSTANCE;
         }
 
         // SUCCESSFUL or FAILED
         return result.fence();
+    }
+
+    @Override
+    public void setCaller(Address callerAddress, long callId) {
+        this.callerAddress = callerAddress;
+        this.callId = callId;
     }
 
     @Override
@@ -71,12 +81,16 @@ public class TryLockOp extends AbstractLockOp implements IndeterminateOperationS
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeLong(timeoutMs);
+        out.writeObject(callerAddress);
+        out.writeLong(callId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         timeoutMs = in.readLong();
+        callerAddress = in.readObject();
+        callId = in.readLong();
     }
 
     @Override
@@ -88,5 +102,7 @@ public class TryLockOp extends AbstractLockOp implements IndeterminateOperationS
     protected void toString(StringBuilder sb) {
         super.toString(sb);
         sb.append(", timeoutMs=").append(timeoutMs);
+        sb.append(", callerAddress=").append(callerAddress);
+        sb.append(", callId=").append(callId);
     }
 }
