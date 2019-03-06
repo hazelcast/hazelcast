@@ -17,5 +17,12 @@
 package com.hazelcast.util.executor;
 
 public enum ExecutorType {
-    CACHED, CONCRETE
+    /**
+     * Executor will use share ThreadPoolExecutor with unlimited pools size with other CACHED Executors
+     */
+    CACHED,
+    /**
+     * Executor will have its own ThreadPoolExecutor
+     */
+    CONCRETE
 }
