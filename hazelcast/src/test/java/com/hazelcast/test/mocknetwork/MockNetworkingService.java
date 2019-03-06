@@ -280,7 +280,10 @@ class MockNetworkingService
                 }
 
                 NetworkingService remoteNetworkingService = connection.remoteNodeEngine.getNode().getNetworkingService();
-                Connection remoteConnection = remoteNetworkingService.getEndpointManager(MEMBER)
+                // all mock implementations of networking service ignore the provided endpoint qualifier
+                // so we pass in null. Once they are changed to use the parameter, we should be notified
+                // and this parameter can be changed
+                Connection remoteConnection = remoteNetworkingService.getEndpointManager(null)
                                                                      .getConnection(connection.localEndpoint);
                 if (remoteConnection != null) {
                     remoteConnection.close("Connection closed by the other side", null);
