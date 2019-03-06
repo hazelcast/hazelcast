@@ -19,11 +19,11 @@ package com.hazelcast.aggregation.impl;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -97,14 +97,36 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
         return value;
     }
 
-    // TODO: better serialization
     @SuppressWarnings("NullableProblems")
-    private static class SetView<R> implements Set<R>, Serializable {
+    private static class SetView<R> implements Set<R>, DataSerializable {
 
-        private final Map<Object, R> map;
+        private Map<Object, R> map;
+
+        @SuppressWarnings("unused")
+        public SetView() {
+            // used for (de)serialization
+        }
 
         public SetView(Map<Object, R> map) {
             this.map = map;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(map.size());
+            for (Object value : map.values()) {
+                out.writeObject(value);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int count = in.readInt();
+            map = new HashMap<Object, R>(count);
+            for (int i = 0; i < count; i++) {
+                R value = in.readObject();
+                map.put(canonicalize(value), value);
+            }
         }
 
         @Override
