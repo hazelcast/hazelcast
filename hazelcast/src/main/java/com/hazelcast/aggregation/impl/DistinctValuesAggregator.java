@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -96,8 +97,9 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
         return value;
     }
 
+    // TODO: better serialization
     @SuppressWarnings("NullableProblems")
-    private static class SetView<R> implements Set<R> {
+    private static class SetView<R> implements Set<R>, Serializable {
 
         private final Map<Object, R> map;
 
