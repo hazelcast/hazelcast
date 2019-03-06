@@ -44,8 +44,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -132,13 +134,21 @@ public class ManagementCenterServiceIntegrationTest {
 
                 String name = randomString();
                 Set<String> labels = new HashSet<String>();
-                Client client1 = new ClientImpl(null, InetSocketAddress.createUnresolved("127.0.0.1", 5000), name, labels);
+                Client client1 = new ClientImpl(null, createInetSocketAddress("127.0.0.1"), name, labels);
                 assertTrue(instance.node.clientEngine.isClientAllowed(client1));
 
-                Client client2 = new ClientImpl(null, InetSocketAddress.createUnresolved("127.0.0.2", 5000), name, labels);
+                Client client2 = new ClientImpl(null, createInetSocketAddress("127.0.0.2"), name, labels);
                 assertFalse(instance.node.clientEngine.isClientAllowed(client2));
             }
         });
+    }
+
+    private InetSocketAddress createInetSocketAddress(String name) {
+        try {
+            return new InetSocketAddress(InetAddress.getByName(name), 5000);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static int availablePort() {

@@ -89,7 +89,7 @@ public final class ClientSelectors {
         return new ClientSelector() {
             @Override
             public boolean select(Client client) {
-                return AddressUtil.matchInterface(client.getSocketAddress().getHostName(), ipMask);
+                return AddressUtil.matchInterface(client.getSocketAddress().getAddress().getHostAddress(), ipMask);
             }
 
             @Override
