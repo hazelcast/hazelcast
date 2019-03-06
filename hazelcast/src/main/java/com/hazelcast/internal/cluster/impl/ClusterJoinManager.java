@@ -628,7 +628,6 @@ public class ClusterJoinManager {
     }
 
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
-        // todo check relationship between Connection and joinMessage.getAddress
         Address target = joinMessage.getAddress();
         MemberImpl member = clusterService.getMember(target);
         if (member == null) {

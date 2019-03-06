@@ -36,8 +36,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.internal.cluster.Versions.V3_12;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.cluster.Versions.V3_12;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -241,19 +241,7 @@ public abstract class AbstractMember implements Member, Versioned {
         }
 
         Member that = (Member) obj;
-        if (!(address.equals(that.getAddress()))) {
-            return false;
-        }
-
-        if (!(uuid.equals(that.getUuid()))) {
-            return false;
-        }
-
-        if (addressMap == null) {
-            return that.getAddressMap() == null;
-        }
-
-        return addressMap.equals(that.getAddressMap());
+        return address.equals(that.getAddress()) && uuid.equals(that.getUuid());
     }
 
     private void writeAddressMap(ObjectDataOutput out) throws IOException {
