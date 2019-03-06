@@ -179,6 +179,30 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public int hashCode() {
+            return map.keySet().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+
+            if (!(obj instanceof Set)) {
+                return false;
+            }
+            Set that = (Set) obj;
+
+            return containsAll(that);
+        }
+
+        @Override
+        public String toString() {
+            return map.values().toString();
+        }
+
     }
 
 }
