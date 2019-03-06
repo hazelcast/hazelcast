@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -35,7 +36,7 @@ public class ClientClasspathYamlConfig extends ClientConfig {
      *
      * @param resource the resource, an YAML configuration file from the classpath
      * @throws IllegalArgumentException              if the resource could not be found
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws HazelcastException if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(String resource) {
         this(resource, System.getProperties());
@@ -48,7 +49,7 @@ public class ClientClasspathYamlConfig extends ClientConfig {
      * @param resource   the resource, an YAML configuration file from the classpath
      * @param properties the Properties to resolve variables in the YAML
      * @throws IllegalArgumentException              if the resource could not be found or if properties is {@code null}
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws HazelcastException if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(String resource, Properties properties) {
         this(Thread.currentThread().getContextClassLoader(), resource, properties);
@@ -61,7 +62,7 @@ public class ClientClasspathYamlConfig extends ClientConfig {
      * @param resource    the resource, an YAML configuration file from the classpath
      * @param properties  the properties used to resolve variables in the YAML
      * @throws IllegalArgumentException              if classLoader or resource is {@code null}, or if the resource is not found
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws HazelcastException if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(ClassLoader classLoader, String resource, Properties properties) {
         if (classLoader == null) {

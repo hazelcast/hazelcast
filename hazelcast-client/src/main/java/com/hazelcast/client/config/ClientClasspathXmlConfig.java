@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -36,7 +37,7 @@ public class ClientClasspathXmlConfig extends ClientConfig {
      *
      * @param resource the resource, an XML configuration file from the classpath
      * @throws IllegalArgumentException if the resource could not be found
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws HazelcastException if the XML content is invalid
      */
     public ClientClasspathXmlConfig(String resource) {
         this(resource, System.getProperties());
@@ -49,7 +50,7 @@ public class ClientClasspathXmlConfig extends ClientConfig {
      * @param resource   the resource, an XML configuration file from the classpath
      * @param properties the Properties to resolve variables in the XML
      * @throws IllegalArgumentException if the resource could not be found or if properties is {@code null}
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws HazelcastException if the XML content is invalid
      */
     public ClientClasspathXmlConfig(String resource, Properties properties) {
         this(Thread.currentThread().getContextClassLoader(), resource, properties);
@@ -62,7 +63,7 @@ public class ClientClasspathXmlConfig extends ClientConfig {
      * @param resource    the resource, an XML configuration file from the classpath
      * @param properties  the properties used to resolve variables in the XML
      * @throws IllegalArgumentException if classLoader or resource is {@code null}, or if the resource is not found
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws HazelcastException if the XML content is invalid
      */
     public ClientClasspathXmlConfig(ClassLoader classLoader, String resource, Properties properties) {
         if (classLoader == null) {
