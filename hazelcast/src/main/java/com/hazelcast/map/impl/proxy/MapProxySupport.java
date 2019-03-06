@@ -115,6 +115,7 @@ import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCE
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
+import static com.hazelcast.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -378,7 +379,7 @@ abstract class MapProxySupport<K, V>
                     .invoke();
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos));
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos), CALLER_RUNS);
             }
 
             return future;
@@ -458,7 +459,7 @@ abstract class MapProxySupport<K, V>
             InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos));
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos), CALLER_RUNS);
             }
             return future;
         } catch (Throwable t) {
@@ -642,7 +643,7 @@ abstract class MapProxySupport<K, V>
             InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos));
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos), CALLER_RUNS);
             }
 
             return future;

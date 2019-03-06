@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -28,8 +29,10 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -51,6 +54,45 @@ public class PipeliningTest extends HazelcastTestSupport {
     public void add_whenNull() throws InterruptedException {
         Pipelining<String> pipelining = new Pipelining<String>(1);
         pipelining.add(null);
+    }
+
+
+    @Test
+    public void testInterrupt() throws Exception {
+        final Pipelining<String> pipelining = new Pipelining<String>(1);
+        pipelining.add(mock(ICompletableFuture.class));
+
+        TestThread t = new TestThread() {
+            @Override
+            public void doRun() throws Throwable {
+                pipelining.add(mock(ICompletableFuture.class));
+            }
+        };
+        t.start();
+        t.interrupt();
+        t.assertFailsEventually(InterruptedException.class);
+    }
+
+    @Test
+    public void testSpuriousWakeup() throws Exception {
+        final Pipelining<String> pipelining = new Pipelining<String>(1);
+        pipelining.add(mock(ICompletableFuture.class));
+
+        TestThread t = new TestThread() {
+            @Override
+            public void doRun() throws Throwable {
+                pipelining.add(mock(ICompletableFuture.class));
+            }
+        };
+        t.start();
+
+        for (int k = 0; k < 100; k++) {
+            Thread.sleep(5);
+            LockSupport.unpark(t);
+        }
+
+        t.interrupt();
+        t.assertFailsEventually(InterruptedException.class);
     }
 
     @Test
