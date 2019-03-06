@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.hadoop.HdfsProcessors;
 import com.hazelcast.nio.Address;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContextImpl;
 import org.apache.hadoop.mapred.JobID;
 import org.apache.hadoop.mapred.OutputCommitter;
@@ -38,7 +39,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 
-import static com.hazelcast.jet.hadoop.impl.SerializableJobConf.asSerializable;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -171,7 +171,7 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
                     TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobContext.getJobID().getId(),
                             JOB_SETUP, i, 0);
 
-                    SerializableJobConf copiedConfig = asSerializable(jobConf);
+                    JobConf copiedConfig = new JobConf(jobConf);
 
                     copiedConfig.set("mapred.task.id", taskAttemptID.toString());
                     copiedConfig.setInt("mapred.task.partition", i);
