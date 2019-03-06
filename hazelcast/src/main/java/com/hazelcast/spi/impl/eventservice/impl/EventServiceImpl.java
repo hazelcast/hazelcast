@@ -519,7 +519,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey)
                     .setPacketType(Packet.Type.EVENT);
 
-            //TODO (TK) : Can the subscriber be other than MEMBER?
             EndpointManager em = nodeEngine.getNode().getNetworkingService().getEndpointManager(MEMBER);
             if (!em.transmit(packet, subscriber)) {
                 if (nodeEngine.isRunning()) {
