@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -145,4 +146,11 @@ public interface InternalOperationService extends OperationService {
     List<SlowOperationDTO> getSlowOperationDTOs();
 
     <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback);
+
+    /**
+     * Cleans up heartbeats and fails invocations for the given endpoint.
+     *
+     * @param endpoint the endpoint that has left
+     */
+    void onEndpointLeft(Address endpoint);
 }

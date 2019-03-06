@@ -193,6 +193,15 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
         scheduler.execute(new OnMemberLeftTask(member, memberListVersion));
     }
 
+    /**
+     * Cleans up heartbeats and fails invocations for the given endpoint.
+     *
+     * @param endpoint the endpoint that has left
+     */
+    void onEndpointLeft(Address endpoint) {
+        scheduler.execute(new OnEndpointLeftTask(endpoint));
+    }
+
     void execute(Runnable runnable) {
         scheduler.execute(runnable);
     }
@@ -338,6 +347,28 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
                 logger.log(logLevel, "Invocations:" + invocationCount
                         + " timeouts:" + invocationTimeouts
                         + " backup-timeouts:" + backupTimeouts);
+            }
+        }
+    }
+
+    /**
+     * Task for cleaning up heartbeats and failing invocations for an endpoint which has left.
+     */
+    private final class OnEndpointLeftTask extends MonitorTask {
+        private final Address endpoint;
+
+        private OnEndpointLeftTask(Address endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        @Override
+        public void run0() {
+            heartbeatPerMember.remove(endpoint);
+
+            for (Invocation invocation : invocationRegistry) {
+                if (endpoint.equals(invocation.getTargetAddress())) {
+                    invocation.notifyError(new MemberLeftException("Endpoint " + endpoint + " has left"));
+                }
             }
         }
     }

@@ -185,6 +185,9 @@ public class MockConnection implements Connection {
 
     @Override
     public String toString() {
-        return "MockConnection{" + "localEndpoint=" + localEndpoint + ", remoteEndpoint=" + remoteEndpoint + '}';
+        return "MockConnection{"
+                + "localEndpoint=" + localEndpoint
+                + ", remoteEndpoint=" + remoteEndpoint
+                + ", alive=" + isAlive() + '}';
     }
 }
