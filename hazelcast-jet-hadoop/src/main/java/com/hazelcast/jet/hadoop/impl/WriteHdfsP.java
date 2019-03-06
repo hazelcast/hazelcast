@@ -38,6 +38,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 
+import static com.hazelcast.jet.hadoop.impl.SerializableJobConf.asSerializable;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -169,14 +170,17 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
                     String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
                     TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobContext.getJobID().getId(),
                             JOB_SETUP, i, 0);
-                    jobConf.set("mapred.task.id", taskAttemptID.toString());
-                    jobConf.setInt("mapred.task.partition", i);
 
-                    TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(jobConf, taskAttemptID);
+                    SerializableJobConf copiedConfig = asSerializable(jobConf);
+
+                    copiedConfig.set("mapred.task.id", taskAttemptID.toString());
+                    copiedConfig.setInt("mapred.task.partition", i);
+
+                    TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(copiedConfig, taskAttemptID);
                     @SuppressWarnings("unchecked")
-                    OutputFormat<K, V> outFormat = jobConf.getOutputFormat();
+                    OutputFormat<K, V> outFormat = copiedConfig.getOutputFormat();
                     RecordWriter<K, V> recordWriter = outFormat.getRecordWriter(
-                            null, jobConf, uuid + '-' + valueOf(i), Reporter.NULL);
+                            null, copiedConfig, uuid + '-' + valueOf(i), Reporter.NULL);
                     return new WriteHdfsP<>(
                             recordWriter, taskAttemptContext, outputCommitter, extractKeyFn, extractValueFn);
                 } catch (IOException e) {
