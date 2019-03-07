@@ -100,7 +100,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
     public void testRemoveRaftMember() throws ExecutionException, InterruptedException {
         final HazelcastInstance[] instances = newInstances(3);
 
-        final CPGroupId testGroupId = getRaftInvocationManager(instances[0]).createRaftGroup("test", 3).get();
+        getRaftInvocationManager(instances[0]).createRaftGroup("test", 3).get();
 
         Member member = instances[0].getCluster().getLocalMember();
         instances[0].getLifecycleService().terminate();
@@ -110,13 +110,18 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         final CPMemberInfo removedEndpoint = new CPMemberInfo(member);
         instances[1].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(removedEndpoint.getUuid()).get();
 
-        CPGroupInfo metadataGroupInfo = getRaftGroupLocally(instances[1], getMetadataGroupId(instances[1]));
-        assertEquals(2, metadataGroupInfo.memberCount());
-        assertFalse(metadataGroupInfo.containsMember(removedEndpoint));
+        CPGroupInfo metadataGroup = (CPGroupInfo) instances[1].getCPSubsystem()
+                                                              .getCPSubsystemManagementService()
+                                                              .getCPGroup(METADATA_CP_GROUP_NAME).get();
+        assertEquals(2, metadataGroup.memberCount());
+        assertFalse(metadataGroup.containsMember(removedEndpoint));
 
-        CPGroupInfo testGroupInfo = getRaftGroupLocally(instances[1], testGroupId);
-        assertEquals(2, testGroupInfo.memberCount());
-        assertFalse(testGroupInfo.containsMember(removedEndpoint));
+        CPGroupInfo testGroup = (CPGroupInfo) instances[1].getCPSubsystem()
+                                                          .getCPSubsystemManagementService()
+                                                          .getCPGroup("test").get();
+        assertNotNull(testGroup);
+        assertEquals(2, testGroup.memberCount());
+        assertFalse(testGroup.containsMember(removedEndpoint));
     }
 
     @Test
