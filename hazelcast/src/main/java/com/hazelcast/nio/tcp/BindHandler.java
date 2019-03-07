@@ -30,10 +30,12 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 final class BindHandler {
 
@@ -41,6 +43,7 @@ final class BindHandler {
     private final IOService ioService;
     private final ILogger logger;
     private final boolean spoofingChecks;
+    private final boolean unifiedEndpointManager;
 
     private final Set<ProtocolType> supportedProtocolTypes;
 
@@ -51,6 +54,7 @@ final class BindHandler {
         this.logger = logger;
         this.spoofingChecks = spoofingChecks;
         this.supportedProtocolTypes = supportedProtocolTypes;
+        this.unifiedEndpointManager = tcpIpEndpointManager.getEndpointQualifier() == null;
     }
 
     public void process(Packet packet) {
@@ -58,7 +62,7 @@ final class BindHandler {
         TcpIpConnection connection = (TcpIpConnection) packet.getConn();
         if (connection.setBinding()) {
             if (bind instanceof ExtendedBindMessage) {
-                // incoming connection from a 3.12 member
+                // incoming connection from a member >= 3.12
                 ExtendedBindMessage extendedBindMessage = (ExtendedBindMessage) bind;
                 bind(connection, extendedBindMessage);
             } else {
@@ -78,7 +82,7 @@ final class BindHandler {
         }
 
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = bindMessage.getLocalAddresses();
-        Set<Address> allAliases = new HashSet<Address>();
+        List<Address> allAliases = new ArrayList<Address>();
         for (Map.Entry<ProtocolType, Collection<Address>> remoteAddresses : remoteAddressesPerProtocolType.entrySet()) {
             if (supportedProtocolTypes.contains(remoteAddresses.getKey())) {
                 allAliases.addAll(remoteAddresses.getValue());
@@ -92,9 +96,26 @@ final class BindHandler {
         assert (tcpIpEndpointManager.getEndpointQualifier() != EndpointQualifier.MEMBER
                 || connection.getType() == ConnectionType.MEMBER) : "When handling MEMBER connections, connection type"
                 + " must be already set";
-        boolean isMemberConnection = connection.getType() == ConnectionType.MEMBER;
+        boolean isMemberConnection = (connection.getType() == ConnectionType.MEMBER
+                && (tcpIpEndpointManager.getEndpointQualifier() == EndpointQualifier.MEMBER
+                    || unifiedEndpointManager));
+        boolean mustRegisterRemoteSocketAddress = !bindMessage.isReply();
+
+        Address remoteEndpoint = null;
+        if (isMemberConnection) {
+            // when a member connection is being bound on the connection initiator side
+            // add the remote socket address as last alias. This way the intended public
+            // address of the target member will be set correctly in TcpIpConnection.setEndpoint.
+            if (mustRegisterRemoteSocketAddress) {
+                allAliases.add(new Address(connection.getRemoteSocketAddress()));
+            }
+        } else {
+            // when not a member connection, register the remote socket address
+            remoteEndpoint = new Address(connection.getRemoteSocketAddress());
+        }
+
         return bind0(connection,
-                isMemberConnection ? null : new Address(connection.getRemoteSocketAddress()),
+                remoteEndpoint,
                 allAliases,
                 bindMessage.isReply());
     }
@@ -165,10 +186,16 @@ final class BindHandler {
             return false;
         }
 
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest("Registering connection " + connection + " to address " + remoteEndpoint);
+        }
         boolean returnValue = tcpIpEndpointManager.registerConnection(remoteEndpoint, connection);
 
         if (remoteAddressAliases != null) {
             for (Address remoteAddressAlias : remoteAddressAliases) {
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias);
+                }
                 tcpIpEndpointManager.connectionsMap.putIfAbsent(remoteAddressAlias, connection);
             }
         }
