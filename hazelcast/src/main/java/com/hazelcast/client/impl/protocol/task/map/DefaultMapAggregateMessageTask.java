@@ -59,7 +59,7 @@ public abstract class DefaultMapAggregateMessageTask<P>
         results.add(aggregationResult);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:npathcomplexity"})
     @Override
     protected Object reduce(Collection<AggregationResult> results) {
         if (results.isEmpty()) {

@@ -86,13 +86,11 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
         return map.containsKey(canonicalize(o));
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public Iterator<E> iterator() {
         return map.values().iterator();
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public Object[] toArray() {
         return map.values().toArray();
@@ -114,7 +112,6 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
         return map.remove(canonicalize(o)) != null;
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public boolean containsAll(Collection<?> c) {
         for (Object element : c) {
@@ -125,7 +122,6 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
         return true;
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public boolean addAll(Collection<? extends E> c) {
         boolean changed = false;
@@ -144,7 +140,6 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
         throw new UnsupportedOperationException();
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public boolean removeAll(Collection<?> c) {
         boolean changed = false;
