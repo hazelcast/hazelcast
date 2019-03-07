@@ -113,6 +113,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     @Override
     public boolean add(E e) {
+        typeInferrer.observe(e);
         return map.put(canonicalize(e), e) == null;
     }
 
