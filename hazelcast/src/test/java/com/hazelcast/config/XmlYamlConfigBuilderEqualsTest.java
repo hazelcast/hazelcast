@@ -94,7 +94,9 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
 
         // remove imports to prevent the test from failing with importing non-existing files
         fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
-        fullExampleYaml = fullExampleYaml.replace("import:\n    - your-configuration-YAML-file", "");
+        fullExampleYaml = fullExampleYaml
+                .replace("\r", "")
+                .replace("import:\n    - your-configuration-YAML-file", "");
 
         // create file to the working directory needed for the EncryptionReplacer
         createPasswordFile("password.txt", "h4z3lc4$t");
