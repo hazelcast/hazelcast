@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -33,7 +34,7 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     CacheEventJournalReadResultSetImpl(
             int minSize, int maxSize, SerializationService serializationService,
             final Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            final Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+            final Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection
     ) {
         super(minSize, maxSize, serializationService,
                 predicate == null ? null : new Predicate<InternalEventJournalCacheEvent>() {
@@ -69,9 +70,9 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     @SerializableByConvention
     private static class ProjectionAdapter<K, V, T> extends Projection<InternalEventJournalCacheEvent, T> {
 
-        private final Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
+        private final Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
 
-        ProjectionAdapter(Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection) {
+        ProjectionAdapter(Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection) {
             this.projection = projection;
         }
 
@@ -79,7 +80,7 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
         @SuppressWarnings("unchecked")
         @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
         public T transform(InternalEventJournalCacheEvent input) {
-            return projection.transform((DeserializingEventJournalCacheEvent<K, V>) input);
+            return projection.apply((DeserializingEventJournalCacheEvent<K, V>) input);
         }
     }
 }

@@ -35,7 +35,7 @@ public final class PacketDispatcher implements Consumer<Packet> {
     private final ILogger logger;
     private final Consumer<Packet> eventService;
     private final Consumer<Packet> operationExecutor;
-    private final Consumer<Packet> jetService;
+    private final Consumer<Packet> jetPacketConsumer;
     private final Consumer<Packet> responseHandler;
     private final Consumer<Packet> invocationMonitor;
 
@@ -44,13 +44,13 @@ public final class PacketDispatcher implements Consumer<Packet> {
                             Consumer<Packet> responseHandler,
                             Consumer<Packet> invocationMonitor,
                             Consumer<Packet> eventService,
-                            Consumer<Packet> jetService) {
+                            Consumer<Packet> jetPacketConsumer) {
         this.logger = logger;
         this.responseHandler = responseHandler;
         this.eventService = eventService;
         this.invocationMonitor = invocationMonitor;
         this.operationExecutor = operationExecutor;
-        this.jetService = jetService;
+        this.jetPacketConsumer = jetPacketConsumer;
     }
 
     @Override
@@ -76,7 +76,7 @@ public final class PacketDispatcher implements Consumer<Packet> {
                     endpointManager.accept(packet);
                     break;
                 case JET:
-                    jetService.accept(packet);
+                    jetPacketConsumer.accept(packet);
                     break;
                 default:
                     logger.severe("Header flags [" + Integer.toBinaryString(packet.getFlags())

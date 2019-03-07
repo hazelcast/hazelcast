@@ -56,7 +56,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Helper to ClientConnectionManager.
- * selecting owner connection, connecting and disconnecting from cluster implemented in this class.
+ * Implemented in this class: selecting owner connection, connecting and disconnecting from the cluster.
  */
 public class ClusterConnectorServiceImpl implements ClusterConnectorService, ConnectionListener {
 
@@ -150,25 +150,25 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onClusterConnect();
         } catch (ConfigurationException e) {
-            logger.warning("Exception during initial connection to " + address + ", exception " + e);
+            logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw rethrow(e);
         } catch (IllegalStateException e) {
-            logger.warning("Exception during initial connection to " + address + ", exception " + e);
+            logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw e;
         } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + address + ", exception " + e);
+            logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + address + ", exception " + e);
+            logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
@@ -190,7 +190,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
     private void connectToClusterInternal() {
         CandidateClusterContext currentClusterContext = discoveryService.current();
-        logger.info("Trying to connect to cluster with name : " + currentClusterContext.getName());
+        logger.info("Trying to connect to cluster with name: " + currentClusterContext.getName());
         if (connectToCandidate(currentClusterContext)) {
             return;
         }
@@ -202,7 +202,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         while (discoveryService.hasNext() && client.getLifecycleService().isRunning()) {
             CandidateClusterContext candidateClusterContext = discoveryService.next();
             beforeClusterSwitch(candidateClusterContext);
-            logger.info("Trying to connect to next cluster with name : " + candidateClusterContext.getName());
+            logger.info("Trying to connect to next cluster with name: " + candidateClusterContext.getName());
 
             if (connectToCandidate(candidateClusterContext)) {
                 //reset queryCache context, publishes eventLostEvent to all caches
@@ -242,7 +242,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             Collection<Address> addresses = getPossibleMemberAddresses(context.getAddressProvider());
             for (Address address : addresses) {
                 if (!client.getLifecycleService().isRunning()) {
-                    throw new IllegalStateException("Giving up on retrying to connect to cluster since client is shutdown.");
+                    throw new IllegalStateException("Giving up retrying to connect to cluster since client is shutdown.");
                 }
                 triedAddresses.add(address);
                 try {
@@ -262,7 +262,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             }
 
         } while (waitStrategy.sleep());
-        logger.warning("Unable to connect to any address for cluster:  " + context.getName()
+        logger.warning("Unable to connect to any address for cluster: " + context.getName()
                 + ". The following addresses were tried: " + triedAddresses);
         return false;
     }
@@ -275,14 +275,14 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
                 try {
                     connectToClusterInternal();
                 } catch (Exception e) {
-                    logger.warning("Could not connect to any cluster, shutting down the client. " + e.getMessage());
+                    logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try {
                                 client.getLifecycleService().shutdown();
                             } catch (Exception exception) {
-                                logger.severe("Exception during client shutdown ", exception);
+                                logger.severe("Exception during client shutdown", exception);
                             }
                         }
                     }, client.getName() + ".clientShutdown-").start();
@@ -409,11 +409,11 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         public boolean sleep() {
             attempt++;
             if (attempt >= connectionAttemptLimit) {
-                logger.warning(String.format("Unable to get alive cluster connection, attempt %d of %d.", attempt,
+                logger.warning(String.format("Unable to get live cluster connection, attempt %d of %d.", attempt,
                         connectionAttemptLimit));
                 return false;
             }
-            logger.warning(String.format("Unable to get alive cluster connection, try in %d ms later, attempt %d of %d.",
+            logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt %d of %d.",
                     connectionAttemptPeriod, attempt, connectionAttemptLimit));
 
             try {
@@ -457,7 +457,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         public boolean sleep() {
             attempt++;
             if (failOnMaxBackoff && currentBackoffMillis >= maxBackoffMillis) {
-                logger.warning(String.format("Unable to get alive cluster connection, attempt %d.", attempt));
+                logger.warning(String.format("Unable to get live cluster connection, attempt %d.", attempt));
                 return false;
             }
             //random_between
@@ -465,8 +465,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             long actualSleepTime = (long) (currentBackoffMillis - (currentBackoffMillis * jitter)
                     + (currentBackoffMillis * jitter * random.nextDouble()));
 
-            logger.warning(String.format("Unable to get alive cluster connection, try in %d ms later, attempt %d "
-                    + ", cap retry timeout millis %d", actualSleepTime, attempt, maxBackoffMillis));
+            logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt %d"
+                    + ", retry timeout millis %d cap", actualSleepTime, attempt, maxBackoffMillis));
 
             try {
                 Thread.sleep(actualSleepTime);

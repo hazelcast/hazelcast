@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.projection.Projections;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.jitter.JitterRule;
@@ -117,7 +116,7 @@ public abstract class AbstractEventJournalBounceTest {
                 final ReadResultSet<T> partitionEvents = reader.readFromEventJournal(
                         state.getOldestSequence(), 1,
                         (int) (state.getNewestSequence() - state.getOldestSequence() + 1), i,
-                        new TruePredicate<T>(), Projections.<T>identity()).get();
+                        new TruePredicate<T>(), new IdentityFunction<T>()).get();
                 for (T event : partitionEvents) {
                     events.add(event);
                 }

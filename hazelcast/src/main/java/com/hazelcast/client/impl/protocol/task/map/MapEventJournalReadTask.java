@@ -24,11 +24,11 @@ import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 
 import java.security.Permission;
@@ -60,7 +60,7 @@ public class MapEventJournalReadTask<K, V, T>
 
     @Override
     protected Operation prepareOperation() {
-        final Projection<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
+        final Function<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalMapEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
         return new MapEventJournalReadOperation<K, V, T>(
                 parameters.name, parameters.startSequence, parameters.minSize,

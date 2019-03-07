@@ -28,35 +28,26 @@ import com.hazelcast.cache.ICache;
  * use of reflection and/or dynamic proxies (e.g. Mockito, Spring etc) to operate on {@link HazelcastInstance} when JCache
  * is not on the classpath.
  * See also related issue https://github.com/hazelcast/hazelcast/issues/8352.
- * </p>
  *
  * @since 3.7
  */
 public interface ICacheManager {
 
     /**
-     * <p>
      * Returns the cache instance with the specified prefixed cache name.
-     * </p>
-     *
      * <p>
-     * Prefixed cache name is the name with URI and classloader prefixes if available.
+     * Prefixed cache name is the name with URI and classloader prefixes, if available.
      * There is no Hazelcast prefix ({@code /hz/}). For example, {@code myURI/foo}.
      *
-     * <pre>
-     * <code>
-     *     &lt;prefixed_cache_name&gt; = [&lt;uri_prefix&gt;/] + [&lt;cl_prefix&gt;/] + &lt;pure_cache_name&gt;
-     * </code>
-     * </pre>
+     * <pre>{@code
+     *     <prefixed_cache_name> = [<uri_prefix>/] + [<cl_prefix>/] + <pure_cache_name>
+     * }</pre>
      * where {@code <pure_cache_name>} is the cache name without any prefix. For example {@code foo}.
-     *
+     * <p>
      * As seen from the definition, URI and classloader prefixes are optional.
-     *
-     * URI prefix is generated as content of this URI as a US-ASCII string. ({@code uri.toASCIIString()})
-     * Classloader prefix is generated as string representation of the specified classloader. ({@code cl.toString()})
-     *
-     * @see com.hazelcast.cache.CacheUtil#getPrefixedCacheName(String, java.net.URI, ClassLoader)
-     * </p>
+     * <p>
+     * URI prefix is generated as content of the URI as a US-ASCII string: ({@code uri.toASCIIString()}).
+     * Classloader prefix is generated as a string representation of the specified classloader: ({@code cl.toString()})
      *
      * @param name the prefixed name of the cache
      * @return the cache instance with the specified prefixed name
@@ -65,6 +56,8 @@ public interface ICacheManager {
      *                                                      with the specified prefixed name
      * @throws java.lang.IllegalStateException              if a valid JCache library does not exist in the classpath
      *                                                      ({@code 1.0.0-PFD} or {@code 0.x} versions are not valid)
+     *
+     * @see com.hazelcast.cache.CacheUtil#getPrefixedCacheName(String, java.net.URI, ClassLoader)
      */
     <K, V> ICache<K, V> getCache(String name);
 }

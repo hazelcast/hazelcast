@@ -47,10 +47,10 @@ import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 
 import javax.cache.CacheException;
@@ -534,7 +534,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
             int maxSize,
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+            Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection
     ) {
         if (maxSize < minSize) {
             throw new IllegalArgumentException("maxSize " + maxSize

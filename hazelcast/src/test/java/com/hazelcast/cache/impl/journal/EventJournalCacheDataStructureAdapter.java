@@ -24,9 +24,9 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
-import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.util.function.Function;
 import com.hazelcast.util.function.Predicate;
 
 import javax.cache.Cache;
@@ -111,7 +111,7 @@ public class EventJournalCacheDataStructureAdapter<K, V>
             int maxSize,
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+            Function<? super EventJournalCacheEvent<K, V>, ? extends T> projection
     ) {
         final EventJournalReader<EventJournalCacheEvent<K, V>> reader
                 = (EventJournalReader<EventJournalCacheEvent<K, V>>) this.cache;

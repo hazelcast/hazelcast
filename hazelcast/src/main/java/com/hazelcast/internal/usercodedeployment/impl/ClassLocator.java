@@ -44,9 +44,9 @@ import static java.security.AccessController.doPrivileged;
  * Provides classes to a local member.
  *
  * It's called by {@link UserCodeDeploymentClassLoader} when a class
- * is not found on a local classpath.
+ * is not found on local classpath.
  *
- * The current implementation can consult a cache and when the class is not found then it consults
+ * The current implementation can consult the cache and when the class is not found then it consults
  * remote members.
  */
 public final class ClassLocator {
@@ -86,7 +86,7 @@ public final class ClassLocator {
     public Class<?> handleClassNotFoundException(String name)
             throws ClassNotFoundException {
         if (!classNameFilter.accept(name)) {
-            throw new ClassNotFoundException("Class " + name + " is not allowed to be loaded from other members.");
+            throw new ClassNotFoundException("Class " + name + " is not allowed to be loaded from other members");
         }
         Class<?> clazz = tryToGetClassFromLocalCache(name);
         if (clazz != null) {
@@ -108,9 +108,9 @@ public final class ClassLocator {
                     if (classSource.getClazz(name) != null) {
                         if (!Arrays.equals(classDef, classSource.getClassDefinition(name))) {
                             throw new IllegalStateException("Class " + name
-                                    + " is already in a local cache and conflicting byte code representation");
+                                    + " is already in local cache and has conflicting byte code representation");
                         } else if (logger.isFineEnabled()) {
-                            logger.finest("Class " + name + " is already in a local cache. ");
+                            logger.finest("Class " + name + " is already in local cache with equal byte code");
                         }
                         return;
                     }
@@ -143,7 +143,7 @@ public final class ClassLocator {
                     Class clazz = classSource.getClazz(name);
                     if (clazz != null) {
                         if (logger.isFineEnabled()) {
-                            logger.finest("Class " + name + " is already in a local cache. ");
+                            logger.finest("Class " + name + " is already in local cache");
                         }
                         return clazz;
                     }
@@ -154,7 +154,7 @@ public final class ClassLocator {
                 }
                 ClassData classData = fetchBytecodeFromRemote(name);
                 if (classData == null) {
-                    throw new ClassNotFoundException("Failed to load class " + name + " from other members.");
+                    throw new ClassNotFoundException("Failed to load class " + name + " from other members");
                 }
 
                 Map<String, byte[]> innerClassDefinitions = classData.getInnerClassDefinitions();
@@ -177,7 +177,7 @@ public final class ClassLocator {
             Class clazz = classSource.getClazz(name);
             if (clazz != null) {
                 if (logger.isFineEnabled()) {
-                    logger.finest("Class " + name + " is already in a local cache. ");
+                    logger.finest("Class " + name + " is already in local cache");
                 }
                 return clazz;
             }
@@ -188,7 +188,7 @@ public final class ClassLocator {
             Class clazz = classSource.getClazz(name);
             if (clazz != null) {
                 if (logger.isFineEnabled()) {
-                    logger.finest("Class " + name + " is already in a local cache. ");
+                    logger.finest("Class " + name + " is already in local cache");
                 }
                 return clazz;
             }
@@ -236,7 +236,7 @@ public final class ClassLocator {
                     return classData;
                 }
             } catch (InterruptedException e) {
-                // question: should we give-up on loading and this point and simply throw ClassNotFoundException?
+                // question: should we give-up on loading at this point and simply throw ClassNotFoundException?
                 interrupted = true;
             } catch (Exception e) {
                 if (logger.isFinestEnabled()) {
