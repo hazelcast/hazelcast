@@ -17,7 +17,7 @@
 package com.hazelcast.spi.tenantcontrol;
 
 import com.hazelcast.spi.annotation.Beta;
-import com.hazelcast.spi.impl.NoopTenantControl;
+import com.hazelcast.spi.impl.tenantcontrol.NoopTenantControl;
 
 import java.io.Closeable;
 import java.io.Serializable;
@@ -39,21 +39,6 @@ public interface TenantControl extends Serializable {
      * Default no-op tenant control
      */
     TenantControl NOOP_TENANT_CONTROL = new NoopTenantControl();
-
-    /**
-     * To be called from the application's thread to connect a Hazelcast object
-     * with a particular tenant, e.g. JCache-based cache with a particular application
-     * Implementor will save the current thread context and return it
-     * Further operations from other threads will use the returned context
-     * for this particular Hazelcast object to re-establish the invocation context
-     *
-     * @param event hook to destroy any Hazelcast object when the tenant is destroyed,
-     * This is used, for example, to delete all associated caches from the application when
-     * it gets undeployed, so there are no ClassCastExceptions afterwards
-     *
-     * @return new TenantControl instance with the saved state of the current tenant
-     */
-    TenantControl saveCurrentTenant(DestroyEventContext event);
 
     /**
      * Establish this tenant's thread-local context

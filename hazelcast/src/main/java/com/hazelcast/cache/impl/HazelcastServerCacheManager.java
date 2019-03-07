@@ -27,7 +27,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceCacheManager;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -61,7 +60,6 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
     private final HazelcastInstanceImpl instance;
     private final NodeEngine nodeEngine;
     private final CacheService cacheService;
-    private final ILogger logger;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
@@ -86,7 +84,6 @@ public class HazelcastServerCacheManager extends AbstractHazelcastCacheManager {
         }
         nodeEngine = instance.node.getNodeEngine();
         cacheService = nodeEngine.getService(ICacheService.SERVICE_NAME);
-        logger = nodeEngine.getLogger(HazelcastCacheManager.class);
     }
 
     @Override

@@ -40,6 +40,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.Closeable;
 
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
+import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 
 /**
@@ -78,9 +79,14 @@ public abstract class CacheOperation extends AbstractNamedOperation
         try {
             recordStore = getOrCreateStoreIfAllowed();
             // establish tenant application's thread-local context for this cache operation
-            CacheConfig<?, ?> cacheConfig = cacheService.getCacheConfig(name);
+            CacheConfig<?, ?> cacheConfig;
+            if (recordStore != null) {
+                cacheConfig = recordStore.getConfig();
+            } else {
+                cacheConfig = cacheService.getCacheConfig(name);
+            }
             if (cacheConfig != null) {
-                tenantContext = cacheConfig.getTenantControl().setTenant(true);
+                tenantContext = getTenantControl(cacheConfig).setTenant(true);
             }
         } catch (CacheNotExistsException e) {
             dispose();
