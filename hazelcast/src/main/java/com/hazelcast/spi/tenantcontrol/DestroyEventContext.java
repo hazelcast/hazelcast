@@ -28,7 +28,7 @@ public interface DestroyEventContext<T> {
     /**
      * Called to decouple Hazelcast object from the tenant
      *
-     * @param context to use to delete the cache
+     * @param context to use to destroy the Hazelcast object
      */
     void destroy(T context);
 
@@ -37,4 +37,16 @@ public interface DestroyEventContext<T> {
      * what context to send to the destroy() method
      */
     Class<? extends T> getContextType();
+
+    /**
+     *
+     * @return
+     */
+    String getDistributedObjectName();
+
+    /**
+     *
+     * @return
+     */
+    String getServiceName();
 }

@@ -14,50 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.tenantcontrol;
 
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
+import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 
-import java.io.Closeable;
+import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 
 /**
- * Default no-op implementation of TenantControl
+ * Default implementation of {@link TenantControlFactory}, always returns a no-op tenant control
  */
-@SerializableByConvention
-public final class NoopTenantControl implements TenantControl {
+public class NoopTenantControlFactory implements TenantControlFactory {
 
     @Override
     public TenantControl saveCurrentTenant(DestroyEventContext event) {
         return NOOP_TENANT_CONTROL;
-    }
-
-    @Override
-    public Closeable setTenant(boolean createRequestScope) {
-        return NoopCloseable.INSTANCE;
-    }
-
-    @Override
-    public void unregister() {
-    }
-
-    private static final class NoopCloseable implements Closeable {
-
-        static final NoopCloseable INSTANCE = new NoopCloseable();
-
-        @Override
-        public void close() {
-        }
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof NoopTenantControl;
-    }
-
-    @Override
-    public int hashCode() {
-        return 0;
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
+import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cache.CacheTestSupport.getCacheService;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -154,28 +156,21 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         destroyEventContext.get().destroy(cache);
 
         assertEquals(TenantControl.NOOP_TENANT_CONTROL,
-                getCacheService(hz).getCacheConfig(cache.getPrefixedName()).getTenantControl());
+                getTenantControl(getCacheService(hz).getCacheConfig(cache.getPrefixedName())));
     }
 
     private void assertTenantControlCreated(HazelcastInstance instance) {
         ICacheService cacheService = getCacheService(instance);
         CacheConfig cacheConfig = cacheService.getCacheConfig(CacheUtil.getDistributedObjectName(cacheName));
-        assertNotNull("TenantControl should not be null", cacheConfig.getTenantControl());
+        assertNotNull("TenantControl should not be null", getTenantControl(cacheConfig));
         if (hasTenantControl) {
-            assertInstanceOf(CountingTenantControl.class, cacheConfig.getTenantControl());
+            assertInstanceOf(CountingTenantControl.class, getTenantControl(cacheConfig));
         } else {
-            assertEquals(TenantControl.NOOP_TENANT_CONTROL, cacheConfig.getTenantControl());
+            assertEquals(TenantControl.NOOP_TENANT_CONTROL, getTenantControl(cacheConfig));
         }
     }
 
     public static class CountingTenantControl implements TenantControl {
-
-        @Override
-        public TenantControl saveCurrentTenant(DestroyEventContext event) {
-            saveCurrentCount.incrementAndGet();
-            destroyEventContext.set(event);
-            return this;
-        }
 
         @Override
         public Closeable setTenant(boolean createRequestScope) {
@@ -194,5 +189,13 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         }
     }
 
+    public static class CountingTenantControlFactory implements TenantControlFactory {
+        @Override
+        public TenantControl saveCurrentTenant(DestroyEventContext event) {
+            saveCurrentCount.incrementAndGet();
+            destroyEventContext.set(event);
+            return new CountingTenantControl();
+        }
+    }
 
 }

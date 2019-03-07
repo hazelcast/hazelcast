@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -105,29 +106,29 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             // establish thread-local context for this cache's tenant application before possibly creating records
             // This is so CDI / JPA / EJB methods can be called from other than JavaEE threads
-            Closeable tenantContext = service.getCacheConfig(entry.getKey()).getTenantControl().setTenant(true);
+            Closeable tenantContext = getTenantControl(service.getCacheConfig(entry.getKey())).setTenant(true);
             ICacheRecordStore cache;
             try {
                 cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
                 cache.reset();
+                Map<Data, CacheRecord> map = entry.getValue();
+
+                Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    if (cache.evictIfRequired()) {
+                        // No need to continue replicating records anymore.
+                        // We are already over eviction threshold, each put record will cause another eviction.
+                        break;
+                    }
+
+                    Map.Entry<Data, CacheRecord> next = iterator.next();
+                    Data key = next.getKey();
+                    CacheRecord record = next.getValue();
+                    iterator.remove();
+                    cache.putRecord(key, record, false);
+                }
             } finally {
                 tenantContext.close();
-            }
-            Map<Data, CacheRecord> map = entry.getValue();
-
-            Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
-            while (iterator.hasNext()) {
-                if (cache.evictIfRequired()) {
-                    // No need to continue replicating records anymore.
-                    // We are already over eviction threshold, each put record will cause another eviction.
-                    break;
-                }
-
-                Map.Entry<Data, CacheRecord> next = iterator.next();
-                Data key = next.getKey();
-                CacheRecord record = next.getValue();
-                iterator.remove();
-                cache.putRecord(key, record, false);
             }
         }
         data.clear();

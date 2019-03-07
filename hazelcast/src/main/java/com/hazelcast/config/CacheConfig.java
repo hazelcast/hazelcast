@@ -641,11 +641,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
                 + '}';
     }
 
-    public TenantControl getTenantControl() {
+    TenantControl getTenantControl() {
         return tenantControl;
     }
 
-    public void setTenantControl(TenantControl tenantControl) {
+    void setTenantControl(TenantControl tenantControl) {
         this.tenantControl = tenantControl;
     }
 

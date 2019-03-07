@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -77,7 +78,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     @Override
     protected void writeTenant(ObjectDataOutput out) throws IOException {
         if (out.getVersion().isGreaterOrEqual(V3_12)) {
-            out.writeObject(getTenantControl());
+            out.writeObject(CacheConfigAccessor.getTenantControl(this));
         }
     }
 
@@ -85,7 +86,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     protected void readTenant(ObjectDataInput in) throws IOException {
         if (in.getVersion().isGreaterOrEqual(V3_12)) {
             TenantControl tc = in.readObject();
-            setTenantControl(tc);
+            CacheConfigAccessor.setTenantControl(this, tc);
         }
     }
 

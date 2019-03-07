@@ -28,6 +28,7 @@ import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.cache.impl.tenantcontrol.CacheDestroyEventContext;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
@@ -51,7 +52,7 @@ import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.partition.MigrationEndpoint;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
+import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -77,9 +78,11 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
+import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
+import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.singleton;
 
@@ -87,7 +90,7 @@ import static java.util.Collections.singleton;
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
         PartitionAwareService, QuorumAwareService, SplitBrainHandlerService, ClusterStateListener {
 
-    public static final String TENANT_CONTROL = "com.hazelcast.spi.tenantcontrol.TenantControl";
+    public static final String TENANT_CONTROL_FACTORY = "com.hazelcast.spi.tenantcontrol.TenantControlFactory";
     private static final String SETUP_REF = "setupRef";
 
     /**
@@ -404,7 +407,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             // decouple this cache from the tenant
             // the tenant will unregister it's event listeners so the tenant itself
             // can be garbage collected
-            config.getTenantControl().unregister();
+            getTenantControl(config).unregister();
             logger.info("Removed cache config: " + config);
         }
         return config;
@@ -493,24 +496,25 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public void setTenantControl(CacheConfig cacheConfig) {
-        if (!NOOP_TENANT_CONTROL.equals(cacheConfig.getTenantControl())) {
+        if (!NOOP_TENANT_CONTROL.equals(getTenantControl(cacheConfig))) {
             // a tenant control has already been explicitly set for the cache config
             return;
         }
         // associate cache config with the current thread's tenant
         // and add hook so when the tenant is destroyed, so is the cache config
-        TenantControl tenantControl = null;
+        TenantControlFactory tenantControlFactory = null;
         try {
-            tenantControl = ServiceLoader.load(TenantControl.class, TENANT_CONTROL, nodeEngine.getConfigClassLoader());
+            tenantControlFactory = ServiceLoader.load(TenantControlFactory.class,
+                    TENANT_CONTROL_FACTORY, nodeEngine.getConfigClassLoader());
         } catch (Exception e) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Could not load service provider for TenantControl", e);
             }
         }
-        if (tenantControl == null) {
-            tenantControl = NOOP_TENANT_CONTROL;
+        if (tenantControlFactory == null) {
+            tenantControlFactory = NOOP_TENANT_CONTROL_FACTORY;
         }
-        cacheConfig.setTenantControl(tenantControl.saveCurrentTenant(
+        CacheConfigAccessor.setTenantControl(cacheConfig, tenantControlFactory.saveCurrentTenant(
                 new CacheDestroyEventContext(cacheConfig.getName())));
     }
 

@@ -28,6 +28,7 @@ import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import javax.cache.Cache;
 import java.io.IOException;
 
+import static com.hazelcast.config.CacheConfigAccessor.setTenantControl;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 
 public class CacheDestroyEventContext implements DestroyEventContext<Cache>, IdentifiedDataSerializable {
@@ -47,7 +48,7 @@ public class CacheDestroyEventContext implements DestroyEventContext<Cache>, Ide
             CacheProxy cache = (CacheProxy) context;
             CacheService cacheService = (CacheService) cache.getService();
             CacheConfig cacheConfig = cacheService.getCacheConfig(cache.getPrefixedName());
-            cacheConfig.setTenantControl(NOOP_TENANT_CONTROL);
+            setTenantControl(cacheConfig, NOOP_TENANT_CONTROL);
         }
     }
 
@@ -76,5 +77,15 @@ public class CacheDestroyEventContext implements DestroyEventContext<Cache>, Ide
     public void readData(ObjectDataInput in)
             throws IOException {
         cacheName = in.readUTF();
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return cacheName;
+    }
+
+    @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
     }
 }
