@@ -51,8 +51,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
@@ -60,7 +60,7 @@ import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeThat;
 
 /**
@@ -114,8 +114,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
         final CountDownLatch node1Started = new CountDownLatch(1);
         final CountDownLatch node1FinishedLoading = new CountDownLatch(1);
-        final AtomicLong thread1Finished = new AtomicLong(-1L);
-        final AtomicLong thread2Finished = new AtomicLong(-1L);
+        final AtomicBoolean thread1FinishedFirst = new AtomicBoolean();
 
         // thread 1: start a single member and load the data
         Thread thread1 = new Thread(new Runnable() {
@@ -129,7 +128,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 IMap<String, String> map = hcInstance.getMap(MAP_NAME);
                 map.size();
                 node1FinishedLoading.countDown();
-                thread1Finished.set(System.currentTimeMillis());
             }
         }, "Thread 1");
         thread1.start();
@@ -143,8 +141,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 try {
                     hcInstance.getMap(MAP_NAME);
                     final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
-                    node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
-                    thread2Finished.set(System.currentTimeMillis());
+                    thread1FinishedFirst.set(node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS));
                 } catch (InterruptedException e) {
                     ignore(e);
                 }
@@ -157,9 +154,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         thread2.join();
 
         // assert correct shutdown order
-        if (thread1Finished.get() > thread2Finished.get()) {
-            fail("Thread 2 was shutdown before thread 1.");
-        }
+        assertTrue("Thread 2 was shutdown before thread 1.", thread1FinishedFirst.get());
     }
 
     @Test(timeout = 600000)
