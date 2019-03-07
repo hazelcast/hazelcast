@@ -19,6 +19,7 @@ package com.hazelcast.cp;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -103,6 +104,35 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * sufficient to maintain all CP data structure instances. Custom CP groups
  * could be created when throughput of the CP subsystem is needed to be
  * improved.
+ * <p>
+ * The CP subsystem runs a discovery process in the background on cluster
+ * startup. When it is enabled by setting a positive value to
+ * {@link CPSubsystemConfig#setCPMemberCount(int)}, say N, the first N members
+ * in the cluster member list initiate the discovery process. Other Hazelcast
+ * members skip this step. The CP subsystem discovery process runs out of the
+ * box on top of Hazelcast's cluster member list without requiring any custom
+ * configuration for different environments. It is completed when each one of
+ * the first N Hazelcast members initializes its local CP member list and
+ * commits it to the Metadata CP group. The Metadata CP group is initialized
+ * among those CP members as well. <strong>A soon-to-be CP member terminates
+ * itself if any of the following conditions occur before the discovery process
+ * is completed:</strong>
+ * <ul>
+ * <li>Any Hazelcast member leaves the cluster,</li>
+ * <li>The local Hazelcast member commits a CP member list which is different
+ * from other members' committed CP member lists,</li>
+ * <li>The local Hazelcast member list fails to commit its discovered CP member
+ * list for any reason.</li>
+ * </ul>
+ * <p>
+ * When the CP subsystem is restarted via
+ * {@link CPSubsystemManagementService#restart()}, the CP subsystem discovery
+ * process is triggered again. However, it does not terminate Hazelcast members
+ * if the discovery fails for the aforementioned reasons, because Hazelcast
+ * members are likely to contain data for AP data structures and termination
+ * can cause data loss. Hence, you need to observe the cluster and check if
+ * the discovery process completes successfully on CP subsystem restart.
+ * See {@link CPSubsystemManagementService#restart()} for more details.
  * <p>
  * <strong>The CP data structure proxies differ from the other Hazelcast data
  * structure proxies in one aspect, that is, if you call the
@@ -219,8 +249,11 @@ public interface CPSubsystem {
      * This field is initialized when the local Hazelcast member is one of
      * the first {@link CPSubsystemConfig#getCPMemberCount()} members
      * in the cluster and the CP subsystem discovery process is completed.
+     * This method fails with {@link HazelcastException} if the CP subsystem
+     * is not enabled.
      *
      * @return local CP member if available, null otherwise
+     * @throws HazelcastException if the CP subsystem is not enabled
      */
     CPMember getLocalCPMember();
 
