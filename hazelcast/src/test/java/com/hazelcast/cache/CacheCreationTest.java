@@ -230,7 +230,7 @@ public class CacheCreationTest extends HazelcastTestSupport {
                 .setEvictionConfig(new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU));
     }
 
-    private Config createBasicConfig() {
+    protected Config createBasicConfig() {
         Config config = new Config();
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig()
