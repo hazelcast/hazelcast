@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
+package com.hazelcast.internal.util.executor;
 
-public enum ExecutorType {
-    /**
-     * Executor will use share ThreadPoolExecutor with unlimited pools size with other CACHED Executors
-     */
-    CACHED,
-    /**
-     * Executor will have its own ThreadPoolExecutor
-     */
-    CONCRETE
+/**
+ * Marker interface for threads that waiting for the responses operations are not allowed.
+ * InvocationFuture.get/join operations have the following check
+ * assert !(waiter instanceof UnblockableThread);
+ */
+public interface UnblockableThread {
 }
