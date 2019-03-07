@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Properties;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
@@ -574,6 +576,164 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
         Config config = new UrlYamlConfig("file:///" + file.getPath(), properties);
 
         assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Override
+    @Test
+    public void testReplaceVariablesUseSystemProperties() {
+        String configYaml = ""
+                + "hazelcast:\n"
+                + "  properties:\n"
+                + "    prop: ${variable}";
+
+        System.setProperty("variable", "foobar");
+        Config config = buildConfig(configYaml);
+
+        assertEquals("foobar", config.getProperty("prop"));
+    }
+
+    @Test
+    public void testImportRedefinesSameConfigScalarThrows() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast:\n"
+                + "  group:\n"
+                + "    name: name1";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name: name2";
+
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/group/name"));
+
+        buildConfig(yaml, "config.location", file.getAbsolutePath());
+    }
+
+    @Test
+    public void testImportSameScalarConfig() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast:\n"
+                + "  group:\n"
+                + "    name: name";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name: name";
+
+        Config config = buildConfig(yaml, "config.location", file.getAbsolutePath());
+        assertEquals("name", config.getGroupConfig().getName());
+    }
+
+    @Test
+    public void testImportNodeScalarVsSequenceThrows() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast:\n"
+                + "  group:\n"
+                + "    name: name1";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name:\n"
+                + "      - seqName: {}";
+
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/group/name"));
+
+        buildConfig(yaml, "config.location", file.getAbsolutePath());
+    }
+
+    @Test
+    public void testImportNodeScalarVsMappingThrows() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast:\n"
+                + "  group:\n"
+                + "    name: name1";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name: {}";
+
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/group/name"));
+
+        buildConfig(yaml, "config.location", file.getAbsolutePath());
+    }
+
+    @Test
+    public void testImportNodeSequenceVsMappingThrows() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast:\n"
+                + "  group:\n"
+                + "    name:\n"
+                + "      - seqname";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  group:\n"
+                + "    name: {}";
+
+        rule.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast/group/name"));
+
+        buildConfig(yaml, "config.location", file.getAbsolutePath());
+    }
+
+    @Test
+    public void testImportNodeSequenceVsSequenceMerges() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String importedYaml = ""
+                + "hazelcast:\n"
+                + "  listeners:\n"
+                + "    - com.hazelcast.examples.MembershipListener\n";
+        writeStringToStreamAndClose(os, importedYaml);
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  import:\n"
+                + "    - ${config.location}\n"
+                + "  listeners:\n"
+                + "    - com.hazelcast.examples.MigrationListener\n";
+
+        Config config = buildConfig(yaml, "config.location", file.getAbsolutePath());
+        List<ListenerConfig> listenerConfigs = config.getListenerConfigs();
+        assertEquals(2, listenerConfigs.size());
+        for (ListenerConfig listenerConfig : listenerConfigs) {
+            assertTrue("com.hazelcast.examples.MembershipListener".equals(listenerConfig.getClassName())
+                    || "com.hazelcast.examples.MigrationListener".equals(listenerConfig.getClassName()));
+        }
+
+    }
+
+    private static Config buildConfig(String yaml) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
+        YamlConfigBuilder configBuilder = new YamlConfigBuilder(bis);
+        return configBuilder.build();
     }
 
     private static Config buildConfig(String yaml, Properties properties) {

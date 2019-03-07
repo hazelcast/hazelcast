@@ -491,7 +491,7 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
                     upperCaseInternal(getTextContent(maxSizePolicy))));
         }
-        msc.setSize(getIntegerValue("max-size", attributes.getNamedItem("max-size").getNodeValue()));
+        msc.setSize(getIntegerValue("max-size", getTextContent(attributes.getNamedItem("max-size"))));
     }
 
     @Override
@@ -594,6 +594,13 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             String listenerClass = listenerNode.getNodeValue();
             cacheConfig.addCachePartitionLostListenerConfig(new CachePartitionLostListenerConfig(listenerClass));
+        }
+    }
+
+    @Override
+    protected void cacheListenerHandle(Node n, CacheSimpleConfig cacheSimpleConfig) {
+        for (Node listenerNode : childElements(n)) {
+            handleCacheEntryListenerNode(cacheSimpleConfig, listenerNode);
         }
     }
 

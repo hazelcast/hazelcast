@@ -358,7 +358,9 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     static ClientConfig buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        configBuilder.setProperties(properties);
+        if (properties != null) {
+            configBuilder.setProperties(properties);
+        }
         return configBuilder.build();
     }
 

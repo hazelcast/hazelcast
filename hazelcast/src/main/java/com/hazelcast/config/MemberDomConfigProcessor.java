@@ -1898,24 +1898,28 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void cacheListenerHandle(Node n, CacheSimpleConfig cacheSimpleConfig) {
+    protected void cacheListenerHandle(Node n, CacheSimpleConfig cacheSimpleConfig) {
         for (Node listenerNode : childElements(n)) {
             if ("cache-entry-listener".equals(cleanNodeName(listenerNode))) {
-                CacheSimpleEntryListenerConfig listenerConfig = new CacheSimpleEntryListenerConfig();
-                for (Node listenerChildNode : childElements(listenerNode)) {
-                    if ("cache-entry-listener-factory".equals(cleanNodeName(listenerChildNode))) {
-                        listenerConfig.setCacheEntryListenerFactory(getAttribute(listenerChildNode, "class-name"));
-                    }
-                    if ("cache-entry-event-filter-factory".equals(cleanNodeName(listenerChildNode))) {
-                        listenerConfig.setCacheEntryEventFilterFactory(getAttribute(listenerChildNode, "class-name"));
-                    }
-                }
-                NamedNodeMap attrs = listenerNode.getAttributes();
-                listenerConfig.setOldValueRequired(getBooleanValue(getTextContent(attrs.getNamedItem("old-value-required"))));
-                listenerConfig.setSynchronous(getBooleanValue(getTextContent(attrs.getNamedItem("synchronous"))));
-                cacheSimpleConfig.addEntryListenerConfig(listenerConfig);
+                handleCacheEntryListenerNode(cacheSimpleConfig, listenerNode);
             }
         }
+    }
+
+    protected void handleCacheEntryListenerNode(CacheSimpleConfig cacheSimpleConfig, Node listenerNode) {
+        CacheSimpleEntryListenerConfig listenerConfig = new CacheSimpleEntryListenerConfig();
+        for (Node listenerChildNode : childElements(listenerNode)) {
+            if ("cache-entry-listener-factory".equals(cleanNodeName(listenerChildNode))) {
+                listenerConfig.setCacheEntryListenerFactory(getAttribute(listenerChildNode, "class-name"));
+            }
+            if ("cache-entry-event-filter-factory".equals(cleanNodeName(listenerChildNode))) {
+                listenerConfig.setCacheEntryEventFilterFactory(getAttribute(listenerChildNode, "class-name"));
+            }
+        }
+        NamedNodeMap attrs = listenerNode.getAttributes();
+        listenerConfig.setOldValueRequired(getBooleanValue(getTextContent(attrs.getNamedItem("old-value-required"))));
+        listenerConfig.setSynchronous(getBooleanValue(getTextContent(attrs.getNamedItem("synchronous"))));
+        cacheSimpleConfig.addEntryListenerConfig(listenerConfig);
     }
 
     protected void mapWanReplicationRefHandle(Node n, MapConfig mapConfig) {
