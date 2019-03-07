@@ -22,7 +22,10 @@ import com.hazelcast.core.ICompletableFuture;
 import java.util.Collection;
 
 /**
- * The public API for managing CP sessions.
+ * The public API for managing CP sessions. CP sessions are used for tracking
+ * liveliness of Hazelcast servers and clients that hold CP resources.
+ *
+ * @see CPSession
  */
 public interface CPSessionManagementService {
 
