@@ -18,11 +18,14 @@ package com.hazelcast.cp.internal.datastructures.semaphore.operation;
 
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
+import com.hazelcast.cp.internal.datastructures.semaphore.AcquireInvocationKey;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphore;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -36,10 +39,12 @@ import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_S
  *
  * @see RaftSemaphore#acquire(AcquireInvocationKey, boolean)
  */
-public class AcquirePermitsOp extends AbstractSemaphoreOp implements IndeterminateOperationStateAware {
+public class AcquirePermitsOp extends AbstractSemaphoreOp implements CallerAware, IndeterminateOperationStateAware {
 
     private int permits;
     private long timeoutMs;
+    private Address callerAddress;
+    private long callId;
 
     public AcquirePermitsOp() {
     }
@@ -53,12 +58,19 @@ public class AcquirePermitsOp extends AbstractSemaphoreOp implements Indetermina
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         RaftSemaphoreService service = getService();
-        boolean acquired = service.acquirePermits(groupId, commitIndex, name, getSemaphoreEndpoint(),
-                invocationUid, permits, timeoutMs);
+        AcquireInvocationKey key = new AcquireInvocationKey(commitIndex, invocationUid, callerAddress, callId,
+                getSemaphoreEndpoint(), permits);
+        boolean acquired = service.acquirePermits(groupId, name, key, timeoutMs);
         if (!acquired && timeoutMs != 0) {
             return PostponedResponse.INSTANCE;
         }
         return acquired;
+    }
+
+    @Override
+    public void setCaller(Address callerAddress, long callId) {
+        this.callerAddress = callerAddress;
+        this.callId = callId;
     }
 
     @Override
@@ -76,6 +88,8 @@ public class AcquirePermitsOp extends AbstractSemaphoreOp implements Indetermina
         super.writeData(out);
         out.writeInt(permits);
         out.writeLong(timeoutMs);
+        out.writeObject(callerAddress);
+        out.writeLong(callId);
     }
 
     @Override
@@ -83,12 +97,16 @@ public class AcquirePermitsOp extends AbstractSemaphoreOp implements Indetermina
         super.readData(in);
         permits = in.readInt();
         timeoutMs = in.readLong();
+        callerAddress = in.readObject();
+        callId = in.readLong();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
         sb.append(", permits=").append(permits)
-          .append(", timeoutMs=").append(timeoutMs);
+          .append(", timeoutMs=").append(timeoutMs)
+          .append(", callerAddress=").append(callerAddress)
+          .append(", callId=").append(callId);
     }
 }

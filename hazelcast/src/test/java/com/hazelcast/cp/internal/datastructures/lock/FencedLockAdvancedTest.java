@@ -98,12 +98,46 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
     }
 
     @Test
+    public void testSuccessfulLockClearsWaitTimeouts() {
+        lock.lock();
+
+        CPGroupId groupId = lock.getGroupId();
+        HazelcastInstance leader = getLeaderInstance(instances, groupId);
+        final RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
+        final RaftLockRegistry registry = service.getRegistryOrNull(groupId);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                latch.countDown();
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse(service.getLiveOperations().isEmpty());
+            }
+        });
+
+        lock.unlock();
+
+        assertOpenEventually(latch);
+
+        assertTrue(registry.getWaitTimeouts().isEmpty());
+        assertTrue(service.getLiveOperations().isEmpty());
+    }
+
+
+    @Test
     public void testSuccessfulTryLockClearsWaitTimeouts() {
         lock.lock();
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
+        final RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
         final RaftLockRegistry registry = service.getRegistryOrNull(groupId);
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -119,6 +153,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
+                assertFalse(service.getLiveOperations().isEmpty());
             }
         });
 
@@ -127,6 +162,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
         assertOpenEventually(latch);
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
+        assertTrue(service.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -142,6 +178,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
 
         assertEquals(FencedLock.INVALID_FENCE, fence);
         assertTrue(registry.getWaitTimeouts().isEmpty());
+        assertTrue(service.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -150,7 +187,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
+        final RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
         final RaftLockRegistry registry = service.getRegistryOrNull(groupId);
 
         spawn(new Runnable() {
@@ -164,12 +201,14 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
+                assertFalse(service.getLiveOperations().isEmpty());
             }
         });
 
         lock.destroy();
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
+        assertTrue(service.getLiveOperations().isEmpty());
     }
 
     @Test

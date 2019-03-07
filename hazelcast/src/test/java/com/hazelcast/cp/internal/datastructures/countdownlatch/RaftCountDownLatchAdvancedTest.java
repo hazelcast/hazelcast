@@ -58,7 +58,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
 
     private HazelcastInstance[] instances;
     private ICountDownLatch latch;
-    private String objectName = "semaphore";
+    private String objectName = "latch";
     private String proxyName = objectName + "@group1";
     private int groupSize = 3;
 
@@ -93,7 +93,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
+        final RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
         final RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
         final CountDownLatch threadLatch = new CountDownLatch(1);
@@ -113,6 +113,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
+                assertFalse(service.getLiveOperations().isEmpty());
             }
         });
 
@@ -121,6 +122,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
         assertOpenEventually(threadLatch);
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
+        assertTrue(service.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -136,6 +138,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
 
         assertFalse(success);
         assertTrue(registry.getWaitTimeouts().isEmpty());
+        assertTrue(service.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -168,6 +171,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
         latch.destroy();
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
+        assertTrue(service.getLiveOperations().isEmpty());
     }
 
     @Test

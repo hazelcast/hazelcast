@@ -17,6 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKey;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -24,8 +25,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
@@ -37,39 +36,26 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * retry this request X, or send a new request Y. After it sends request Y,
  * it will not retry request X anymore.
  */
-public class AcquireInvocationKey implements WaitKey, IdentifiedDataSerializable {
+public class AcquireInvocationKey extends WaitKey implements IdentifiedDataSerializable {
 
-    private long commitIndex;
     private SemaphoreEndpoint endpoint;
-    private UUID invocationUid;
     private int permits;
 
     AcquireInvocationKey() {
     }
 
-    AcquireInvocationKey(long commitIndex, SemaphoreEndpoint endpoint, UUID invocationUid, int permits) {
+    public AcquireInvocationKey(long commitIndex, UUID invocationUid, Address callerAddress, long callId,
+                                SemaphoreEndpoint endpoint, int permits) {
+        super(commitIndex, invocationUid, callerAddress, callId);
         checkNotNull(endpoint);
-        checkNotNull(invocationUid);
         checkTrue(permits > 0, "permits must be positive");
-        this.commitIndex = commitIndex;
         this.endpoint = endpoint;
-        this.invocationUid = invocationUid;
         this.permits = permits;
-    }
-
-    @Override
-    public long commitIndex() {
-        return commitIndex;
     }
 
     @Override
     public long sessionId() {
         return endpoint.sessionId();
-    }
-
-    @Override
-    public UUID invocationUid() {
-        return invocationUid;
     }
 
     public SemaphoreEndpoint endpoint() {
@@ -96,21 +82,20 @@ public class AcquireInvocationKey implements WaitKey, IdentifiedDataSerializable
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(commitIndex);
+        super.writeData(out);
         out.writeObject(endpoint);
-        writeUUID(out, invocationUid);
         out.writeInt(permits);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        commitIndex = in.readLong();
+        super.readData(in);
         endpoint = in.readObject();
-        invocationUid = readUUID(in);
         permits = in.readInt();
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -124,27 +109,35 @@ public class AcquireInvocationKey implements WaitKey, IdentifiedDataSerializable
         if (commitIndex != that.commitIndex) {
             return false;
         }
-        if (permits != that.permits) {
+        if (!invocationUid.equals(that.invocationUid)) {
+            return false;
+        }
+        if (!callerAddress.equals(that.callerAddress)) {
+            return false;
+        }
+        if (callId != that.callId) {
             return false;
         }
         if (!endpoint.equals(that.endpoint)) {
             return false;
         }
-        return invocationUid.equals(that.invocationUid);
+        return permits == that.permits;
     }
 
     @Override
     public int hashCode() {
         int result = (int) (commitIndex ^ (commitIndex >>> 32));
-        result = 31 * result + endpoint.hashCode();
         result = 31 * result + invocationUid.hashCode();
+        result = 31 * result + callerAddress.hashCode();
+        result = 31 * result + (int) (callId ^ (callId >>> 32));
+        result = 31 * result + endpoint.hashCode();
         result = 31 * result + permits;
         return result;
     }
 
     @Override
     public String toString() {
-        return "SemaphoreInvocationKey{" + "commitIndex=" + commitIndex + ", endpoint=" + endpoint
-                + ", invocationUid=" + invocationUid + ", permits=" + permits + '}';
+        return "AcquireInvocationKey{" + "endpoint=" + endpoint + ", permits=" + permits + ", commitIndex=" + commitIndex
+                + ", invocationUid=" + invocationUid + ", callerAddress=" + callerAddress + ", callId=" + callId + '}';
     }
 }

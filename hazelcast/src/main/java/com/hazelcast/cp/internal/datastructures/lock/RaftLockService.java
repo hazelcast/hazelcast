@@ -54,23 +54,29 @@ public class RaftLockService extends AbstractBlockingService<LockInvocationKey, 
         super.initImpl();
     }
 
-    public AcquireResult acquire(CPGroupId groupId, long commitIndex, String name, LockEndpoint endpoint,
-                                          UUID invocationUid) {
-        heartbeatSession(groupId, endpoint.sessionId());
+    public AcquireResult acquire(CPGroupId groupId, String name, LockInvocationKey key) {
+        heartbeatSession(groupId, key.sessionId());
         RaftLockRegistry registry = getOrInitRegistry(groupId);
-        AcquireResult result = registry.acquire(commitIndex, name, endpoint, invocationUid);
+        AcquireResult result = registry.acquire(name, key);
 
         if (logger.isFineEnabled()) {
             if (result.status() == SUCCESSFUL) {
-                logger.fine("Lock[" + name + "] in " + groupId + " acquired by <" + endpoint + ", " + invocationUid
-                        + "> at commit index: " + commitIndex + ". new lock state: " + registry.getLockOwnershipState(name));
+                logger.fine("Lock[" + name + "] in " + groupId + " acquired by <" + key.endpoint() + ", " + key.invocationUid()
+                        + "> at commit index: " + key.commitIndex() + ". new lock state: "
+                        + registry.getLockOwnershipState(name));
             } else if (result.status() == WAIT_KEY_ADDED) {
-                logger.fine("Lock[" + name + "] in " + groupId + " wait key added for <" + endpoint + ", " + invocationUid
-                        + "> at commit index: " + commitIndex + ". lock state: " + registry.getLockOwnershipState(name));
+                logger.fine("Lock[" + name + "] in " + groupId + " wait key added for <" + key.endpoint() + ", "
+                        + key.invocationUid() + "> at commit index: " + key.commitIndex() + ". lock state: "
+                        + registry.getLockOwnershipState(name));
             } else if (result.status() == FAILED) {
-                logger.fine("Lock[" + name + "] in " + groupId + " acquire failed for <" + endpoint + ", " + invocationUid
-                        + "> at commit index: " + commitIndex + ". lock state: " + registry.getLockOwnershipState(name));
+                logger.fine("Lock[" + name + "] in " + groupId + " acquire failed for <" + key.endpoint() + ", "
+                        + key.invocationUid() + "> at commit index: " + key.commitIndex() + ". lock state: "
+                        + registry.getLockOwnershipState(name));
             }
+        }
+
+        if (result.status() == WAIT_KEY_ADDED) {
+            addLiveOperation(key);
         }
 
         notifyCancelledWaitKeys(groupId, name, result.cancelledWaitKeys());
@@ -78,27 +84,30 @@ public class RaftLockService extends AbstractBlockingService<LockInvocationKey, 
         return result;
     }
 
-    public AcquireResult tryAcquire(CPGroupId groupId, long commitIndex, String name, LockEndpoint endpoint,
-                                             UUID invocationUid, long timeoutMs) {
-        heartbeatSession(groupId, endpoint.sessionId());
+    public AcquireResult tryAcquire(CPGroupId groupId, String name, LockInvocationKey key, long timeoutMs) {
+        heartbeatSession(groupId, key.sessionId());
         RaftLockRegistry registry = getOrInitRegistry(groupId);
-        AcquireResult result = registry.tryAcquire(commitIndex, name, endpoint, invocationUid, timeoutMs);
+        AcquireResult result = registry.tryAcquire(name, key, timeoutMs);
 
         if (logger.isFineEnabled()) {
             if (result.status() == SUCCESSFUL) {
-                logger.fine("Lock[" + name + "] in " + groupId + " acquired by <" + endpoint + ", " + invocationUid
-                        + "> at commit index: " + commitIndex + ". new lock state: " + registry.getLockOwnershipState(name));
+                logger.fine("Lock[" + name + "] in " + groupId + " acquired by <" + key.endpoint() + ", " + key.invocationUid()
+                        + "> at commit index: " + key.commitIndex() + ". new lock state: "
+                        + registry.getLockOwnershipState(name));
             } else if (result.status() == WAIT_KEY_ADDED) {
-                logger.fine("Lock[" + name + "] in " + groupId + " wait key added for <" + endpoint + ", " + invocationUid
-                        + "> at commit index: " + commitIndex + ". lock state: " + registry.getLockOwnershipState(name));
+                logger.fine("Lock[" + name + "] in " + groupId + " wait key added for <" + key.endpoint() + ", "
+                        + key.invocationUid() + "> at commit index: " + key.commitIndex() + ". lock state: "
+                        + registry.getLockOwnershipState(name));
             } else {
-                logger.fine("Lock[" + name + "] in " + groupId + " acquire failed for by <" + endpoint + ", " + invocationUid
-                        + "> at commit index: " + commitIndex + ". lock state: " + registry.getLockOwnershipState(name));
+                logger.fine("Lock[" + name + "] in " + groupId + " acquire failed for by <" + key.endpoint() + ", "
+                        + key.invocationUid() + "> at commit index: " + key.commitIndex() + ". lock state: "
+                        + registry.getLockOwnershipState(name));
             }
         }
 
         if (result.status() == WAIT_KEY_ADDED) {
-            scheduleTimeout(groupId, name, invocationUid, timeoutMs);
+            scheduleTimeout(groupId, name, key.invocationUid(), timeoutMs);
+            addLiveOperation(key);
         }
 
         notifyCancelledWaitKeys(groupId, name, result.cancelledWaitKeys());

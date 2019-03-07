@@ -93,14 +93,15 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
      * with one of the previous invocations of the current lock owner,
      * memorized result of the previous invocation is returned.
      */
-    AcquireResult acquire(long commitIndex, LockEndpoint endpoint, UUID invocationUid, boolean wait) {
+    AcquireResult acquire(LockInvocationKey key, boolean wait) {
+        LockEndpoint endpoint = key.endpoint();
+        UUID invocationUid = key.invocationUid();
         RaftLockOwnershipState memorized = ownerInvocationRefUids.get(Tuple2.of(endpoint, invocationUid));
         if (memorized != null) {
             AcquireStatus status = memorized.isLocked() ? SUCCESSFUL : FAILED;
             return new AcquireResult(status, memorized.getFence(), Collections.<LockInvocationKey>emptyList());
         }
 
-        LockInvocationKey key = new LockInvocationKey(endpoint, commitIndex, invocationUid);
         if (owner == null) {
             owner = key;
         }

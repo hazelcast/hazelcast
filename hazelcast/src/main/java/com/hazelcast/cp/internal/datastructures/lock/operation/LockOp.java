@@ -17,13 +17,19 @@
 package com.hazelcast.cp.internal.datastructures.lock.operation;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.datastructures.lock.AcquireResult;
+import com.hazelcast.cp.internal.datastructures.lock.LockInvocationKey;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
+import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
@@ -33,7 +39,10 @@ import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.Acquir
  *
  * @see com.hazelcast.cp.internal.datastructures.lock.RaftLock#acquire(LockEndpoint, long, UUID, boolean)
  */
-public class LockOp extends AbstractLockOp implements IndeterminateOperationStateAware {
+public class LockOp extends AbstractLockOp implements CallerAware, IndeterminateOperationStateAware {
+
+    private Address callerAddress;
+    private long callId;
 
     public LockOp() {
     }
@@ -45,7 +54,8 @@ public class LockOp extends AbstractLockOp implements IndeterminateOperationStat
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         RaftLockService service = getService();
-        AcquireResult result = service.acquire(groupId, commitIndex, name, getLockEndpoint(), invocationUid);
+        LockInvocationKey key = new LockInvocationKey(commitIndex, invocationUid, callerAddress, callId, getLockEndpoint());
+        AcquireResult result = service.acquire(groupId, name, key);
         if (result.status() == WAIT_KEY_ADDED) {
             return PostponedResponse.INSTANCE;
         }
@@ -55,12 +65,39 @@ public class LockOp extends AbstractLockOp implements IndeterminateOperationStat
     }
 
     @Override
+    public void setCaller(Address callerAddress, long callId) {
+        this.callerAddress = callerAddress;
+        this.callId = callId;
+    }
+
+    @Override
     public boolean isRetryableOnIndeterminateOperationState() {
         return true;
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeObject(callerAddress);
+        out.writeLong(callId);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        callerAddress = in.readObject();
+        callId = in.readLong();
+    }
+
+    @Override
     public int getId() {
         return RaftLockDataSerializerHook.LOCK_OP;
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+        sb.append(", callerAddress=").append(callerAddress);
+        sb.append(", callId=").append(callId);
     }
 }

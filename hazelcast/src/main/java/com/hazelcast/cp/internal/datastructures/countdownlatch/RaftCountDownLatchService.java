@@ -58,10 +58,11 @@ public class RaftCountDownLatchService
         return t.element1;
     }
 
-    public boolean await(CPGroupId groupId, String name, long commitIndex, UUID invocationUid, long timeoutMillis) {
-        boolean success = getOrInitRegistry(groupId).await(name, commitIndex, invocationUid, timeoutMillis);
+    public boolean await(CPGroupId groupId, String name, AwaitInvocationKey key, long timeoutMillis) {
+        boolean success = getOrInitRegistry(groupId).await(name, key, timeoutMillis);
         if (!success) {
-            scheduleTimeout(groupId, name, invocationUid, timeoutMillis);
+            scheduleTimeout(groupId, name, key.invocationUid(), timeoutMillis);
+            addLiveOperation(key);
         }
 
         return success;

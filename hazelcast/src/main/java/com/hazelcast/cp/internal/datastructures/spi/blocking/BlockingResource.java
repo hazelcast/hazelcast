@@ -97,15 +97,13 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         return all;
     }
 
-    final void expireWaitKey(UUID invocationUid, List<Long> commitIndices) {
+    final void expireWaitKeys(UUID invocationUid, List<W> expired) {
         Iterator<WaitKeyContainer<W>> iter = waitKeys.values().iterator();
         while (iter.hasNext()) {
             WaitKeyContainer<W> container = iter.next();
             if (container.invocationUid().equals(invocationUid)) {
-                commitIndices.add(container.key().commitIndex());
-                for (W retry : container.retries()) {
-                    commitIndices.add(retry.commitIndex());
-                }
+                expired.add(container.key());
+                expired.addAll(container.retries());
                 iter.remove();
                 return;
             }

@@ -17,6 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.lock;
 
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKey;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -24,44 +25,30 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
-import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Represents lock() invocation of a LockEndpoint.
  * A LockInvocationKey either holds the lock or resides in the wait queue.
  */
-public class LockInvocationKey implements WaitKey, IdentifiedDataSerializable {
+public class LockInvocationKey extends WaitKey implements IdentifiedDataSerializable {
 
     private LockEndpoint endpoint;
-    private long commitIndex;
-    private UUID invocationUid;
 
     public LockInvocationKey() {
     }
 
-    LockInvocationKey(LockEndpoint endpoint, long commitIndex, UUID invocationUid) {
+    public LockInvocationKey(long commitIndex, UUID invocationUid, Address callerAddress, long callId, LockEndpoint endpoint) {
+        super(commitIndex, invocationUid, callerAddress, callId);
         checkNotNull(endpoint);
-        checkNotNull(invocationUid);
         this.endpoint = endpoint;
         this.commitIndex = commitIndex;
         this.invocationUid = invocationUid;
     }
 
     @Override
-    public long commitIndex() {
-        return commitIndex;
-    }
-
-    @Override
     public long sessionId() {
         return endpoint.sessionId();
-    }
-
-    @Override
-    public UUID invocationUid() {
-        return invocationUid;
     }
 
     LockEndpoint endpoint() {
@@ -84,19 +71,18 @@ public class LockInvocationKey implements WaitKey, IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
         out.writeObject(endpoint);
-        out.writeLong(commitIndex);
-        writeUUID(out, invocationUid);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
         endpoint = in.readObject();
-        commitIndex = in.readLong();
-        invocationUid = readUUID(in);
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -110,23 +96,31 @@ public class LockInvocationKey implements WaitKey, IdentifiedDataSerializable {
         if (commitIndex != that.commitIndex) {
             return false;
         }
-        if (!endpoint.equals(that.endpoint)) {
+        if (!invocationUid.equals(that.invocationUid)) {
             return false;
         }
-        return invocationUid.equals(that.invocationUid);
+        if (!callerAddress.equals(that.callerAddress)) {
+            return false;
+        }
+        if (callId != that.callId) {
+            return false;
+        }
+        return endpoint.equals(that.endpoint);
     }
 
     @Override
     public int hashCode() {
-        int result = endpoint.hashCode();
-        result = 31 * result + (int) (commitIndex ^ (commitIndex >>> 32));
+        int result = (int) (commitIndex ^ (commitIndex >>> 32));
         result = 31 * result + invocationUid.hashCode();
+        result = 31 * result + callerAddress.hashCode();
+        result = 31 * result + (int) (callId ^ (callId >>> 32));
+        result = 31 * result + endpoint.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
         return "LockInvocationKey{" + "endpoint=" + endpoint + ", commitIndex=" + commitIndex + ", invocationUid=" + invocationUid
-                + '}';
+                + ", callerAddress=" + callerAddress + ", callId=" + callId + '}';
     }
 }

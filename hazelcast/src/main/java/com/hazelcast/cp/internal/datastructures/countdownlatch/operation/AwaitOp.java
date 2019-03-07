@@ -18,10 +18,13 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch.operation;
 
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.AwaitInvocationKey;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchDataSerializerHook;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -35,10 +38,12 @@ import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
 /**
  * Operation for {@link ICountDownLatch#await(long, TimeUnit)}
  */
-public class AwaitOp extends AbstractCountDownLatchOp implements IndeterminateOperationStateAware {
+public class AwaitOp extends AbstractCountDownLatchOp implements CallerAware, IndeterminateOperationStateAware {
 
     private UUID invocationUid;
     private long timeoutMillis;
+    private Address callerAddress;
+    private long callId;
 
     public AwaitOp() {
     }
@@ -52,11 +57,18 @@ public class AwaitOp extends AbstractCountDownLatchOp implements IndeterminateOp
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         RaftCountDownLatchService service = getService();
-        if (service.await(groupId, name, commitIndex, invocationUid, timeoutMillis)) {
+        AwaitInvocationKey key = new AwaitInvocationKey(commitIndex, invocationUid, callerAddress, callId);
+        if (service.await(groupId, name, key, timeoutMillis)) {
             return true;
         }
 
         return timeoutMillis > 0 ? PostponedResponse.INSTANCE : false;
+    }
+
+    @Override
+    public void setCaller(Address callerAddress, long callId) {
+        this.callerAddress = callerAddress;
+        this.callId = callId;
     }
 
     @Override
@@ -70,24 +82,29 @@ public class AwaitOp extends AbstractCountDownLatchOp implements IndeterminateOp
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         writeUUID(out, invocationUid);
         out.writeLong(timeoutMillis);
+        out.writeObject(callerAddress);
+        out.writeLong(callId);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         invocationUid = readUUID(in);
         timeoutMillis = in.readLong();
+        callerAddress = in.readObject();
+        callId = in.readLong();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-        sb.append(", invocationUid=").append(invocationUid).append(", timeoutMillis=").append(timeoutMillis);
+        sb.append(", invocationUid=").append(invocationUid)
+          .append(", timeoutMillis=").append(timeoutMillis)
+          .append(", callerAddress=").append(callerAddress)
+          .append(", callId=").append(callId);
     }
 }

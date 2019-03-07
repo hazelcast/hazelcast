@@ -30,7 +30,10 @@ import com.hazelcast.cp.internal.session.SessionAwareService;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
 import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -44,12 +47,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -62,7 +67,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public abstract class AbstractBlockingService<W extends WaitKey, R extends BlockingResource<W>, RR extends ResourceRegistry<W, R>>
         implements RaftManagedService, RaftGroupLifecycleAwareService, RaftRemoteService, SessionAwareService,
-                   SnapshotAwareService<RR> {
+                   SnapshotAwareService<RR>, LiveOperationsTracker {
 
     public static final long WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS = 1500;
     private static final long WAIT_TIMEOUT_TASK_PERIOD_MILLIS = 500;
@@ -72,6 +77,14 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     protected volatile RaftService raftService;
 
     private final ConcurrentMap<CPGroupId, RR> registries = new ConcurrentHashMap<CPGroupId, RR>();
+    // Live operations are not put into Raft snapshots because it is not needed.
+    // Currently, only Raft ops that create a wait key are tracked as live operations,
+    // and it is sufficiently to report them only through the leader. Although followers
+    // populate live operations as well, they can miss some entries if they install a snapshot
+    // instead of applying Raft log entries. If a follower becomes later, callers will
+    // retry and commit their waiting Raft ops.
+    private final Set<Tuple2<Address, Long>> liveOperations =
+            newSetFromMap(new ConcurrentHashMap<Tuple2<Address, Long>, Boolean>());
     private volatile SessionAccessor sessionAccessor;
 
     protected AbstractBlockingService(NodeEngine nodeEngine) {
@@ -136,12 +149,18 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     @Override
     public boolean destroyRaftObject(CPGroupId groupId, String name) {
-        Collection<Long> indices = getOrInitRegistry(groupId).destroyResource(name);
-        if (indices == null) {
+        Collection<W> keys = getOrInitRegistry(groupId).destroyResource(name);
+        if (keys == null) {
             return false;
         }
 
-        completeFutures(groupId, indices, new DistributedObjectDestroyedException(name + " is destroyed"));
+        List<Long> commitIndices = new ArrayList<Long>();
+        for (W key : keys) {
+            commitIndices.add(key.commitIndex());
+            removeLiveOperation(key);
+        }
+
+        completeFutures(groupId, commitIndices, new DistributedObjectDestroyedException(name + " is destroyed"));
         return true;
     }
 
@@ -210,6 +229,13 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         }
     }
 
+    @Override
+    public final void populate(LiveOperations liveOperations) {
+        for (Tuple2<Address, Long> t : this.liveOperations) {
+            liveOperations.add(t.element1, t.element2);
+        }
+    }
+
     public final void expireWaitKeys(CPGroupId groupId, Collection<Tuple2<String, UUID>> keys) {
         // no need to validate the session. if the session is expired, the corresponding wait key is gone already
         ResourceRegistry<W, R> registry = registries.get(groupId);
@@ -218,16 +244,26 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
             return;
         }
 
-        List<Long> expired = new ArrayList<Long>();
+        List<W> expired = new ArrayList<W>();
         for (Tuple2<String, UUID> key : keys) {
             registry.expireWaitKey(key.element1, key.element2, expired);
         }
 
-        completeFutures(groupId, expired, expiredWaitKeyResponse());
+        List<Long> commitIndices = new ArrayList<Long>();
+        for (W key : expired) {
+            commitIndices.add(key.commitIndex());
+            removeLiveOperation(key);
+        }
+
+        completeFutures(groupId, commitIndices, expiredWaitKeyResponse());
     }
 
     public final RR getRegistryOrNull(CPGroupId groupId) {
         return registries.get(groupId);
+    }
+
+    public Collection<Tuple2<Address, Long>> getLiveOperations() {
+        return Collections.unmodifiableSet(liveOperations);
     }
 
     protected final RR getOrInitRegistry(CPGroupId groupId) {
@@ -271,10 +307,19 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
         List<Long> indices = new ArrayList<Long>(keys.size());
         for (W key : keys) {
+            removeLiveOperation(key);
             indices.add(key.commitIndex());
         }
 
         completeFutures(groupId, indices, result);
+    }
+
+    protected final void addLiveOperation(W key) {
+        liveOperations.add(Tuple2.of(key.callerAddress(), key.callId()));
+    }
+
+    private void removeLiveOperation(W key) {
+        liveOperations.remove(Tuple2.of(key.callerAddress(), key.callId()));
     }
 
     private void completeFutures(CPGroupId groupId, Collection<Long> indices, Object result) {

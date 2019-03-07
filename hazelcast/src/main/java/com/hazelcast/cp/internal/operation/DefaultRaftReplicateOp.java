@@ -16,13 +16,16 @@
 
 package com.hazelcast.cp.internal.operation;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.CallerAware;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.RaftInvocationManager;
+import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
+import com.hazelcast.cp.internal.raft.impl.RaftNode;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
@@ -34,25 +37,29 @@ import java.io.IOException;
  */
 public class DefaultRaftReplicateOp extends RaftReplicateOp implements IndeterminateOperationStateAware {
 
-    private RaftOp raftOp;
+    private RaftOp op;
 
     public DefaultRaftReplicateOp() {
     }
 
-    public DefaultRaftReplicateOp(CPGroupId groupId, RaftOp raftOp) {
+    public DefaultRaftReplicateOp(CPGroupId groupId, RaftOp op) {
         super(groupId);
-        this.raftOp = raftOp;
+        this.op = op;
     }
 
     @Override
-    protected RaftOp getRaftOp() {
-        return raftOp;
+    protected ICompletableFuture replicate(RaftNode raftNode) {
+        if (op instanceof CallerAware) {
+            ((CallerAware) op).setCaller(getCallerAddress(), getCallId());
+        }
+
+        return raftNode.replicate(op);
     }
 
     @Override
     public boolean isRetryableOnIndeterminateOperationState() {
-        if (raftOp instanceof IndeterminateOperationStateAware) {
-            return ((IndeterminateOperationStateAware) raftOp).isRetryableOnIndeterminateOperationState();
+        if (op instanceof IndeterminateOperationStateAware) {
+            return ((IndeterminateOperationStateAware) op).isRetryableOnIndeterminateOperationState();
         }
 
         return false;
@@ -71,18 +78,18 @@ public class DefaultRaftReplicateOp extends RaftReplicateOp implements Indetermi
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(raftOp);
+        out.writeObject(op);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        raftOp = in.readObject();
+        op = in.readObject();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-        sb.append(", raftOp=").append(raftOp);
+        sb.append(", op=").append(op);
     }
 }
