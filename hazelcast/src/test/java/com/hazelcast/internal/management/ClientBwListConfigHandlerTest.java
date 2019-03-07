@@ -33,7 +33,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -197,8 +199,8 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
                 new ClientBwListEntryDTO(Type.LABEL, "192.168.0.1"),
                 new ClientBwListEntryDTO(Type.IP_ADDRESS, "192.168.0.2"));
         configJson.get("clientBwList").asObject()
-                  .get("entries").asArray()
-                  .get(0).asObject().set("type", "invalid_type");
+                .get("entries").asArray()
+                .get(0).asObject().set("type", "invalid_type");
         handler.handleConfig(configJson);
 
         Client client1 = createClient("192.168.0.1", randomString());
@@ -226,8 +228,17 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
                 labelsSet.add(label);
             }
         }
-        Client client = new ClientImpl(null, InetSocketAddress.createUnresolved(ip, 5000), name, labelsSet);
+        Client client = new ClientImpl(null, createInetSocketAddress(ip), name, labelsSet);
         return client;
     }
+
+    private InetSocketAddress createInetSocketAddress(String name) {
+        try {
+            return new InetSocketAddress(InetAddress.getByName(name), 5000);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
 }
