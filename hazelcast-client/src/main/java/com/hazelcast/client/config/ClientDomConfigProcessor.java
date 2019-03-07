@@ -94,7 +94,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node node : childElements(rootNode)) {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
-                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration");
+                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in the configuration");
             }
             handleNode(node, nodeName);
             if (!canOccurMultipleTimes(nodeName)) {
