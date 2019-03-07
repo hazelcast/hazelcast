@@ -298,6 +298,15 @@ public final class Numbers {
 
         private static final Type[] VALUES = Type.values();
 
+        private final boolean decimal;
+
+        private final int width;
+
+        Type(boolean decimal, int width) {
+            this.decimal = decimal;
+            this.width = width;
+        }
+
         public static Type fromClass(Class clazz) {
             if (clazz == Double.class) {
                 return DOUBLE;
@@ -318,15 +327,6 @@ public final class Numbers {
 
         public static Type fromOrdinal(int ordinal) {
             return ordinal == -1 ? null : VALUES[ordinal];
-        }
-
-        private final boolean decimal;
-
-        private final int width;
-
-        Type(boolean decimal, int width) {
-            this.decimal = decimal;
-            this.width = width;
         }
 
     }
