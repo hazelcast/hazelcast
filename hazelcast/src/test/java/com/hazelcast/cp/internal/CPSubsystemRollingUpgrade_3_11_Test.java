@@ -129,7 +129,7 @@ public class CPSubsystemRollingUpgrade_3_11_Test extends HazelcastRaftTestSuppor
 
         RaftService service = getRaftService(instances[0]);
         expectedException.expect(UnsupportedOperationException.class);
-        service.getInvocationManager().createRaftGroup("default", 3);
+        service.getInvocationManager().createRaftGroup("default", 3).join();
     }
 
     @Test

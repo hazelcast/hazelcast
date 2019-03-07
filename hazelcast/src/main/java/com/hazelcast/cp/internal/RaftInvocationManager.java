@@ -32,6 +32,7 @@ import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
+import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -68,6 +69,7 @@ public class RaftInvocationManager {
     private final long operationCallTimeout;
     private final int invocationMaxRetryCount;
     private final long invocationRetryPauseMillis;
+    private final boolean cpSubsystemEnabled;
 
     RaftInvocationManager(NodeEngine nodeEngine, RaftService raftService) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -78,34 +80,39 @@ public class RaftInvocationManager {
         this.invocationMaxRetryCount = nodeEngine.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
         this.invocationRetryPauseMillis = nodeEngine.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
         this.operationCallTimeout = nodeEngine.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
+        this.cpSubsystemEnabled = raftService.getConfig().getCPMemberCount() > 0;
     }
 
     void reset() {
         raftInvocationContext.reset();
     }
 
-    public ICompletableFuture<RaftGroupId> createRaftGroup(String groupName) {
+    public InternalCompletableFuture<RaftGroupId> createRaftGroup(String groupName) {
         return createRaftGroup(groupName, raftService.getConfig().getGroupSize());
     }
 
-    public ICompletableFuture<RaftGroupId> createRaftGroup(String groupName, int groupSize) {
-        checkCPSubsystemEnabled();
+    public InternalCompletableFuture<RaftGroupId> createRaftGroup(String groupName, int groupSize) {
+        InternalCompletableFuture<RaftGroupId> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
+        if (completedFuture != null) {
+            return completedFuture;
+        }
 
         Executor executor = nodeEngine.getExecutionService().getExecutor(ASYNC_EXECUTOR);
-        ILogger logger = nodeEngine.getLogger(getClass());
         SimpleCompletableFuture<RaftGroupId> resultFuture = new SimpleCompletableFuture<RaftGroupId>(executor, logger);
         invokeGetMembersToCreateRaftGroup(groupName, groupSize, resultFuture);
         return resultFuture;
     }
 
-    private void checkCPSubsystemEnabled() {
+    private <V> InternalCompletableFuture<V> completeExceptionallyIfCPSubsystemNotAvailable() {
         // RU_COMPAT_3_11
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_12)) {
-            throw new UnsupportedOperationException("CP Subsystem is not available before version 3.12!");
+            return new SimpleCompletedFuture<V>(
+                    new UnsupportedOperationException("CP Subsystem is not available before version 3.12!"));
         }
-        if (raftService.getConfig().getCPMemberCount() == 0) {
-            throw new HazelcastException("CP Subsystem is not enabled!");
+        if (!cpSubsystemEnabled) {
+            return new SimpleCompletedFuture<V>(new HazelcastException("CP Subsystem is not enabled!"));
         }
+        return null;
     }
 
     private void invokeGetMembersToCreateRaftGroup(final String groupName, final int groupSize,
@@ -165,7 +172,10 @@ public class RaftInvocationManager {
 
     <T> InternalCompletableFuture<T> changeMembership(CPGroupId groupId, long membersCommitIndex,
                                                       CPMemberInfo member, MembershipChangeMode membershipChangeMode) {
-        checkCPSubsystemEnabled();
+        InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
+        if (completedFuture != null) {
+            return completedFuture;
+        }
         Operation operation = new ChangeRaftGroupMembershipOp(groupId, membersCommitIndex, member, membershipChangeMode);
         Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext, groupId,
                 operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
@@ -173,7 +183,10 @@ public class RaftInvocationManager {
     }
 
     public <T> InternalCompletableFuture<T> invoke(CPGroupId groupId, RaftOp raftOp) {
-        checkCPSubsystemEnabled();
+        InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
+        if (completedFuture != null) {
+            return completedFuture;
+        }
         Operation operation = new DefaultRaftReplicateOp(groupId, raftOp);
         Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
                 groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
@@ -181,7 +194,10 @@ public class RaftInvocationManager {
     }
 
     public <T> InternalCompletableFuture<T> query(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
-        checkCPSubsystemEnabled();
+        InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
+        if (completedFuture != null) {
+            return completedFuture;
+        }
         RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
         Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
                 groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
@@ -189,13 +205,19 @@ public class RaftInvocationManager {
     }
 
     public <T> InternalCompletableFuture<T> queryLocally(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
-        checkCPSubsystemEnabled();
+        InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
+        if (completedFuture != null) {
+            return completedFuture;
+        }
         RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
         return nodeEngine.getOperationService().invokeOnTarget(RaftService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
     }
 
     public InternalCompletableFuture<Object> destroy(CPGroupId groupId) {
-        checkCPSubsystemEnabled();
+        InternalCompletableFuture<Object> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
+        if (completedFuture != null) {
+            return completedFuture;
+        }
         Operation operation = new DestroyRaftGroupOp(groupId);
         Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
                 groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
