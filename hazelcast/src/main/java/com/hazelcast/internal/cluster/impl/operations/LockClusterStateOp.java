@@ -85,7 +85,7 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
 
     @Override
     public void logError(Throwable e) {
-        if (e instanceof TransactionException) {
+        if (e instanceof TransactionException || e instanceof IllegalStateException) {
             getLogger().severe(e.getMessage());
         } else {
             super.logError(e);
