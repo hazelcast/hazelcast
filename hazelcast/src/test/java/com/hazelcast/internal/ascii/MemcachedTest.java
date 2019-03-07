@@ -57,20 +57,23 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class MemcachedTest extends HazelcastTestSupport {
 
-    protected Config config = new Config();
     protected HazelcastInstance instance;
     protected MemcachedClient client;
 
-    @Before
-    public void setup() throws Exception {
+    protected Config createConfig() {
+        Config config = smallInstanceConfig();
         config.setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "true");
 
         // Join is disabled intentionally. will start standalone HazelcastInstances.
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
+        return config;
+    }
 
-        instance = Hazelcast.newHazelcastInstance(config);
+    @Before
+    public void setup() throws Exception {
+        instance = Hazelcast.newHazelcastInstance(createConfig());
         client = getMemcachedClient(instance);
     }
 
@@ -363,7 +366,7 @@ public class MemcachedTest extends HazelcastTestSupport {
     @SuppressWarnings("checkstyle:parameternumber")
     private void checkStats(int sets, int gets, int getHits, int getMisses, int deleteHits, int deleteMisses,
                             int incHits, int incMisses, int decHits, int decMisses) {
-        InetSocketAddress address = instance.getCluster().getLocalMember().getSocketAddress(MEMCACHE);
+        InetSocketAddress address = getMemcachedAddr(instance);
         Map<String, String> stats = client.getStats().get(address);
 
         assertEquals(String.valueOf(sets), stats.get("cmd_set"));
@@ -378,13 +381,16 @@ public class MemcachedTest extends HazelcastTestSupport {
         assertEquals(String.valueOf(decMisses), stats.get("decr_misses"));
     }
 
+    protected InetSocketAddress getMemcachedAddr(HazelcastInstance instance) {
+        return instance.getCluster().getLocalMember().getSocketAddress(MEMCACHE);
+    }
+
     protected MemcachedClient getMemcachedClient(HazelcastInstance instance) throws Exception {
-        InetSocketAddress address = instance.getCluster().getLocalMember().getSocketAddress(MEMCACHE);
         ConnectionFactory factory = new ConnectionFactoryBuilder()
                 .setOpTimeout(60 * 60 * 60)
                 .setDaemon(true)
                 .setFailureMode(FailureMode.Retry)
                 .build();
-        return new MemcachedClient(factory, Collections.singletonList(address));
+        return new MemcachedClient(factory, Collections.singletonList(getMemcachedAddr(instance)));
     }
 }

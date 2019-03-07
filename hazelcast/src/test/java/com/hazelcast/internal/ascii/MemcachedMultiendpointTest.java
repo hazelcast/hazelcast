@@ -17,9 +17,9 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
@@ -31,7 +31,8 @@ public class MemcachedMultiendpointTest
         extends MemcachedTest {
 
     @Override
-    public void setup() throws Exception {
+    protected Config createConfig() {
+        Config config = smallInstanceConfig();
         AdvancedNetworkConfig anc = config.getAdvancedNetworkConfig();
         anc.setEnabled(true)
            .setMemcacheEndpointConfig(new ServerSocketEndpointConfig());
@@ -40,9 +41,7 @@ public class MemcachedMultiendpointTest
         JoinConfig join = anc.getJoin();
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
-
-        instance = Hazelcast.newHazelcastInstance(config);
-        client = getMemcachedClient(instance);
+        return config;
     }
 
 }
