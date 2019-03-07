@@ -59,6 +59,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
     private MapProxyImpl<Integer, Integer> map;
     private int[] partitionKeys;
+    private JetInstance instance;
 
     @Before
     public void setUp() {
@@ -71,7 +72,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
         config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), "2");
         config.getHazelcastConfig().addEventJournalConfig(journalConfig);
-        JetInstance instance = this.createJetMember(config);
+        instance = this.createJetMember(config);
 
         map = (MapProxyImpl<Integer, Integer>) instance.getHazelcastInstance().<Integer, Integer>getMap("test");
 
@@ -91,6 +92,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
+                   .jetInstance(instance)
                    .expectOutput(asList(wm(10), 10, 10));
     }
 
@@ -116,6 +118,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
+                   .jetInstance(instance)
                    .outputChecker((e, a) -> new HashSet<>(e).equals(new HashSet<>(a)))
                    .expectOutput(asList(11, wm(11)));
 
@@ -128,6 +131,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
+                   .jetInstance(instance)
                    .expectOutput(singletonList(IDLE_MESSAGE));
     }
 
@@ -148,7 +152,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
         Processor processor = createSupplier(asList(0, 1), 2000).get();
         TestOutbox outbox = new TestOutbox(1024);
         Queue<Object> outbox0 = outbox.queue(0);
-        processor.init(outbox, new TestProcessorContext());
+        processor.init(outbox, new TestProcessorContext().setJetInstance(instance));
 
         assertTrueEventually(() -> {
             processor.complete();
@@ -172,6 +176,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
+                   .jetInstance(instance)
                    .expectOutput(asList(wm(13), 13, IDLE_MESSAGE));
     }
 

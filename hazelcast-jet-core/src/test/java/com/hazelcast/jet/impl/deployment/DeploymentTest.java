@@ -52,6 +52,4 @@ public class DeploymentTest extends AbstractDeploymentTest {
         jetConfig.getHazelcastConfig().setClassLoader(filteringClassLoader);
         factory.newMember(jetConfig);
     }
-
-
 }

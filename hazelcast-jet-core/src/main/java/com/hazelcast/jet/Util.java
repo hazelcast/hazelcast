@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.cache.impl.journal.CacheEventJournalFunctions;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ExecutionCallback;
@@ -24,6 +25,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.impl.journal.MapEventJournalFunctions;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -31,6 +33,9 @@ import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
+
+import static com.hazelcast.jet.impl.util.Util.wrapImdgFunction;
+import static com.hazelcast.jet.impl.util.Util.wrapImdgPredicate;
 
 /**
  * Miscellaneous utility methods useful in DAG building logic.
@@ -57,7 +62,7 @@ public final class Util {
      * UPDATED} events.
      */
     public static <K, V> PredicateEx<EventJournalMapEvent<K, V>> mapPutEvents() {
-        return e -> e.getType() == EntryEventType.ADDED || e.getType() == EntryEventType.UPDATED;
+        return wrapImdgPredicate(MapEventJournalFunctions.mapPutEvents());
     }
 
     /**
@@ -67,7 +72,7 @@ public final class Util {
      * UPDATED} events.
      */
     public static <K, V> PredicateEx<EventJournalCacheEvent<K, V>> cachePutEvents() {
-        return e -> e.getType() == CacheEventType.CREATED || e.getType() == CacheEventType.UPDATED;
+        return wrapImdgPredicate(CacheEventJournalFunctions.cachePutEvents());
     }
 
     /**
@@ -78,18 +83,18 @@ public final class Util {
      * @see Sources#remoteMapJournal
      */
     public static <K, V> FunctionEx<EventJournalMapEvent<K, V>, Entry<K, V>> mapEventToEntry() {
-        return e -> entry(e.getKey(), e.getNewValue());
+        return wrapImdgFunction(MapEventJournalFunctions.mapEventToEntry());
     }
 
     /**
-     * Returns a projection that extracts the new value from a {@link
+     * Returns a projection that extracts the new value from an {@link
      * EventJournalMapEvent}.
      *
      * @see Sources#mapJournal
      * @see Sources#remoteMapJournal
      */
     public static <K, V> FunctionEx<EventJournalMapEvent<K, V>, V> mapEventNewValue() {
-        return EventJournalMapEvent::getNewValue;
+        return wrapImdgFunction(MapEventJournalFunctions.mapEventNewValue());
     }
 
     /**
@@ -100,7 +105,18 @@ public final class Util {
      * @see Sources#remoteCacheJournal
      */
     public static <K, V> FunctionEx<EventJournalCacheEvent<K, V>, Entry<K, V>> cacheEventToEntry() {
-        return e -> entry(e.getKey(), e.getNewValue());
+        return wrapImdgFunction(CacheEventJournalFunctions.cacheEventToEntry());
+    }
+
+    /**
+     * Returns a projection that extracts the new value from an {@link
+     * EventJournalCacheEvent}.
+     *
+     * @see Sources#mapJournal
+     * @see Sources#remoteMapJournal
+     */
+    public static <K, V> FunctionEx<EventJournalCacheEvent<K, V>, V> cacheEventNewValue() {
+        return wrapImdgFunction(CacheEventJournalFunctions.cacheEventNewValue());
     }
 
     /**

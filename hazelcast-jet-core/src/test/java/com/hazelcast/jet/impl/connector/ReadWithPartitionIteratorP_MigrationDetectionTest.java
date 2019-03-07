@@ -82,13 +82,11 @@ public class ReadWithPartitionIteratorP_MigrationDetectionTest extends JetTestSu
             remoteMemberConfig = new Config();
             GroupConfig groupConfig = remoteMemberConfig.getGroupConfig();
             groupConfig.setName(UuidUtil.newUnsecureUuidString());
-            groupConfig.setPassword("remote-cluster");
             mapInstance = Hazelcast.newHazelcastInstance(remoteMemberConfig);
             remoteInstances.add(mapInstance);
 
             clientConfig = new ClientConfig();
             clientConfig.getGroupConfig().setName(groupConfig.getName());
-            clientConfig.getGroupConfig().setPassword(groupConfig.getPassword());
         } else {
             mapInstance = jobInstance.getHazelcastInstance();
             clientConfig = null;

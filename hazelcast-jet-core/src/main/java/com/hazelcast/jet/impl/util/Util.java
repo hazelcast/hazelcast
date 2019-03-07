@@ -30,6 +30,8 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
@@ -43,6 +45,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.function.Predicate;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -559,5 +562,53 @@ public final class Util {
             }
         }
         return name + '-' + index;
+    }
+
+    public static <T> PredicateEx<T> wrapImdgPredicate(com.hazelcast.util.function.Predicate<T> predicate) {
+        return new ImdgPredicateWrapper(predicate);
+    }
+
+    public static <T> com.hazelcast.util.function.Predicate<T> maybeUnwrapImdgPredicate(PredicateEx<T> predicate) {
+        if (predicate instanceof ImdgPredicateWrapper) {
+            return ((ImdgPredicateWrapper<T>) predicate).wrapped;
+        }
+        return predicate;
+    }
+
+    public static FunctionEx wrapImdgFunction(com.hazelcast.util.function.Function function) {
+        return new ImdgFunctionWrapper(function);
+    }
+
+    public static <T, R> com.hazelcast.util.function.Function<T, R> maybeUnwrapImdgFunction(FunctionEx<T, R> function) {
+        if (function instanceof ImdgFunctionWrapper) {
+            return ((ImdgFunctionWrapper<T, R>) function).wrapped;
+        }
+        return function;
+    }
+
+    private static final class ImdgPredicateWrapper<T> implements PredicateEx<T> {
+        private final com.hazelcast.util.function.Predicate<T> wrapped;
+
+        ImdgPredicateWrapper(Predicate<T> wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public boolean testEx(T t) {
+            return wrapped.test(t);
+        }
+    }
+
+    private static final class ImdgFunctionWrapper<T, R> implements FunctionEx<T, R> {
+        private final com.hazelcast.util.function.Function<T, R> wrapped;
+
+        ImdgFunctionWrapper(com.hazelcast.util.function.Function<T, R> wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public R applyEx(T t) {
+            return wrapped.apply(t);
+        }
     }
 }

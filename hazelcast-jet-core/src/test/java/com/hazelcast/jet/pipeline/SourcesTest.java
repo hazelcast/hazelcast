@@ -16,13 +16,16 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.projection.Projections;
 import org.junit.AfterClass;
@@ -34,6 +37,9 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -44,10 +50,12 @@ import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRE
 import static com.hazelcast.projection.Projections.singleAttribute;
 import static com.hazelcast.query.TruePredicate.truePredicate;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class SourcesTest extends PipelineTestSupport {
     private static HazelcastInstance remoteHz;
@@ -267,6 +275,33 @@ public class SourcesTest extends PipelineTestSupport {
     }
 
     @Test
+    public void remoteMapWithUnknownValueClass() throws Exception {
+        // Given
+        URL jarResource = Thread.currentThread().getContextClassLoader()
+                                .getResource("deployment/sample-pojo-1.0-car.jar");
+        assertNotNull("jar not found", jarResource);
+        ClassLoader cl = new URLClassLoader(new URL[]{jarResource});
+        Class<?> personClz = cl.loadClass("com.sample.pojo.car.Car");
+        Object person = personClz.getConstructor(String.class, String.class)
+                                 .newInstance("make", "model");
+        IMap<String, Object> map = remoteHz.getMap(srcName);
+        // the class of the value is unknown to the remote IMDG member, it will be only known to Jet
+        map.put("key", person);
+
+        // When
+        BatchSource<Entry<String, Object>> source = Sources.remoteMap(srcName, clientConfig);
+
+        // Then
+        p.drawFrom(source).map(en -> en.getValue().toString()).drainTo(sink);
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJar(jarResource);
+        jet().newJob(p, jobConfig).join();
+        List<Object> expected = singletonList(person.toString());
+        List<Object> actual = new ArrayList<>(sinkList);
+        assertEquals(expected, actual);
+    }
+
+    @Test
     public void cache_byName() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -300,6 +335,33 @@ public class SourcesTest extends PipelineTestSupport {
                                                      .map(i -> entry(String.valueOf(i), i))
                                                      .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void remoteCacheWithUnknownValueClass() throws Exception {
+        // Given
+        URL jarResource = Thread.currentThread().getContextClassLoader()
+                                .getResource("deployment/sample-pojo-1.0-car.jar");
+        assertNotNull("jar not found", jarResource);
+        ClassLoader cl = new URLClassLoader(new URL[]{jarResource});
+        Class<?> personClz = cl.loadClass("com.sample.pojo.car.Car");
+        Object person = personClz.getConstructor(String.class, String.class)
+                                 .newInstance("make", "model");
+        ICache<String, Object> cache = remoteHz.getCacheManager().getCache(srcName);
+        // the class of the value is unknown to the remote IMDG member, it will be only known to Jet
+        cache.put("key", person);
+
+        // When
+        BatchSource<Entry<String, Object>> source = Sources.remoteCache(srcName, clientConfig);
+
+        // Then
+        p.drawFrom(source).map(en -> en.getValue().toString()).drainTo(sink);
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJar(jarResource);
+        jet().newJob(p, jobConfig).join();
+        List<Object> expected = singletonList(person.toString());
+        List<Object> actual = new ArrayList<>(sinkList);
+        assertEquals(expected, actual);
     }
 
     @Test

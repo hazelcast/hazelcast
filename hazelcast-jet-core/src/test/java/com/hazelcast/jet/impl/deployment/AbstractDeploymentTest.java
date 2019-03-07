@@ -20,7 +20,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobClassLoaderFactory;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.impl.deployment.LoadPersonIsolated.LoadPersonIsolatedMetaSupplier;
 import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
@@ -49,7 +48,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         createCluster();
 
         DAG dag = new DAG();
-        dag.newVertex("load class", new LoadPersonIsolatedMetaSupplier());
+        dag.newVertex("load class", LoadPersonIsolated::new);
 
         JetInstance jetInstance = getJetInstance();
         JobConfig jobConfig = new JobConfig();
@@ -63,7 +62,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         createCluster();
 
         DAG dag = new DAG();
-        dag.newVertex("create and print person", new LoadPersonIsolatedMetaSupplier());
+        dag.newVertex("create and print person", LoadPersonIsolated::new);
 
         JobConfig jobConfig = new JobConfig();
         URL classUrl = this.getClass().getResource("/cp1/");

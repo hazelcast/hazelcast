@@ -91,7 +91,7 @@ public final class Jet {
      * Creates a Jet client with the given Hazelcast client configuration.
      *
      * {@link JetClientConfig} may be used to create a configuration with the
-     * default group name and password for Jet.
+     * default group name for Jet.
      */
     @Nonnull
     public static JetInstance newJetClient(@Nonnull ClientConfig config) {
