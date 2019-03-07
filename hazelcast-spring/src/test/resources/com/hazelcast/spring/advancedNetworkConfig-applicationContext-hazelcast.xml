@@ -162,7 +162,7 @@
                                namespace="hazelcast"/>
                 </hz:join>
                 <hz:member-server-socket-endpoint-config name="member-server-socket"
-                        port="${cluster.port}" port-auto-increment="true" port-count="99">
+                        port="${cluster.port}" port-auto-increment="false" port-count="99">
                     <hz:outbound-ports>
                         <hz:ports>35000-35100</hz:ports>
                         <hz:ports>36000,36100</hz:ports>
@@ -170,7 +170,7 @@
                     <hz:interfaces enabled="true">
                         <hz:interface>127.0.0.1</hz:interface>
                     </hz:interfaces>
-                    <hz:reuse-address>false</hz:reuse-address>
+                    <hz:reuse-address>true</hz:reuse-address>
                     <hz:socket-interceptor enabled="true" class-name="com.hazelcast.SocketInterceptor"/>
                     <hz:ssl enabled="false" factory-class-name="com.hazelcast.SSLContextFactory"/>
                     <hz:symmetric-encryption enabled="false"/>
@@ -200,7 +200,7 @@
                                              iteration-count="19"/>
                 </hz:wan-endpoint-config>
 
-                <hz:client-server-socket-endpoint-config port="9919" port-auto-increment="true" port-count="10">
+                <hz:client-server-socket-endpoint-config port="9919" port-auto-increment="false" port-count="10">
                     <hz:reuse-address>true</hz:reuse-address>
                 </hz:client-server-socket-endpoint-config>
 
@@ -221,7 +221,8 @@
                     </hz:icmp>
                 </hz:failure-detector>
 
-                <hz:rest-server-socket-endpoint-config port="8080" port-auto-increment="false">
+                <hz:rest-server-socket-endpoint-config port="9999" port-auto-increment="true">
+                    <hz:reuse-address>false</hz:reuse-address>
                     <hz:endpoint-groups>
                         <hz:endpoint-group name="HEALTH_CHECK" enabled="true"/>
                         <hz:endpoint-group name="CLUSTER_READ" enabled="true"/>
