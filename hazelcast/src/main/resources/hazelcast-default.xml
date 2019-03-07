@@ -394,8 +394,8 @@
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
             <max-missed-leader-heartbeat-count>5</max-missed-leader-heartbeat-count>
-            <append-request-max-entry-count>50</append-request-max-entry-count>
-            <commit-index-advance-count-to-snapshot>1000</commit-index-advance-count-to-snapshot>
+            <append-request-max-entry-count>100</append-request-max-entry-count>
+            <commit-index-advance-count-to-snapshot>10000</commit-index-advance-count-to-snapshot>
             <uncommitted-entry-count-to-reject-new-appends>100</uncommitted-entry-count-to-reject-new-appends>
             <append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
         </raft-algorithm>

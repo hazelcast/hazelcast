@@ -4653,7 +4653,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="append-request-max-entry-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="50">
+            <xs:element name="append-request-max-entry-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="100">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of entries that can be sent in a single batch of append entries request
@@ -4661,7 +4661,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="commit-index-advance-count-to-snapshot" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"
-                        default="1000">
+                        default="10000">
                 <xs:annotation>
                     <xs:documentation>
                         Number of new commits to initiate a new snapshot after the last snapshot

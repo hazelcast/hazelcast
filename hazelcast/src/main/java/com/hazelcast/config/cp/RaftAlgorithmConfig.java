@@ -39,13 +39,13 @@ public class RaftAlgorithmConfig {
      * Default max append request entry count.
      * See {@link #appendRequestMaxEntryCount}.
      */
-    public static final int DEFAULT_APPEND_REQUEST_MAX_ENTRY_COUNT = 50;
+    public static final int DEFAULT_APPEND_REQUEST_MAX_ENTRY_COUNT = 100;
 
     /**
      * Default commit index advance to initiate a snapshot.
      * See {@link #commitIndexAdvanceCountToSnapshot}.
      */
-    public static final int DEFAULT_COMMIT_INDEX_ADVANCE_COUNT_TO_SNAPSHOT = 1000;
+    public static final int DEFAULT_COMMIT_INDEX_ADVANCE_COUNT_TO_SNAPSHOT = 10000;
 
     /**
      * Default max allowed uncommitted entry count.
