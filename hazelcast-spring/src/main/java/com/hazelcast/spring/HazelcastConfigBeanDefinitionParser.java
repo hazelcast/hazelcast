@@ -724,22 +724,26 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             AbstractBeanDefinition beanDefinition = endpointConfigBuilder.getBeanDefinition();
             fillAttributeValues(node, endpointConfigBuilder);
             for (Node child : childElements(node)) {
-                String nodeName = cleanNodeName(child);
-                if ("outbound-ports".equals(nodeName)) {
-                    handleOutboundPorts(child, endpointConfigBuilder);
-                } else if ("interfaces".equals(nodeName)) {
-                    handleInterfaces(child, endpointConfigBuilder);
-                } else if ("symmetric-encryption".equals(nodeName)) {
-                    handleSymmetricEncryption(child, endpointConfigBuilder);
-                } else if ("ssl".equals(nodeName)) {
-                    handleSSLConfig(child, endpointConfigBuilder);
-                } else if ("socket-interceptor".equals(nodeName)) {
-                    handleSocketInterceptorConfig(child, endpointConfigBuilder);
-                } else if ("socket-options".equals(nodeName)) {
-                    handleEndpointSocketOptions(child, endpointConfigBuilder);
-                }
+                handleEndpointConfigCommons(child, endpointConfigBuilder);
             }
             endpointConfigsMap.put(createEndpointQualifier(type, node), beanDefinition);
+        }
+
+        private void handleEndpointConfigCommons(Node node, BeanDefinitionBuilder endpointConfigBuilder) {
+            String nodeName = cleanNodeName(node);
+            if ("outbound-ports".equals(nodeName)) {
+                handleOutboundPorts(node, endpointConfigBuilder);
+            } else if ("interfaces".equals(nodeName)) {
+                handleInterfaces(node, endpointConfigBuilder);
+            } else if ("symmetric-encryption".equals(nodeName)) {
+                handleSymmetricEncryption(node, endpointConfigBuilder);
+            } else if ("ssl".equals(nodeName)) {
+                handleSSLConfig(node, endpointConfigBuilder);
+            } else if ("socket-interceptor".equals(nodeName)) {
+                handleSocketInterceptorConfig(node, endpointConfigBuilder);
+            } else if ("socket-options".equals(nodeName)) {
+                handleEndpointSocketOptions(node, endpointConfigBuilder);
+            }
         }
 
         void handleMemberServerSocketEndpointConfig(Node node) {
@@ -786,18 +790,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, endpointBuilder);
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
-                if ("outbound-ports".equals(nodeName)) {
-                    handleOutboundPorts(child, endpointBuilder);
-                } else if ("interfaces".equals(nodeName)) {
-                    handleInterfaces(child, endpointBuilder);
-                } else if ("symmetric-encryption".equals(nodeName)) {
-                    handleSymmetricEncryption(child, endpointBuilder);
-                } else if ("ssl".equals(nodeName)) {
-                    handleSSLConfig(child, endpointBuilder);
-                } else if ("socket-interceptor".equals(nodeName)) {
-                    handleSocketInterceptorConfig(child, endpointBuilder);
-                } else if ("socket-options".equals(nodeName)) {
-                    handleEndpointSocketOptions(child, endpointBuilder);
+                if ("reuse-address".equals(nodeName)) {
+                    String value = getTextContent(child).trim();
+                    endpointBuilder.addPropertyValue("reuseAddress", value);
+                } else {
+                    handleEndpointConfigCommons(child, endpointBuilder);
                 }
             }
             endpointConfigsMap.put(createEndpointQualifier(type, node), beanDefinition);

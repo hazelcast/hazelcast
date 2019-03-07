@@ -25,13 +25,12 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,24 +54,19 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TestAdvancedNetworkApplicationContext {
 
-    private Config config;
-
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
     @BeforeClass
     @AfterClass
     public static void start() {
-        Hazelcast.shutdownAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
-    @Before
-    public void before() {
-        config = instance.getConfig();
-    }
 
     @Test
     public void testAdvancedNetworkConfig() {
+        Config config = instance.getConfig();
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         assertTrue(advancedNetworkConfig.isEnabled());
 
@@ -113,11 +107,12 @@ public class TestAdvancedNetworkApplicationContext {
                 .getEndpointConfigs().get(EndpointQualifier.CLIENT);
         assertEquals(9919, clientEndpointConfig.getPort());
         assertEquals(10, clientEndpointConfig.getPortCount());
-        assertTrue(clientEndpointConfig.isPortAutoIncrement());
+        assertFalse(clientEndpointConfig.isPortAutoIncrement());
         assertTrue(clientEndpointConfig.isReuseAddress());
 
         RestServerEndpointConfig restServerEndpointConfig = advancedNetworkConfig.getRestEndpointConfig();
-        assertEquals(8080, restServerEndpointConfig.getPort());
+        assertEquals(9999, restServerEndpointConfig.getPort());
+        assertTrue(restServerEndpointConfig.isPortAutoIncrement());
         assertContainsAll(restServerEndpointConfig.getEnabledGroups(),
                 Arrays.asList(HEALTH_CHECK, CLUSTER_READ));
 
