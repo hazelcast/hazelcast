@@ -192,7 +192,7 @@ public class ProcessorTasklet implements Tasklet {
         probeBuilder.register(this, "lastForwardedWm", ProbeLevel.INFO, ProbeUnit.MS,
                 (LongProbeFunction<ProcessorTasklet>) t -> t.outbox.lastForwardedWm());
         probeBuilder.register(this, "lastForwardedWmLatency", ProbeLevel.INFO, ProbeUnit.MS,
-                (LongProbeFunction<ProcessorTasklet>) t -> t.outbox.lastForwardedWmLatency());
+                (LongProbeFunction<ProcessorTasklet>) t -> lastForwardedWmLatency());
         probeBuilder.register(this, "queuesSize", ProbeLevel.INFO, ProbeUnit.COUNT,
                 (LongProbeFunction<ProcessorTasklet>) t -> t.queuesSize.get());
         probeBuilder.register(this, "queuesCapacity", ProbeLevel.INFO, ProbeUnit.COUNT,
@@ -491,6 +491,17 @@ public class ProcessorTasklet implements Tasklet {
      */
     private boolean isSnapshotInbox() {
         return currInstream != null && currInstream.priority() == Integer.MIN_VALUE;
+    }
+
+    private long lastForwardedWmLatency() {
+        long wm = outbox.lastForwardedWm();
+        if (wm == IDLE_MESSAGE.timestamp()) {
+            return Long.MIN_VALUE; // idle
+        }
+        if (wm == Long.MIN_VALUE) {
+            return Long.MAX_VALUE; // no wms emitted
+        }
+        return System.currentTimeMillis() - wm;
     }
 
     @Override

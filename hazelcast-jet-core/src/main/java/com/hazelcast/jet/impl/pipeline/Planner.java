@@ -35,11 +35,9 @@ import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -58,13 +56,12 @@ public class Planner {
      * necessary, but improves debugging by avoiding too large gaps between WMs
      * and the user can better observe if input to WM coalescing is lagging.
      */
-    private static final int MAXIMUM_WATERMARK_GAP = 1_000;
+    private static final int MAXIMUM_WATERMARK_GAP = 1000;
 
     public final DAG dag = new DAG();
     public final Map<Transform, PlannerVertex> xform2vertex = new HashMap<>();
 
     private final PipelineImpl pipeline;
-    private final Set<String> vertexNames = new HashSet<>();
 
     Planner(PipelineImpl pipeline) {
         this.pipeline = pipeline;
