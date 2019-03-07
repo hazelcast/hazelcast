@@ -22,9 +22,9 @@ import com.hazelcast.util.executor.PoolExecutorThreadFactory;
  * This factory is implemented to have a thread factory that creates threads with `UnblockableThread` interface.
  * see @{@link UnblockableThread}
  */
-public class PoolExecutorUnblockableThreadFactory extends PoolExecutorThreadFactory {
+public class UnblockablePoolExecutorThreadFactory extends PoolExecutorThreadFactory {
 
-    public PoolExecutorUnblockableThreadFactory(String threadNamePrefix, ClassLoader classLoader) {
+    public UnblockablePoolExecutorThreadFactory(String threadNamePrefix, ClassLoader classLoader) {
         super(threadNamePrefix, classLoader);
     }
 

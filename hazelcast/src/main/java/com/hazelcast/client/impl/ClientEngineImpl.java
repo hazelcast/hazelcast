@@ -71,7 +71,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.internal.util.executor.PoolExecutorUnblockableThreadFactory;
+import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
 
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
@@ -194,7 +194,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         String hzName = nodeEngine.getHazelcastInstance().getName();
         String internalName = name.substring("hz:".length());
         String threadNamePrefix = createThreadPoolName(hzName, internalName);
-        PoolExecutorUnblockableThreadFactory factory = new PoolExecutorUnblockableThreadFactory(threadNamePrefix, classLoader);
+        UnblockablePoolExecutorThreadFactory factory = new UnblockablePoolExecutorThreadFactory(threadNamePrefix, classLoader);
         return executionService.register(ExecutionService.CLIENT_EXECUTOR,
                 threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE, factory);
     }
