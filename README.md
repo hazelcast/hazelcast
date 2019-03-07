@@ -123,6 +123,10 @@ There are 4 properties to configure the plugin, all of them are optional.
  * `namespace`: Kubernetes Namespace where Hazelcast is running; if not specified, the value is taken from the environment variables `KUBERNETES_NAMESPACE` or `OPENSHIFT_BUILD_NAMESPACE`
  * `service-name`: service name used to scan only PODs connected to the given service; if not specified, then all PODs in the namespace are checked
  * `service-label-name`, `service-label-value`: service label and value used to tag services that should form the Hazelcast cluster together
+ * `resolve-not-ready-addresses`: if set to `true`, it checks also the addresses of PODs which are not ready; `false` by default 
+ * `kubernetes-master`: URL of Kubernetes Master; `https://kubernetes.default.svc` by default
+ * `api-token`: API Token to Kubernetes API; if not specified, the value is taken from the file `/var/run/secrets/kubernetes.io/serviceaccount/token`
+ * `ca-certificate`: CA Certificate for Kubernetes API; if not specified, the value is taken from the file `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`
  
 You should use either `service-name` or (`service-label-name` and `service-label-value`), specifying all 3 parameters does not make sense.
 
@@ -179,24 +183,49 @@ There are 2 properties to configure the plugin:
 
 **Note**: In this README, only XML configurations are presented, however you can achieve exactly the same effect using Java-based configurations.
 
-## Scaling Hazelcast cluster in Kubernetes
+### Zone Aware
 
-Hazelcast cluster is easily scalable within Kubernetes. You can use the standard `kubectl scale` command to change the cluster size.
+When using `ZONE_AWARE` configuration, backups are created in the other availability zone.
 
-Note however that, by default, Hazelcast does not shutdown gracefully. It means that if you suddenly scale down by more than your `backup-count` property (1 by default), you may lose the cluster data. To prevent that from happening, set the following properties:
-- `terminationGracePeriodSeconds`:  in your StatefulSet (or Deployment) configuration; the value should be high enough to cover the data migration process
-- `-Dhazelcast.shutdownhook.policy=GRACEFUL`: in the JVM parameters
-- `-Dhazelcast.graceful.shutdown.max.wait`: in the JVM parameters; the value should be high enough to cover the data migration process
+**Note**: Your Kubernetes cluster must orchestrate Hazelcast Member PODs equally between the availability zones, otherwise Zone Aware feature may not work correctly.
 
-The graceful shutdown configuration is already included in [Hazelcast Helm Charts](#helm-chart).
+#### XML Configuration
 
-## Plugin Usages
+```xml
+<partition-group enabled="true" group-type="ZONE_AWARE" />
+```
 
-Apart from embedding Hazelcast in your application as described above, there are multiple other scenarios of how to use the Hazelcast Kubernetes plugin.
+#### Java-based Configuration
 
-### Embedded Hazelcast Client
+```java
+config.getPartitionGroupConfig()
+    .setEnabled(true)
+    .setGroupType(MemberGroupType.ZONE_AWARE);
+```
 
-If you have a Hazelcast cluster deployed on Kubernetes, then you can configure Hazelcast Client (deployed on the same Kubernetes cluster). To do it, use exactly the same Maven/Gradle dependencies and the same Discovery Strategy extract in your Hazelcast Client configuration.
+Note the following aspects of `ZONE_AWARE`:
+ * Kubernetes cluster must provide the [well-known Kubernetes annotations](https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/#failure-domainbetakubernetesiozone)
+ * Retrieving Zone Name uses Kubernetes API, so RBAC must be configured as described [here](#granting-permissions-to-use-kubernetes-api)
+ * `ZONE_AWARE` feature works correctly when Hazelcast members are distributed equally in all zones, so your Kubernetes cluster must orchestrate PODs equally
+ 
+ Note also that retrieving Zone Name assumes that your container's hostname is the same as POD Name, which is almost always true. If you happen to change your hostname in the container, then please define the following environment variable:
+ 
+ ```yaml
+ 
+env:
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+ ``` 
+
+## Hazelcast Client Configuration
+
+Depending on whether your Hazelcast Client runs inside or outside the Kubernetes cluster, its configuration looks different.
+
+### Inside Kubernetes Cluster
+
+If you have a Hazelcast cluster deployed on Kubernetes and you want to configure Hazelcast Client deployed on the same Kubernetes cluster, then the configuration looks very similar to Hazelcast Member.
 
 Here's an example in case of the **Kubernetes API** mode.
 
@@ -216,6 +245,69 @@ clientConfig.getNetworkConfig().getKubernetesConfig().setEnabled(true)
             .setProperty("namespace", "MY-KUBERNETES-NAMESPACE")
             .setProperty("service-name", "MY-SERVICE-NAME");
 ```
+
+### Outside Kubernetes Cluster
+
+If your Hazelcast cluster is deployed on Kubernetes, but Hazelcast Client is in a completely different network, then they can connect only through the public Internet network.
+
+To use **Hazelcast Dummy Client** (`<smart-routing>false</smart-routing>`) you don't need any plugin, it's enough to expose your Hazelcast cluster with a LoadBalancer (or NodePort) service and set its IP/port as the TCP/IP Hazelcast Client configuration. Dummy Client, however, compromises the performance, since all the communication happens against a single Hazelcast member.
+
+To configure **Hazelcast Smart Client**, you need to perform the following steps:
+* Expose each Hazelcast Member POD with a separate LoadBalancer or NodePort service (the simplest way to do it is to install [Metacontroller](https://metacontroller.app/) and [service-per-pod](https://github.com/GoogleCloudPlatform/metacontroller/tree/master/examples/service-per-pod) Decorator Controller)
+* Configure ServiceAccount with ClusterRole having at least `get` and `list` permissions to the following resources: `endpoints`, `pods`, `nodes`, `services`
+* Use credentials from the created ServiceAccount in the Hazelcast Client configuration (credentials can be fetched with `kubectl get secret <sevice-account-secret> -o jsonpath={.data.token} | base64 --decode` and `kubectl get secret <sevice-account-secret> -o jsonpath={.data.ca\\.crt} | base64 --decode`)
+
+```xml
+<hazelcast-client>
+    <network>
+        <kubernetes enabled="true">
+            <namespace>MY-KUBERNETES-NAMESPACE</namespace>
+            <service-name>MY-SERVICE-NAME</service-name>
+            <use-public-ip>true</use-public-ip>
+            <kubernetes-master>https://35.226.182.228</kubernetes-master>
+            <api-token>eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InNhbXBsZS1zZXJ2aWNlLWFjY291bnQtdG9rZW4tNnM5NGgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoic2FtcGxlLXNlcnZpY2UtYWNjb3VudCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjI5OTI1NzBmLTI1NDQtMTFlOS1iNjg3LTQyMDEwYTgwMDI4YiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OnNhbXBsZS1zZXJ2aWNlLWFjY291bnQifQ.o-j4e-ducrMmQc23xYDnPr6TIyzlAs3pLNAmGLqPe9Vq1mwsxOh3ujcVKR90HAdkfHIF_Sw66qC9hXIDvxfqN_rLXlOKbvTX3gjDrAnyY_93Y3MpmSBj8yR9yHMb4O29a9UIwN5F2_VoCsc0IGumScU_EhPYc9mvEXlwp2bATQOEU-SVAGYPqvVPs9h5wjWZ7WUQa_-RBLMF6KRc9EP2i3c7dPSRVL9ZQ6k6OyUUOVEaPa1tqIxP7vOgx9Tg2C1KmYF5RDrlzrWkhEcjd4BLTiYDKEyaoBff9RqdPYlPwu0YcEH-F7yU8tTDN74KX5jvah3amg_zTiXeNoe5ZFcVdg</api-token>
+            <ca-certificate>
+                -----BEGIN CERTIFICATE-----
+                MIIDCzCCAfOgAwIBAgIQVcTHv3jK6g1l7Ph9Xyd9DTANBgkqhkiG9w0BAQsFADAv
+                MS0wKwYDVQQDEyQ4YjRhNjgwMS04NzJhLTQ2NDEtYjIwOC0zYjEyNDEwYWVkMTcw
+                HhcNMTkwMTMxMDcyNDMxWhcNMjQwMTMwMDgyNDMxWjAvMS0wKwYDVQQDEyQ4YjRh
+                NjgwMS04NzJhLTQ2NDEtYjIwOC0zYjEyNDEwYWVkMTcwggEiMA0GCSqGSIb3DQEB
+                AQUAA4IBDwAwggEKAoIBAQCaty8l9aHeWE1r9yLWKJMa3YQotVclYoEHegB8y6Ke
+                +zKqa06JKKrz3Qony97VdWR/NMpRYXouSF0owDv9BIoLTC682wlQtNB1c4pTVW7a
+                AikoNtyNIT8gtA5w0MyjFrbNslUblXvuo0HIeSmJREUmT7BC3VaKgkg64mVdf0DJ
+                NyrcL+qyCs1m03mi12hgzI72O3qgEtP91tu/oCUdOh39u13TB0fj5tgWURMFgkxo
+                T0xiNfPueV3pe8uYxBntzFn/74ibiizLRP6d/hsuRdS7IA+bvRLKG/paYwyZuMFb
+                BDA+kXXAIkOvCpIQCkAKMpyyDz9lBVCtl3eRSAJQLBefAgMBAAGjIzAhMA4GA1Ud
+                DwEB/wQEAwICBDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBP
+                TBRY1IbkFJuboMKLW9tdpIzW7hf2qsTLOhtlaJbMXrWaXCTrl8qUgBUZ1sWAW9Uk
+                qETwRoCMl1Ht7PhbnXEGDNt3Sw3Y3feR4PsffhcgWH0BK8pZVY0Q1zbZ6dVNbU82
+                EUrrcnV0uiB/JFsJ3rg8qJurutro3uIzAhb9ixYRqYnXUR4q0bxahO04iSUHvtYQ
+                JmWp1GCb/ny9MyeTkwh2Q+WIQBHsX4LfrKjPwJd6qZME7BmwryYBTkGa0FinmhRg
+                SdSPEQKmuXmghPU5GLudiI2ooOaqOXIjVPfM/cw4uU9FCGM49qufccOOt6utk0SM
+                DwupAKLLiaYs47a8JgUa
+                -----END CERTIFICATE-----
+            </ca-certificate>
+        </kubernetes>
+    </network>
+</hazelcast-client>
+```
+
+**Note:** Hazelcast Client outside Kubernetes cluster works only in the **Kubernetes API** mode (it does not work in the **DNS Lookup** mode).
+
+## Scaling Hazelcast cluster in Kubernetes
+
+Hazelcast cluster is easily scalable within Kubernetes. You can use the standard `kubectl scale` command to change the cluster size.
+
+Note however that, by default, Hazelcast does not shutdown gracefully. It means that if you suddenly scale down by more than your `backup-count` property (1 by default), you may lose the cluster data. To prevent that from happening, set the following properties:
+- `terminationGracePeriodSeconds`:  in your StatefulSet (or Deployment) configuration; the value should be high enough to cover the data migration process
+- `-Dhazelcast.shutdownhook.policy=GRACEFUL`: in the JVM parameters
+- `-Dhazelcast.graceful.shutdown.max.wait`: in the JVM parameters; the value should be high enough to cover the data migration process
+
+The graceful shutdown configuration is already included in [Hazelcast Helm Charts](#helm-chart).
+
+## Plugin Usages
+
+Apart from embedding Hazelcast in your application as described above, there are multiple other scenarios of how to use the Hazelcast Kubernetes plugin.
 
 ### Docker images
 
