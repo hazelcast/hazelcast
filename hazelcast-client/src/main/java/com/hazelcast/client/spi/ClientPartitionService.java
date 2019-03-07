@@ -37,10 +37,4 @@ public interface ClientPartitionService extends ClusterSwitchAwareService {
 
     Partition getPartition(int partitionId);
 
-    /**
-     * @param partitionCount new partition count
-     * @return true if partitions are not checked yet or last partition count is equal to the partition count provided,
-     * otherwise return false
-     */
-    boolean isPartitionCountConsistent(int partitionCount);
 }

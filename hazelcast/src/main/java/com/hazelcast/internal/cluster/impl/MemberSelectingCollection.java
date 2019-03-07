@@ -31,6 +31,7 @@ import java.util.NoSuchElementException;
  * its internal {@link com.hazelcast.core.Member} collection. It reflects changes in the internal collection.
  * Mutating methods throw {@link java.lang.UnsupportedOperationException}
  * It is mainly used for querying a member list.
+ *
  * @param <M> A subclass of {@link com.hazelcast.core.Member} interface
  */
 public final class MemberSelectingCollection<M extends Member> implements Collection<M> {
@@ -46,13 +47,16 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
 
     @Override
     public int size() {
+        return count(members, selector);
+    }
+
+    public static <M extends Member> int count(Collection<M> members, MemberSelector memberSelector) {
         int size = 0;
         for (M member : members) {
-            if (selector.select(member)) {
+            if (memberSelector.select(member)) {
                 size++;
             }
         }
-
         return size;
     }
 
@@ -174,7 +178,7 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
             if (member != null || hasNext()) {
                 nextMember = member;
                 member = null;
-            } else  {
+            } else {
                 throw new NoSuchElementException();
             }
 
