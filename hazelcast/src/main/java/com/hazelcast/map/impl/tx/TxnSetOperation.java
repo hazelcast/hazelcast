@@ -71,7 +71,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         if (record == null || version == record.getVersion()) {
             EventService eventService = getNodeEngine().getEventService();
             if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {
-                dataOldValue = record == null ? null : mapServiceContext.toData(record.getValue());
+                oldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
             recordStore.set(dataKey, dataValue, ttl, maxIdle);

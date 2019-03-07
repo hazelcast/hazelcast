@@ -53,7 +53,7 @@ public class LegacyMergeOperation extends BasePutOperation {
     public void run() {
         Record oldRecord = recordStore.getRecord(dataKey);
         if (oldRecord != null) {
-            dataOldValue = mapServiceContext.toData(oldRecord.getValue());
+            oldValue = mapServiceContext.toData(oldRecord.getValue());
         }
         merged = recordStore.merge(dataKey, mergingEntry, mergePolicy, getCallerProvenance());
         if (merged) {
