@@ -39,7 +39,10 @@ import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -88,9 +91,25 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
     @Override
     public void destroyDistributedObject(String name) {
-        CollectionContainer container = getContainerMap().remove(name);
+        final CollectionContainer container = getContainerMap().remove(name);
+        final int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
         if (container != null) {
-            container.destroy();
+            if (Thread.currentThread().getClass() == PartitionOperationThread.class) {
+                container.destroy();
+            } else {
+                InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+                operationService.execute(new PartitionSpecificRunnable() {
+                    @Override
+                    public void run() {
+                        container.destroy();
+                    }
+
+                    @Override
+                    public int getPartitionId() {
+                        return partitionId;
+                    }
+                });
+            }
         }
         nodeEngine.getEventService().deregisterAllListeners(getServiceName(), name);
     }

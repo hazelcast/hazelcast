@@ -28,19 +28,26 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.util.Collections.emptyList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace;
 
 public abstract class ListAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
+    protected HazelcastInstance local;
+    protected HazelcastInstance target;
 
     private IList<String> list;
 
@@ -50,8 +57,8 @@ public abstract class ListAbstractTest extends HazelcastTestSupport {
         config.addListConfig(new ListConfig("testAdd_whenCapacityReached_thenItemNotAdded*").setMaxSize(10));
 
         instances = newInstances(config);
-        HazelcastInstance local = instances[0];
-        HazelcastInstance target = instances[instances.length - 1];
+        local = instances[0];
+        target = instances[instances.length - 1];
         String methodName = getTestMethodName();
         String name = randomNameOwnedBy(target, methodName);
         list = local.getList(name);
@@ -532,6 +539,70 @@ public abstract class ListAbstractTest extends HazelcastTestSupport {
         while (iterator.hasNext()) {
             Object o = iterator.next();
             assertEquals(o, "item" + i++);
+        }
+    }
+
+    @Test
+    public void testCreateUseDestroyStress_doesNotThrow() throws InterruptedException {
+        final int threadCount = 100;
+
+        ListCreateUseDestroyRunnable[] runnables = new ListCreateUseDestroyRunnable[threadCount];
+        Thread[] threads = new Thread[threadCount];
+        AtomicBoolean stopFlag = new AtomicBoolean();
+
+        for (int i = 0; i < threadCount; i++) {
+            runnables[i] = new ListCreateUseDestroyRunnable(local, stopFlag);
+            threads[i] = new Thread(runnables[i]);
+        }
+        for (int i = 0; i < threadCount; i++) {
+            threads[i].start();
+        }
+
+        Thread.sleep(SECONDS.toMillis(10));
+
+        stopFlag.set(true);
+
+        for (int i = 0; i < threadCount; i++) {
+            threads[i].join();
+        }
+        for (int i = 0; i < threadCount; i++) {
+            Exception exception = runnables[i].getException();
+            assertNull("Expected no exception but got:\n" + (exception != null ? getStackTrace(exception) : ""), exception);
+        }
+    }
+
+    static class ListCreateUseDestroyRunnable implements Runnable {
+
+        private final HazelcastInstance instance;
+        private AtomicBoolean stop;
+        private Random random = new Random();
+        private Exception exception;
+
+        public ListCreateUseDestroyRunnable(HazelcastInstance instance, AtomicBoolean stop) {
+            this.instance = instance;
+            this.stop = stop;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!stop.get()) {
+                    IList<Integer> list = instance.getList("list");
+                    list.add(random.nextInt(100));
+                    list.destroy();
+                }
+            } catch (Exception e) {
+                stop.set(true);
+                setException(e);
+            }
+        }
+
+        public Exception getException() {
+            return exception;
+        }
+
+        public void setException(Exception exception) {
+            this.exception = exception;
         }
     }
 

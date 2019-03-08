@@ -31,12 +31,17 @@ import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.util.Collections.emptySet;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class SetAbstractTest extends HazelcastTestSupport {
@@ -310,6 +315,71 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
         for (ISet set : localSets) {
             assertEquals(1, set.size());
+        }
+    }
+
+    @Test
+    public void testCreateUseDestroyStress_doesNotThrow() throws InterruptedException {
+        final int threadCount = 100;
+
+        SetCreateUseDestroyRunnable[] runnables = new SetCreateUseDestroyRunnable[threadCount];
+        Thread[] threads = new Thread[threadCount];
+        AtomicBoolean stopFlag = new AtomicBoolean();
+
+        for (int i = 0; i < threadCount; i++) {
+            runnables[i] = new SetCreateUseDestroyRunnable(local, stopFlag);
+            threads[i] = new Thread(runnables[i]);
+        }
+
+        for (int i = 0; i < threadCount; i++) {
+            threads[i].start();
+        }
+
+        Thread.sleep(SECONDS.toMillis(10));
+
+        stopFlag.set(true);
+
+        for (int i = 0; i < threadCount; i++) {
+            threads[i].join();
+        }
+        for (int i = 0; i < threadCount; i++) {
+            Exception exception = runnables[i].getException();
+            assertNull("Expected no exception but got:\n" + (exception != null ? getStackTrace(exception) : ""), exception);
+        }
+    }
+
+    static class SetCreateUseDestroyRunnable implements Runnable {
+
+        private final HazelcastInstance instance;
+        private AtomicBoolean stop;
+        private Random random = new Random();
+        private Exception exception;
+
+        public SetCreateUseDestroyRunnable(HazelcastInstance instance, AtomicBoolean stop) {
+            this.instance = instance;
+            this.stop = stop;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!stop.get()) {
+                    ISet<Integer> set = instance.getSet("set");
+                    set.add(random.nextInt(100));
+                    set.destroy();
+                }
+            } catch (Exception e) {
+                stop.set(true);
+                setException(e);
+            }
+        }
+
+        public Exception getException() {
+            return exception;
+        }
+
+        public void setException(Exception exception) {
+            this.exception = exception;
         }
     }
 }
