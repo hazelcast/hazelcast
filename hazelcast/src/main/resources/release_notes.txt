@@ -42,13 +42,29 @@ Hazelcast IMDG Open Source Enhancements:
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
-* Improved the Javadoc of `HazelcastClient` so that the code comments now use "unisocket client" instead of "dumb client". https://github.com/hazelcast/hazelcast/issues/14213[[#14213]]
-* Introduced the `/ready` endpoint to the REST API to allow checking a member if it is ready to be used after it joins to the cluster. https://github.com/hazelcast/hazelcast/issues/14089[[#14089]]
-* Improved the syncing of XSD files. https://github.com/hazelcast/hazelcast/issues/14070[[#14070]]
-* The `IMap.removeAll()` method now supports `PartitionPredicate`. https://github.com/hazelcast/hazelcast/issues/12238[[#12238]]
-* Improved the diagnostics tool so that it automatically creates the configured directory for the diagnostic outputs. https://github.com/hazelcast/hazelcast/issues/11946[[#11946]]
+**3.12-BETA-2**
+
+* Removed group password from the Hazelcast’s default XML configuration file. Also improved the non-empty password `INFO` message. It's now only logged if security is disabled, password is not empty and password is not the Hazelcast default one. [#14603]
+
+**3.12-BETA-1**
+
+* Improved the Javadoc of `HazelcastClient` so that the code comments now use "unisocket client" instead of "dumb client". [#14213]
+* Introduced the `/ready` endpoint to the REST API to allow checking a member if it is ready to be used after it joins to the cluster. [#14089]
+* Improved the syncing of XSD files. [#14070]
+* The `IMap.removeAll()` method now supports `PartitionPredicate`. [#12238]
+* Improved the diagnostics tool so that it automatically creates the configured directory for the diagnostic outputs. [#11946]
 
 4. Fixes
+
+**3.12-BETA-2**
+
+* Fixed the wording of a misleading error in the first attempt to connect to a wrongly configured cluster. The error message has been changed to “Unable to connect to any cluster”.  https://github.com/hazelcast/hazelcast/issues/14574[[#14574]]
+* Fixed an issue where the collection attributes indexed with `[any]` were causing incorrect SQL query results, if the first data inserted to the map has no value for the attribute or the collection is empty. [#14358]
+* Fixed an issue where `mapEvictionPolicy` couldn’t be specified in the JSON configuration file. [#14092]
+* Fixed the discrepancy between the XSD on the website and the one in the download package. [#13011]
+* Fixed an issue where `TcpIpConnectionManager` was putting the connections in a map under the remote endpoint bind address but not under the address to which Hazelcast connects. [#11256]
+
+**3.12-BETA-1**
 
 * Fixed an issue where the REST API was not handling the HTTP requests without headers correctly: when a client sends an HTTP request without headers to the Hazelcast REST API, the `HttpCommand` class was wrongly expecting an additional new line. [#14353]
 * Fixed an issue where `QueryCache` was not returning the copies of the found objects. [#14333]
@@ -63,5 +79,10 @@ The following are the other improvements performed to solve the enhancement issu
 
 * `ILock` interface and implementation of `ILock` has been deprecated, and `FencedLock` has been introduced.
 * The original implementations of `IAtomicLong`, `IAtomicReference`, `ISemaphore` and `ICountDownLatch` have been deprecated. Instead, the implementations provided by the CP Subsystem have been introduced.
+* The following system properties are deprecated:
+  ** `hazelcast.rest.enabled`
+  ** `hazelcast.mc.url.change.enabled`
+  ** `hazelcast.memcache.enabled`
+  ** `hazelcast.http.healthcheck.enabled`
 
 
