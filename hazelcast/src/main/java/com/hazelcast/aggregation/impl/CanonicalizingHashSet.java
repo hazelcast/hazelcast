@@ -42,9 +42,14 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
         this.map = new HashMap<Object, E>(capacity);
     }
 
-    public void addAll(CanonicalizingHashSet<E> set) {
+    public void addAllInternal(CanonicalizingHashSet<E> set) {
         map.putAll(set.map);
         typeInferrer.observe(set.typeInferrer);
+    }
+
+    public void addInternal(E e) {
+        typeInferrer.observe(e);
+        map.put(canonicalize(e), e);
     }
 
     @Override
@@ -63,7 +68,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
         this.map = new HashMap<Object, E>(count);
         for (int i = 0; i < count; i++) {
             E element = in.readObject();
-            add(element);
+            addInternal(element);
         }
     }
 
@@ -113,13 +118,12 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     @Override
     public boolean add(E e) {
-        typeInferrer.observe(e);
-        return map.put(canonicalize(e), e) == null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean remove(Object o) {
-        return map.remove(canonicalize(o)) != null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -134,37 +138,23 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        boolean changed = false;
-        for (E element : c) {
-            if (add(element)) {
-                changed = true;
-            }
-        }
-        return changed;
+        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings("NullableProblems")
     @Override
     public boolean retainAll(Collection<?> c) {
-        // no efficient way of implementing, better just to avoid this method
         throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        boolean changed = false;
-        for (Object element : c) {
-            if (remove(element)) {
-                changed = true;
-            }
-        }
-        return changed;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void clear() {
-        map.clear();
-        typeInferrer.reset();
+        throw new UnsupportedOperationException();
     }
 
     @Override

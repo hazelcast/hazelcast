@@ -40,14 +40,14 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
 
     @Override
     public void accumulateExtracted(I entry, R value) {
-        values.add(value);
+        values.addInternal(value);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void combine(Aggregator aggregator) {
         DistinctValuesAggregator distinctValuesAggregator = (DistinctValuesAggregator) aggregator;
-        this.values.addAll(distinctValuesAggregator.values);
+        this.values.addAllInternal(distinctValuesAggregator.values);
     }
 
     @Override
@@ -81,7 +81,7 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
         this.values = new CanonicalizingHashSet<R>(count);
         for (int i = 0; i < count; i++) {
             R value = in.readObject();
-            values.add(value);
+            values.addInternal(value);
         }
     }
 

@@ -110,6 +110,56 @@ public final class Numbers {
         return Float.floatToIntBits(lhs) == Float.floatToIntBits(rhs);
     }
 
+    public static double asDoubleExactly(Number number) {
+        Class clazz = number.getClass();
+
+        if (isDoubleRepresentable(clazz) || isLongRepresentableExceptLong(clazz)) {
+            return number.doubleValue();
+        } else if (clazz == Long.class) {
+            double doubleValue = number.doubleValue();
+            if (number.longValue() == (long) doubleValue) {
+                return doubleValue;
+            }
+        }
+
+        throw new IllegalArgumentException("Can't represent " + number + " as double exactly");
+    }
+
+    public static long asLongExactly(Number number) {
+        Class clazz = number.getClass();
+
+        if (isLongRepresentable(clazz)) {
+            return number.longValue();
+        } else if (isDoubleRepresentable(clazz)) {
+            long longValue = number.longValue();
+            if (equalDoubles(number.doubleValue(), (double) longValue)) {
+                return longValue;
+            }
+        }
+
+        throw new IllegalArgumentException("Can't represent " + number + " as long exactly");
+    }
+
+    public static int asIntExactly(Number number) {
+        Class clazz = number.getClass();
+
+        if (isLongRepresentableExceptLong(clazz)) {
+            return number.intValue();
+        } else if (clazz == Long.class) {
+            int intValue = number.intValue();
+            if (number.longValue() == (long) intValue) {
+                return intValue;
+            }
+        } else if (isDoubleRepresentable(clazz)) {
+            int intValue = number.intValue();
+            if (equalDoubles(number.doubleValue(), (double) intValue)) {
+                return intValue;
+            }
+        }
+
+        throw new IllegalArgumentException("Can't represent " + number + " as int exactly");
+    }
+
     public static boolean isDoubleRepresentable(Class clazz) {
         return clazz == Double.class || clazz == Float.class;
     }
@@ -248,12 +298,6 @@ public final class Numbers {
             } else {
                 return widestDecimalType;
             }
-        }
-
-        public void reset() {
-            widestDecimalType = null;
-            widestIntegerType = null;
-            mixedTypes = false;
         }
 
         @Override
