@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
 import static org.junit.Assert.assertEquals;
@@ -111,6 +112,10 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         MemberStateImpl memberState = timedMemberState.getMemberState();
         memberState.setAddress("memberStateAddress:Port");
+        String uuid = UUID.randomUUID().toString();
+        memberState.setUuid(uuid);
+        String cpMemberUuid = UUID.randomUUID().toString();
+        memberState.setCpMemberUuid(cpMemberUuid);
         memberState.setEndpoints(endpoints);
         memberState.putLocalMapStats("mapStats", new LocalMapStatsImpl());
         memberState.putLocalMultiMapStats("multiMapStats", new LocalMultiMapStatsImpl());
@@ -135,6 +140,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         deserialized.fromJson(memberState.toJson());
 
         assertEquals("memberStateAddress:Port", deserialized.getAddress());
+        assertEquals(uuid, deserialized.getUuid());
+        assertEquals(cpMemberUuid, deserialized.getCpMemberUuid());
         assertEquals(endpoints, deserialized.getEndpoints());
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
