@@ -24,6 +24,7 @@ import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -161,6 +162,11 @@ public final class JetBootstrap {
      * automatically shut down once the {@code main()} method of the JAR returns.
      */
     public static JetInstance getInstance() {
+        if (config == null) {
+            throw new JetException(
+                    "JetBootstrap.getInstance() should be used in conjunction with the jet.sh submit command"
+            );
+        }
         return SUPPLIER.get().instance;
     }
 
