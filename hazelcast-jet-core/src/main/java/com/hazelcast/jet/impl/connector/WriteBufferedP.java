@@ -28,15 +28,16 @@ import com.hazelcast.jet.function.ConsumerEx;
 import com.hazelcast.jet.function.SupplierEx;
 
 import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
     private final FunctionEx<? super Context, B> createFn;
-    private final BiConsumerEx<? super B, ? super T> onReceiveFn;
     private final ConsumerEx<? super B> flushFn;
     private final ConsumerEx<? super B> destroyFn;
 
     private B buffer;
+    private final Consumer<Object> inboxConsumer;
 
     WriteBufferedP(
             @Nonnull FunctionEx<? super Context, B> createFn,
@@ -45,9 +46,10 @@ public final class WriteBufferedP<B, T> implements Processor {
             @Nonnull ConsumerEx<? super B> destroyFn
     ) {
         this.createFn = createFn;
-        this.onReceiveFn = onReceiveFn;
         this.flushFn = flushFn;
         this.destroyFn = destroyFn;
+
+        inboxConsumer = item -> onReceiveFn.accept(buffer, (T) item);
     }
 
     @Override
@@ -60,7 +62,7 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        inbox.drain(item -> onReceiveFn.accept(buffer, (T) item));
+        inbox.drain(inboxConsumer);
         flushFn.accept(buffer);
     }
 
