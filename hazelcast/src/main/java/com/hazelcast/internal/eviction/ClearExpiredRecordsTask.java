@@ -130,6 +130,10 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
             T container = this.containers[partitionId];
 
             IPartition partition = partitionService.getPartition(partitionId, false);
+            if (partition.isMigrating()) {
+                continue;
+            }
+
             if (partition.isLocal()) {
                 if (lostPartitionDetected) {
                     equalizeBackupSizeWithPrimary(container);
