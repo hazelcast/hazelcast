@@ -65,6 +65,8 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
     private ChannelOutboundHandler outboundHandler;
 
     private OutboundFrame currentFrame;
+    private volatile boolean writeEvenIfOuputIsEmpty;
+    private volatile boolean forceUnschedule;
     private volatile long lastWriteTime;
 
     // this field will be accessed by the NioThread or
@@ -152,6 +154,30 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
         schedule();
     }
 
+    /**
+     * Counterpart to {@link #markForSleep()} method. Forces
+     * {@link com.hazelcast.internal.networking.Channel#write(ByteBuffer))} to be called even if the output buffer is
+     * empty. It also re-schedules this writer on the IO thread selector.
+     *
+     * @see #markForSleep()
+     */
+    public void wakeUp() {
+        writeEvenIfOuputIsEmpty = true;
+        forceUnschedule = false;
+        write(WakeUpFrame.INSTANCE);
+    }
+
+    /**
+     * This method asks for unscheduling this writer from the IO thread Selector until the {@link #wakeUp()} is called.
+     * The {@link NioChannel} can utilize it when waiting for an external action (e.g. receiving additional data).
+     *
+     * @see #wakeUp()
+     */
+    public void markForSleep() {
+        writeEvenIfOuputIsEmpty = false;
+        forceUnschedule = true;
+    }
+
     private OutboundFrame poll() {
         for (; ; ) {
             boolean urgent = true;
@@ -222,6 +248,11 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
      * This call is only made by the IO thread.
      */
     private void unschedule() throws IOException {
+        if (forceUnschedule) {
+            unregisterOp(OP_WRITE);
+            scheduled.set(false);
+            return;
+        }
         if (dirtyOutputBuffer() || currentFrame != null) {
             // Because not all data was written to the socket, we need to register for OP_WRITE so we get
             // notified when the channel is ready for more data.
@@ -268,6 +299,7 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
         fillOutputBuffer();
 
         if (dirtyOutputBuffer()) {
+            writeEvenIfOuputIsEmpty = false;
             writeOutputBufferToSocket();
         }
 
@@ -286,14 +318,18 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
      */
     private boolean init() throws IOException {
         InitResult<ChannelOutboundHandler> init = initializer.initOutbound(channel);
-        if (init == null) {
+        if (init != null) {
+            this.outputBuffer = init.getByteBuffer();
+            this.outboundHandler = init.getHandler();
+        } else if (writeEvenIfOuputIsEmpty) {
+            if (outputBuffer == null) {
+                outputBuffer = ByteBuffer.allocate(0);
+            }
+        } else {
             // we can't initialize the outbound-handler yet since insufficient data is available.
             unschedule();
             return false;
         }
-
-        this.outputBuffer = init.getByteBuffer();
-        this.outboundHandler = init.getHandler();
         registerOp(OP_WRITE);
         return true;
     }
@@ -310,7 +346,7 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
      * @return true if dirty, false otherwise.
      */
     private boolean dirtyOutputBuffer() {
-        return outputBuffer != null && outputBuffer.position() > 0;
+        return writeEvenIfOuputIsEmpty || (outputBuffer != null && outputBuffer.position() > 0);
     }
 
     /**
@@ -337,8 +373,10 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
         }
 
         while (currentFrame != null) {
+            if (currentFrame == WakeUpFrame.INSTANCE) {
+                writeEvenIfOuputIsEmpty = true;
             // Lets write the currentFrame to the outputBuffer.
-            if (!outboundHandler.onWrite(currentFrame, outputBuffer)) {
+            } else if (!outboundHandler.onWrite(currentFrame, outputBuffer)) {
                 // We are done for this round because not all data of the currentFrame fits in the outputBuffer
                 return;
             }
@@ -458,6 +496,19 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    private static final class WakeUpFrame implements OutboundFrame {
+
+        public static final WakeUpFrame INSTANCE = new WakeUpFrame();
+
+        private WakeUpFrame() {
+        }
+
+        @Override
+        public boolean isUrgent() {
+            return true;
         }
     }
 }
