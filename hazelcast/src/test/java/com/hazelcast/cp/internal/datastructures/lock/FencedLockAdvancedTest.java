@@ -118,7 +118,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(registry.getLiveOperations().isEmpty());
             }
         });
 
@@ -127,7 +127,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
         assertOpenEventually(latch);
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
 
@@ -153,7 +153,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(registry.getLiveOperations().isEmpty());
             }
         });
 
@@ -162,7 +162,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
         assertOpenEventually(latch);
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -178,7 +178,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
 
         assertEquals(FencedLock.INVALID_FENCE, fence);
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -201,14 +201,14 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(registry.getLiveOperations().isEmpty());
             }
         });
 
         lock.destroy();
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -417,7 +417,7 @@ public class FencedLockAdvancedTest extends HazelcastRaftTestSupport {
                 assertNotNull(registry);
                 RaftLock raftLock = registry.getResourceOrNull(objectName);
                 assertNotNull(raftLock);
-                assertFalse(raftLock.getWaitKeys().isEmpty());
+                assertFalse(raftLock.getInternalWaitKeysMap().isEmpty());
             }
         });
 

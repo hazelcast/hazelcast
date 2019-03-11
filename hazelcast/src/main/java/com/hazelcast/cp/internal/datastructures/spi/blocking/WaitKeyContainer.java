@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -37,9 +38,15 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  */
 public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerializable {
 
+    /**
+     * Wait key of the first invocation.
+     */
     private W key;
 
-    private List<W> retries;
+    /**
+     * All wait keys, including the first invocation and its retries.
+     */
+    private List<W> keys;
 
     public WaitKeyContainer() {
     }
@@ -52,24 +59,19 @@ public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerial
         return key;
     }
 
-    public List<W> retries() {
-        return retries != null ? retries : Collections.<W>emptyList();
+    public Collection<W> retries() {
+        return keys != null ? keys.subList(1, keys.size()) : Collections.<W>emptyList();
     }
 
-    public List<W> keyAndRetries() {
-        if (retryCount() == 0) {
+    public Collection<W> keyAndRetries() {
+        if (keys == null) {
             return Collections.singletonList(key);
         }
-
-        List<W> all = new ArrayList<W>(1 + retryCount());
-        all.add(key);
-        all.addAll(retries());
-
-        return all;
+        return keys;
     }
 
     public int retryCount() {
-        return retries().size();
+        return keys != null ? keys.size() - 1 : 0;
     }
 
     public long sessionId() {
@@ -85,11 +87,12 @@ public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerial
                 + " has different session ids!");
         checkTrue(key.invocationUid().equals(retry.invocationUid()), key + " and its retry: " + retry
                 + " has different invocation uids!");
-        if (retries == null) {
-            retries = new ArrayList<W>(1);
-        }
 
-        retries.add(retry);
+        if (keys == null) {
+            keys = new ArrayList<W>(3);
+            keys.add(key);
+        }
+        keys.add(retry);
     }
 
     @Override
@@ -105,10 +108,10 @@ public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerial
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(key);
-        int retryCount = retries != null ? retries.size() : 0;
-        out.writeInt(retryCount);
-        for (int i = 0; i < retryCount; i++) {
-            out.writeObject(retries.get(i));
+        Collection<W> retries = retries();
+        out.writeInt(retries.size());
+        for (W retry : retries) {
+            out.writeObject(retry);
         }
     }
 
@@ -117,16 +120,16 @@ public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerial
         key = in.readObject();
         int retryCount = in.readInt();
         if (retryCount > 0) {
-            retries = new ArrayList<W>(retryCount);
+            keys = new ArrayList<W>(retryCount + 1);
+            keys.add(key);
             for (int i = 0; i < retryCount; i++) {
                 W retry = in.readObject();
-                retries.add(retry);
+                keys.add(retry);
             }
         }
     }
 
-    @Override
     public String toString() {
-        return "WaitKeyContainer{" + "key=" + key + ", retries=" + retries + '}';
+        return "WaitKeyContainer{" + "key=" + key + ", retries=" + retries() + '}';
     }
 }

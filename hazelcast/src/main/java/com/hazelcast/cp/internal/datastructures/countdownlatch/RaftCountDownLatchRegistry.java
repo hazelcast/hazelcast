@@ -73,7 +73,7 @@ public class RaftCountDownLatchRegistry extends ResourceRegistry<AwaitInvocation
     boolean await(String name, AwaitInvocationKey key, long timeoutMs) {
         boolean success = getOrInitResource(name).await(key, (timeoutMs > 0));
         if (!success) {
-            addWaitKey(name, key.invocationUid(), timeoutMs);
+            addWaitKey(name, key, timeoutMs);
         }
 
         return success;

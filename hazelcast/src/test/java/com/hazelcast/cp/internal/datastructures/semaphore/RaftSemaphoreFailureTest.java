@@ -488,7 +488,7 @@ public abstract class RaftSemaphoreFailureTest extends HazelcastRaftTestSupport 
                 RaftSemaphoreService service = getNodeEngineImpl(semaphoreInstance).getService(RaftSemaphoreService.SERVICE_NAME);
                 RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
                 RaftSemaphore raftSemaphore = registry.getResourceOrNull(objectName);
-                assertEquals(2, raftSemaphore.getWaitKeys().size());
+                assertEquals(2, raftSemaphore.getInternalWaitKeysMap().size());
             }
         });
 

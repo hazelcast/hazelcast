@@ -90,9 +90,6 @@ public class RaftSemaphoreService extends AbstractBlockingService<AcquireInvocat
 
         if (!success) {
             scheduleTimeout(groupId, name, key.invocationUid(), timeoutMs);
-            if (timeoutMs != 0) {
-                addLiveOperation(key);
-            }
         }
 
         return success;

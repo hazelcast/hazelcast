@@ -133,7 +133,7 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations().size());
+                assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
             }
         });
 
@@ -141,7 +141,7 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations().size());
+                assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
             }
         }, callTimeoutSeconds + 5);
 
