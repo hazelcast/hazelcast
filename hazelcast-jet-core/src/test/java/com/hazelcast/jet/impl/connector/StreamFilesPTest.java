@@ -44,6 +44,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -268,6 +269,26 @@ public class StreamFilesPTest extends JetTestSupport {
         List<Entry<String, String>> expected = asList(
                 entry("a.txt", "incomplete1 complete1"),
                 entry("b.txt", "incomplete2 complete2"));
+        assertTrueEventually(() -> assertEquals(expected, outboxLines), ASSERT_COUNT_TIMEOUT_SECONDS);
+    }
+
+    @Test
+    public void when_multipleLinesAdded_then_seenOneByOne() throws Exception {
+        // Given
+        initializeProcessor(null);
+        driverThread.start();
+
+        // When
+        Path file = workDir.toPath().resolve("a.txt");
+        writeToFile(file, "line1\n");
+        List<Entry<String, String>> expected = new ArrayList<>();
+        expected.add(entry("a.txt", "line1"));
+        assertTrueEventually(() -> assertEquals(expected, outboxLines), ASSERT_COUNT_TIMEOUT_SECONDS);
+        writeToFile(file, "line2\n");
+        expected.add(entry("a.txt", "line2"));
+        assertTrueEventually(() -> assertEquals(expected, outboxLines), ASSERT_COUNT_TIMEOUT_SECONDS);
+        writeToFile(file, "line3\n");
+        expected.add(entry("a.txt", "line3"));
         assertTrueEventually(() -> assertEquals(expected, outboxLines), ASSERT_COUNT_TIMEOUT_SECONDS);
     }
 

@@ -1049,6 +1049,13 @@ public final class Sources {
      *      .buildWatcher()
      * }</pre>
      *
+     * <h3>Appending lines using an text editor</h3>
+     * If you're testing this source, you might think of using a text editor to
+     * append the lines. However, it might not work as expected because some
+     * editors write to a temp file and then rename it or append extra newline
+     * character at the end which gets overwritten if more text is added in the
+     * editor. Best way to append is to use {@code echo text >> yourfile}.
+     *
      * See {@link #filesBuilder(String)}.
      */
     @Nonnull

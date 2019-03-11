@@ -161,6 +161,13 @@ public final class FileSourceBuilder {
      * blocking, missed, or duplicate events as a result. Such problems may be
      * resolved by upgrading the JRE to the latest version.
      *
+     * <h3>Appending lines using an text editor</h3>
+     * If you're testing this source, you might think of using a text editor to
+     * append the lines. However, it might not work as expected because some
+     * editors write to a temp file and then rename it or append extra newline
+     * character at the end which gets overwritten if more text is added in the
+     * editor. Best way to append is to use {@code echo text >> yourfile}.
+     *
      * @param mapOutputFn the function which creates output object from each
      *                    line. Gets the filename and line as parameters
      * @param <T> the type of the items the source emits
