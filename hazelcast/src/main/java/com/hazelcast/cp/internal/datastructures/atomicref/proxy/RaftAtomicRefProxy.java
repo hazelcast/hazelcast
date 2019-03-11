@@ -32,7 +32,6 @@ import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectO
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.NO_RETURN_VALUE;
@@ -49,7 +48,6 @@ public class RaftAtomicRefProxy<T> implements IAtomicReference<T> {
 
     private final RaftInvocationManager invocationManager;
     private final SerializationService serializationService;
-    private final ProxyService proxyService;
     private final RaftGroupId groupId;
     private final String proxyName;
     private final String objectName;
@@ -58,7 +56,6 @@ public class RaftAtomicRefProxy<T> implements IAtomicReference<T> {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
         this.serializationService = nodeEngine.getSerializationService();
-        this.proxyService = nodeEngine.getProxyService();
         this.groupId = groupId;
         this.proxyName = proxyName;
         this.objectName = objectName;
@@ -202,7 +199,6 @@ public class RaftAtomicRefProxy<T> implements IAtomicReference<T> {
     @Override
     public void destroy() {
         invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
-        proxyService.destroyDistributedObject(getServiceName(), proxyName);
     }
 
     public CPGroupId getGroupId() {

@@ -38,7 +38,6 @@ import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
@@ -50,14 +49,12 @@ import java.util.concurrent.Future;
 public class RaftAtomicLongProxy implements IAtomicLong {
 
     private final RaftInvocationManager invocationManager;
-    private final ProxyService proxyService;
     private final RaftGroupId groupId;
     private final String proxyName;
     private final String objectName;
 
     public RaftAtomicLongProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        this.proxyService = nodeEngine.getProxyService();
         this.invocationManager = service.getInvocationManager();
         this.groupId = groupId;
         this.proxyName = proxyName;
@@ -262,7 +259,6 @@ public class RaftAtomicLongProxy implements IAtomicLong {
     @Override
     public void destroy() {
         invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
-        proxyService.destroyDistributedObject(getServiceName(), proxyName);
     }
 
     public CPGroupId getGroupId() {

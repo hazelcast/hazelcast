@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.datastructures.lock;
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
@@ -27,8 +26,11 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
+import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.AcquireStatus.FAILED;
 import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.AcquireStatus.SUCCESSFUL;
 import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
@@ -44,6 +46,9 @@ public class RaftLockService extends AbstractBlockingService<LockInvocationKey, 
      * Name of the service
      */
     public static final String SERVICE_NAME = "hz:raft:lockService";
+
+    private final ConcurrentMap<String, RaftFencedLockProxy> proxies
+            = new ConcurrentHashMap<String, RaftFencedLockProxy>();
 
     public RaftLockService(NodeEngine nodeEngine) {
         super(nodeEngine);
@@ -155,7 +160,35 @@ public class RaftLockService extends AbstractBlockingService<LockInvocationKey, 
     }
 
     @Override
-    public DistributedObject createDistributedObject(String proxyName) {
+    public FencedLock createProxy(String proxyName) {
+        proxyName = withoutDefaultGroupName(proxyName);
+
+        while (true) {
+            RaftFencedLockProxy proxy = proxies.get(proxyName);
+            if (proxy != null) {
+                CPGroupId groupId = raftService.createRaftGroupForProxy(proxyName);
+                if (!proxy.getGroupId().equals(groupId)) {
+                    proxies.remove(proxyName, proxy);
+                } else {
+                    return proxy;
+                }
+            }
+
+            proxy = doCreateProxy(proxyName);
+            RaftFencedLockProxy existing = proxies.putIfAbsent(proxyName, proxy);
+            if (existing == null) {
+                return proxy;
+            }
+        }
+    }
+
+    @Override
+    public void onCPSubsystemRestart() {
+        super.onCPSubsystemRestart();
+        proxies.clear();
+    }
+
+    private RaftFencedLockProxy doCreateProxy(String proxyName) {
         try {
             RaftGroupId groupId = raftService.createRaftGroupForProxy(proxyName);
             return new RaftFencedLockProxy(nodeEngine, groupId, proxyName, getObjectNameForProxy(proxyName));
@@ -164,7 +197,4 @@ public class RaftLockService extends AbstractBlockingService<LockInvocationKey, 
         }
     }
 
-    @Override
-    public void destroyDistributedObject(String objectName) {
-    }
 }

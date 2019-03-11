@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.clientside;
+package com.hazelcast.client.cp.internal;
 
+import com.hazelcast.client.cp.internal.datastructures.proxy.ClientRaftProxyFactory;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
@@ -23,50 +26,52 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
-import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
-
-import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
+import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.cp.session.CPSessionManagementService;
 
 /**
- * TODO [basri] javadoc
+ * Client-side impl of the CP subsystem to create CP data structure proxies
  */
-class CPSubsystemImpl implements CPSubsystem {
+public class CPSubsystemImpl implements CPSubsystem {
 
-    private final HazelcastClientInstanceImpl client;
+    private final ClientRaftProxyFactory proxyFactory;
 
-    CPSubsystemImpl(HazelcastClientInstanceImpl client) {
-        this.client = client;
+    public CPSubsystemImpl(HazelcastClientInstanceImpl client) {
+        this.proxyFactory = new ClientRaftProxyFactory(client);
+    }
+
+    public void init(ClientContext context) {
+        proxyFactory.init(context);
     }
 
     @Override
     public IAtomicLong getAtomicLong(String name) {
-        return client.getDistributedObject(RaftAtomicLongService.SERVICE_NAME, withoutDefaultGroupName(name));
+        return proxyFactory.createProxy(RaftAtomicLongService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> IAtomicReference<E> getAtomicReference(String name) {
-        return client.getDistributedObject(RaftAtomicRefService.SERVICE_NAME, withoutDefaultGroupName(name));
+        return proxyFactory.createProxy(RaftAtomicRefService.SERVICE_NAME, name);
     }
 
     @Override
     public ICountDownLatch getCountDownLatch(String name) {
-        return client.getDistributedObject(RaftCountDownLatchService.SERVICE_NAME, withoutDefaultGroupName(name));
+        return proxyFactory.createProxy(RaftCountDownLatchService.SERVICE_NAME, name);
     }
 
     @Override
     public FencedLock getLock(String name) {
-        return client.getDistributedObject(RaftLockService.SERVICE_NAME, withoutDefaultGroupName(name));
+        return proxyFactory.createProxy(RaftLockService.SERVICE_NAME, name);
     }
 
     @Override
     public ISemaphore getSemaphore(String name) {
-        return client.getDistributedObject(RaftSemaphoreService.SERVICE_NAME, withoutDefaultGroupName(name));
+        return proxyFactory.createProxy(RaftSemaphoreService.SERVICE_NAME, name);
     }
 
     @Override

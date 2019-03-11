@@ -18,6 +18,7 @@ package com.hazelcast.cp;
 
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -135,10 +136,12 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * See {@link CPSubsystemManagementService#restart()} for more details.
  * <p>
  * <strong>The CP data structure proxies differ from the other Hazelcast data
- * structure proxies in one aspect, that is, if you call the
- * {@link DistributedObject#destroy()} API on a CP data structure proxy,
- * that data structure is terminated on the underlying CP group and cannot be
- * reinitialized on the same CP group until the CP group is force-destroyed.
+ * structure proxies in two aspects. First, each time you fetch a proxy via
+ * one of the methods in this interface, internally a commit is performed
+ * on the Metadata CP group. Hence, callers should cache returned proxies.
+ * Second, if you call {@link DistributedObject#destroy()} on a CP data
+ * structure proxy, that data structure is terminated on the underlying
+ * CP group and cannot be reinitialized until the CP group is force-destroyed.
  * For this reason, please make sure that you are completely done with a CP
  * data structure before destroying its proxy.</strong>
  *
@@ -160,9 +163,13 @@ public interface CPSubsystem {
      * {@link IAtomicLong} instance offers linearizability and behaves as a CP
      * register. When a network partition occurs, proxies that exist on the
      * minority side of its CP group lose availability.
+     * <p>
+     * <strong>Each call of this method performs a commit to the Metadata CP
+     * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @param name name of the {@link IAtomicLong} proxy
      * @return {@link IAtomicLong} proxy for the given name
+     * @throws HazelcastException if the CP subsystem is not enabled
      */
     IAtomicLong getAtomicLong(String name);
 
@@ -179,9 +186,13 @@ public interface CPSubsystem {
      * Returned {@link IAtomicReference} instance offers linearizability and
      * behaves as a CP register. When a network partition occurs, proxies that
      * exist on the minority side of its CP group lose availability.
+     * <p>
+     * <strong>Each call of this method performs a commit to the Metadata CP
+     * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @param name name of the {@link IAtomicReference} proxy
      * @return {@link IAtomicReference} proxy for the given name
+     * @throws HazelcastException if the CP subsystem is not enabled
      */
     <E> IAtomicReference<E> getAtomicReference(String name);
 
@@ -198,9 +209,13 @@ public interface CPSubsystem {
      * {@link ICountDownLatch} instance offers linearizability. When a network
      * partition occurs, proxies that exist on the minority side of its CP
      * group lose availability.
+     * <p>
+     * <strong>Each call of this method performs a commit to the Metadata CP
+     * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @param name name of the {@link ICountDownLatch} proxy
      * @return {@link ICountDownLatch} proxy for the given name
+     * @throws HazelcastException if the CP subsystem is not enabled
      */
     ICountDownLatch getCountDownLatch(String name);
 
@@ -216,9 +231,15 @@ public interface CPSubsystem {
      * instance offers linearizability. When a network partition occurs,
      * proxies that exist on the minority side of its CP group lose
      * availability.
+     * <p>
+     * <strong>Each call of this method performs a commit to the Metadata CP
+     * group. Hence, callers should cache the returned proxy.</strong>
+     *
+     * @see FencedLockConfig
      *
      * @param name name of the {@link FencedLock} proxy
      * @return {@link FencedLock} proxy for the given name
+     * @throws HazelcastException if the CP subsystem is not enabled
      */
     FencedLock getLock(String name);
 
@@ -234,11 +255,15 @@ public interface CPSubsystem {
      * {@link ISemaphore} instance offers linearizability. When a network
      * partition occurs, proxies that exist on the minority side of its CP
      * group lose availability.
+     * <p>
+     * <strong>Each call of this method performs a commit to the Metadata CP
+     * group. Hence, callers should cache the returned proxy.</strong>
      *
      * @see CPSemaphoreConfig
      *
      * @param name name of the {@link ISemaphore} proxy
      * @return {@link ISemaphore} proxy for the given name
+     * @throws HazelcastException if the CP subsystem is not enabled
      */
     ISemaphore getSemaphore(String name);
 

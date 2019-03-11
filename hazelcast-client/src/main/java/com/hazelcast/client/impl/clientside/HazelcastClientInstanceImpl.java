@@ -32,6 +32,7 @@ import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.connection.nio.ClusterConnectorService;
 import com.hazelcast.client.connection.nio.ClusterConnectorServiceImpl;
 import com.hazelcast.client.connection.nio.DefaultClientConnectionStrategy;
+import com.hazelcast.client.cp.internal.CPSubsystemImpl;
 import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -200,6 +201,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientUserCodeDeploymentService userCodeDeploymentService;
     private final ClientDiscoveryService clientDiscoveryService;
     private final ClientProxySessionManager proxySessionManager;
+    private final CPSubsystemImpl cpSubsystem;
 
     public HazelcastClientInstanceImpl(ClientFailoverConfig clientFailoverConfig,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -249,6 +251,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         statistics = new Statistics(this);
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
+        cpSubsystem = new CPSubsystemImpl(this);
     }
 
     private ClusterConnectorService initClusterConnectorService() {
@@ -407,6 +410,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService.start();
         statistics.start();
         clientExtension.afterStart(this);
+        cpSubsystem.init(clientContext);
     }
 
     public void onClusterConnect(Connection ownerConnection) throws Exception {
@@ -683,7 +687,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public CPSubsystem getCPSubsystem() {
-        return new CPSubsystemImpl(this);
+        return cpSubsystem;
     }
 
     @Override

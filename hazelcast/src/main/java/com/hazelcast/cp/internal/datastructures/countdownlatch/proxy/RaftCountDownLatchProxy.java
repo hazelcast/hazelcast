@@ -29,7 +29,6 @@ import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetRoun
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.TrySetCountOp;
 import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
 
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +41,6 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 public class RaftCountDownLatchProxy implements ICountDownLatch {
 
     private final RaftInvocationManager invocationManager;
-    private final ProxyService proxyService;
     private final RaftGroupId groupId;
     private final String proxyName;
     private final String objectName;
@@ -50,7 +48,6 @@ public class RaftCountDownLatchProxy implements ICountDownLatch {
     public RaftCountDownLatchProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
-        this.proxyService = nodeEngine.getProxyService();
         this.groupId = groupId;
         this.proxyName = proxyName;
         this.objectName = objectName;
@@ -98,7 +95,6 @@ public class RaftCountDownLatchProxy implements ICountDownLatch {
     @Override
     public void destroy() {
         invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
-        proxyService.destroyDistributedObject(getServiceName(), proxyName);
     }
 
     public CPGroupId getGroupId() {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomicref;
 
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftGroupLifecycleAwareService;
@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
+import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
@@ -154,16 +155,13 @@ public class RaftAtomicRefService implements RaftManagedService, RaftRemoteServi
     }
 
     @Override
-    public DistributedObject createDistributedObject(String proxyName) {
+    public IAtomicReference createProxy(String proxyName) {
         try {
+            proxyName = withoutDefaultGroupName(proxyName);
             RaftGroupId groupId = raftService.createRaftGroupForProxy(proxyName);
             return new RaftAtomicRefProxy(nodeEngine, groupId, proxyName, getObjectNameForProxy(proxyName));
         } catch (Exception e) {
             throw rethrow(e);
         }
-    }
-
-    @Override
-    public void destroyDistributedObject(String proxyName) {
     }
 }

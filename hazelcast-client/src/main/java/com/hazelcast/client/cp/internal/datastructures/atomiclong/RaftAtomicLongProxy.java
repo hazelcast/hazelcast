@@ -46,7 +46,7 @@ import static com.hazelcast.cp.internal.datastructures.atomiclong.operation.Alte
  * Client-side Raft-based proxy implementation of {@link IAtomicLong}
  */
 @SuppressWarnings("checkstyle:methodcount")
-class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
+public class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     private static final ClientMessageDecoder ADD_AND_GET_DECODER = new ClientMessageDecoder() {
         @Override
@@ -101,7 +101,7 @@ class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
     private final RaftGroupId groupId;
     private final String objectName;
 
-    RaftAtomicLongProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
+    public RaftAtomicLongProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
         super(RaftAtomicLongService.SERVICE_NAME, proxyName, context);
         this.groupId = groupId;
         this.objectName = objectName;

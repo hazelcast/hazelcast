@@ -69,7 +69,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -266,15 +265,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     private void resetLocalRaftState() {
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(RaftRemoteService.class)) {
-            InternalProxyService proxyService = nodeEngine.getProxyService();
-            for (String objectName : proxyService.getDistributedObjectNames(serviceInfo.getName())) {
-                try {
-                    proxyService.destroyLocalDistributedObject(serviceInfo.getName(), objectName, false);
-                } catch (Throwable t) {
-                    logger.warning("Proxy destroy of " + objectName + " in " + serviceInfo.getName() + " failed.", t);
-                }
-            }
-
             if (serviceInfo.getService() instanceof RaftManagedService) {
                 ((RaftManagedService) serviceInfo.getService()).onCPSubsystemRestart();
             }
@@ -591,7 +581,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     public RaftNode getOrInitRaftNode(CPGroupId groupId) {
         RaftNode node = nodes.get(groupId);
-        if (node == null && !destroyedGroupIds.contains(groupId)) {
+        if (node == null && metadataGroupManager.isDiscoveryCompleted() && !destroyedGroupIds.contains(groupId)) {
             logger.fine("RaftNode[" + groupId + "] does not exist. Asking to the METADATA CP group...");
             nodeEngine.getExecutionService().execute(ASYNC_EXECUTOR, new InitializeRaftNodeTask(groupId));
         }
@@ -756,8 +746,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
 
         checkTrue(name.indexOf("@", i + 1) == -1, "Custom group name must be specified at most once");
-        String groupName = name.substring(i + 1);
-        if (groupName.equals(DEFAULT_GROUP_NAME)) {
+        String groupName = name.substring(i + 1).trim();
+        if (groupName.equalsIgnoreCase(DEFAULT_GROUP_NAME)) {
             return name.substring(0, i);
         }
 
@@ -765,6 +755,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     public static String getGroupNameForProxy(String name) {
+        name = name.trim();
         int i = name.indexOf("@");
         if (i == -1) {
             return DEFAULT_GROUP_NAME;
@@ -775,7 +766,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         String groupName = name.substring(i + 1).trim();
         checkTrue(groupName.length() > 0, "Custom CP group name cannot be empty string");
         checkFalse(groupName.equalsIgnoreCase(METADATA_CP_GROUP_NAME), "CP data structures cannot run on the METADATA CP group!");
-        return groupName;
+        return groupName.equalsIgnoreCase(DEFAULT_GROUP_NAME) ? DEFAULT_GROUP_NAME : groupName;
     }
 
     public static String getObjectNameForProxy(String name) {

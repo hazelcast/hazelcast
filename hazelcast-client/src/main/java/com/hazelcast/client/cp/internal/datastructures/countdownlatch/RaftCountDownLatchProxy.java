@@ -42,12 +42,12 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 /**
  * Client-side Raft-based proxy implementation of {@link ICountDownLatch}
  */
-class RaftCountDownLatchProxy extends ClientProxy implements ICountDownLatch {
+public class RaftCountDownLatchProxy extends ClientProxy implements ICountDownLatch {
 
     private final RaftGroupId groupId;
     private final String objectName;
 
-    RaftCountDownLatchProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
+    public RaftCountDownLatchProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
         super(RaftCountDownLatchService.SERVICE_NAME, proxyName, context);
         this.groupId = groupId;
         this.objectName = objectName;

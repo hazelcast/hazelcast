@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
+import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
@@ -91,8 +92,9 @@ public class RaftCountDownLatchService
     }
 
     @Override
-    public DistributedObject createDistributedObject(String proxyName) {
+    public ICountDownLatch createProxy(String proxyName) {
         try {
+            proxyName = withoutDefaultGroupName(proxyName);
             RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
             RaftGroupId groupId = service.createRaftGroupForProxy(proxyName);
             return new RaftCountDownLatchProxy(nodeEngine, groupId, proxyName, getObjectNameForProxy(proxyName));
@@ -101,7 +103,4 @@ public class RaftCountDownLatchService
         }
     }
 
-    @Override
-    public void destroyDistributedObject(String objectName) {
-    }
 }

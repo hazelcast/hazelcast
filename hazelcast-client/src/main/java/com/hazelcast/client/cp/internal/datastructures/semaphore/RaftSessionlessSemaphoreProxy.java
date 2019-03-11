@@ -46,13 +46,13 @@ import static java.lang.Math.max;
 /**
  * Client-side sessionless proxy of Raft-based {@link ISemaphore}
  */
-class RaftSessionlessSemaphoreProxy extends ClientProxy implements ISemaphore {
+public class RaftSessionlessSemaphoreProxy extends ClientProxy implements ISemaphore {
 
     private final ClientProxySessionManager sessionManager;
     private final RaftGroupId groupId;
     private final String objectName;
 
-    RaftSessionlessSemaphoreProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
+    public RaftSessionlessSemaphoreProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
         super(RaftSemaphoreService.SERVICE_NAME, proxyName, context);
         this.sessionManager = getClient().getProxySessionManager();
         this.groupId = groupId;

@@ -30,7 +30,6 @@ import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
 
 import java.util.UUID;
 
@@ -40,14 +39,12 @@ import java.util.UUID;
 public class RaftFencedLockProxy extends AbstractRaftFencedLockProxy {
 
     private final RaftInvocationManager invocationManager;
-    private final ProxyService proxyService;
 
     public RaftFencedLockProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
         super((ProxySessionManagerService) nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME), groupId, proxyName,
                 objectName);
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
-        this.proxyService = nodeEngine.getProxyService();
     }
 
     @Override
@@ -79,7 +76,6 @@ public class RaftFencedLockProxy extends AbstractRaftFencedLockProxy {
     public void destroy() {
         try {
             invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
-            proxyService.destroyDistributedObject(getServiceName(), proxyName);
         } finally {
             super.destroy();
         }
