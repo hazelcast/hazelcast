@@ -68,7 +68,7 @@ public final class FailoverClientConfigSupport {
      */
     public static ClientFailoverConfig resolveClientFailoverConfig(ClientFailoverConfig clientFailoverConfig) {
         if (clientFailoverConfig == null) {
-            locateAndCreateClientFailoverConfig();
+            clientFailoverConfig = locateAndCreateClientFailoverConfig();
         }
         checkValidAlternative(clientFailoverConfig.getClientConfigs());
         return clientFailoverConfig;
