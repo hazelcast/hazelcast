@@ -25,7 +25,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-class AbstractClientFailoverConfigBuilderTest {
+abstract class AbstractClientFailoverConfigBuilderTest {
     protected ClientFailoverConfig fullClientConfig;
 
     @After
@@ -52,18 +52,31 @@ class AbstractClientFailoverConfigBuilderTest {
 
         YamlClientFailoverConfigBuilder configBuilder = new YamlClientFailoverConfigBuilder();
         ClientFailoverConfig config = configBuilder.build();
-        assertEquals(2, config.getClientConfigs().size());
-        assertEquals("cluster1", config.getClientConfigs().get(0).getGroupConfig().getName());
-        assertEquals("cluster2", config.getClientConfigs().get(1).getGroupConfig().getName());
-        assertEquals(4, config.getTryCount());
+        assertSampleFailoverConfig(config);
     }
 
     @Test
     public void testClientFailoverConfig() {
+        assertSampleFailoverConfig(fullClientConfig);
+    }
+
+    @Test
+    public abstract void testVariableReplacementFromSystemProperties();
+
+    @Test
+    public abstract void testVariableReplacementFromProperties();
+
+    @Test
+    public abstract void testWithClasspathConfig();
+
+    @Test
+    public abstract void testVariableReplacementFromSystemPropertiesWithClasspathConfig();
+
+    void assertSampleFailoverConfig(ClientFailoverConfig config) {
         List<ClientConfig> clientConfigs = fullClientConfig.getClientConfigs();
         assertEquals(2, clientConfigs.size());
         assertEquals("cluster1", clientConfigs.get(0).getGroupConfig().getName());
         assertEquals("cluster2", clientConfigs.get(1).getGroupConfig().getName());
-        assertEquals(4, fullClientConfig.getTryCount());
+        assertEquals(4, config.getTryCount());
     }
 }

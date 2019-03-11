@@ -22,7 +22,7 @@ import com.hazelcast.config.AbstractConfigLocator;
  * A support class for the {@link YamlClientFailoverConfigBuilder} to
  * locate the client failover YAML configuration.
  */
-class YamlClientFailoverConfigLocator extends AbstractConfigLocator {
+public class YamlClientFailoverConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {

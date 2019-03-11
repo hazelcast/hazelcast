@@ -23,7 +23,9 @@ import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.DuplicateInstanceNameException;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -94,6 +96,12 @@ public final class HazelcastClient {
      *     <li>
      *         Classpath: Hazelcast will check classpath for hazelcast-client.xml file.
      *     </li>
+     *     <li>
+     *         "hazelcast-client.yaml" file in current working directory
+     *     </li>
+     *     <li>
+     *         Classpath: Hazelcast will check classpath for hazelcast-client.yaml file.
+     *     </li>
      * </ol>
      * If Hazelcast doesn't find any config file, it will start with the default configuration (hazelcast-client-default.xml)
      * located in hazelcast.jar.
@@ -125,21 +133,49 @@ public final class HazelcastClient {
 
     /**
      * Creates a client with cluster switch capability. Client will try to connect to alternative clusters according to
-     * ClientFailoverConfig when it disconnects from a cluster.
+     * {@link ClientFailoverConfig} when it disconnects from a cluster.
      *
-     * If provided clientFailoverConfig is null, new XmlClientFailoverConfigBuilder().build() is used instead.
-     * It loads the client config using the following resolution mechanism:
+     * The configuration is loaded using using the following resolution mechanism:
+     * <ol>
+     * <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
+     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     * <li>it checks if a hazelcast-client-failover.xml is available in the working dir</li>
+     * <li>it checks if a hazelcast-client-failover.xml is available on the classpath</li>
+     * <li>it checks if a hazelcast-client-failover.yaml is available in the working dir</li>
+     * <li>it checks if a hazelcast-client-failover.yaml is available on the classpath</li>
+     * <li>if none available {@link HazelcastException} is thrown</li>
+     * </ol>
+     *
+     * @return the client instance
+     * @throws HazelcastException            if no failover configuration is found
+     * @throws InvalidConfigurationException if the loaded failover configuration is not valid
+     */
+    public static HazelcastInstance newHazelcastFailoverClient() {
+        return newHazelcastClientInternal(null, null, resolveClientFailoverConfig());
+    }
+
+    /**
+     * Creates a client with cluster switch capability. Client will try to connect to alternative clusters according to
+     * {@link ClientFailoverConfig} when it disconnects from a cluster.
+     *
+     * If provided clientFailoverConfig is {@code null}, the configuration is loaded using using the following resolution
+     * mechanism:
      * <ol>
      *      <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
      *          'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
      *      <li>it checks if a hazelcast-client-failover.xml is available in the working dir</li>
      *      <li>it checks if a hazelcast-client-failover.xml is available on the classpath</li>
-     *      <li>if none available build throws HazelcastException </li>
+     *      <li>it checks if a hazelcast-client-failover.yaml is available in the working dir</li>
+     *      <li>it checks if a hazelcast-client-failover.yaml is available on the classpath</li>
+     *      <li>if none available {@link HazelcastException} is thrown</li>
      * </ol>
      *
      *
      * @param clientFailoverConfig config describing the failover configs and try count
      * @return the client instance
+     * @throws HazelcastException            if no failover configuration is found
+     * @throws InvalidConfigurationException if the provided clientFailoverConfig is {@code null} and the loaded failover
+     * configuration is not valid
      */
     public static HazelcastInstance newHazelcastFailoverClient(ClientFailoverConfig clientFailoverConfig) {
         return newHazelcastClientInternal(null, null, resolveClientFailoverConfig(clientFailoverConfig));

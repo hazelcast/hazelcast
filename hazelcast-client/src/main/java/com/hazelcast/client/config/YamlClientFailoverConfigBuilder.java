@@ -79,6 +79,7 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
      * <li>it checks if a hazelcast-client-failover.yaml is available in the working dir</li>
      * <li>it checks if a hazelcast-client-failover.yaml is available on the classpath</li>
      * </ol>
+     * @throws HazelcastException if no failover configuration is found
      */
     public YamlClientFailoverConfigBuilder() {
         this((YamlClientFailoverConfigLocator) null);
@@ -98,6 +99,7 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
      * if the configuration YAML is not located already.
      *
      * @param locator the configured locator to use
+     * @throws HazelcastException if no failover configuration is found
      */
     public YamlClientFailoverConfigBuilder(YamlClientFailoverConfigLocator locator) {
         if (locator == null) {

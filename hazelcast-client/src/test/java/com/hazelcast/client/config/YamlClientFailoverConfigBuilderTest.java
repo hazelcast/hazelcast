@@ -29,6 +29,9 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.net.URL;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -64,9 +67,63 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         buildConfig(yaml);
     }
 
-    private static void buildConfig(String yaml) {
+    @Override
+    @Test
+    public void testVariableReplacementFromProperties() {
+        String yaml = ""
+                + "hazelcast-client-failover:\n"
+                + "  clients:\n"
+                + "    - hazelcast-client-c1.yaml\n"
+                + "    - hazelcast-client-c2.yaml\n"
+                + "  try-count: ${try-count}";
+
+        Properties properties = new Properties();
+        properties.setProperty("try-count", "11");
+        ClientFailoverConfig config = buildConfig(yaml, properties);
+        assertEquals(11, config.getTryCount());
+    }
+
+    @Override
+    @Test
+    public void testVariableReplacementFromSystemProperties() {
+        String yaml = ""
+                + "hazelcast-client-failover:\n"
+                + "  clients:\n"
+                + "    - hazelcast-client-c1.yaml\n"
+                + "    - hazelcast-client-c2.yaml\n"
+                + "  try-count: ${try-count}";
+
+        System.setProperty("try-count", "11");
+        ClientFailoverConfig config = buildConfig(yaml);
+        assertEquals(11, config.getTryCount());
+    }
+
+    @Override
+    @Test
+    public void testWithClasspathConfig() {
+        ClientFailoverConfig config = new ClientFailoverClasspathYamlConfig("hazelcast-client-failover-sample.yaml");
+        assertSampleFailoverConfig(config);
+    }
+
+    @Override
+    @Test
+    public void testVariableReplacementFromSystemPropertiesWithClasspathConfig() {
+        System.setProperty("try-count", "13");
+        ClientFailoverConfig config = new ClientFailoverClasspathYamlConfig(
+                "hazelcast-client-failover-sample-with-variable.yaml");
+        assertEquals(13, config.getTryCount());
+    }
+
+    private static ClientFailoverConfig buildConfig(String yaml) {
+        return buildConfig(yaml, null);
+    }
+
+    private static ClientFailoverConfig buildConfig(String yaml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlClientFailoverConfigBuilder configBuilder = new YamlClientFailoverConfigBuilder(bis);
-        configBuilder.build();
+        if (properties != null) {
+            configBuilder.setProperties(properties);
+        }
+        return configBuilder.build();
     }
 }

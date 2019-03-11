@@ -29,6 +29,7 @@ class YamlClientFailoverDomConfigProcessor extends ClientFailoverDomConfigProces
         super(domLevel3, clientFailoverConfig);
     }
 
+    @Override
     protected void handleClients(Node node) {
         boolean clientConfigDefined = false;
 
