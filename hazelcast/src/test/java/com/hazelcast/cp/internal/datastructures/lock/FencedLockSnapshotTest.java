@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.datastructures.atomiclong;
+package com.hazelcast.cp.internal.datastructures.lock;
 
-import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.datastructures.AbstractAtomicRegisterSnapshotTest;
-import com.hazelcast.cp.internal.datastructures.atomiclong.operation.LocalGetOp;
-import com.hazelcast.cp.internal.datastructures.atomiclong.proxy.RaftAtomicLongProxy;
+import com.hazelcast.cp.internal.datastructures.lock.operation.GetLockOwnershipStateOp;
+import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,35 +31,39 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class RaftAtomicLongSnapshotTest extends AbstractAtomicRegisterSnapshotTest<Long> {
+public class FencedLockSnapshotTest extends AbstractAtomicRegisterSnapshotTest<Long> {
 
-    private IAtomicLong atomicLong;
-    private String name = "long";
+    private FencedLock lock;
+    private String name = "lock";
 
     @Before
     public void createProxy() {
-        atomicLong = getCPSubsystem().getAtomicLong(name);
+        lock = getCPSubsystem().getLock(name);
     }
 
     @Override
     protected CPGroupId getGroupId() {
-        return ((RaftAtomicLongProxy) atomicLong).getGroupId();
+        return lock.getGroupId();
     }
 
     @Override
     protected Long setAndGetInitialValue() {
-        long value = 13131L;
-        atomicLong.set(value);
-        return value;
+        return lock.lockAndGetFence();
     }
 
     @Override
     protected Long readValue() {
-        return atomicLong.get();
+        return lock.getFence();
     }
 
     @Override
     protected RaftOp getQueryRaftOp() {
-        return new LocalGetOp(name);
+        return new GetLockOwnershipStateOp(name);
+    }
+
+    @Override
+    protected Long getValue(InternalCompletableFuture<Object> future) {
+        RaftLockOwnershipState state = (RaftLockOwnershipState) future.join();
+        return state.getFence();
     }
 }

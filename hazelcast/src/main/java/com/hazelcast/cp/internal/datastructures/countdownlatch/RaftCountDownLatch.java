@@ -76,7 +76,7 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
         }
 
         Collection<AwaitInvocationKey> w = getAllWaitKeys();
-        waitKeys.clear();
+        clearWaitKeys();
 
         return Tuple2.of(0, w);
     }
@@ -114,9 +114,7 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
 
     RaftCountDownLatch cloneForSnapshot() {
         RaftCountDownLatch clone = new RaftCountDownLatch();
-        clone.groupId = this.groupId;
-        clone.name = this.name;
-        clone.waitKeys.putAll(this.waitKeys);
+        cloneForSnapshot(clone);
         clone.round = this.round;
         clone.countDownFrom = this.countDownFrom;
         clone.countDownUids.addAll(this.countDownUids);
@@ -169,7 +167,7 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
 
     @Override
     public String toString() {
-        return "RaftCountDownLatch{" + "groupId=" + groupId + ", name='" + name + '\'' + ", round=" + round
-                + ", countDownFrom=" + countDownFrom + ", countDownUids=" + countDownUids + ", waitKeys=" + waitKeys + '}';
+        return "RaftCountDownLatch{" + internalToString() + ", round=" + round
+                + ", countDownFrom=" + countDownFrom + ", countDownUids=" + countDownUids + '}';
     }
 }

@@ -89,7 +89,7 @@ public class RaftCountDownLatchLongAwaitClientTest extends HazelcastRaftTestSupp
             @Override
             public void run() {
                 RaftCountDownLatchService service = getNodeEngineImpl(instance).getService(RaftCountDownLatchService.SERVICE_NAME);
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(service.getLiveOperations(groupId).isEmpty());
             }
         });
 
@@ -97,7 +97,7 @@ public class RaftCountDownLatchLongAwaitClientTest extends HazelcastRaftTestSupp
             @Override
             public void run() {
                 RaftCountDownLatchService service = getNodeEngineImpl(instance).getService(RaftCountDownLatchService.SERVICE_NAME);
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(service.getLiveOperations(groupId).isEmpty());
             }
         }, callTimeoutSeconds + 5);
 

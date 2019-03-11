@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.datastructures.atomiclong;
+package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.datastructures.AbstractAtomicRegisterSnapshotTest;
-import com.hazelcast.cp.internal.datastructures.atomiclong.operation.LocalGetOp;
-import com.hazelcast.cp.internal.datastructures.atomiclong.proxy.RaftAtomicLongProxy;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetCountOp;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.RaftCountDownLatchProxy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,37 +29,39 @@ import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class RaftAtomicLongSnapshotTest extends AbstractAtomicRegisterSnapshotTest<Long> {
+public class RaftCountDownLatchSnapshotTest extends AbstractAtomicRegisterSnapshotTest<Integer> {
 
-    private IAtomicLong atomicLong;
-    private String name = "long";
+    private ICountDownLatch latch;
+    private String name = "latch";
 
     @Before
     public void createProxy() {
-        atomicLong = getCPSubsystem().getAtomicLong(name);
+        latch = getCPSubsystem().getCountDownLatch(name);
     }
 
     @Override
     protected CPGroupId getGroupId() {
-        return ((RaftAtomicLongProxy) atomicLong).getGroupId();
+        return ((RaftCountDownLatchProxy) latch).getGroupId();
     }
 
     @Override
-    protected Long setAndGetInitialValue() {
-        long value = 13131L;
-        atomicLong.set(value);
-        return value;
+    protected Integer setAndGetInitialValue() {
+        assertTrue(latch.trySetCount(5));
+        latch.countDown();
+        return latch.getCount();
     }
 
     @Override
-    protected Long readValue() {
-        return atomicLong.get();
+    protected Integer readValue() {
+        return latch.getCount();
     }
 
     @Override
     protected RaftOp getQueryRaftOp() {
-        return new LocalGetOp(name);
+        return new GetCountOp(name);
     }
 }

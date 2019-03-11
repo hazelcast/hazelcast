@@ -70,25 +70,15 @@ class RaftLockRegistry extends ResourceRegistry<LockInvocationKey, RaftLock> imp
         return clone;
     }
 
-    AcquireResult acquire(String name, LockInvocationKey key) {
-        AcquireResult result = getOrInitResource(name).acquire(key, true);
-
-        for (LockInvocationKey cancelled : result.cancelledWaitKeys()) {
-            removeWaitKey(name, cancelled);
-        }
-
-        return result;
-    }
-
-    AcquireResult tryAcquire(String name, LockInvocationKey key, long timeoutMs) {
-        AcquireResult result = getOrInitResource(name).acquire(key, (timeoutMs > 0));
+    AcquireResult acquire(String name, LockInvocationKey key, long timeoutMs) {
+        AcquireResult result = getOrInitResource(name).acquire(key, (timeoutMs != 0));
 
         for (LockInvocationKey cancelled : result.cancelledWaitKeys()) {
             removeWaitKey(name, cancelled);
         }
 
         if (result.status() == WAIT_KEY_ADDED) {
-            addWaitKey(name, key.invocationUid(), timeoutMs);
+            addWaitKey(name, key, timeoutMs);
         }
 
         return result;

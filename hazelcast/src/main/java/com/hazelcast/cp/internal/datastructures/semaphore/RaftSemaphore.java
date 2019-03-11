@@ -23,12 +23,12 @@ import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.collection.Long2ObjectHashMap;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -52,7 +52,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
 
     private boolean initialized;
     private int available;
-    private final Map<Long, SessionSemaphoreState> sessionStates = new HashMap<Long, SessionSemaphoreState>();
+    private final Long2ObjectHashMap<SessionSemaphoreState> sessionStates = new Long2ObjectHashMap<SessionSemaphoreState>();
 
     RaftSemaphore() {
     }
@@ -185,9 +185,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
 
     RaftSemaphore cloneForSnapshot() {
         RaftSemaphore clone = new RaftSemaphore();
-        clone.groupId = this.groupId;
-        clone.name = this.name;
-        clone.waitKeys.putAll(this.waitKeys);
+        cloneForSnapshot(clone);
         clone.initialized = this.initialized;
         clone.available = this.available;
         for (Entry<Long, SessionSemaphoreState> e : this.sessionStates.entrySet()) {
@@ -201,11 +199,11 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
     }
 
     private Collection<AcquireInvocationKey> cancelWaitKeys(SemaphoreEndpoint endpoint, UUID invocationUid) {
-        List<AcquireInvocationKey> cancelled = null;
-        WaitKeyContainer<AcquireInvocationKey> container = waitKeys.get(endpoint);
+        Collection<AcquireInvocationKey> cancelled = null;
+        WaitKeyContainer<AcquireInvocationKey> container = getWaitKeyContainer(endpoint);
         if (container != null && container.key().isDifferentInvocationOf(endpoint, invocationUid)) {
             cancelled = container.keyAndRetries();
-            waitKeys.remove(endpoint);
+            removeWaitKey(endpoint);
         }
 
         return cancelled != null ? cancelled : Collections.<AcquireInvocationKey>emptyList();
@@ -213,7 +211,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
 
     private Collection<AcquireInvocationKey> assignPermitsToWaitKeys() {
         List<AcquireInvocationKey> assigned = new ArrayList<AcquireInvocationKey>();
-        Iterator<WaitKeyContainer<AcquireInvocationKey>> iterator = waitKeys.values().iterator();
+        Iterator<WaitKeyContainer<AcquireInvocationKey>> iterator = waitKeyContainersIterator();
         while (iterator.hasNext() && available > 0) {
             WaitKeyContainer<AcquireInvocationKey> container = iterator.next();
             AcquireInvocationKey key = container.key();
@@ -385,8 +383,8 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
 
     @Override
     public String toString() {
-        return "RaftSemaphore{" + "groupId=" + groupId + ", name='" + name + '\'' + ", initialized=" + initialized
-                + ", available=" + available + ", sessionStates=" + sessionStates + ", waitKeys=" + waitKeys + '}';
+        return "RaftSemaphore{" + internalToString() + ", initialized=" + initialized
+                + ", available=" + available + ", sessionStates=" + sessionStates + '}';
     }
 
     /**
@@ -452,7 +450,8 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
         /**
          * map of threadId -> <invocationUid, permits> to track last operation of each endpoint
          */
-        private final Map<Long, Tuple2<UUID, Integer>> invocationRefUids = new HashMap<Long, Tuple2<UUID, Integer>>();
+        private final Long2ObjectHashMap<Tuple2<UUID, Integer>> invocationRefUids
+                = new Long2ObjectHashMap<Tuple2<UUID, Integer>>();
 
         private int acquiredPermits;
 

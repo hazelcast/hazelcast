@@ -97,7 +97,7 @@ public class RaftSemaphoreLongAwaitTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 RaftSemaphoreService service = getNodeEngineImpl(instance).getService(RaftSemaphoreService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations().size());
+                assertEquals(2, service.getLiveOperations(groupId).size());
             }
         });
 
@@ -105,7 +105,7 @@ public class RaftSemaphoreLongAwaitTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 RaftSemaphoreService service = getNodeEngineImpl(instance).getService(RaftSemaphoreService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations().size());
+                assertEquals(2, service.getLiveOperations(groupId).size());
             }
         }, callTimeoutSeconds + 5);
 

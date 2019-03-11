@@ -41,9 +41,10 @@ import java.util.UUID;
  */
 public abstract class BlockingResource<W extends WaitKey> implements DataSerializable {
 
-    protected CPGroupId groupId;
-    protected String name;
-    protected Map<Object, WaitKeyContainer<W>> waitKeys = new LinkedHashMap<Object, WaitKeyContainer<W>>();
+    private CPGroupId groupId;
+    private String name;
+    // Should be an insertion ordered map to ensure fairness
+    private final Map<Object, WaitKeyContainer<W>> waitKeys = new LinkedHashMap<Object, WaitKeyContainer<W>>();
 
     protected BlockingResource() {
     }
@@ -62,7 +63,7 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
     }
 
     // only for testing purposes
-    public final Map<Object, WaitKeyContainer<W>> getWaitKeys() {
+    public final Map<Object, WaitKeyContainer<W>> getInternalWaitKeysMap() {
         return waitKeys;
     }
 
@@ -88,6 +89,14 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         }
     }
 
+    protected final WaitKeyContainer<W> getWaitKeyContainer(Object waitKeyId) {
+        return waitKeys.get(waitKeyId);
+    }
+
+    protected final void removeWaitKey(Object waitKeyId) {
+        waitKeys.remove(waitKeyId);
+    }
+
     protected final Collection<W> getAllWaitKeys() {
         List<W> all = new ArrayList<W>(waitKeys.size());
         for (WaitKeyContainer<W> container : waitKeys.values()) {
@@ -110,7 +119,15 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         }
     }
 
-    final Map<Long, Object> closeSession(long sessionId, List<Long> expiredWaitKeys, Map<Long, Object> result) {
+    protected final Iterator<WaitKeyContainer<W>> waitKeyContainersIterator() {
+        return waitKeys.values().iterator();
+    }
+
+    protected final void clearWaitKeys() {
+        waitKeys.clear();
+    }
+
+    final void closeSession(long sessionId, List<Long> expiredWaitKeys, Map<Long, Object> result) {
         Iterator<WaitKeyContainer<W>> iter = waitKeys.values().iterator();
         while (iter.hasNext()) {
             WaitKeyContainer<W> container = iter.next();
@@ -125,8 +142,6 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         }
 
         onSessionClose(sessionId, result);
-
-        return result;
     }
 
     final void collectAttachedSessions(Collection<Long> sessions) {
@@ -134,6 +149,12 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         for (WaitKeyContainer<W> key : waitKeys.values()) {
             sessions.add(key.sessionId());
         }
+    }
+
+    protected final void cloneForSnapshot(BlockingResource<W> clone) {
+        clone.groupId = groupId;
+        clone.name = name;
+        clone.waitKeys.putAll(waitKeys);
     }
 
     @Override
@@ -159,8 +180,7 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         }
     }
 
-    @Override
-    public String toString() {
-        return "BlockingResource{" + "groupId=" + groupId + ", name='" + name + '\'' + ", waitKeys=" + waitKeys + '}';
+    protected final String internalToString() {
+        return "groupId=" + groupId + ", name='" + name + '\'' + ", waitKeys=" + waitKeys;
     }
 }

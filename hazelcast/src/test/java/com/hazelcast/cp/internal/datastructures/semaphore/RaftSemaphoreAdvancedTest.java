@@ -118,7 +118,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(registry.getLiveOperations().isEmpty());
             }
         });
 
@@ -127,7 +127,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         assertOpenEventually(latch);
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -152,7 +152,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(registry.getLiveOperations().isEmpty());
             }
         });
 
@@ -161,7 +161,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         assertOpenEventually(latch);
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -177,7 +177,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
 
         assertFalse(success);
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -202,7 +202,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(registry.getLiveOperations().isEmpty());
             }
         });
 
@@ -210,7 +210,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
 
         assertOpenEventually(latch);
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -233,14 +233,14 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(registry.getLiveOperations().isEmpty());
             }
         });
 
         semaphore.destroy();
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -561,7 +561,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
                     @Override
                     public void run() {
                         RaftSemaphore raftSemaphore = registry.getResourceOrNull(objectName);
-                        final Map<Object, WaitKeyContainer<AcquireInvocationKey>> waitKeys = raftSemaphore.getWaitKeys();
+                        final Map<Object, WaitKeyContainer<AcquireInvocationKey>> waitKeys = raftSemaphore.getInternalWaitKeysMap();
                         verified[0] = (waitKeys.size() == 1 && waitKeys.values().iterator().next().retryCount() == 1);
                         latch.countDown();
                     }
@@ -625,7 +625,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
                 assertNotNull(registry);
                 RaftSemaphore semaphore = registry.getResourceOrNull(objectName);
                 assertNotNull(semaphore);
-                assertFalse(semaphore.getWaitKeys().isEmpty());
+                assertFalse(semaphore.getInternalWaitKeysMap().isEmpty());
             }
         });
 

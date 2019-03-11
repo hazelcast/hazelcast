@@ -62,7 +62,6 @@ public class RaftCountDownLatchService
         boolean success = getOrInitRegistry(groupId).await(name, key, timeoutMillis);
         if (!success) {
             scheduleTimeout(groupId, name, key.invocationUid(), timeoutMillis);
-            addLiveOperation(key);
         }
 
         return success;

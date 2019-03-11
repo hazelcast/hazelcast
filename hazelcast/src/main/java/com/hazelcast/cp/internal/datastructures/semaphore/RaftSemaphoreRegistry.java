@@ -81,7 +81,7 @@ public class RaftSemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey
         }
 
         if (result.acquired == 0) {
-            addWaitKey(name, key.invocationUid(), timeoutMs);
+            addWaitKey(name, key, timeoutMs);
         }
 
         return result;

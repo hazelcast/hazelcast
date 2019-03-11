@@ -113,7 +113,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(service.getLiveOperations().isEmpty());
+                assertFalse(registry.getLiveOperations().isEmpty());
             }
         });
 
@@ -122,7 +122,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
         assertOpenEventually(threadLatch);
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -138,7 +138,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
 
         assertFalse(success);
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test
@@ -171,7 +171,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
         latch.destroy();
 
         assertTrue(registry.getWaitTimeouts().isEmpty());
-        assertTrue(service.getLiveOperations().isEmpty());
+        assertTrue(registry.getLiveOperations().isEmpty());
     }
 
     @Test

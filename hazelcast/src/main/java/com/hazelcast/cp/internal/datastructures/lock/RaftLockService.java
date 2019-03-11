@@ -54,10 +54,10 @@ public class RaftLockService extends AbstractBlockingService<LockInvocationKey, 
         super.initImpl();
     }
 
-    public AcquireResult acquire(CPGroupId groupId, String name, LockInvocationKey key) {
+    public AcquireResult acquire(CPGroupId groupId, String name, LockInvocationKey key, long timeoutMs) {
         heartbeatSession(groupId, key.sessionId());
         RaftLockRegistry registry = getOrInitRegistry(groupId);
-        AcquireResult result = registry.acquire(name, key);
+        AcquireResult result = registry.acquire(name, key, timeoutMs);
 
         if (logger.isFineEnabled()) {
             if (result.status() == SUCCESSFUL) {
@@ -76,38 +76,7 @@ public class RaftLockService extends AbstractBlockingService<LockInvocationKey, 
         }
 
         if (result.status() == WAIT_KEY_ADDED) {
-            addLiveOperation(key);
-        }
-
-        notifyCancelledWaitKeys(groupId, name, result.cancelledWaitKeys());
-
-        return result;
-    }
-
-    public AcquireResult tryAcquire(CPGroupId groupId, String name, LockInvocationKey key, long timeoutMs) {
-        heartbeatSession(groupId, key.sessionId());
-        RaftLockRegistry registry = getOrInitRegistry(groupId);
-        AcquireResult result = registry.tryAcquire(name, key, timeoutMs);
-
-        if (logger.isFineEnabled()) {
-            if (result.status() == SUCCESSFUL) {
-                logger.fine("Lock[" + name + "] in " + groupId + " acquired by <" + key.endpoint() + ", " + key.invocationUid()
-                        + "> at commit index: " + key.commitIndex() + ". new lock state: "
-                        + registry.getLockOwnershipState(name));
-            } else if (result.status() == WAIT_KEY_ADDED) {
-                logger.fine("Lock[" + name + "] in " + groupId + " wait key added for <" + key.endpoint() + ", "
-                        + key.invocationUid() + "> at commit index: " + key.commitIndex() + ". lock state: "
-                        + registry.getLockOwnershipState(name));
-            } else {
-                logger.fine("Lock[" + name + "] in " + groupId + " acquire failed for by <" + key.endpoint() + ", "
-                        + key.invocationUid() + "> at commit index: " + key.commitIndex() + ". lock state: "
-                        + registry.getLockOwnershipState(name));
-            }
-        }
-
-        if (result.status() == WAIT_KEY_ADDED) {
             scheduleTimeout(groupId, name, key.invocationUid(), timeoutMs);
-            addLiveOperation(key);
         }
 
         notifyCancelledWaitKeys(groupId, name, result.cancelledWaitKeys());

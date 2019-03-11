@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -130,11 +129,11 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
     }
 
     private Collection<LockInvocationKey> cancelWaitKeys(LockEndpoint endpoint, UUID invocationUid) {
-        List<LockInvocationKey> cancelled = null;
-        WaitKeyContainer<LockInvocationKey> container = waitKeys.get(endpoint);
+        Collection<LockInvocationKey> cancelled = null;
+        WaitKeyContainer<LockInvocationKey> container = getWaitKeyContainer(endpoint);
         if (container != null && container.key().isDifferentInvocationOf(endpoint, invocationUid)) {
             cancelled = container.keyAndRetries();
-            waitKeys.remove(endpoint);
+            removeWaitKey(endpoint);
         }
 
         return cancelled != null ? cancelled : Collections.<LockInvocationKey>emptyList();
@@ -174,7 +173,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
 
         removeInvocationRefUids(endpoint);
 
-        List<LockInvocationKey> newOwnerWaitKeys = setNewLockOwner();
+        Collection<LockInvocationKey> newOwnerWaitKeys = setNewLockOwner();
 
         ownerInvocationRefUids.put(Tuple2.of(endpoint, invocationUid), lockOwnershipState());
 
@@ -190,9 +189,9 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
         }
     }
 
-    private List<LockInvocationKey> setNewLockOwner() {
-        List<LockInvocationKey> newOwnerWaitKeys;
-        Iterator<WaitKeyContainer<LockInvocationKey>> iter = waitKeys.values().iterator();
+    private Collection<LockInvocationKey> setNewLockOwner() {
+        Collection<LockInvocationKey> newOwnerWaitKeys;
+        Iterator<WaitKeyContainer<LockInvocationKey>> iter = waitKeyContainersIterator();
         if (iter.hasNext()) {
             WaitKeyContainer<LockInvocationKey> container = iter.next();
             LockInvocationKey newOwner = container.key();
@@ -220,10 +219,8 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
 
     RaftLock cloneForSnapshot() {
         RaftLock clone = new RaftLock();
+        cloneForSnapshot(clone);
         clone.lockCountLimit = this.lockCountLimit;
-        clone.groupId = this.groupId;
-        clone.name = this.name;
-        clone.waitKeys.putAll(this.waitKeys);
         clone.owner = this.owner;
         clone.lockCount = this.lockCount;
         clone.ownerInvocationRefUids.putAll(this.ownerInvocationRefUids);
@@ -312,9 +309,8 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
 
     @Override
     public String toString() {
-        return "RaftLock{" + "groupId=" + groupId + ", name='" + name + '\'' + ", lockCountLimit=" + lockCountLimit + ", owner="
-                + owner + ", lockCount=" + lockCount + ", ownerInvocationRefUids=" + ownerInvocationRefUids + ", waitKeys="
-                + waitKeys + '}';
+        return "RaftLock{" + internalToString() + ", lockCountLimit=" + lockCountLimit + ", owner="
+                + owner + ", lockCount=" + lockCount + ", ownerInvocationRefUids=" + ownerInvocationRefUids + '}';
     }
 
 }

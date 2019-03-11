@@ -16,24 +16,35 @@
 
 package com.hazelcast.cp.internal.datastructures;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.CPSubsystemManagementService;
-import com.hazelcast.cp.internal.CPMemberInfo;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.cp.internal.RaftInvocationManager;
+import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.test.AssertTask;
+import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.locks.LockSupport;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaftTestSupport {
 
-    protected HazelcastInstance[] createInstances() {
-        return newInstances(3, 3, 1);
+    private static final int SNAPSHOT_THRESHOLD = 100;
+
+    private HazelcastInstance[] instances;
+
+    @Before
+    public void setup() {
+        instances = newInstances(3);
+    }
+
+    protected CPSubsystem getCPSubsystem() {
+        return instances[0].getCPSubsystem();
     }
 
     protected abstract CPGroupId getGroupId();
@@ -42,63 +53,63 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
 
     protected abstract T readValue();
 
-    @Test
-    public void snapshot_withGracefulShutdown() throws Exception {
-        test(false);
+    protected abstract RaftOp getQueryRaftOp();
+
+    @Override
+    protected Config createConfig(int cpNodeCount, int groupSize) {
+        Config config = super.createConfig(cpNodeCount, groupSize);
+        config.getCPSubsystemConfig().getRaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(SNAPSHOT_THRESHOLD);
+        return config;
     }
 
     @Test
-    public void snapshot_withTerminate() throws Exception {
-        test(true);
-    }
+    public void test_snapshot() throws Exception {
+        final T initialValue = setAndGetInitialValue();
 
-    private void test(boolean terminate) throws Exception {
-        final T value = setAndGetInitialValue();
-
-        Future future = spawn(new RestartCpMemberTask(terminate));
-
-        while (!future.isDone()) {
+        // force snapshot
+        for (int i = 0; i < SNAPSHOT_THRESHOLD; i++) {
             T v = readValue();
-            assertEquals(value, v);
-            LockSupport.parkNanos(100);
-        }
-        future.get();
-    }
-
-    private class RestartCpMemberTask implements Runnable {
-        private final boolean terminate;
-
-        RestartCpMemberTask(boolean terminate) {
-            this.terminate = terminate;
+            assertEquals(initialValue, v);
         }
 
-        @Override
-        public void run() {
-            for (int i = 0; i < 3; i++) {
+        // shutdown the last instance
+        instances[instances.length - 1].shutdown();
+
+        final HazelcastInstance instance = factory.newHazelcastInstance(createConfig(3, 3));
+        instance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+
+        // Read from local CP member, which should install snapshot after promotion.
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                InternalCompletableFuture<Object> future = queryLocally(instance);
                 try {
-                    sleepSeconds(5);
-                    HazelcastInstance[] instances = factory.getAllHazelcastInstances().toArray(new HazelcastInstance[0]);
-                    HazelcastInstance instance = getLeaderInstance(instances, getGroupId());
-                    CPMemberInfo cpMember = getRaftService(instance).getLocalCPMember();
-                    assertNotNull(cpMember);
-
-                    if (terminate) {
-                        instance.getLifecycleService().terminate();
-                    } else {
-                        instance.shutdown();
-                    }
-
-                    instance = factory.newHazelcastInstance(cpMember.getAddress(), createConfig(3, 3));
-                    CPSubsystemManagementService managementService = instance.getCPSubsystem().getCPSubsystemManagementService();
-                    if (terminate) {
-                        managementService.removeCPMember(cpMember.getUuid()).get();
-                    }
-                    managementService.promoteToCPMember().get();
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
+                    T value = getValue(future);
+                    assertEquals(initialValue, value);
+                } catch (CPSubsystemException e) {
+                    // Raft node may not be created yet...
+                    throw new AssertionError(e);
                 }
             }
-        }
+        });
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                InternalCompletableFuture<Object> future = queryLocally(instance);
+                T value = getValue(future);
+                assertEquals(initialValue, value);
+            }
+        }, 5);
+    }
+
+    protected T getValue(InternalCompletableFuture<Object> future) {
+        return (T) future.join();
+    }
+
+    private InternalCompletableFuture<Object> queryLocally(HazelcastInstance instance) {
+        RaftInvocationManager invocationManager = getRaftInvocationManager(instance);
+        return invocationManager.queryLocally(getGroupId(), getQueryRaftOp(), QueryPolicy.ANY_LOCAL);
     }
 
 }

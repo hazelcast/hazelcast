@@ -37,7 +37,7 @@ import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.Acquir
 /**
  * Operation for {@link FencedLock#lock()}
  *
- * @see com.hazelcast.cp.internal.datastructures.lock.RaftLock#acquire(LockEndpoint, long, UUID, boolean)
+ * @see com.hazelcast.cp.internal.datastructures.lock.RaftLock#acquire(LockInvocationKey, boolean)
  */
 public class TryLockOp extends AbstractLockOp implements CallerAware, IndeterminateOperationStateAware {
 
@@ -57,7 +57,7 @@ public class TryLockOp extends AbstractLockOp implements CallerAware, Indetermin
     public Object run(CPGroupId groupId, long commitIndex) {
         RaftLockService service = getService();
         LockInvocationKey key = new LockInvocationKey(commitIndex, invocationUid, callerAddress, callId, getLockEndpoint());
-        AcquireResult result = service.tryAcquire(groupId, name, key, timeoutMs);
+        AcquireResult result = service.acquire(groupId, name, key, timeoutMs);
         if (result.status() == WAIT_KEY_ADDED) {
             return PostponedResponse.INSTANCE;
         }

@@ -203,7 +203,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
                     @Override
                     public void run() {
                         RaftLock raftLock = registry.getResourceOrNull(objectName);
-                        final Map<Object, WaitKeyContainer<LockInvocationKey>> waitKeys = raftLock.getWaitKeys();
+                        final Map<Object, WaitKeyContainer<LockInvocationKey>> waitKeys = raftLock.getInternalWaitKeysMap();
                         verified[0] = (waitKeys.size() == 1 && waitKeys.values().iterator().next().retryCount() == 1);
                         latch.countDown();
                     }
@@ -618,7 +618,7 @@ public class FencedLockFailureTest extends HazelcastRaftTestSupport {
                     @Override
                     public void run() {
                         RaftLock raftLock = registry.getResourceOrNull(objectName);
-                        final Map<Object, WaitKeyContainer<LockInvocationKey>> waitKeys = raftLock.getWaitKeys();
+                        final Map<Object, WaitKeyContainer<LockInvocationKey>> waitKeys = raftLock.getInternalWaitKeysMap();
                         verified[0] = (waitKeys.size() == 1 && waitKeys.values().iterator().next().retryCount() == 1);
                         latch.countDown();
                     }

@@ -18,9 +18,12 @@ package com.hazelcast.cp.internal.datastructures.spi.blocking;
 
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.util.Tuple2;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.Clock;
 
@@ -40,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.cp.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -52,7 +56,8 @@ import static java.util.Collections.unmodifiableMap;
  * @param <W> concrete type of the WaitKey
  * @param <R> concrete type of the resource
  */
-public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingResource<W>> implements DataSerializable {
+public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingResource<W>>
+        implements LiveOperationsTracker, DataSerializable {
 
     protected CPGroupId groupId;
     protected final Map<String, R> resources = new ConcurrentHashMap<String, R>();
@@ -62,7 +67,16 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     protected final ConcurrentMap<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts =
             new ConcurrentHashMap<Tuple2<String, UUID>, Tuple2<Long, Long>>();
 
-    public ResourceRegistry() {
+    // Live operations are not put into Raft snapshots because it is not needed.
+    // Currently, only Raft ops that create a wait key are tracked as live operations,
+    // and it is sufficiently to report them only through the leader. Although followers
+    // populate live operations as well, they can miss some entries if they install a snapshot
+    // instead of applying Raft log entries. If a follower becomes later, callers will
+    // retry and commit their waiting Raft ops.
+    private final Set<Tuple2<Address, Long>> liveOperationsSet =
+            newSetFromMap(new ConcurrentHashMap<Tuple2<Address, Long>, Boolean>());
+
+    protected ResourceRegistry() {
     }
 
     protected ResourceRegistry(CPGroupId groupId) {
@@ -97,22 +111,23 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         }
     }
 
-    protected final void addWaitKey(String name, UUID invocationUid, long timeoutMs) {
+    protected final void addWaitKey(String name, W key, long timeoutMs) {
         if (timeoutMs > 0) {
-            waitTimeouts.putIfAbsent(Tuple2.of(name, invocationUid), Tuple2.of(timeoutMs, Clock.currentTimeMillis() + timeoutMs));
+            long deadline = Clock.currentTimeMillis() + timeoutMs;
+            waitTimeouts.putIfAbsent(Tuple2.of(name, key.invocationUid), Tuple2.of(timeoutMs, deadline));
+        }
+        if (timeoutMs != 0) {
+            addLiveOperation(key);
         }
     }
 
     protected final void removeWaitKey(String name, W key) {
-        removeWaitKey(name, key.invocationUid());
-    }
-
-    protected final void removeWaitKey(String name, UUID invocationUid) {
-        waitTimeouts.remove(Tuple2.of(name, invocationUid));
+        waitTimeouts.remove(Tuple2.of(name, key.invocationUid()));
+        removeLiveOperation(key);
     }
 
     final void expireWaitKey(String name, UUID invocationUid, List<W> expired) {
-        removeWaitKey(name, invocationUid);
+        waitTimeouts.remove(Tuple2.of(name, invocationUid));
 
         BlockingResource<W> resource = getResourceOrNull(name);
         if (resource != null) {
@@ -174,7 +189,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
 
         Collection<W> keys = resource.getAllWaitKeys();
         for (W key : keys) {
-            waitTimeouts.remove(Tuple2.of(name, key.invocationUid()));
+            removeWaitKey(name, key);
         }
 
         return keys;
@@ -202,6 +217,33 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         waitTimeouts.clear();
 
         return indices;
+    }
+
+    @Override
+    public void populate(LiveOperations liveOperations) {
+        for (Tuple2<Address, Long> t : liveOperationsSet) {
+            liveOperations.add(t.element1, t.element2);
+        }
+    }
+
+    private void addLiveOperation(W key) {
+        liveOperationsSet.add(Tuple2.of(key.callerAddress(), key.callId()));
+    }
+
+    final void removeLiveOperation(W key) {
+        liveOperationsSet.remove(Tuple2.of(key.callerAddress(), key.callId()));
+    }
+
+    public final Collection<Tuple2<Address, Long>> getLiveOperations() {
+        return liveOperationsSet;
+    }
+
+    final void onSnapshotRestore() {
+        for (R resource : resources.values()) {
+            for (W key : resource.getAllWaitKeys()) {
+                addLiveOperation(key);
+            }
+        }
     }
 
     @Override

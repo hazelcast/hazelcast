@@ -16,10 +16,11 @@
 
 package com.hazelcast.cp.internal.datastructures.atomicref;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.datastructures.AbstractAtomicRegisterSnapshotTest;
+import com.hazelcast.cp.internal.datastructures.atomicref.operation.GetOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.proxy.RaftAtomicRefProxy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -32,18 +33,12 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class RaftAtomicRefSnapshotTest extends AbstractAtomicRegisterSnapshotTest<String> {
 
-    protected IAtomicReference<String> atomicRef;
+    private IAtomicReference<String> atomicRef;
+    private String name = "ref";
 
     @Before
-    public void setup() {
-        HazelcastInstance[] instances = createInstances();
-        String name = "ref@group";
-        atomicRef = createAtomicRef(instances, name);
-    }
-
-    protected IAtomicReference<String> createAtomicRef(HazelcastInstance[] instances, String name) {
-        HazelcastInstance apInstance = instances[instances.length - 1];
-        return apInstance.getCPSubsystem().getAtomicReference(name);
+    public void createProxy() {
+        atomicRef = getCPSubsystem().getAtomicReference(name);
     }
 
     @Override
@@ -61,5 +56,10 @@ public class RaftAtomicRefSnapshotTest extends AbstractAtomicRegisterSnapshotTes
     @Override
     protected String readValue() {
         return atomicRef.get();
+    }
+
+    @Override
+    protected RaftOp getQueryRaftOp() {
+        return new GetOp(name);
     }
 }
