@@ -98,13 +98,14 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
         LeaderState leaderState = state.leaderState();
         FollowerState followerState = leaderState.getFollowerState(follower);
 
-        // Received a response for the last append request. Resetting the flag...
-        followerState.resetAppendRequestBackoff();
 
         long matchIndex = followerState.matchIndex();
         long followerLastLogIndex = resp.lastLogIndex();
 
         if (followerLastLogIndex > matchIndex) {
+            // Received a response for the last append request. Resetting the flag...
+            followerState.resetAppendRequestBackoff();
+
             long newNextIndex = followerLastLogIndex + 1;
             followerState.matchIndex(followerLastLogIndex);
             followerState.nextIndex(newNextIndex);
