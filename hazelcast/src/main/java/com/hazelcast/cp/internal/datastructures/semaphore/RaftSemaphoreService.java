@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.config.cp.CPSemaphoreConfig;
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ISemaphore;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
+import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
@@ -172,8 +173,9 @@ public class RaftSemaphoreService extends AbstractBlockingService<AcquireInvocat
     }
 
     @Override
-    public DistributedObject createDistributedObject(String proxyName) {
+    public ISemaphore createProxy(String proxyName) {
         try {
+            proxyName = withoutDefaultGroupName(proxyName);
             RaftGroupId groupId = raftService.createRaftGroupForProxy(proxyName);
             String objectName = getObjectNameForProxy(proxyName);
             CPSemaphoreConfig config = getConfig(proxyName);
@@ -183,9 +185,5 @@ public class RaftSemaphoreService extends AbstractBlockingService<AcquireInvocat
         } catch (Exception e) {
             throw rethrow(e);
         }
-    }
-
-    @Override
-    public void destroyDistributedObject(String objectName) {
     }
 }

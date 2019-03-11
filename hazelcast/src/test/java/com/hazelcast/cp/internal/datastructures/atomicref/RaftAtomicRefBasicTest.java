@@ -22,6 +22,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.datastructures.atomicref.proxy.RaftAtomicRefProxy;
@@ -47,6 +48,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -249,6 +251,12 @@ public class RaftAtomicRefBasicTest extends HazelcastRaftTestSupport {
                 assertEquals(CPGroupStatus.DESTROYED, group.status());
             }
         });
+
+        try {
+            atomicRef.get();
+            fail();
+        } catch (CPGroupDestroyedException ignored) {
+        }
 
         atomicRef = createAtomicRef(name);
         assertNotEquals(groupId, getGroupId(atomicRef));

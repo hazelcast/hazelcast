@@ -34,7 +34,6 @@ import com.hazelcast.cp.internal.session.SessionAwareProxy;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
 import com.hazelcast.util.Clock;
 
 import java.util.UUID;
@@ -61,7 +60,6 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
     public static final int DRAIN_SESSION_ACQ_COUNT = 1024;
 
     private final RaftInvocationManager invocationManager;
-    private final ProxyService proxyService;
     private final String proxyName;
     private final String objectName;
 
@@ -69,7 +67,6 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
         super((ProxySessionManagerService) nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME), groupId);
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
-        this.proxyService = nodeEngine.getProxyService();
         this.proxyName = proxyName;
         this.objectName = objectName;
     }
@@ -264,7 +261,6 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
     @Override
     public void destroy() {
         invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
-        proxyService.destroyDistributedObject(getServiceName(), proxyName);
     }
 
 }

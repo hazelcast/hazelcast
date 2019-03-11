@@ -16,7 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.atomiclong;
 
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftGroupLifecycleAwareService;
@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
+import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
@@ -154,8 +155,9 @@ public class RaftAtomicLongService implements RaftManagedService, RaftRemoteServ
     }
 
     @Override
-    public DistributedObject createDistributedObject(String proxyName) {
+    public IAtomicLong createProxy(String proxyName) {
         try {
+            proxyName = withoutDefaultGroupName(proxyName);
             RaftGroupId groupId = raftService.createRaftGroupForProxy(proxyName);
             return new RaftAtomicLongProxy(nodeEngine, groupId, proxyName, getObjectNameForProxy(proxyName));
         } catch (Exception e) {
@@ -163,7 +165,4 @@ public class RaftAtomicLongService implements RaftManagedService, RaftRemoteServ
         }
     }
 
-    @Override
-    public void destroyDistributedObject(String proxyName) {
-    }
 }

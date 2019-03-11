@@ -44,7 +44,7 @@ import java.util.concurrent.locks.Condition;
 /**
  * Client-side proxy of Raft-based {@link FencedLock} API
  */
-class RaftFencedLockProxy extends ClientProxy implements FencedLock {
+public class RaftFencedLockProxy extends ClientProxy implements FencedLock {
 
     private static final ClientMessageDecoder LOCK_RESPONSE_DECODER = new ClientMessageDecoder() {
         @Override
@@ -78,7 +78,7 @@ class RaftFencedLockProxy extends ClientProxy implements FencedLock {
 
     private final FencedLockImpl lock;
 
-    RaftFencedLockProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
+    public RaftFencedLockProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
         super(RaftLockService.SERVICE_NAME, proxyName, context);
         this.lock = new FencedLockImpl(getClient().getProxySessionManager(), groupId, proxyName, objectName);
     }

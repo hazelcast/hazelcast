@@ -156,7 +156,7 @@ public class CPSubsystemRollingUpgrade_3_11_Test extends HazelcastRaftTestSuppor
 
         RaftAtomicLongService service = getNodeEngineImpl(instances[0]).getService(RaftAtomicLongService.SERVICE_NAME);
         expectedException.expect(UnsupportedOperationException.class);
-        service.createDistributedObject("atomic");
+        service.createProxy("atomic");
     }
 
     @Test

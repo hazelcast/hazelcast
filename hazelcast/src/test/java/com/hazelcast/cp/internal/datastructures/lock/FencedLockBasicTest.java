@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.datastructures.lock;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.lock.proxy.AbstractRaftFencedLockProxy;
@@ -59,11 +60,13 @@ public class FencedLockBasicTest extends HazelcastRaftTestSupport {
     protected HazelcastInstance[] instances;
     protected HazelcastInstance lockInstance;
     protected FencedLock lock;
+    private String objectName = "lock";
+    private String proxyName = objectName + "@group1";
 
     @Before
     public void setup() {
         instances = createInstances();
-        lock = lockInstance.getCPSubsystem().getLock("lock@group1");
+        lock = lockInstance.getCPSubsystem().getLock(proxyName);
         assertNotNull(lock);
     }
 
@@ -577,6 +580,22 @@ public class FencedLockBasicTest extends HazelcastRaftTestSupport {
                 assertTrue(t instanceof InterruptedException);
             }
         });
+    }
+
+    @Test
+    public void test_lockFailsAfterCPGroupDestroyed() throws ExecutionException, InterruptedException {
+        instances[0].getCPSubsystem()
+                    .getCPSubsystemManagementService()
+                    .forceDestroyCPGroup(lock.getGroupId().name())
+                    .get();
+
+        try {
+            lock.lock();
+            fail();
+        } catch (CPGroupDestroyedException ignored) {
+        }
+
+        lockInstance.getCPSubsystem().getLock(proxyName);
     }
 
     static void assertValidFence(long fence) {

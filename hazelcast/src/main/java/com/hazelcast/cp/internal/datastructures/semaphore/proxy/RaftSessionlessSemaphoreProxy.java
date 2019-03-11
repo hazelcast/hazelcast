@@ -32,7 +32,6 @@ import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectO
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.SessionAwareProxy;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ProxyService;
 
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +47,6 @@ import static java.lang.Math.max;
 public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements ISemaphore {
 
     private final RaftInvocationManager invocationManager;
-    private final ProxyService proxyService;
     private final String proxyName;
     private final String objectName;
 
@@ -56,7 +54,6 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
         super((ProxySessionManagerService) nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME), groupId);
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
-        this.proxyService = nodeEngine.getProxyService();
         this.proxyName = proxyName;
         this.objectName = objectName;
     }
@@ -169,7 +166,6 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
     @Override
     public void destroy() {
         invocationManager.invoke(groupId, new DestroyRaftObjectOp(getServiceName(), objectName)).join();
-        proxyService.destroyDistributedObject(getServiceName(), proxyName);
     }
 
 }

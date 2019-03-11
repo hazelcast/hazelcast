@@ -45,9 +45,11 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Client-side Raft-based proxy implementation of {@link IAtomicReference}
+ *
+ * @param <T> the type of object referred to by this reference
  */
 @SuppressWarnings("checkstyle:methodcount")
-class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T> {
+public class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T> {
 
     private static final ClientMessageDecoder COMPARE_AND_SET_DECODER = new ClientMessageDecoder() {
         @Override
@@ -88,7 +90,7 @@ class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T> {
     private final RaftGroupId groupId;
     private final String objectName;
 
-    RaftAtomicRefProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
+    public RaftAtomicRefProxy(ClientContext context, RaftGroupId groupId, String proxyName, String objectName) {
         super(RaftAtomicRefService.SERVICE_NAME, proxyName, context);
         this.groupId = groupId;
         this.objectName = objectName;
