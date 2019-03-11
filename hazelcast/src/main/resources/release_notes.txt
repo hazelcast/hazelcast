@@ -58,7 +58,10 @@ The following are the other improvements performed to solve the enhancement issu
 
 **3.12-BETA-2**
 
+* Fixed an issue where the IP client selector was not working for the local clients. [#14654]
 * Fixed the wording of a misleading error in the first attempt to connect to a wrongly configured cluster. The error message has been changed to “Unable to connect to any cluster”.  https://github.com/hazelcast/hazelcast/issues/14574[[#14574]]
+* Fixed the REST service which was not working when the REST endpoint is configured for   `AdvancedNetworkConfig`. [#14516]
+* Fixed an issue where the `setAsync()` method was throwing `NullPointerException`. [#14445]
 * Fixed an issue where the collection attributes indexed with `[any]` were causing incorrect SQL query results, if the first data inserted to the map has no value for the attribute or the collection is empty. [#14358]
 * Fixed an issue where `mapEvictionPolicy` couldn’t be specified in the JSON configuration file. [#14092]
 * Fixed the discrepancy between the XSD on the website and the one in the download package. [#13011]
