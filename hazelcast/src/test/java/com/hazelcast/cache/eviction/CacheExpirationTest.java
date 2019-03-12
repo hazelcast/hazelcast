@@ -286,10 +286,9 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_backupOperationAppliesDefaultExpiryPolicy() {
-        SimpleExpiryListener listener = new SimpleExpiryListener();
         HazelcastExpiryPolicy defaultExpiryPolicy = new HazelcastExpiryPolicy(FIVE_SECONDS, FIVE_SECONDS, FIVE_SECONDS);
 
-        CacheConfig cacheConfig = createCacheConfig(defaultExpiryPolicy, listener);
+        CacheConfig cacheConfig = createCacheConfig(defaultExpiryPolicy);
         ICache cache = createCache(cacheConfig);
 
         for (int i = 0; i < 100; i++) {
@@ -321,7 +320,6 @@ public class CacheExpirationTest extends CacheTestSupport {
         }
 
         assertEquals(0, unExpiredCount);
-        assertEqualsEventually(100, listener.expirationCount);
     }
 
     @Test
