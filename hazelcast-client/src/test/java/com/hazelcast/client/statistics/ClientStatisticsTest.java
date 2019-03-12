@@ -343,7 +343,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
             public void run() {
                 getStats(client, clientEngine);
             }
-        }, STATS_PERIOD_SECONDS * 3);
+        });
     }
 
     private static void waitForNextStatsCollection(final HazelcastClientInstanceImpl client, final ClientEngineImpl clientEngine,
