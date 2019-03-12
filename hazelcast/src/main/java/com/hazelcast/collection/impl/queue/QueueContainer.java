@@ -905,6 +905,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 backupMap.clear();
                 backupMap = null;
             }
+            if (!txMap.isEmpty()) {
+                long maxItemId = Long.MIN_VALUE;
+                for (TxQueueItem item : txMap.values()) {
+                    maxItemId = Math.max(maxItemId, item.itemId);
+                }
+                setId(maxItemId + ID_PROMOTION_OFFSET);
+            }
         }
         return itemQueue;
     }
