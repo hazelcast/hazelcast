@@ -31,12 +31,13 @@ public class ClientClasspathYamlConfig extends ClientConfig {
 
     /**
      * Creates a config which is loaded from a classpath resource using the
-     * Thread.currentThread contextClassLoader. The System.properties are used to resolve variables
+     * {@link Thread#currentThread} contextClassLoader. The System.properties are used to resolve variables
      * in the YAML.
      *
-     * @param resource the resource, an YAML configuration file from the classpath
-     * @throws IllegalArgumentException              if the resource could not be found
-     * @throws HazelcastException if the YAML content is invalid
+     * @param resource the resource, a YAML configuration file from the classpath,
+     *                 without the "classpath:" prefix
+     * @throws IllegalArgumentException if the resource could not be found
+     * @throws HazelcastException       if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(String resource) {
         this(resource, System.getProperties());
@@ -44,12 +45,13 @@ public class ClientClasspathYamlConfig extends ClientConfig {
 
     /**
      * Creates a config which is loaded from a classpath resource using the
-     * Thread.currentThread contextClassLoader.
+     * {@link Thread#currentThread} contextClassLoader.
      *
-     * @param resource   the resource, an YAML configuration file from the classpath
+     * @param resource   the resource, a YAML configuration file from the classpath,
+     *                   without the "classpath:" prefix
      * @param properties the Properties to resolve variables in the YAML
-     * @throws IllegalArgumentException              if the resource could not be found or if properties is {@code null}
-     * @throws HazelcastException if the YAML content is invalid
+     * @throws IllegalArgumentException if the resource could not be found or if properties is {@code null}
+     * @throws HazelcastException       if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(String resource, Properties properties) {
         this(Thread.currentThread().getContextClassLoader(), resource, properties);
@@ -59,10 +61,11 @@ public class ClientClasspathYamlConfig extends ClientConfig {
      * Creates a config which is loaded from a classpath resource.
      *
      * @param classLoader the ClassLoader used to load the resource
-     * @param resource    the resource, an YAML configuration file from the classpath
+     * @param resource    the resource, a YAML configuration file from the classpath,
+     *                    without the "classpath:" prefix
      * @param properties  the properties used to resolve variables in the YAML
-     * @throws IllegalArgumentException              if classLoader or resource is {@code null}, or if the resource is not found
-     * @throws HazelcastException if the YAML content is invalid
+     * @throws IllegalArgumentException if classLoader or resource is {@code null}, or if the resource is not found
+     * @throws HazelcastException       if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(ClassLoader classLoader, String resource, Properties properties) {
         if (classLoader == null) {

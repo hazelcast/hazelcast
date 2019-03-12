@@ -114,6 +114,20 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         assertEquals(13, config.getTryCount());
     }
 
+    @Override
+    @Test
+    public void loadingThroughSystemProperty_existingClasspathResource() {
+        System.setProperty("hazelcast.client.failover.config", "classpath:hazelcast-client-failover-sample.yaml");
+
+        ClientFailoverConfig config = buildConfig();
+        assertSampleFailoverConfig(config);
+    }
+
+    @Override
+    ClientFailoverConfig buildConfig() {
+        return new YamlClientFailoverConfigBuilder().build();
+    }
+
     private static ClientFailoverConfig buildConfig(String yaml) {
         return buildConfig(yaml, null);
     }

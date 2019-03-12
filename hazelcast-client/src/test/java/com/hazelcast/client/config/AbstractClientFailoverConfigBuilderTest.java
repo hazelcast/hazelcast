@@ -37,23 +37,17 @@ abstract class AbstractClientFailoverConfigBuilderTest {
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingFile() {
         System.setProperty("hazelcast.client.failover.config", "idontexist");
-        new YamlClientFailoverConfigBuilder();
+        buildConfig();
     }
 
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingClasspathResource() {
         System.setProperty("hazelcast.client.failover.config", "classpath:idontexist");
-        new YamlClientFailoverConfigBuilder();
+        buildConfig();
     }
 
     @Test
-    public void loadingThroughSystemProperty_existingClasspathResource() {
-        System.setProperty("hazelcast.client.failover.config", "classpath:hazelcast-client-failover-sample.yaml");
-
-        YamlClientFailoverConfigBuilder configBuilder = new YamlClientFailoverConfigBuilder();
-        ClientFailoverConfig config = configBuilder.build();
-        assertSampleFailoverConfig(config);
-    }
+    public abstract void loadingThroughSystemProperty_existingClasspathResource();
 
     @Test
     public void testClientFailoverConfig() {
@@ -71,6 +65,8 @@ abstract class AbstractClientFailoverConfigBuilderTest {
 
     @Test
     public abstract void testVariableReplacementFromSystemPropertiesWithClasspathConfig();
+
+    abstract ClientFailoverConfig buildConfig();
 
     void assertSampleFailoverConfig(ClientFailoverConfig config) {
         List<ClientConfig> clientConfigs = fullClientConfig.getClientConfigs();

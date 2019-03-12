@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -37,8 +38,8 @@ public class InMemoryYamlConfig extends Config {
      * in the YAML.
      *
      * @param yaml the YAML content as a Hazelcast YAML String
-     * @throws IllegalArgumentException              if the YAML is null or empty
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws IllegalArgumentException if the YAML is null or empty
+     * @throws HazelcastException       if the YAML content is invalid
      */
     public InMemoryYamlConfig(String yaml) {
         this(yaml, System.getProperties());
@@ -48,8 +49,8 @@ public class InMemoryYamlConfig extends Config {
      * Creates a Config from the provided YAML string and properties to resolve the variables in the YAML.
      *
      * @param yaml the YAML content as a Hazelcast YAML String
-     * @throws IllegalArgumentException              if the YAML is null or empty or if properties is null
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws IllegalArgumentException if the YAML is null or empty or if properties is null
+     * @throws HazelcastException       if the YAML content is invalid
      */
     public InMemoryYamlConfig(String yaml, Properties properties) {
         LOGGER.info("Configuring Hazelcast from 'in-memory YAML'.");

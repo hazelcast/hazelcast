@@ -114,6 +114,20 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
         assertEquals(13, config.getTryCount());
     }
 
+    @Override
+    @Test
+    public void loadingThroughSystemProperty_existingClasspathResource() {
+        System.setProperty("hazelcast.client.failover.config", "classpath:hazelcast-client-failover-sample.xml");
+
+        ClientFailoverConfig config = buildConfig();
+        assertSampleFailoverConfig(config);
+    }
+
+    @Override
+    ClientFailoverConfig buildConfig() {
+        return new XmlClientFailoverConfigBuilder().build();
+    }
+
     private static ClientFailoverConfig buildConfig(String yaml) {
         return buildConfig(yaml, null);
     }

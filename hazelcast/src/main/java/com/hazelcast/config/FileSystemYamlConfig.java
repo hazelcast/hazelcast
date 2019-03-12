@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -38,9 +39,9 @@ public class FileSystemYamlConfig extends Config {
      * variables in the YAML.
      *
      * @param configFilename the path of the Hazelcast yaml configuration file
-     * @throws NullPointerException                  if configFilename is {@code null}
-     * @throws FileNotFoundException                 fi the file is not found
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws NullPointerException  if configFilename is {@code null}
+     * @throws FileNotFoundException if the file is not found
+     * @throws HazelcastException    if the YAML content is invalid
      */
     public FileSystemYamlConfig(String configFilename) throws FileNotFoundException {
         this(configFilename, System.getProperties());
@@ -51,10 +52,10 @@ public class FileSystemYamlConfig extends Config {
      *
      * @param configFilename the path of the Hazelcast YAML configuration file
      * @param properties     the Properties to resolve variables in the YAML
-     * @throws FileNotFoundException                 fi the file is not found
-     * @throws NullPointerException                  if configFilename is {@code null}
-     * @throws IllegalArgumentException              if properties is {@code null}
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws FileNotFoundException    if the file is not found
+     * @throws NullPointerException     if configFilename is {@code null}
+     * @throws IllegalArgumentException if properties is {@code null}
+     * @throws HazelcastException       if the YAML content is invalid
      */
     public FileSystemYamlConfig(String configFilename, Properties properties) throws FileNotFoundException {
         this(new File(configFilename), properties);
@@ -65,8 +66,8 @@ public class FileSystemYamlConfig extends Config {
      * variables in the YAML.
      *
      * @param configFile the path of the Hazelcast YAML configuration file
-     * @throws FileNotFoundException                 if the file doesn't exist
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws FileNotFoundException if the file doesn't exist
+     * @throws HazelcastException    if the YAML content is invalid
      */
     public FileSystemYamlConfig(File configFile) throws FileNotFoundException {
         this(configFile, System.getProperties());
@@ -77,9 +78,9 @@ public class FileSystemYamlConfig extends Config {
      *
      * @param configFile the path of the Hazelcast yaml configuration file
      * @param properties the Properties to resolve variables in the YAML
-     * @throws IllegalArgumentException              if configFile or properties is {@code null}
-     * @throws FileNotFoundException                 if the file doesn't exist
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws IllegalArgumentException if configFile or properties is {@code null}
+     * @throws FileNotFoundException    if the file doesn't exist
+     * @throws HazelcastException       if the YAML content is invalid
      */
     public FileSystemYamlConfig(File configFile, Properties properties) throws FileNotFoundException {
         if (configFile == null) {

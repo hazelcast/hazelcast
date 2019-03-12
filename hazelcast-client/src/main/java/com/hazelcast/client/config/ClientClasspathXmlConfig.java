@@ -32,12 +32,12 @@ public class ClientClasspathXmlConfig extends ClientConfig {
 
     /**
      * Creates a config which is loaded from a classpath resource using the
-     * Thread.currentThread contextClassLoader. The System.properties are used to resolve variables
+     * {@link Thread#currentThread} contextClassLoader. The System.properties are used to resolve variables
      * in the XML.
      *
      * @param resource the resource, an XML configuration file from the classpath
      * @throws IllegalArgumentException if the resource could not be found
-     * @throws HazelcastException if the XML content is invalid
+     * @throws HazelcastException       if the XML content is invalid
      */
     public ClientClasspathXmlConfig(String resource) {
         this(resource, System.getProperties());
@@ -45,12 +45,13 @@ public class ClientClasspathXmlConfig extends ClientConfig {
 
     /**
      * Creates a config which is loaded from a classpath resource using the
-     * Thread.currentThread contextClassLoader.
+     * {@link Thread#currentThread} contextClassLoader.
      *
-     * @param resource   the resource, an XML configuration file from the classpath
+     * @param resource   the resource, an XML configuration file from the classpath,
+     *                   without the "classpath:" prefix
      * @param properties the Properties to resolve variables in the XML
      * @throws IllegalArgumentException if the resource could not be found or if properties is {@code null}
-     * @throws HazelcastException if the XML content is invalid
+     * @throws HazelcastException       if the XML content is invalid
      */
     public ClientClasspathXmlConfig(String resource, Properties properties) {
         this(Thread.currentThread().getContextClassLoader(), resource, properties);
@@ -60,10 +61,11 @@ public class ClientClasspathXmlConfig extends ClientConfig {
      * Creates a config which is loaded from a classpath resource.
      *
      * @param classLoader the ClassLoader used to load the resource
-     * @param resource    the resource, an XML configuration file from the classpath
+     * @param resource    the resource, an XML configuration file from the classpath,
+     *                    without the "classpath:" prefix
      * @param properties  the properties used to resolve variables in the XML
      * @throws IllegalArgumentException if classLoader or resource is {@code null}, or if the resource is not found
-     * @throws HazelcastException if the XML content is invalid
+     * @throws HazelcastException       if the XML content is invalid
      */
     public ClientClasspathXmlConfig(ClassLoader classLoader, String resource, Properties properties) {
         if (classLoader == null) {
