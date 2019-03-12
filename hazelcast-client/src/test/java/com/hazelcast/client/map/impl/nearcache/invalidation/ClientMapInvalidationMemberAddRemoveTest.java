@@ -103,9 +103,11 @@ public class ClientMapInvalidationMemberAddRemoveTest extends NearCacheTestSuppo
         for (int i = 0; i < NEAR_CACHE_POPULATE_THREAD_COUNT; i++) {
             Thread populateClientNearCache = new Thread(new Runnable() {
                 public void run() {
+                    int i = 0;
                     while (!stopTest.get()) {
-                        for (int i = 0; i < KEY_COUNT; i++) {
-                            clientMap.get(i);
+                        clientMap.get(i++);
+                        if (i == KEY_COUNT) {
+                            i = 0;
                         }
                     }
                 }
