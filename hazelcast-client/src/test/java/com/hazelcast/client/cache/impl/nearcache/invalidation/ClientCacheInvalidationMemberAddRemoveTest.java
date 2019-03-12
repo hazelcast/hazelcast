@@ -141,9 +141,11 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
             // populates client Near Cache
             Thread populateClientNearCache = new Thread(new Runnable() {
                 public void run() {
+                    int i = 0;
                     while (!stopTest.get()) {
-                        for (int i = 0; i < KEY_COUNT; i++) {
-                            clientCache.get(i);
+                        clientCache.get(i++);
+                        if (i == KEY_COUNT) {
+                            i = 0;
                         }
                     }
                 }
