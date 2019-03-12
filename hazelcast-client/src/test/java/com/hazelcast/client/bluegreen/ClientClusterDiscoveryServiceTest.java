@@ -28,8 +28,10 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -74,7 +76,7 @@ public class ClientClusterDiscoveryServiceTest {
 
         discoveryService.resetSearch();
 
-        assertEquals(arrayList.get(2), discoveryService.next());
+        assertEquals(arrayList.get(3), discoveryService.next());
 
     }
 
@@ -113,4 +115,40 @@ public class ClientClusterDiscoveryServiceTest {
 
     }
 
+    @Test
+    public void testCurrentAndNextReturnsCorrect() {
+        ArrayList<CandidateClusterContext> arrayList = new ArrayList<CandidateClusterContext>();
+
+        CandidateClusterContext first = createContext();
+        arrayList.add(first);
+        CandidateClusterContext second = createContext();
+        arrayList.add(second);
+        ClientDiscoveryService discoveryService = new ClientDiscoveryService(10, arrayList);
+
+        assertEquals(first, discoveryService.current());
+        discoveryService.resetSearch();
+        assertTrue(discoveryService.hasNext());
+
+        assertEquals(second, discoveryService.next());
+        assertEquals(second, discoveryService.current());
+
+        assertEquals(first, discoveryService.next());
+        assertEquals(first, discoveryService.current());
+    }
+
+    @Test
+    public void testSingleCandidateBehavior() {
+        ArrayList<CandidateClusterContext> arrayList = new ArrayList<CandidateClusterContext>();
+
+        arrayList.add(createContext());
+        ClientDiscoveryService discoveryService = new ClientDiscoveryService(1, arrayList);
+
+        assertNotNull(discoveryService.current());
+        discoveryService.resetSearch();
+        assertTrue(discoveryService.hasNext());
+
+        assertNotNull(discoveryService.next());
+        assertNotNull(discoveryService.current());
+        assertFalse(discoveryService.hasNext());
+    }
 }

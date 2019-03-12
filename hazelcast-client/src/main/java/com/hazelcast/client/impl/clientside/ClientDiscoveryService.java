@@ -50,8 +50,8 @@ public class ClientDiscoveryService implements Iterator<CandidateClusterContext>
         if (currentTryCount == configsMaxTryCount) {
             throw new NoSuchElementException("Has no alternative cluster");
         }
-        CandidateClusterContext candidateClusterContext = discoveryServices.get((int) (head % size));
         head++;
+        CandidateClusterContext candidateClusterContext = discoveryServices.get((int) (head % size));
         if (head % size == 0) {
             currentTryCount++;
         }

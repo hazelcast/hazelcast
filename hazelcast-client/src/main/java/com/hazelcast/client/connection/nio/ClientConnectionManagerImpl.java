@@ -137,7 +137,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.outboundPortCount = outboundPorts.size();
         this.heartbeat = new HeartbeatManager(this, client);
         this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
-        this.failoverConfigProvided = client.getFailoverConfig().getClientConfigs().size() > 1;
+        this.failoverConfigProvided = client.getFailoverConfig() != null;
     }
 
     private Collection<Integer> getOutboundPorts(ClientNetworkConfig networkConfig) {

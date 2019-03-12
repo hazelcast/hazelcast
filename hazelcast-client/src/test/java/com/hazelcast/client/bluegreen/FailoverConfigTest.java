@@ -35,7 +35,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.resolveClientConfig;
+import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.resolveClientFailoverConfig;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -101,7 +101,7 @@ public class FailoverConfigTest {
         ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
         clientFailoverConfig.addClientConfig(new ClientConfig());
         clientFailoverConfig.addClientConfig(new ClientConfig());
-        resolveClientConfig(clientFailoverConfig);
+        resolveClientFailoverConfig(clientFailoverConfig);
     }
 
     @Test
@@ -113,7 +113,7 @@ public class FailoverConfigTest {
         alternativeConfig.getGroupConfig().setName("alternative");
         clientFailoverConfig.addClientConfig(alternativeConfig);
 
-        resolveClientConfig(clientFailoverConfig);
+        resolveClientFailoverConfig(clientFailoverConfig);
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -126,7 +126,7 @@ public class FailoverConfigTest {
         alternativeConfig.setProperty("newProperty", "newValue");
         clientFailoverConfig.addClientConfig(alternativeConfig);
 
-        resolveClientConfig(clientFailoverConfig);
+        resolveClientFailoverConfig(clientFailoverConfig);
     }
 
     @Test
@@ -141,32 +141,18 @@ public class FailoverConfigTest {
         alternativeConfig.getSecurityConfig().setCredentialsFactoryConfig(credentialsFactoryConfig);
         clientFailoverConfig.addClientConfig(alternativeConfig);
 
-        resolveClientConfig(clientFailoverConfig);
+        resolveClientFailoverConfig(clientFailoverConfig);
     }
 
     @Test(expected = HazelcastException.class)
     public void test_throwsException_whenFailoverConfigIsIntended_butPassedNull() {
-        ClientFailoverConfig clientFailoverConfig = resolveClientConfig((ClientFailoverConfig) null);
-        assertEquals(1, clientFailoverConfig.getClientConfigs().size());
-        assertEquals("dev", clientFailoverConfig.getClientConfigs().get(0).getGroupConfig().getName());
-    }
-
-    @Test
-    public void test_returnsDefaultConfigWhen_ClienConfig_passedNull() {
-        ClientFailoverConfig clientFailoverConfig = resolveClientConfig((ClientConfig) null);
-        assertEquals(1, clientFailoverConfig.getClientConfigs().size());
-        assertEquals("dev", clientFailoverConfig.getClientConfigs().get(0).getGroupConfig().getName());
-    }
-
-    @Test
-    public void test_returnsDefaultConfigWhenEmpty() {
-        ClientFailoverConfig clientFailoverConfig = resolveClientConfig();
+        ClientFailoverConfig clientFailoverConfig = resolveClientFailoverConfig(null);
         assertEquals(1, clientFailoverConfig.getClientConfigs().size());
         assertEquals("dev", clientFailoverConfig.getClientConfigs().get(0).getGroupConfig().getName());
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void test_throwsException_whenFailoverConfigIsEmpty() {
-        resolveClientConfig(new ClientFailoverConfig());
+        resolveClientFailoverConfig(new ClientFailoverConfig());
     }
 }

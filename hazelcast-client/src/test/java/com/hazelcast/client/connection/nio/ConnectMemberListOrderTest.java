@@ -105,7 +105,7 @@ public class ConnectMemberListOrderTest extends ClientTestSupport {
         HazelcastClientInstanceImpl instanceImpl = getHazelcastClientInstanceImpl(client);
         ClientDiscoveryService clientDiscoveryService = instanceImpl.getClientDiscoveryService();
         clientDiscoveryService.resetSearch();
-        CandidateClusterContext clusterContext = clientDiscoveryService.next();
+        CandidateClusterContext clusterContext = clientDiscoveryService.current();
         ClusterConnectorServiceImpl clusterConnectorService = (ClusterConnectorServiceImpl) instanceImpl.getClusterConnectorService();
         return clusterConnectorService.getPossibleMemberAddresses(clusterContext.getAddressProvider());
     }

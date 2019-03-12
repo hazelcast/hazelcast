@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.resolveClientConfig;
+import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.resolveClientFailoverConfig;
 
 /**
  * The HazelcastClient is comparable to the {@link com.hazelcast.core.Hazelcast} class and provides the ability
@@ -102,7 +103,7 @@ public final class HazelcastClient {
      * @see #getHazelcastClientByName(String) (String)
      */
     public static HazelcastInstance newHazelcastClient() {
-        return newHazelcastClientInternal(null, resolveClientConfig());
+        return newHazelcastClientInternal(null, resolveClientConfig(null), null);
     }
 
     /**
@@ -119,7 +120,7 @@ public final class HazelcastClient {
      * @see #getHazelcastClientByName(String) (String)
      */
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
-        return newHazelcastClientInternal(null, resolveClientConfig(config));
+        return newHazelcastClientInternal(null, resolveClientConfig(config), null);
     }
 
     /**
@@ -141,16 +142,18 @@ public final class HazelcastClient {
      * @return the client instance
      */
     public static HazelcastInstance newHazelcastFailoverClient(ClientFailoverConfig clientFailoverConfig) {
-        return newHazelcastClientInternal(null, resolveClientConfig(clientFailoverConfig));
+        return newHazelcastClientInternal(null, null, resolveClientFailoverConfig(clientFailoverConfig));
     }
 
-    static HazelcastInstance newHazelcastClientInternal(AddressProvider addressProvider, ClientFailoverConfig failoverConfig) {
+    static HazelcastInstance newHazelcastClientInternal(AddressProvider addressProvider, ClientConfig clientConfig,
+                                                        ClientFailoverConfig failoverConfig) {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         HazelcastClientProxy proxy;
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(failoverConfig, factory, addressProvider);
+            HazelcastClientInstanceImpl client =
+                    new HazelcastClientInstanceImpl(clientConfig, failoverConfig, factory, addressProvider);
             client.start();
             OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);

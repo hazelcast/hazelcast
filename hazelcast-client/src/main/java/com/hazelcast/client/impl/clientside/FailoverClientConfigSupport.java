@@ -45,7 +45,7 @@ public final class FailoverClientConfigSupport {
      * @return resolvedConfigs
      * @throws InvalidConfigurationException when given config is not valid
      */
-    public static ClientFailoverConfig resolveClientConfig(ClientFailoverConfig clientFailoverConfig) {
+    public static ClientFailoverConfig resolveClientFailoverConfig(ClientFailoverConfig clientFailoverConfig) {
         if (clientFailoverConfig == null) {
             XmlClientFailoverConfigBuilder configBuilder = new XmlClientFailoverConfigBuilder();
             clientFailoverConfig = configBuilder.build();
@@ -55,21 +55,21 @@ public final class FailoverClientConfigSupport {
     }
 
     /**
-     * Returns a ClientFailoverConfig with single client config. If clientConfig is null,
-     * We create it via XmlClientConfigBuilder().build()
+     * If clientConfig is null, it is created via XmlClientConfigBuilder().build()
+     *
+     * used with
+     * HazelcastClient.newHazelcastClient() or
+     * HazelcastClient.newHazelcastClient(ClientConfig config)
      *
      * @param config provided via HazelcastClient.newHazelcastClient(ClientConfig config)
      * @return resolvedConfigs
      * @throws InvalidConfigurationException when given config is not valid
      */
-    public static ClientFailoverConfig resolveClientConfig(ClientConfig config) {
+    public static ClientConfig resolveClientConfig(ClientConfig config) {
         if (config == null) {
-            config = createDefaultClientConfig();
+            return createDefaultClientConfig();
         }
-        ClientFailoverConfig resolvedConfig = new ClientFailoverConfig();
-        resolvedConfig.addClientConfig(config);
-        resolvedConfig.setTryCount(1);
-        return resolvedConfig;
+        return config;
     }
 
     private static ClientConfig createDefaultClientConfig() {
@@ -99,22 +99,6 @@ public final class FailoverClientConfigSupport {
             config = new XmlClientConfigBuilder(xmlConfigLocator).build();
         }
         return config;
-    }
-
-    /**
-     * Creates ClientFailoverConfig is created which is equivalent of single client config.
-     *
-     * used with HazelcastClient.newHazelcastClient()
-     *
-     * @return resolved configs
-     */
-    public static ClientFailoverConfig resolveClientConfig() {
-        ClientFailoverConfig resolvedConfig = new ClientFailoverConfig();
-
-        ClientConfig config = createDefaultClientConfig();
-        resolvedConfig.addClientConfig(config);
-        resolvedConfig.setTryCount(1);
-        return resolvedConfig;
     }
 
     /**
