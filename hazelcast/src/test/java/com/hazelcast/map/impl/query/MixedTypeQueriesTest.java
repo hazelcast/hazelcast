@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.greaterEqual;
@@ -83,12 +84,14 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         expected.addIndex("attr2, attr1", true);
         expected.addIndex("attr3", false);
         expected.addIndex("attr4", true);
+        expected.addIndex("attr2, attr4", true);
 
         actual = instance.getMap("actual");
         actual.addIndex("attr1, attr2", false);
         actual.addIndex("attr2, attr1", true);
         actual.addIndex("attr3", false);
         actual.addIndex("attr4", true);
+        actual.addIndex("attr2, attr4", true);
 
         for (int i = 0; i < 2000; ++i) {
             Number attr1 = randomNumber();
@@ -106,7 +109,12 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             Number number = randomNumber();
             double expected = number.doubleValue();
-            Comparable actual = (Comparable) number;
+            Comparable actual;
+            if (random.nextBoolean()) {
+                actual = (Comparable) number;
+            } else {
+                actual = number.toString();
+            }
 
             // no index
             assertPredicates(equal("attr1", expected), equal("attr1", actual));
@@ -116,6 +124,13 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
             assertPredicates(equal("attr3", expected), equal("attr3", actual));
             // regular ordered index
             assertPredicates(equal("attr4", expected), equal("attr4", actual));
+
+            // composite unordered index
+            assertPredicates(and(equal("attr1", expected), equal("attr2", expected)),
+                    and(equal("attr1", actual), equal("attr2", actual)));
+            // composite ordered index
+            assertPredicates(and(equal("attr2", expected), equal("attr4", expected)),
+                    and(equal("attr2", actual), equal("attr4", actual)));
         }
     }
 
@@ -124,16 +139,32 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             Number number = randomNumber();
             double expected = number.doubleValue();
-            Comparable actual = (Comparable) number;
+            Comparable actual;
+            if (random.nextBoolean()) {
+                actual = (Comparable) number;
+            } else {
+                actual = number.toString();
+            }
 
             // no index
             assertPredicates(notEqual("attr1", expected), notEqual("attr1", actual));
+
+            // Indexes are not used by NotEqualPredicate in fact, the code below
+            // is just for completeness.
+
             // first component of composite ordered index
             assertPredicates(notEqual("attr2", expected), notEqual("attr2", actual));
             // regular unordered index
             assertPredicates(notEqual("attr3", expected), notEqual("attr3", actual));
             // regular ordered index
             assertPredicates(notEqual("attr4", expected), notEqual("attr4", actual));
+
+            // composite unordered index
+            assertPredicates(and(notEqual("attr1", expected), notEqual("attr2", expected)),
+                    and(notEqual("attr1", actual), notEqual("attr2", actual)));
+            // composite ordered index
+            assertPredicates(and(notEqual("attr2", expected), notEqual("attr4", expected)),
+                    and(notEqual("attr2", actual), notEqual("attr4", actual)));
         }
     }
 
@@ -142,11 +173,21 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             Number number1 = randomNumber();
             double expected1 = number1.doubleValue();
-            Comparable actual1 = (Comparable) number1;
+            Comparable actual1;
+            if (random.nextBoolean()) {
+                actual1 = (Comparable) number1;
+            } else {
+                actual1 = number1.toString();
+            }
 
             Number number2 = randomNumber();
             double expected2 = number2.doubleValue();
-            Comparable actual2 = (Comparable) number2;
+            Comparable actual2;
+            if (random.nextBoolean()) {
+                actual2 = (Comparable) number2;
+            } else {
+                actual2 = number2.toString();
+            }
 
             // no index
             assertPredicates(in("attr1", expected1, expected2), in("attr1", actual1, actual2));
@@ -156,6 +197,16 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
             assertPredicates(in("attr3", expected1, expected2), in("attr3", actual1, actual2));
             // regular ordered index
             assertPredicates(in("attr4", expected1, expected2), in("attr4", actual1, actual2));
+
+            // InPredicate doesn't support composite indexes for now, the code
+            // below is just for completeness.
+
+            // composite unordered index
+            assertPredicates(and(equal("attr1", expected1), in("attr2", expected1, expected2)),
+                    and(equal("attr1", actual1), in("attr2", actual1, actual2)));
+            // composite ordered index
+            assertPredicates(and(equal("attr2", expected1), in("attr4", expected1, expected2)),
+                    and(equal("attr2", actual1), in("attr4", actual1, actual2)));
         }
     }
 
@@ -164,7 +215,12 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             Number number = randomNumber();
             double expected = number.doubleValue();
-            Comparable actual = (Comparable) number;
+            Comparable actual;
+            if (random.nextBoolean()) {
+                actual = (Comparable) number;
+            } else {
+                actual = number.toString();
+            }
 
             // no index
             assertPredicates(greaterThan("attr1", expected), greaterThan("attr1", actual));
@@ -174,6 +230,13 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
             assertPredicates(greaterThan("attr3", expected), greaterThan("attr3", actual));
             // regular ordered index
             assertPredicates(greaterThan("attr4", expected), greaterThan("attr4", actual));
+
+            // composite unordered index, just for completeness
+            assertPredicates(and(equal("attr1", expected), greaterThan("attr2", expected)),
+                    and(equal("attr1", actual), greaterThan("attr2", actual)));
+            // composite ordered index
+            assertPredicates(and(equal("attr2", expected), greaterThan("attr4", expected)),
+                    and(equal("attr2", actual), greaterThan("attr4", actual)));
         }
     }
 
@@ -182,7 +245,12 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             Number number = randomNumber();
             double expected = number.doubleValue();
-            Comparable actual = (Comparable) number;
+            Comparable actual;
+            if (random.nextBoolean()) {
+                actual = (Comparable) number;
+            } else {
+                actual = number.toString();
+            }
 
             // no index
             assertPredicates(greaterEqual("attr1", expected), greaterEqual("attr1", actual));
@@ -192,6 +260,13 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
             assertPredicates(greaterEqual("attr3", expected), greaterEqual("attr3", actual));
             // regular ordered index
             assertPredicates(greaterEqual("attr4", expected), greaterEqual("attr4", actual));
+
+            // composite unordered index, just for completeness
+            assertPredicates(and(equal("attr1", expected), greaterEqual("attr2", expected)),
+                    and(equal("attr1", actual), greaterEqual("attr2", actual)));
+            // composite ordered index
+            assertPredicates(and(equal("attr2", expected), greaterEqual("attr4", expected)),
+                    and(equal("attr2", actual), greaterEqual("attr4", actual)));
         }
     }
 
@@ -200,7 +275,12 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             Number number = randomNumber();
             double expected = number.doubleValue();
-            Comparable actual = (Comparable) number;
+            Comparable actual;
+            if (random.nextBoolean()) {
+                actual = (Comparable) number;
+            } else {
+                actual = number.toString();
+            }
 
             // no index
             assertPredicates(lessThan("attr1", expected), lessThan("attr1", actual));
@@ -210,6 +290,13 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
             assertPredicates(lessThan("attr3", expected), lessThan("attr3", actual));
             // regular ordered index
             assertPredicates(lessThan("attr4", expected), lessThan("attr4", actual));
+
+            // composite unordered index, just for completeness
+            assertPredicates(and(equal("attr1", expected), lessThan("attr2", expected)),
+                    and(equal("attr1", actual), lessThan("attr2", actual)));
+            // composite ordered index
+            assertPredicates(and(equal("attr2", expected), lessThan("attr4", expected)),
+                    and(equal("attr2", actual), lessThan("attr4", actual)));
         }
     }
 
@@ -218,7 +305,12 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             Number number = randomNumber();
             double expected = number.doubleValue();
-            Comparable actual = (Comparable) number;
+            Comparable actual;
+            if (random.nextBoolean()) {
+                actual = (Comparable) number;
+            } else {
+                actual = number.toString();
+            }
 
             // no index
             assertPredicates(lessEqual("attr1", expected), lessEqual("attr1", actual));
@@ -228,6 +320,13 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
             assertPredicates(lessEqual("attr3", expected), lessEqual("attr3", actual));
             // regular ordered index
             assertPredicates(lessEqual("attr4", expected), lessEqual("attr4", actual));
+
+            // composite unordered index, just for completeness
+            assertPredicates(and(equal("attr1", expected), lessEqual("attr2", expected)),
+                    and(equal("attr1", actual), lessEqual("attr2", actual)));
+            // composite ordered index
+            assertPredicates(and(equal("attr2", expected), lessEqual("attr4", expected)),
+                    and(equal("attr2", actual), lessEqual("attr4", actual)));
         }
     }
 
@@ -236,11 +335,21 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; ++i) {
             Number from = randomNumber();
             double expectedFrom = from.doubleValue();
-            Comparable actualFrom = (Comparable) from;
+            Comparable actualFrom;
+            if (random.nextBoolean()) {
+                actualFrom = (Comparable) from;
+            } else {
+                actualFrom = from.toString();
+            }
 
             Number to = randomNumber();
             double expectedTo = to.doubleValue();
-            Comparable actualTo = (Comparable) to;
+            Comparable actualTo;
+            if (random.nextBoolean()) {
+                actualTo = (Comparable) to;
+            } else {
+                actualTo = to.toString();
+            }
 
             // no index
             assertPredicates(between("attr1", expectedFrom, expectedTo), between("attr1", actualFrom, actualTo));
@@ -250,6 +359,13 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
             assertPredicates(between("attr3", expectedFrom, expectedTo), between("attr3", actualFrom, actualTo));
             // regular ordered index
             assertPredicates(between("attr4", expectedFrom, expectedTo), between("attr4", actualFrom, actualTo));
+
+            // composite unordered index, just for completeness
+            assertPredicates(and(equal("attr1", expectedFrom), between("attr2", expectedFrom, expectedTo)),
+                    and(equal("attr1", actualFrom), between("attr2", actualFrom, actualTo)));
+            // composite ordered index
+            assertPredicates(and(equal("attr2", expectedFrom), between("attr4", expectedFrom, expectedTo)),
+                    and(equal("attr2", actualFrom), between("attr4", actualFrom, actualTo)));
         }
     }
 
