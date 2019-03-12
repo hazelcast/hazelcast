@@ -153,7 +153,7 @@ public final class TypeConverters {
 
                 if (clazz == Long.class) {
                     double doubleValue = number.doubleValue();
-                    if (number.longValue() == (long) doubleValue) {
+                    if (Numbers.equalLongAndDouble(number.longValue(), doubleValue)) {
                         return doubleValue;
                     }
                 } else if (clazz == Integer.class || clazz == Float.class || clazz == Short.class || clazz == Byte.class) {
@@ -208,7 +208,14 @@ public final class TypeConverters {
                 try {
                     return Long.parseLong(string);
                 } catch (NumberFormatException e) {
-                    return Double.parseDouble(string);
+                    double parsedDouble = Double.parseDouble(string);
+
+                    long longValue = (long) parsedDouble;
+                    if (Numbers.equalDoubles(parsedDouble, (double) longValue)) {
+                        return longValue;
+                    }
+
+                    return parsedDouble;
                 }
             }
 
@@ -319,7 +326,14 @@ public final class TypeConverters {
                     try {
                         return Long.parseLong(string);
                     } catch (NumberFormatException e2) {
-                        return Double.parseDouble(string);
+                        double parsedDouble = Double.parseDouble(string);
+
+                        int intValue = (int) parsedDouble;
+                        if (Numbers.equalDoubles(parsedDouble, (double) intValue)) {
+                            return intValue;
+                        }
+
+                        return parsedDouble;
                     }
                 }
             }
@@ -356,12 +370,12 @@ public final class TypeConverters {
 
                 if (clazz == Long.class) {
                     float floatValue = number.floatValue();
-                    if (number.longValue() == (long) floatValue) {
+                    if (Numbers.equalLongAndDouble(number.longValue(), floatValue)) {
                         return floatValue;
                     }
                 } else if (clazz == Integer.class) {
                     float floatValue = number.floatValue();
-                    if (number.intValue() == (int) floatValue) {
+                    if (Numbers.equalLongAndDouble(number.intValue(), floatValue)) {
                         return floatValue;
                     }
                 } else if (clazz == Short.class || clazz == Byte.class) {
@@ -372,7 +386,16 @@ public final class TypeConverters {
             }
 
             if (value instanceof String) {
-                return Double.parseDouble((String) value);
+                // Using parseDouble instead of parseFloat to guarantee the most
+                // precise representation.
+                double parsedDouble = Double.parseDouble((String) value);
+
+                float floatValue = (float) parsedDouble;
+                if (floatValue == parsedDouble) {
+                    return floatValue;
+                }
+
+                return parsedDouble;
             }
 
             throw new IllegalArgumentException("Cannot convert [" + value + "] to number");
@@ -430,7 +453,14 @@ public final class TypeConverters {
                     try {
                         return Long.parseLong(string);
                     } catch (NumberFormatException e2) {
-                        return Double.parseDouble(string);
+                        double parsedDouble = Double.parseDouble(string);
+
+                        short shortValue = (short) parsedDouble;
+                        if (Numbers.equalDoubles(parsedDouble, (double) shortValue)) {
+                            return shortValue;
+                        }
+
+                        return parsedDouble;
                     }
                 }
             }
@@ -512,7 +542,14 @@ public final class TypeConverters {
                     try {
                         return Long.parseLong(string);
                     } catch (NumberFormatException e2) {
-                        return Double.parseDouble(string);
+                        double parsedDouble = Double.parseDouble(string);
+
+                        byte byteValue = (byte) parsedDouble;
+                        if (Numbers.equalDoubles(parsedDouble, (double) byteValue)) {
+                            return byteValue;
+                        }
+
+                        return parsedDouble;
                     }
                 }
             }

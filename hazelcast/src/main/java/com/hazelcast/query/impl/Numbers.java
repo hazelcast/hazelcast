@@ -219,7 +219,7 @@ public final class Numbers {
      * @see #compareLongWithDouble(long, double)
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    private static boolean equalLongAndDouble(long l, double d) {
+    public static boolean equalLongAndDouble(long l, double d) {
         if (d > -0x1p53 && d < +0x1p53) {
             return equalDoubles((double) l, d);
         }
