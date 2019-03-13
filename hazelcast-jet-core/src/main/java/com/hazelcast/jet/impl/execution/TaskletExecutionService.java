@@ -46,13 +46,13 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.regex.Matcher.quoteReplacement;
@@ -62,10 +62,8 @@ import static java.util.stream.Collectors.toList;
 
 public class TaskletExecutionService {
 
-    private static final IdleStrategy IDLER_COOPERATIVE =
-            new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
-    private static final IdleStrategy IDLER_NON_COOPERATIVE =
-            new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(5));
+    private static final long MAXIMUM_IDLE_COOPERATIVE = MILLISECONDS.toNanos(1);
+    private static final long MAXIMUM_IDLE_NON_COOPERATIVE = MILLISECONDS.toNanos(5);
 
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
     private final CooperativeWorker[] cooperativeWorkers;
@@ -77,12 +75,20 @@ public class TaskletExecutionService {
     private final AtomicInteger blockingWorkerCount = new AtomicInteger();
     private volatile boolean isShutdown;
     private final Object lock = new Object();
+    private volatile IdleStrategy idlerCooperative;
+    private volatile IdleStrategy idlerNonCooperative;
 
-    public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount) {
+    public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, long minimumIdleTimeNs) {
         this.hzInstanceName = nodeEngine.getHazelcastInstance().getName();
         this.cooperativeWorkers = new CooperativeWorker[threadCount];
         this.cooperativeThreadPool = new Thread[threadCount];
         this.logger = nodeEngine.getLoggingService().getLogger(TaskletExecutionService.class);
+
+        logFine(logger, "Actual minimum idle time=%dµs", NANOSECONDS.toMicros(minimumIdleTimeNs));
+        idlerCooperative = new BackoffIdleStrategy(0, 0, minimumIdleTimeNs,
+                Math.max(minimumIdleTimeNs, MAXIMUM_IDLE_COOPERATIVE));
+        idlerNonCooperative = new BackoffIdleStrategy(0, 0, minimumIdleTimeNs,
+                Math.max(minimumIdleTimeNs, MAXIMUM_IDLE_NON_COOPERATIVE));
 
         nodeEngine.getMetricsRegistry().newProbeBuilder()
                        .withTag("module", "jet")
@@ -217,6 +223,7 @@ public class TaskletExecutionService {
             final Tasklet t = tracker.tasklet;
             final String oldName = currentThread().getName();
             currentThread().setContextClassLoader(tracker.jobClassLoader);
+            IdleStrategy idlerLocal = idlerNonCooperative;
 
             // swap the thread name by replacing the ".thread-NN" part at the end
             try {
@@ -233,7 +240,7 @@ public class TaskletExecutionService {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
-                        IDLER_NON_COOPERATIVE.idle(++idleCount);
+                        idlerLocal.idle(++idleCount);
                     }
                 } while (!result.isDone()
                         && !tracker.executionTracker.executionCompletedExceptionally()
@@ -265,6 +272,7 @@ public class TaskletExecutionService {
 
         @Override
         public void run() {
+            IdleStrategy idlerLocal = idlerCooperative;
             long idleCount = 0;
             // capture thread once and prevent lambda allocation on each iteration
             Consumer<TaskletTracker> runTasklet = t -> runTasklet(Thread.currentThread(), t);
@@ -277,7 +285,7 @@ public class TaskletExecutionService {
                 if (progressTracker.isMadeProgress()) {
                     idleCount = 0;
                 } else {
-                    IDLER_COOPERATIVE.idle(++idleCount);
+                    idlerLocal.idle(++idleCount);
                 }
             }
             trackers.forEach(t -> t.executionTracker.taskletDone());

@@ -20,6 +20,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -35,7 +36,20 @@ public final class JetGroupProperty {
     public static final HazelcastProperty JOB_RESULTS_TTL_SECONDS
             = new HazelcastProperty("jet.job.results.ttl.seconds", DAYS.toSeconds(7), SECONDS);
 
+    /**
+     * The minimum time in microseconds the worker threads will sleep if none
+     * of the tasklets made any progress. If you see high cpu usage for jobs
+     * with otherwise low traffic, you can try increasing the value.
+     * <p>
+     * The default value is 25µs, but the {@code parkNano} call actually sleeps
+     * longer, by default 50µs on Linux and up to 15000µs on Windows. See
+     * https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/
+     * for more information. Higher value also slightly increases latency and a
+     * very high value (>10000µs) limits the throughput.
+     */
+    public static final HazelcastProperty JET_MINIMUM_IDLE_MICROSECONDS
+            = new HazelcastProperty("jet.minimum.idle.microseconds", 25, MICROSECONDS);
+
     private JetGroupProperty() {
     }
-
 }

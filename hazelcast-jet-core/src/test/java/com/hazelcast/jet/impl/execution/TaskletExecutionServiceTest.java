@@ -83,7 +83,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         Mockito.when(neMock.getMetricsRegistry()).thenReturn(metricsRegistry);
         Mockito.when(loggingService.getLogger(TaskletExecutionService.class))
                .thenReturn(Logger.getLogger(TaskletExecutionService.class));
-        es = new TaskletExecutionService(neMock, THREAD_COUNT);
+        es = new TaskletExecutionService(neMock, THREAD_COUNT, 10_000);
         classLoaderMock = mock(ClassLoader.class);
     }
 

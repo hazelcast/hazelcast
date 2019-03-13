@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.JetGroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperations;
@@ -40,6 +41,7 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -93,13 +95,15 @@ public class JetService
 
     // ManagedService
     @Override
-    public void init(NodeEngine engine, Properties properties) {
+    public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
         this.config = findJetServiceConfig(engine.getConfig());
         this.sharedMigrationWatcher = new MigrationWatcher(engine.getHazelcastInstance());
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
+        HazelcastProperties jetProperties = new HazelcastProperties(config.getProperties());
         taskletExecutionService = new TaskletExecutionService(nodeEngine,
-                config.getInstanceConfig().getCooperativeThreadCount());
+                config.getInstanceConfig().getCooperativeThreadCount(),
+                jetProperties.getNanos(JetGroupProperty.JET_MINIMUM_IDLE_MICROSECONDS));
         jobRepository = new JobRepository(jetInstance);
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();

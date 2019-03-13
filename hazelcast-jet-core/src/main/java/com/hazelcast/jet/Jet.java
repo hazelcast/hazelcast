@@ -172,5 +172,4 @@ public final class Jet {
         MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
         applyMetricsConfig(hzConfig, metricsConfig);
     }
-
 }
