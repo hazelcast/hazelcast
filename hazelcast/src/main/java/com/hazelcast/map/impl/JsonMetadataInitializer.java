@@ -50,7 +50,7 @@ public class JsonMetadataInitializer implements MetadataInitializer {
 
     public Object createFromObject(Object obj) throws IOException {
         if (obj instanceof HazelcastJsonValue) {
-            String str = ((HazelcastJsonValue) obj).toJsonString();
+            String str = obj.toString();
             JsonParser parser = FACTORY.createParser(str);
             try {
                 return JsonSchemaHelper.createSchema(parser);

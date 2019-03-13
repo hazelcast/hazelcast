@@ -97,26 +97,26 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
 
     private HazelcastJsonValue putJsonString(Map map, String name, int age, boolean onDuty) {
         String f = createNameAgeOnDuty(name, age, onDuty).toString();
-        HazelcastJsonValue json = HazelcastJson.fromString(f);
+        HazelcastJsonValue json = new HazelcastJsonValue(f);
         map.put(name, json);
         return json;
     }
 
     private String putWithJsonStringKey(Map map, String name, int age, boolean onDuty) {
         String f = createNameAgeOnDuty(name, age, onDuty).toString();
-        HazelcastJsonValue json = HazelcastJson.fromString(f);
+        HazelcastJsonValue json = new HazelcastJsonValue(f);
         map.put(json, name);
         return name;
     }
 
     private HazelcastJsonValue putJsonString(Map map, String key, JsonValue value) {
-        HazelcastJsonValue hazelcastJson = HazelcastJson.fromString(value.toString());
+        HazelcastJsonValue hazelcastJson = new HazelcastJsonValue(value.toString());
         map.put(key, hazelcastJson);
         return hazelcastJson;
     }
 
     private String putWithJsonStringKey(Map map, JsonValue key, String value) {
-        HazelcastJsonValue lazyKey = HazelcastJson.fromString(key.toString());
+        HazelcastJsonValue lazyKey = new HazelcastJsonValue(key.toString());
         map.put(lazyKey, value);
         return value;
     }
@@ -381,9 +381,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject obj3 = Json.object();
         obj3.add("arr", array3);
 
-        HazelcastJsonValue p1 = HazelcastJson.fromString(obj1.toString());
-        HazelcastJsonValue p2 = HazelcastJson.fromString(obj2.toString());
-        HazelcastJsonValue p3 = HazelcastJson.fromString(obj3.toString());
+        HazelcastJsonValue p1 = new HazelcastJsonValue(obj1.toString());
+        HazelcastJsonValue p2 = new HazelcastJsonValue(obj2.toString());
+        HazelcastJsonValue p3 = new HazelcastJsonValue(obj3.toString());
 
         IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
         map.put("one", p1);
@@ -497,12 +497,12 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     public void testJsonValueIsJustANumber() {
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < 10; i++) {
-            map.put(i, HazelcastJson.fromString(Json.value(i).toString()));
+            map.put(i, new HazelcastJsonValue(Json.value(i).toString()));
         }
         Collection<HazelcastJsonValue> vals = map.values(Predicates.greaterEqual("this", 3));
         assertEquals(7, vals.size());
         for (HazelcastJsonValue value : vals) {
-            int intValue = Json.parse(value.toJsonString()).asInt();
+            int intValue = Json.parse(value.toString()).asInt();
             assertTrue(intValue >= 3);
             assertGreaterOrEquals("predicate result ", intValue, 3);
         }
@@ -512,12 +512,12 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     public void testJsonValueIsJustAString() {
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < 10; i++) {
-            map.put(i, HazelcastJson.fromString(Json.value("s" + i).toString()));
+            map.put(i, new HazelcastJsonValue(Json.value("s" + i).toString()));
         }
         Collection<HazelcastJsonValue> vals = map.values(Predicates.greaterEqual("this", "s3"));
         assertEquals(7, vals.size());
         for (HazelcastJsonValue value : vals) {
-            String stringVal = Json.parse(value.toJsonString()).asString();
+            String stringVal = Json.parse(value.toString()).asString();
             assertTrue(stringVal.compareTo("s3") >= 0);
         }
     }
@@ -526,13 +526,13 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     public void testJsonValueIsJustABoolean() {
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
         for (int i = 0; i < 10; i++) {
-            map.put(i, HazelcastJson.fromString(Json.value(i < 7).toString()));
+            map.put(i, new HazelcastJsonValue(Json.value(i < 7).toString()));
         }
         Collection<Map.Entry<Integer, HazelcastJsonValue>> vals = map.entrySet(Predicates.equal("this", true));
         assertEquals(7, vals.size());
         for (Map.Entry<Integer, HazelcastJsonValue> entry : vals) {
             assertTrue(entry.getKey() < 7);
-            assertEquals("true", entry.getValue().toJsonString());
+            assertEquals("true", entry.getValue().toString());
         }
 
     }
@@ -634,9 +634,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         JsonObject obj3 = Json.object();
         obj3.add("arr", array3);
 
-        HazelcastJsonValue p1 = HazelcastJson.fromString(obj1.toString());
-        HazelcastJsonValue p2 = HazelcastJson.fromString(obj2.toString());
-        HazelcastJsonValue p3 = HazelcastJson.fromString(obj3.toString());
+        HazelcastJsonValue p1 = new HazelcastJsonValue(obj1.toString());
+        HazelcastJsonValue p2 = new HazelcastJsonValue(obj2.toString());
+        HazelcastJsonValue p3 = new HazelcastJsonValue(obj3.toString());
 
         IMap<HazelcastJsonValue, String> map = instance.getMap(randomMapName());
         map.put(p1, "one");
@@ -653,9 +653,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
     public void testInvalidJsonDoesNotThrowException() {
         IMap<HazelcastJsonValue, HazelcastJsonValue> map = instance.getMap(randomMapName());
         String invalidJsonString = "{ \"a: 1 }";
-        HazelcastJsonValue invalidHazelcastJsonValue = HazelcastJson.fromString(invalidJsonString);
+        HazelcastJsonValue invalidHazelcastJsonValue = new HazelcastJsonValue(invalidJsonString);
         map.put(invalidHazelcastJsonValue, invalidHazelcastJsonValue);
-        assertEquals(invalidJsonString, map.get(invalidHazelcastJsonValue).toJsonString());
+        assertEquals(invalidJsonString, map.get(invalidHazelcastJsonValue).toString());
     }
 
     @Test
@@ -665,9 +665,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         String validString1 = "{ \"a\": 2 }";
         String validString2 = "{ \"a\": 3 }";
 
-        HazelcastJsonValue invalidJson = HazelcastJson.fromString(invalidJsonString);
-        HazelcastJsonValue valid1 = HazelcastJson.fromString(validString1);
-        HazelcastJsonValue valid2 = HazelcastJson.fromString(validString2);
+        HazelcastJsonValue invalidJson = new HazelcastJsonValue(invalidJsonString);
+        HazelcastJsonValue valid1 = new HazelcastJsonValue(validString1);
+        HazelcastJsonValue valid2 = new HazelcastJsonValue(validString2);
 
         map.put(1, invalidJson);
         map.put(2, valid1);
@@ -688,9 +688,9 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
         String validString1 = "{ \"a\": 2 }";
         String validString2 = "{ \"a\": 3 }";
 
-        HazelcastJsonValue invalidJson = HazelcastJson.fromString(invalidJsonString);
-        HazelcastJsonValue valid1 = HazelcastJson.fromString(validString1);
-        HazelcastJsonValue valid2 = HazelcastJson.fromString(validString2);
+        HazelcastJsonValue invalidJson = new HazelcastJsonValue(invalidJsonString);
+        HazelcastJsonValue valid1 = new HazelcastJsonValue(validString1);
+        HazelcastJsonValue valid2 = new HazelcastJsonValue(validString2);
 
         map.put(invalidJson, 1);
         map.put(valid1, 2);
@@ -712,7 +712,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
                         .add("age", 23))
                 .toString();
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
-        map.put(1, HazelcastJson.fromString(jsonWithNonTerminalQueryField));
+        map.put(1, new HazelcastJsonValue(jsonWithNonTerminalQueryField));
 
         Collection<Integer> keys = map.keySet(Predicates.equal("user", null));
         assertEquals(0, keys.size());
@@ -726,7 +726,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
                         .add("age", 23))
                 .toString();
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
-        map.put(1, HazelcastJson.fromString(jsonWithNonTerminalQueryField));
+        map.put(1, new HazelcastJsonValue(jsonWithNonTerminalQueryField));
 
         Collection<Integer> keys = map.keySet(Predicates.notEqual("user", null));
         assertEquals(1, keys.size());
@@ -738,7 +738,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
                 .add("user", Json.NULL)
                 .toString();
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
-        map.put(1, HazelcastJson.fromString(jsonWithNonTerminalQueryField));
+        map.put(1, new HazelcastJsonValue(jsonWithNonTerminalQueryField));
 
         Collection<Integer> keys = map.keySet(Predicates.notEqual("user", null));
         assertEquals(0, keys.size());
@@ -750,7 +750,7 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
                 .add("user", Json.NULL)
                 .toString();
         IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
-        map.put(1, HazelcastJson.fromString(jsonWithNonTerminalQueryField));
+        map.put(1, new HazelcastJsonValue(jsonWithNonTerminalQueryField));
 
         Collection<Integer> keys = map.keySet(Predicates.equal("user", null));
         assertEquals(1, keys.size());

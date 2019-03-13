@@ -17,6 +17,7 @@
 package com.hazelcast.json.internal;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
@@ -24,7 +25,6 @@ import com.hazelcast.internal.json.PrettyPrint;
 import com.hazelcast.internal.json.RandomPrint;
 import com.hazelcast.internal.json.WriterConfig;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -99,7 +99,7 @@ public class JsonSchemaHelperTest extends AbstractJsonSchemaTest {
                         .add("a", 3)
                         .add("b", 5));
 
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(object.toString()));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("inner.b"));
         assertEquals(new JsonPattern(asList(0, 1)), pattern);
@@ -107,7 +107,7 @@ public class JsonSchemaHelperTest extends AbstractJsonSchemaTest {
 
     @Test
     public void testEmptyStringReturnsNullSchema() throws IOException {
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(""));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(""));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         assertNull(description);
     }
@@ -121,7 +121,7 @@ public class JsonSchemaHelperTest extends AbstractJsonSchemaTest {
                 .add("d", 4)
                 .add("e", "asd");
 
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(object.toString()));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("b"));
         assertEquals(new JsonPattern(asList(1)), pattern);
@@ -138,7 +138,7 @@ public class JsonSchemaHelperTest extends AbstractJsonSchemaTest {
                         .add("y", 2))
                 .add("b", false);
 
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(object.toString()));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("a"));
         assertEquals(new JsonPattern(asList(0)), pattern);

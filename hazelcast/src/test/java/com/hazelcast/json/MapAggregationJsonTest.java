@@ -118,7 +118,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testValueIsOmitted_whenObjectIsEmpty() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(OBJECT_COUNT, HazelcastJson.fromString(Json.object().toString()));
+        map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object().toString()));
         long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
@@ -126,7 +126,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testValueIsOmitted_whenAttributePathDoesNotExist() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(OBJECT_COUNT, HazelcastJson.fromString(Json.object().add("someField", "someValue").toString()));
+        map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object().add("someField", "someValue").toString()));
         long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
@@ -134,7 +134,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testValueIsOmitted_whenValueIsNotAnObject() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(OBJECT_COUNT, HazelcastJson.fromString(Json.value(5).toString()));
+        map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.value(5).toString()));
         long maxLongValue = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
         assertEquals(OBJECT_COUNT - 1, maxLongValue);
     }
@@ -142,7 +142,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testValueIsOmitted_whenAttributePathIsNotTerminal() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(OBJECT_COUNT, HazelcastJson.fromString(Json.object()
+        map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
         long count = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>longMax("longValue"));
@@ -152,7 +152,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testValueIsOmitted_whenAttributePathIsNotTerminal_count() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(OBJECT_COUNT, HazelcastJson.fromString(Json.object()
+        map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
         long count = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>>count("longValue"));
@@ -162,7 +162,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     @Test
     public void testValueIsOmitted_whenAttributePathIsNotTerminal_distinct() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(OBJECT_COUNT, HazelcastJson.fromString(Json.object()
+        map.put(OBJECT_COUNT, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
         Collection<Object> distinctLongValues = map.aggregate(Aggregators.<Map.Entry<Integer, HazelcastJsonValue>, Object>distinct("longValue"));
@@ -189,7 +189,7 @@ public class MapAggregationJsonTest extends HazelcastTestSupport {
     }
 
     private HazelcastJsonValue createHazelcastJsonValue(String stringValue, long longValue, double doubleValue, long nestedLongValue) {
-        return HazelcastJson.fromString(createJsonString(stringValue, longValue, doubleValue, nestedLongValue));
+        return new HazelcastJsonValue(createJsonString(stringValue, longValue, doubleValue, nestedLongValue));
     }
 
     private String createJsonString(String stringValue, long longValue, double doubleValue, long nestedLongValue) {

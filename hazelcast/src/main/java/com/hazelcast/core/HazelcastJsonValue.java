@@ -16,29 +16,65 @@
 
 package com.hazelcast.core;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
- * HazelcastJsonValue is a wrapper for Json formatted strings. It is preferred
- * to store HazelcastJsonValue instead of Strings for Json formatted strings.
- * Users can run predicates and use indexes on the attributes of the underlying
- * Json strings.
+ * HazelcastJsonValue is a wrapper for Json formatted strings. It is
+ * preferred to store HazelcastJsonValue instead of Strings for Json
+ * formatted strings. Users can run predicates/aggregations and use
+ * indexes on the attributes of the underlying Json strings.
  *
  * HazelcastJsonValue is queried using Hazelcast's querying language.
  * See {@link com.hazelcast.query.Predicates}.
  *
  * In terms of querying, numbers in Json strings are treated as either
- * {@code Long} or {@code Double}. Strings, booleans and null are treated as
- * their Java counterparts.
+ * {@code Long} or {@code Double}. Strings, booleans and null are
+ * treated as their Java counterparts.
  *
- * HazelcastJsonValue keeps given string as it is.
- *
- * See {@link com.hazelcast.json.HazelcastJson#fromString(String)}
+ * HazelcastJsonValue keeps given string as it is. Strings are not
+ * checked for being valid. Ill-formatted json strings may cause false
+ * positive or false negative results in queries. {@code null} string
+ * is not allowed.
  */
-public interface HazelcastJsonValue {
+public final class HazelcastJsonValue {
+
+    private final String string;
 
     /**
-     * This method returns a Json representation of the object
-     * @return Json representation
+     * Creates a HazelcastJsonValue from given string.
+     *
+     * @param string a non null Json string
      */
-    String toJsonString();
+    public HazelcastJsonValue(String string) {
+        checkNotNull(string);
+        this.string = string;
+    }
 
+    /**
+     * Returns unaltered string that was used to create this object.
+     * @return original string
+     */
+    @Override
+    public String toString() {
+        return string;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        HazelcastJsonValue jsonValue = (HazelcastJsonValue) o;
+
+        return string != null ? string.equals(jsonValue.string) : jsonValue.string == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return string != null ? string.hashCode() : 0;
+    }
 }

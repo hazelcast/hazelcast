@@ -31,7 +31,6 @@ import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
@@ -482,7 +481,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         for (String key : keys) {
-            HazelcastJsonValue jsonString = HazelcastJson.fromString("{ \"value\": \"" + key + "\" }");
+            HazelcastJsonValue jsonString = new HazelcastJsonValue("{ \"value\": \"" + key + "\" }");
             map.put(key, jsonString);
         }
 
@@ -491,14 +490,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (String key : keys) {
             HazelcastJsonValue jsonObject = map.get(key);
             assertNotNull(jsonObject);
-            assertTrue(Json.parse(jsonObject.toJsonString()).asObject().get(JsonStringPropAdder.NEW_FIELD).asBoolean());
+            assertTrue(Json.parse(jsonObject.toString()).asObject().get(JsonStringPropAdder.NEW_FIELD).asBoolean());
         }
 
         instance1.shutdown();
         for (Object key : keys) {
             HazelcastJsonValue jsonObject = map.get(key);
             assertNotNull(jsonObject);
-            assertTrue(Json.parse(jsonObject.toJsonString()).asObject().get(JsonStringPropAdder.NEW_FIELD).asBoolean());
+            assertTrue(Json.parse(jsonObject.toString()).asObject().get(JsonStringPropAdder.NEW_FIELD).asBoolean());
         }
     }
 
@@ -517,7 +516,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry<Integer, HazelcastJsonValue> entry) {
-            HazelcastJsonValue jsonValue = HazelcastJson.fromString("{\"123\" : \"123\"}");
+            HazelcastJsonValue jsonValue = new HazelcastJsonValue("{\"123\" : \"123\"}");
             entry.setValue(jsonValue);
             return "anyResult";
         }
@@ -1847,9 +1846,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry<String, HazelcastJsonValue> entry) {
             HazelcastJsonValue value = entry.getValue();
-            JsonValue jsonValue = Json.parse(value.toJsonString());
+            JsonValue jsonValue = Json.parse(value.toString());
             jsonValue.asObject().add(NEW_FIELD, true);
-            entry.setValue(HazelcastJson.fromString(jsonValue.toString()));
+            entry.setValue(new HazelcastJsonValue(jsonValue.toString()));
             return null;
         }
     }

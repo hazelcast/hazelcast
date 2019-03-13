@@ -38,13 +38,13 @@ public final class JsonGetter extends AbstractJsonGetter {
     @Override
     protected NavigableJsonInputAdapter annotate(Object object) {
         HazelcastJsonValue hazelcastJson = (HazelcastJsonValue) object;
-        return new StringNavigableJsonAdapter(hazelcastJson.toJsonString(), 0);
+        return new StringNavigableJsonAdapter(hazelcastJson.toString(), 0);
     }
 
     @Override
     JsonParser createParser(Object obj) throws IOException {
         if (obj instanceof HazelcastJsonValue) {
-            return factory.createParser(((HazelcastJsonValue) obj).toJsonString());
+            return factory.createParser(obj.toString());
         } else {
             throw new QueryException("Queried object is not of HazelcastJsonValue type. It is " + obj.getClass());
         }

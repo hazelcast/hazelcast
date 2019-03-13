@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -133,7 +132,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
     }
 
     protected static HazelcastJsonValue createJsonValue(String type, int innerValue) {
-        return HazelcastJson.fromString(Json.object()
+        return new HazelcastJsonValue(Json.object()
                 .add("type", type)
                 .add("value", innerValue)
                 .toString());
