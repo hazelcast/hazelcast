@@ -174,6 +174,7 @@ public final class TypeConverters {
 
     static class LongConverter extends BaseTypeConverter {
 
+        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
