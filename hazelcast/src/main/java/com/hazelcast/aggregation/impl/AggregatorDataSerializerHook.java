@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.Numbers;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AGGREGATOR_DS_FACTORY;
@@ -51,10 +50,8 @@ public final class AggregatorDataSerializerHook implements DataSerializerHook {
     public static final int MAX_BY = 17;
     public static final int MIN_BY = 18;
     public static final int CANONICALIZING_SET = 19;
-    public static final int TYPE_INFERRER = 20;
 
-
-    private static final int LEN = TYPE_INFERRER + 1;
+    private static final int LEN = CANONICALIZING_SET + 1;
 
     @Override
     public int getFactoryId() {
@@ -164,11 +161,6 @@ public final class AggregatorDataSerializerHook implements DataSerializerHook {
         constructors[CANONICALIZING_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CanonicalizingHashSet();
-            }
-        };
-        constructors[TYPE_INFERRER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Numbers.TypeInferrer();
             }
         };
 

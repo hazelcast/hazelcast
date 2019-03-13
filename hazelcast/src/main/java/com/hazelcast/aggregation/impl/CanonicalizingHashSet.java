@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Comparables;
-import com.hazelcast.query.impl.Numbers;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -32,8 +31,6 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     private HashMap<Object, E> map;
 
-    private Numbers.TypeInferrer typeInferrer = new Numbers.TypeInferrer();
-
     public CanonicalizingHashSet() {
         this.map = new HashMap<Object, E>();
     }
@@ -44,17 +41,14 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     public void addAllInternal(CanonicalizingHashSet<E> set) {
         map.putAll(set.map);
-        typeInferrer.observe(set.typeInferrer);
     }
 
     public void addInternal(E e) {
-        typeInferrer.observe(e);
         map.put(canonicalize(e), e);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(typeInferrer);
         out.writeInt(size());
         for (Object element : this) {
             out.writeObject(element);
@@ -63,7 +57,6 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        typeInferrer = in.readObject();
         int count = in.readInt();
         this.map = new HashMap<Object, E>(count);
         for (int i = 0; i < count; i++) {
@@ -99,20 +92,17 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     @Override
     public Iterator<E> iterator() {
-        // FIXME type inferrer support
         return map.values().iterator();
     }
 
     @Override
     public Object[] toArray() {
-        // FIXME type inferrer support
         return map.values().toArray();
     }
 
     @SuppressWarnings({"NullableProblems", "SuspiciousToArrayCall"})
     @Override
     public <T> T[] toArray(T[] a) {
-        // FIXME type inferrer support
         return map.values().toArray(a);
     }
 
@@ -136,6 +126,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
         return true;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public boolean addAll(Collection<? extends E> c) {
         throw new UnsupportedOperationException();
@@ -147,6 +138,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
         throw new UnsupportedOperationException();
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public boolean removeAll(Collection<?> c) {
         throw new UnsupportedOperationException();
@@ -178,7 +170,6 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
 
     @Override
     public String toString() {
-        // FIXME type inferrer support
         return map.values().toString();
     }
 
