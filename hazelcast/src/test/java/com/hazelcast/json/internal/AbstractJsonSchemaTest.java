@@ -29,7 +29,6 @@ import com.hazelcast.internal.serialization.impl.DataInputNavigableJsonAdapter;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
 import com.hazelcast.internal.serialization.impl.StringNavigableJsonAdapter;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
 
 import java.io.IOException;
@@ -55,7 +54,7 @@ public abstract class AbstractJsonSchemaTest {
 
     protected NavigableJsonInputAdapter toAdapter(HazelcastJsonValue jsonValue) {
         if (getInMemoryFormay() == InMemoryFormat.OBJECT) {
-            return new StringNavigableJsonAdapter(jsonValue.toJsonString(), 0);
+            return new StringNavigableJsonAdapter(jsonValue.toString(), 0);
         } else {
             return new DataInputNavigableJsonAdapter(serializationService.createObjectDataInput(serializationService.toData(jsonValue)), JSON_UTF8_START_OFFSET);
         }
@@ -70,7 +69,7 @@ public abstract class AbstractJsonSchemaTest {
 
 
     protected void validateJson(String originalString, JsonValue jsonValue) throws IOException {
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(originalString));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(originalString));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         if (jsonValue.isObject()) {
             validateJsonObject(originalString, new JsonPattern(), jsonValue.asObject(), description, input, null);

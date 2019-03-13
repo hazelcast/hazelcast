@@ -18,10 +18,10 @@ package com.hazelcast.json.internal;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,7 +41,7 @@ public class DataInputJsonSchemaCreateTest extends AbstractJsonSchemaCreateTest 
     private JsonFactory factory = new JsonFactory();
 
     protected JsonParser createParserFromString(String jsonString) throws IOException {
-        return factory.createParser(convertToInputStream(serializationService.createObjectDataInput(serializationService.toBytes(HazelcastJson.fromString(jsonString))), 12));
+        return factory.createParser(convertToInputStream(serializationService.createObjectDataInput(serializationService.toBytes(new HazelcastJsonValue(jsonString))), 12));
     }
 
     @Test

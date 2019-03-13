@@ -17,10 +17,10 @@
 package com.hazelcast.json.internal;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -226,14 +226,14 @@ public class JsonSchemaHelperNullTest extends AbstractJsonSchemaTest {
     }
 
     private void test_givenInvalidPattern_createNullPattern(String jsonString, String path) throws IOException {
-        NavigableJsonInputAdapter inputAdapter = toAdapter(HazelcastJson.fromString(jsonString));
+        NavigableJsonInputAdapter inputAdapter = toAdapter(new HazelcastJsonValue(jsonString));
         JsonSchemaNode schemaNode = JsonSchemaHelper.createSchema(createParserFromInput(inputAdapter));
         JsonPattern pattern = JsonSchemaHelper.createPattern(inputAdapter, schemaNode, splitPath(path));
         assertNull(pattern);
     }
 
     private void test_givenWrongPattern_returnNull(String jsonString, String patternPath, String queryPath) throws IOException {
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(jsonString));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(jsonString));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath(patternPath));
 

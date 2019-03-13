@@ -21,12 +21,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.json.HazelcastJson;
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
@@ -100,7 +99,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            map.put(i, HazelcastJson.fromString(jsonString));
+            map.put(i, new HazelcastJsonValue(jsonString));
         }
 
         Set<QueryableEntry> records = getRecords(instance, MAP_NAME, "age", 40);
@@ -123,7 +122,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            map.put(i, HazelcastJson.fromString(jsonString));
+            map.put(i, new HazelcastJsonValue(jsonString));
         }
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
@@ -142,7 +141,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            map.put(i, HazelcastJson.fromString(jsonString));
+            map.put(i, new HazelcastJsonValue(jsonString));
         }
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
@@ -162,7 +161,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         for (int i = 0; i < 1000; i++) {
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            map.put(i, HazelcastJson.fromString(jsonString));
+            map.put(i, new HazelcastJsonValue(jsonString));
         }
 
         assertEquals(500, map.values(Predicates.and(Predicates.equal("name", "sancar"), Predicates.equal("active", "true"))).size());
@@ -179,11 +178,11 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry<Integer, HazelcastJsonValue> entry) {
-            JsonObject jsonObject = Json.parse(entry.getValue().toJsonString()).asObject();
+            JsonObject jsonObject = Json.parse(entry.getValue().toString()).asObject();
             jsonObject.set("age", 0);
             jsonObject.set("active", false);
 
-            entry.setValue(HazelcastJson.fromString(jsonObject.toString()));
+            entry.setValue(new HazelcastJsonValue(jsonObject.toString()));
             return "anyResult";
         }
 

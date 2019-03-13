@@ -27,7 +27,6 @@ import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.internal.json.Json;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -1298,12 +1297,12 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testJsonPutGet() {
         final IMap<String, HazelcastJsonValue> map = getInstance().getMap(randomMapName());
-        HazelcastJsonValue value = HazelcastJson.fromString("{ \"age\": 4 }");
+        HazelcastJsonValue value = new HazelcastJsonValue("{ \"age\": 4 }");
         map.put("item1", value);
         HazelcastJsonValue retrieved = map.get("item1");
 
         assertEquals(value, retrieved);
-        assertEquals(4, Json.parse(retrieved.toJsonString()).asObject().get("age").asInt());
+        assertEquals(4, Json.parse(retrieved.toString()).asObject().get("age").asInt());
     }
 
     @Test

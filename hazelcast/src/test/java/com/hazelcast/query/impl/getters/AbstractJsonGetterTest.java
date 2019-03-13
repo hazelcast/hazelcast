@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.json.internal.JsonSchemaHelper;
 import com.hazelcast.json.internal.JsonSchemaNode;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -57,7 +56,7 @@ public class AbstractJsonGetterTest {
     @Test
     public void testRepeatQueriesUseTheCachedContext() throws Exception {
         String jsonText = Json.object().add("at1", "val1").add("at2", "val2").toString();
-        HazelcastJsonValue jsonValue = HazelcastJson.fromString(jsonText);
+        HazelcastJsonValue jsonValue = new HazelcastJsonValue(jsonText);
         JsonSchemaNode node = JsonSchemaHelper.createSchema(factory.createParser(jsonText));
         assertEquals("val1", getter.getValue(jsonValue, "at1", node));
         assertEquals("val1", getter.getValue(jsonValue, "at1", node));
@@ -70,7 +69,7 @@ public class AbstractJsonGetterTest {
     @Test
     public void testDifferentQueriesCreateNewContexts() throws Exception {
         String jsonText = Json.object().add("at1", "val1").add("at2", "val2").toString();
-        HazelcastJsonValue jsonValue = HazelcastJson.fromString(jsonText);
+        HazelcastJsonValue jsonValue = new HazelcastJsonValue(jsonText);
         JsonSchemaNode node = JsonSchemaHelper.createSchema(factory.createParser(jsonText));
         assertEquals("val1", getter.getValue(jsonValue, "at1", node));
         assertEquals("val1", getter.getValue(jsonValue, "at1", node));
@@ -137,7 +136,7 @@ public class AbstractJsonGetterTest {
     }
 
     private JsonSchemaNode createMetadata(HazelcastJsonValue value) throws IOException {
-        return JsonSchemaHelper.createSchema(factory.createParser(value.toJsonString()));
+        return JsonSchemaHelper.createSchema(factory.createParser(value.toString()));
     }
 
     private class GetterRunner implements Runnable {
@@ -205,6 +204,6 @@ public class AbstractJsonGetterTest {
         for (int i = 0; i < names.length; i++) {
             object.add(names[i], values[i]);
         }
-        return HazelcastJson.fromString(object.toString());
+        return new HazelcastJsonValue(object.toString());
     }
 }

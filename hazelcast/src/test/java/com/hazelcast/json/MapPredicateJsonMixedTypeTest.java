@@ -93,7 +93,7 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
         object.add("name", name);
         object.add("age", age);
         object.add("onDuty", onDuty);
-        return HazelcastJson.fromString(object.toString());
+        return new HazelcastJsonValue(object.toString());
     }
 
     @Test
@@ -101,11 +101,11 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
         IMap map = instance.getMap(randomMapName());
 
         map.put("k_int", 5);
-        map.put("k_json", HazelcastJson.fromString("10"));
+        map.put("k_json", new HazelcastJsonValue("10"));
         map.put("k_int_2", 11);
 
         assertEquals(5, map.get("k_int"));
-        assertEquals(10, Json.parse(((HazelcastJsonValue) map.get("k_json")).toJsonString()).asInt());
+        assertEquals(10, Json.parse(((HazelcastJsonValue) map.get("k_json")).toString()).asInt());
         assertEquals(11, map.get("k_int_2"));
     }
 
@@ -114,12 +114,12 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
         IMap map = instance.getMap(randomMapName());
 
         map.put("k_int", 5);
-        map.put("k_json", HazelcastJson.fromString("10"));
+        map.put("k_json", new HazelcastJsonValue("10"));
         map.put("k_int_2", 11);
 
         Collection vals = map.values(Predicates.greaterEqual("this", 8));
         assertEquals(2, vals.size());
-        assertContains(vals, HazelcastJson.fromString("10"));
+        assertContains(vals, new HazelcastJsonValue("10"));
         assertContains(vals, 11);
     }
 

@@ -17,11 +17,11 @@
 package com.hazelcast.json.internal;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -67,7 +67,7 @@ public class JsonSchemaHelperMultiValueTest extends AbstractJsonSchemaTest {
                         .add(2)
                         .add(3));
 
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(object.toString()));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("array[any]"));
         assertEquals(1, pattern.depth());
@@ -83,7 +83,7 @@ public class JsonSchemaHelperMultiValueTest extends AbstractJsonSchemaTest {
                         .add(2)
                         .add(3));
 
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(object.toString()));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("array[any].a"));
         assertEquals(1, pattern.depth());
@@ -98,7 +98,7 @@ public class JsonSchemaHelperMultiValueTest extends AbstractJsonSchemaTest {
                         .add(2)
                         .add(3);
 
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(object.toString()));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("[any]"));
         assertEquals(0, pattern.depth());
@@ -112,7 +112,7 @@ public class JsonSchemaHelperMultiValueTest extends AbstractJsonSchemaTest {
                 .add(2)
                 .add(3);
 
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(object.toString()));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("[any].abc.de"));
         assertEquals(0, pattern.depth());
@@ -124,7 +124,7 @@ public class JsonSchemaHelperMultiValueTest extends AbstractJsonSchemaTest {
         JsonObject object = Json.object()
                 .add("scalarValue", 4);
 
-        NavigableJsonInputAdapter input = toAdapter(HazelcastJson.fromString(object.toString()));
+        NavigableJsonInputAdapter input = toAdapter(new HazelcastJsonValue(object.toString()));
         JsonSchemaNode description = JsonSchemaHelper.createSchema(createParserFromInput(input));
         JsonPattern pattern = JsonSchemaHelper.createPattern(input, description, splitPath("scalarValue[any]"));
         assertNull(pattern);

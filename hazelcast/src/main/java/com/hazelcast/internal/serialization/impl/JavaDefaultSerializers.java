@@ -17,7 +17,6 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.json.HazelcastJson;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ClassNameFilter;
@@ -329,12 +328,12 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(ObjectDataOutput out, HazelcastJsonValue object) throws IOException {
-            out.writeUTF(object.toJsonString());
+            out.writeUTF(object.toString());
         }
 
         @Override
         public HazelcastJsonValue read(ObjectDataInput in) throws IOException {
-            return HazelcastJson.fromString(in.readUTF());
+            return new HazelcastJsonValue(in.readUTF());
         }
 
         @Override

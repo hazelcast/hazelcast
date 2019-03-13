@@ -43,9 +43,14 @@ public class JsonValueSerializationTest {
 
     @Test
     public void testSerializeDeserializeJsonValue() {
-        HazelcastJsonValue jsonValue = HazelcastJson.fromString("{ \"key\": \"value\" }");
+        HazelcastJsonValue jsonValue = new HazelcastJsonValue("{ \"key\": \"value\" }");
         Data jsonData = serializationService.toData(jsonValue);
         HazelcastJsonValue jsonDeserialized = serializationService.toObject(jsonData);
         assertEquals(jsonValue, jsonDeserialized);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testHazelcastJsonValueWithNullStringThrows() {
+        new HazelcastJsonValue(null);
     }
 }
