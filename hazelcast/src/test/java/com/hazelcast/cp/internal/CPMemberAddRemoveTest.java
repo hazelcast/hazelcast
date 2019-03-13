@@ -994,4 +994,43 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         });
     }
 
+    @Test
+    public void when_crashedMemberIsRemovedAndThenNewCPMemberIsPromoted_then_membershipChangeSucceeds()
+            throws ExecutionException, InterruptedException {
+        final int cpMemberCount = 3;
+        final HazelcastInstance[] instances = newInstances(cpMemberCount);
+        waitUntilCPDiscoveryCompleted(instances);
+
+        final CPMember cpMember3 = instances[2].getCPSubsystem().getLocalCPMember();
+        instances[2].getLifecycleService().terminate();
+        instances[0].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(cpMember3.getUuid());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                CPGroup metadataGroup = instances[0].getCPSubsystem()
+                                                    .getCPSubsystemManagementService()
+                                                    .getCPGroup(CPGroup.METADATA_CP_GROUP_NAME)
+                                                    .get();
+                assertEquals(cpMemberCount - 1, metadataGroup.members().size());
+                assertFalse(metadataGroup.members().contains(cpMember3));
+            }
+        });
+
+        final HazelcastInstance instance4 = factory.newHazelcastInstance(createConfig(cpMemberCount, cpMemberCount));
+        instance4.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                CPGroup metadataGroup = instances[0].getCPSubsystem()
+                                                    .getCPSubsystemManagementService()
+                                                    .getCPGroup(CPGroup.METADATA_CP_GROUP_NAME)
+                                                    .get();
+                assertTrue(metadataGroup.members().contains(instance4.getCPSubsystem().getLocalCPMember()));
+                assertEquals(cpMemberCount, metadataGroup.members().size());
+            }
+        });
+    }
+
 }

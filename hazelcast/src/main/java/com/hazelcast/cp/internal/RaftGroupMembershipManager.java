@@ -247,11 +247,11 @@ class RaftGroupMembershipManager {
             }
 
             List<CPGroupMembershipChange> changes = schedule.getChanges();
-            Map<CPGroupId, Tuple2<Long, Long>> changedGroups = new ConcurrentHashMap<CPGroupId, Tuple2<Long, Long>>();
             CountDownLatch latch = new CountDownLatch(changes.size());
+            Map<CPGroupId, Tuple2<Long, Long>> changedGroups = new ConcurrentHashMap<CPGroupId, Tuple2<Long, Long>>();
 
             for (CPGroupMembershipChange change : changes) {
-                applyMembershipChangeOnRaftGroup(changedGroups, latch, change);
+                applyOnRaftGroup(latch, changedGroups, change);
             }
 
             try {
@@ -269,36 +269,32 @@ class RaftGroupMembershipManager {
             return f.join();
         }
 
-        private void applyMembershipChangeOnRaftGroup(final Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
-                                                      final CountDownLatch latch,
-                                                      final CPGroupMembershipChange change) {
-            final CPGroupId groupId = change.getGroupId();
+        private void applyOnRaftGroup(final CountDownLatch latch, final Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
+                                      final CPGroupMembershipChange change) {
             ICompletableFuture<Long> future;
-            if (change.getMemberToAdd() == null) {
-                future = new SimpleCompletedFuture<Long>(change.getMembersCommitIndex());
+            if (change.getMemberToRemove() != null) {
+                future = invocationManager.changeMembership(change.getGroupId(), change.getMembersCommitIndex(),
+                        change.getMemberToRemove(), MembershipChangeMode.REMOVE);
             } else {
-                logger.fine("Adding " + change.getMemberToAdd() + " to " + groupId);
-
-                future = invocationManager.changeMembership(groupId, change.getMembersCommitIndex(),
-                        change.getMemberToAdd(), MembershipChangeMode.ADD);
+                future = new SimpleCompletedFuture<Long>(change.getMembersCommitIndex());
             }
 
             future.andThen(new ExecutionCallback<Long>() {
                 @Override
-                public void onResponse(Long addCommitIndex) {
-                    if (change.getMemberToRemove() == null) {
-                        changedGroups.put(groupId, Tuple2.of(change.getMembersCommitIndex(), addCommitIndex));
-                        latch.countDown();
+                public void onResponse(Long removeCommitIndex) {
+                    if (change.getMemberToAdd() != null) {
+                        addMember(latch, changedGroups, change, removeCommitIndex);
                     } else {
-                        removeMember(changedGroups, latch, change, addCommitIndex);
+                        changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), removeCommitIndex));
+                        latch.countDown();
                     }
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
-                    long addCommitIndex = getMemberAddCommitIndex(changedGroups, change, t);
-                    if (addCommitIndex != NA_MEMBERS_COMMIT_INDEX) {
-                        onResponse(addCommitIndex);
+                    long removeCommitIndex = checkMemberRemoveCommitIndex(changedGroups, change, t);
+                    if (removeCommitIndex != NA_MEMBERS_COMMIT_INDEX) {
+                        onResponse(removeCommitIndex);
                     } else {
                         latch.countDown();
                     }
@@ -306,32 +302,28 @@ class RaftGroupMembershipManager {
             });
         }
 
-        private void removeMember(final Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
-                                  final CountDownLatch latch,
-                                  final CPGroupMembershipChange change,
-                                  final long currentCommitIndex) {
+        private void addMember(final CountDownLatch latch, final Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
+                               final CPGroupMembershipChange change, final long currentCommitIndex) {
             ICompletableFuture<Long> future = invocationManager.changeMembership(change.getGroupId(), currentCommitIndex,
-                    change.getMemberToRemove(), MembershipChangeMode.REMOVE);
+                    change.getMemberToAdd(), MembershipChangeMode.ADD);
             future.andThen(new ExecutionCallback<Long>() {
                 @Override
-                public void onResponse(Long removeCommitIndex) {
-                    changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), removeCommitIndex));
+                public void onResponse(Long addCommitIndex) {
+                    changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), addCommitIndex));
                     latch.countDown();
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
-                    long removeCommitIndex = getMemberRemoveCommitIndex(change, t);
-                    if (removeCommitIndex != NA_MEMBERS_COMMIT_INDEX) {
-                        changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), removeCommitIndex));
-                    }
+                    checkMemberAddCommitIndex(changedGroups, change, t);
                     latch.countDown();
                 }
             });
         }
 
-        private long getMemberAddCommitIndex(Map<CPGroupId, Tuple2<Long, Long>> changedGroups, CPGroupMembershipChange change,
-                                             Throwable t) {
+        private void checkMemberAddCommitIndex(Map<CPGroupId, Tuple2<Long, Long>> changedGroups, CPGroupMembershipChange change,
+                                               Throwable t) {
+            CPMemberInfo memberToAdd = change.getMemberToAdd();
             if (t instanceof MismatchingGroupMembersCommitIndexException) {
                 MismatchingGroupMembersCommitIndexException m = (MismatchingGroupMembersCommitIndexException) t;
                 String msg = "MEMBER ADD commit of " + change + " failed. Actual group members: " + m.getMembers()
@@ -339,35 +331,50 @@ class RaftGroupMembershipManager {
 
                 // learnt group members must contain the added member and the current members I know
 
-                if (!m.getMembers().contains(change.getMemberToAdd())) {
+                if (!m.getMembers().contains(memberToAdd)) {
                     logger.severe(msg);
-                    return NA_MEMBERS_COMMIT_INDEX;
+                    return;
+                }
+
+                if (change.getMemberToRemove() != null) {
+                    // I expect the member to be removed to be removed from the group
+                    if (m.getMembers().contains(change.getMemberToRemove())) {
+                        logger.severe(msg);
+                        return;
+                    }
+
+                    // I know the removed member has left the group and the added member has joined.
+                    // So member counts must be same...
+                    if (m.getMembers().size() != change.getMembers().size()) {
+                        logger.severe(msg);
+                        return;
+                    }
+                } else if (m.getMembers().size() != (change.getMembers().size() + 1)) {
+                    // if there is no removed member, I expect number of the learnt number of group members to be 1 greater than
+                    // the current members I know
+                    logger.severe(msg);
+                    return;
                 }
 
                 for (CPMemberInfo member : change.getMembers()) {
                     if (!member.equals(change.getMemberToRemove()) && !m.getMembers().contains(member)) {
                         logger.severe(msg);
-                        return NA_MEMBERS_COMMIT_INDEX;
+                        return;
                     }
                 }
 
-                // If the scheduled member-remove is already done, put its result and do not retry it
-                if (change.getMemberToRemove() != null && !m.getMembers().contains(change.getMemberToRemove())) {
-                    changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), m.getCommitIndex()));
-                    return NA_MEMBERS_COMMIT_INDEX;
-                }
-
-                return m.getCommitIndex();
+                changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), m.getCommitIndex()));
+                return;
             }
 
-            logger.severe("Cannot get MEMBER ADD result of " + change.getMemberToAdd() + " to " + change.getGroupId()
+            logger.severe("Cannot get MEMBER ADD result of " + memberToAdd + " to " + change.getGroupId()
                     + " with members commit index: " + change.getMembersCommitIndex(), t);
-            return NA_MEMBERS_COMMIT_INDEX;
         }
 
-        private long getMemberRemoveCommitIndex(CPGroupMembershipChange change, Throwable t) {
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
+        private long checkMemberRemoveCommitIndex(Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
+                                                  CPGroupMembershipChange change, Throwable t) {
             CPMemberInfo removedMember = change.getMemberToRemove();
-
             if (t instanceof MismatchingGroupMembersCommitIndexException) {
                 MismatchingGroupMembersCommitIndexException m = (MismatchingGroupMembersCommitIndexException) t;
                 String msg = "MEMBER REMOVE commit of " + change + " failed. Actual group members: " + m.getMembers()
@@ -378,19 +385,26 @@ class RaftGroupMembershipManager {
                     return NA_MEMBERS_COMMIT_INDEX;
                 }
 
-                if (change.getMemberToAdd() != null) {
-                    // I expect the added member to be joined to the group
-                    if (!m.getMembers().contains(change.getMemberToAdd())) {
-                        logger.severe(msg);
-                        return NA_MEMBERS_COMMIT_INDEX;
-                    }
-
-                    // I know the removed member has left the group and the added member has joined.
+                // The member to be added can be already joined to the group
+                if (change.getMemberToAdd() != null && m.getMembers().contains(change.getMemberToAdd())) {
+                    // I know the removed member has left the group and the member to be added has already joined to the group.
                     // So member sizes must be same...
                     if (m.getMembers().size() != change.getMembers().size()) {
                         logger.severe(msg);
                         return NA_MEMBERS_COMMIT_INDEX;
                     }
+
+                    for (CPMemberInfo member : change.getMembers()) {
+                        // Other group members except the removed one must be still present...
+                        if (!member.equals(removedMember) && !m.getMembers().contains(member)) {
+                            logger.severe(msg);
+                            return NA_MEMBERS_COMMIT_INDEX;
+                        }
+                    }
+
+                    // both member-remove and member-add are done.
+                    changedGroups.put(change.getGroupId(), Tuple2.of(change.getMembersCommitIndex(), m.getCommitIndex()));
+                    return NA_MEMBERS_COMMIT_INDEX;
                 } else if (m.getMembers().size() != (change.getMembers().size() - 1)) {
                     // if there is no added member, I expect number of the learnt group members to be 1 less than
                     // the current members I know
@@ -399,7 +413,7 @@ class RaftGroupMembershipManager {
                 }
 
                 for (CPMemberInfo member : change.getMembers()) {
-                    // Other group members except the removed one and added one must be still present...
+                    // Other group members except the removed one must be still present...
                     if (!member.equals(removedMember) && !m.getMembers().contains(member)) {
                         logger.severe(msg);
                         return NA_MEMBERS_COMMIT_INDEX;
