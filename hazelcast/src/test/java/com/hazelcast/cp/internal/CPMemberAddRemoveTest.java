@@ -898,7 +898,6 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
                     List<CPMemberInfo> activeMembers = new ArrayList<CPMemberInfo>(service.getMetadataGroupManager().getActiveMembers());
                     assertEquals(cpMembers, activeMembers);
                 }
-
             }
         });
     }
@@ -965,6 +964,32 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
                 for (int i = 0; i < instances.length; i++) {
                     assertEquals(NodeState.SHUT_DOWN, nodes[i].getState());
                 }
+            }
+        });
+    }
+
+    @Test
+    public void when_crashedMemberIsReplacedByAnotherAvailableCPMember_then_membershipChangeSucceeds() throws InterruptedException, ExecutionException {
+        final int cpMemberCount = 3;
+        final HazelcastInstance[] instances = newInstances(cpMemberCount);
+        waitUntilCPDiscoveryCompleted(instances);
+
+        final HazelcastInstance instance4 = factory.newHazelcastInstance(createConfig(cpMemberCount, cpMemberCount));
+        instance4.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
+
+        CPMember cpMember3 = instances[2].getCPSubsystem().getLocalCPMember();
+        instances[2].getLifecycleService().terminate();
+        instances[0].getCPSubsystem().getCPSubsystemManagementService().removeCPMember(cpMember3.getUuid());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                CPGroup metadataGroup = instances[0].getCPSubsystem()
+                                           .getCPSubsystemManagementService()
+                                           .getCPGroup(CPGroup.METADATA_CP_GROUP_NAME)
+                                           .get();
+                assertTrue(metadataGroup.members().contains(instance4.getCPSubsystem().getLocalCPMember()));
+                assertEquals(cpMemberCount, metadataGroup.members().size());
             }
         });
     }

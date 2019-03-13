@@ -69,7 +69,7 @@ public class GetInitialRaftGroupMembersIfCurrentGroupMemberOp extends RaftOp imp
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         checkState(raftNode != null, "RaftNode is not injected in " + groupId);
-        Collection<Endpoint> members = raftNode.getCommittedMembers();
+        Collection<Endpoint> members = raftNode.getAppliedMembers();
         checkState(members.contains(cpMember), cpMember
                 + " is not in the current committed member list: " + members + " of " + groupId);
         return new ArrayList<Endpoint>(raftNode.getInitialMembers());

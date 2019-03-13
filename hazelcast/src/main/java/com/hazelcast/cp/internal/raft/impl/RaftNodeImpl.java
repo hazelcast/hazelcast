@@ -172,6 +172,11 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     @Override
+    public Collection<Endpoint> getAppliedMembers() {
+        return state.lastGroupMembers().members();
+    }
+
+    @Override
     public void forceSetTerminatedStatus() {
         execute(new Runnable() {
             @Override

@@ -21,7 +21,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftGroupLifecycleAwareService;
+import com.hazelcast.cp.internal.RaftNodeLifecycleAwareService;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.TermChangeAwareService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
@@ -84,7 +84,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings({"checkstyle:methodcount"})
 public class RaftSessionService implements ManagedService, SnapshotAwareService<RaftSessionRegistry>, SessionAccessor,
-                                           TermChangeAwareService, RaftGroupLifecycleAwareService, CPSessionManagementService {
+                                           TermChangeAwareService, RaftNodeLifecycleAwareService, CPSessionManagementService {
 
     public static final String SERVICE_NAME = "hz:core:raftSession";
 
@@ -150,8 +150,12 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
     }
 
     @Override
-    public void onGroupDestroy(CPGroupId groupId) {
+    public void onRaftGroupDestroyed(CPGroupId groupId) {
         registries.remove(groupId);
+    }
+
+    @Override
+    public void onRaftNodeSteppedDown(CPGroupId groupId) {
     }
 
     @Override

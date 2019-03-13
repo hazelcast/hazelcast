@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 
@@ -234,9 +235,14 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     @Override
     public void onNodeStatusChange(RaftNodeStatus status) {
         if (status == TERMINATED) {
-            Collection<RaftGroupLifecycleAwareService> services = nodeEngine.getServices(RaftGroupLifecycleAwareService.class);
-            for (RaftGroupLifecycleAwareService service : services) {
-                service.onGroupDestroy(groupId);
+            Collection<RaftNodeLifecycleAwareService> services = nodeEngine.getServices(RaftNodeLifecycleAwareService.class);
+            for (RaftNodeLifecycleAwareService service : services) {
+                service.onRaftGroupDestroyed(groupId);
+            }
+        } else if (status == STEPPED_DOWN) {
+            Collection<RaftNodeLifecycleAwareService> services = nodeEngine.getServices(RaftNodeLifecycleAwareService.class);
+            for (RaftNodeLifecycleAwareService service : services) {
+                service.onRaftNodeSteppedDown(groupId);
             }
         }
     }

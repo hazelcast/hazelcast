@@ -70,10 +70,18 @@ public interface RaftNode {
     /**
      * Returns the last committed member list of the raft group this node
      * belongs to. Please note that the returned member list can be different
-     * from the current effective member list, if there is an ongoing
+     * from the currently effective member list, if there is an ongoing
      * membership change in the group.
      */
     Collection<Endpoint> getCommittedMembers();
+
+    /**
+     * Returns the currently effective member list of the raft group this node
+     * belongs to. Please note that the returned member list can be different
+     * from the committed member list, if there is an ongoing
+     * membership change in the group.
+     */
+    Collection<Endpoint> getAppliedMembers();
 
     /**
      * Returns true if this node is {@link RaftNodeStatus#TERMINATED} or
