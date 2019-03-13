@@ -119,7 +119,7 @@ public final class Jet {
         return new JetClientInstanceImpl(((HazelcastClientProxy) client).client);
     }
 
-    private static void configureJetService(JetConfig jetConfig) {
+    private static synchronized void configureJetService(JetConfig jetConfig) {
         Config hzConfig = jetConfig.getHazelcastConfig();
         if (!(hzConfig.getConfigPatternMatcher() instanceof MatchingPointConfigPatternMatcher)) {
             throw new UnsupportedOperationException("Custom config pattern matcher is not supported in Jet");
