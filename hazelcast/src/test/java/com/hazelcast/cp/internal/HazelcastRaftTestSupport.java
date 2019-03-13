@@ -19,9 +19,9 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Address;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -86,13 +86,12 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
         throw new AssertionError("Cannot find non-leader instance!");
     }
 
-    protected void waitUntilCPDiscoveryCompleted(final HazelcastInstance[] instances) {
+    public static void waitUntilCPDiscoveryCompleted(final HazelcastInstance... instances) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    RaftService service = getRaftService(instance);
-                    assertTrue(service.getMetadataGroupManager().isDiscoveryCompleted());
+                    assertTrue(getRaftService(instance).isDiscoveryCompleted());
                 }
             }
         });

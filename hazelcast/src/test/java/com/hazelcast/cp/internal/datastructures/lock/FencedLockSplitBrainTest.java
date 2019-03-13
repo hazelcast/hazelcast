@@ -32,6 +32,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
 import static java.util.concurrent.locks.LockSupport.parkNanos;
 
 @RunWith(Parameterized.class)

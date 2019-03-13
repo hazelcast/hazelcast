@@ -82,6 +82,26 @@ import static org.junit.Assert.fail;
 public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
     @Test
+    public void testAwaitDiscoveryCompleted() throws InterruptedException {
+        Config config = createConfig(3, 3);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        assertFalse(hz1.getCPSubsystem().getCPSubsystemManagementService().awaitUntilDiscoveryCompleted(1, TimeUnit.SECONDS));
+        assertFalse(hz2.getCPSubsystem().getCPSubsystemManagementService().awaitUntilDiscoveryCompleted(1, TimeUnit.SECONDS));
+
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+
+        assertTrue(hz1.getCPSubsystem().getCPSubsystemManagementService().awaitUntilDiscoveryCompleted(60, TimeUnit.SECONDS));
+        assertTrue(hz2.getCPSubsystem().getCPSubsystemManagementService().awaitUntilDiscoveryCompleted(60, TimeUnit.SECONDS));
+        assertTrue(hz3.getCPSubsystem().getCPSubsystemManagementService().awaitUntilDiscoveryCompleted(60, TimeUnit.SECONDS));
+
+        HazelcastInstance hz4 = factory.newHazelcastInstance(config);
+        assertTrue(hz4.getCPSubsystem().getCPSubsystemManagementService().isDiscoveryCompleted());
+    }
+
+    @Test
     public void testPromoteToRaftMember() throws ExecutionException, InterruptedException {
         HazelcastInstance[] instances = newInstances(3, 3, 1);
 

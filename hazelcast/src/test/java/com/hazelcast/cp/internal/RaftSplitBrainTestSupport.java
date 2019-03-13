@@ -17,8 +17,6 @@
 package com.hazelcast.cp.internal;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.SplitBrainTestSupport;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -26,7 +24,6 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.Collection;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertTrue;
 
 public abstract class RaftSplitBrainTestSupport extends SplitBrainTestSupport {
 
@@ -68,21 +65,5 @@ public abstract class RaftSplitBrainTestSupport extends SplitBrainTestSupport {
             size += brainSize;
         }
         return size;
-    }
-
-    protected static void waitUntilCPDiscoveryCompleted(final HazelcastInstance[] instances) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : instances) {
-                    RaftService service = getRaftService(instance);
-                    assertTrue(service.getMetadataGroupManager().isDiscoveryCompleted());
-                }
-            }
-        });
-    }
-
-    protected static RaftService getRaftService(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
     }
 }

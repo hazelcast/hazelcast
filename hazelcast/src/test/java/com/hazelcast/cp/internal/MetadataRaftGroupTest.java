@@ -688,7 +688,9 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
     public void when_noCpNodeCountConfigured_then_cpDiscoveryCompletes() {
         final HazelcastInstance[] instances = newInstances(0, 0, 3);
 
-        waitUntilCPDiscoveryCompleted(instances);
+        for (HazelcastInstance instance : instances) {
+            assertTrue(getRaftService(instance).isDiscoveryCompleted());
+        }
     }
 
     @Test
