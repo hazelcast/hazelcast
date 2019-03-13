@@ -816,7 +816,7 @@ public class JobCoordinationService {
                         jobRepository.getJobExecutionRecord(jobRecord.getJobId()));
                 startJobIfNotStartedOrCompleted(jobRecord, jobExecutionRecord, "discovered by scanning of JobRecords");
             }
-            performCleanup();
+            jobRepository.cleanup(nodeEngine);
             if (!jobsScanned) {
                 synchronized (lock) {
                     jobsScanned = true;
@@ -832,11 +832,6 @@ public class JobCoordinationService {
 
     private JobExecutionRecord ensureExecutionRecord(long jobId, JobExecutionRecord record) {
         return record != null ? record : new JobExecutionRecord(jobId, getQuorumSize(), false);
-    }
-
-    private void performCleanup() {
-        Set<Long> runningJobIds = masterContexts.keySet();
-        jobRepository.cleanup(runningJobIds);
     }
 
     void assertIsMaster(String error) {

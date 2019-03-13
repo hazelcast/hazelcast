@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository.FilterExecutionIdByJobIdPredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobIdPredicate;
-import com.hazelcast.jet.impl.JobRepository.FilterJobRecordByNamePredicate;
 import com.hazelcast.jet.impl.JobRepository.FilterJobResultByNamePredicate;
 import com.hazelcast.jet.impl.JobRepository.UpdateJobExecutionRecordEntryProcessor;
 import com.hazelcast.jet.impl.JobResult;
@@ -80,24 +79,23 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int JOIN_SUBMITTED_JOB = 17;
     public static final int UPDATE_JOB_EXECUTION_RECORD_EP = 18;
     public static final int TERMINATE_EXECUTION_OP = 20;
-    public static final int FILTER_JOB_RECORD_BY_NAME = 21;
-    public static final int FILTER_JOB_RESULT_BY_NAME = 22;
-    public static final int GET_JOB_IDS_BY_NAME_OP = 23;
-    public static final int GET_JOB_SUBMISSION_TIME_OP = 24;
-    public static final int GET_JOB_CONFIG_OP = 25;
-    public static final int TERMINATE_JOB_OP = 26;
-    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY = 27;
-    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR = 28;
-    public static final int SNAPSHOT_OPERATION_RESULT = 29;
-    public static final int RESUME_JOB_OP = 30;
-    public static final int NOTIFY_MEMBER_SHUTDOWN_OP = 31;
-    public static final int GET_JOB_SUMMARY_LIST_OP = 32;
-    public static final int JOB_SUMMARY = 33;
-    public static final int SNAPSHOT_STATS = 34;
-    public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 35;
-    public static final int SNAPSHOT_VALIDATION_RECORD = 36;
-    public static final int CLUSTER_METADATA = 37;
-    public static final int GET_CLUSTER_METADATA_OP = 38;
+    public static final int FILTER_JOB_RESULT_BY_NAME = 21;
+    public static final int GET_JOB_IDS_BY_NAME_OP = 22;
+    public static final int GET_JOB_SUBMISSION_TIME_OP = 23;
+    public static final int GET_JOB_CONFIG_OP = 24;
+    public static final int TERMINATE_JOB_OP = 25;
+    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY = 26;
+    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR = 27;
+    public static final int SNAPSHOT_OPERATION_RESULT = 28;
+    public static final int RESUME_JOB_OP = 29;
+    public static final int NOTIFY_MEMBER_SHUTDOWN_OP = 30;
+    public static final int GET_JOB_SUMMARY_LIST_OP = 31;
+    public static final int JOB_SUMMARY = 32;
+    public static final int SNAPSHOT_STATS = 33;
+    public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 34;
+    public static final int SNAPSHOT_VALIDATION_RECORD = 35;
+    public static final int CLUSTER_METADATA = 36;
+    public static final int GET_CLUSTER_METADATA_OP = 37;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -156,8 +154,6 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new UpdateJobExecutionRecordEntryProcessor();
                 case TERMINATE_EXECUTION_OP:
                     return new TerminateExecutionOperation();
-                case FILTER_JOB_RECORD_BY_NAME:
-                    return new FilterJobRecordByNamePredicate();
                 case FILTER_JOB_RESULT_BY_NAME:
                     return new FilterJobResultByNamePredicate();
                 case GET_JOB_IDS_BY_NAME_OP:
