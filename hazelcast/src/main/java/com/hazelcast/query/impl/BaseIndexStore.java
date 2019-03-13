@@ -52,6 +52,16 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
+    /**
+     * Canonicalizes the given value for storing it in this index store.
+     * <p>
+     * The method is used by hash indexes to achieve the canonical
+     * representation of mixed-type numeric values, so {@code equals} and {@code
+     * hashCode} logic can work properly.
+     *
+     * @param value the value to canonicalize.
+     * @return the canonicalized value.
+     */
     abstract Comparable canonicalizeScalarForStorage(Comparable value);
 
     /**
