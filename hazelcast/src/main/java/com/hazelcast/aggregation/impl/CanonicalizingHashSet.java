@@ -27,22 +27,50 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
+/**
+ * A read-only hash set that canonicalizes its mixed-type numeric elements for
+ * lookup operations while still preserving the original element values.
+ * <p>
+ * That canonicalization logic is required for the consistency with the
+ * mixed-type numeric quality logic used inside query engine.
+ *
+ * @param <E> the element type.
+ */
 public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSerializable {
 
     private HashMap<Object, E> map;
 
+    /**
+     * Constructs a new empty instance of canonicalizing hash set.
+     */
     public CanonicalizingHashSet() {
         this.map = new HashMap<Object, E>();
     }
 
+    /**
+     * Constructs a new empty instance of canonicalizing hash set with the given
+     * expected capacity.
+     */
     public CanonicalizingHashSet(int capacity) {
         this.map = new HashMap<Object, E>(capacity);
     }
 
+    /**
+     * Adds all elements of the given canonicalizing hash set into this
+     * canonicalizing hash set.
+     *
+     * @param set the set to add elements of.
+     */
     public void addAllInternal(CanonicalizingHashSet<E> set) {
+        // elements are already canonicalized
         map.putAll(set.map);
     }
 
+    /**
+     * Adds the given element to this canonicalizing hash set.
+     *
+     * @param e the element to add.
+     */
     public void addInternal(E e) {
         map.put(canonicalize(e), e);
     }
