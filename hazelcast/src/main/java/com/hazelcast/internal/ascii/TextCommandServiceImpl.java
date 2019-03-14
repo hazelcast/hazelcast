@@ -79,7 +79,6 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
-import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
@@ -176,10 +175,8 @@ public class TextCommandServiceImpl implements TextCommandService {
         stats.setDecrHits(decrementHits.get());
         stats.setDecrMisses(decrementMisses.get());
         NetworkingService cm = node.networkingService;
-        EndpointManager rem = cm.getEndpointManager(REST);
         EndpointManager mem = cm.getEndpointManager(MEMCACHE);
-        int totalText = (rem != null ? rem.getActiveConnections().size() : 0)
-                + (mem != null ? mem.getActiveConnections().size() : 0);
+        int totalText = (mem != null ? mem.getActiveConnections().size() : 0);
 
         AggregateEndpointManager aem = cm.getAggregateEndpointManager();
         stats.setCurrConnections(totalText);

@@ -28,14 +28,16 @@ class TextViewUnifiedEndpointManager
         implements EndpointManager<TcpIpConnection> {
 
     private final TcpIpUnifiedEndpointManager unifiedEndpointManager;
+    private final boolean rest;
 
-    TextViewUnifiedEndpointManager(TcpIpUnifiedEndpointManager unifiedEndpointManager) {
+    TextViewUnifiedEndpointManager(TcpIpUnifiedEndpointManager unifiedEndpointManager, boolean rest) {
         this.unifiedEndpointManager = unifiedEndpointManager;
+        this.rest = rest;
     }
 
     @Override
     public Set<TcpIpConnection> getActiveConnections() {
-        return unifiedEndpointManager.getTextConnections();
+        return rest ? unifiedEndpointManager.getRestConnections() : unifiedEndpointManager.getMemachedConnections();
     }
 
     @Override

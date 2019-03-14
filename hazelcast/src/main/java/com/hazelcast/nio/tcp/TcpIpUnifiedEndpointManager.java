@@ -45,6 +45,33 @@ class TcpIpUnifiedEndpointManager
                 metricsRegistry, properties, ProtocolType.valuesAsSet());
     }
 
+    Set<TcpIpConnection> getRestConnections() {
+        Set<TcpIpConnection> connections = activeConnections.isEmpty()
+                ? Collections.<TcpIpConnection>emptySet()
+                : new HashSet<TcpIpConnection>(activeConnections.size());
+
+        for (TcpIpConnection conn : activeConnections) {
+            if (conn.isAlive() && conn.getType() == REST_CLIENT) {
+                connections.add(conn);
+            }
+        }
+        return connections;
+    }
+
+    Set<TcpIpConnection> getMemachedConnections() {
+        Set<TcpIpConnection> connections = activeConnections.isEmpty()
+                ? Collections.<TcpIpConnection>emptySet()
+                : new HashSet<TcpIpConnection>(activeConnections.size());
+
+        for (TcpIpConnection conn : activeConnections) {
+            if (conn.isAlive() && conn.getType() == MEMCACHE_CLIENT) {
+                connections.add(conn);
+            }
+        }
+        return connections;
+    }
+
+
     Set<TcpIpConnection> getTextConnections() {
         Set<TcpIpConnection> connections = activeConnections.isEmpty()
                 ? Collections.<TcpIpConnection>emptySet()

@@ -33,20 +33,20 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.AggregateEndpointManager;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.NetworkingService;
-import com.hazelcast.nio.Address;
 import com.hazelcast.util.StringUtil;
 
 import java.util.Collection;
 
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200_WITH_NO_CONTENT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_503;
-import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -353,10 +353,10 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         res.append("\n");
         NetworkingService ns = node.getNetworkingService();
         EndpointManager cem = ns.getEndpointManager(CLIENT);
-        EndpointManager tem = ns.getEndpointManager(REST);
+        AggregateEndpointManager aem = ns.getAggregateEndpointManager();
         res.append("ConnectionCount: ").append(cem.getActiveConnections().size());
         res.append("\n");
-        res.append("AllConnectionCount: ").append(tem.getActiveConnections().size());
+        res.append("AllConnectionCount: ").append(aem.getActiveConnections().size());
         res.append("\n");
         command.setResponse(null, stringToBytes(res.toString()));
     }
