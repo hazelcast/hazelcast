@@ -19,7 +19,6 @@ package com.hazelcast.client.test;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Addresses;
@@ -68,17 +67,13 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             config = new XmlClientConfigBuilder().build();
         }
 
-        ClientFailoverConfig resolvedConfig = new ClientFailoverConfig();
-        resolvedConfig.addClientConfig(config);
-        resolvedConfig.setTryCount(1);
-
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
         try {
             if (tccl == ClassLoader.getSystemClassLoader()) {
                 currentThread.setContextClassLoader(HazelcastClient.class.getClassLoader());
             }
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(resolvedConfig,
+            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, null,
                     clientRegistry.createClientServiceFactory(), createAddressProvider(config));
             client.start();
             clients.add(client);

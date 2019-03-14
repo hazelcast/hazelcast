@@ -150,6 +150,7 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -203,10 +204,17 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientProxySessionManager proxySessionManager;
     private final CPSubsystemImpl cpSubsystem;
 
-    public HazelcastClientInstanceImpl(ClientFailoverConfig clientFailoverConfig,
+    public HazelcastClientInstanceImpl(ClientConfig clientConfig,
+                                       ClientFailoverConfig clientFailoverConfig,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
                                        AddressProvider externalAddressProvider) {
-        this.config = clientFailoverConfig.getClientConfigs().get(0);
+        assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
+        assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
+        if (clientConfig != null) {
+            this.config = clientConfig;
+        } else {
+            this.config = clientFailoverConfig.getClientConfigs().get(0);
+        }
         this.clientFailoverConfig = clientFailoverConfig;
         if (config.getInstanceName() != null) {
             instanceName = config.getInstanceName();
@@ -279,8 +287,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private ClientDiscoveryService initClientDiscoveryService(AddressProvider externalAddressProvider) {
-        int tryCount = clientFailoverConfig.getTryCount();
-        List<ClientConfig> configs = clientFailoverConfig.getClientConfigs();
+        int tryCount;
+        List<ClientConfig> configs;
+        if (clientFailoverConfig == null) {
+            tryCount = 0;
+            configs = Collections.singletonList(config);
+        } else {
+            tryCount = clientFailoverConfig.getTryCount();
+            configs = clientFailoverConfig.getClientConfigs();
+        }
         ClientDiscoveryServiceBuilder builder = new ClientDiscoveryServiceBuilder(tryCount, configs, loggingService,
                 externalAddressProvider, properties, clientExtension);
         return builder.build();

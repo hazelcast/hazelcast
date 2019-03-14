@@ -197,7 +197,6 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
         // we reset the search so that we will iterate the list try-count times, each time we start searching for a new cluster
         discoveryService.resetSearch();
-        discoveryService.next();
 
         while (discoveryService.hasNext() && client.getLifecycleService().isRunning()) {
             CandidateClusterContext candidateClusterContext = discoveryService.next();
