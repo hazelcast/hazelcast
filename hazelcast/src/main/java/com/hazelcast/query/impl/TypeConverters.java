@@ -358,6 +358,7 @@ public final class TypeConverters {
 
     static class FloatConverter extends BaseTypeConverter {
 
+        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -369,7 +370,15 @@ public final class TypeConverters {
             if (value instanceof Number) {
                 Number number = (Number) value;
 
-                if (clazz == Long.class) {
+                if (clazz == Double.class) {
+                    float floatValue = number.floatValue();
+                    if (number.doubleValue() == (double) floatValue) {
+                        // That almost never happens for a random double, but
+                        // users tend to query on whole numbers which are
+                        // frequently may be represented as a float.
+                        return floatValue;
+                    }
+                } else if (clazz == Long.class) {
                     float floatValue = number.floatValue();
                     if (Numbers.equalLongAndDouble(number.longValue(), floatValue)) {
                         return floatValue;
@@ -392,7 +401,7 @@ public final class TypeConverters {
                 double parsedDouble = Double.parseDouble((String) value);
 
                 float floatValue = (float) parsedDouble;
-                if (floatValue == parsedDouble) {
+                if (parsedDouble == (double) floatValue) {
                     return floatValue;
                 }
 
