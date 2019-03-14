@@ -38,7 +38,8 @@ public enum RaftNodeStatus {
 
     /**
      * When a node is removed from the cluster after a membership change is
-     * committed, its status becomes {@code STEPPED_DOWN}.
+     * committed, or a new Raft node could not be added to the Raft group,
+     * its status becomes {@code STEPPED_DOWN}.
      */
     STEPPED_DOWN,
 

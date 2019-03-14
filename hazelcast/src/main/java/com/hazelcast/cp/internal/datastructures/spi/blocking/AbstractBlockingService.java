@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.spi.blocking;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftGroupLifecycleAwareService;
+import com.hazelcast.cp.internal.RaftNodeLifecycleAwareService;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
@@ -65,7 +65,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @param <RR> concrete ty;e lf the resource registry
  */
 public abstract class AbstractBlockingService<W extends WaitKey, R extends BlockingResource<W>, RR extends ResourceRegistry<W, R>>
-        implements RaftManagedService, RaftGroupLifecycleAwareService, RaftRemoteService, SessionAwareService,
+        implements RaftManagedService, RaftNodeLifecycleAwareService, RaftRemoteService, SessionAwareService,
                    SnapshotAwareService<RR>, LiveOperationsTracker {
 
     public static final long WAIT_TIMEOUT_TASK_UPPER_BOUND_MILLIS = 1500;
@@ -212,12 +212,16 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     }
 
     @Override
-    public final void onGroupDestroy(CPGroupId groupId) {
+    public final void onRaftGroupDestroyed(CPGroupId groupId) {
         ResourceRegistry<W, R> registry = registries.get(groupId);
         if (registry != null) {
             Collection<Long> indices = registry.destroy();
             completeFutures(groupId, indices, new DistributedObjectDestroyedException(groupId + " is destroyed"));
         }
+    }
+
+    @Override
+    public final void onRaftNodeSteppedDown(CPGroupId groupId) {
     }
 
     @Override

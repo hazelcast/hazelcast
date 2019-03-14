@@ -109,7 +109,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class RaftService implements ManagedService, SnapshotAwareService<MetadataRaftGroupSnapshot>, GracefulShutdownAwareService,
-                                    MembershipAwareService, CPSubsystemManagementService, PreJoinAwareService {
+                                    MembershipAwareService, CPSubsystemManagementService, PreJoinAwareService,
+                                    RaftNodeLifecycleAwareService {
 
     public static final String SERVICE_NAME = "hz:core:raft";
 
@@ -632,8 +633,12 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed");
             return;
         } else if (steppedDownGroupIds.contains(groupId)) {
-            logger.fine("Not creating RaftNode[" + groupId + "] since the local CP member is already stepped down");
-            return;
+            if (!nodeEngine.isRunning()) {
+                logger.fine("Not creating RaftNode[" + groupId + "] since the local CP member is already stepped down");
+                return;
+            }
+
+            steppedDownGroupIds.remove(groupId);
         }
 
         RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember);
@@ -838,6 +843,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
 
         metadataGroupManager.handleMetadataGroupId(latestMetadataGroupId);
+    }
+
+    @Override
+    public void onRaftGroupDestroyed(CPGroupId groupId) {
+        destroyRaftNode(groupId);
+    }
+
+    @Override
+    public void onRaftNodeSteppedDown(CPGroupId groupId) {
+        stepDownRaftNode(groupId);
     }
 
     private class InitializeRaftNodeTask implements Runnable {

@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.atomicref;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.cp.internal.RaftGroupLifecycleAwareService;
+import com.hazelcast.cp.internal.RaftNodeLifecycleAwareService;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.atomicref.proxy.RaftAtomicRefProxy;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
@@ -48,7 +48,7 @@ import static java.util.Collections.newSetFromMap;
  * Contains Raft-based atomic reference instances, implements snapshotting,
  * and creates proxies
  */
-public class RaftAtomicRefService implements RaftManagedService, RaftRemoteService, RaftGroupLifecycleAwareService,
+public class RaftAtomicRefService implements RaftManagedService, RaftRemoteService, RaftNodeLifecycleAwareService,
                                              SnapshotAwareService<RaftAtomicRefSnapshot> {
 
     /**
@@ -121,7 +121,7 @@ public class RaftAtomicRefService implements RaftManagedService, RaftRemoteServi
     }
 
     @Override
-    public void onGroupDestroy(CPGroupId groupId) {
+    public void onRaftGroupDestroyed(CPGroupId groupId) {
         Iterator<Tuple2<CPGroupId, String>> iter = atomicRefs.keySet().iterator();
         while (iter.hasNext()) {
             Tuple2<CPGroupId, String> next = iter.next();
@@ -130,6 +130,10 @@ public class RaftAtomicRefService implements RaftManagedService, RaftRemoteServi
                 iter.remove();
             }
         }
+    }
+
+    @Override
+    public void onRaftNodeSteppedDown(CPGroupId groupId) {
     }
 
     @Override
