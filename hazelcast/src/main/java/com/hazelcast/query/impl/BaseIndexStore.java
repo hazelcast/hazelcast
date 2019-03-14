@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
@@ -145,6 +146,9 @@ public abstract class BaseIndexStore implements IndexStore {
 
     @SuppressWarnings("unchecked")
     private void unwrapAndInsertToIndex(Object newValue, QueryableEntry record, IndexOperationStats operationStats) {
+        if (newValue == NonTerminalJsonValue.INSTANCE) {
+            return;
+        }
         if (newValue instanceof MultiResult) {
             multiResultHasToDetectDuplicates = true;
             List<Object> results = ((MultiResult) newValue).getResults();
@@ -162,6 +166,9 @@ public abstract class BaseIndexStore implements IndexStore {
 
     @SuppressWarnings("unchecked")
     private void unwrapAndRemoveFromIndex(Object oldValue, Data indexKey, IndexOperationStats operationStats) {
+        if (oldValue == NonTerminalJsonValue.INSTANCE) {
+            return;
+        }
         if (oldValue instanceof MultiResult) {
             List<Object> results = ((MultiResult) oldValue).getResults();
             for (Object o : results) {
