@@ -5,6 +5,10 @@ In this Release Notes document, you will find the new features, enhancements and
 The numbers in the square brackets refer to the issue number in Hazelcast’s GitHub repository. You can reach
 to the full descriptions of the issues at https://github.com/hazelcast/hazelcast/issues/<issue number>.
 
+==== 3.9.4-AT&T RELEASE NOTES ====
+
+* Fixed an issue where a split-brain occurred during a security vulnerability scan. [#14683]
+
 ==== 3.9.4 RELEASE NOTES ====
 
 Enhancements: 
