@@ -137,28 +137,28 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     @Test
     public void testValueIsOmitted_whenObjectIsEmpty() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(0, HazelcastJson.fromString(Json.object().toString()));
+        map.put(0, new HazelcastJsonValue(Json.object().toString()));
         assertIndex(map, 99, 100, "longValue");
     }
 
     @Test
     public void testValueIsOmitted_whenAttributePathDoesNotExist() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(0, HazelcastJson.fromString(Json.object().add("someField", "someValue").toString()));
+        map.put(0, new HazelcastJsonValue(Json.object().add("someField", "someValue").toString()));
         assertIndex(map, 99, 100, "longValue");
     }
 
     @Test
     public void testValueIsOmitted_whenValueIsNotAnObject() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(0, HazelcastJson.fromString(Json.value(5).toString()));
+        map.put(0, new HazelcastJsonValue(Json.value(5).toString()));
         assertIndex(map, 99, 100, "longValue");
     }
 
     @Test
     public void testValueIsOmitted_whenAttributePathIsNotTerminal() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
-        map.put(0, HazelcastJson.fromString(Json.object()
+        map.put(0, new HazelcastJsonValue(Json.object()
                 .add("longValue", Json.object())
                 .toString()));
         assertIndex(map, 99, 100, "longValue");
@@ -207,7 +207,7 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     }
 
     private HazelcastJsonValue createHazelcastJsonValue(String stringValue, long longValue, double doubleValue, long nestedLongValue) {
-        return HazelcastJson.fromString(createJsonString(stringValue, longValue, doubleValue, nestedLongValue));
+        return new HazelcastJsonValue(createJsonString(stringValue, longValue, doubleValue, nestedLongValue));
     }
 
     private String createJsonString(String stringValue, long longValue, double doubleValue, long nestedLongValue) {
