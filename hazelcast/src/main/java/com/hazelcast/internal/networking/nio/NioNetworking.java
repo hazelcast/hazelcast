@@ -93,7 +93,7 @@ public final class NioNetworking implements Networking {
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
-    private final ExecutorService closeListenerExecutor;
+    private volatile ExecutorService closeListenerExecutor;
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
@@ -111,12 +111,10 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
-        this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, threadNamePrefix + "-NioNetworking-closeListenerExecutor");
-            }
-        });
+
+        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
+            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS);
+        }
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -147,6 +145,15 @@ public final class NioNetworking implements Networking {
         }
 
         logger.log(selectorMode != SELECT ? INFO : FINE, "IO threads selector mode is " + selectorMode);
+
+        this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName(threadNamePrefix + "-NioNetworking-closeListenerExecutor");
+                return t;
+            }
+        });
 
         this.inputThreads = new NioThread[inputThreadCount];
         for (int i = 0; i < inputThreads.length; i++) {
@@ -179,10 +186,6 @@ public final class NioNetworking implements Networking {
         }
 
         startIOBalancer();
-
-        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
-            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS);
-        }
     }
 
     private void startIOBalancer() {
