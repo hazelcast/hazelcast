@@ -271,14 +271,13 @@ public interface CPSubsystem {
      * Returns the local CP member if this Hazelcast member is part of
      * the CP subsystem, returns null otherwise.
      * <p>
-     * This field is initialized when the local Hazelcast member is one of
-     * the first {@link CPSubsystemConfig#getCPMemberCount()} members
-     * in the cluster and the CP subsystem discovery process is completed.
-     * This method fails with {@link HazelcastException} if the CP subsystem
-     * is not enabled.
+     * This method is a shortcut for {@link CPSubsystemManagementService#getLocalCPMember()}
+     * method. Calling this method is equivalent to calling
+     * <code>getCPSubsystemManagementService().getLocalCPMember()</code>.
      *
      * @return local CP member if available, null otherwise
      * @throws HazelcastException if the CP subsystem is not enabled
+     * @see CPSubsystemManagementService#getLocalCPMember()
      */
     CPMember getLocalCPMember();
 

@@ -17,11 +17,13 @@
 package com.hazelcast.cp;
 
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The public API for managing CP members and groups.
@@ -142,6 +144,24 @@ import java.util.Collection;
 public interface CPSubsystemManagementService {
 
     /**
+     * Returns the local CP member if this Hazelcast member is part of
+     * the CP subsystem, returns null otherwise.
+     * <p>
+     * This field is initialized when the local Hazelcast member is one of
+     * the first {@link CPSubsystemConfig#getCPMemberCount()} members
+     * in the cluster and the CP subsystem discovery process is completed.
+     * <p></p>
+     * This method fails with {@link HazelcastException} if the CP subsystem
+     * is not enabled.
+     *
+     * @return local CP member if available, null otherwise
+     * @throws HazelcastException if the CP subsystem is not enabled
+     * @see #isDiscoveryCompleted()
+     * @see #awaitUntilDiscoveryCompleted(long, TimeUnit)
+     */
+    CPMember getLocalCPMember();
+
+    /**
      * Returns all active CP group ids.
      */
     ICompletableFuture<Collection<CPGroupId>> getCPGroupIds();
@@ -258,4 +278,23 @@ public interface CPSubsystemManagementService {
      */
     ICompletableFuture<Void> restart();
 
+    /**
+     * Returns whether CP discovery process is completed or not.
+     *
+     * @return {@code true} if CP discovery completed, {@code false} otherwise
+     * @see #awaitUntilDiscoveryCompleted(long, TimeUnit)
+     */
+    boolean isDiscoveryCompleted();
+
+    /**
+     * Blocks until CP discovery process is completed, or the timeout occurs,
+     * or the current thread is interrupted, whichever happens first.
+     *
+     * @param timeout  maximum time to wait
+     * @param timeUnit time unit of the timeout
+     * @return {@code true} if CP discovery completed, {@code false} otherwise
+     * @throws InterruptedException if interrupted while waiting
+     * @see #isDiscoveryCompleted()
+     */
+    boolean awaitUntilDiscoveryCompleted(long timeout, TimeUnit timeUnit) throws InterruptedException;
 }

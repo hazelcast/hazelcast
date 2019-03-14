@@ -115,6 +115,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     public static final String SERVICE_NAME = "hz:core:raft";
 
     private static final long REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS = 1;
+    private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
 
     private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<CPGroupId, RaftNode>();
     private final NodeEngineImpl nodeEngine;
@@ -391,6 +392,22 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
+    public boolean isDiscoveryCompleted() {
+        return metadataGroupManager.isDiscoveryCompleted();
+    }
+
+    @Override
+    public boolean awaitUntilDiscoveryCompleted(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        long timeoutMillis = timeUnit.toMillis(timeout);
+        while (timeoutMillis > 0 && !metadataGroupManager.isDiscoveryCompleted()) {
+            long sleepMillis = Math.min(AWAIT_DISCOVERY_STEP_MILLIS, timeoutMillis);
+            Thread.sleep(sleepMillis);
+            timeoutMillis -= sleepMillis;
+        }
+        return metadataGroupManager.isDiscoveryCompleted();
+    }
+
+    @Override
     public boolean onShutdown(long timeout, TimeUnit unit) {
         CPMemberInfo localMember = getLocalCPMember();
         if (localMember == null) {
@@ -616,6 +633,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return config;
     }
 
+    @Override
     public CPMemberInfo getLocalCPMember() {
         return metadataGroupManager.getLocalCPMember();
     }

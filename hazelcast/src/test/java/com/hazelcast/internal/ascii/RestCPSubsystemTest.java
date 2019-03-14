@@ -55,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.cp.internal.HazelcastRaftTestSupport.waitUntilCPDiscoveryCompleted;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -133,14 +134,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3);
 
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
 
@@ -179,14 +173,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3);
 
         instance1.getCPSubsystem().getAtomicLong("long1").set(5);
 
@@ -227,14 +214,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3);
 
         instance1.getCPSubsystem().getAtomicLong("long1@custom").set(5);
 
@@ -289,14 +269,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance4 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3, instance4);
 
         ConnectionResponse response1 = new HTTPCommunicator(instance1).getLocalCPMember();
         ConnectionResponse response2 = new HTTPCommunicator(instance2).getLocalCPMember();
@@ -323,14 +296,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3);
 
         ConnectionResponse response = new HTTPCommunicator(instance1).getCPMembers();
 
@@ -414,12 +380,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3);
 
         CPMember crashedCPMember = instance3.getCPSubsystem().getLocalCPMember();
         instance3.getLifecycleService().terminate();
@@ -437,12 +398,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3);
 
         CPMember crashedCPMember = instance3.getCPSubsystem().getLocalCPMember();
         instance3.getLifecycleService().terminate();
@@ -493,14 +449,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance instance4 = Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance2.getCPSubsystem().getLocalCPMember());
-                assertNotNull(instance3.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1, instance2, instance3, instance4);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -536,12 +485,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotNull(instance1.getCPSubsystem().getLocalCPMember());
-            }
-        });
+        waitUntilCPDiscoveryCompleted(instance1);
 
         ConnectionResponse response = new HTTPCommunicator(instance1).promoteCPMember(groupName, groupPassword);
 
