@@ -16,8 +16,10 @@
 
 package com.hazelcast.config;
 
-import java.util.HashSet;
+import static java.util.Collections.newSetFromMap;
+
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Contains the configuration for a permission.
@@ -27,8 +29,8 @@ public class PermissionConfig {
     private PermissionType type;
     private String name;
     private String principal;
-    private Set<String> endpoints = new HashSet<String>();
-    private Set<String> actions = new HashSet<String>();
+    private Set<String> endpoints = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private Set<String> actions = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
     public PermissionConfig() {
     }
