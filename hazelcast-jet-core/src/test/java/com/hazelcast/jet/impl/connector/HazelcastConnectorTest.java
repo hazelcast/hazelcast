@@ -26,6 +26,7 @@ import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
@@ -36,8 +37,10 @@ import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -67,12 +70,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class HazelcastConnectorTest extends JetTestSupport {
 
     private static final int ENTRY_COUNT = 100;
 
-    private JetInstance jetInstance;
+    private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private static JetInstance jetInstance;
+    private static JetInstance jetInstance2;
 
     private String sourceName;
     private String sinkName;
@@ -80,15 +85,18 @@ public class HazelcastConnectorTest extends JetTestSupport {
     private String streamSourceName;
     private String streamSinkName;
 
-    @Before
-    public void setup() {
+    @BeforeClass
+    public static void beforeClass() {
         JetConfig jetConfig = new JetConfig();
         Config hazelcastConfig = jetConfig.getHazelcastConfig();
         hazelcastConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
         hazelcastConfig.addEventJournalConfig(new EventJournalConfig().setCacheName("stream*").setMapName("stream*"));
-        jetInstance = createJetMember(jetConfig);
-        JetInstance jetInstance2 = createJetMember(jetConfig);
+        jetInstance = factory.newMember(jetConfig);
+        jetInstance2 = factory.newMember(jetConfig);
+    }
 
+    @Before
+    public void before() {
         sourceName = randomString();
         sinkName = randomString();
 
@@ -101,6 +109,11 @@ public class HazelcastConnectorTest extends JetTestSupport {
         cacheManager.getCache(sinkName);
         cacheManager.getCache(streamSourceName);
         cacheManager.getCache(streamSinkName);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        factory.shutdownAll();
     }
 
     @Test
@@ -226,7 +239,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
         IMapJet<Integer, Entry<Integer, String>> sourceMap = jetInstance.getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
-        assertTrueEventually(() -> checkContents_projectedToNull(streamSinkName), 10);
+        assertTrueEventually(() -> checkContents_projectedToNull(streamSinkName));
         job.cancel();
     }
 
@@ -349,7 +362,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
             e = sinkList.get(1);
             assertEquals(Integer.valueOf(1), e.getKey());
             assertEquals(Integer.valueOf(2), e.getValue());
-        }, 10);
+        });
 
         job.cancel();
     }
@@ -381,7 +394,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
             e = sinkList.get(1);
             assertEquals(Integer.valueOf(1), e.getKey());
             assertEquals(Integer.valueOf(2), e.getValue());
-        }, 10);
+        });
 
         job.cancel();
     }
