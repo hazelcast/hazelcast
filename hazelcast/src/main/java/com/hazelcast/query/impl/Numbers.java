@@ -317,18 +317,25 @@ public final class Numbers {
     @SuppressWarnings("checkstyle:magicnumber")
     private static int compareLongWithDouble(long l, double d) {
         if (d > -0x1p53 && d < +0x1p53) {
-            // All long values in this range are exactly representable as doubles.
-            // 2^53 itself is excluded to ensure the correct ordering of 2^53 + 1
-            // long value, 2^53 and 2^53 + 1 are the same value when represented
-            // as double and that's the first integer value having this property.
+            // Whole numbers in this range are exactly representable as doubles.
+            // After casting the given long value to a double, it either falls
+            // in this same range and thus it's safe to compare it with the
+            // given double value; or it falls outside of the range and this
+            // indicates that the long value is less or greater than the given
+            // double value and it's also safe to compare it since we already
+            // limited the double range to exactly representable whole numbers.
+            //
+            // 2^53 itself is excluded to ensure the correct ordering of 2^53 + 1:
+            // 2^53 and 2^53 + 1 are the same value when represented as a double
+            // and that's the first whole number having this property.
             //
             // Double.compare also handles the correct ordering of negative and
             // positive zeroes for us.
             return Double.compare((double) l, d);
         }
 
-        // Only infinities, NaNs and integer double values are left: starting
-        // from 2^52, doubles can represent only integer values with increasing
+        // Only infinities, NaNs and whole double values are left: starting
+        // from 2^52, doubles can represent only whole values with increasing
         // gaps between them.
 
         if (d <= -0x1p63) {
@@ -353,7 +360,7 @@ public final class Numbers {
             return -1;
         }
 
-        // All remaining double values are integer and less than 2^63 in
+        // All remaining double values are whole numbers and less than 2^63 in
         // magnitude, so we may just cast them to long.
         return compareLongs(l, (long) d);
     }
