@@ -28,6 +28,7 @@ import java.util.HashSet;
 public final class HashSetHook implements SerializerHook<HashSet> {
 
     @Override
+    @SuppressWarnings("checkstyle:illegaltype")
     public Class<HashSet> getSerializationType() {
         return HashSet.class;
     }

@@ -29,6 +29,7 @@ import java.util.Map;
 public final class HashMapHook implements SerializerHook<HashMap> {
 
     @Override
+    @SuppressWarnings("checkstyle:illegaltype")
     public Class<HashMap> getSerializationType() {
         return HashMap.class;
     }
