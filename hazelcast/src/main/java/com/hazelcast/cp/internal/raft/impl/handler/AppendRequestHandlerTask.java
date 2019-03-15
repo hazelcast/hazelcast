@@ -16,8 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl.handler;
 
-import com.hazelcast.core.Endpoint;
-import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
 import com.hazelcast.cp.internal.raft.command.RaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
@@ -28,7 +26,6 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
-import com.hazelcast.cp.internal.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 
@@ -162,10 +159,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                     }
 
                     raftNode.invalidateFuturesFrom(reqEntry.index());
-                    if (revertPreAppliedRaftGroupCmd(truncatedEntries)) {
-                        return;
-                    }
-
+                    revertPreAppliedRaftGroupCmd(truncatedEntries);
                     newEntries = Arrays.copyOfRange(req.entries(), i, req.entryCount());
                     break;
                 }
@@ -249,7 +243,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
         }
     }
 
-    private boolean revertPreAppliedRaftGroupCmd(List<LogEntry> entries) {
+    private void revertPreAppliedRaftGroupCmd(List<LogEntry> entries) {
         // I am reverting appended-but-uncommitted entries and there can be at most 1 uncommitted Raft command...
         List<LogEntry> commandEntries = new ArrayList<LogEntry>();
         for (LogEntry entry : entries) {
@@ -263,32 +257,11 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
         for (LogEntry entry : entries) {
             if (entry.operation() instanceof DestroyRaftGroupCmd) {
                 raftNode.setStatus(RaftNodeStatus.ACTIVE);
-                return false;
             } else if (entry.operation() instanceof UpdateRaftGroupMembersCmd) {
-                UpdateRaftGroupMembersCmd cmd = (UpdateRaftGroupMembersCmd) entry.operation();
-                Endpoint localMember = raftNode.getLocalMember();
-                if (cmd.getMode() == MembershipChangeMode.ADD && cmd.getMember().equals(localMember)) {
-                    // The Raft Dissertation, Chapter 4.1
-                    // Unfortunately, this decision does imply that a log entry for a configuration change
-                    // can be removed (if leadership changes); in this case, a server must be prepared to
-                    // fall back to the previous configuration in its log.
-                    RaftGroupMembers lastGroupMembers = raftNode.state().lastGroupMembers();
-                    RaftGroupMembers committedGroupMembers = raftNode.state().committedGroupMembers();
-                    assert lastGroupMembers.isKnownMember(localMember) && !committedGroupMembers.isKnownMember(localMember)
-                            : "Applied Group Members: " + lastGroupMembers + " Committed Group Members: " + committedGroupMembers
-                            + " Reverted: " + cmd;
-                    logger.warning("Local Endpoint: " + localMember + " could not join to the group :( Maybe another time...");
-                    raftNode.setStatus(RaftNodeStatus.STEPPED_DOWN);
-                    return true;
-                } else {
-                    raftNode.setStatus(RaftNodeStatus.ACTIVE);
-                    raftNode.resetGroupMembers();
-                    return false;
-                }
+                raftNode.setStatus(RaftNodeStatus.ACTIVE);
+                raftNode.resetGroupMembers();
             }
         }
-
-        return false;
     }
 
     private AppendFailureResponse createFailureResponse(int term) {
