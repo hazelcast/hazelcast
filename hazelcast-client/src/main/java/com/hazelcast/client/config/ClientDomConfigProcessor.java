@@ -327,6 +327,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         Node size = node.getAttributes().getNamedItem("size");
         Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
         Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+        Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
         if (size != null) {
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
@@ -338,6 +339,9 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         if (evictionPolicy != null) {
             evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(getTextContent(evictionPolicy)))
             );
+        }
+        if (comparatorClassName != null) {
+            evictionConfig.setComparatorClassName(getTextContent(comparatorClassName));
         }
         return evictionConfig;
     }

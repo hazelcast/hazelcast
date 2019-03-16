@@ -227,6 +227,13 @@ hazelcast-client:
       serialize-keys: true
       local-update-policy: INVALIDATE
 
+    NearCacheEvictionConfigExample:
+      eviction:
+        eviction-policy: LRU
+        max-size-policy: ENTRY_COUNT
+        size: 10000
+        comparator-class-name: com.hazelcast.examples.MyEvictionComparator
+
   flake-id-generator:
     default:
       prefetch-count: 100
@@ -252,6 +259,7 @@ hazelcast-client:
         eviction-policy: LRU
         max-size-policy: ENTRY_COUNT
         size: 10000
+        comparator-class-name: com.hazelcast.examples.MyEvictionComparator
       indexes:
         name:
           ordered: false

@@ -92,6 +92,7 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
         final Node size = node.getAttributes().getNamedItem("size");
         final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
         final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+        Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
         if (size != null) {
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
@@ -106,6 +107,9 @@ abstract class AbstractQueryCacheConfigBuilderHelper implements QueryCacheConfig
                     EvictionPolicy.valueOf(
                             upperCaseInternal(getTextContent(evictionPolicy)))
             );
+        }
+        if (comparatorClassName != null) {
+            evictionConfig.setComparatorClassName(getTextContent(comparatorClassName));
         }
         return evictionConfig;
     }

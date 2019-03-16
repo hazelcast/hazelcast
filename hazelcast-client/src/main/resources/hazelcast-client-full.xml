@@ -247,6 +247,11 @@
         <local-update-policy>INVALIDATE</local-update-policy>
     </near-cache>
 
+    <near-cache name="NearCacheEvictionConfigExample">
+        <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"
+                  comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
+    </near-cache>
+
     <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
@@ -265,7 +270,8 @@
             <in-memory-format>BINARY</in-memory-format>
             <coalesce>false</coalesce>
             <populate>true</populate>
-            <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
+            <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"
+                      comparator-class-name="com.hazelcast.examples.MyEvictionComparator"/>
             <indexes>
                 <index ordered="false">name</index>
             </indexes>
