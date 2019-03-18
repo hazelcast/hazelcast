@@ -325,6 +325,7 @@ public class MembershipManager {
             handleMemberRemove(memberMapRef.get(), member);
         }
 
+        clusterService.getClusterJoinManager().insertIntoRecentlyJoinedMemberSet(addedMembers);
         sendMembershipEvents(currentMemberMap.getMembers(), addedMembers);
 
         MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();

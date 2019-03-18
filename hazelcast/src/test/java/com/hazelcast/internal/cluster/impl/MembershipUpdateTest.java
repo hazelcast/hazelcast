@@ -42,10 +42,12 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -68,7 +70,9 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINA
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
+import static com.hazelcast.internal.cluster.impl.ClusterJoinManager.STALE_JOIN_PREVENTION_DURATION_PROP;
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
@@ -89,6 +93,9 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MembershipUpdateTest extends HazelcastTestSupport {
+
+    @Rule
+    public final OverridePropertyRule ruleStaleJoinPreventionDuration = clear(STALE_JOIN_PREVENTION_DURATION_PROP);
 
     private TestHazelcastInstanceFactory factory;
 
@@ -624,11 +631,10 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void memberListOrder_shouldBeSame_whenMemberRestartedWithSameIdentity() {
+        ruleStaleJoinPreventionDuration.setOrClearProperty("5");
+
         Config configMaster = new Config();
         configMaster.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
-        // Needed only on master to prevent accepting stale join requests.
-        // See ClusterJoinManager#checkRecentlyJoinedMemberUuidBeforeJoin(target, uuid)
-        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
         final HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
 
         final HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -664,17 +670,46 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void shouldNotProcessStaleJoinRequest() {
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        final HazelcastInstance hz1 = factory.newHazelcastInstance();
+        final HazelcastInstance hz2 = factory.newHazelcastInstance();
+        assertClusterSizeEventually(2, hz1, hz2);
 
-        JoinRequest staleJoinReq = getNode(hz2).createJoinRequest(true);
+        final JoinRequest staleJoinReq = getNode(hz2).createJoinRequest(true);
         hz2.shutdown();
         assertClusterSizeEventually(1, hz1);
 
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz1);
-        clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, null);
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz1);
+                clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, null);
 
-        assertClusterSize(1, hz1);
+                assertClusterSize(1, hz1);
+            }
+        }, 3);
+    }
+
+    @Test
+    public void shouldNotProcessStaleJoinRequest_whenMasterChanges() {
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        final HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+
+        final JoinRequest staleJoinReq = getNode(hz3).createJoinRequest(true);
+        hz3.shutdown();
+        hz1.shutdown();
+        assertClusterSizeEventually(1, hz2);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz2);
+                clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, null);
+
+                assertClusterSize(1, hz2);
+            }
+        }, 3);
     }
 
     // On a joining member assert that no operations are executed before pre join operations execution is completed.
