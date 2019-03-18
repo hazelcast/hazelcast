@@ -41,10 +41,8 @@ import java.util.concurrent.ConcurrentMap;
  * you want to use Hazelcast's distributed data structures, you must first create an instance.
  * Multiple Hazelcast instances can be created on a single JVM.
  * 
- * Instances should be shut down explicitly. When it is a member, use {@link com.hazelcast.core.LifecycleService#shutdown()}.
- * When it is a client, you need to shut it down 
- * using {@link com.hazelcast.client.HazelcastClient#shutdown(HazelcastInstance instance)}
- * since it has started with non-daemon threads. Otherwise, it will continue to run and 
+ * Instances should be shut down explicitly. See the {@link #shutdown()} method.
+ * If the instance is a client and you don't shut it down explicitly, it will continue to run and 
  * even connect to another live member if the one it was connected fails.
  *
  * Each Hazelcast instance has its own socket and threads.
