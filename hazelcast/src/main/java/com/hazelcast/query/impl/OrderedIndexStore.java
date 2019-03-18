@@ -144,7 +144,7 @@ public class OrderedIndexStore extends BaseIndexStore {
                     break;
                 case NOT_EQUAL:
                     for (Map.Entry<Comparable, Map<Data, QueryableEntry>> entry : recordMap.entrySet()) {
-                        if (!Comparables.equal(searchedValue, entry.getKey())) {
+                        if (Comparables.compare(searchedValue, entry.getKey()) != 0) {
                             copyToMultiResultSet(results, entry.getValue());
                         }
                     }

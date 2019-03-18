@@ -23,6 +23,16 @@ import com.hazelcast.monitor.impl.PerIndexStats;
  */
 public interface InternalIndex extends Index {
 
+    /**
+     * Canonicalizes the given value for the purpose of a hash-based lookup.
+     * <p>
+     * The method is used while performing in-predicate queries to canonicalize
+     * the set of values in question, so additional duplicate-eliminating
+     * post-processing step can be avoided.
+     *
+     * @param value the value to canonicalize.
+     * @return the canonicalized value.
+     */
     Comparable canonicalizeScalarForHashLookup(Comparable value);
 
     /**
