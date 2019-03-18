@@ -160,16 +160,12 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         CompositeValue that = (CompositeValue) o;
-        assert components.length == that.components.length;
 
-        for (int i = 0; i < components.length; ++i) {
-            if (!Comparables.equal(components[i], that.components[i])) {
-                return false;
-            }
-        }
-        return true;
+        // We are not using Comparables.equal here since an externally
+        // canonicalized composite value is expected here, otherwise we can't
+        // guarantee hashCode is working properly.
+        return Arrays.equals(components, that.components);
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Comparables;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -86,7 +87,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int count = in.readInt();
-        this.map = new HashMap<Object, E>(count);
+        this.map = new HashMap<Object, E>(MapUtil.calculateInitialCapacity(count));
         for (int i = 0; i < count; i++) {
             E element = in.readObject();
             addInternal(element);

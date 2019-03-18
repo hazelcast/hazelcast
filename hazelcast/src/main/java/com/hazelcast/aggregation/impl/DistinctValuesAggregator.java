@@ -20,6 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.MapUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -78,7 +79,7 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
     public void readData(ObjectDataInput in) throws IOException {
         this.attributePath = in.readUTF();
         int count = in.readInt();
-        this.values = new CanonicalizingHashSet<R>(count);
+        this.values = new CanonicalizingHashSet<R>(MapUtil.calculateInitialCapacity(count));
         for (int i = 0; i < count; i++) {
             R value = in.readObject();
             values.addInternal(value);
