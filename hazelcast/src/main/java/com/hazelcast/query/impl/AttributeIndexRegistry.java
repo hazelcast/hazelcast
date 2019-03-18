@@ -236,7 +236,7 @@ public class AttributeIndexRegistry {
             Set<Comparable> convertedValues = new HashSet<Comparable>();
             for (Comparable value : values) {
                 Comparable converted = converter.convert(value);
-                convertedValues.add(canonicalizeScalarForHashLookup(converted));
+                convertedValues.add(canonicalizeQueryArgumentScalar(converted));
             }
 
             if (convertedValues.size() == 1) {
@@ -294,8 +294,8 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Comparable canonicalizeScalarForHashLookup(Comparable value) {
-            return delegate.canonicalizeScalarForHashLookup(value);
+        public Comparable canonicalizeQueryArgumentScalar(Comparable value) {
+            return delegate.canonicalizeQueryArgumentScalar(value);
         }
 
         @Override

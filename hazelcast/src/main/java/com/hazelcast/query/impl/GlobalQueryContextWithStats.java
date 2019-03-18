@@ -158,8 +158,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Comparable canonicalizeScalarForHashLookup(Comparable value) {
-            return delegate.canonicalizeScalarForHashLookup(value);
+        public Comparable canonicalizeQueryArgumentScalar(Comparable value) {
+            return delegate.canonicalizeQueryArgumentScalar(value);
         }
 
         @Override
