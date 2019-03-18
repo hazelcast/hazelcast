@@ -31,13 +31,14 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,6 +50,8 @@ import java.util.List;
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.internal.cluster.impl.ClusterJoinManager.STALE_JOIN_PREVENTION_DURATION_PROP;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.util.Arrays.asList;
@@ -60,6 +63,9 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class FrozenPartitionTableTest extends HazelcastTestSupport {
+
+    @Rule
+    public final OverridePropertyRule ruleStaleJoinPreventionDuration = clear(STALE_JOIN_PREVENTION_DURATION_PROP);
 
     @Test
     public void partitionTable_isFrozen_whenNodesLeave_duringClusterStateIsFrozen() {
@@ -196,11 +202,10 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
     @Test
     public void partitionTable_shouldBeFixed_whenMemberRestarts_usingNewUuid() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Config configMaster = new Config();
-        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        ruleStaleJoinPreventionDuration.setOrClearProperty("5");
 
-        HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         HazelcastInstance hz3 = factory.newHazelcastInstance();
 
@@ -224,11 +229,10 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
     @Test
     public void partitionTable_shouldBeFixed_whenMemberRestarts_usingUuidOfAnotherMissingMember() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Config configMaster = new Config();
-        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        ruleStaleJoinPreventionDuration.setOrClearProperty("5");
 
-        HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         HazelcastInstance hz4 = factory.newHazelcastInstance();

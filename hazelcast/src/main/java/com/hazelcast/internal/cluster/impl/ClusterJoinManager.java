@@ -58,6 +58,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
@@ -81,7 +82,10 @@ import static java.lang.String.format;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:npathcomplexity"})
 public class ClusterJoinManager {
 
+    public static final String STALE_JOIN_PREVENTION_DURATION_PROP = "hazelcast.stale.join.prevention.duration.seconds";
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
+    private static final int STALE_JOIN_PREVENTION_DURATION_SECONDS
+            = Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, 30);
 
     private final ILogger logger;
     private final Node node;
@@ -113,7 +117,7 @@ public class ClusterJoinManager {
 
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
-        staleJoinPreventionDuration = node.getProperties().getMillis(GroupProperty.MAX_JOIN_SECONDS);
+        staleJoinPreventionDuration = TimeUnit.SECONDS.toMillis(STALE_JOIN_PREVENTION_DURATION_SECONDS);
     }
 
     boolean isJoinInProgress() {
@@ -339,6 +343,16 @@ public class ClusterJoinManager {
             logger.warning(message);
         }
         return true;
+    }
+
+    void insertIntoRecentlyJoinedMemberSet(Collection<? extends Member> members) {
+        cleanupRecentlyJoinedMemberUuids();
+        if (clusterService.getClusterState().isJoinAllowed()) {
+            long localTime = Clock.currentTimeMillis();
+            for (Member member : members) {
+                recentlyJoinedMemberUuids.put(member.getUuid(), localTime);
+            }
+        }
     }
 
     private boolean checkRecentlyJoinedMemberUuidBeforeJoin(Address target, String uuid) {
@@ -732,8 +746,6 @@ public class ClusterJoinManager {
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
 
-                persistJoinedMemberUuids(joiningMembers.values());
-
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
@@ -770,15 +782,6 @@ public class ClusterJoinManager {
     private OnJoinOp preparePreJoinOps() {
         Operation[] preJoinOps = nodeEngine.getPreJoinOperations();
         return (preJoinOps != null && preJoinOps.length > 0) ? new OnJoinOp(preJoinOps) : null;
-    }
-
-    private void persistJoinedMemberUuids(Collection<MemberInfo> joinedMembers) {
-        if (clusterService.getClusterState().isJoinAllowed()) {
-            long localTime = Clock.currentTimeMillis();
-            for (MemberInfo member : joinedMembers) {
-                recentlyJoinedMemberUuids.put(member.getUuid(), localTime);
-            }
-        }
     }
 
     private Future invokeClusterOp(Operation op, Address target) {
