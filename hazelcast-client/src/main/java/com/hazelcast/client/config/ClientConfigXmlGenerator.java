@@ -375,7 +375,8 @@ public final class ClientConfigXmlGenerator {
                    .node("buffer-size", queryCache.getBufferSize())
                    .node("eviction", null, "size", queryCache.getEvictionConfig().getSize(),
                            "max-size-policy", queryCache.getEvictionConfig().getMaximumSizePolicy(),
-                           "eviction-policy", queryCache.getEvictionConfig().getEvictionPolicy());
+                           "eviction-policy", queryCache.getEvictionConfig().getEvictionPolicy(),
+                           "comparator-class-name", queryCache.getEvictionConfig().getComparatorClassName());
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
                 indexes(gen, queryCache.getIndexConfigs());
@@ -563,7 +564,7 @@ public final class ClientConfigXmlGenerator {
            .node("local-update-policy", nearCache.getLocalUpdatePolicy())
            .node("eviction", null, "size", eviction.getSize(),
                    "max-size-policy", eviction.getMaximumSizePolicy(),
-                   "eviction-policy", eviction.getEvictionPolicy())
+                   "eviction-policy", eviction.getEvictionPolicy(), "comparator-class-name", eviction.getComparatorClassName())
            .node("preloader", null, "enabled", preloader.isEnabled(),
                    "directory", preloader.getDirectory(),
                    "store-initial-delay-seconds", preloader.getStoreInitialDelaySeconds(),

@@ -156,7 +156,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public void testNearCacheConfigs() {
-        assertEquals(1, fullClientConfig.getNearCacheConfigMap().size());
+        assertEquals(2, fullClientConfig.getNearCacheConfigMap().size());
         final NearCacheConfig nearCacheConfig = fullClientConfig.getNearCacheConfig("asd");
 
         assertEquals(2000, nearCacheConfig.getMaxSize());
@@ -168,6 +168,13 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertTrue(nearCacheConfig.isSerializeKeys());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
+
+        final NearCacheConfig evictableNearCacheConfig = fullClientConfig.getNearCacheConfig("NearCacheEvictionConfigExample");
+        EvictionConfig nearCacheEvictionConfig = evictableNearCacheConfig.getEvictionConfig();
+        assertEquals(EvictionPolicy.LRU, nearCacheEvictionConfig.getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheEvictionConfig.getMaximumSizePolicy());
+        assertEquals(10000, nearCacheEvictionConfig.getSize());
+        assertEquals("com.hazelcast.examples.MyEvictionComparator", nearCacheEvictionConfig.getComparatorClassName());
     }
 
     @Test
@@ -230,10 +237,11 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(1, queryCacheClassPredicateConfig.getBatchSize());
         assertEquals(16, queryCacheClassPredicateConfig.getBufferSize());
         assertEquals(0, queryCacheClassPredicateConfig.getDelaySeconds());
-        assertEquals(EvictionPolicy.LRU, queryCacheClassPredicateConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
-                queryCacheClassPredicateConfig.getEvictionConfig().getMaximumSizePolicy());
-        assertEquals(10000, queryCacheClassPredicateConfig.getEvictionConfig().getSize());
+        EvictionConfig evictionConfig = queryCacheClassPredicateConfig.getEvictionConfig();
+        assertEquals(EvictionPolicy.LRU, evictionConfig.getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
+        assertEquals(10000, evictionConfig.getSize());
+        assertEquals("com.hazelcast.examples.MyEvictionComparator", evictionConfig.getComparatorClassName());
         assertEquals(InMemoryFormat.BINARY, queryCacheClassPredicateConfig.getInMemoryFormat());
         assertFalse(queryCacheClassPredicateConfig.isCoalesce());
         assertTrue(queryCacheClassPredicateConfig.isPopulate());
