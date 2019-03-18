@@ -211,7 +211,7 @@ public abstract class AbstractIndex implements InternalIndex {
 
     @Override
     public final Comparable canonicalizeScalarForHashLookup(Comparable value) {
-        return indexStore.canonicalizeScalarForHashLookup(value);
+        return indexStore.canonicalizeQueryArgumentScalar(value);
     }
 
     @Override

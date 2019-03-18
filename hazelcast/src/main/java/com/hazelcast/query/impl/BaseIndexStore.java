@@ -58,6 +58,11 @@ public abstract class BaseIndexStore implements IndexStore {
      * The method is used by hash indexes to achieve the canonical
      * representation of mixed-type numeric values, so {@code equals} and {@code
      * hashCode} logic can work properly.
+     * <p>
+     * The main difference comparing to {@link IndexStore#canonicalizeQueryArgumentScalar}
+     * is that this method is specifically designed to support the
+     * canonicalization of persistent index values (think of map entry attribute
+     * values), so a more suitable value representation may chosen.
      *
      * @param value the value to canonicalize.
      * @return the canonicalized value.

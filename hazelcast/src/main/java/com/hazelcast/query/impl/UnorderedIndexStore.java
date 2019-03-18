@@ -63,14 +63,17 @@ public class UnorderedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Comparable canonicalizeScalarForHashLookup(Comparable value) {
+    public Comparable canonicalizeQueryArgumentScalar(Comparable value) {
+        // Using a storage representation for arguments here to save on
+        // conversions later.
         return canonicalizeScalarForStorage(value);
     }
 
     @Override
     public Comparable canonicalizeScalarForStorage(Comparable value) {
-        // On-heap overhead is 12 bytes for the object header, allocation
-        // granularity is mod 8.
+        // Assuming on-heap overhead of 12 bytes for the object header and
+        // allocation granularity by modulo 8, there is no point in trying to
+        // represent a value in less than 4 bytes.
 
         if (!(value instanceof Number)) {
             return value;
