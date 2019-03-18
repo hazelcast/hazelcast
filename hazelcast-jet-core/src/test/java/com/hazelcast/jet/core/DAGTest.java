@@ -34,7 +34,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;

@@ -37,7 +37,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.CoreMatchers;
+import org.hamcrest.core.StringContains;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -252,7 +252,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
         // Then
         assertTrueEventually(() ->
-                assertThat(String.valueOf(writer.getError()), CoreMatchers.containsString("Always failing store")), 10);
+                assertThat(String.valueOf(writer.getError()), StringContains.containsString("Always failing store")), 10);
     }
 
     @Test
