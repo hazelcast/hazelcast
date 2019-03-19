@@ -127,13 +127,11 @@ public class TimedMemberStateFactory {
         createMemberState(memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
-        if (timedMemberState.isMaster()) {
-            Set<Member> memberSet = instance.getCluster().getMembers();
-            for (Member member : memberSet) {
-                MemberImpl memberImpl = (MemberImpl) member;
-                Address address = memberImpl.getAddress();
-                timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
-            }
+        Set<Member> memberSet = instance.getCluster().getMembers();
+        for (Member member : memberSet) {
+            MemberImpl memberImpl = (MemberImpl) member;
+            Address address = memberImpl.getAddress();
+            timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
         }
         timedMemberState.setMemberState(memberState);
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
