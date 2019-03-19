@@ -32,16 +32,19 @@ public final class GCStatsSupport {
     private static final Set<String> OLD_GC;
 
     static {
-        final Set<String> youngGC = createHashSet(3);
+        final Set<String> youngGC = createHashSet(4);
         youngGC.add("PS Scavenge");
         youngGC.add("ParNew");
         youngGC.add("G1 Young Generation");
+        youngGC.add("Copy");
         YOUNG_GC = Collections.unmodifiableSet(youngGC);
 
-        final Set<String> oldGC = createHashSet(3);
+        final Set<String> oldGC = createHashSet(5);
         oldGC.add("PS MarkSweep");
         oldGC.add("ConcurrentMarkSweep");
         oldGC.add("G1 Old Generation");
+        oldGC.add("G1 Mixed Generation");
+        oldGC.add("MarkSweepCompact");
         OLD_GC = Collections.unmodifiableSet(oldGC);
     }
 
