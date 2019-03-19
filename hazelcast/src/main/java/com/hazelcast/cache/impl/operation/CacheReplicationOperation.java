@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -79,7 +80,12 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
 
             CacheConfig cacheConfig = recordStore.getConfig();
             if (cacheConfig.getTotalBackupCount() >= replicaIndex) {
-                storeRecordsToReplicate(recordStore);
+                Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false);
+                try {
+                    storeRecordsToReplicate(recordStore);
+                } finally {
+                    closeResource(tenantContext);
+                }
             }
         }
 
