@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestUtil;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -36,7 +36,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class ExceptionUtilTest extends JetTestSupport {
 
     @Rule
@@ -77,10 +77,7 @@ public class ExceptionUtilTest extends JetTestSupport {
             dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
             client.newJob(dag).join();
         } catch (Exception caught) {
-            assertThat(caught.toString(), containsString(exc.toString()));
             TestUtil.assertExceptionInCauses(exc, caught);
-        } finally {
-            shutdownFactory();
         }
     }
 

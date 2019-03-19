@@ -22,6 +22,8 @@ import com.hazelcast.jet.impl.util.ThrottleWrappedP;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 
 import javax.annotation.Nonnull;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -61,7 +63,9 @@ public final class TestUtil {
         }
 
         if (!found) {
-            assertEquals("expected exception not found in causes chain", expected, caught);
+            StringWriter caughtStr = new StringWriter();
+            caught.printStackTrace(new PrintWriter(caughtStr));
+            assertEquals("expected exception not found in causes chain", expected.toString(), caughtStr.toString());
         }
     }
 

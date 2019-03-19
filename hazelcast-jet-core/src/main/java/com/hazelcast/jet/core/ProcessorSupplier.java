@@ -45,7 +45,7 @@ public interface ProcessorSupplier extends Serializable {
      * {@link Processor} that will be used during the execution of the Jet job.
      *
      * @param count the number of processor this method is required to create
-     *              and return
+     *              and return. It is equal to {@link Context#localParallelism()}.
      */
     @Nonnull
     Collection<? extends Processor> get(int count);
