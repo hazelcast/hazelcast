@@ -781,7 +781,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         IScheduledFuture future = s.scheduleAtFixedRate(new ICountdownLatchRunnableTask("latch"), 0, 1, SECONDS);
 
-        latch.await(10, SECONDS);
+        latch.await(20, SECONDS);
         future.cancel(false);
 
         assertEquals(0, latch.getCount());
