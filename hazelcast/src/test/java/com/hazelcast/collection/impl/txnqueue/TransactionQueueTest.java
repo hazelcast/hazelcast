@@ -60,6 +60,24 @@ import static org.junit.Assert.fail;
 public class TransactionQueueTest extends HazelcastTestSupport {
 
     @Test
+    public void testPromotionFromBackup() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance owner = factory.newHazelcastInstance();
+        HazelcastInstance backup = factory.newHazelcastInstance();
+        String name = generateKeyOwnedBy(owner);
+
+        TransactionContext context = backup.newTransactionContext();
+        context.beginTransaction();
+
+        TransactionalQueue<Integer> queue = context.getQueue(name);
+        queue.offer(1);
+        owner.getLifecycleService().terminate();
+        queue.offer(2);
+
+        context.commitTransaction();
+    }
+
+    @Test
     public void testSingleQueueAtomicity() throws ExecutionException, InterruptedException {
         final String name = randomString();
         final int itemCount = 200;
