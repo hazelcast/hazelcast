@@ -121,14 +121,10 @@ public class TcpIpNetworkingService
                                      ChannelInitializerProvider channelInitializerProvider,
                                      HazelcastProperties properties) {
         if (unifiedEndpointManager != null) {
-            //todo (TK): have separate view for REST & Memcache? might require further changes to JMX & MC REST
-            TextViewUnifiedEndpointManager textViewUnifiedEndpointManager
-                    = new TextViewUnifiedEndpointManager(unifiedEndpointManager);
-
             endpointManagers.put(MEMBER, new MemberViewUnifiedEndpointManager(unifiedEndpointManager));
             endpointManagers.put(CLIENT, new ClientViewUnifiedEndpointManager(unifiedEndpointManager));
-            endpointManagers.put(REST, textViewUnifiedEndpointManager);
-            endpointManagers.put(MEMCACHE, textViewUnifiedEndpointManager);
+            endpointManagers.put(REST,  new TextViewUnifiedEndpointManager(unifiedEndpointManager, true));
+            endpointManagers.put(MEMCACHE,  new TextViewUnifiedEndpointManager(unifiedEndpointManager, false));
         } else {
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
