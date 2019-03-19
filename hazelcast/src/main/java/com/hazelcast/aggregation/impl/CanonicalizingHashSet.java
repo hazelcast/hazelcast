@@ -33,7 +33,7 @@ import java.util.Set;
  * lookup operations while still preserving the original element values.
  * <p>
  * That canonicalization logic is required for the consistency with the
- * mixed-type numeric quality logic used inside query engine.
+ * mixed-type numeric equality logic used inside query engine.
  *
  * @param <E> the element type.
  */
@@ -62,7 +62,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
      *
      * @param set the set to add elements of.
      */
-    public void addAllInternal(CanonicalizingHashSet<E> set) {
+    void addAllInternal(CanonicalizingHashSet<E> set) {
         // elements are already canonicalized
         map.putAll(set.map);
     }
@@ -72,7 +72,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
      *
      * @param e the element to add.
      */
-    public void addInternal(E e) {
+    void addInternal(E e) {
         map.put(canonicalize(e), e);
     }
 
