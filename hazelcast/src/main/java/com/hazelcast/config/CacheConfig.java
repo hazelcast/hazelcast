@@ -553,36 +553,29 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
 
         String resultInMemoryFormat = in.readUTF();
         inMemoryFormat = InMemoryFormat.valueOf(resultInMemoryFormat);
-        evictionConfig = in.readObject();
-
-        wanReplicationRef = in.readObject();
-
-        // SUPER
-        readKeyValueTypes(in);
-        readTenant(in);
+        // set the thread-context and class loading context for this cache's tenant application
+        // This way user customizations (loader factories, listeners) and keyType/valueType
+        // can be CDI / EJB / JPA objects
         Closeable tenantContext = tenantControl.setTenant(false);
         try {
+            evictionConfig = in.readObject();
+            wanReplicationRef = in.readObject();
+
+            readKeyValueTypes(in);
+            readTenant(in);
             readFactories(in);
-        } finally {
-            tenantContext.close();
-        }
 
-        isReadThrough = in.readBoolean();
-        isWriteThrough = in.readBoolean();
-        isStoreByValue = in.readBoolean();
-        isManagementEnabled = in.readBoolean();
-        isStatisticsEnabled = in.readBoolean();
-        hotRestartConfig.setEnabled(in.readBoolean());
-        hotRestartConfig.setFsync(in.readBoolean());
+            isReadThrough = in.readBoolean();
+            isWriteThrough = in.readBoolean();
+            isStoreByValue = in.readBoolean();
+            isManagementEnabled = in.readBoolean();
+            isStatisticsEnabled = in.readBoolean();
+            hotRestartConfig.setEnabled(in.readBoolean());
+            hotRestartConfig.setFsync(in.readBoolean());
 
-        quorumName = in.readUTF();
+            quorumName = in.readUTF();
 
-        final boolean listNotEmpty = in.readBoolean();
-        // set the thread-context and class loading context for this cache's tenant application
-        // This way keyType/valueType/ loader factories and listeners can be CDI / EJB / JPA objects
-        // and class loading is guaranteed to work
-        tenantContext = tenantControl.setTenant(false);
-        try {
+            final boolean listNotEmpty = in.readBoolean();
             if (listNotEmpty) {
                 readListenerConfigurations(in);
             }

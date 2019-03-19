@@ -138,8 +138,11 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         cache.destroy();
 
         assertEquals(1, saveCurrentCount.get());
-        assertEquals(3, setTenantCount.get());
-        assertEquals(3, closeTenantCount.get());
+        // expecting tenant context is created & closed 4 times:
+        // 1 time on creation of record store (wrapping initialization of eviction policy)
+        // + 3 times on before/afterRun of put, get & getAndPut operations
+        assertEquals(4, setTenantCount.get());
+        assertEquals(4, closeTenantCount.get());
         assertEquals(1, unregisterTenantCount.get());
     }
 
@@ -174,6 +177,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
 
         @Override
         public Closeable setTenant(boolean createRequestScope) {
+            new Exception().printStackTrace();
             setTenantCount.incrementAndGet();
             return new Closeable() {
                 @Override
