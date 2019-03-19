@@ -23,8 +23,6 @@ import com.hazelcast.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Node;
@@ -37,35 +35,29 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using YAML.
  */
 public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
 
-    private static final ILogger LOGGER = Logger.getLogger(YamlClientConfigBuilder.class);
-
     private final InputStream in;
 
     public YamlClientConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
-        if (url == null) {
-            throw new IllegalArgumentException("Could not load " + resource);
-        }
+        checkTrue(url != null, "Could not load " + resource);
         this.in = url.openStream();
     }
 
     public YamlClientConfigBuilder(File file) throws IOException {
-        if (file == null) {
-            throw new NullPointerException("File is null!");
-        }
+        checkNotNull(file, "File is null!");
         this.in = new FileInputStream(file);
     }
 
     public YamlClientConfigBuilder(URL url) throws IOException {
-        if (url == null) {
-            throw new NullPointerException("URL is null!");
-        }
+        checkNotNull(url, "URL is null!");
         this.in = url.openStream();
     }
 

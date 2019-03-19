@@ -36,6 +36,8 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Loads the {@link com.hazelcast.client.config.ClientFailoverConfig} using YAML.
@@ -46,23 +48,18 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
 
     public YamlClientFailoverConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
-        if (url == null) {
-            throw new IllegalArgumentException("Could not load " + resource);
-        }
+        checkTrue(url != null, "Could not load " + resource);
+
         this.in = url.openStream();
     }
 
     public YamlClientFailoverConfigBuilder(File file) throws IOException {
-        if (file == null) {
-            throw new NullPointerException("File is null!");
-        }
+        checkNotNull(file, "File is null!");
         this.in = new FileInputStream(file);
     }
 
     public YamlClientFailoverConfigBuilder(URL url) throws IOException {
-        if (url == null) {
-            throw new NullPointerException("URL is null!");
-        }
+        checkNotNull(url, "URL is null!");
         this.in = url.openStream();
     }
 

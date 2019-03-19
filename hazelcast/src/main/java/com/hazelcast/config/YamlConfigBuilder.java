@@ -34,6 +34,7 @@ import java.util.Properties;
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
 import static com.hazelcast.internal.yaml.YamlUtil.ensureRunningOnJava8OrHigher;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * A YAML {@link ConfigBuilder} implementation.
@@ -66,9 +67,7 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
      * @throws IllegalArgumentException if inputStream is {@code null}
      */
     public YamlConfigBuilder(InputStream inputStream) {
-        if (inputStream == null) {
-            throw new IllegalArgumentException("inputStream can't be null");
-        }
+        checkTrue(inputStream != null, "inputStream can't be null");
         this.in = inputStream;
     }
 

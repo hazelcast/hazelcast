@@ -36,6 +36,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -48,23 +50,17 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
 
     public XmlClientFailoverConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
-        if (url == null) {
-            throw new IllegalArgumentException("Could not load " + resource);
-        }
+        checkTrue(url != null, "Could not load " + resource);
         this.in = url.openStream();
     }
 
     public XmlClientFailoverConfigBuilder(File file) throws IOException {
-        if (file == null) {
-            throw new NullPointerException("File is null!");
-        }
+        checkNotNull(file, "File is null!");
         this.in = new FileInputStream(file);
     }
 
     public XmlClientFailoverConfigBuilder(URL url) throws IOException {
-        if (url == null) {
-            throw new NullPointerException("URL is null!");
-        }
+        checkNotNull(url, "URL is null!");
         this.in = url.openStream();
     }
 

@@ -35,6 +35,7 @@ import java.util.Properties;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -67,9 +68,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
      * @throws IllegalArgumentException if inputStream is {@code null}
      */
     public XmlConfigBuilder(InputStream inputStream) {
-        if (inputStream == null) {
-            throw new IllegalArgumentException("inputStream can't be null");
-        }
+        checkTrue(inputStream != null, "inputStream can't be null");
         this.in = inputStream;
     }
 

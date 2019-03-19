@@ -85,9 +85,10 @@ public final class HazelcastClient {
      * <ol>
      *     <li>
      *         System property: Hazelcast will first check if "hazelcast.client.config" system property is set to a file or a
-     *         {@code classpath:...} path.
+     *         {@code classpath:...} path. The configuration can either be an XML or a YAML configuration, distinguished by the
+     *         suffix ('.xml' or '.yaml') of the provided configuration file's name
      *         Examples: -Dhazelcast.client.config=C:/myhazelcastclient.xml ,
-     *         -Dhazelcast.client.config=classpath:the-hazelcast-config.xml ,
+     *         -Dhazelcast.client.config=classpath:the-hazelcast-config.yaml ,
      *         -Dhazelcast.client.config=classpath:com/mydomain/hazelcast.xml
      *     </li>
      *     <li>
@@ -138,7 +139,9 @@ public final class HazelcastClient {
      * The configuration is loaded using using the following resolution mechanism:
      * <ol>
      * <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
-     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference. The configuration can
+     * either be an XML or a YAML configuration, distinguished by the suffix ('.xml' or '.yaml') of the provided configuration
+     * file's name</li>
      * <li>it checks if a hazelcast-client-failover.xml is available in the working dir</li>
      * <li>it checks if a hazelcast-client-failover.xml is available on the classpath</li>
      * <li>it checks if a hazelcast-client-failover.yaml is available in the working dir</li>
@@ -162,7 +165,9 @@ public final class HazelcastClient {
      * mechanism:
      * <ol>
      *      <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
-     *          'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     *          'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference. The configuration
+     *          can either be an XML or a YAML configuration, distinguished by the suffix ('.xml' or '.yaml') of the provided
+     *          configuration file's name</li>
      *      <li>it checks if a hazelcast-client-failover.xml is available in the working dir</li>
      *      <li>it checks if a hazelcast-client-failover.xml is available on the classpath</li>
      *      <li>it checks if a hazelcast-client-failover.yaml is available in the working dir</li>

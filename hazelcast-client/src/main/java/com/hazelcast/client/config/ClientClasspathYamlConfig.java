@@ -16,12 +16,14 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;
+
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * A {@link ClientConfig} which is initialized by loading an YAML configuration file from the classpath.
@@ -36,8 +38,8 @@ public class ClientClasspathYamlConfig extends ClientConfig {
      *
      * @param resource the resource, a YAML configuration file from the classpath,
      *                 without the "classpath:" prefix
-     * @throws IllegalArgumentException if the resource could not be found
-     * @throws HazelcastException       if the YAML content is invalid
+     * @throws IllegalArgumentException      if the resource could not be found
+     * @throws InvalidConfigurationException if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(String resource) {
         this(resource, System.getProperties());
@@ -50,8 +52,8 @@ public class ClientClasspathYamlConfig extends ClientConfig {
      * @param resource   the resource, a YAML configuration file from the classpath,
      *                   without the "classpath:" prefix
      * @param properties the Properties to resolve variables in the YAML
-     * @throws IllegalArgumentException if the resource could not be found or if properties is {@code null}
-     * @throws HazelcastException       if the YAML content is invalid
+     * @throws IllegalArgumentException      if the resource could not be found or if properties is {@code null}
+     * @throws InvalidConfigurationException if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(String resource, Properties properties) {
         this(Thread.currentThread().getContextClassLoader(), resource, properties);
@@ -64,25 +66,18 @@ public class ClientClasspathYamlConfig extends ClientConfig {
      * @param resource    the resource, a YAML configuration file from the classpath,
      *                    without the "classpath:" prefix
      * @param properties  the properties used to resolve variables in the YAML
-     * @throws IllegalArgumentException if classLoader or resource is {@code null}, or if the resource is not found
-     * @throws HazelcastException       if the YAML content is invalid
+     * @throws IllegalArgumentException      if classLoader or resource is {@code null}, or if the resource is not found
+     * @throws InvalidConfigurationException if the YAML content is invalid
      */
     public ClientClasspathYamlConfig(ClassLoader classLoader, String resource, Properties properties) {
-        if (classLoader == null) {
-            throw new IllegalArgumentException("classLoader can't be null");
-        }
-        if (resource == null) {
-            throw new IllegalArgumentException("resource can't be null");
-        }
-        if (properties == null) {
-            throw new IllegalArgumentException("properties can't be null");
-        }
+        checkTrue(classLoader != null, "classLoader can't be null");
+        checkTrue(resource != null, "resource can't be null");
+        checkTrue(properties != null, "properties can't be null");
 
         LOGGER.info("Configuring Hazelcast Client from '" + resource + "'.");
         InputStream in = classLoader.getResourceAsStream(resource);
-        if (in == null) {
-            throw new IllegalArgumentException("Specified resource '" + resource + "' could not be found!");
-        }
+        checkTrue(in != null, "Specified resource '" + resource + "' could not be found!");
+
         YamlClientConfigBuilder yamlClientConfigBuilder = new YamlClientConfigBuilder(in);
         yamlClientConfigBuilder.setProperties(properties);
         yamlClientConfigBuilder.build(this, classLoader);
