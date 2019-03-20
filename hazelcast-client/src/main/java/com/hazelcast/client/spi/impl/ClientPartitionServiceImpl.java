@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -32,6 +33,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -148,19 +150,25 @@ public final class ClientPartitionServiceImpl
         return MemberSelectingCollection.count(memberList, MemberSelectors.DATA_MEMBER_SELECTOR) == 0;
     }
 
+    /**
+     * The partitions can be empty on the response, client will not apply the empty partition table,
+     * see {@link ClientPartitionListenerService#getPartitions(PartitionTableView)}
+     */
     private void processPartitionResponse(Collection<Map.Entry<Address, List<Integer>>> partitions,
                                           int partitionStateVersion,
                                           boolean partitionStateVersionExist) {
+        if (partitions.isEmpty()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Partition response is empty, state version:"
+                        + (partitionStateVersionExist ? partitionStateVersion : "NotAvailable"));
+            }
+            return;
+        }
+
         synchronized (lock) {
             if (!partitionStateVersionExist || partitionStateVersion > lastPartitionStateVersion) {
-                Map<Integer, Address> newPartitions = new HashMap<Integer, Address>();
-                for (Map.Entry<Address, List<Integer>> entry : partitions) {
-                    Address address = entry.getKey();
-                    for (Integer partition : entry.getValue()) {
-                        newPartitions.put(partition, address);
-                    }
-                }
-                this.partitions = Collections.unmodifiableMap(newPartitions);
+                Map<Integer, Address> partitionToAddressMap = convertToPartitionToAddressMap(partitions);
+                this.partitions = Collections.unmodifiableMap(partitionToAddressMap);
                 if (partitionCount == 0) {
                     partitionCount = this.partitions.size();
                 }
@@ -173,6 +181,17 @@ public final class ClientPartitionServiceImpl
 
             }
         }
+    }
+
+    private Map<Integer, Address> convertToPartitionToAddressMap(Collection<Map.Entry<Address, List<Integer>>> partitions) {
+        Map<Integer, Address> newPartitions = new HashMap<Integer, Address>();
+        for (Map.Entry<Address, List<Integer>> entry : partitions) {
+            Address address = entry.getKey();
+            for (Integer partition : entry.getValue()) {
+                newPartitions.put(partition, address);
+            }
+        }
+        return newPartitions;
     }
 
     public void stop() {

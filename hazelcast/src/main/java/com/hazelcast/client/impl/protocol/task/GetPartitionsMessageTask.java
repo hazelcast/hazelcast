@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.instance.Node;
@@ -36,6 +37,10 @@ public class GetPartitionsMessageTask
         super(clientMessage, node, connection);
     }
 
+    /**
+     * The partitions can be empty on the response
+     * see {@link ClientPartitionListenerService#getPartitions(PartitionTableView)}
+     */
     protected Object call() {
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         service.firstArrangement();

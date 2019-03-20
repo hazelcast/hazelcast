@@ -78,7 +78,12 @@ public class ClientPartitionListenerService {
         partitionListeningEndpoints.remove(clientEndpoint);
     }
 
-    // return address->partitions mapping, where address is the client address of the member
+    /**
+     * If any partition does not have an owner, this method returns empty collection
+     *
+     * @param partitionTableView will be converted to address->partitions mapping
+     * @return address->partitions mapping, where address is the client address of the member
+     */
     public Collection<Map.Entry<Address, List<Integer>>> getPartitions(PartitionTableView partitionTableView) {
 
         Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
