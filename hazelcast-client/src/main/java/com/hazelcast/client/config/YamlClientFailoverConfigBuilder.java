@@ -142,8 +142,10 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
 
         String configRoot = getConfigRoot();
         YamlNode clientFailoverRoot = yamlRootNode.childAsMapping(configRoot);
-        checkTrue(clientFailoverRoot != null,
-                String.format("No mapping with %s key is found in the provided configuration", configRoot));
+        if (clientFailoverRoot == null) {
+            String message = String.format("No mapping with %s key is found in the provided configuration", configRoot);
+            throw new InvalidConfigurationException(message);
+        }
 
         YamlDomChecker.check(clientFailoverRoot);
 
