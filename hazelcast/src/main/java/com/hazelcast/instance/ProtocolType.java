@@ -42,8 +42,8 @@ public enum ProtocolType {
     MEMBER(1, Protocols.CLUSTER),
     CLIENT(1, Protocols.CLIENT_BINARY_NEW),
     WAN(Integer.MAX_VALUE, Protocols.CLUSTER),
-    REST(1, Protocols.TEXT),
-    MEMCACHE(1, Protocols.TEXT);
+    REST(1, Protocols.REST),
+    MEMCACHE(1, Protocols.MEMCACHE);
 
     private static final Set<ProtocolType> PROTOCOL_TYPES_SET;
     private static final ProtocolType[] PROTOCOL_TYPES;

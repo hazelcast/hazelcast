@@ -355,7 +355,7 @@ public class HTTPCommunicator {
         final int responseCode;
         final Map<String, List<String>> responseHeaders;
 
-        private ConnectionResponse(String response, int responseCode) {
+        ConnectionResponse(String response, int responseCode) {
             this(response, responseCode, null);
         }
 

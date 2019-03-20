@@ -63,7 +63,6 @@ public class RestMultiendpointTest
 
         config.getAdvancedNetworkConfig()
               .setEnabled(true)
-              .setEnabled(true)
               .setMemberEndpointConfig(memberEndpointConfig)
               .setClientEndpointConfig(clientEndpointConfig)
               .setRestEndpointConfig(restEndpoint);

@@ -33,8 +33,9 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 public class SingleProtocolDecoder
         extends InboundHandler<ByteBuffer, Void> {
 
-    private final ProtocolType supportedProtocol;
-    private final InboundHandler[] inboundHandlers;
+    protected final InboundHandler[] inboundHandlers;
+    protected final ProtocolType supportedProtocol;
+
     private final MemberProtocolEncoder encoder;
 
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next) {
@@ -73,16 +74,10 @@ public class SingleProtocolDecoder
                 return CLEAN;
             }
 
-            String protocol = loadProtocol();
-            if (protocol.equals(supportedProtocol.getDescriptor())) {
-                // initialize the connection
-                initConnection();
-                // replace this handler with the next one
-                channel.inboundPipeline().replace(this, inboundHandlers);
-            } else {
-                throw new IllegalStateException("Unsupported protocol exchange detected, "
-                        + "expected protocol: " + supportedProtocol.name());
-            }
+            verifyProtocol(loadProtocol());
+            // initialize the connection
+            initConnection();
+            setupNextDecoder();
 
             if (shouldSignalProtocolLoaded()) {
                 encoder.signalProtocolLoaded();
@@ -91,6 +86,18 @@ public class SingleProtocolDecoder
             return CLEAN;
         } finally {
             compactOrClear(src);
+        }
+    }
+
+    protected void setupNextDecoder() {
+        // replace this handler with the next one
+        channel.inboundPipeline().replace(this, inboundHandlers);
+    }
+
+    protected void verifyProtocol(String incomingProtocol) {
+        if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
+            throw new IllegalStateException("Unsupported protocol exchange detected, "
+                    + "expected protocol: " + supportedProtocol.name());
         }
     }
 

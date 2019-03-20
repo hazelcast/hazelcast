@@ -40,9 +40,14 @@ public final class Protocols {
     public static final String CLIENT_BINARY_NEW = "CB2";
 
     /**
-     * Protocol that is used by Memcache And Http
+     * Protocol that is used by REST
      */
-    public static final String TEXT = "TXT";
+    public static final String REST = "HTTP";
+
+    /**
+     * Protocol that is used by Memcached
+     */
+    public static final String MEMCACHE = "Memcached";
 
     private Protocols() {
     }
@@ -56,8 +61,12 @@ public final class Protocols {
             return "Client Open Binary Protocol";
         }
 
-        if (TEXT.equals(protocol)) {
-            return "Text Protocol";
+        if (REST.equals(protocol)) {
+            return "REST Protocol";
+        }
+
+        if (MEMCACHE.equals(protocol)) {
+            return "MEMCACHE Protocol";
         }
 
         return "Unknown Protocol";
