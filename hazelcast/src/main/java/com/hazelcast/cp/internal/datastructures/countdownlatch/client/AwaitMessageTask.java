@@ -25,8 +25,11 @@ import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatc
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.AwaitOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CountDownLatchPermission;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client message task for {@link AwaitOp}
@@ -63,7 +66,7 @@ public class AwaitMessageTask extends AbstractMessageTask<CPCountDownLatchAwaitC
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CountDownLatchPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -78,7 +81,7 @@ public class AwaitMessageTask extends AbstractMessageTask<CPCountDownLatchAwaitC
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters.timeoutMs, TimeUnit.MILLISECONDS};
     }
 
     @Override

@@ -26,8 +26,12 @@ import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.ChangePermitsOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SemaphorePermission;
 
 import java.security.Permission;
+
+import static java.lang.Math.abs;
 
 /**
  * Client message task for {@link ChangePermitsOp}
@@ -64,7 +68,8 @@ public class ChangePermitsMessageTask extends AbstractMessageTask<CPSemaphoreCha
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return parameters.permits < 0 ? new SemaphorePermission(parameters.name, ActionConstants.ACTION_ACQUIRE)
+                : new SemaphorePermission(parameters.name, ActionConstants.ACTION_RELEASE);
     }
 
     @Override
@@ -74,12 +79,12 @@ public class ChangePermitsMessageTask extends AbstractMessageTask<CPSemaphoreCha
 
     @Override
     public String getMethodName() {
-        return "changePermits";
+        return parameters.permits > 0 ? "increasePermits" : "reducePermits";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{abs(parameters.permits)};
     }
 
     @Override

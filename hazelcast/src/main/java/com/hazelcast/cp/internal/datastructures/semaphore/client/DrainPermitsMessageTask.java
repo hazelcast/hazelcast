@@ -26,6 +26,8 @@ import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.DrainPermitsOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SemaphorePermission;
 
 import java.security.Permission;
 
@@ -63,7 +65,7 @@ public class DrainPermitsMessageTask extends AbstractMessageTask<CPSemaphoreDrai
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SemaphorePermission(parameters.name, ActionConstants.ACTION_ACQUIRE);
     }
 
     @Override

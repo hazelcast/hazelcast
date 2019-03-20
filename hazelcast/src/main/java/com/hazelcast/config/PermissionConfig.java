@@ -98,6 +98,10 @@ public class PermissionConfig {
          */
         ATOMIC_LONG("atomic-long-permission"),
         /**
+         * Atomic long
+         */
+        ATOMIC_REFERENCE("atomic-reference-permission"),
+        /**
          * Countdown Latch
          */
         COUNTDOWN_LATCH("countdown-latch-permission"),

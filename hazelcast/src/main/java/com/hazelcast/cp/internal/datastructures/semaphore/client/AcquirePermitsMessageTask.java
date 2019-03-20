@@ -26,8 +26,11 @@ import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AcquirePermitsOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SemaphorePermission;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client message task for {@link AcquirePermitsOp}
@@ -64,7 +67,7 @@ public class AcquirePermitsMessageTask extends AbstractMessageTask<CPSemaphoreAc
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SemaphorePermission(parameters.name, ActionConstants.ACTION_ACQUIRE);
     }
 
     @Override
@@ -74,12 +77,15 @@ public class AcquirePermitsMessageTask extends AbstractMessageTask<CPSemaphoreAc
 
     @Override
     public String getMethodName() {
-        return "acquire";
+        return parameters.timeoutMs >= 0 ? "tryAcquire" : "acquire";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        if (parameters.timeoutMs > 0) {
+            return new Object[]{parameters.permits, parameters.timeoutMs, TimeUnit.MILLISECONDS};
+        }
+        return new Object[]{parameters.permits};
     }
 
     @Override

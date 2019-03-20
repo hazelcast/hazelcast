@@ -25,6 +25,8 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndAddOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.AtomicLongPermission;
 
 import java.security.Permission;
 
@@ -63,7 +65,7 @@ public class GetMessageTask extends AbstractMessageTask<CPAtomicLongGetCodec.Req
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new AtomicLongPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override

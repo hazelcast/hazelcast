@@ -26,6 +26,8 @@ import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.UnlockOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.LockPermission;
 
 import java.security.Permission;
 
@@ -63,7 +65,7 @@ public class UnlockMessageTask extends AbstractMessageTask<CPFencedLockUnlockCod
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new LockPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }
 
     @Override

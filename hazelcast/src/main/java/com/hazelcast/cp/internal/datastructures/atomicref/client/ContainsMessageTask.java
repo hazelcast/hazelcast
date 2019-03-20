@@ -25,6 +25,8 @@ import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ContainsOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.AtomicReferencePermission;
 
 import java.security.Permission;
 
@@ -64,7 +66,7 @@ public class ContainsMessageTask extends AbstractMessageTask<CPAtomicRefContains
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new AtomicReferencePermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -79,7 +81,7 @@ public class ContainsMessageTask extends AbstractMessageTask<CPAtomicRefContains
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return new Object[]{parameters.value};
     }
 
 

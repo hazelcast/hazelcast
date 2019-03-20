@@ -3062,6 +3062,8 @@
                                     maxOccurs="unbounded"/>
                         <xs:element name="atomic-long-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
+                        <xs:element name="atomic-reference-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
                         <xs:element name="countdown-latch-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="semaphore-permission" type="instance-permission" minOccurs="0"

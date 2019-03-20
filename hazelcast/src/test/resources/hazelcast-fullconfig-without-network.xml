@@ -711,6 +711,11 @@
                     <action>all</action>
                 </actions>
             </atomic-long-permission>
+            <atomic-reference-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </atomic-reference-permission>
             <countdown-latch-permission name="*">
                 <actions>
                     <action>all</action>

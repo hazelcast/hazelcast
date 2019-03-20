@@ -27,6 +27,11 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
+import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
+import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.lock.RaftLockService;
+import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -108,13 +113,31 @@ public final class ActionConstants {
                 return new AtomicLongPermission(name, actions);
             }
         });
+        PERMISSION_FACTORY_MAP.put(RaftAtomicLongService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new AtomicLongPermission(name, actions);
+            }
+        });
         PERMISSION_FACTORY_MAP.put(CountDownLatchService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new CountDownLatchPermission(name, actions);
             }
         });
+        PERMISSION_FACTORY_MAP.put(RaftCountDownLatchService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new CountDownLatchPermission(name, actions);
+            }
+        });
         PERMISSION_FACTORY_MAP.put(SemaphoreService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new SemaphorePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(RaftSemaphoreService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new SemaphorePermission(name, actions);
@@ -127,6 +150,12 @@ public final class ActionConstants {
             }
         });
         PERMISSION_FACTORY_MAP.put(LockService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new LockPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(RaftLockService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new LockPermission(name, actions);
@@ -163,6 +192,12 @@ public final class ActionConstants {
             }
         });
         PERMISSION_FACTORY_MAP.put(AtomicReferenceService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new AtomicReferencePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(RaftAtomicRefService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new AtomicReferencePermission(name, actions);
