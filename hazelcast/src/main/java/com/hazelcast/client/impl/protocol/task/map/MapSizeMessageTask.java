@@ -28,6 +28,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
+import static com.hazelcast.map.impl.LocalMapStatsUtil.incrementOtherOperationsCount;
+
 public class MapSizeMessageTask
         extends AbstractMapAllPartitionsMessageTask<MapSizeCodec.RequestParameters> {
 
@@ -49,6 +51,7 @@ public class MapSizeMessageTask
             Integer size = (Integer) mapService.getMapServiceContext().toObject(result);
             total += size;
         }
+        incrementOtherOperationsCount(mapService, parameters.name);
         return total;
     }
 

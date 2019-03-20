@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
@@ -34,6 +33,8 @@ import com.hazelcast.spi.OperationService;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Runs query operations in the calling thread (thus blocking it)
@@ -86,8 +87,6 @@ public class QueryRunner {
         final QueryableEntriesSegment entries = partitionScanExecutor
                 .execute(query.getMapName(), predicate, partitionId, tableIndex, fetchSize);
 
-        updateStatistics(mapContainer);
-
         final ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
         final Result result = processor
                 .populateResult(query, Long.MAX_VALUE, entries.getEntries(), Collections.singletonList(partitionId));
@@ -120,7 +119,6 @@ public class QueryRunner {
             result = populateResult(query, initialPartitions, entries);
         }
 
-        updateStatistics(mapContainer);
         return result;
     }
 
@@ -166,7 +164,6 @@ public class QueryRunner {
             result = populateResult(query, initialPartitions, entries);
         }
 
-        updateStatistics(mapContainer);
         return result;
     }
 
@@ -194,7 +191,6 @@ public class QueryRunner {
             result = populateResult(query, partitions, entries);
         }
 
-        updateStatistics(mapContainer);
         return result;
     }
 
@@ -213,7 +209,7 @@ public class QueryRunner {
     Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
-        Collection<Integer> partitions = Collections.singletonList(partitionId);
+        Collection<Integer> partitions = singletonList(partitionId);
         Result result = createResult(query, partitions);
         partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
         result.completeConstruction(partitions);
@@ -299,12 +295,5 @@ public class QueryRunner {
 
     private boolean validateMigrationStamp(int migrationStamp) {
         return mapServiceContext.getService().validateMigrationStamp(migrationStamp);
-    }
-
-    private void updateStatistics(MapContainer mapContainer) {
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            LocalMapStatsImpl localStats = localMapStatsProvider.getLocalMapStatsImpl(mapContainer.getName());
-            localStats.incrementOtherOperations();
-        }
     }
 }
