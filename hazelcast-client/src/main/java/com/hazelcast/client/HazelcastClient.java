@@ -179,8 +179,7 @@ public final class HazelcastClient {
      * @param clientFailoverConfig config describing the failover configs and try count
      * @return the client instance
      * @throws HazelcastException            if no failover configuration is found
-     * @throws InvalidConfigurationException if the provided clientFailoverConfig is {@code null} and the loaded failover
-     * configuration is not valid
+     * @throws InvalidConfigurationException if the provided or the loaded failover configuration is not valid
      */
     public static HazelcastInstance newHazelcastFailoverClient(ClientFailoverConfig clientFailoverConfig) {
         return newHazelcastClientInternal(null, null, resolveClientFailoverConfig(clientFailoverConfig));

@@ -68,8 +68,10 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
     /**
      * Loads the client config using the following resolution mechanism:
      * <ol>
-     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and it begins with
-     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and
+     * it begins with 'classpath:', then a classpath resource is loaded. Else it will assume it is a file
+     * reference. The configuration file or resource will be loaded only if the postfix of its name ends
+     * with `.yaml`.</li>
      * <li>it checks if a hazelcast-client.yaml is available in the working dir</li>
      * <li>it checks if a hazelcast-client.yaml is available on the classpath</li>
      * <li>it loads the hazelcast-client-default.yaml</li>

@@ -99,11 +99,11 @@ public final class FailoverClientConfigSupport {
         YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
 
         if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config if provided in system property
+            // 1. Try loading config if provided in system property and it is an XML file
             config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
 
         } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config if provided in system property
+            // 2. Try loading config if provided in system property and it is an YAML file
             config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
 
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
@@ -126,11 +126,11 @@ public final class FailoverClientConfigSupport {
         YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
 
         if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config if provided in system property
+            // 1. Try loading config if provided in system property and it is an XML file
             config = new XmlClientConfigBuilder(xmlConfigLocator).build();
 
         } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config if provided in system property
+            // 2. Try loading config if provided in system property and it is an YAML file
             config = new YamlClientConfigBuilder(yamlConfigLocator).build();
 
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
@@ -150,25 +150,6 @@ public final class FailoverClientConfigSupport {
     }
 
     /**
-     <<<<<<< HEAD
-     =======
-     * Creates {@link ClientFailoverConfig} is created which is equivalent of single client config.
-     * <p/>
-     * Used with {@link HazelcastClient#newHazelcastClient()}
-     *
-     * @return resolved configs
-     */
-    public static ClientFailoverConfig resolveClientConfig() {
-        ClientFailoverConfig resolvedConfig = new ClientFailoverConfig();
-
-        ClientConfig config = locateAndCreateClientConfig();
-        resolvedConfig.addClientConfig(config);
-        resolvedConfig.setTryCount(1);
-        return resolvedConfig;
-    }
-
-    /**
-     >>>>>>> Failover config additions
      * For a client to be valid alternative, all configurations should be equal except
      * GroupConfig
      * SecurityConfig
