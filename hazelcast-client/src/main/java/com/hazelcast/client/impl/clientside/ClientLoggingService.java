@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.clientside;
 
+import com.hazelcast.client.spi.ClusterSwitchAwareService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.logging.AbstractLogger;
@@ -33,7 +34,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
-public class ClientLoggingService implements LoggingService {
+public class ClientLoggingService implements LoggingService, ClusterSwitchAwareService {
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
 
@@ -47,14 +48,28 @@ public class ClientLoggingService implements LoggingService {
     };
 
     private final LoggerFactory loggerFactory;
-    private final String versionMessage;
+    private final BuildInfo buildInfo;
+    private final String clientName;
+    private volatile String versionMessage;
 
     public ClientLoggingService(String groupName, String loggingType, BuildInfo buildInfo, String clientName) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
+        this.buildInfo = buildInfo;
+        this.clientName = clientName;
+        updateVersionMessageWithGroupName(groupName);
+    }
+
+    private void updateVersionMessageWithGroupName(String groupName) {
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
         this.versionMessage = clientName + " [" + groupName + "]"
                 + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
                 + " [" + buildInfo.getVersion() + "] ";
+    }
+
+    @Override
+    public void beforeClusterSwitch(CandidateClusterContext context) {
+        String groupName = context.getName();
+        updateVersionMessageWithGroupName(groupName);
     }
 
     @Override

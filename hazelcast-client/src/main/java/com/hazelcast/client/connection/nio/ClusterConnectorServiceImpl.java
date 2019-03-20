@@ -26,6 +26,7 @@ import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientDiscoveryService;
+import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -228,6 +229,8 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         //non retryable client messages will fail immediately
         //retryable client messages will be retried but they will wait for new partition table
         client.getConnectionManager().beforeClusterSwitch(context);
+        //update logger with new group name
+        ((ClientLoggingService) client.getLoggingService()).beforeClusterSwitch(context);
     }
 
     private boolean connectToCandidate(CandidateClusterContext context) {
