@@ -488,7 +488,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         currentClusterContext = context;
     }
 
-    @Override
     public void beforeClusterSwitch(CandidateClusterContext context) {
         for (ClientConnection activeConnection : activeConnections.values()) {
             activeConnection.close(null, new TargetDisconnectedException("Closing since client is switching cluster"));

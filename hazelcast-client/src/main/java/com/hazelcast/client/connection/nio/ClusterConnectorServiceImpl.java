@@ -222,15 +222,15 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
         //reset near caches, clears all near cache data
         client.getNearCacheManager().clearAllNearCaches();
         //clear the member list
-        client.getClientClusterService().beforeClusterSwitch(context);
+        client.getClientClusterService().reset();
         //clear the partition table
-        client.getClientPartitionService().beforeClusterSwitch(context);
+        client.getClientPartitionService().reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
         //non retryable client messages will fail immediately
         //retryable client messages will be retried but they will wait for new partition table
         client.getConnectionManager().beforeClusterSwitch(context);
         //update logger with new group name
-        ((ClientLoggingService) client.getLoggingService()).beforeClusterSwitch(context);
+        ((ClientLoggingService) client.getLoggingService()).updateGroupName(context.getName());
     }
 
     private boolean connectToCandidate(CandidateClusterContext context) {

@@ -19,9 +19,8 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.ClientImpl;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.config.ListenerConfig;
@@ -259,9 +258,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     public void shutdown() {
     }
 
-    @Override
-    public void beforeClusterSwitch(CandidateClusterContext context) {
-        clientMembershipListener.beforeClusterSwitch(context);
+    public void reset() {
+        clientMembershipListener.clearMembers();
         synchronized (initialMembershipListenerMutex) {
             members.set(Collections.<Address, Member>emptyMap());
         }
