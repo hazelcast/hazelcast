@@ -20,6 +20,7 @@ import com.hazelcast.config.AbstractYamlConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.yaml.YamlDomChecker;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
@@ -39,90 +40,91 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
- * Loads the {@link com.hazelcast.client.config.ClientConfig} using YAML.
+ * Loads the {@link com.hazelcast.client.config.ClientFailoverConfig} using YAML.
  */
-public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
+public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
 
     private final InputStream in;
 
-    public YamlClientConfigBuilder(String resource) throws IOException {
+    public YamlClientFailoverConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
         checkTrue(url != null, "Could not load " + resource);
+
         this.in = url.openStream();
     }
 
-    public YamlClientConfigBuilder(File file) throws IOException {
+    public YamlClientFailoverConfigBuilder(File file) throws IOException {
         checkNotNull(file, "File is null!");
         this.in = new FileInputStream(file);
     }
 
-    public YamlClientConfigBuilder(URL url) throws IOException {
+    public YamlClientFailoverConfigBuilder(URL url) throws IOException {
         checkNotNull(url, "URL is null!");
         this.in = url.openStream();
     }
 
-    public YamlClientConfigBuilder(InputStream in) {
+    public YamlClientFailoverConfigBuilder(InputStream in) {
         this.in = in;
     }
 
     /**
-     * Loads the client config using the following resolution mechanism:
+     * Loads the client failover config using the following resolution mechanism:
      * <ol>
-     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and
+     * <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and
      * it begins with 'classpath:', then a classpath resource is loaded. Else it will assume it is a file
      * reference. The configuration file or resource will be loaded only if the postfix of its name ends
-     * with `.yaml`.</li>
-     * <li>it checks if a hazelcast-client.yaml is available in the working dir</li>
-     * <li>it checks if a hazelcast-client.yaml is available on the classpath</li>
-     * <li>it loads the hazelcast-client-default.yaml</li>
+     * with '.yaml'.</li>
+     * <li>it checks if a hazelcast-client-failover.yaml is available in the working dir</li>
+     * <li>it checks if a hazelcast-client-failover.yaml is available on the classpath</li>
      * </ol>
+     * @throws HazelcastException if no failover configuration is found
      */
-    public YamlClientConfigBuilder() {
-        this((YamlClientConfigLocator) null);
+    public YamlClientFailoverConfigBuilder() {
+        this((YamlClientFailoverConfigLocator) null);
     }
 
     /**
-     * Constructs a {@link YamlClientConfigBuilder} that loads the configuration
-     * with the provided {@link YamlClientConfigLocator}.
+     * Constructs a {@link YamlClientFailoverConfigBuilder} that loads the configuration
+     * with the provided {@link YamlClientFailoverConfigLocator}.
      * <p/>
-     * If the provided {@link YamlClientConfigLocator} is {@code null}, a new
+     * If the provided {@link YamlClientFailoverConfigLocator} is {@code null}, a new
      * instance is created and the config is located in every possible
-     * places. For these places, please see {@link YamlClientConfigLocator}.
+     * places. For these places, please see {@link YamlClientFailoverConfigLocator}.
      * <p/>
-     * If the provided {@link YamlClientConfigLocator} is not {@code null}, it
+     * If the provided {@link YamlClientFailoverConfigLocator} is not {@code null}, it
      * is expected that it already located the configuration YAML to load
      * from. No further attempt to locate the configuration YAML is made
      * if the configuration YAML is not located already.
      *
      * @param locator the configured locator to use
+     * @throws HazelcastException if no failover configuration is found
      */
-    public YamlClientConfigBuilder(YamlClientConfigLocator locator) {
+    public YamlClientFailoverConfigBuilder(YamlClientFailoverConfigLocator locator) {
         if (locator == null) {
-            locator = new YamlClientConfigLocator();
+            locator = new YamlClientFailoverConfigLocator();
             locator.locateEverywhere();
+        }
+
+        if (!locator.isConfigPresent()) {
+            throw new HazelcastException("Failed to load ClientFailoverConfig");
         }
 
         this.in = locator.getIn();
     }
 
-    public ClientConfig build() {
-        return build(Thread.currentThread().getContextClassLoader());
-    }
-
-    public ClientConfig build(ClassLoader classLoader) {
-        ClientConfig clientConfig = new ClientConfig();
-        build(clientConfig, classLoader);
-        return clientConfig;
+    public ClientFailoverConfig build() {
+        ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
+        build(clientFailoverConfig);
+        return clientFailoverConfig;
     }
 
     public void setProperties(Properties properties) {
         setPropertiesInternal(properties);
     }
 
-    void build(ClientConfig clientConfig, ClassLoader classLoader) {
-        clientConfig.setClassLoader(classLoader);
+    void build(ClientFailoverConfig clientFailoverConfig) {
         try {
-            parseAndBuildConfig(clientConfig);
+            parseAndBuildConfig(clientFailoverConfig);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         } finally {
@@ -130,7 +132,7 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
         }
     }
 
-    private void parseAndBuildConfig(ClientConfig config) throws Exception {
+    private void parseAndBuildConfig(ClientFailoverConfig config) throws Exception {
         YamlMapping yamlRootNode;
         try {
             yamlRootNode = ((YamlMapping) YamlLoader.load(in));
@@ -138,23 +140,24 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
         }
 
-        YamlNode clientRoot = yamlRootNode.childAsMapping(ClientConfigSections.HAZELCAST_CLIENT.name);
-        if (clientRoot == null) {
-            throw new InvalidConfigurationException("No mapping with hazelcast-client key is found in the provided "
-                    + "configuration");
+        String configRoot = getConfigRoot();
+        YamlNode clientFailoverRoot = yamlRootNode.childAsMapping(configRoot);
+        if (clientFailoverRoot == null) {
+            String message = String.format("No mapping with %s key is found in the provided configuration", configRoot);
+            throw new InvalidConfigurationException(message);
         }
 
-        YamlDomChecker.check(clientRoot);
+        YamlDomChecker.check(clientFailoverRoot);
 
-        Node w3cRootNode = asW3cNode(clientRoot);
+        Node w3cRootNode = asW3cNode(clientFailoverRoot);
         replaceVariables(w3cRootNode);
-        importDocuments(clientRoot);
+        importDocuments(clientFailoverRoot);
 
-        new YamlClientDomConfigProcessor(true, config).buildConfig(w3cRootNode);
+        new YamlClientFailoverDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }
 
     @Override
     protected String getConfigRoot() {
-        return ClientConfigSections.HAZELCAST_CLIENT.name;
+        return ClientFailoverConfigSections.CLIENT_FAILOVER.name;
     }
 }

@@ -1,0 +1,5 @@
+hazelcast-client-failover:
+  try-count: 4
+  clients:
+    - hazelcast-client-c1.yaml
+    - hazelcast-client-c2.yaml

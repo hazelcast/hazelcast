@@ -19,9 +19,12 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -32,77 +35,73 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverConfigBuilderTest {
+public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverConfigBuilderTest {
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     @Before
     public void init() throws Exception {
-        URL schemaResource = XmlClientFailoverConfigBuilderTest.class.
-                getClassLoader().getResource("hazelcast-client-failover-sample.xml");
-        fullClientConfig = new XmlClientFailoverConfigBuilder(schemaResource).build();
+        URL schemaResource = YamlClientFailoverConfigBuilderTest.class.getClassLoader()
+                                                                      .getResource("hazelcast-client-failover-sample.yaml");
+        fullClientConfig = new YamlClientFailoverConfigBuilder(schemaResource).build();
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidRootElement() {
-        String xml = "<hazelcast>"
-                + "<group>"
-                + "<name>dev</name>"
-                + "<password>clusterpass</password>"
-                + "</group>"
-                + "</hazelcast>";
-        buildConfig(xml);
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  group:\n"
+                + "    name: dev\n"
+                + "    password: clusterpass";
+        buildConfig(yaml);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testExpectsAtLeastOneConfig() {
-        String xml = "<hazelcast-client-failover>"
-                + "    <clients>"
-                + "    </clients>"
-                + "</hazelcast-client-failover>";
-        Properties properties = new Properties();
-        properties.setProperty("try-count", "11");
-        ClientFailoverConfig config = buildConfig(xml, properties);
-        assertEquals(11, config.getTryCount());
+        String yaml = ""
+                + "hazelcast-client-failover:\n"
+                + "  clients: {}";
+
+        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client-failover/clients"));
+        buildConfig(yaml);
     }
 
     @Override
     @Test
     public void testVariableReplacementFromProperties() {
-        String xml = ""
-                + "<hazelcast-client-failover>"
-                + "  <clients>"
-                + "    <client>hazelcast-client-c1.xml</client>\n"
-                + "    <client>hazelcast-client-c2.xml</client>\n"
-                + "  </clients>"
-                + "  <try-count>${try-count}</try-count>"
-                + "</hazelcast-client-failover>";
+        String yaml = ""
+                + "hazelcast-client-failover:\n"
+                + "  clients:\n"
+                + "    - hazelcast-client-c1.yaml\n"
+                + "    - hazelcast-client-c2.yaml\n"
+                + "  try-count: ${try-count}";
 
         Properties properties = new Properties();
         properties.setProperty("try-count", "11");
-        ClientFailoverConfig config = buildConfig(xml, properties);
+        ClientFailoverConfig config = buildConfig(yaml, properties);
         assertEquals(11, config.getTryCount());
     }
 
     @Override
     @Test
     public void testVariableReplacementFromSystemProperties() {
-        String xml = ""
-                + "<hazelcast-client-failover>"
-                + "  <clients>"
-                + "    <client>hazelcast-client-c1.xml</client>\n"
-                + "    <client>hazelcast-client-c2.xml</client>\n"
-                + "  </clients>"
-                + "  <try-count>${try-count}</try-count>"
-                + "</hazelcast-client-failover>";
+        String yaml = ""
+                + "hazelcast-client-failover:\n"
+                + "  clients:\n"
+                + "    - hazelcast-client-c1.yaml\n"
+                + "    - hazelcast-client-c2.yaml\n"
+                + "  try-count: ${try-count}";
 
         System.setProperty("try-count", "11");
-        ClientFailoverConfig config = buildConfig(xml);
+        ClientFailoverConfig config = buildConfig(yaml);
         assertEquals(11, config.getTryCount());
     }
 
     @Override
     @Test
     public void testWithClasspathConfig() {
-        ClientFailoverConfig config = new ClientFailoverClasspathXmlConfig("hazelcast-client-failover-sample.xml");
+        ClientFailoverConfig config = new ClientFailoverClasspathYamlConfig("hazelcast-client-failover-sample.yaml");
         assertSampleFailoverConfig(config);
     }
 
@@ -110,14 +109,15 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
     @Test
     public void testVariableReplacementFromSystemPropertiesWithClasspathConfig() {
         System.setProperty("try-count", "13");
-        ClientFailoverConfig config = new ClientFailoverClasspathXmlConfig("hazelcast-client-failover-sample-with-variable.xml");
+        ClientFailoverConfig config = new ClientFailoverClasspathYamlConfig(
+                "hazelcast-client-failover-sample-with-variable.yaml");
         assertEquals(13, config.getTryCount());
     }
 
     @Override
     @Test
     public void loadingThroughSystemProperty_existingClasspathResource() {
-        System.setProperty("hazelcast.client.failover.config", "classpath:hazelcast-client-failover-sample.xml");
+        System.setProperty("hazelcast.client.failover.config", "classpath:hazelcast-client-failover-sample.yaml");
 
         ClientFailoverConfig config = buildConfig();
         assertSampleFailoverConfig(config);
@@ -125,20 +125,19 @@ public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverCo
 
     @Override
     ClientFailoverConfig buildConfig() {
-        return new XmlClientFailoverConfigBuilder().build();
+        return new YamlClientFailoverConfigBuilder().build();
     }
 
     private static ClientFailoverConfig buildConfig(String yaml) {
         return buildConfig(yaml, null);
     }
 
-    private static ClientFailoverConfig buildConfig(String xml, Properties properties) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientFailoverConfigBuilder configBuilder = new XmlClientFailoverConfigBuilder(bis);
+    private static ClientFailoverConfig buildConfig(String yaml, Properties properties) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
+        YamlClientFailoverConfigBuilder configBuilder = new YamlClientFailoverConfigBuilder(bis);
         if (properties != null) {
             configBuilder.setProperties(properties);
         }
         return configBuilder.build();
     }
-
 }

@@ -26,23 +26,23 @@ import java.util.Properties;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
- * A {@link ClientConfig} which is initialized by loading an XML configuration file from the classpath.
- *
+ * A {@link ClientFailoverConfig} which is initialized by loading a YAML
+ * configuration file from the classpath.
  */
-public class ClientClasspathXmlConfig extends ClientConfig {
-    private static final ILogger LOGGER = Logger.getLogger(ClientClasspathXmlConfig.class);
+public class ClientFailoverClasspathYamlConfig extends ClientFailoverConfig {
+    private static final ILogger LOGGER = Logger.getLogger(ClientFailoverClasspathYamlConfig.class);
 
     /**
      * Creates a config which is loaded from a classpath resource using the
-     * {@link Thread#currentThread} contextClassLoader. The System.properties are used to resolve variables
-     * in the XML.
+     * {@link Thread#currentThread} contextClassLoader. The System.properties
+     * are used to resolve variables in the YAML.
      *
-     * @param resource the resource, an XML configuration file from the classpath,
+     * @param resource the resource, a YAML configuration file from the classpath,
      *                 without the "classpath:" prefix
      * @throws IllegalArgumentException      if the resource could not be found
-     * @throws InvalidConfigurationException if the XML content is invalid
+     * @throws InvalidConfigurationException if the YAML content is invalid
      */
-    public ClientClasspathXmlConfig(String resource) {
+    public ClientFailoverClasspathYamlConfig(String resource) {
         this(resource, System.getProperties());
     }
 
@@ -50,13 +50,13 @@ public class ClientClasspathXmlConfig extends ClientConfig {
      * Creates a config which is loaded from a classpath resource using the
      * {@link Thread#currentThread} contextClassLoader.
      *
-     * @param resource   the resource, an XML configuration file from the classpath,
+     * @param resource   the resource, a YAML configuration file from the classpath,
      *                   without the "classpath:" prefix
-     * @param properties the Properties to resolve variables in the XML
+     * @param properties the Properties to resolve variables in the YAML
      * @throws IllegalArgumentException      if the resource could not be found or if properties is {@code null}
-     * @throws InvalidConfigurationException if the XML content is invalid
+     * @throws InvalidConfigurationException if the YAML content is invalid
      */
-    public ClientClasspathXmlConfig(String resource, Properties properties) {
+    public ClientFailoverClasspathYamlConfig(String resource, Properties properties) {
         this(Thread.currentThread().getContextClassLoader(), resource, properties);
     }
 
@@ -64,23 +64,23 @@ public class ClientClasspathXmlConfig extends ClientConfig {
      * Creates a config which is loaded from a classpath resource.
      *
      * @param classLoader the ClassLoader used to load the resource
-     * @param resource    the resource, an XML configuration file from the classpath,
+     * @param resource    the resource, a YAML configuration file from the classpath,
      *                    without the "classpath:" prefix
-     * @param properties  the properties used to resolve variables in the XML
+     * @param properties  the properties used to resolve variables in the YAML
      * @throws IllegalArgumentException      if classLoader or resource is {@code null}, or if the resource is not found
-     * @throws InvalidConfigurationException if the XML content is invalid
+     * @throws InvalidConfigurationException if the YAML content is invalid
      */
-    public ClientClasspathXmlConfig(ClassLoader classLoader, String resource, Properties properties) {
+    public ClientFailoverClasspathYamlConfig(ClassLoader classLoader, String resource, Properties properties) {
         checkTrue(classLoader != null, "classLoader can't be null");
         checkTrue(resource != null, "resource can't be null");
         checkTrue(properties != null, "properties can't be null");
 
-        LOGGER.info("Configuring Hazelcast Client from '" + resource + "'.");
+        LOGGER.info("Configuring Hazelcast Client Failover from '" + resource + "'.");
         InputStream in = classLoader.getResourceAsStream(resource);
         checkTrue(in != null, "Specified resource '" + resource + "' could not be found!");
 
-        XmlClientConfigBuilder xmlClientConfigBuilder = new XmlClientConfigBuilder(in);
-        xmlClientConfigBuilder.setProperties(properties);
-        xmlClientConfigBuilder.build(this, classLoader);
+        YamlClientFailoverConfigBuilder configBuilder = new YamlClientFailoverConfigBuilder(in);
+        configBuilder.setProperties(properties);
+        configBuilder.build(this);
     }
 }

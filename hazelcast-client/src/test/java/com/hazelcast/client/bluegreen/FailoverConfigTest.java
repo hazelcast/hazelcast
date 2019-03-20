@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.bluegreen;
 
-
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;

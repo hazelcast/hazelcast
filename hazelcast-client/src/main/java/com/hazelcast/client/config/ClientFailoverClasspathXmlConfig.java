@@ -26,23 +26,23 @@ import java.util.Properties;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
- * A {@link ClientConfig} which is initialized by loading an XML configuration file from the classpath.
- *
+ * A {@link ClientFailoverConfig} which is initialized by loading an XML
+ * configuration file from the classpath.
  */
-public class ClientClasspathXmlConfig extends ClientConfig {
-    private static final ILogger LOGGER = Logger.getLogger(ClientClasspathXmlConfig.class);
+public class ClientFailoverClasspathXmlConfig extends ClientFailoverConfig {
+    private static final ILogger LOGGER = Logger.getLogger(ClientFailoverClasspathXmlConfig.class);
 
     /**
      * Creates a config which is loaded from a classpath resource using the
-     * {@link Thread#currentThread} contextClassLoader. The System.properties are used to resolve variables
-     * in the XML.
+     * {@link Thread#currentThread} contextClassLoader. The System.properties
+     * are used to resolve variables in the XML.
      *
      * @param resource the resource, an XML configuration file from the classpath,
      *                 without the "classpath:" prefix
      * @throws IllegalArgumentException      if the resource could not be found
      * @throws InvalidConfigurationException if the XML content is invalid
      */
-    public ClientClasspathXmlConfig(String resource) {
+    public ClientFailoverClasspathXmlConfig(String resource) {
         this(resource, System.getProperties());
     }
 
@@ -56,7 +56,7 @@ public class ClientClasspathXmlConfig extends ClientConfig {
      * @throws IllegalArgumentException      if the resource could not be found or if properties is {@code null}
      * @throws InvalidConfigurationException if the XML content is invalid
      */
-    public ClientClasspathXmlConfig(String resource, Properties properties) {
+    public ClientFailoverClasspathXmlConfig(String resource, Properties properties) {
         this(Thread.currentThread().getContextClassLoader(), resource, properties);
     }
 
@@ -70,17 +70,17 @@ public class ClientClasspathXmlConfig extends ClientConfig {
      * @throws IllegalArgumentException      if classLoader or resource is {@code null}, or if the resource is not found
      * @throws InvalidConfigurationException if the XML content is invalid
      */
-    public ClientClasspathXmlConfig(ClassLoader classLoader, String resource, Properties properties) {
+    public ClientFailoverClasspathXmlConfig(ClassLoader classLoader, String resource, Properties properties) {
         checkTrue(classLoader != null, "classLoader can't be null");
         checkTrue(resource != null, "resource can't be null");
         checkTrue(properties != null, "properties can't be null");
 
-        LOGGER.info("Configuring Hazelcast Client from '" + resource + "'.");
+        LOGGER.info("Configuring Hazelcast Client Failover from '" + resource + "'.");
         InputStream in = classLoader.getResourceAsStream(resource);
         checkTrue(in != null, "Specified resource '" + resource + "' could not be found!");
 
-        XmlClientConfigBuilder xmlClientConfigBuilder = new XmlClientConfigBuilder(in);
-        xmlClientConfigBuilder.setProperties(properties);
-        xmlClientConfigBuilder.build(this, classLoader);
+        XmlClientFailoverConfigBuilder configBuilder = new XmlClientFailoverConfigBuilder(in);
+        configBuilder.setProperties(properties);
+        configBuilder.build(this);
     }
 }

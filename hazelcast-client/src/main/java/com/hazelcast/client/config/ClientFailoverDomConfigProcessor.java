@@ -31,7 +31,7 @@ import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
 
 class ClientFailoverDomConfigProcessor extends AbstractDomConfigProcessor {
 
-    private final ClientFailoverConfig clientFailoverConfig;
+    protected final ClientFailoverConfig clientFailoverConfig;
 
     ClientFailoverDomConfigProcessor(boolean domLevel3, ClientFailoverConfig clientFailoverConfig) {
         super(domLevel3);
@@ -43,16 +43,16 @@ class ClientFailoverDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node node : childElements(rootNode)) {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
-                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration");
+                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in the configuration");
             }
-            handleXmlNode(node, nodeName);
+            handleNode(node, nodeName);
             if (!canOccurMultipleTimes(nodeName)) {
                 occurrenceSet.add(nodeName);
             }
         }
     }
 
-    private void handleXmlNode(Node node, String nodeName) {
+    private void handleNode(Node node, String nodeName) {
         if (CLIENTS.isEqual(nodeName)) {
             handleClients(node);
         } else if (TRY_COUNT.isEqual(nodeName)) {
@@ -60,7 +60,7 @@ class ClientFailoverDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void handleClients(Node node) {
+    protected void handleClients(Node node) {
         for (Node child : childElements(node)) {
             if ("client".equals(cleanNodeName(child))) {
                 String clientPath = getTextContent(child);

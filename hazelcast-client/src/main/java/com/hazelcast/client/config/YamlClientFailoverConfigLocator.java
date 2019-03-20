@@ -19,24 +19,24 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.AbstractConfigLocator;
 
 /**
- * A support class for the {@link XmlClientFailoverConfigBuilder} to
- * locate the client failover XML configuration.
+ * A support class for the {@link YamlClientFailoverConfigBuilder} to
+ * locate the client failover YAML configuration.
  */
-public class XmlClientFailoverConfigLocator extends AbstractConfigLocator {
+public class YamlClientFailoverConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.client.failover.config", "xml");
+        return loadFromSystemProperty("hazelcast.client.failover.config", "yaml");
     }
 
     @Override
     protected boolean locateInWorkDir() {
-        return loadFromWorkingDirectory("hazelcast-client-failover.xml");
+        return loadFromWorkingDirectory("hazelcast-client-failover.yaml");
     }
 
     @Override
     protected boolean locateOnClasspath() {
-        return loadConfigurationFromClasspath("hazelcast-client-failover.xml");
+        return loadConfigurationFromClasspath("hazelcast-client-failover.yaml");
     }
 
     @Override

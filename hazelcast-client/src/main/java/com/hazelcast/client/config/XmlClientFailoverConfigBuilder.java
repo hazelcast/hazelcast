@@ -34,7 +34,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Properties;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -47,23 +50,17 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
 
     public XmlClientFailoverConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
-        if (url == null) {
-            throw new IllegalArgumentException("Could not load " + resource);
-        }
+        checkTrue(url != null, "Could not load " + resource);
         this.in = url.openStream();
     }
 
     public XmlClientFailoverConfigBuilder(File file) throws IOException {
-        if (file == null) {
-            throw new NullPointerException("File is null!");
-        }
+        checkNotNull(file, "File is null!");
         this.in = new FileInputStream(file);
     }
 
     public XmlClientFailoverConfigBuilder(URL url) throws IOException {
-        if (url == null) {
-            throw new NullPointerException("URL is null!");
-        }
+        checkNotNull(url, "URL is null!");
         this.in = url.openStream();
     }
 
@@ -72,17 +69,42 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
     }
 
     /**
-     * Loads the client config using the following resolution mechanism:
+     * Loads the client failover config using the following resolution mechanism:
      * <ol>
-     * <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
-     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     * <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and
+     * it begins with 'classpath:', then a classpath resource is loaded. Else it will assume it is a file
+     * reference. The configuration file or resource will be loaded only if the postfix of its name ends
+     * with '.xml'.</li>
      * <li>it checks if a hazelcast-client-failover.xml is available in the working dir</li>
      * <li>it checks if a hazelcast-client-failover.xml is available on the classpath</li>
-     * <li>if none available build throws HazelcastException </li>
      * </ol>
+     *
+     * @throws HazelcastException if no failover configuration is found
      */
     public XmlClientFailoverConfigBuilder() {
-        XmlClientFailoverConfigLocator locator = new XmlClientFailoverConfigLocator();
+        this((XmlClientFailoverConfigLocator) null);
+    }
+
+    /**
+     * Constructs a {@link XmlClientFailoverConfigBuilder} that loads the configuration
+     * with the provided {@link XmlClientFailoverConfigLocator}.
+     * <p/>
+     * If the provided {@link XmlClientFailoverConfigLocator} is {@code null}, a new
+     * instance is created and the config is located in every possible
+     * places. For these places, please see {@link XmlClientFailoverConfigLocator}.
+     * <p/>
+     * If the provided {@link XmlClientFailoverConfigLocator} is not {@code null}, it
+     * is expected that it already located the configuration XML to load
+     * from. No further attempt to locate the configuration XML is made
+     * if the configuration XML is not located already.
+     *
+     * @param locator the configured locator to use
+     * @throws HazelcastException if no failover configuration is found
+     */
+    public XmlClientFailoverConfigBuilder(XmlClientFailoverConfigLocator locator) {
+        if (locator == null) {
+            locator = new XmlClientFailoverConfigLocator();
+        }
         boolean located = locator.locateEverywhere();
         if (!located) {
             throw new HazelcastException("Failed to load ClientFailoverConfig");
@@ -115,7 +137,10 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
     }
 
     public ClientFailoverConfig build() {
-        ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
+        return build(new ClientFailoverConfig());
+    }
+
+    public ClientFailoverConfig build(ClientFailoverConfig clientFailoverConfig) {
         try {
             parseAndBuildConfig(clientFailoverConfig);
         } catch (Exception e) {
@@ -146,6 +171,10 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
             throw new InvalidConfigurationException("Invalid root element in xml configuration! "
                     + "Expected: <hazelcast-client-failover>, Actual: <" + rootNodeName + ">.");
         }
+    }
+
+    public void setProperties(Properties properties) {
+        setPropertiesInternal(properties);
     }
 }
 
