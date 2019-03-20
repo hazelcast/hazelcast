@@ -24,9 +24,11 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.TestDeserialized;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,6 +42,7 @@ import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -48,6 +51,9 @@ import static org.junit.Assert.assertFalse;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MulticastDeserializationTest {
+
+    @Rule
+    public final OverridePropertyRule ruleSysPropHazelcastLocalAddress = clear("hazelcast.local.localAddress");
 
     private static final int MULTICAST_PORT = 53535;
     private static final String MULTICAST_GROUP = "224.0.0.219";
@@ -108,6 +114,7 @@ public class MulticastDeserializationTest {
         MulticastSocket multicastSocket = null;
         try {
             multicastSocket = new MulticastSocket(MULTICAST_PORT);
+            multicastSocket.setInterface(InetAddress.getLocalHost());
             multicastSocket.setTimeToLive(MULTICAST_TTL);
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
             multicastSocket.joinGroup(group);

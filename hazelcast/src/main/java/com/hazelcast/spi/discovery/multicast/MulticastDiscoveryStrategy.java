@@ -71,6 +71,13 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
             String group = getOrDefault(MulticastProperties.GROUP, DEFAULT_MULTICAST_GROUP);
             multicastSocket = new MulticastSocket(null);
             multicastSocket.bind(new InetSocketAddress(port));
+            if (discoveryNode != null) {
+                // See MulticastService.createMulticastService(...)
+                InetAddress inetAddress = discoveryNode.getPrivateAddress().getInetAddress();
+                if (!inetAddress.isLoopbackAddress()) {
+                    multicastSocket.setInterface(inetAddress);
+                }
+            }
             multicastSocket.setReuseAddress(true);
             multicastSocket.setTimeToLive(SOCKET_TIME_TO_LIVE);
             multicastSocket.setReceiveBufferSize(DATA_OUTPUT_BUFFER_SIZE);
