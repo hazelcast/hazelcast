@@ -19,7 +19,6 @@ package com.hazelcast.client.connection;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.client.spi.ClusterSwitchAwareService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListenable;
@@ -30,7 +29,7 @@ import java.util.Collection;
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
  */
-public interface ClientConnectionManager extends ConnectionListenable, ClusterSwitchAwareService {
+public interface ClientConnectionManager extends ConnectionListenable {
 
     /**
      * Check if client connection manager is alive.
@@ -69,4 +68,6 @@ public interface ClientConnectionManager extends ConnectionListenable, ClusterSw
     ClientConnection getOwnerConnection();
 
     void setCandidateClusterContext(CandidateClusterContext context);
+
+    void beforeClusterSwitch(CandidateClusterContext context);
 }

@@ -786,7 +786,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterConnectorService.shutdown();
         clientDiscoveryService.shutdown();
         clusterService.shutdown();
-        partitionService.stop();
+        partitionService.reset();
         transactionManager.shutdown();
         invocationService.shutdown();
         executionService.shutdown();

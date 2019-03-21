@@ -19,7 +19,6 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientPartitionListenerService;
-import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
@@ -194,7 +193,7 @@ public final class ClientPartitionServiceImpl
         return newPartitions;
     }
 
-    public void stop() {
+    public void reset() {
         partitions = Collections.emptyMap();
     }
 
@@ -230,11 +229,6 @@ public final class ClientPartitionServiceImpl
     @Override
     public Partition getPartition(int partitionId) {
         return new PartitionImpl(partitionId);
-    }
-
-    @Override
-    public void beforeClusterSwitch(CandidateClusterContext context) {
-        partitions = Collections.emptyMap();
     }
 
     private final class PartitionImpl implements Partition {

@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.Data;
  *
  * Allows to retrieve information about the partition count, the partition owner or the partitionId of a key.
  */
-public interface ClientPartitionService extends ClusterSwitchAwareService {
+public interface ClientPartitionService {
 
     Address getPartitionOwner(int partitionId);
 
@@ -37,4 +37,5 @@ public interface ClientPartitionService extends ClusterSwitchAwareService {
 
     Partition getPartition(int partitionId);
 
+    void reset();
 }
