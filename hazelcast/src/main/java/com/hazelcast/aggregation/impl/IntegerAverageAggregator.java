@@ -20,10 +20,11 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Numbers;
 
 import java.io.IOException;
 
-public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Integer, Double>
+public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Number, Double>
         implements IdentifiedDataSerializable {
 
     private long sum;
@@ -39,9 +40,9 @@ public final class IntegerAverageAggregator<I> extends AbstractAggregator<I, Int
     }
 
     @Override
-    public void accumulateExtracted(I entry, Integer value) {
+    public void accumulateExtracted(I entry, Number value) {
         count++;
-        sum += value;
+        sum += Numbers.asIntExactly(value);
     }
 
     @Override

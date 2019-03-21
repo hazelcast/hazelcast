@@ -158,6 +158,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public Comparable canonicalizeQueryArgumentScalar(Comparable value) {
+            return delegate.canonicalizeQueryArgumentScalar(value);
+        }
+
+        @Override
         public boolean hasPartitionIndexed(int partitionId) {
             return delegate.hasPartitionIndexed(partitionId);
         }

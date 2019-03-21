@@ -35,7 +35,7 @@ import static java.util.Collections.emptySet;
 public class OrderedIndexStore extends BaseIndexStore {
 
     private final ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>> recordMap =
-            new ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>>();
+            new ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>>(Comparables.COMPARATOR);
 
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
@@ -64,6 +64,21 @@ public class OrderedIndexStore extends BaseIndexStore {
     @Override
     Object removeInternal(Comparable value, Data recordKey) {
         return removeFunctor.invoke(value, recordKey);
+    }
+
+    @Override
+    public Comparable canonicalizeQueryArgumentScalar(Comparable value) {
+        // We still need to canonicalize query arguments for ordered indexes to
+        // support InPredicate queries.
+        return Comparables.canonicalizeForHashLookup(value);
+    }
+
+    @Override
+    public Comparable canonicalizeScalarForStorage(Comparable value) {
+        // Returning the original value since ordered indexes are not supporting
+        // hash lookups on their stored values, so there is no need in providing
+        // canonical representations.
+        return value;
     }
 
     @Override
@@ -134,7 +149,7 @@ public class OrderedIndexStore extends BaseIndexStore {
                     break;
                 case NOT_EQUAL:
                     for (Map.Entry<Comparable, Map<Data, QueryableEntry>> entry : recordMap.entrySet()) {
-                        if (!searchedValue.equals(entry.getKey())) {
+                        if (Comparables.compare(searchedValue, entry.getKey()) != 0) {
                             copyToMultiResultSet(results, entry.getValue());
                         }
                     }
@@ -151,12 +166,11 @@ public class OrderedIndexStore extends BaseIndexStore {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
         takeReadLock();
         try {
-            int order = from.compareTo(to);
+            int order = Comparables.compare(from, to);
             if (order == 0) {
                 if (!fromInclusive || !toInclusive) {
                     return emptySet();

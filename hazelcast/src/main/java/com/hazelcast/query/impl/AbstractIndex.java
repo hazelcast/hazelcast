@@ -161,7 +161,8 @@ public abstract class AbstractIndex implements InternalIndex {
 
         Set<Comparable> convertedValues = createHashSet(values.length);
         for (Comparable value : values) {
-            convertedValues.add(convert(value));
+            Comparable converted = convert(value);
+            convertedValues.add(canonicalizeQueryArgumentScalar(converted));
         }
         Set<QueryableEntry> result = indexStore.getRecords(convertedValues);
         stats.onIndexHit(timestamp, result.size());
@@ -206,6 +207,11 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public void destroy() {
         stats.onClear();
+    }
+
+    @Override
+    public final Comparable canonicalizeQueryArgumentScalar(Comparable value) {
+        return indexStore.canonicalizeQueryArgumentScalar(value);
     }
 
     @Override

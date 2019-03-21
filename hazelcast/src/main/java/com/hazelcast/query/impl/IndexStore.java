@@ -28,6 +28,23 @@ import java.util.Set;
 public interface IndexStore {
 
     /**
+     * Canonicalizes the given value for the purpose of a hash-based lookup.
+     * <p>
+     * The method is used while performing InPredicate queries to canonicalize
+     * the set of values in question, so additional duplicate-eliminating
+     * post-processing step can be avoided.
+     * <p>
+     * The main difference comparing to {@link BaseIndexStore#canonicalizeScalarForStorage}
+     * is that this method is specifically designed to support the
+     * canonicalization of transient non-persistent values (think of query
+     * arguments), so a more efficient representation may chosen.
+     *
+     * @param value the value to canonicalize.
+     * @return the canonicalized value.
+     */
+    Comparable canonicalizeQueryArgumentScalar(Comparable value);
+
+    /**
      * Inserts the given entry into this index store under the given value
      * acting as an index key.
      *
