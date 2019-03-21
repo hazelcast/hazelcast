@@ -367,8 +367,8 @@ public final class Preconditions {
      * @throws IllegalStateException if the time is less that minimum time
      * @throws NullPointerException if {@param leftTimeUnit} or {@param rightTimeUnit} is <code>null</code>
      */
-    public static void checkMinTime(long time, TimeUnit timeUnit, long minTime, TimeUnit minTimeUnit, String message) {
-        if (TimeUtil.compare(time, timeUnit, minTime, minTimeUnit) == -1) {
+    public static void checkMinTimeIfPositive(long time, TimeUnit timeUnit, long minTime, TimeUnit minTimeUnit, String message) {
+        if (time > 0 && TimeUtil.compare(time, timeUnit, minTime, minTimeUnit) == -1) {
             throw new IllegalArgumentException(message);
         }
     }

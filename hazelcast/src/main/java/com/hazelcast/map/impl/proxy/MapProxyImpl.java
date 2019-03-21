@@ -91,7 +91,7 @@ import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.new
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkMinTime;
+import static com.hazelcast.util.Preconditions.checkMinTimeIfPositive;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -145,7 +145,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTime(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS, MAX_IDLE_TIME_IS_TOO_SMALL);
+        checkMinTimeIfPositive(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS,
+                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         Data valueData = toData(value);
         Data result = putInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
@@ -185,7 +186,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTime(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS, MAX_IDLE_TIME_IS_TOO_SMALL);
+        checkMinTimeIfPositive(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS,
+                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         Data valueData = toData(value);
         Data result = putIfAbsentInternal(key, valueData, ttl, timeunit, maxIdle, maxIdleUnit);
@@ -210,7 +212,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTime(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS, MAX_IDLE_TIME_IS_TOO_SMALL);
+        checkMinTimeIfPositive(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS,
+                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         Data valueData = toData(value);
         putTransientInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
@@ -259,7 +262,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTime(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS, MAX_IDLE_TIME_IS_TOO_SMALL);
+        checkMinTimeIfPositive(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS,
+                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         Data valueData = toData(value);
         setInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
@@ -384,7 +388,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTime(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS, MAX_IDLE_TIME_IS_TOO_SMALL);
+        checkMinTimeIfPositive(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS,
+                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         Data valueData = toData(value);
         return new DelegatingFuture<V>(
@@ -417,7 +422,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTime(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS, MAX_IDLE_TIME_IS_TOO_SMALL);
+        checkMinTimeIfPositive(maxIdle, maxIdleUnit, MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS, TimeUnit.SECONDS,
+                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         Data valueData = toData(value);
         return new DelegatingFuture<Void>(

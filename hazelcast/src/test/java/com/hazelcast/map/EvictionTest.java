@@ -107,7 +107,7 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testMaxIdle_entryShouldNotBeReachableAfterMaxIdle() {
         final IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value0", 0, SECONDS, 1, SECONDS);
+        map.put(1, "value0", 0, SECONDS, 2, SECONDS);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -182,7 +182,7 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testMaxIdle_zeroIsInfinity() {
         IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value0", 0, SECONDS, 1, SECONDS);
+        map.put(1, "value0", 0, SECONDS, 2, SECONDS);
         map.put(1, "value1", 0, SECONDS, 0, SECONDS);
 
         assertTrue(map.containsKey(1));
@@ -667,7 +667,7 @@ public class EvictionTest extends HazelcastTestSupport {
     @Test
     public void testMapRecordIdleEviction() {
         String mapName = randomMapName("testMapRecordIdleEviction");
-        int maxIdleSeconds = 1;
+        int maxIdleSeconds = 2;
         int size = 100;
 
         MapConfig mapConfig = newMapConfig(mapName)
@@ -1018,7 +1018,7 @@ public class EvictionTest extends HazelcastTestSupport {
     @Test
     @Category(NightlyTest.class)
     public void testNumberOfEventsFired_withMaxIdleSeconds_whenReadBackupDataEnabled() {
-        int maxIdleSeconds = 1;
+        int maxIdleSeconds = 2;
         int numberOfEntriesToBeAdded = 1000;
 
         final AtomicInteger count = new AtomicInteger(0);
@@ -1038,7 +1038,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, i);
         }
         // wait some time for idle expiration
-        sleepAtLeastSeconds(2);
+        sleepAtLeastSeconds(3);
 
         for (int i = 0; i < numberOfEntriesToBeAdded; i++) {
             map.get(i);
