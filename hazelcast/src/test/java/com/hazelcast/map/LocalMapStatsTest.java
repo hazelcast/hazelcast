@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,7 +36,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -44,7 +44,6 @@ import static org.junit.Assert.assertTrue;
 public class LocalMapStatsTest extends HazelcastTestSupport {
 
     static final int OPERATION_COUNT = 10;
-    static final int DEFAULT_PARTITION_COUNT = Integer.valueOf(PARTITION_COUNT.getDefaultValue());
 
     HazelcastInstance instance;
     private String mapName = "mapName";
@@ -54,7 +53,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         instance = createHazelcastInstance(getConfig());
     }
 
-    protected LocalMapStats geMapStats() {
+    protected LocalMapStats getMapStats() {
         return instance.getMap(mapName).getLocalMapStats();
     }
 
@@ -70,7 +69,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = geMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getHits());
     }
 
@@ -81,7 +80,19 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = geMapStats();
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(100, localMapStats.getPutOperationCount());
+        assertEquals(100, localMapStats.getHits());
+    }
+
+    @Test
+    public void testPutIfAbsentAndHitsGenerated() throws Exception {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.putIfAbsent(i, i);
+            map.get(i);
+        }
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getPutOperationCount());
         assertEquals(100, localMapStats.getHits());
     }
@@ -92,7 +103,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; i++) {
             map.putAsync(i, i);
         }
-        final LocalMapStats localMapStats = geMapStats();
+        final LocalMapStats localMapStats = getMapStats();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -109,7 +120,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = geMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getGetOperationCount());
         assertEquals(100, localMapStats.getHits());
     }
@@ -123,7 +134,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             putMap.put(100 + i, 100 + i);
             map.putAll(putMap);
         }
-        LocalMapStats localMapStats = geMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(200, localMapStats.getPutOperationCount());
     }
 
@@ -139,7 +150,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             keys.add(100 + i);
             map.getAll(keys);
         }
-        LocalMapStats localMapStats = geMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(200, localMapStats.getGetOperationCount());
     }
 
@@ -155,7 +166,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                final LocalMapStats localMapStats = geMapStats();
+                final LocalMapStats localMapStats = getMapStats();
                 assertEquals(100, localMapStats.getGetOperationCount());
                 assertEquals(100, localMapStats.getHits());
             }
@@ -169,9 +180,20 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.put(i, i);
             map.delete(i);
         }
-        LocalMapStats localMapStats = geMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getRemoveOperationCount());
     }
+
+    @Test
+    public void testSet() throws Exception {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.set(i, i);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(100, localMapStats.getPutOperationCount());
+    }
+
 
     @Test
     public void testRemove() throws Exception {
@@ -180,7 +202,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.put(i, i);
             map.remove(i);
         }
-        LocalMapStats localMapStats = geMapStats();
+        LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getRemoveOperationCount());
     }
 
@@ -191,7 +213,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.put(i, i);
             map.removeAsync(i);
         }
-        final LocalMapStats localMapStats = geMapStats();
+        final LocalMapStats localMapStats = getMapStats();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -209,7 +231,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.put(i, i);
             map.get(i);
         }
-        final LocalMapStats localMapStats = geMapStats();
+        final LocalMapStats localMapStats = getMapStats();
         final long initialHits = localMapStats.getHits();
 
         new Thread(new Runnable() {
@@ -218,7 +240,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                 for (int i = 0; i < actionCount; i++) {
                     map.get(i);
                 }
-                geMapStats(); // causes the local stats object to update
+                getMapStats(); // causes the local stats object to update
             }
         }).start();
 
@@ -242,12 +264,12 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         map.put(key, "value");
         map.get(key);
 
-        long lastAccessTime = geMapStats().getLastAccessTime();
+        long lastAccessTime = getMapStats().getLastAccessTime();
         assertTrue(lastAccessTime >= startTime);
 
         Thread.sleep(5);
         map.put(key, "value2");
-        long lastAccessTime2 = geMapStats().getLastAccessTime();
+        long lastAccessTime2 = getMapStats().getLastAccessTime();
         assertTrue(lastAccessTime2 > lastAccessTime);
     }
 
@@ -260,7 +282,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         map.put(key, "value");
         map.put(key, "value");
 
-        final LocalMapStats localMapStats = geMapStats();
+        final LocalMapStats localMapStats = getMapStats();
         final long lastUpdateTime = localMapStats.getLastUpdateTime();
 
         new Thread(new Runnable() {
@@ -268,7 +290,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             public void run() {
                 sleepAtLeastMillis(1);
                 map.put(key, "value2");
-                geMapStats(); // causes the local stats object to update
+                getMapStats(); // causes the local stats object to update
             }
         }).start();
 
@@ -288,7 +310,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         map.put("key", "value");
         map.evictAll();
 
-        final long heapCost = geMapStats().getHeapCost();
+        final long heapCost = getMapStats().getHeapCost();
 
         assertEquals(0L, heapCost);
     }
@@ -302,7 +324,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.containsKey(i);
         }
 
-        LocalMapStats stats = geMapStats();
+        LocalMapStats stats = getMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
@@ -314,7 +336,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.entrySet();
         }
 
-        LocalMapStats stats = geMapStats();
+        LocalMapStats stats = getMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
@@ -326,7 +348,19 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.keySet();
         }
 
-        LocalMapStats stats = geMapStats();
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testOtherOperationCount_localKeySet() {
+        Map map = getMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+            ((IMap) map).localKeySet();
+        }
+
+        LocalMapStats stats = getMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
@@ -338,7 +372,21 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.values();
         }
 
-        LocalMapStats stats = geMapStats();
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
+    }
+
+
+    @Test
+    public void testOtherOperationCount_valuesWithPredicate() {
+        Map map = getMap();
+
+        for (int i = 0; i < OPERATION_COUNT; i++) {
+
+            ((IMap) map).values(Predicates.lessThan("this", 0));
+        }
+
+        LocalMapStats stats = getMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
@@ -350,7 +398,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.clear();
         }
 
-        LocalMapStats stats = geMapStats();
+        LocalMapStats stats = getMapStats();
         assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
@@ -362,8 +410,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.containsValue(1);
         }
 
-        LocalMapStats stats = geMapStats();
-        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
@@ -374,8 +422,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.isEmpty();
         }
 
-        LocalMapStats stats = geMapStats();
-        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 
     @Test
@@ -386,7 +434,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.size();
         }
 
-        LocalMapStats stats = geMapStats();
-        assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+        LocalMapStats stats = getMapStats();
+        assertEquals(OPERATION_COUNT, stats.getOtherOperationCount());
     }
 }

@@ -16,9 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
@@ -37,11 +35,6 @@ public class MapSizeOperation extends MapOperation implements PartitionAwareOper
     public void run() {
         recordStore.checkIfLoaded();
         size = recordStore.size();
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-            LocalMapStatsImpl localMapStatsImpl = localMapStatsProvider.getLocalMapStatsImpl(name);
-            localMapStatsImpl.incrementOtherOperations();
-        }
     }
 
     @Override

@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
@@ -90,8 +89,6 @@ public class QueryRunner {
         QueryableEntriesSegment entries = partitionScanExecutor
                 .execute(query.getMapName(), predicate, partitionId, tableIndex, fetchSize);
 
-        updateStatistics(mapContainer);
-
         ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
         Result result = processor.populateResult(query, Long.MAX_VALUE, entries.getEntries(), singletonList(partitionId));
 
@@ -128,7 +125,6 @@ public class QueryRunner {
             result = populateNonEmptyResult(query, entries, initialPartitions);
         }
 
-        updateStatistics(mapContainer);
         return result;
     }
 
@@ -175,7 +171,6 @@ public class QueryRunner {
             result = populateNonEmptyResult(query, entries, initialPartitions);
         }
 
-        updateStatistics(mapContainer);
         return result;
     }
 
@@ -204,7 +199,6 @@ public class QueryRunner {
             result = populateNonEmptyResult(query, entries, partitions);
         }
 
-        updateStatistics(mapContainer);
         return result;
     }
 
@@ -299,12 +293,5 @@ public class QueryRunner {
 
     private boolean validateMigrationStamp(int migrationStamp) {
         return mapServiceContext.getService().validateMigrationStamp(migrationStamp);
-    }
-
-    private void updateStatistics(MapContainer mapContainer) {
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            LocalMapStatsImpl localStats = localMapStatsProvider.getLocalMapStatsImpl(mapContainer.getName());
-            localStats.incrementOtherOperations();
-        }
     }
 }

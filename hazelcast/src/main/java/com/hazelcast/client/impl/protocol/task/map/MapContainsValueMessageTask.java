@@ -29,6 +29,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
+import static com.hazelcast.map.impl.LocalMapStatsUtil.incrementOtherOperationsCount;
+
 public class MapContainsValueMessageTask
         extends AbstractMapAllPartitionsMessageTask<MapContainsValueCodec.RequestParameters> {
 
@@ -51,6 +53,7 @@ public class MapContainsValueMessageTask
                 break;
             }
         }
+        incrementOtherOperationsCount((MapService) getService(MapService.SERVICE_NAME), parameters.name);
         return result;
     }
 

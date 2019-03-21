@@ -51,8 +51,13 @@ public class ClientMapStatsTest extends LocalMapStatsTest {
     }
 
     @Override
-    protected LocalMapStats geMapStats() {
+    protected LocalMapStats getMapStats() {
         return member.getMap(mapName).getLocalMapStats();
+    }
+
+    @Override
+    public void testOtherOperationCount_localKeySet() {
+        // localKeySet is not supported on client
     }
 
     @Override
