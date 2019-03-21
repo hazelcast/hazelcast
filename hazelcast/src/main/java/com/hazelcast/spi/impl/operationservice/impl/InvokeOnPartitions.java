@@ -85,6 +85,9 @@ final class InvokeOnPartitions {
      * Executes all the operations on the partitions.
      */
     <T> Map<Integer, T> invoke() throws Exception {
+        if (Thread.currentThread().getName().contains(".async.thread-")) {
+            throw new RuntimeException("Cannot execute on async thread");
+        }
         return this.<T>invokeAsync().get();
     }
 
