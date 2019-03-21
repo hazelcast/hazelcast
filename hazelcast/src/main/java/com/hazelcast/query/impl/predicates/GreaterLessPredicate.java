@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
@@ -55,7 +56,6 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         this.less = less;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
@@ -63,7 +63,7 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         }
         Comparable givenValue = convert(attributeValue, value);
         attributeValue = (Comparable) convertEnumValue(attributeValue);
-        int result = attributeValue.compareTo(givenValue);
+        int result = Comparables.compare(attributeValue, givenValue);
         return equal && result == 0 || (less ? (result < 0) : (result > 0));
     }
 

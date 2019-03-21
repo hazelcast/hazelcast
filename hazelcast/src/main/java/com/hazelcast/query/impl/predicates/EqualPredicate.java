@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -63,7 +64,7 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
         }
         value = convert(attributeValue, value);
         attributeValue = (Comparable) convertEnumValue(attributeValue);
-        return attributeValue.equals(value);
+        return Comparables.equal(attributeValue, value);
     }
 
     @Override

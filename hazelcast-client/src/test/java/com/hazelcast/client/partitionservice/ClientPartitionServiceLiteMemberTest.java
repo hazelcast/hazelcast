@@ -31,7 +31,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -55,7 +57,8 @@ public class ClientPartitionServiceLiteMemberTest {
 
         final HazelcastInstance client = factory.newHazelcastClient();
         final ClientPartitionService clientPartitionService = getClientPartitionService(client);
-        clientPartitionService.getPartitionOwner(0);
+        assertNull(clientPartitionService.getPartitionOwner(0));
+        clientPartitionService.getPartitionCount();
     }
 
     @Test
@@ -65,6 +68,7 @@ public class ClientPartitionServiceLiteMemberTest {
 
         final HazelcastInstance client = factory.newHazelcastClient();
         final ClientPartitionService clientPartitionService = getClientPartitionService(client);
+        assertNotEquals(0, clientPartitionService.getPartitionCount());
         assertNotNull(clientPartitionService.getPartitionOwner(0));
     }
 

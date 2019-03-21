@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.spi;
+package com.hazelcast.test.starter.constructor;
 
-import com.hazelcast.client.impl.clientside.CandidateClusterContext;
+import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
-/**
- * Client side services that needs to take action before attempting to connect a new cluster
- */
-public interface ClusterSwitchAwareService {
+@SuppressWarnings("unused")
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.aggregation.impl.DistinctValuesAggregator"})
+public class DistinctValuesAggregatorConstructor extends AbstractStarterObjectConstructor {
 
-    void beforeClusterSwitch(CandidateClusterContext context);
+    public DistinctValuesAggregatorConstructor(Class<?> targetClass) {
+        super(targetClass);
+    }
+
+    @Override
+    Object createNew0(Object delegate) throws Exception {
+        return targetClass.newInstance();
+    }
 
 }

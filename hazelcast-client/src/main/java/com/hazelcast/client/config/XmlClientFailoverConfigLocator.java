@@ -18,7 +18,11 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
 
-class XmlClientFailoverConfigLocator extends AbstractConfigLocator {
+/**
+ * A support class for the {@link XmlClientFailoverConfigBuilder} to
+ * locate the client failover XML configuration.
+ */
+public class XmlClientFailoverConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {

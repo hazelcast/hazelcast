@@ -160,8 +160,11 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         CompositeValue that = (CompositeValue) o;
+
+        // We are not using Comparables.equal here since an externally
+        // canonicalized composite value is expected here, otherwise we can't
+        // guarantee hashCode is working properly.
         return Arrays.equals(components, that.components);
     }
 
@@ -217,7 +220,7 @@ public final class CompositeValue implements Comparable<CompositeValue>, Identif
         if (rhs == NULL || rhs == NEGATIVE_INFINITY || rhs == POSITIVE_INFINITY) {
             return -signum(rhs.compareTo(lhs));
         } else {
-            return lhs.compareTo(rhs);
+            return Comparables.compare(lhs, rhs);
         }
     }
 

@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -37,8 +38,8 @@ public class InMemoryYamlConfig extends Config {
      * in the YAML.
      *
      * @param yaml the YAML content as a Hazelcast YAML String
-     * @throws IllegalArgumentException              if the YAML is null or empty
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws IllegalArgumentException      if the YAML is null or empty
+     * @throws InvalidConfigurationException if the YAML content is invalid
      */
     public InMemoryYamlConfig(String yaml) {
         this(yaml, System.getProperties());
@@ -48,17 +49,15 @@ public class InMemoryYamlConfig extends Config {
      * Creates a Config from the provided YAML string and properties to resolve the variables in the YAML.
      *
      * @param yaml the YAML content as a Hazelcast YAML String
-     * @throws IllegalArgumentException              if the YAML is null or empty or if properties is null
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws IllegalArgumentException      if the YAML is null or empty or if properties is null
+     * @throws InvalidConfigurationException if the YAML content is invalid
      */
     public InMemoryYamlConfig(String yaml, Properties properties) {
         LOGGER.info("Configuring Hazelcast from 'in-memory YAML'.");
         if (isNullOrEmptyAfterTrim(yaml)) {
             throw new IllegalArgumentException("YAML configuration is null or empty! Please use a well-structured YAML.");
         }
-        if (properties == null) {
-            throw new IllegalArgumentException("properties can't be null");
-        }
+        checkTrue(properties != null, "properties can't be null");
 
         InputStream in = new ByteArrayInputStream(stringToBytes(yaml));
         new YamlConfigBuilder(in).setProperties(properties).build(this);

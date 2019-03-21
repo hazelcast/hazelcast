@@ -17,10 +17,8 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,27 +26,19 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.net.URL;
-import java.util.List;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class XmlClientFailoverConfigBuilderTest {
-
-    private ClientFailoverConfig fullClientConfig;
+public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverConfigBuilderTest {
 
     @Before
     public void init() throws Exception {
         URL schemaResource = XmlClientFailoverConfigBuilderTest.class.
                 getClassLoader().getResource("hazelcast-client-failover-sample.xml");
         fullClientConfig = new XmlClientFailoverConfigBuilder(schemaResource).build();
-    }
-
-    @After
-    @Before
-    public void beforeAndAfter() {
-        System.clearProperty("hazelcast.client.failover.config");
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -68,47 +58,87 @@ public class XmlClientFailoverConfigBuilderTest {
                 + "    <clients>"
                 + "    </clients>"
                 + "</hazelcast-client-failover>";
-        buildConfig(xml);
+        Properties properties = new Properties();
+        properties.setProperty("try-count", "11");
+        ClientFailoverConfig config = buildConfig(xml, properties);
+        assertEquals(11, config.getTryCount());
     }
 
-    private static void buildConfig(String xml) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientFailoverConfigBuilder configBuilder = new XmlClientFailoverConfigBuilder(bis);
-        configBuilder.build();
+    @Override
+    @Test
+    public void testVariableReplacementFromProperties() {
+        String xml = ""
+                + "<hazelcast-client-failover>"
+                + "  <clients>"
+                + "    <client>hazelcast-client-c1.xml</client>\n"
+                + "    <client>hazelcast-client-c2.xml</client>\n"
+                + "  </clients>"
+                + "  <try-count>${try-count}</try-count>"
+                + "</hazelcast-client-failover>";
+
+        Properties properties = new Properties();
+        properties.setProperty("try-count", "11");
+        ClientFailoverConfig config = buildConfig(xml, properties);
+        assertEquals(11, config.getTryCount());
     }
 
+    @Override
+    @Test
+    public void testVariableReplacementFromSystemProperties() {
+        String xml = ""
+                + "<hazelcast-client-failover>"
+                + "  <clients>"
+                + "    <client>hazelcast-client-c1.xml</client>\n"
+                + "    <client>hazelcast-client-c2.xml</client>\n"
+                + "  </clients>"
+                + "  <try-count>${try-count}</try-count>"
+                + "</hazelcast-client-failover>";
 
-    @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingFile() {
-        System.setProperty("hazelcast.client.failover.config", "idontexist");
-        new XmlClientFailoverConfigBuilder();
+        System.setProperty("try-count", "11");
+        ClientFailoverConfig config = buildConfig(xml);
+        assertEquals(11, config.getTryCount());
     }
 
-    @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingClasspathResource() {
-        System.setProperty("hazelcast.client.failover.config", "classpath:idontexist");
-        new XmlClientFailoverConfigBuilder();
+    @Override
+    @Test
+    public void testWithClasspathConfig() {
+        ClientFailoverConfig config = new ClientFailoverClasspathXmlConfig("hazelcast-client-failover-sample.xml");
+        assertSampleFailoverConfig(config);
     }
 
+    @Override
+    @Test
+    public void testVariableReplacementFromSystemPropertiesWithClasspathConfig() {
+        System.setProperty("try-count", "13");
+        ClientFailoverConfig config = new ClientFailoverClasspathXmlConfig("hazelcast-client-failover-sample-with-variable.xml");
+        assertEquals(13, config.getTryCount());
+    }
+
+    @Override
     @Test
     public void loadingThroughSystemProperty_existingClasspathResource() {
         System.setProperty("hazelcast.client.failover.config", "classpath:hazelcast-client-failover-sample.xml");
 
-        XmlClientFailoverConfigBuilder configBuilder = new XmlClientFailoverConfigBuilder();
-        ClientFailoverConfig config = configBuilder.build();
-        assertEquals(2, config.getClientConfigs().size());
-        assertEquals("cluster1", config.getClientConfigs().get(0).getGroupConfig().getName());
-        assertEquals("cluster2", config.getClientConfigs().get(1).getGroupConfig().getName());
-        assertEquals(4, config.getTryCount());
+        ClientFailoverConfig config = buildConfig();
+        assertSampleFailoverConfig(config);
     }
 
-    @Test
-    public void testClientFailoverConfig() {
-        List<ClientConfig> clientConfigs = fullClientConfig.getClientConfigs();
-        assertEquals(2, clientConfigs.size());
-        assertEquals("cluster1", clientConfigs.get(0).getGroupConfig().getName());
-        assertEquals("cluster2", clientConfigs.get(1).getGroupConfig().getName());
-        assertEquals(4, fullClientConfig.getTryCount());
+    @Override
+    ClientFailoverConfig buildConfig() {
+        return new XmlClientFailoverConfigBuilder().build();
+    }
+
+    private static ClientFailoverConfig buildConfig(String yaml) {
+        return buildConfig(yaml, null);
+    }
+
+    private static ClientFailoverConfig buildConfig(String xml, Properties properties) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlClientFailoverConfigBuilder configBuilder = new XmlClientFailoverConfigBuilder(bis);
+        if (properties != null) {
+            configBuilder.setProperties(properties);
+        }
+        return configBuilder.build();
     }
 
 }

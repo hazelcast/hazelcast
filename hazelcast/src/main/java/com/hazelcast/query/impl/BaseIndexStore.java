@@ -53,6 +53,23 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     /**
+     * Canonicalizes the given value for storing it in this index store.
+     * <p>
+     * The method is used by hash indexes to achieve the canonical
+     * representation of mixed-type numeric values, so {@code equals} and {@code
+     * hashCode} logic can work properly.
+     * <p>
+     * The main difference comparing to {@link IndexStore#canonicalizeQueryArgumentScalar}
+     * is that this method is specifically designed to support the
+     * canonicalization of persistent index values (think of map entry attribute
+     * values), so a more suitable value representation may chosen.
+     *
+     * @param value the value to canonicalize.
+     * @return the canonicalized value.
+     */
+    abstract Comparable canonicalizeScalarForStorage(Comparable value);
+
+    /**
      * Associates the given value in this index store with the given record.
      * <p>
      * Despite the name the given value acts as a key into this index store. In
@@ -183,7 +200,7 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    private static Comparable sanitizeValue(Object input) {
+    private Comparable sanitizeValue(Object input) {
         if (input instanceof CompositeValue) {
             CompositeValue compositeValue = (CompositeValue) input;
             Comparable[] components = compositeValue.getComponents();
@@ -196,7 +213,7 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    private static Comparable sanitizeScalar(Object input) {
+    private Comparable sanitizeScalar(Object input) {
         if (input == null || input instanceof Comparable) {
             Comparable value = (Comparable) input;
             if (value == null) {
@@ -204,7 +221,7 @@ public abstract class BaseIndexStore implements IndexStore {
             } else if (value.getClass().isEnum()) {
                 value = TypeConverters.ENUM_CONVERTER.convert(value);
             }
-            return value;
+            return canonicalizeScalarForStorage(value);
         } else {
             throw new IllegalArgumentException("It is not allowed to use a type that is not Comparable: " + input.getClass());
         }

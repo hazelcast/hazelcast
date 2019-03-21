@@ -35,6 +35,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -48,23 +50,17 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
 
     public XmlClientConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
-        if (url == null) {
-            throw new IllegalArgumentException("Could not load " + resource);
-        }
+        checkTrue(url != null, "Could not load " + resource);
         this.in = url.openStream();
     }
 
     public XmlClientConfigBuilder(File file) throws IOException {
-        if (file == null) {
-            throw new NullPointerException("File is null!");
-        }
+        checkNotNull(file, "File is null!");
         this.in = new FileInputStream(file);
     }
 
     public XmlClientConfigBuilder(URL url) throws IOException {
-        if (url == null) {
-            throw new NullPointerException("URL is null!");
-        }
+        checkNotNull(url, "URL is null!");
         this.in = url.openStream();
     }
 
@@ -75,8 +71,10 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
     /**
      * Loads the client config using the following resolution mechanism:
      * <ol>
-     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and it begins with
-     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and
+     * it begins with 'classpath:', then a classpath resource is loaded. Else it will assume it is a file
+     * reference. The configuration file or resource will be loaded only if the postfix of its name ends
+     * with `.xml`.</li>
      * <li>it checks if a hazelcast-client.xml is available in the working dir</li>
      * <li>it checks if a hazelcast-client.xml is available on the classpath</li>
      * <li>it loads the hazelcast-client-default.xml</li>

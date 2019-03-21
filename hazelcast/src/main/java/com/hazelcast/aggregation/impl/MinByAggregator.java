@@ -20,11 +20,11 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
 
-public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, I>
-        implements IdentifiedDataSerializable {
+public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, I> implements IdentifiedDataSerializable {
 
     private Comparable minValue;
     private I minEntry;
@@ -49,9 +49,10 @@ public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, 
         if (otherValue == null) {
             return false;
         }
-        return minValue == null || minValue.compareTo(otherValue) > 0;
+        return minValue == null || Comparables.compare(minValue, otherValue) > 0;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void combine(Aggregator aggregator) {
         MinByAggregator<I> minAggregator = (MinByAggregator<I>) aggregator;
@@ -90,4 +91,5 @@ public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, 
         this.minValue = in.readObject();
         this.minEntry = in.readObject();
     }
+
 }

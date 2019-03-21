@@ -23,8 +23,6 @@ import com.hazelcast.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Node;
@@ -37,35 +35,29 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using YAML.
  */
 public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
 
-    private static final ILogger LOGGER = Logger.getLogger(YamlClientConfigBuilder.class);
-
     private final InputStream in;
 
     public YamlClientConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
-        if (url == null) {
-            throw new IllegalArgumentException("Could not load " + resource);
-        }
+        checkTrue(url != null, "Could not load " + resource);
         this.in = url.openStream();
     }
 
     public YamlClientConfigBuilder(File file) throws IOException {
-        if (file == null) {
-            throw new NullPointerException("File is null!");
-        }
+        checkNotNull(file, "File is null!");
         this.in = new FileInputStream(file);
     }
 
     public YamlClientConfigBuilder(URL url) throws IOException {
-        if (url == null) {
-            throw new NullPointerException("URL is null!");
-        }
+        checkNotNull(url, "URL is null!");
         this.in = url.openStream();
     }
 
@@ -76,11 +68,13 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
     /**
      * Loads the client config using the following resolution mechanism:
      * <ol>
-     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and it begins with
-     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
-     * <li>it checks if a hazelcast-client.Yaml is available in the working dir</li>
-     * <li>it checks if a hazelcast-client.Yaml is available on the classpath</li>
-     * <li>it loads the hazelcast-client-default.Yaml</li>
+     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and
+     * it begins with 'classpath:', then a classpath resource is loaded. Else it will assume it is a file
+     * reference. The configuration file or resource will be loaded only if the postfix of its name ends
+     * with `.yaml`.</li>
+     * <li>it checks if a hazelcast-client.yaml is available in the working dir</li>
+     * <li>it checks if a hazelcast-client.yaml is available on the classpath</li>
+     * <li>it loads the hazelcast-client-default.yaml</li>
      * </ol>
      */
     public YamlClientConfigBuilder() {

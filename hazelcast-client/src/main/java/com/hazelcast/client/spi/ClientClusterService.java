@@ -29,7 +29,7 @@ import java.util.Collection;
  *
  * Allows to retrieve Hazelcast members of the cluster, e.g. by their {@link Address} or UUID.
  */
-public interface ClientClusterService extends ClusterSwitchAwareService {
+public interface ClientClusterService {
 
     /**
      * @return The client interface representing the local client.
@@ -83,6 +83,7 @@ public interface ClientClusterService extends ClusterSwitchAwareService {
 
     /**
      * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     *
      * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted.
      * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
      */
@@ -107,4 +108,5 @@ public interface ClientClusterService extends ClusterSwitchAwareService {
      */
     boolean removeMembershipListener(String registrationId);
 
+    void reset();
 }

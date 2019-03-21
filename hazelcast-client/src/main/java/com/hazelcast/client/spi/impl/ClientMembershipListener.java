@@ -17,11 +17,9 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
-import com.hazelcast.client.spi.ClusterSwitchAwareService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.InitialMembershipEvent;
@@ -48,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import static java.util.Collections.unmodifiableSet;
 
 class ClientMembershipListener extends ClientAddMembershipListenerCodec.AbstractEventHandler
-        implements EventHandler<ClientMessage> , ClusterSwitchAwareService {
+        implements EventHandler<ClientMessage>  {
 
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
 
@@ -233,7 +231,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                 + '}';
     }
 
-    public void beforeClusterSwitch(CandidateClusterContext context) {
+    public void clearMembers() {
         members = new LinkedHashSet<Member>();
     }
 }

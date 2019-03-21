@@ -141,7 +141,7 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
     public static class Person implements Portable {
 
         private String name;
-        private long age;
+        private int age;
         private boolean onDuty;
 
         public Person() {
@@ -166,14 +166,14 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeUTF("name", this.name);
-            writer.writeLong("age", this.age);
+            writer.writeInt("age", this.age);
             writer.writeBoolean("onDuty", this.onDuty);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
             this.name = reader.readUTF("name");
-            this.age = reader.readLong("age");
+            this.age = reader.readInt("age");
             this.onDuty = reader.readBoolean("onDuty");
 
         }

@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -62,11 +63,12 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         if (set == null) {
             set = createHashSet(values.length);
             for (Comparable value : values) {
-                set.add(convert(attributeValue, value));
+                Comparable converted = convert(attributeValue, value);
+                set.add(Comparables.canonicalizeForHashLookup(converted));
             }
             convertedInValues = set;
         }
-        return set.contains(attributeValue);
+        return set.contains(Comparables.canonicalizeForHashLookup(attributeValue));
     }
 
     @Override
