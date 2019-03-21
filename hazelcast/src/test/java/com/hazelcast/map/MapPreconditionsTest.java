@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -42,6 +43,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -629,6 +631,42 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
         });
 
         assertEquals(0, map.size());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutAsyncWithNotAllowedMaxIdleTime() {
+        map.putAsync("key1", "value1", 1, TimeUnit.MINUTES,
+                MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetAsyncWithNotAllowedMaxIdleTime() {
+        map.setAsync("key1", "value1", 1, TimeUnit.MINUTES,
+                MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutWithNotAllowedMaxIdleTime() {
+        map.put("key1", "value1", 1, TimeUnit.MINUTES,
+                MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutTransientWithNotAllowedMaxIdleTime() {
+        map.putTransient("key1", "value1", 1, TimeUnit.MINUTES,
+                MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutIfAbsentWithNotAllowedMaxIdleTime() {
+        map.putIfAbsent("key1", "value1", 1, TimeUnit.MINUTES,
+                MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetWithNotAllowedMaxIdleTime() {
+        map.set("key1", "value1", 1, TimeUnit.MINUTES,
+                MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS - 1, SECONDS);
     }
 
     private class TestEntryListener implements EntryListener {

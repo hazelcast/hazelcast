@@ -27,6 +27,7 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapListenerAdapter;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
@@ -48,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -611,6 +613,42 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     public void testIssue7631_emptyKeysSupported() {
         Map<Object, Object> res = map.executeOnKeys(emptySet(), new NoOpEntryProcessor());
         assertEquals(emptyMap(), res);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutAsyncWithNotAllowedMaxIdleTime() {
+        map.putAsync("key1", "value1", 1, TimeUnit.MINUTES,
+                RecordStore.MIN_ALLOWED_MAX_IDLE - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetAsyncWithNotAllowedMaxIdleTime() {
+        map.setAsync("key1", "value1", 1, TimeUnit.MINUTES,
+                RecordStore.MIN_ALLOWED_MAX_IDLE - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutWithNotAllowedMaxIdleTime() {
+        map.put("key1", "value1", 1, TimeUnit.MINUTES,
+                RecordStore.MIN_ALLOWED_MAX_IDLE - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutTransientWithNotAllowedMaxIdleTime() {
+        map.putTransient("key1", "value1", 1, TimeUnit.MINUTES,
+                RecordStore.MIN_ALLOWED_MAX_IDLE - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutIfAbsentWithNotAllowedMaxIdleTime() {
+        map.putIfAbsent("key1", "value1", 1, TimeUnit.MINUTES,
+                RecordStore.MIN_ALLOWED_MAX_IDLE - 1, SECONDS);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetWithNotAllowedMaxIdleTime() {
+        map.set("key1", "value1", 1, TimeUnit.MINUTES,
+                RecordStore.MIN_ALLOWED_MAX_IDLE - 1, SECONDS);
     }
 
     private static class NoOpEntryProcessor implements EntryProcessor {

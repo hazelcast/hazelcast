@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static java.lang.String.format;
@@ -353,6 +354,22 @@ public final class Preconditions {
     public static void checkState(boolean condition, String message) throws IllegalStateException {
         if (!condition) {
             throw new IllegalStateException(message);
+        }
+    }
+
+    /**
+     * Checks if the time is greater or equal than minimum time with respect to their time units.
+     * @param time the time value
+     * @param timeUnit the time unit
+     * @param minTime the minimum time value
+     * @param minTimeUnit the minimum time value unit
+     * @param message the error message
+     * @throws IllegalStateException if the time is less that minimum time
+     * @throws NullPointerException if {@param leftTimeUnit} or {@param rightTimeUnit} is <code>null</code>
+     */
+    public static void checkMinTime(long time, TimeUnit timeUnit, long minTime, TimeUnit minTimeUnit, String message) {
+        if (TimeUtil.compare(time, timeUnit, minTime, minTimeUnit) == -1) {
+            throw new IllegalArgumentException(message);
         }
     }
 }
