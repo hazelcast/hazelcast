@@ -109,7 +109,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 0, SECONDS, 2, SECONDS);
 
-        assertTrueEventually(new AssertTask() {
+        assertTrueDelayed(2, new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertFalse(map.containsKey(1));
