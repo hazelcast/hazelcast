@@ -200,7 +200,6 @@ public final class ClientPartitionServiceImpl
 
     @Override
     public Address getPartitionOwner(int partitionId) {
-        waitForPartitionsFetchedOnce();
         return partitions.get(partitionId);
     }
 
