@@ -23,9 +23,9 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BiPredicateEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
@@ -34,8 +34,8 @@ import com.hazelcast.jet.function.TriFunction;
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.jet.Util.toCompletableFuture;
+import static com.hazelcast.jet.function.PredicateEx.alwaysTrue;
 
 /**
  * The common aspect of {@link BatchStage batch} and {@link StreamStage
@@ -49,10 +49,15 @@ import static com.hazelcast.jet.Util.toCompletableFuture;
 public interface GeneralStage<T> extends Stage {
 
     /**
-     * Attaches a mapping stage which applies the supplied function to each
-     * input item independently and emits the function's result as the output
-     * item. If the result is {@code null}, it emits nothing. Therefore this
-     * stage can be used to implement filtering semantics as well.
+     * Attaches a mapping stage which applies the given function to each input
+     * item independently and emits the function's result as the output item.
+     * If the result is {@code null}, it emits nothing. Therefore this stage
+     * can be used to implement filtering semantics as well.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * stage.map(name -> name.toLowerCase())
+     * }</pre>
      *
      * @param mapFn a stateless mapping function
      * @param <R> the result type of the mapping function
@@ -65,6 +70,11 @@ public interface GeneralStage<T> extends Stage {
      * Attaches a filtering stage which applies the provided predicate function
      * to each input item to decide whether to pass the item to the output or
      * to discard it. Returns the newly attached stage.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * stage.filter(name -> !name.isEmpty())
+     * }</pre>
      *
      * @param filterFn a stateless filter predicate function
      * @return the newly attached stage
@@ -76,6 +86,11 @@ public interface GeneralStage<T> extends Stage {
      * Attaches a flat-mapping stage which applies the supplied function to
      * each input item independently and emits all the items from the {@link
      * Traverser} it returns. The traverser must be <em>null-terminated</em>.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * stage.map(sentence -> traverseArray(sentence.split("\\W+")))
+     * }</pre>
      *
      * @param flatMapFn a stateless flatmapping function, whose result type is
      *                  Jet's {@link Traverser}
@@ -103,7 +118,14 @@ public interface GeneralStage<T> extends Stage {
      * job restart; if it is saved to some durable storage, the state of that
      * storage won't be rewound to the last checkpoint, so you'll perform
      * duplicate updates.
-     *
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * stage.mapUsingContext(
+     *     ContextFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
+     *     (reg, item) -> item.setDetail(reg.fetchDetail(item))
+     * )
+     * }</pre>
      * @param <C> type of context object
      * @param <R> the result type of the mapping function
      * @param contextFactory the context factory
@@ -123,7 +145,17 @@ public interface GeneralStage<T> extends Stage {
      * The function can return a null future or the future can return a null
      * result: in both cases it will act just like a filter.
      * <p>
-     * The latency of the async call will add to the latency of items.
+     * The latency of the async call will add to the total latency of the
+     * output.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * stage.mapUsingContextAsync(
+     *     ContextFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
+     *     (reg, item) -> reg.fetchDetailAsync(item)
+     *                       .thenApply(detail -> item.setDetail(detail)
+     * )
+     * }</pre>
      *
      * @param <C> type of context object
      * @param <R> the future's result type of the mapping function
@@ -152,6 +184,14 @@ public interface GeneralStage<T> extends Stage {
      * job restart; if it is saved to some durable storage, the state of that
      * storage won't be rewound to the last checkpoint, so you'll perform
      * duplicate updates.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * photos.filterUsingContext(
+     *     ContextFactory.withCreateFn(jet -> new ImageClassifier(jet)),
+     *     (classifier, photo) -> classifier.classify(photo).equals("cat")
+     * )
+     * }</pre>
      *
      * @param <C> type of context object
      * @param contextFactory the context factory
@@ -171,7 +211,17 @@ public interface GeneralStage<T> extends Stage {
      * <p>
      * The function must not return a null future.
      * <p>
-     * The latency of the async call will add to the latency of items.
+     * The latency of the async call will add to the total latency of the
+     * output.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * photos.filterUsingContextAsync(
+     *     ContextFactory.withCreateFn(jet -> new ImageClassifier(jet)),
+     *     (classifier, photo) -> reg.classifyAsync(photo)
+     *                               .thenApply(it -> it.equals("cat"))
+     * )
+     * }</pre>
      *
      * @param <C> type of context object
      * @param contextFactory the context factory
@@ -191,6 +241,15 @@ public interface GeneralStage<T> extends Stage {
      * <em>null-terminated</em>. The mapping function receives another
      * parameter, the context object, which Jet will create using the supplied
      * {@code contextFactory}.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<Part> parts = products.flatMapUsingContext(
+     *     ContextFactory.withCreateFn(jet -> new PartRegistryCtx()),
+     *     (registry, product) -> Traversers.traverseIterable(
+     *                                registry.fetchParts(product))
+     * );
+     * }</pre>
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
@@ -199,7 +258,6 @@ public interface GeneralStage<T> extends Stage {
      * job restart; if it is saved to some durable storage, the state of that
      * storage won't be rewound to the last checkpoint, so you'll perform
      * duplicate updates.
-     *
      * @param <C> type of context object
      * @param <R> the type of items in the result's traversers
      * @param contextFactory the context factory
@@ -221,7 +279,18 @@ public interface GeneralStage<T> extends Stage {
      * The function can return a null future or the future can return a null
      * traverser: in both cases it will act just like a filter.
      * <p>
-     * The latency of the async call will add to the latency of items.
+     * The latency of the async call will add to the total latency of the
+     * output.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<Part> parts = products.flatMapUsingContextAsync(
+     *     ContextFactory.withCreateFn(jet -> new PartRegistryCtx()),
+     *     (registry, product) -> registry
+     *          .fetchPartsAsync(product)
+     *          .thenApply(parts -> Traversers.traverseIterable(parts))
+     * );
+     * }</pre>
      *
      * @param <C> type of context object
      * @param <R> the type of the returned stage
@@ -243,14 +312,23 @@ public interface GeneralStage<T> extends Stage {
      * result of the lookup is merged with the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
-     * Therefore this stage can be used to implement filtering semantics as well.
+     * Therefore this stage can be used to implement filtering semantics as
+     * well.
      * <p>
      * The mapping logic is equivalent to:
-     *
      * <pre>{@code
      * K key = lookupKeyFn.apply(item);
      * V value = replicatedMap.get(key);
      * return mapFn.apply(item, value);
+     * }</pre>
+     *
+     * Sample usage:
+     * <pre>{@code
+     * items.mapUsingReplicatedMap(
+     *     "enriching-map",
+     *     item -> item.getDetailId(),
+     *     (Item item, ItemDetail detail) -> item.setDetail(detail)
+     * )
      * }</pre>
      *
      * @param mapName name of the {@code ReplicatedMap}
@@ -282,11 +360,19 @@ public interface GeneralStage<T> extends Stage {
      * Therefore this stage can be used to implement filtering semantics as well.
      * <p>
      * The mapping logic is equivalent to:
-     *
      * <pre>{@code
      * K key = lookupKeyFn.apply(item);
      * V value = replicatedMap.get(key);
      * return mapFn.apply(item, value);
+     * }</pre>
+     *
+     * Sample usage:
+     * <pre>{@code
+     * items.mapUsingReplicatedMap(
+     *     enrichingMap,
+     *     item -> item.getDetailId(),
+     *     (item, detail) -> item.setDetail(detail)
+     * )
      * }</pre>
      *
      * @param replicatedMap the {@code ReplicatedMap} to lookup from
@@ -321,6 +407,15 @@ public interface GeneralStage<T> extends Stage {
      * K key = lookupKeyFn.apply(item);
      * V value = map.get(key);
      * return mapFn.apply(item, value);
+     * }</pre>
+     *
+     * Sample usage:
+     * <pre>{@code
+     * items.mapUsingIMap(
+     *     "enriching-map",
+     *     item -> item.getDetailId(),
+     *     (Item item, ItemDetail detail) -> item.setDetail(detail)
+     * )
      * }</pre>
      *
      * See also {@link GeneralStageWithKey#mapUsingIMap} for a partitioned version of
@@ -362,6 +457,15 @@ public interface GeneralStage<T> extends Stage {
      * return mapFn.apply(item, value);
      * }</pre>
      *
+     * Sample usage:
+     * <pre>{@code
+     * items.mapUsingIMap(
+     *     enrichingMap,
+     *     item -> item.getDetailId(),
+     *     (item, detail) -> item.setDetail(detail)
+     * )
+     * }</pre>
+     *
      * See also {@link GeneralStageWithKey#mapUsingIMap} for a partitioned version of
      * this operation.
      *
@@ -390,6 +494,10 @@ public interface GeneralStage<T> extends Stage {
      * is {@code {2, 7, 8, -5}}, the output will be {@code {2, 9, 17, 12}}. The
      * number of input and output items is equal.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     * stage.rollingAggregate(AggregateOperations.counting())
+     * }</pre>
      * This stage is fault-tolerant and saves its state to the snapshot.
      * <p>
      * <strong>NOTE 1:</strong> since the output for each item depends on all
@@ -397,11 +505,6 @@ public interface GeneralStage<T> extends Stage {
      * perform it on a single member, single-threaded. Jet also supports
      * {@link GeneralStageWithKey#rollingAggregate keyed rolling aggregation}
      * which it can parallelize by partitioning.
-     * <p>
-     * <strong>NOTE 2:</strong> if you plan to use an aggregate operation whose
-     * result size grows with input size (such as {@code toList} and your data
-     * source is unbounded, you must carefully consider the memory demands this
-     * implies. The result will keep growing forever.
      *
      * @param aggrOp the aggregate operation to do the aggregation
      * @param <R> result type of the aggregate operation
@@ -416,6 +519,19 @@ public interface GeneralStage<T> extends Stage {
      * returns it. This stage plays the role of the <em>primary stage</em> in
      * the hash-join. Please refer to the {@link com.hazelcast.jet.pipeline
      * package javadoc} for a detailed description of the hash-join transform.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * // Types of the input stages:
+     * BatchStage<User> users;
+     * BatchStage<Map.Entry<Long, Country>> idAndCountry;
+     *
+     * users.hashJoin(
+     *     idAndCountry,
+     *     JoinClause.joinMapEntries(User::getCountryId),
+     *     (user, country) -> user.setCountry(country)
+     * )
+     * }</pre>
      *
      * @param stage1        the stage to hash-join with this one
      * @param joinClause1   specifies how to join the two streams
@@ -438,6 +554,20 @@ public interface GeneralStage<T> extends Stage {
      * returns it. This stage plays the role of the <em>primary stage</em> in
      * the hash-join. Please refer to the {@link com.hazelcast.jet.pipeline
      * package javadoc} for a detailed description of the hash-join transform.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * // Types of the input stages:
+     * BatchStage<User> users;
+     * BatchStage<Map.Entry<Long, Country>> idAndCountry;
+     * BatchStage<Map.Entry<Long, Company>> idAndCompany;
+     *
+     * users.hashJoin(
+     *     idAndCountry, JoinClause.joinMapEntries(User::getCountryId),
+     *     idAndCompany, JoinClause.joinMapEntries(User::getCompanyId),
+     *     (user, country, company) -> user.setCountry(country).setCompany(company)
+     * )
+     * }</pre>
      *
      * @param stage1        the first stage to join
      * @param joinClause1   specifies how to join with {@code stage1}
@@ -468,6 +598,21 @@ public interface GeneralStage<T> extends Stage {
      * hash-joins with three or more enriching stages. For one or two stages
      * prefer the direct {@code stage.hashJoinN(...)} calls because they offer
      * more static type safety.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * // Types of the input stages:
+     * StreamStage<User> users;
+     * BatchStage<Map.Entry<Long, Country>> idAndCountry;
+     * BatchStage<Map.Entry<Long, Company>> idAndCompany;
+     *
+     * StreamHashJoinBuilder<User> builder = users.hashJoinBuilder();
+     * Tag<Country> tCountry = builder.add(idAndCountry, JoinClause.joinMapEntries(User::getCountryId));
+     * Tag<Company> tCompany = builder.add(idAndCompany, JoinClause.joinMapEntries(User::getCompanyId));
+     * StreamStage<User> joined = builder.build((user, itemsByTag) ->
+     *         user.setCountry(itemsByTag.get(tCountry)).setCompany(itemsByTag.get(tCompany)));
+     * }</pre>
+     *
      */
     @Nonnull
     GeneralHashJoinBuilder<T> hashJoinBuilder();
@@ -476,6 +621,11 @@ public interface GeneralStage<T> extends Stage {
      * Specifies the function that will extract a key from the items in the
      * associated pipeline stage. This enables the operations that need the
      * key, such as grouped aggregation.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * users.groupingKey(User::getId)
+     * }</pre>
      * <p>
      * <b>Note:</b> make sure the extracted key is not-null, it would fail the
      * job otherwise. Also make sure that it implements {@code equals()} and
@@ -507,6 +657,11 @@ public interface GeneralStage<T> extends Stage {
      * will it have to wait for possible latecomers. On the other hand, if you
      * don't allow enough lag, you face the risk of failing to account for the
      * data that came in after the results were already emitted.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * events.addTimestamps(Event::getTimestamp)
+     * }</pre>
      * <p>
      * <b>Note:</b> This method adds the timestamps after the source emitted
      * them. When timestamps are added at this moment, source partitions won't
@@ -567,6 +722,14 @@ public interface GeneralStage<T> extends Stage {
      * The stage logs each item on whichever cluster member it happens to
      * receive it. Its primary purpose is for development use, when running Jet
      * on a local machine.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * users.peek(
+     *     user -> user.getName().size() > 100,
+     *     User::getName
+     * )
+     * }</pre>
      *
      * @param shouldLogFn a function to filter the logged items. You can use {@link
      *                    PredicateEx#alwaysTrue()
@@ -594,6 +757,11 @@ public interface GeneralStage<T> extends Stage {
      * The stage logs each item on whichever cluster member it happens to
      * receive it. Its primary purpose is for development use, when running Jet
      * on a local machine.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * users.peek(User::getName)
+     * }</pre>
      *
      * @param toStringFn  a function that returns a string representation of the item
      * @see #peek(PredicateEx, FunctionEx)

@@ -530,7 +530,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         Tag<String> tagB = builder.add(enrichingStage2, joinMapEntries(wholeItem()));
         @SuppressWarnings("Convert2MethodRef")
         // there's a method ref bug in JDK
-        GeneralStage<Tuple2<Integer, ItemsByTag>> joined = builder.build((a, b) -> tuple2(a, b));
+        StreamStage<Tuple2<Integer, ItemsByTag>> joined = builder.build((a, b) -> tuple2(a, b));
 
         // Then
         joined.drainTo(sink);

@@ -92,7 +92,13 @@ public interface StageWithWindow<T> {
      * the items that belong to a given window. Once the window is complete, it
      * emits a {@code WindowResult} with the result of the aggregate
      * operation and the timestamp denoting the window's ending time.
-     *
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<WindowResult<Long>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .aggregate(AggregateOperations.counting());
+     * }</pre>
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <R> the type of the result
@@ -109,6 +115,17 @@ public interface StageWithWindow<T> {
      * invokes {@code mapToOutputFn} with the result of the aggregate
      * operation and emits its return value as the window result.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<WindowResult<Tuple2<Long, Long>>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .aggregate2(
+     *         addToCarts,
+     *         AggregateOperations.aggregateOperation2(
+     *             AggregateOperations.counting(),
+     *             AggregateOperations.counting())
+     *     );
+     * }</pre>
      * This variant requires you to provide a two-input aggregate operation
      * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
      * example). If you can express your logic in terms of two single-input
@@ -141,6 +158,17 @@ public interface StageWithWindow<T> {
      * WindowResult(Tuple2(result0, result1))}.
      * <p>
      * The aggregating stage emits a single item for each completed window.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<WindowResult<Tuple2<Long, Long>>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .aggregate2(
+     *         AggregateOperations.counting(),
+     *         addToCarts,
+     *         AggregateOperations.counting()
+     *     );
+     * }</pre>
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp0 aggregate operation to perform on this stage
@@ -166,6 +194,19 @@ public interface StageWithWindow<T> {
      * WindowResult} with the result of the aggregate operation and the
      * timestamp denoting the window's ending time.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<WindowResult<Tuple3<Long, Long, Long>>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .aggregate3(
+     *         addToCarts,
+     *         payments,
+     *         AggregateOperations.aggregateOperation3(
+     *             AggregateOperations.counting(),
+     *             AggregateOperations.counting(),
+     *             AggregateOperations.counting())
+     *     );
+     * }</pre>
      * This variant requires you to provide a three-input aggregate operation
      * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
      * example). If you can express your logic in terms of three single-input
@@ -203,6 +244,19 @@ public interface StageWithWindow<T> {
      * WindowResult(Tuple3(result0, result1, result2))}.
      * <p>
      * The aggregating stage emits a single item for each completed window.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<WindowResult<Tuple3<Long, Long, Long>>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .aggregate3(
+     *         AggregateOperations.counting(),
+     *         addToCarts,
+     *         AggregateOperations.counting(),
+     *         payments,
+     *         AggregateOperations.counting()
+     *     );
+     * }</pre>
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      *

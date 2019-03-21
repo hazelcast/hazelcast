@@ -76,6 +76,14 @@ public interface StageWithKeyAndWindow<T, K> {
      * distinct key it observes in its input belonging to a given window. The
      * value is the result of the aggregate operation across all the items with
      * the given grouping key.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<KeyedWindowResult<Long, Long>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .groupingKey(PageVisit::getUserId)
+     *     .aggregate(AggregateOperations.counting());
+     * }</pre>
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -94,6 +102,18 @@ public interface StageWithKeyAndWindow<T, K> {
      * value is the result of the aggregate operation across all the items with
      * the given grouping key.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<KeyedWindowResult<Long, Tuple2<Long, Long>>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .groupingKey(PageVisit::getUserId)
+     *     .aggregate2(
+     *         addToCarts.groupingKey(AddToCart::getUserId),
+     *         AggregateOperations.aggregateOperation2(
+     *                 AggregateOperations.counting(),
+     *                 AggregateOperations.counting())
+     *     );
+     * }</pre>
      * This variant requires you to provide a two-input aggregate operation
      * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
      * example). If you can express your logic in terms of two single-input
@@ -126,6 +146,18 @@ public interface StageWithKeyAndWindow<T, K> {
      * stage1}. Once it has received all the items belonging to a window, it
      * emits for each distinct key a {@code KeyedWindowResult(key, Tuple2(result0,
      * result1))}.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<KeyedWindowResult<Long, Tuple2<Long, Long>>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .groupingKey(PageVisit::getUserId)
+     *     .aggregate2(
+     *             AggregateOperations.counting(),
+     *             addToCarts.groupingKey(AddToCart::getUserId),
+     *             AggregateOperations.counting()
+     *     );
+     * }</pre>
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp0 aggregate operation to perform on this stage
@@ -153,6 +185,21 @@ public interface StageWithKeyAndWindow<T, K> {
      * all the items belonging to a window, it emits for each distinct key a
      * {@code KeyedWindowResult(key, Tuple3(result0, result1, result2))}.
      * <p>
+     * Sample usage:
+     * StreamStage<KeyedWindowResult<Long, Tuple3<Long, Long, Long>>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .groupingKey(PageVisit::getUserId)
+     *     .aggregate3(
+     *         addToCarts.groupingKey(AddToCart::getUserId),
+     *         payments.groupingKey(Payment::getUserId),
+     *         AggregateOperations.aggregateOperation3(
+     *             AggregateOperations.counting(),
+     *             AggregateOperations.counting(),
+     *             AggregateOperations.counting())
+     *     );
+     * <pre>{@code
+     *
+     * }</pre>
      * This variant requires you to provide a three-input aggregate operation
      * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
      * example). If you can express your logic in terms of three single-input
@@ -190,6 +237,20 @@ public interface StageWithKeyAndWindow<T, K> {
      * stage1} and {@code aggrOp2} on {@code stage2}. Once it has received all
      * the items, it calls the supplied {@code mapToOutputFn} with each key and
      * the associated aggregation result to create the items to emit.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<KeyedWindowResult<Long, Tuple3<Long, Long, Long>>> aggregated = pageVisits
+     *     .window(SlidingWindowDefinition.sliding(MINUTES.toMillis(1), SECONDS.toMillis(1)))
+     *     .groupingKey(PageVisit::getUserId)
+     *     .aggregate3(
+     *         AggregateOperations.counting(),
+     *         addToCarts.groupingKey(AddToCart::getUserId),
+     *         AggregateOperations.counting(),
+     *         payments.groupingKey(Payment::getUserId),
+     *         AggregateOperations.counting()
+     *     );
+     * }</pre>
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp0 aggregate operation to perform on this stage

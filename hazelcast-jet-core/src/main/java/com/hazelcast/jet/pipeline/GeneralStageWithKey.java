@@ -18,13 +18,12 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
@@ -59,11 +58,21 @@ public interface GeneralStageWithKey<T, K> {
      * mapping result is {@code null}, it emits nothing. Therefore this stage
      * can be used to implement filtering semantics as well.
      * <p>
-     * Jet uses the {@link #keyFn() key-extracting function} specified on this
-     * stage for partitioning: all the items with the same key will see the
-     * same context instance (but note that the same instance serves many keys).
-     * One case where this is useful is fetching data from an external system
-     * because you can use a near-cache without duplicating the cached data.
+     * Jet uses the {@linkplain #keyFn() key-extracting function} specified on
+     * this stage for partitioning: all the items with the same key will see
+     * the same context instance (but note that the same instance serves many
+     * keys). One case where this is useful is fetching data from an external
+     * system because you can use a near-cache without duplicating the cached
+     * data.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * items.groupingKey(Item::getDetailId)
+     *      .mapUsingContext(
+     *          ContextFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *          (reg, key, item) -> item.setDetail(reg.fetchDetail(key))
+     *      );
+     * }</pre>
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
@@ -92,7 +101,17 @@ public interface GeneralStageWithKey<T, K> {
      * The function can return a null future or the future can return a null
      * result: in both cases it will act just like a filter.
      * <p>
-     * The latency of the async call will add to the latency of the items.
+     * Sample usage:
+     * <pre>{@code
+     * items.groupingKey(Item::getDetailId)
+     *      .mapUsingContextAsync(
+     *          ContextFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *          (reg, key, item) -> reg.fetchDetailAsync(key)
+     *                                 .thenApply(detail -> item.setDetail(detail))
+     *      );
+     * }</pre>
+     * The latency of the async call will add to the total latency of the
+     * output.
      *
      * @param <C> type of context object
      * @param <R> the future's result type of the mapping function
@@ -114,11 +133,21 @@ public interface GeneralStageWithKey<T, K> {
      * context object, which Jet will create using the supplied {@code
      * contextFactory}.
      * <p>
-     * Jet uses the {@link #keyFn() key-extracting function} specified on this
-     * stage for partitioning: all the items with the same key will see the
-     * same context instance (but note that the same instance serves many keys).
-     * One case where this is useful is fetching data from an external system
-     * because you can use a near-cache without duplicating the cached data.
+     * Jet uses the {@linkplain #keyFn() key-extracting function} specified on
+     * this stage for partitioning: all the items with the same key will see
+     * the same context instance (but note that the same instance serves many
+     * keys). One case where this is useful is fetching data from an external
+     * system because you can use a near-cache without duplicating the cached
+     * data.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * items.groupingKey(Item::getDetailId)
+     *      .filterUsingContext(
+     *          ContextFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *          (reg, key, item) -> reg.fetchDetail(key).contains("blade")
+     *      );
+     * }</pre>
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
@@ -146,7 +175,18 @@ public interface GeneralStageWithKey<T, K> {
      * <p>
      * The function must not return a null future.
      * <p>
-     * The latency of the async call will add to the latency of the items.
+     * Sample usage:
+     * <pre>{@code
+     * items.groupingKey(Item::getDetailId)
+     *      .filterUsingContextAsync(
+     *          ContextFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *          (reg, key, item) -> reg.fetchDetailAsync(key)
+     *                                 .thenApply(detail -> detail.contains("blade"))
+     *      );
+     * }</pre>
+     * <p>
+     * The latency of the async call will add to the total latency of the
+     * output.
      *
      * @param <C> type of context object
      * @param contextFactory the context factory
@@ -167,11 +207,23 @@ public interface GeneralStageWithKey<T, K> {
      * parameter, the context object, which Jet will create using the supplied
      * {@code contextFactory}.
      * <p>
-     * Jet uses the {@link #keyFn() key-extracting function} specified on this
-     * stage for partitioning: all the items with the same key will see the
-     * same context instance (but note that the same instance serves many keys).
-     * One case where this is useful is fetching data from an external system
-     * because you can use a near-cache without duplicating the cached data.
+     * Jet uses the {@linkplain #keyFn() key-extracting function} specified on
+     * this stage for partitioning: all the items with the same key will see
+     * the same context instance (but note that the same instance serves many
+     * keys). One case where this is useful is fetching data from an external
+     * system because you can use a near-cache without duplicating the cached
+     * data.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<Part> parts = products
+     *     .groupingKey(Product::getId)
+     *     .flatMapUsingContext(
+     *         ContextFactory.withCreateFn(jet -> new PartRegistry()),
+     *         (registry, productId, product) -> Traversers.traverseIterable(
+     *                 registry.fetchParts(productId))
+     *     );
+     * }</pre>
      *
      * <h3>Interaction with fault-tolerant unbounded jobs</h3>
      * If you use this stage in a fault-tolerant unbounded job, keep in mind
@@ -201,6 +253,18 @@ public interface GeneralStageWithKey<T, K> {
      * The function can return a null future or the future can return a null
      * traverser: in both cases it will act just like a filter.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<Part> productParts = products
+     *     .groupingKey(Product::getId)
+     *     .flatMapUsingContextAsync(
+     *         ContextFactory.withCreateFn(jet -> new PartRegistry()),
+     *         (registry, productId, product) -> registry
+     *                 .fetchPartsAsync(productId)
+     *                 .thenApply(parts -> Traversers.traverseIterable(parts))
+     *     );
+     * }</pre>
+     * <p>
      * The latency of the async call will add to the latency of the items.
      *
      * @param <C> type of context object
@@ -226,12 +290,19 @@ public interface GeneralStageWithKey<T, K> {
      * Therefore this stage can be used to implement filtering semantics as well.
      * <p>
      * The mapping logic is equivalent to:
-     *
      * <pre>{@code
      * V value = map.get(groupingKey);
      * return mapFn.apply(item, value);
      * }</pre>
      *
+     * Sample usage:
+     * <pre>{@code
+     * items.groupingKey(Item::getDetailId)
+     *      .mapUsingIMap(
+     *              "enriching-map",
+     *              (Item item, ItemDetail detail) -> item.setDetail(detail)
+     *      );
+     * }</pre>
      * This stage is similar to {@link GeneralStage#mapUsingIMap(IMap,
      * FunctionEx, BiFunctionEx) stageWithoutKey.mapUsingIMap()},
      * but here Jet knows the key and uses it to partition and distribute the input in order
@@ -264,19 +335,24 @@ public interface GeneralStageWithKey<T, K> {
      * Therefore this stage can be used to implement filtering semantics as well.
      * <p>
      * The mapping logic is equivalent to:
-     *
      * <pre>{@code
      * V value = map.get(groupingKey);
      * return mapFn.apply(item, value);
      * }</pre>
      *
+     * Sample usage:
+     * <pre>{@code
+     * items.groupingKey(Item::getDetailId)
+     *      .mapUsingIMap(enrichingMap, (item, detail) -> item.setDetail(detail));
+     * }</pre>
+     *
      * This stage is similar to {@link GeneralStage#mapUsingIMap(IMap,
      * FunctionEx, BiFunctionEx) stageWithoutKey.mapUsingIMap()},
-     * but here Jet knows the key and uses it to partition and distribute the input in order
-     * to achieve data locality. The value it fetches from the {@code IMap} is
-     * stored on the cluster member where the processing takes place. However,
-     * if the map doesn't use the default partitioning strategy, the data
-     * locality will be broken.
+     * but here Jet knows the key and uses it to partition and distribute the
+     * input in order to achieve data locality. The value it fetches from the
+     * {@code IMap} is stored on the cluster member where the processing takes
+     * place. However, if the map doesn't use the default partitioning strategy,
+     * data locality will be broken.
      *
      * @param iMap the {@code IMap} to use as the context
      * @param mapFn the mapping function
@@ -299,39 +375,23 @@ public interface GeneralStageWithKey<T, K> {
      * under a given key is {@code {2, 7, 8, -5}}, the output will be {@code {2,
      * 9, 17, 12}}.
      * <p>
-     * This stage is fault-tolerant and saves its state to the snapshot.
+     * Sample usage:
+     * <pre>{@code
+     * StreamStage<Entry<Color, Long>> aggregated = items
+     *         .groupingKey(Item::getColor)
+     *         .rollingAggregate(AggregateOperations.counting());
+     * }</pre>
      * <p>
-     * <strong>NOTE:</strong> if you plan to use an aggregate operation whose
-     * result size grows with input size (such as {@code toList} and your data
-     * source is unbounded, carefully consider the memory demands this implies.
-     * The result will keep growing forever.
+     * This stage is fault-tolerant and saves its state to the snapshot.
      *
      * @param aggrOp the aggregate operation to perform
-     * @param mapToOutputFn function that transforms the key and the aggregation result into the
-     *                      output item
      * @param <R> type of the aggregate operation result
-     * @param <OUT> type of the output item
      * @return the newly attached stage
      */
     @Nonnull
-    <R, OUT> GeneralStage<OUT> rollingAggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
-    );
-
-    /**
-     * A shortcut for:
-     * <blockquote>
-     *     {@link #rollingAggregate(AggregateOperation1,
-     *     BiFunctionEx) aggregateRolling(aggrOp, Util::entry)}.
-     * </blockquote>
-     */
-    @Nonnull
-    default <R> GeneralStage<Entry<K, R>> rollingAggregate(
+    <R> GeneralStage<Entry<K, R>> rollingAggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-    ) {
-        return rollingAggregate(aggrOp, Util::entry);
-    }
+    );
 
     /**
      * Attaches a stage with a custom transform based on the provided supplier

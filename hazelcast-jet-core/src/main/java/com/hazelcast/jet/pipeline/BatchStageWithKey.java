@@ -18,7 +18,6 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
@@ -28,7 +27,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.BiFunctionEx;
-import com.hazelcast.jet.function.QuadFunction;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
@@ -127,6 +125,12 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * key it observes in its input. The value is the result of the aggregate
      * operation across all the items with the given grouping key.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Entry<String, Long>> aggregated = people.
+     *         .groupingKey(Person::getLastName)
+     *         .aggregate(AggregateOperations.counting());
+     * }</pre>
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -144,15 +148,23 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * it observes in its input. The value is the result of the aggregate
      * operation across all the items with the given grouping key.
      * <p>
-     * This variant requires you to provide a two-input aggregate operation
-     * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
-     * example). If you can express your logic in terms of two single-input
-     * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate2(AggregateOperation1, BatchStageWithKey, AggregateOperation1)
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Entry<Long, Tuple2<Long, Long>>> aggregated = pageVisits
+     *         .groupingKey(PageVisit::getUserId)
+     *         .aggregate2(addToCarts.groupingKey(AddToCart::getUserId),
+     *                 aggregateOperation2(
+     *                         AggregateOperations.counting(),
+     *                         AggregateOperations.counting())
+     *         );
+     * }</pre>
+     * This variant requires you to provide a two-input aggregate operation. If
+     * you can express your logic in terms of two single-input aggregate
+     * operations, one for each input stream, then you should use {@link
+     * #aggregate2(AggregateOperation1, BatchStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
-     * API and you can use the already defined single-input operations. Use
-     * this variant only when you have the need to implement an aggregate
-     * operation that combines the input streams into the same accumulator.
+     * API. Use this variant only when your aggregate operation must combine
+     * the input streams into the same accumulator.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -168,12 +180,23 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     /**
      * Attaches a stage that performs the given cogroup-and-aggregate
      * transformation of the items from both this stage and {@code stage1}
-     * you supply. For each distinct grouping key it observes in the input, it
-     * performs the supplied aggregate operation across all the items sharing
-     * that key. It performs the aggregation separately for each input stage:
-     * {@code aggrOp0} on this stage and {@code aggrOp1} on {@code stage1}.
-     * Once it has received all the items, it emits for each distinct key a
-     * {@code Map.Entry(key, Tuple2(result0, result1))}.
+     * you supply. For each distinct grouping key it performs the supplied
+     * aggregate operation across all the items sharing that key. It
+     * performs the aggregation separately for each input stage: {@code
+     * aggrOp0} on this stage and {@code aggrOp1} on {@code stage1}. Once it
+     * has received all the items, it emits for each distinct key a {@code
+     * Map.Entry(key, Tuple2(result0, result1))}.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Entry<Long, Tuple2<Long, Long>>> aggregated = pageVisits
+     *         .groupingKey(PageVisit::getUserId)
+     *         .aggregate2(
+     *                 AggregateOperations.counting(),
+     *                 addToCarts.groupingKey(AddToCart::getUserId),
+     *                 AggregateOperations.counting()
+     *         );
+     * }</pre>
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      *
@@ -203,17 +226,27 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * of the aggregate operation across all the items with the given grouping
      * key.
      * <p>
-     * This variant requires you to provide a three-input aggregate operation
-     * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
-     * example). If you can express your logic in terms of three single-input
-     * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate3(AggregateOperation1, BatchStageWithKey,
-     *      AggregateOperation1, BatchStageWithKey, AggregateOperation1)
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Entry<Long, Tuple3<Long, Long, Long>>> aggregated = pageVisits
+     *         .groupingKey(PageVisit::getUserId)
+     *         .aggregate3(
+     *                 addToCarts.groupingKey(AddToCart::getUserId),
+     *                 payments.groupingKey(Payment::getUserId),
+     *                 aggregateOperation3(
+     *                         AggregateOperations.counting(),
+     *                         AggregateOperations.counting(),
+     *                         AggregateOperations.counting())
+     *         );
+     * }</pre>
+     * This variant requires you to provide a three-input aggregate operation.
+     * If you can express your logic in terms of three single-input aggregate
+     * operations, one for each input stream, then you should use {@link
+     * #aggregate3(AggregateOperation1, BatchStageWithKey, AggregateOperation1,
+     *             BatchStageWithKey, AggregateOperation1)
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1, stage2, aggrOp2)} because it
-     * offers a simpler API and you can use the already defined single-input
-     * operations. Use this variant only when you have the need to implement an
-     * aggregate operation that combines the input streams into the same
-     * accumulator.
+     * offers a simpler API. Use this variant only when your aggregate
+     * operation must combine the input streams into the same accumulator.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -238,6 +271,19 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * aggrOp1} on {@code stage1} and {@code aggrOp2} on {@code stage2}. Once
      * it has received all the items, it emits for each distinct key a {@code
      * Map.Entry(key, Tuple3(result0, result1, result2))}.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Entry<Long, Tuple3<Long, Long, Long>>> aggregated = pageVisits
+     *         .groupingKey(PageVisit::getUserId)
+     *         .aggregate3(
+     *                 AggregateOperations.counting(),
+     *                 addToCarts.groupingKey(AddToCart::getUserId),
+     *                 AggregateOperations.counting(),
+     *                 payments.groupingKey(Payment::getUserId),
+     *                 AggregateOperations.counting()
+     *         );
+     * }</pre>
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      *

@@ -190,6 +190,11 @@ public interface BatchStage<T> extends GeneralStage<T> {
     /**
      * Attaches a stage that performs the given aggregate operation over all
      * the items it receives. The aggregating stage emits a single item.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * stage.aggregate(AggregateOperations.counting())
+     * }</pre>
      *
      * @see AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -215,6 +220,15 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * accumulator.
      * <p>
      * The returned stage emits a single item.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Tuple2<Long, Long>> counts = pageVisits.aggregate2(addToCarts,
+     *         AggregateOperations.aggregateOperation2(
+     *                 AggregateOperations.counting(),
+     *                 AggregateOperations.counting())
+     *         );
+     * }</pre>
      *
      * @see AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -232,6 +246,14 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * a {@link Tuple2} with their results.
      * <p>
      * The returned stage emits a single item.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Tuple2<Long, Long>> counts = pageVisits.aggregate2(
+     *         AggregateOperations.counting(),
+     *         addToCarts, AggregateOperations.counting()
+     * );
+     * }</pre>
      *
      * @param aggrOp0 aggregate operation to perform on this stage
      * @param stage1 the other stage
@@ -264,7 +286,18 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * aggregate operation that combines the input streams into the same
      * accumulator.
      * <p>
-     * The aggregating stage emits a single item.
+     * The returned stage emits a single item.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Tuple3<Long, Long, Long>> counts = pageVisits.aggregate3(
+     *         addToCarts,
+     *         payments,
+     *         AggregateOperations.aggregateOperation3(
+     *                 AggregateOperations.counting(),
+     *                 AggregateOperations.counting(),
+     *                 AggregateOperations.counting()));
+     * }</pre>
      *
      * @see AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -285,6 +318,15 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * emitting a {@link Tuple3} with their results.
      * <p>
      * The returned stage emits a single item.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     * BatchStage<Tuple3<Long, Long, Long>> counts = pageVisits.aggregate3(
+     *         AggregateOperations.counting(),
+     *         addToCarts, AggregateOperations.counting(),
+     *         payments, AggregateOperations.counting()
+     * );
+     * }</pre>
      *
      * @param aggrOp0 aggregate operation to perform on this stage
      * @param stage1 the first additional stage
