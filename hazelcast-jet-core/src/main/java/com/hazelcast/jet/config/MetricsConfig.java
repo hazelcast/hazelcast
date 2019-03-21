@@ -104,8 +104,9 @@ public class MetricsConfig {
      * domain) and {@code metric} (it will be converted to attribute name in
      * the MBean).
      */
-    public void setJmxEnabled(boolean jmxEnabled) {
+    public MetricsConfig setJmxEnabled(boolean jmxEnabled) {
         this.jmxEnabled = jmxEnabled;
+        return this;
     }
 
     /**

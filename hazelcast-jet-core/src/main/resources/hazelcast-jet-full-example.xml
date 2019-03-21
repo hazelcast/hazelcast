@@ -52,7 +52,7 @@
     </edge-defaults>
 
     <!-- whether metrics collection is enabled -->
-    <metrics enabled="true">
+    <metrics enabled="true" jmxEnabled="true">
 
         <!-- the number of seconds the metrics will be retained on the instance -->
         <retention-seconds>120</retention-seconds>
