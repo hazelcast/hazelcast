@@ -39,6 +39,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HashUtil;
 
 import java.util.Collection;
@@ -60,7 +61,7 @@ public final class ClientPartitionServiceImpl
 
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
-
+    private static final long BLOCKING_GET_ONCE_SLEEP_MILLIS = 100;
     private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
     private final ClientExecutionServiceImpl clientExecutionService;
     private final HazelcastClientInstanceImpl client;
@@ -68,6 +69,7 @@ public final class ClientPartitionServiceImpl
     private volatile Map<Integer, Address> partitions = Collections.emptyMap();
     private volatile int partitionCount;
     private volatile int lastPartitionStateVersion = -1;
+    private volatile Connection ownerConnection;
     private final Object lock = new Object();
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
@@ -84,6 +86,7 @@ public final class ClientPartitionServiceImpl
     public void listenPartitionTable(Connection ownerConnection) throws Exception {
         //when we connect to cluster back we need to reset partition state version
         lastPartitionStateVersion = -1;
+        this.ownerConnection = ownerConnection;
         if (((ClientConnection) ownerConnection).getConnectedServerVersion() >= BuildInfo.calculateVersion("3.9")) {
             //Servers after 3.9 supports listeners
             ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
@@ -121,17 +124,22 @@ public final class ClientPartitionServiceImpl
         while (partitions.isEmpty() && client.getConnectionManager().isAlive()) {
             ClientClusterService clusterService = client.getClientClusterService();
             Collection<Member> memberList = clusterService.getMemberList();
-            if (memberList.isEmpty()) {
-                //if member list is empty we will return without waiting
-                //getPartitionOwner method will return null as a result
-                break;
+            Connection ownerConnection = this.ownerConnection;
+            //if member list is empty or owner is null, we will sleep and retry
+            if (memberList.isEmpty() || ownerConnection == null) {
+                sleepBeforeNextTry();
+                continue;
             }
             if (isClusterFormedByOnlyLiteMembers(memberList)) {
                 throw new NoDataMemberInClusterException(
                         "Partitions can't be assigned since all nodes in the cluster are lite members");
             }
+
             ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
-            ClientInvocationFuture future = new ClientInvocation(client, requestMessage, null).invokeUrgent();
+            // invocation should go to owner connection because the listener is added to owner connection
+            // and partition state version should be fetched from one member to keep it consistent
+            ClientInvocationFuture future =
+                    new ClientInvocation(client, requestMessage, null, ownerConnection).invokeUrgent();
             try {
                 ClientMessage responseMessage = future.get();
                 ClientGetPartitionsCodec.ResponseParameters response =
@@ -143,6 +151,15 @@ public final class ClientPartitionServiceImpl
                     logger.warning("Error while fetching cluster partition table!", e);
                 }
             }
+        }
+    }
+
+    private void sleepBeforeNextTry() {
+        try {
+            Thread.sleep(BLOCKING_GET_ONCE_SLEEP_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
