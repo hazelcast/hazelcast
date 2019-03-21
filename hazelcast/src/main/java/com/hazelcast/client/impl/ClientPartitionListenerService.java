@@ -18,7 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
-import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
@@ -31,6 +31,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 
 public class ClientPartitionListenerService {
 
@@ -96,6 +98,10 @@ public class ClientPartitionListenerService {
                 return partitionsMap.entrySet();
             }
             Address clientOwnerAddress = clientAddressOf(owner.address());
+            if (clientOwnerAddress == null) {
+                partitionsMap.clear();
+                return partitionsMap.entrySet();
+            }
             List<Integer> indexes = partitionsMap.get(clientOwnerAddress);
             if (indexes == null) {
                 indexes = new LinkedList<Integer>();
@@ -110,6 +116,12 @@ public class ClientPartitionListenerService {
         if (!advancedNetworkConfigEnabled) {
             return memberAddress;
         }
-        return nodeEngine.getClusterService().getMember(memberAddress).getAddressMap().get(EndpointQualifier.CLIENT);
+        Member member = nodeEngine.getClusterService().getMember(memberAddress);
+        if (member != null) {
+            return member.getAddressMap().get(CLIENT);
+        } else {
+            // partition table contains stale entries for members which are not in the member list
+            return null;
+        }
     }
 }
