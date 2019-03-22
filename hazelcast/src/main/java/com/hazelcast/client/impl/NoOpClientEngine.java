@@ -39,7 +39,8 @@ import static java.util.Collections.emptyMap;
 public class NoOpClientEngine implements ClientEngine {
 
     @Override
-    public void bind(ClientEndpoint endpoint) {
+    public boolean bind(ClientEndpoint endpoint) {
+        return true;
     }
 
     @Override

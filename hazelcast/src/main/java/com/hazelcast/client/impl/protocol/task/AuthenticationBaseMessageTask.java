@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.ClientTypes;
 import com.hazelcast.client.impl.ReAuthenticationOperationSupplier;
 import com.hazelcast.client.impl.client.ClientPrincipal;
@@ -119,9 +118,6 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
             logger.warning("Member having UUID " + principal.getOwnerUuid()
                     + " is not part of the cluster. Client Authentication rejected.");
             return CREDENTIALS_FAILED;
-        } else if (!clientEngine.isClientAllowed(new ClientImpl(null,
-                connection.getRemoteSocketAddress(), clientName, labels))) {
-            return NOT_ALLOWED_IN_CLUSTER;
         } else if (credentials == null) {
             logger.severe("Could not retrieve Credentials object!");
             return CREDENTIALS_FAILED;
@@ -201,12 +197,12 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion, clientMessage.getCorrelationId(),
                 clientName, labels);
         setConnectionType();
-        logger.info("Received auth from " + connection + ", successfully authenticated" + ", principal: " + principal
-                + ", owner connection: " + isOwnerConnection() + ", client version: " + clientVersion);
-        if (endpointManager.registerEndpoint(endpoint)) {
-            clientEngine.bind(endpoint);
+        if (!clientEngine.bind(endpoint)) {
+            return prepareNotAllowedInCluster();
         }
 
+        logger.info("Received auth from " + connection + ", successfully authenticated" + ", principal: " + principal
+                + ", owner connection: " + isOwnerConnection() + ", client version: " + clientVersion);
         final Address thisAddress = clientEngine.getThisAddress();
         byte status = AUTHENTICATED.getId();
         return encodeAuth(status, thisAddress, principal.getUuid(), principal.getOwnerUuid(),
