@@ -89,18 +89,18 @@ public class CompositeConverter implements TypeConverter {
         }
         CompositeValue compositeValue = (CompositeValue) value;
 
-        // Components are converted in-place to reduce littering. Composite
-        // values are never exposed to user code, so that's not a problem to
-        // mutate them.
         Comparable[] components = compositeValue.getComponents();
+        Comparable[] converted = new Comparable[components.length];
         for (int i = 0; i < components.length; ++i) {
             Comparable component = components[i];
-            if (component != NULL && component != NEGATIVE_INFINITY && component != POSITIVE_INFINITY) {
-                components[i] = converters[i].convert(component);
+            if (component == NULL || component == NEGATIVE_INFINITY || component == POSITIVE_INFINITY) {
+                converted[i] = component;
+            } else {
+                converted[i] = converters[i].convert(component);
             }
         }
 
-        return value;
+        return new CompositeValue(converted);
     }
 
 }
