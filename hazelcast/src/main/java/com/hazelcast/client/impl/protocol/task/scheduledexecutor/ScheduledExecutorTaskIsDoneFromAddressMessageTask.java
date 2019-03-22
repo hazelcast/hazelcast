@@ -58,6 +58,11 @@ public class ScheduledExecutorTaskIsDoneFromAddressMessageTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         return ScheduledExecutorIsDoneFromAddressCodec.encodeResponse((Boolean) response);
     }

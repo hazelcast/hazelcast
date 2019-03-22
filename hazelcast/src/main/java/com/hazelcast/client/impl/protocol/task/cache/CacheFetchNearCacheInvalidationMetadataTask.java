@@ -53,6 +53,11 @@ public class CacheFetchNearCacheInvalidationMetadataTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         CacheGetInvalidationMetaDataOperation.MetaDataResponse metaDataResponse =
                 (CacheGetInvalidationMetaDataOperation.MetaDataResponse) response;

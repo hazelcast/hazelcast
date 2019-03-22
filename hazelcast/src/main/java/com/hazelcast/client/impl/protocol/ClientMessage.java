@@ -113,7 +113,6 @@ public class ClientMessage
     private transient boolean isRetryable;
     private transient boolean acquiresResource;
     private transient String operationName;
-    private transient ClientEngine clientEngine;
     private Connection connection;
 
     protected ClientMessage() {
@@ -125,14 +124,6 @@ public class ClientMessage
 
     public void setConnection(Connection connection) {
         this.connection = connection;
-    }
-
-    public void setClientEngine(ClientEngine clientEngine) {
-        this.clientEngine = clientEngine;
-    }
-
-    public ClientEngine getClientEngine() {
-        return clientEngine;
     }
 
     protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {

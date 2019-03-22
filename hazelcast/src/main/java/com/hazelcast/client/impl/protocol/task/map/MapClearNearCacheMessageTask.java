@@ -58,6 +58,11 @@ public class MapClearNearCacheMessageTask extends AbstractInvocationMessageTask<
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.target = clientEngine.memberAddressOf(parameters.target);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         return MapClearNearCacheCodec.encodeResponse();
     }

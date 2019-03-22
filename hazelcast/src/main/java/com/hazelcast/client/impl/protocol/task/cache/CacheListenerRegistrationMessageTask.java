@@ -54,6 +54,11 @@ public class CacheListenerRegistrationMessageTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         return CacheListenerRegistrationCodec.encodeResponse();
     }

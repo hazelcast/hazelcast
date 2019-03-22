@@ -69,6 +69,11 @@ public class PNCounterGetMessageTask extends AbstractAddressMessageTask<RequestP
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.targetReplica = clientEngine.memberAddressOf(parameters.targetReplica);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         final CRDTTimestampedLong resp = (CRDTTimestampedLong) response;
         final PNCounterConfig counterConfig = nodeEngine.getConfig().findPNCounterConfig(parameters.name);

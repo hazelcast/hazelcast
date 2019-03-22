@@ -59,6 +59,11 @@ public class ScheduledExecutorTaskGetDelayFromAddressMessageTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         return ScheduledExecutorGetDelayFromAddressCodec.encodeResponse((Long) response);
     }

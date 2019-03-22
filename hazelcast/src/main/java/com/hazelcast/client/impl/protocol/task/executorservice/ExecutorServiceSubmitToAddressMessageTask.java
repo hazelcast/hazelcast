@@ -70,6 +70,11 @@ public class ExecutorServiceSubmitToAddressMessageTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         Data data = serializationService.toData(response);
         return ExecutorServiceSubmitToAddressCodec.encodeResponse(data);

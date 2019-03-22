@@ -49,6 +49,11 @@ public class ExecutorServiceCancelOnAddressMessageTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         return ExecutorServiceCancelOnAddressCodec.encodeResponse((Boolean) response);
     }

@@ -61,6 +61,11 @@ public class ScheduledExecutorTaskGetResultFromAddressMessageTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         Data data = nodeEngine.getSerializationService().toData(response);
         return ScheduledExecutorGetResultFromAddressCodec.encodeResponse(data);
