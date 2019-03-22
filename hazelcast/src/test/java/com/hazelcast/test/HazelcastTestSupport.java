@@ -132,6 +132,7 @@ public abstract class HazelcastTestSupport {
     public static final String JVM_NAME = System.getProperty("java.vm.name");
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
 
     private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
@@ -148,6 +149,8 @@ public abstract class HazelcastTestSupport {
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
         LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        ASSERT_COMPLETES_STALL_TOLERANCE = getInteger("hazelcast.assertCompletes.stallTolerance", 20);
+        LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
     }
 
     @After
@@ -1338,7 +1341,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertCompletesEventually(ProgressCheckerTask task) {
-        assertCompletesEventually(null, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        assertCompletesEventually(null, task, ASSERT_COMPLETES_STALL_TOLERANCE);
     }
 
     /**
@@ -1362,7 +1365,7 @@ public abstract class HazelcastTestSupport {
         int sleepMillis = 200;
         List<TaskProgress> progresses = new LinkedList<TaskProgress>();
         long lastProgressTimestamp = System.currentTimeMillis();
-        float lastProgress = 0;
+        double lastProgress = 0;
 
         while (true) {
             try {
@@ -1372,16 +1375,17 @@ public abstract class HazelcastTestSupport {
                 }
                 boolean toleranceExceeded = progress.timestamp() > lastProgressTimestamp
                         + SECONDS.toMillis(stallToleranceSeconds);
+                boolean progressMade = progress.progress() > lastProgress;
 
                 // we store current progress if the task advanced or the tolerance exceeded
-                if (progress.progress() > lastProgress || toleranceExceeded) {
+                if (progressMade || toleranceExceeded) {
                     progresses.add(progress);
                     lastProgressTimestamp = progress.timestamp();
                     lastProgress = progress.progress();
                 }
 
                 // if the task exceeded stall tolerance, we fail and log the history of the progress changes
-                if (toleranceExceeded) {
+                if (toleranceExceeded && !progressMade) {
                     StringBuilder sb = new StringBuilder("Stall tolerance " + stallToleranceSeconds + " seconds has been "
                             + "exceeded without completing the task. Track of progress:\n");
                     for (TaskProgress historicProgress : progresses) {
