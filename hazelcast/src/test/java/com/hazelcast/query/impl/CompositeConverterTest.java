@@ -24,6 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
+import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
+import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static com.hazelcast.query.impl.TypeConverters.BOOLEAN_CONVERTER;
 import static com.hazelcast.query.impl.TypeConverters.IDENTITY_CONVERTER;
 import static com.hazelcast.query.impl.TypeConverters.INTEGER_CONVERTER;
@@ -78,6 +81,13 @@ public class CompositeConverterTest {
                 converter(INTEGER_CONVERTER, BOOLEAN_CONVERTER, STRING_CONVERTER).convert(value(1, true, "foo")));
         assertEquals(value(1, false, "1"),
                 converter(INTEGER_CONVERTER, BOOLEAN_CONVERTER, STRING_CONVERTER).convert(value(1.0, "non-true", 1)));
+    }
+
+    @Test
+    public void testSpecialValuesArePreserved() {
+        assertEquals(value(NULL), converter(INTEGER_CONVERTER).convert(value(NULL)));
+        assertEquals(value(NEGATIVE_INFINITY), converter(INTEGER_CONVERTER).convert(value(NEGATIVE_INFINITY)));
+        assertEquals(value(POSITIVE_INFINITY), converter(INTEGER_CONVERTER).convert(value(POSITIVE_INFINITY)));
     }
 
     private static CompositeConverter converter(TypeConverter... converters) {
