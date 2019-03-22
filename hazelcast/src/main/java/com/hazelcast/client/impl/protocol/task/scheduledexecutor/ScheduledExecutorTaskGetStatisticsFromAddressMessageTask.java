@@ -61,6 +61,11 @@ public class ScheduledExecutorTaskGetStatisticsFromAddressMessageTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         ScheduledTaskStatistics stats = (ScheduledTaskStatistics) response;
         return ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(stats.getLastIdleTime(TimeUnit.NANOSECONDS),

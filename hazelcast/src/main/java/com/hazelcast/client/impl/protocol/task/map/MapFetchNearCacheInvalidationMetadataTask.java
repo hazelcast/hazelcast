@@ -53,6 +53,11 @@ public class MapFetchNearCacheInvalidationMetadataTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         MapGetInvalidationMetaDataOperation.MetaDataResponse metaDataResponse =
                 (MapGetInvalidationMetaDataOperation.MetaDataResponse) response;

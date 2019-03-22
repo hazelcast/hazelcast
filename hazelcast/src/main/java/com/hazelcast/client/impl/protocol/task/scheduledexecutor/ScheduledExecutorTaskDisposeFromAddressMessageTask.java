@@ -58,6 +58,11 @@ public class ScheduledExecutorTaskDisposeFromAddressMessageTask
     }
 
     @Override
+    protected void postDecodeParameters() {
+        parameters.address = clientEngine.memberAddressOf(parameters.address);
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         return ScheduledExecutorDisposeFromAddressCodec.encodeResponse();
     }
