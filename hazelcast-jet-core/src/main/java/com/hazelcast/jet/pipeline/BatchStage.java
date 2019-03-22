@@ -228,33 +228,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
 
     /**
      * Attaches a stage that co-aggregates the data from this and the supplied
-     * stage by performing a separate aggregate operation on each and then
-     * passing both results to {@code mapToOutputFn}, which transforms them
-     * into the final output.
-     * <p>
-     * The returned stage emits a single item.
-     *
-     * @param aggrOp0 aggregate operation to perform on this stage
-     * @param stage1 the other stage
-     * @param aggrOp1 aggregate operation to perform on the other stage
-     * @param mapToOutputFn function to apply to the aggregated results
-     * @param <T1> type of the items in the other stage
-     * @param <R0> type of the aggregated result for this stage
-     * @param <R1> type of the aggregated result for the other stage
-     * @param <OUT> the output item type
-     */
-    @Nonnull
-    default <T1, R0, R1, OUT> BatchStage<OUT> aggregate2(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
-            @Nonnull BatchStage<T1> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
-            @Nonnull BiFunctionEx<? super R0, ? super R1, ? extends OUT> mapToOutputFn
-    ) {
-        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, mapToOutputFn));
-    }
-
-    /**
-     * Attaches a stage that co-aggregates the data from this and the supplied
      * stage by performing a separate aggregate operation on each and emitting
      * a {@link Tuple2} with their results.
      * <p>
@@ -273,7 +246,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
             @Nonnull BatchStage<T1> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1
     ) {
-        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2));
+        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1));
     }
 
     /**
@@ -305,38 +278,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
             @Nonnull BatchStage<T2> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp);
 
-    /**
-     * Attaches a stage that co-aggregates the data from this and the two
-     * supplied stages by performing a separate aggregate operation on each and
-     * then passing all three results to {@code mapToOutputFn}, which
-     * transforms them into the final output.
-     * <p>
-     * The returned stage emits a single item.
-     *
-     * @param aggrOp0 aggregate operation to perform on this stage
-     * @param stage1 the first additional stage
-     * @param aggrOp1 aggregate operation to perform on {@code stage1}
-     * @param stage2 the second additional stage
-     * @param aggrOp2 aggregate operation to perform on {@code stage2}
-     * @param mapToOutputFn function to apply to the aggregated results
-     * @param <T1> type of the items in {@code stage1}
-     * @param <T2> type of the items in {@code stage2}
-     * @param <R0> type of the aggregated result for this stage
-     * @param <R1> type of the aggregated result for {@code stage1}
-     * @param <R2> type of the aggregated result for {@code stage2}
-     * @param <OUT> the output item type
-     */
-    @Nonnull
-    default <T1, T2, R0, R1, R2, OUT> BatchStage<OUT> aggregate3(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
-            @Nonnull BatchStage<T1> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
-            @Nonnull BatchStage<T2> stage2,
-            @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2,
-            @Nonnull TriFunction<? super R0, ? super R1, ? super R2, ? extends OUT> mapToOutputFn
-    ) {
-        return aggregate3(stage1, stage2, aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, mapToOutputFn));
-    }
 
     /**
      * Attaches a stage that co-aggregates the data from this and the two

@@ -117,85 +117,25 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     );
 
     @Nonnull @Override
-    <R, OUT> BatchStage<OUT> rollingAggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
-    );
-
-    @Nonnull @Override
-    default <R> BatchStage<Entry<K, R>> rollingAggregate(
+    <R> BatchStage<Entry<K, R>> rollingAggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-    ) {
-        return (BatchStage<Entry<K, R>>) GeneralStageWithKey.super.<R>rollingAggregate(aggrOp);
-    }
-
-    /**
-     * Attaches a stage that performs the given group-and-aggregate operation.
-     * For each distinct grouping key it observes in the input, it performs the
-     * supplied aggregate operation across all the items sharing that key. Once
-     * it has received all the items, it calls the supplied {@code mapToOutputFn}
-     * with each key and the associated aggregation result to create the items
-     * to emit.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     * @param aggrOp the aggregate operation to perform
-     * @param mapToOutputFn the function that creates the output item
-     * @param <R> type of the aggregation result
-     * @param <OUT> type of the output item
-     */
-    @Nonnull
-    <R, OUT> BatchStage<OUT> aggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn);
+    );
 
     /**
      * Attaches a stage that performs the given group-and-aggregate operation.
      * It emits one key-value pair (in a {@code Map.Entry}) for each distinct
      * key it observes in its input. The value is the result of the aggregate
      * operation across all the items with the given grouping key.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     * @param aggrOp the aggregate operation to perform
-     * @param <R> type of the aggregation result
-     */
-    @Nonnull
-    default <R> BatchStage<Entry<K, R>> aggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-    ) {
-        return aggregate(aggrOp, Util::entry);
-    }
-
-    /**
-     * Attaches a stage that performs the given cogroup-and-aggregate operation
-     * over the items from both this stage and {@code stage1} you supply. For
-     * each distinct grouping key it observes in the input, it performs the
-     * supplied aggregate operation across all the items sharing that key. Once
-     * it has received all the items, it calls the supplied {@code mapToOutputFn}
-     * with each key and the associated aggregation result to create the items
-     * to emit.
      * <p>
-     * This variant requires you to provide a two-input aggregate operation
-     * (refer to its {@linkplain AggregateOperation2 Javadoc} for a simple
-     * example). If you can express your logic in terms of two single-input
-     * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate2(AggregateOperation1, BatchStageWithKey, AggregateOperation1)
-     * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
-     * API and you can use the already defined single-input operations. Use
-     * this variant only when you have the need to implement an aggregate
-     * operation that combines the input streams into the same accumulator.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
-     * @param mapToOutputFn the function that creates the output item
-     * @param <T1> type of items in {@code stage1}
      * @param <R> type of the aggregation result
-     * @param <OUT> type of the output item
      */
     @Nonnull
-    <T1, R, OUT> BatchStage<OUT> aggregate2(
-            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn);
+    <R> BatchStage<Entry<K, R>> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
+    );
 
     /**
      * Attaches a stage that performs the given cogroup-and-aggregate operation
@@ -220,44 +160,10 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @param <R> type of the aggregation result
      */
     @Nonnull
-    default <T1, R> BatchStage<Entry<K, R>> aggregate2(
+    <T1, R> BatchStage<Entry<K, R>> aggregate2(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, ?, R> aggrOp
-    ) {
-        return aggregate2(stage1, aggrOp, Util::entry);
-    }
-
-    /**
-     * Attaches a stage that performs the given cogroup-and-aggregate
-     * transformation of the items from both this stage and {@code stage1} you
-     * supply. For each distinct grouping key it observes in the input, it
-     * performs the supplied aggregate operation across all the items sharing
-     * that key. It performs the aggregation separately for each input stage:
-     * {@code aggrOp0} on this stage and {@code aggrOp1} on {@code stage1}.
-     * Once it has received all the items, it calls the supplied {@code
-     * mapToOutputFn} with each key and the associated aggregation results to
-     * create the items to emit.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     *@param <R0> type of the aggregation result for stream-0
-     * @param <T1> type of items in {@code stage1}
-     * @param <R1> type of the aggregation result for stream-1
-     * @param <OUT> type of the output item
-     * @param aggrOp0 aggregate operation to perform on this stage
-     * @param stage1 the other stage
-     * @param aggrOp1 aggregate operation to perform on the other stage
-     * @param mapToOutputFn the function that creates the output item
-     */
-    @Nonnull
-    default <T1, R0, R1, OUT> BatchStage<OUT> aggregate2(
-            @Nonnull AggregateOperation1<? super T, ?, R0> aggrOp0,
-            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1,
-            @Nonnull TriFunction<? super K, ? super R0, ? super R1, OUT> mapToOutputFn
-    ) {
-        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2),
-                (key, tuple) -> mapToOutputFn.apply(key, tuple.f0(), tuple.f1()));
-    }
+    );
 
     /**
      * Attaches a stage that performs the given cogroup-and-aggregate
@@ -286,45 +192,8 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     ) {
         AggregateOperation2<? super T, ? super T1, ?, Tuple2<R0, R1>> aggrOp =
                 aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2);
-        return aggregate2(stage1, aggrOp, Util::entry);
+        return aggregate2(stage1, aggrOp);
     }
-
-    /**
-     * Attaches a stage that performs the given cogroup-and-aggregate operation
-     * over the items from this stage as well as {@code stage1} and {@code
-     * stage2} you supply. For each distinct grouping key it observes in the
-     * input, it performs the supplied aggregate operation across all the items
-     * sharing that key. Once it has received all the items, it calls the
-     * supplied {@code mapToOutputFn} with each key and the associated
-     * aggregation result to create the items to
-     * emit.
-     * <p>
-     * This variant requires you to provide a three-input aggregate operation
-     * (refer to its {@linkplain AggregateOperation3 Javadoc} for a simple
-     * example). If you can express your logic in terms of three single-input
-     * aggregate operations, one for each input stream, then you should use
-     * {@link #aggregate3(AggregateOperation1, BatchStageWithKey,
-     *      AggregateOperation1, BatchStageWithKey, AggregateOperation1)
-     * stage0.aggregate2(aggrOp0, stage1, aggrOp1, stage2, aggrOp2)} because it
-     * offers a simpler API and you can use the already defined single-input
-     * operations. Use this variant only when you have the need to implement an
-     * aggregate operation that combines the input streams into the same
-     * accumulator.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     * @param aggrOp the aggregate operation to perform
-     * @param mapToOutputFn the function that creates the output item
-     * @param <T1> type of items in {@code stage1}
-     * @param <T2> type of items in {@code stage2}
-     * @param <R> type of the aggregation result
-     * @param <OUT> type of the output item
-     */
-    @Nonnull
-    <T1, T2, R, OUT> BatchStage<OUT> aggregate3(
-            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
-            @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn);
 
     /**
      * Attaches a stage that performs the given cogroup-and-aggregate operation
@@ -353,54 +222,11 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * @param <R> type of the aggregation result
      */
     @Nonnull
-    default <T1, T2, R> BatchStage<Entry<K, R>> aggregate3(
+    <T1, T2, R> BatchStage<Entry<K, R>> aggregate3(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp
-    ) {
-        return aggregate3(stage1, stage2, aggrOp, Util::entry);
-    }
-
-    /**
-     * Attaches a stage that performs the given cogroup-and-aggregate
-     * transformation of the items from this stage as well as {@code stage1}
-     * and {@code stage2} you supply. For each distinct grouping key it
-     * observes in the input, it performs the supplied aggregate operation
-     * across all the items sharing that key. It performs the aggregation
-     * separately for each input stage: {@code aggrOp0} on this stage, {@code
-     * aggrOp1} on {@code stage1} and {@code aggrOp2} on {@code stage2}. Once
-     * it has received all the items, it calls the supplied {@code
-     * mapToOutputFn} with each key and the associated aggregation results to
-     * create the items to emit.
-     *
-     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
-     *
-     * @param aggrOp0 aggregate operation to perform on this stage
-     * @param stage1 the first additional stage
-     * @param aggrOp1 aggregate operation to perform on {@code stage1}
-     * @param stage2 the second additional stage
-     * @param aggrOp2 aggregate operation to perform on {@code stage2}
-     * @param mapToOutputFn the function that creates the output item
-     * @param <T1> type of items in {@code stage1}
-     * @param <T2> type of items in {@code stage2}
-     * @param <R0> type of the aggregation result for stream-0
-     * @param <R1> type of the aggregation result for stream-1
-     * @param <R2> type of the aggregation result for stream-2
-     * @param <OUT> type of the output item
-     */
-    @Nonnull
-    default <T1, T2, R0, R1, R2, OUT> BatchStage<OUT> aggregate3(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
-            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
-            @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2,
-            @Nonnull QuadFunction<? super K, ? super R0, ? super R1, ? super R2, ? extends OUT> mapToOutputFn
-    ) {
-        return aggregate3(stage1, stage2,
-                aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3),
-                (key, tuple) -> mapToOutputFn.apply(key, tuple.f0(), tuple.f1(), tuple.f2()));
-    }
+    );
 
     /**
      * Attaches a stage that performs the given cogroup-and-aggregate
@@ -436,7 +262,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     ) {
         AggregateOperation3<T, T1, T2, ?, Tuple3<R0, R1, R2>> aggrOp =
                 aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3);
-        return aggregate3(stage1, stage2, aggrOp, Util::entry);
+        return aggregate3(stage1, stage2, aggrOp);
     }
 
     /**

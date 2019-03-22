@@ -395,45 +395,6 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
-    public void rollingAggregate_keyed_withOutputFn() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-        BiFunctionEx<Integer, Long, String> formatFn =
-                (key, count) -> String.format("(%d, %04d)", key, count);
-
-        // When
-        StreamStage<String> mapped = streamStageFromList(input)
-                .groupingKey(i -> i % 2)
-                .rollingAggregate(counting(), formatFn);
-
-        // Then
-        mapped.drainTo(sink);
-        execute();
-        assertEquals(
-                streamToString(
-                        IntStream.range(2, itemCount + 2).mapToObj(i -> entry(i % 2, (long) i / 2)),
-                        e -> formatFn.apply(e.getKey(), e.getValue())),
-                streamToString(sinkList.stream().map(String.class::cast), identity())
-        );
-    }
-
-    @Test
-    public void rollingAggregate_when_outputFnReturnsNull_then_filteredOut() {
-        // Given
-        List<Integer> input = sequence(itemCount);
-
-        // When
-        StreamStage<String> mapped = streamStageFromList(input)
-                .groupingKey(i -> i % 2)
-                .rollingAggregate(counting(), (x, y) -> null);
-
-        // Then
-        mapped.drainTo(sink);
-        execute();
-        assertEquals(0, sinkList.size());
-    }
-
-    @Test
     public void when_rollingAggregateWithTimestamps_then_timestampsPropagated() {
         // Given
         List<Integer> input = sequence(itemCount);

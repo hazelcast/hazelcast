@@ -22,7 +22,6 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.impl.pipeline.GrAggBuilder;
 
 import javax.annotation.Nonnull;
@@ -83,26 +82,6 @@ public class GroupAggregateBuilder<K, R0> {
 
     /**
      * Creates and returns a pipeline stage that performs the co-aggregation
-     * of the stages registered with this builder object. The composite
-     * aggregate operation places the results of the individual aggregate
-     * operations in an {@code ItemsByTag} and the {@code mapToOutputFn} you
-     * supply transforms it to the final result to emit. Use the tags you got
-     * from this builder in the implementation of {@code mapToOutputFn} to
-     * access the results.
-     *
-     * @param mapToOutputFn function that transforms the aggregation result into the output item
-     * @param <OUT> the output item type
-     */
-    @Nonnull
-    public <OUT> BatchStage<OUT> build(
-            @Nonnull BiFunctionEx<? super K, ItemsByTag, OUT> mapToOutputFn
-    ) {
-        AggregateOperation<Object[], ItemsByTag> aggrOp = aggrOpBuilder.build();
-        return grAggBuilder.buildBatch(aggrOp, mapToOutputFn);
-    }
-
-    /**
-     * Creates and returns a pipeline stage that performs the co-aggregation
      * of the stages registered with this builder object and emits a {@code
      * Map.Entry(key, resultsByTag)} for each distinct key. The composite
      * aggregate operation places the results of the individual aggregate
@@ -113,6 +92,7 @@ public class GroupAggregateBuilder<K, R0> {
      */
     @Nonnull
     public BatchStage<Entry<K, ItemsByTag>> build() {
-        return build(Util::entry);
+        AggregateOperation<Object[], ItemsByTag> aggrOp = aggrOpBuilder.build();
+        return grAggBuilder.buildBatch(aggrOp, Util::entry);
     }
 }

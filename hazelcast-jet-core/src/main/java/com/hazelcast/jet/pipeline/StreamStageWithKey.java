@@ -57,6 +57,7 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     }
 
     @Nonnull @Override
+    @SuppressWarnings("unchecked")
     default <V, R> StreamStage<R> mapUsingIMap(
             @Nonnull IMap<K, V> iMap,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
@@ -102,18 +103,9 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     );
 
     @Nonnull @Override
-    @SuppressWarnings("unchecked")
-    <R, OUT> StreamStage<OUT> rollingAggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
-    );
-
-    @Nonnull @Override
-    default <R> StreamStage<Entry<K, R>> rollingAggregate(
+    <R> StreamStage<Entry<K, R>> rollingAggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
-    ) {
-        return (StreamStage<Entry<K, R>>) GeneralStageWithKey.super.<R>rollingAggregate(aggrOp);
-    }
+    );
 
     @Nonnull @Override
     default <R> StreamStage<R> customTransform(@Nonnull String stageName,

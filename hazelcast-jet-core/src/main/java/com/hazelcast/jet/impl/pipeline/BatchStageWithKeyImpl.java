@@ -18,11 +18,11 @@ package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
@@ -33,10 +33,10 @@ import com.hazelcast.jet.pipeline.BatchStageWithKey;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DO_NOT_ADAPT;
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -107,11 +107,10 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
     }
 
     @Nonnull @Override
-    public <R, OUT> BatchStage<OUT> rollingAggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
+    public <R> BatchStage<Entry<K, R>> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
-        return computeStage.attachRollingAggregate(keyFn(), aggrOp, mapToOutputFn);
+        return computeStage.attachRollingAggregate(keyFn(), aggrOp);
     }
 
     @Nonnull @Override
@@ -120,49 +119,43 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
     }
 
     @Nonnull @Override
-    public <R, OUT> BatchStage<OUT> aggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
+    public <R> BatchStage<Entry<K, R>> aggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
-        checkSerializable(mapToOutputFn, "mapToOutputFn");
         return computeStage.attach(new GroupTransform<>(
                         singletonList(computeStage.transform),
                         singletonList(keyFn()),
                         aggrOp,
-                        mapToOutputFn),
+                        Util::entry),
                 DO_NOT_ADAPT);
     }
 
     @Nonnull @Override
-    public <T1, R, OUT> BatchStage<OUT> aggregate2(
+    public <T1, R> BatchStage<Entry<K, R>> aggregate2(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull AggregateOperation2<? super T, ? super T1, ?, R> aggrOp
     ) {
-        checkSerializable(mapToOutputFn, "mapToOutputFn");
         return computeStage.attach(
                 new GroupTransform<>(
                         asList(computeStage.transform, transformOf(stage1)),
                         asList(keyFn(), stage1.keyFn()),
                         aggrOp,
-                        mapToOutputFn
+                        Util::entry
                 ), DO_NOT_ADAPT);
     }
 
     @Nonnull @Override
-    public <T1, T2, R, OUT> BatchStage<OUT> aggregate3(
+    public <T1, T2, R> BatchStage<Entry<K, R>> aggregate3(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
-            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp
     ) {
-        checkSerializable(mapToOutputFn, "mapToOutputFn");
         return computeStage.attach(
                 new GroupTransform<>(
                         asList(computeStage.transform, transformOf(stage1), transformOf(stage2)),
                         asList(keyFn(), stage1.keyFn(), stage2.keyFn()),
                         aggrOp,
-                        mapToOutputFn),
+                        Util::entry),
                 DO_NOT_ADAPT);
     }
 }

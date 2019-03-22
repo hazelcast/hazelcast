@@ -20,7 +20,6 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
@@ -30,6 +29,7 @@ import com.hazelcast.jet.pipeline.StreamStageWithKey;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> implements StreamStageWithKey<T, K> {
@@ -98,11 +98,10 @@ public class StreamStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> im
     }
 
     @Nonnull @Override
-    public <R, OUT> StreamStage<OUT> rollingAggregate(
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
+    public <R> StreamStage<Map.Entry<K, R>> rollingAggregate(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
-        return computeStage.attachRollingAggregate(keyFn(), aggrOp, mapToOutputFn);
+        return computeStage.attachRollingAggregate(keyFn(), aggrOp);
     }
 
     @Nonnull @Override

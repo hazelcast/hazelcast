@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.BiFunctionEx;
@@ -248,17 +249,15 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     <K, R, OUT, RET> RET attachRollingAggregate(
             FunctionEx<? super T, ? extends K> keyFn,
-            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
-            @Nonnull BiFunctionEx<? super K, ? super R, ? extends OUT> mapToOutputFn
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
 
     ) {
         checkSerializable(keyFn, "keyFn");
-        checkSerializable(mapToOutputFn, "mapToOutputFn");
         return (RET) attach(new RollingAggregateTransform(
                         transform,
                         fnAdapter.adaptKeyFn(keyFn),
                         fnAdapter.adaptAggregateOperation1(aggrOp),
-                        fnAdapter.adaptRollingAggregateOutputFn(mapToOutputFn)
+                        fnAdapter.adaptRollingAggregateOutputFn(Util::entry)
         ), fnAdapter);
     }
 
