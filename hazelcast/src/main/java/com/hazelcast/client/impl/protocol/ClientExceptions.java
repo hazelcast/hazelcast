@@ -36,7 +36,7 @@ import com.hazelcast.cp.exception.CannotReplicateException;
 import com.hazelcast.cp.exception.LeaderDemotedException;
 import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.exception.StaleAppendRequestException;
-import com.hazelcast.cp.lock.exception.LockAcquireLimitExceededException;
+import com.hazelcast.cp.lock.exception.LockAcquireLimitReachedException;
 import com.hazelcast.cp.lock.exception.LockOwnershipLostException;
 import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledException;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
@@ -209,7 +209,7 @@ public class ClientExceptions {
         register(ClientProtocolErrorCodes.CONSISTENCY_LOST_EXCEPTION, ConsistencyLostException.class);
         register(ClientProtocolErrorCodes.SESSION_EXPIRED_EXCEPTION, SessionExpiredException.class);
         register(ClientProtocolErrorCodes.WAIT_KEY_CANCELLED_EXCEPTION, WaitKeyCancelledException.class);
-        register(ClientProtocolErrorCodes.LOCK_ACQUIRE_LIMIT_EXCEEDED_EXCEPTION, LockAcquireLimitExceededException.class);
+        register(ClientProtocolErrorCodes.LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION, LockAcquireLimitReachedException.class);
         register(ClientProtocolErrorCodes.LOCK_OWNERSHIP_LOST_EXCEPTION, LockOwnershipLostException.class);
         register(ClientProtocolErrorCodes.CP_GROUP_DESTROYED_EXCEPTION, CPGroupDestroyedException.class);
         register(ClientProtocolErrorCodes.CANNOT_REPLICATE_EXCEPTION, CannotReplicateException.class);

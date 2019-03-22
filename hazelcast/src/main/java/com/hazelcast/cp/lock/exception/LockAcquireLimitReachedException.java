@@ -28,12 +28,12 @@ import com.hazelcast.cp.lock.FencedLock;
  * @see FencedLockConfig
  * @see FencedLock
  */
-public class LockAcquireLimitExceededException extends HazelcastException {
+public class LockAcquireLimitReachedException extends HazelcastException {
 
-    public LockAcquireLimitExceededException() {
+    public LockAcquireLimitReachedException() {
     }
 
-    public LockAcquireLimitExceededException(String message) {
+    public LockAcquireLimitReachedException(String message) {
         super(message);
     }
 
