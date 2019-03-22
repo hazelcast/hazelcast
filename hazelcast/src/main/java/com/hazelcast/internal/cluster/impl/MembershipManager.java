@@ -575,6 +575,9 @@ public class MembershipManager {
         // Make sure that all pending join requests are cancelled temporarily.
         clusterJoinManager.setMastershipClaimInProgress();
 
+        // pause migrations until mastership claim process completes
+        node.getPartitionService().pauseMigration();
+
         clusterService.setMasterAddress(node.getThisAddress());
         return true;
     }
@@ -1117,6 +1120,8 @@ public class MembershipManager {
                 sendMemberListToOthers();
                 logger.info("Mastership is claimed with: " + newMembersView);
             } finally {
+                // Resume migrations, they are disabled when mastership claim is started
+                node.getPartitionService().resumeMigration();
                 clusterServiceLock.unlock();
             }
         }
