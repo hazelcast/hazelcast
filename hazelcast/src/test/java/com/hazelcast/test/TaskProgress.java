@@ -38,7 +38,7 @@ public interface TaskProgress {
      *
      * @return the progress
      */
-    float progress();
+    double progress();
 
     /**
      * Returns the timestamp when this progress snapshot was taken

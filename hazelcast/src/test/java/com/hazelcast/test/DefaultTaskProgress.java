@@ -20,13 +20,13 @@ public class DefaultTaskProgress implements TaskProgress {
     private final long timestamp = System.currentTimeMillis();
     private final int total;
     private final int done;
-    private final float progress;
+    private final double progress;
     private final boolean completed;
 
     public DefaultTaskProgress(int total, int done) {
         this.total = total;
         this.done = done;
-        this.progress = ((float) done) / total;
+        this.progress = ((double) done) / total;
         this.completed = total == done;
     }
 
@@ -36,7 +36,7 @@ public class DefaultTaskProgress implements TaskProgress {
     }
 
     @Override
-    public float progress() {
+    public double progress() {
         return progress;
     }
 
