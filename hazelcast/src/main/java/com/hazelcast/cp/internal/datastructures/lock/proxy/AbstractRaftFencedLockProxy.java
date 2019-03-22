@@ -24,7 +24,7 @@ import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.internal.session.SessionAwareProxy;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.cp.lock.exception.LockAcquireLimitExceededException;
+import com.hazelcast.cp.lock.exception.LockAcquireLimitReachedException;
 import com.hazelcast.cp.lock.exception.LockOwnershipLostException;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.Clock;
@@ -92,7 +92,7 @@ public abstract class AbstractRaftFencedLockProxy extends SessionAwareProxy impl
                     return;
                 }
 
-                throw new LockAcquireLimitExceededException("Lock[" + proxyName + "] reentrant lock limit exceeded!");
+                throw new LockAcquireLimitReachedException("Lock[" + proxyName + "] reentrant lock limit is already reached!");
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
                 verifyNoLockedSessionIdPresent(threadId);
@@ -125,7 +125,7 @@ public abstract class AbstractRaftFencedLockProxy extends SessionAwareProxy impl
                     return fence;
                 }
 
-                throw new LockAcquireLimitExceededException("Lock[" + proxyName + "] reentrant lock limit exceeded!");
+                throw new LockAcquireLimitReachedException("Lock[" + proxyName + "] reentrant lock limit is already reached!");
             } catch (SessionExpiredException e) {
                 invalidateSession(sessionId);
                 verifyNoLockedSessionIdPresent(threadId);

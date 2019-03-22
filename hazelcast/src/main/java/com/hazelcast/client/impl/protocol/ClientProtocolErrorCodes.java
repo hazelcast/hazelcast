@@ -113,7 +113,7 @@ public final class ClientProtocolErrorCodes {
     public static final int CONSISTENCY_LOST_EXCEPTION = 88;
     public static final int SESSION_EXPIRED_EXCEPTION = 89;
     public static final int WAIT_KEY_CANCELLED_EXCEPTION = 90;
-    public static final int LOCK_ACQUIRE_LIMIT_EXCEEDED_EXCEPTION = 91;
+    public static final int LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION = 91;
     public static final int LOCK_OWNERSHIP_LOST_EXCEPTION = 92;
     public static final int CP_GROUP_DESTROYED_EXCEPTION = 93;
     public static final int CANNOT_REPLICATE_EXCEPTION = 94;
