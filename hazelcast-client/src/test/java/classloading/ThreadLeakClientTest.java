@@ -18,13 +18,22 @@ package classloading;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
+import com.hazelcast.client.spi.impl.discovery.ClientDiscoverySpiTest;
+import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Collections;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -42,13 +51,74 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
     @Test
     public void testThreadLeak_withoutCluster() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig()
-                .setAsyncStart(true);
-        clientConfig.getNetworkConfig()
-                .setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         client.shutdown();
     }
+
+    @Test
+    public void testThreadLeakWhenClientCanNotStart() {
+        try {
+            HazelcastClient.newHazelcastClient();
+            Assert.fail();
+        } catch (IllegalStateException e) {
+        }
+    }
+
+    @Test
+    public void testThreadLeakWhenClientCanNotStartDueToAuthenticationError() {
+        try {
+            ClientConfig config = new ClientConfig();
+            config.getGroupConfig().setName("invalid cluster");
+            HazelcastClient.newHazelcastClient(config);
+            Assert.fail();
+        } catch (IllegalStateException e) {
+        }
+    }
+
+    @Test
+    public void testThreadLeakWhenClientCanNotStartDueToNoMemberDiscoveryStrategyConfig() {
+        try {
+            ClientConfig config = new ClientConfig();
+            config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
+                    new DiscoveryStrategyConfig(new ClientDiscoverySpiTest.NoMemberDiscoveryStrategyFactory(),
+                            Collections.<String, Comparable>emptyMap()));
+            HazelcastClient.newHazelcastClient(config);
+            Assert.fail();
+        } catch (IllegalStateException e) {
+        }
+    }
+
+    @Test
+    public void testThreadLeakWhenClientCanNotStartDueToIncorrectUserCodeDeploymentClass() {
+        try {
+            ClientConfig config = new ClientConfig();
+            ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+            clientUserCodeDeploymentConfig.addClass("invalid.class.test");
+            config.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+            HazelcastClient.newHazelcastClient(config);
+            Assert.fail();
+        } catch (HazelcastException e) {
+        }
+    }
+
+
+    @Test
+    public void testThreadLeakWhenClientCanNotStartDueToIncorrectSerializationServiceFactoryClassName() {
+        try {
+            ClientConfig config = new ClientConfig();
+            SerializationConfig serializationConfig = new SerializationConfig();
+            serializationConfig.addDataSerializableFactoryClass(5, "invalid.factory");
+            config.setSerializationConfig(serializationConfig);
+
+            HazelcastClient.newHazelcastClient(config);
+            Assert.fail();
+        } catch (HazelcastSerializationException e) {
+        }
+    }
+
 }

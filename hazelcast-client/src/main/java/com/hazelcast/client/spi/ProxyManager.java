@@ -159,7 +159,10 @@ public final class ProxyManager {
 
     public ProxyManager(HazelcastClientInstanceImpl client) {
         this.client = client;
+    }
 
+    @SuppressWarnings("checkstyle:methodlength")
+    public void init(ClientConfig config, ClientContext clientContext) {
         List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
@@ -168,10 +171,7 @@ public final class ProxyManager {
                 }
             }
         }
-    }
 
-    @SuppressWarnings("checkstyle:methodlength")
-    public void init(ClientConfig config, ClientContext clientContext) {
         context = clientContext;
         // register defaults
         register(MapService.SERVICE_NAME, createServiceProxyFactory(MapService.class));

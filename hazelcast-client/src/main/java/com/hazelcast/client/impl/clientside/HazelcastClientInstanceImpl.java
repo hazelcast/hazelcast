@@ -160,6 +160,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
@@ -234,10 +235,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         properties = new HazelcastProperties(config.getProperties());
         metricsRegistry = initMetricsRegistry();
         serializationService = clientExtension.createSerializationService((byte) -1);
-        metricsRegistry.collectMetrics(clientExtension);
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
-        metricsRegistry.collectMetrics(executionService);
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
@@ -311,6 +310,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, probeLevel);
+        return metricsRegistry;
+    }
+
+    private void startMetrics() {
         RuntimeMetricSet.register(metricsRegistry);
         GarbageCollectionMetricSet.register(metricsRegistry);
         OperatingSystemMetricSet.register(metricsRegistry);
@@ -318,7 +321,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
         metricsRegistry.scanAndRegister(clientExtension.getMemoryStats(), "memory");
-        return metricsRegistry;
+        metricsRegistry.collectMetrics(clientExtension);
+        metricsRegistry.collectMetrics(executionService);
     }
 
     private LoadBalancer initLoadBalancer(ClientConfig config) {
@@ -382,50 +386,56 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void start() {
-        lifecycleService.setStarted();
-        invocationService.start();
-        clusterService.start();
-        ClientContext clientContext = new ClientContext(this);
         try {
+            lifecycleService.start();
+            startMetrics();
+            invocationService.start();
+            clusterService.start();
+            ClientContext clientContext = new ClientContext(this);
             userCodeDeploymentService.start();
             connectionManager.start();
             clientConnectionStrategy.init(clientContext);
             clientConnectionStrategy.start();
-        } catch (Exception e) {
-            throw rethrow(e);
+
+            diagnostics.start();
+
+            // static loggers at beginning of file
+            diagnostics.register(
+                    new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
+            diagnostics.register(
+                    new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
+            diagnostics.register(
+                    new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
+
+            // periodic loggers
+            diagnostics.register(
+                    new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
+            diagnostics.register(
+                    new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
+            diagnostics.register(
+                    new NetworkingImbalancePlugin(properties, connectionManager.getNetworking(),
+                            loggingService.getLogger(NetworkingImbalancePlugin.class)));
+            diagnostics.register(
+                    new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
+                            properties));
+
+            metricsRegistry.collectMetrics(listenerService);
+
+            proxyManager.init(config, clientContext);
+            listenerService.start();
+            loadBalancer.init(getCluster(), config);
+            partitionService.start();
+            statistics.start();
+            clientExtension.afterStart(this);
+            cpSubsystem.init(clientContext);
+        } catch (Throwable e) {
+            try {
+                doShutdown(false);
+            } catch (Throwable t) {
+               ignore(t);
+            }
+            rethrow(e);
         }
-
-        diagnostics.start();
-
-        // static loggers at beginning of file
-        diagnostics.register(
-                new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
-        diagnostics.register(
-                new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
-        diagnostics.register(
-                new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
-
-        // periodic loggers
-        diagnostics.register(
-                new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
-        diagnostics.register(
-                new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
-        diagnostics.register(
-                new NetworkingImbalancePlugin(properties, connectionManager.getNetworking(),
-                        loggingService.getLogger(NetworkingImbalancePlugin.class)));
-        diagnostics.register(
-                new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
-                        properties));
-
-        metricsRegistry.collectMetrics(listenerService);
-
-        proxyManager.init(config, clientContext);
-        listenerService.start();
-        loadBalancer.init(getCluster(), config);
-        partitionService.start();
-        statistics.start();
-        clientExtension.afterStart(this);
-        cpSubsystem.init(clientContext);
     }
 
     public void onClusterConnect(Connection ownerConnection) throws Exception {

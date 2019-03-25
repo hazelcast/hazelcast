@@ -42,7 +42,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.util.HashUtil.hashToIndex;
@@ -125,9 +124,6 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
-
-        metricsRegistry.scanAndRegister(this, "tcp");
-        metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, INFO);
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -158,6 +154,10 @@ public final class NioNetworking implements Networking {
         }
 
         logger.log(selectorMode != SELECT ? Level.INFO : FINE, "IO threads selector mode is " + selectorMode);
+
+        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
+            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, ProbeLevel.INFO);
+        }
 
         this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
             @Override
@@ -300,7 +300,6 @@ public final class NioNetworking implements Networking {
     }
 
     private class PublishAllTask implements Runnable {
-
         @Override
         public void run() {
             for (NioChannel channel : channels) {
