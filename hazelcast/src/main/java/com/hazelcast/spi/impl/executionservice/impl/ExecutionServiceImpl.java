@@ -144,7 +144,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
                 singleExecutorThreadFactory,
                 nodeEngine.getProperties().getBoolean(GroupProperty.TASK_SCHEDULER_REMOVE_ON_CANCEL));
 
-        int coreSize = RuntimeAvailableProcessors.get();
+        int coreSize = Math.max(RuntimeAvailableProcessors.get(), 2);
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
         register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);
