@@ -93,9 +93,9 @@ final class NioChannelOptions implements ChannelOptions {
             } else if (option.equals(SO_TIMEOUT)) {
                 socket.setSoTimeout((Integer) value);
             } else if (option.equals(SO_LINGER)) {
-                int soLonger = (Integer) value;
-                if (soLonger > 0) {
-                    socket.setSoLinger(true, soLonger);
+                int soLinger = (Integer) value;
+                if (soLinger >= 0) {
+                    socket.setSoLinger(true, soLinger);
                 }
             } else {
                 values.put(option.name(), value);
