@@ -17,12 +17,15 @@
 package com.hazelcast.cp.lock.exception;
 
 import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.cp.session.CPSession;
 
 /**
- * Thrown when session of a lock holder is closed and the lock holder attempts
- * a new lock / unlock operation on the lock.
+ * Thrown when an endpoint (either a Hazelcast server or a client) interacts
+ * with a {@link FencedLock} instance after its CP session is closed
+ * in the underlying CP group and its lock ownership is cancelled.
  *
  * @see FencedLock
+ * @see CPSession
  */
 public class LockOwnershipLostException extends IllegalMonitorStateException {
 
