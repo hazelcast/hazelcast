@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.cp.lock.exception.LockAcquireLimitExceededException;
+import com.hazelcast.cp.lock.exception.LockAcquireLimitReachedException;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -156,7 +156,7 @@ public class BoundedReentrantFencedLockTest extends HazelcastRaftTestSupport {
         lock.lock();
         lock.lock();
 
-        expectedException.expect(LockAcquireLimitExceededException.class);
+        expectedException.expect(LockAcquireLimitReachedException.class);
         lock.lock();
     }
 

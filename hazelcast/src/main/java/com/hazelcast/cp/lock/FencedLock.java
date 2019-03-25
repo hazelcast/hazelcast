@@ -21,7 +21,7 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.lock.exception.LockAcquireLimitExceededException;
+import com.hazelcast.cp.lock.exception.LockAcquireLimitReachedException;
 import com.hazelcast.cp.lock.exception.LockOwnershipLostException;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
@@ -48,9 +48,9 @@ import java.util.concurrent.locks.Lock;
  * in a linearizable manner. You can configure the reentrancy behaviour via
  * {@link FencedLockConfig}. For instance, reentrancy can be disabled and
  * {@link FencedLock} can work as a non-reentrant mutex. One can also set
- * a custom reentrancy limit. When the reentrancy limit is exceeded,
+ * a custom reentrancy limit. When the reentrancy limit is reached,
  * {@link FencedLock} does not block a lock call. Instead, it fails with
- * {@link LockAcquireLimitExceededException} or a specified return value.
+ * {@link LockAcquireLimitReachedException} or a specified return value.
  * Please check the locking methods to see details about the behaviour.
  * <p>
  * Distributed locks are unfortunately NOT EQUIVALENT to single-node mutexes
@@ -123,7 +123,7 @@ import java.util.concurrent.locks.Lock;
  * @see CPSessionManagementService
  * @see CPSession
  * @see LockOwnershipLostException
- * @see LockAcquireLimitExceededException
+ * @see LockAcquireLimitReachedException
  */
 public interface FencedLock extends Lock, DistributedObject {
 
@@ -138,8 +138,9 @@ public interface FencedLock extends Lock, DistributedObject {
      * <p>
      * When the caller already holds the lock and the current lock() call is
      * reentrant, the call can fail with
-     * {@link LockAcquireLimitExceededException} if the lock acquire limit is
-     * exceeded. Please see {@link FencedLockConfig} for more information.
+     * {@link LockAcquireLimitReachedException} if the lock acquire limit is
+     * already reached. Please see {@link FencedLockConfig} for more
+     * information.
      * <p>
      * If the lock is not available then the current thread becomes disabled
      * for thread scheduling purposes and lies dormant until the lock has been
@@ -168,8 +169,8 @@ public interface FencedLock extends Lock, DistributedObject {
      *
      * @throws LockOwnershipLostException if the underlying CP session is
      *         closed while locking reentrantly
-     * @throws LockAcquireLimitExceededException if the lock call is reentrant
-     *         and the configured lock acquire limit is exceeded.
+     * @throws LockAcquireLimitReachedException if the lock call is reentrant
+     *         and the configured lock acquire limit is already reached.
      */
     void lock();
 
@@ -179,8 +180,9 @@ public interface FencedLock extends Lock, DistributedObject {
      * <p>
      * When the caller already holds the lock and the current lock() call is
      * reentrant, the call can fail with
-     * {@link LockAcquireLimitExceededException} if the lock acquire limit is
-     * exceeded. Please see {@link FencedLockConfig} for more information.
+     * {@link LockAcquireLimitReachedException} if the lock acquire limit is
+     * already reached. Please see {@link FencedLockConfig} for more
+     * information.
      * <p>
      * If the lock is not available then the current thread becomes disabled
      * for thread scheduling purposes and lies dormant until the lock has been
@@ -220,8 +222,8 @@ public interface FencedLock extends Lock, DistributedObject {
      *
      * @throws LockOwnershipLostException if the underlying CP session is
      *         closed while locking reentrantly
-     * @throws LockAcquireLimitExceededException if the lock call is reentrant
-     *         and the configured lock acquire limit is exceeded.
+     * @throws LockAcquireLimitReachedException if the lock call is reentrant
+     *         and the configured lock acquire limit is already reached.
      */
     void lockInterruptibly() throws InterruptedException;
 
@@ -229,8 +231,9 @@ public interface FencedLock extends Lock, DistributedObject {
      * Acquires the lock and returns the fencing token assigned to the current
      * thread for this lock acquire. If the lock is acquired reentrantly,
      * the same fencing token is returned, or the lock() call can fail with
-     * {@link LockAcquireLimitExceededException} if the lock acquire limit is
-     * exceeded. Please see {@link FencedLockConfig} for more information.
+     * {@link LockAcquireLimitReachedException} if the lock acquire limit is
+     * already reached. Please see {@link FencedLockConfig} for more
+     * information.
      * <p>
      * If the lock is not available then the current thread becomes disabled
      * for thread scheduling purposes and lies dormant until the lock has been
@@ -293,8 +296,8 @@ public interface FencedLock extends Lock, DistributedObject {
      *
      * @throws LockOwnershipLostException if the underlying CP session is
      *         closed while locking reentrantly
-     * @throws LockAcquireLimitExceededException if the lock call is reentrant
-     *         and the configured lock acquire limit is exceeded.
+     * @throws LockAcquireLimitReachedException if the lock call is reentrant
+     *         and the configured lock acquire limit is already reached.
      */
     long lockAndGetFence();
 

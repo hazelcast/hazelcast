@@ -294,8 +294,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 @Override
                 public void onResponse(PartitionRuntimeState partitionState) {
                     resetMasterTriggeredFlag();
-                    partitionState.setMaster(masterAddress);
-                    processPartitionRuntimeState(partitionState);
+                    if (partitionState != null) {
+                        partitionState.setMaster(masterAddress);
+                        processPartitionRuntimeState(partitionState);
+                    }
                 }
 
                 @Override
