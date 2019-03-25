@@ -66,7 +66,7 @@ public class JetConfigXmlGeneratorTest {
         JetConfig jetConfig = new JetConfig();
         InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
         instanceConfig.setCooperativeThreadCount(randomInt())
-                      .setBackupCount(randomInt(7))
+                      .setBackupCount(randomInt(6))
                       .setScaleUpDelayMillis(randomInt())
                       .setFlowControlPeriodMs(randomInt())
                       .setLosslessRestartEnabled(true);
