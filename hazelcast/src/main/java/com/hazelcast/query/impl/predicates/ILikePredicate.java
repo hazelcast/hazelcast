@@ -40,7 +40,7 @@ public class ILikePredicate extends LikePredicate {
 
     @Override
     protected int getFlags() {
-        return Pattern.CASE_INSENSITIVE;
+        return super.getFlags() | Pattern.CASE_INSENSITIVE;
     }
 
     @Override

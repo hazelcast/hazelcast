@@ -48,28 +48,32 @@ public class LikePredicate extends AbstractPredicate {
         String attributeValueString = (String) attributeValue;
         if (attributeValueString == null) {
             return (expression == null);
-        } else if (expression == null) {
-            return false;
-        } else {
-            if (pattern == null) {
-                // we quote the input string then escape then replace % and _
-                // at the end we have a regex pattern look like: \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
-                final String quotedExpression = Pattern.quote(expression);
-                String regex = quotedExpression
-                        //escaped %
-                        .replaceAll("(?<!\\\\)[%]", "\\\\E.*\\\\Q")
-                                //escaped _
-                        .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")
-                                //non escaped %
-                        .replaceAll("\\\\%", "%")
-                                //non escaped _
-                        .replaceAll("\\\\_", "_");
-                int flags = getFlags();
-                pattern = Pattern.compile(regex, flags);
-            }
-            Matcher m = pattern.matcher(attributeValueString);
-            return m.matches();
         }
+
+        if (expression == null) {
+            return false;
+        }
+
+        pattern = pattern != null ? pattern : createPattern(expression);
+        Matcher m = pattern.matcher(attributeValueString);
+        return m.matches();
+    }
+
+    private Pattern createPattern(String expression) {
+        // we quote the input string then escape then replace % and _
+        // at the end we have a regex pattern look like: \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
+        final String quotedExpression = Pattern.quote(expression);
+        String regex = quotedExpression
+                //escaped %
+                .replaceAll("(?<!\\\\)[%]", "\\\\E.*\\\\Q")
+                //escaped _
+                .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")
+                //non escaped %
+                .replaceAll("\\\\%", "%")
+                //non escaped _
+                .replaceAll("\\\\_", "_");
+        int flags = getFlags();
+        return Pattern.compile(regex, flags);
     }
 
     @Override
@@ -84,10 +88,8 @@ public class LikePredicate extends AbstractPredicate {
         expression = in.readUTF();
     }
 
-
     protected int getFlags() {
-        //no addFlag
-        return 0;
+        return Pattern.DOTALL;
     }
 
     @Override
