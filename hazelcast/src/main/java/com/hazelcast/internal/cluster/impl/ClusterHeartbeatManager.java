@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
+import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXECUTOR_NAME;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
@@ -216,7 +216,7 @@ public class ClusterHeartbeatManager {
     void init() {
         ExecutionService executionService = nodeEngine.getExecutionService();
 
-        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, new Runnable() {
             public void run() {
                 heartbeat();
             }
@@ -587,7 +587,7 @@ public class ClusterHeartbeatManager {
     }
 
     private void startPeriodicPinger() {
-        nodeEngine.getExecutionService().scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
+        nodeEngine.getExecutionService().scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, new Runnable() {
             public void run() {
                 Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
 

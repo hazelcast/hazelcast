@@ -67,7 +67,6 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.GracefulShutdownAwareService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -125,6 +124,7 @@ import static java.security.AccessController.doPrivileged;
 public class Node {
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
+    private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
 
     public final HazelcastInstanceImpl hazelcastInstance;
 
@@ -477,7 +477,7 @@ public class Node {
     }
 
     private boolean callGracefulShutdownAwareServices(final int maxWaitSeconds) {
-        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.SYSTEM_EXECUTOR);
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(GRACEFUL_SHUTDOWN_EXECUTOR_NAME);
         Collection<GracefulShutdownAwareService> services = nodeEngine.getServices(GracefulShutdownAwareService.class);
         Collection<Future> futures = new ArrayList<Future>(services.size());
 
