@@ -204,8 +204,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
     protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
 
-    protected static final String MAX_IDLE_TIME_IS_TOO_SMALL = "Parameter maxIdle in seconds representation must be greater or"
-            + " equal than " + RecordStore.MIN_ALLOWED_MAX_IDLE;
+    protected static final String MAX_IDLE_TIME_IS_TOO_SMALL = "Parameter maxIdle in seconds representation must be greater than"
+            + " or equal to " + RecordStore.MIN_ALLOWED_MAX_IDLE;
 
     @SuppressWarnings("unchecked")
     protected static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
