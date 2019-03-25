@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.util.StringUtil;
 
 import java.util.Collection;
@@ -311,8 +312,14 @@ public class NetworkConfig {
      *
      * @return the SSLConfig
      * @see #setSSLConfig(SSLConfig)
+     * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
+     *         {@link HazelcastRuntimePermission}
      */
     public SSLConfig getSSLConfig() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new HazelcastRuntimePermission("com.hazelcast.config.NetworkConfig.getSSLConfig"));
+        }
         return sslConfig;
     }
 
@@ -322,8 +329,14 @@ public class NetworkConfig {
      * @param sslConfig the SSLConfig
      * @return the updated NetworkConfig
      * @see #getSSLConfig()
+     * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
+     *         {@link HazelcastRuntimePermission}
      */
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new HazelcastRuntimePermission("com.hazelcast.config.NetworkConfig.setSSLConfig"));
+        }
         this.sslConfig = sslConfig;
         return this;
     }

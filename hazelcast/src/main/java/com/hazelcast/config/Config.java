@@ -25,6 +25,7 @@ import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.util.function.BiConsumer;
 
@@ -3380,8 +3381,14 @@ public class Config {
      * is used to enable enterprise features.
      *
      * @return the license key
+     * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
+     *         {@link HazelcastRuntimePermission}
      */
     public String getLicenseKey() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new HazelcastRuntimePermission("com.hazelcast.config.Config.getLicenseKey"));
+        }
         return licenseKey;
     }
 
