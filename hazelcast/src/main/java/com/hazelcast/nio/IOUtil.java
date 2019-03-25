@@ -385,22 +385,6 @@ public final class IOUtil {
     }
 
     /**
-     * Quietly attempts to close a {@link Closeable}, swallowing any exception.
-     *
-     * @param closeable closeable to close. If {@code null}, no action is taken.
-     */
-    public static void close(Closeable closeable) {
-        if (closeable == null) {
-            return;
-        }
-        try {
-            closeable.close();
-        } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
-        }
-    }
-
-    /**
      * Ensures that the file described by the supplied parameter does not exist
      * after the method returns. If the file didn't exist, returns silently.
      * If the file could not be deleted, returns silently.
