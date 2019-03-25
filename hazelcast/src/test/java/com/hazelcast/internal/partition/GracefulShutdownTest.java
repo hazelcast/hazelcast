@@ -20,8 +20,11 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -39,14 +42,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.AbstractPartitionAssignmentsCorrectnessTest.assertPartitionAssignments;
 import static com.hazelcast.internal.partition.AbstractPartitionAssignmentsCorrectnessTest.assertPartitionAssignmentsEventually;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
+import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /*
  * When executed with HazelcastParallelClassRunner, this test creates a massive amount of threads (peaks of 1000 threads
@@ -479,6 +489,68 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         f1.get();
         f2.get();
+    }
+
+    @Test
+    public void shutdownMasterCandidate_whileMastershipClaimIsInProgress() throws Exception {
+        Config config = new Config();
+        // setting a very graceful shutdown high timeout value
+        // to guarantee instance.shutdown() not to timeout
+        config.setProperty(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "99999999999");
+
+        final HazelcastInstance[] instances = factory.newInstances(config, 4);
+        assertClusterSizeEventually(4, instances);
+        warmUpPartitions(instances);
+
+        // Drop mastership claim operation submitted from master candidate
+        dropOperationsFrom(instances[1], ClusterDataSerializerHook.F_ID, singletonList(ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE));
+
+        final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[1]);
+        final AtomicReference<MigrationInfo> startedMigration = new AtomicReference<MigrationInfo>();
+        partitionService.setInternalMigrationListener(new InternalMigrationListener() {
+            @Override
+            public void onMigrationStart(MigrationParticipant participant, MigrationInfo migrationInfo) {
+                startedMigration.set(migrationInfo);
+            }
+        });
+
+        final int partitionStateVersion = partitionService.getPartitionStateVersion();
+
+        instances[0].getLifecycleService().terminate();
+
+        // instance-1 starts mastership claim
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(getNode(instances[1]).isMaster());
+            }
+        });
+
+        Future future = spawn(new Runnable() {
+            @Override
+            public void run() {
+                instances[1].shutdown();
+            }
+        });
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                // other members have not received/accepted mastership claim yet
+                assertNotEquals(getAddress(instances[1]), getNode(instances[2]).getMasterAddress());
+                assertNotEquals(getAddress(instances[1]), getNode(instances[3]).getMasterAddress());
+
+                // no partition state version change
+                assertEquals(partitionStateVersion, partitionService.getPartitionStateVersion());
+
+                // no migrations has been submitted yet
+                assertNull(startedMigration.get());
+            }
+        }, 5);
+        assertFalse(future.isDone());
+
+        resetPacketFiltersFrom(instances[1]);
+        future.get();
     }
 
     private static void assertPartitionTableEquals(InternalPartition[] partitions1, InternalPartition[] partitions2) {
