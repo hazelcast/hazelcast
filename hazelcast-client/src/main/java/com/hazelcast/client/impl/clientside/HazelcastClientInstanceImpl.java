@@ -430,7 +430,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             cpSubsystem.init(clientContext);
         } catch (Throwable e) {
             try {
-                doShutdown(false);
+                lifecycleService.terminate();
             } catch (Throwable t) {
                ignore(t);
             }
