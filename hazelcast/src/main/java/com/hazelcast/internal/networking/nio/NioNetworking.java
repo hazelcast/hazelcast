@@ -157,7 +157,7 @@ public final class NioNetworking implements Networking {
         });
 
         NioThread[] inThreads = new NioThread[inputThreadCount];
-        for (int i = 0; i < inputThreads.length; i++) {
+        for (int i = 0; i < inThreads.length; i++) {
             NioThread thread = new NioThread(
                     createThreadPoolName(threadNamePrefix, "IO") + "in-" + i,
                     loggingService.getLogger(NioThread.class),
@@ -173,7 +173,7 @@ public final class NioNetworking implements Networking {
         this.inputThreads = inThreads;
 
         NioThread[] outThreads = new NioThread[outputThreadCount];
-        for (int i = 0; i < outputThreads.length; i++) {
+        for (int i = 0; i < outThreads.length; i++) {
             NioThread thread = new NioThread(
                     createThreadPoolName(threadNamePrefix, "IO") + "out-" + i,
                     loggingService.getLogger(NioThread.class),
