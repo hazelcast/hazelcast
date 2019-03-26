@@ -445,6 +445,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                         }
                     }
                 }
+
+                migrationManager.onClusterVersionChange(newVersion);
             } finally {
                 lock.unlock();
             }
@@ -662,7 +664,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         assert !((ReentrantLock) lock).isHeldByCurrentThread();
         assert partitionStateManager.isInitialized();
         assert node.isMaster();
-        assert areMigrationTasksAllowed();
 
         PartitionRuntimeState partitionState = createPartitionStateInternal();
         assert partitionState != null;
