@@ -24,10 +24,6 @@ import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.util.Collections;
 import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
@@ -36,7 +32,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.networking.nio.AbstractAdvancedNetworkIntegrationTest.MEMBER_PORT;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.util.Collections;
+
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -69,6 +69,7 @@ public class AdvancedNetworkingCommunicationIntegrationTest extends AbstractAdva
         testRestCallFailsOnPort(hz, MEMBER_PORT);
         testRestCallFailsOnPort(hz, CLIENT_PORT);
         testRestCallFailsOnPort(hz, WAN1_PORT);
+        testRestCallFailsOnPort(hz, MEMCACHE_PORT);
     }
 
     @Test
@@ -91,6 +92,7 @@ public class AdvancedNetworkingCommunicationIntegrationTest extends AbstractAdva
         testMemcacheCallFailsOnPort(hz, MEMBER_PORT);
         testMemcacheCallFailsOnPort(hz, CLIENT_PORT);
         testMemcacheCallFailsOnPort(hz, WAN1_PORT);
+        testMemcacheCallFailsOnPort(hz, REST_PORT);
     }
 
     private void startMemberAndTryToJoinToPort(int port, int expectedClusterSize) {

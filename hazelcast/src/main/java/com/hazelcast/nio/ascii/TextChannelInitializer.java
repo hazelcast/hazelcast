@@ -17,10 +17,13 @@
 package com.hazelcast.nio.ascii;
 
 import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.AbstractChannelInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.TextHandshakeDecoder;
 
 public class TextChannelInitializer
         extends AbstractChannelInitializer {
@@ -40,9 +43,12 @@ public class TextChannelInitializer
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
         TextEncoder encoder = new TextEncoder(connection);
 
-        channel.outboundPipeline().addLast(encoder);
-        channel.inboundPipeline().addLast(rest
+        InboundHandler decoder = rest
                 ? new RestApiTextDecoder(connection, encoder, true)
-                : new MemcacheTextDecoder(connection, encoder, true));
+                : new MemcacheTextDecoder(connection, encoder, true);
+
+        TextHandshakeDecoder handshaker = new TextHandshakeDecoder(rest ? ProtocolType.REST : ProtocolType.MEMCACHE, decoder);
+        channel.outboundPipeline().addLast(encoder);
+        channel.inboundPipeline().addLast(handshaker);
     }
 }

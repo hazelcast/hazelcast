@@ -50,6 +50,8 @@ public class AdvancedNetworkingClientCommunicationIntegrationTest extends Abstra
 
         testClientConnectFailOnPort(MEMBER_PORT);
         testClientConnectFailOnPort(WAN1_PORT);
+        testClientConnectFailOnPort(REST_PORT);
+        testClientConnectFailOnPort(MEMCACHE_PORT);
     }
 
     private HazelcastInstance createClient(int port) {
