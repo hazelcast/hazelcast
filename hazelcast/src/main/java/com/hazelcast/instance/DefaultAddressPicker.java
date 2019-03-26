@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.logging.ILogger;
@@ -134,7 +135,11 @@ class DefaultAddressPicker
         boolean bindAny = hazelcastProperties.getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
         AddressDefinition bindAddressDef = pickAddressDef();
 
-        serverSocketChannel = createServerSocketChannel(logger, endpointQualifier, bindAddressDef.inetAddress,
+        EndpointConfig endpoint = config.getAdvancedNetworkConfig().isEnabled()
+                ? config.getAdvancedNetworkConfig().getEndpointConfigs().get(endpointQualifier)
+                : null;
+
+        serverSocketChannel = createServerSocketChannel(logger, endpoint, bindAddressDef.inetAddress,
                 bindAddressDef.port == 0 ? port : bindAddressDef.port, portCount, isPortAutoIncrement, isReuseAddress, bindAny);
 
         int port = serverSocketChannel.socket().getLocalPort();

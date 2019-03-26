@@ -102,7 +102,7 @@ final class DelegatingAddressPicker
         publicAddress = memberAddressProvider.getPublicAddress();
         validatePublicAddress(publicAddress);
 
-        serverSocketChannel = createServerSocketChannel(logger, MEMBER, bindAddress.getAddress(),
+        serverSocketChannel = createServerSocketChannel(logger, null, bindAddress.getAddress(),
                 bindAddress.getPort() == 0 ? networkConfig.getPort() : bindAddress.getPort(), networkConfig.getPortCount(),
                 networkConfig.isPortAutoIncrement(), networkConfig.isReuseAddress(), false);
 
@@ -140,7 +140,7 @@ final class DelegatingAddressPicker
 
             if (!bindAddresses.values().contains(bindAddress)) {
                 // bind new server socket
-                serverSocketChannel = createServerSocketChannel(logger, qualifier, bindAddress.getAddress(),
+                serverSocketChannel = createServerSocketChannel(logger, config, bindAddress.getAddress(),
                         bindAddress.getPort() == 0 ? endpointConfig.getPort() : bindAddress.getPort(),
                         endpointConfig.getPortCount(), endpointConfig.isPortAutoIncrement(),
                         endpointConfig.isReuseAddress(), false);

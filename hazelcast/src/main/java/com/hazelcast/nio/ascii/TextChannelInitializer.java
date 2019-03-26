@@ -35,11 +35,8 @@ public class TextChannelInitializer
         this.rest = rest;
     }
 
-
     @Override
     public void initChannel(Channel channel) {
-        super.initChannel(channel);
-
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
         TextEncoder encoder = new TextEncoder(connection);
 

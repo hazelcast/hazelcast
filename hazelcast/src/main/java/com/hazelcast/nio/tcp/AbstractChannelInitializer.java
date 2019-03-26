@@ -17,18 +17,15 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.nio.IOService;
-
-import static com.hazelcast.nio.IOUtil.setChannelOptions;
 
 /**
  * A {@link ChannelInitializer} that runs on a member and used for unencrypted
  * channels. It will deal with the exchange of protocols and based on that it
  * will set up the appropriate handlers in the pipeline.
  */
-public class AbstractChannelInitializer
+public abstract class AbstractChannelInitializer
         implements ChannelInitializer {
 
     protected final IOService ioService;
@@ -39,8 +36,4 @@ public class AbstractChannelInitializer
         this.ioService = ioService;
     }
 
-    @Override
-    public void initChannel(Channel channel) {
-        setChannelOptions(channel, config);
-    }
 }

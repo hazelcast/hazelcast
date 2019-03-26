@@ -33,8 +33,6 @@ public class MemberChannelInitializer
 
     @Override
     public void initChannel(Channel channel) {
-        super.initChannel(channel);
-
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
         OutboundHandler[] outboundHandlers = ioService.createOutboundHandlers(EndpointQualifier.MEMBER, connection);
         InboundHandler[] inboundHandlers = ioService.createInboundHandlers(EndpointQualifier.MEMBER, connection);

@@ -33,8 +33,6 @@ public class ClientChannelInitializer
 
     @Override
     public void initChannel(Channel channel) {
-        super.initChannel(channel);
-
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
         SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(CLIENT,
                 new ClientMessageDecoder(connection, ioService.getClientEngine()));
