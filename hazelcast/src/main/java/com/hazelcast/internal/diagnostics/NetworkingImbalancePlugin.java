@@ -144,7 +144,14 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
     }
 
     private String toPercentage(long amount, long total) {
-        double percentage = (HUNDRED * amount) / total;
+        final double percentage;
+        if (amount == 0L) {
+            percentage = 0D;
+        } else if (total == 0L) {
+            percentage = Double.NaN;
+        } else {
+            percentage = (HUNDRED * amount) / total;
+        }
         return String.format("%1$,.2f", percentage) + " %";
     }
 }
