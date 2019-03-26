@@ -28,7 +28,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
