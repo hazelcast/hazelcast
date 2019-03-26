@@ -793,14 +793,18 @@ public class MigrationManager {
                 }
             }
             if (!partitions.isEmpty()) {
-                logger.warning("Assigning new owners for " + partitions.size() + " LOST partitions!");
                 PartitionReplica[][] state = partitionStateManager.repartition(shutdownRequestedMembers, partitions);
-                for (int partitionId : partitions) {
-                    InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
-                    PartitionReplica[] replicas = state[partitionId];
+                if (state != null) {
+                    logger.warning("Assigning new owners for " + partitions.size() + " LOST partitions!");
+                    for (int partitionId : partitions) {
+                        InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
+                        PartitionReplica[] replicas = state[partitionId];
 
-                    assignLostPartitionOwner(partition, replicas[0]);
-                    partition.setReplicas(replicas);
+                        assignLostPartitionOwner(partition, replicas[0]);
+                        partition.setReplicas(replicas);
+                    }
+                } else {
+                    logger.warning("Unable to assign LOST partitions");
                 }
             }
         }
