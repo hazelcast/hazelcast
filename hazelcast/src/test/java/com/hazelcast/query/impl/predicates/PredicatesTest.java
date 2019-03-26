@@ -243,6 +243,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(like(ATTRIBUTE, "J.-*.*\\%"), "J.-*.*%");
         assertPredicateTrue(like(ATTRIBUTE, "J\\_"), "J_");
         assertPredicateTrue(like(ATTRIBUTE, "J%"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "J%"), "Java\n");
     }
 
     @Test
@@ -252,6 +253,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(ilike(ATTRIBUTE, "java%ld"), "Java World");
         assertPredicateTrue(ilike(ATTRIBUTE, "%world"), "Java World");
         assertPredicateFalse(ilike(ATTRIBUTE, "Java_World"), "gava World");
+        assertPredicateTrue(ilike(ATTRIBUTE, "J%"), "java\nworld");
     }
 
     @Test
