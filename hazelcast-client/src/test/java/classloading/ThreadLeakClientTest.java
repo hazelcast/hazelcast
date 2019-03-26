@@ -71,16 +71,19 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
     @Test
     public void testThreadLeakWhenClientCanNotStartDueToAuthenticationError() {
         try {
+            Hazelcast.newHazelcastInstance();
             ClientConfig config = new ClientConfig();
             config.getGroupConfig().setName("invalid cluster");
             HazelcastClient.newHazelcastClient(config);
             Assert.fail();
         } catch (IllegalStateException e) {
+        } finally {
+            Hazelcast.shutdownAll();
         }
     }
 
     @Test
-    public void testThreadLeakWhenClientCanNotStartDueToNoMemberDiscoveryStrategyConfig() {
+    public void testThreadLeakWhenClientCanNotConstructDueToNoMemberDiscoveryStrategyConfig() {
         try {
             ClientConfig config = new ClientConfig();
             config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
@@ -95,6 +98,8 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
     @Test
     public void testThreadLeakWhenClientCanNotStartDueToIncorrectUserCodeDeploymentClass() {
         try {
+            Hazelcast.newHazelcastInstance();
+
             ClientConfig config = new ClientConfig();
             ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
             clientUserCodeDeploymentConfig.addClass("invalid.class.test");
@@ -103,12 +108,14 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
             HazelcastClient.newHazelcastClient(config);
             Assert.fail();
         } catch (HazelcastException e) {
+        } finally {
+            Hazelcast.shutdownAll();
         }
     }
 
 
     @Test
-    public void testThreadLeakWhenClientCanNotStartDueToIncorrectSerializationServiceFactoryClassName() {
+    public void testThreadLeakWhenClientCanNotConstructDueToIncorrectSerializationServiceFactoryClassName() {
         try {
             ClientConfig config = new ClientConfig();
             SerializationConfig serializationConfig = new SerializationConfig();
