@@ -27,8 +27,11 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
+import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -52,6 +55,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.durableexecutor.impl.DurableExecutorServiceHelper.getDurableExecutorContainer;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -96,6 +101,42 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAny(callables, 1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testDestroyCleansAllContainers() throws Exception {
+        final String executorName = randomMapName();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
+        final HazelcastInstance[] instances = factory.newInstances();
+
+        DurableExecutorService service = instances[0].getDurableExecutorService(executorName);
+
+        List<Future<String>> futures = new ArrayList<Future<String>>(TASK_COUNT);
+        for (int i = 0; i < TASK_COUNT; i++) {
+            futures.add(service.submit(new DummyCallable()));
+        }
+        for (Future<String> future: futures) {
+            future.get();
+        }
+        service.destroy();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (int i = 0; i < NODE_COUNT; i++) {
+                    DistributedDurableExecutorService internalService = getNodeEngineImpl(instances[i]).getService(DistributedDurableExecutorService.SERVICE_NAME);
+                    boolean allEmpty = true;
+                    StringBuilder failMessage = new StringBuilder();
+                    for (int partitionId = 0; partitionId < getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT); partitionId++) {
+                        DurableExecutorContainer container = getDurableExecutorContainer(internalService, partitionId, executorName);
+                        if (container != null) {
+                            failMessage.append(String.format("Partition %d\n", partitionId));
+                            allEmpty = false;
+                        }
+                    }
+                    assertTrue(String.format("Some partitions has non-null containers for executor %s:\n%s", executorName, failMessage.toString()), allEmpty);
+                }
+            }
+        }, 10);
     }
 
     @Test

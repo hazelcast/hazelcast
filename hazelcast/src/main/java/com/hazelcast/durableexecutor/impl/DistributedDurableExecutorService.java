@@ -106,6 +106,7 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
     public void destroyDistributedObject(String name) {
         shutdownExecutors.remove(name);
         nodeEngine.getExecutionService().shutdownDurableExecutor(name);
+        removeAllContainers(name);
         quorumConfigCache.remove(name);
     }
 
@@ -159,4 +160,9 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
+    private void removeAllContainers(String name) {
+        for (int i = 0; i < partitionContainers.length; i++) {
+            getPartitionContainer(i).removeContainer(name);
+        }
+    }
 }

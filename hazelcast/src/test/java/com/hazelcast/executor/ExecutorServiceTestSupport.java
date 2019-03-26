@@ -150,6 +150,14 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
+    public static class DummyCallable implements Callable<String>, Serializable {
+
+        @Override
+        public String call() throws Exception {
+            return "Completed";
+        }
+    }
+
     public static class SleepingTask implements Callable<Boolean>, Serializable, PartitionAware {
 
         long sleepSeconds;

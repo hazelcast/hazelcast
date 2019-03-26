@@ -83,6 +83,15 @@ public class DurableExecutorPartitionContainer {
         }
     }
 
+    public void removeContainer(String name) {
+        executorContainerMap.remove(name);
+    }
+
+    // for testing
+    DurableExecutorContainer getExistingExecutorContainer(String name) {
+        return executorContainerMap.get(name);
+    }
+
     private DurableExecutorContainer createExecutorContainer(String name) {
         DurableExecutorConfig durableExecutorConfig = nodeEngine.getConfig().findDurableExecutorConfig(name);
         int durability = durableExecutorConfig.getDurability();
