@@ -16,6 +16,7 @@
 
 package classloading;
 
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -35,7 +36,11 @@ public abstract class AbstractThreadLeakTest extends HazelcastTestSupport {
     }
 
     @After
-    public final void assertThreadLeaks() {
-        assertHazelcastThreadShutdown(oldThreads);
+    public void assertThreadLeaks() {
+        try {
+            assertHazelcastThreadShutdown(oldThreads);
+        } finally {
+            Hazelcast.shutdownAll();
+        }
     }
 }

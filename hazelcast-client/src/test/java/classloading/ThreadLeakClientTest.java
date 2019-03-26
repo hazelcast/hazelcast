@@ -28,6 +28,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,6 +39,10 @@ import java.util.Collections;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ThreadLeakClientTest extends AbstractThreadLeakTest {
+    public final void assertThreadLeaks() {
+        super.assertThreadLeaks();
+        HazelcastClient.shutdownAll();
+    }
 
     @Test
     public void testThreadLeak() {
@@ -59,16 +64,13 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
         client.shutdown();
     }
 
-    @Test
+    @Test (expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotStart() {
-        try {
-            HazelcastClient.newHazelcastClient();
-            Assert.fail();
-        } catch (IllegalStateException e) {
-        }
+        HazelcastClient.newHazelcastClient();
+        Assert.fail();
     }
 
-    @Test
+    @Test (expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotStartDueToAuthenticationError() {
         try {
             Hazelcast.newHazelcastInstance();
@@ -76,26 +78,22 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
             config.getGroupConfig().setName("invalid cluster");
             HazelcastClient.newHazelcastClient(config);
             Assert.fail();
-        } catch (IllegalStateException e) {
         } finally {
             Hazelcast.shutdownAll();
         }
     }
 
-    @Test
+    @Test (expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotConstructDueToNoMemberDiscoveryStrategyConfig() {
-        try {
-            ClientConfig config = new ClientConfig();
-            config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
-                    new DiscoveryStrategyConfig(new ClientDiscoverySpiTest.NoMemberDiscoveryStrategyFactory(),
-                            Collections.<String, Comparable>emptyMap()));
-            HazelcastClient.newHazelcastClient(config);
-            Assert.fail();
-        } catch (IllegalStateException e) {
-        }
+        ClientConfig config = new ClientConfig();
+        config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
+                new DiscoveryStrategyConfig(new ClientDiscoverySpiTest.NoMemberDiscoveryStrategyFactory(),
+                        Collections.<String, Comparable>emptyMap()));
+        HazelcastClient.newHazelcastClient(config);
+        Assert.fail();
     }
 
-    @Test
+    @Test (expected = HazelcastException.class)
     public void testThreadLeakWhenClientCanNotStartDueToIncorrectUserCodeDeploymentClass() {
         try {
             Hazelcast.newHazelcastInstance();
@@ -107,25 +105,20 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
 
             HazelcastClient.newHazelcastClient(config);
             Assert.fail();
-        } catch (HazelcastException e) {
         } finally {
             Hazelcast.shutdownAll();
         }
     }
 
 
-    @Test
+    @Test (expected = HazelcastSerializationException.class)
     public void testThreadLeakWhenClientCanNotConstructDueToIncorrectSerializationServiceFactoryClassName() {
-        try {
-            ClientConfig config = new ClientConfig();
-            SerializationConfig serializationConfig = new SerializationConfig();
-            serializationConfig.addDataSerializableFactoryClass(5, "invalid.factory");
-            config.setSerializationConfig(serializationConfig);
+        ClientConfig config = new ClientConfig();
+        SerializationConfig serializationConfig = new SerializationConfig();
+        serializationConfig.addDataSerializableFactoryClass(5, "invalid.factory");
+        config.setSerializationConfig(serializationConfig);
 
-            HazelcastClient.newHazelcastClient(config);
-            Assert.fail();
-        } catch (HazelcastSerializationException e) {
-        }
+        HazelcastClient.newHazelcastClient(config);
+        Assert.fail();
     }
-
 }

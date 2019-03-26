@@ -85,7 +85,7 @@ public final class NioNetworking implements Networking {
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
     private final MetricsRegistry metricsRegistry;
-    private final AtomicBoolean metricsRegistryScheduled;
+    private final AtomicBoolean metricsRegistryScheduled = new AtomicBoolean(false);
     private final LoggingService loggingService;
     private final String threadNamePrefix;
     private final ChannelErrorHandler errorHandler;
@@ -117,7 +117,6 @@ public final class NioNetworking implements Networking {
     public NioNetworking(Context ctx) {
         this.threadNamePrefix = ctx.threadNamePrefix;
         this.metricsRegistry = ctx.metricsRegistry;
-        this.metricsRegistryScheduled = new AtomicBoolean(false);
         this.loggingService = ctx.loggingService;
         this.inputThreadCount = ctx.inputThreadCount;
         this.outputThreadCount = ctx.outputThreadCount;
