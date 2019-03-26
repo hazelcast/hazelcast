@@ -41,7 +41,6 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
-import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -661,10 +660,7 @@ abstract class MapProxySupport<K, V>
         try {
             Future future = operationService.invokeOnPartition(SERVICE_NAME, containsKeyOperation, partitionId);
             Object object = future.get();
-            if (statisticsEnabled) {
-                LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-                localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
-            }
+            incrementOtherOperationsStat();
             return (Boolean) toObject(object);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -736,6 +732,7 @@ abstract class MapProxySupport<K, V>
         try {
             OperationFactory sizeOperationFactory = operationProvider.createMapSizeOperationFactory(name);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, sizeOperationFactory);
+            incrementOtherOperationsStat();
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = toObject(result);
@@ -751,6 +748,7 @@ abstract class MapProxySupport<K, V>
         try {
             OperationFactory operationFactory = operationProvider.createContainsValueOperationFactory(name, dataValue);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
+            incrementOtherOperationsStat();
             for (Object result : results.values()) {
                 Boolean contains = toObject(result);
                 if (contains) {
@@ -770,6 +768,7 @@ abstract class MapProxySupport<K, V>
             // also there is no need to make use of IsEmptyOperation, just use size to reduce the amount of code
             IsEmptyOperationFactory factory = new IsEmptyOperationFactory(name);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, factory);
+            incrementOtherOperationsStat();
             for (Object result : results.values()) {
                 if (!(Boolean) toObject(result)) {
                     return false;
@@ -778,6 +777,12 @@ abstract class MapProxySupport<K, V>
             return true;
         } catch (Throwable t) {
             throw rethrow(t);
+        }
+    }
+
+    protected void incrementOtherOperationsStat() {
+        if (statisticsEnabled) {
+            localMapStats.incrementOtherOperations();
         }
     }
 
@@ -1024,10 +1029,7 @@ abstract class MapProxySupport<K, V>
                 publishMapEvent(clearedCount, CLEAR_ALL);
             }
 
-            if (statisticsEnabled) {
-                LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-                localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
-            }
+            incrementOtherOperationsStat();
         } catch (Throwable t) {
             throw rethrow(t);
         }

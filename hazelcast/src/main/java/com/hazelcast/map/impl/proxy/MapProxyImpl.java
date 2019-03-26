@@ -733,6 +733,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         QueryResult result = executeQueryInternal(predicate, iterationType, Target.ALL_NODES);
+        incrementOtherOperationsStat();
         return transformToSet(serializationService, result, predicate, iterationType, uniqueResult, false);
     }
 
@@ -746,6 +747,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public Set<K> localKeySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         QueryResult result = executeQueryInternal(predicate, IterationType.KEY, Target.LOCAL_NODE);
+        incrementOtherOperationsStat();
         return transformToSet(serializationService, result, predicate, IterationType.KEY, false, false);
     }
 

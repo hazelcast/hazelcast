@@ -47,5 +47,4 @@ public abstract class DefaultMapQueryMessageTask<P>
     protected void extractAndAppendResult(Collection<QueryResultRow> results, QueryResult queryResult) {
         results.addAll(queryResult.getRows());
     }
-
 }
