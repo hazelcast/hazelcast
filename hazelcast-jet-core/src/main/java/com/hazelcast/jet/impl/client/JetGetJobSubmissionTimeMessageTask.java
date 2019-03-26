@@ -18,17 +18,15 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
 public class JetGetJobSubmissionTimeMessageTask
-        extends AbstractJetMessageTask<JetGetJobSubmissionTimeCodec.RequestParameters, Long>
-        implements BlockingMessageTask {
+        extends AbstractJetMessageTask<JetGetJobSubmissionTimeCodec.RequestParameters, Long> {
 
-    protected JetGetJobSubmissionTimeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    JetGetJobSubmissionTimeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetGetJobSubmissionTimeCodec::decodeRequest,
                 JetGetJobSubmissionTimeCodec::encodeResponse);
@@ -48,5 +46,4 @@ public class JetGetJobSubmissionTimeMessageTask
     public Object[] getParameters() {
         return new Object[0];
     }
-
 }

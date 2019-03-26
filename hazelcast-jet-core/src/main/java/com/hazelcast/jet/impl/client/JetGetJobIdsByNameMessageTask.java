@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsByNameCodec;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.nio.Connection;
@@ -27,9 +26,9 @@ import com.hazelcast.spi.Operation;
 import java.util.List;
 
 public class JetGetJobIdsByNameMessageTask
-        extends AbstractJetMessageTask<JetGetJobIdsByNameCodec.RequestParameters, List<Long>>
-        implements BlockingMessageTask {
-    protected JetGetJobIdsByNameMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        extends AbstractJetMessageTask<JetGetJobIdsByNameCodec.RequestParameters, List<Long>> {
+
+    JetGetJobIdsByNameMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetGetJobIdsByNameCodec::decodeRequest,
                 JetGetJobIdsByNameCodec::encodeResponse);
@@ -39,7 +38,6 @@ public class JetGetJobIdsByNameMessageTask
     protected Operation prepareOperation() {
         return new GetJobIdsByNameOperation(parameters.name);
     }
-
 
     @Override
     public String getMethodName() {

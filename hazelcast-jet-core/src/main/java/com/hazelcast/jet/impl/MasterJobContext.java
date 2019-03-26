@@ -84,6 +84,7 @@ import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createE
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -329,7 +330,11 @@ public class MasterJobContext {
         }
 
         if (localStatus == SUSPENDED) {
-            mc.coordinationService().completeJob(mc, System.currentTimeMillis(), new CancellationException());
+            try {
+                mc.coordinationService().completeJob(mc, System.currentTimeMillis(), new CancellationException()).get();
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
         } else {
             if (localStatus == RUNNING || localStatus == STARTING) {
                 handleTermination(mode);
@@ -615,15 +620,14 @@ public class MasterJobContext {
                     return;
                 }
 
-                nonSynchronizedAction = () -> {
-                    try {
-                        mc.coordinationService().completeJob(mc, System.currentTimeMillis(), failure);
-                    } catch (RuntimeException e) {
-                        logger.warning("Completion of " + mc.jobIdString() + " failed", e);
-                    } finally {
-                        setFinalResult(failure);
-                    }
-                };
+                mc.coordinationService().completeJob(mc, System.currentTimeMillis(), failure)
+                  .whenComplete(withTryCatch(logger, (r, f) -> {
+                      if (f != null) {
+                          logger.warning("Completion of " + mc.jobIdString() + " failed", f);
+                      } else {
+                          setFinalResult(failure);
+                      }
+                  }));
             }
         } finally {
             mc.unlock();

@@ -16,16 +16,15 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
-public class SubmitJobOperation extends AbstractJobOperation {
+public class SubmitJobOperation extends AsyncJobOperation {
 
     // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
     private Data dag;
@@ -41,10 +40,8 @@ public class SubmitJobOperation extends AbstractJobOperation {
     }
 
     @Override
-    public void run() {
-        JetService service = getService();
-        JobCoordinationService coordinationService = service.getJobCoordinationService();
-        coordinationService.submitJob(jobId(), dag, config);
+    public CompletableFuture<Void> doRun() {
+        return getJobCoordinationService().submitJob(jobId(), dag, config);
     }
 
     @Override
@@ -65,5 +62,4 @@ public class SubmitJobOperation extends AbstractJobOperation {
         dag = in.readData();
         config = in.readData();
     }
-
 }

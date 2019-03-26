@@ -16,20 +16,20 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Operation sent from client to coordinator member to terminate particular
  * job. See also {@link TerminateExecutionOperation}, which is sent from
  * coordinator to members to terminate execution.
  */
-public class TerminateJobOperation extends AbstractJobOperation {
+public class TerminateJobOperation extends AsyncJobOperation {
 
     private TerminationMode terminationMode;
 
@@ -42,9 +42,8 @@ public class TerminateJobOperation extends AbstractJobOperation {
     }
 
     @Override
-    public void run() {
-        JetService service = getService();
-        service.getJobCoordinationService().terminateJob(jobId(), terminationMode);
+    public CompletableFuture<Void> doRun() {
+        return getJobCoordinationService().terminateJob(jobId(), terminationMode);
     }
 
     @Override

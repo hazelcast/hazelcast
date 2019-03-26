@@ -205,6 +205,8 @@ public interface Job {
      *
      * @param name name of the snapshot. If name is already used, it will be
      *            overwritten
+     * @throws JetException if the job is in an incorrect state: completed,
+     *            cancelled or is in the process of restarting or suspending.
      */
     JobStateSnapshot cancelAndExportSnapshot(String name);
 
@@ -237,12 +239,13 @@ public interface Job {
      * <p>
      * You can access the exported state map using {@link
      * JetInstance#getJobStateSnapshot(String)}.
+     * <p>
+     * The method call will block until it has fully exported the snapshot.
      *
      * @param name name of the snapshot. If name is already used, it will be
      *            overwritten
      * @throws JetException if the job is in an incorrect state: completed,
-     *            cancelled, or also in the process of restarting or
-     *            suspending.
+     *            cancelled or is in the process of restarting or suspending.
      */
     JobStateSnapshot exportSnapshot(String name);
 }

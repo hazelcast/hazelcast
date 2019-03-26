@@ -25,6 +25,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
 public class ReadMetricsOperation extends Operation implements ReadonlyOperation {
@@ -46,7 +47,7 @@ public class ReadMetricsOperation extends Operation implements ReadonlyOperation
         ILogger logger = getNodeEngine().getLogger(getClass());
         JetMetricsService service = getService();
         CompletableFuture<RingbufferSlice<Entry<Long, byte[]>>> future = service.readMetrics(offset);
-        future.whenComplete(withTryCatch(logger, (slice, error) -> doSendResponse(error != null ? error : slice)));
+        future.whenComplete(withTryCatch(logger, (slice, error) -> doSendResponse(error != null ? peel(error) : slice)));
     }
 
     @Override

@@ -415,6 +415,7 @@ public final class Util {
     /**
      * Returns a future which is already completed with the supplied exception.
      */
+    // replace with CompletableFuture.failedFuture(e) once we depend on java9+
     public static <T> CompletableFuture<T> exceptionallyCompletedFuture(@Nonnull Throwable exception) {
         CompletableFuture<T> future = new CompletableFuture<>();
         future.completeExceptionally(exception);

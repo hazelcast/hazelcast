@@ -16,14 +16,9 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 
 import java.util.concurrent.CompletableFuture;
-
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
 public class JoinSubmittedJobOperation extends AsyncJobOperation {
 
@@ -35,11 +30,8 @@ public class JoinSubmittedJobOperation extends AsyncJobOperation {
     }
 
     @Override
-    protected void doRun() {
-        JetService service = getService();
-        JobCoordinationService coordinationService = service.getJobCoordinationService();
-        CompletableFuture<Void> executionFuture = coordinationService.joinSubmittedJob(jobId());
-        executionFuture.whenComplete(withTryCatch(getLogger(), (r, t) -> doSendResponse(peel(t))));
+    protected CompletableFuture<?> doRun() {
+        return getJobCoordinationService().joinSubmittedJob(jobId());
     }
 
     @Override

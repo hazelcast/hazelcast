@@ -16,13 +16,10 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.util.concurrent.CompletableFuture;
-
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
 /**
  * Operation sent from a non-master member to master to notify it that the
@@ -35,10 +32,8 @@ public class NotifyMemberShutdownOperation extends AsyncOperation implements All
     }
 
     @Override
-    protected void doRun() {
-        JetService service = getService();
-        CompletableFuture<Void> future = service.getJobCoordinationService().addShuttingDownMember(getCallerUuid());
-        future.whenComplete(withTryCatch(getLogger(), (r, e) -> sendResponse(null)));
+    protected CompletableFuture<Void> doRun() {
+        return getJobCoordinationService().addShuttingDownMember(getCallerUuid());
     }
 
     @Override

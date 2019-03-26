@@ -16,11 +16,9 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Sent from the member that initiates a cluster state change to the master.
@@ -32,11 +30,8 @@ public class PrepareForPassiveClusterOperation extends AsyncOperation {
     }
 
     @Override
-    protected void doRun() {
-        this.<JetService>getService()
-                .getJobCoordinationService()
-                .prepareForPassiveClusterState()
-                .whenComplete(withTryCatch(getLogger(), (r, t) -> doSendResponse(peel(t))));
+    protected CompletableFuture<Void> doRun() {
+        return getJobCoordinationService().prepareForPassiveClusterState();
     }
 
     @Override

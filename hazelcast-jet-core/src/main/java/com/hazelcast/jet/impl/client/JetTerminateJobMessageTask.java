@@ -18,16 +18,15 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTerminateJobCodec.RequestParameters, Void>
-        implements BlockingMessageTask {
-    protected JetTerminateJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTerminateJobCodec.RequestParameters, Void> {
+
+    JetTerminateJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetTerminateJobCodec::decodeRequest,
                 o -> JetTerminateJobCodec.encodeResponse());
     }

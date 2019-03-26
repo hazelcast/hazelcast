@@ -94,7 +94,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
             assertTrueEventually(() -> {
                 JetService service = getJetService(firstSubCluster[0]);
-                assertEquals(COMPLETED, service.getJobCoordinationService().getJobStatus(jobId));
+                assertEquals(COMPLETED, service.getJobCoordinationService().getJobStatus(jobId).get());
             });
 
             JetService service2 = getJetService(secondSubCluster[0]);
@@ -106,7 +106,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             });
 
             assertTrueAllTheTime(() -> {
-                assertStatusNotRunningOrStarting(service2.getJobCoordinationService().getJobStatus(jobId));
+                assertStatusNotRunningOrStarting(service2.getJobCoordinationService().getJobStatus(jobId).get());
             }, 20);
         };
 
@@ -163,8 +163,8 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             assertTrueAllTheTime(() -> {
                 JetService service1 = getJetService(firstSubCluster[0]);
                 JetService service2 = getJetService(secondSubCluster[0]);
-                JobStatus status1 = service1.getJobCoordinationService().getJobStatus(jobId);
-                JobStatus status2 = service2.getJobCoordinationService().getJobStatus(jobId);
+                JobStatus status1 = service1.getJobCoordinationService().getJobStatus(jobId).get();
+                JobStatus status2 = service2.getJobCoordinationService().getJobStatus(jobId).get();
                 assertStatusNotRunningOrStarting(status1);
                 assertStatusNotRunningOrStarting(status2);
             }, 20);
@@ -206,8 +206,8 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             assertTrueEventually(() -> {
                 JetService service1 = getJetService(firstSubCluster[0]);
                 JetService service2 = getJetService(secondSubCluster[0]);
-                assertEquals(COMPLETED, service1.getJobCoordinationService().getJobStatus(jobId));
-                assertEquals(COMPLETED, service2.getJobCoordinationService().getJobStatus(jobId));
+                assertEquals(COMPLETED, service1.getJobCoordinationService().getJobStatus(jobId).get());
+                assertEquals(COMPLETED, service2.getJobCoordinationService().getJobStatus(jobId).get());
             });
         };
 

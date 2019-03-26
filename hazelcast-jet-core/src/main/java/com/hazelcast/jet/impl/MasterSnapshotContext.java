@@ -162,8 +162,11 @@ class MasterSnapshotContext {
         // Need to take a copy of executionId: we don't cancel the scheduled task when the execution
         // finalizes. If a new execution is started in the meantime, we'll use the execution ID to detect it.
         long localExecutionId = mc.executionId();
-        mc.invokeOnParticipants(factory, responses -> onSnapshotCompleted(
-                responses, localExecutionId, newSnapshotId, finalMapName, isExport, isTerminal, future),
+        mc.invokeOnParticipants(
+                factory,
+                responses -> mc.coordinationService().submitToCoordinatorThread(() ->
+                        onSnapshotCompleted(responses, localExecutionId, newSnapshotId, finalMapName, isExport, isTerminal,
+                                future)),
                 null);
     }
 
@@ -228,7 +231,9 @@ class MasterSnapshotContext {
                 stats.duration(), stats.numBytes(),
                 stats.numKeys(), stats.numChunks(),
                 snapshotMapName));
-        mc.jobRepository().clearSnapshotData(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
+        if (!wasExport) {
+            mc.jobRepository().clearSnapshotData(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
+        }
         if (future != null) {
             if (isSuccess) {
                 future.complete(null);

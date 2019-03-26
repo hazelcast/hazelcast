@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.Collections.emptyList;
@@ -207,7 +206,7 @@ public class ExecutionContext {
     /**
      * Starts a new snapshot by incrementing the current snapshot id
      */
-    public CompletionStage<SnapshotOperationResult> beginSnapshot(long snapshotId, String mapName,
+    public CompletableFuture<SnapshotOperationResult> beginSnapshot(long snapshotId, String mapName,
                                                                   boolean isTerminal) {
         synchronized (executionLock) {
             if (cancellationFuture.isDone() || executionFuture != null && executionFuture.isDone()) {

@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
-import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.nio.Connection;
@@ -27,8 +26,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 public class JetGetJobSummaryListMessageTask
-        extends AbstractJetMessageTask<JetGetJobSummaryListCodec.RequestParameters, Data> implements BlockingMessageTask {
-    protected JetGetJobSummaryListMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        extends AbstractJetMessageTask<JetGetJobSummaryListCodec.RequestParameters, Data> {
+
+    JetGetJobSummaryListMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetGetJobSummaryListCodec::decodeRequest,
                 JetGetJobSummaryListCodec::encodeResponse);
