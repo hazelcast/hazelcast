@@ -45,6 +45,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -309,15 +310,22 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        migrationInfo.writeData(out);
+        Version version = out.getVersion();
+        // RU_COMPAT_3_11
+        if (version.isGreaterOrEqual(Versions.V3_12)) {
+            out.writeObject(migrationInfo);
+        } else {
+            migrationInfo.writeData(out);
+        }
+
         out.writeInt(partitionStateVersion);
 
         // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+        if (version.isGreaterOrEqual(Versions.V3_12)) {
             int len = completedMigrations.size();
             out.writeInt(len);
             for (MigrationInfo migrationInfo : completedMigrations) {
-                migrationInfo.writeData(out);
+                out.writeObject(migrationInfo);
             }
         }
     }
@@ -325,17 +333,23 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        migrationInfo = new MigrationInfo();
-        migrationInfo.readData(in);
+        Version version = in.getVersion();
+        // RU_COMPAT_3_11
+        if (version.isGreaterOrEqual(Versions.V3_12)) {
+            migrationInfo = in.readObject();
+        } else {
+            migrationInfo = new MigrationInfo();
+            migrationInfo.readData(in);
+        }
+
         partitionStateVersion = in.readInt();
 
         // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
+        if (version.isGreaterOrEqual(Versions.V3_12)) {
             int len = in.readInt();
             completedMigrations = new ArrayList<MigrationInfo>(len);
             for (int i = 0; i < len; i++) {
-                MigrationInfo migrationInfo = new MigrationInfo();
-                migrationInfo.readData(in);
+                MigrationInfo migrationInfo = in.readObject();
                 completedMigrations.add(migrationInfo);
             }
         }

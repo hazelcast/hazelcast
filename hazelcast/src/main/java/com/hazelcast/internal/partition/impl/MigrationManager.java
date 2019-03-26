@@ -712,6 +712,22 @@ public class MigrationManager {
         return stats;
     }
 
+    // RU_COMPAT_3_11
+    void onClusterVersionChange(Version newVersion) {
+        if (newVersion.isEqualTo(Versions.V3_12)) {
+            partitionServiceLock.lock();
+            try {
+                // Cluster version & state changes are safepoints for migrations.
+                // We know that all cluster members have the same partition table.
+                // We can safely clear completed migrations.
+                assert activeMigrationInfo == null : "Active migration: " + activeMigrationInfo;
+                completedMigrations.clear();
+            } finally {
+                partitionServiceLock.unlock();
+            }
+        }
+    }
+
     /**
      * Invoked on the master node. Rearranges the partition table if there is no recent activity in the cluster after
      * this task has been scheduled, schedules migrations and syncs the partition state.

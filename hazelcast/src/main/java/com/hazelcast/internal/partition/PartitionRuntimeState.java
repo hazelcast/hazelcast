@@ -150,6 +150,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
         Version version = in.getVersion();
         for (int i = 0; i < memberCount; i++) {
             PartitionReplica replica;
+            // RU_COMPAT_3_11
             if (version.isGreaterOrEqual(Versions.V3_12)) {
                 replica = in.readObject();
             } else {
@@ -173,16 +174,27 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
         }
 
         if (in.readBoolean()) {
-            activeMigration = new MigrationInfo();
-            activeMigration.readData(in);
+            // RU_COMPAT_3_11
+            if (version.isGreaterOrEqual(Versions.V3_12)) {
+                activeMigration = in.readObject();
+            } else {
+                activeMigration = new MigrationInfo();
+                activeMigration.readData(in);
+            }
         }
 
         int k = in.readInt();
         if (k > 0) {
             completedMigrations = new ArrayList<MigrationInfo>(k);
             for (int i = 0; i < k; i++) {
-                MigrationInfo migrationInfo = new MigrationInfo();
-                migrationInfo.readData(in);
+                MigrationInfo migrationInfo;
+                // RU_COMPAT_3_11
+                if (version.isGreaterOrEqual(Versions.V3_12)) {
+                    migrationInfo = in.readObject();
+                } else {
+                    migrationInfo = new MigrationInfo();
+                    migrationInfo.readData(in);
+                }
                 completedMigrations.add(migrationInfo);
             }
         }
@@ -196,6 +208,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
         out.writeInt(replicas.length);
         for (int index = 0; index < replicas.length; index++) {
             PartitionReplica replica = replicas[index];
+            // RU_COMPAT_3_11
             if (version.isGreaterOrEqual(Versions.V3_12)) {
                 out.writeObject(replica);
             } else {
@@ -213,7 +226,12 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
 
         if (activeMigration != null) {
             out.writeBoolean(true);
-            activeMigration.writeData(out);
+            // RU_COMPAT_3_11
+            if (version.isGreaterOrEqual(Versions.V3_12)) {
+                out.writeObject(activeMigration);
+            } else {
+                activeMigration.writeData(out);
+            }
         } else {
             out.writeBoolean(false);
         }
@@ -222,7 +240,12 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
             int k = completedMigrations.size();
             out.writeInt(k);
             for (MigrationInfo migrationInfo : completedMigrations) {
-                migrationInfo.writeData(out);
+                // RU_COMPAT_3_11
+                if (version.isGreaterOrEqual(Versions.V3_12)) {
+                    out.writeObject(migrationInfo);
+                } else {
+                    migrationInfo.writeData(out);
+                }
             }
         } else {
             out.writeInt(0);
