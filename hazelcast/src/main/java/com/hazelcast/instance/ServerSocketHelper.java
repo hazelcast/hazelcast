@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
@@ -27,6 +28,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.nio.IOService.KILO_BYTE;
 
 final class ServerSocketHelper {
 
@@ -48,7 +51,7 @@ final class ServerSocketHelper {
      * Otherwise, it will be bound to any local address ({@code 0.0.0.0}).
      *
      * @param logger                logger instance
-     * @param qualifier             the {@link EndpointQualifier} that supplies network configuration for the
+     * @param endpointConfig        the {@link EndpointConfig} that supplies network configuration for the
      *                              server socket
      * @param bindAddress           InetAddress to bind created {@code ServerSocket}
      * @param port                  initial port number to attempt to bind
@@ -59,7 +62,7 @@ final class ServerSocketHelper {
      * @param bindAny               when {@code true} bind any local address otherwise bind given {@code bindAddress}
      * @return actual port number that created {@code ServerSocketChannel} is bound to
      */
-    static ServerSocketChannel createServerSocketChannel(ILogger logger, EndpointQualifier qualifier, InetAddress bindAddress,
+    static ServerSocketChannel createServerSocketChannel(ILogger logger, EndpointConfig endpointConfig, InetAddress bindAddress,
                                                          int port, int portCount, boolean isPortAutoIncrement,
                                                          boolean isReuseAddress, boolean bindAny) {
         logger.finest("inet reuseAddress:" + isReuseAddress);
@@ -70,7 +73,7 @@ final class ServerSocketHelper {
         int portTrialCount = port > 0 && isPortAutoIncrement ? portCount : 1;
 
         try {
-            return tryOpenServerSocketChannel(qualifier, bindAddress, port, isReuseAddress, portTrialCount, bindAny, logger);
+            return tryOpenServerSocketChannel(endpointConfig, bindAddress, port, isReuseAddress, portTrialCount, bindAny, logger);
         } catch (IOException e) {
             String message = "Cannot bind to a given address: " + bindAddress + ". Hazelcast cannot start. ";
             if (isPortAutoIncrement) {
@@ -82,7 +85,7 @@ final class ServerSocketHelper {
         }
     }
 
-    static ServerSocketChannel tryOpenServerSocketChannel(EndpointQualifier qualifier, InetAddress bindAddress,
+    private static ServerSocketChannel tryOpenServerSocketChannel(EndpointConfig endpointConfig, InetAddress bindAddress,
                                                           int initialPort, boolean isReuseAddress,  int portTrialCount,
                                                           boolean bindAny, ILogger logger)
             throws IOException {
@@ -95,7 +98,7 @@ final class ServerSocketHelper {
                     ? new InetSocketAddress(actualPort)
                     : new InetSocketAddress(bindAddress, actualPort);
             try {
-                return openServerSocketChannel(qualifier, socketBindAddress, isReuseAddress, logger);
+                return openServerSocketChannel(endpointConfig, socketBindAddress, isReuseAddress, logger);
             } catch (IOException e) {
                 error = e;
             }
@@ -103,7 +106,7 @@ final class ServerSocketHelper {
         throw error;
     }
 
-    static ServerSocketChannel openServerSocketChannel(EndpointQualifier qualifier, InetSocketAddress socketBindAddress,
+    private static ServerSocketChannel openServerSocketChannel(EndpointConfig endpointConfig, InetSocketAddress socketBindAddress,
                                                         boolean reuseAddress, ILogger logger)
             throws IOException {
 
@@ -121,6 +124,10 @@ final class ServerSocketHelper {
             serverSocket = serverSocketChannel.socket();
             serverSocket.setReuseAddress(reuseAddress);
             serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+
+            if (endpointConfig != null) {
+                serverSocket.setReceiveBufferSize(endpointConfig.getSocketRcvBufferSizeKb() * KILO_BYTE);
+            }
 
             logger.fine("Trying to bind inet socket address: " + socketBindAddress);
             serverSocket.bind(socketBindAddress, SOCKET_BACKLOG_LENGTH);

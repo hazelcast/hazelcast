@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -57,6 +58,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOUtil.close;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.nio.IOUtil.setChannelOptions;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.unmodifiableCollection;
@@ -80,6 +82,7 @@ public class TcpIpEndpointManager
 
     private final ILogger logger;
     private final IOService ioService;
+    private final EndpointConfig endpointConfig;
     private final EndpointQualifier endpointQualifier;
     private final ChannelInitializerProvider channelInitializerProvider;
     private final NetworkingService networkingService;
@@ -114,12 +117,13 @@ public class TcpIpEndpointManager
 
     private final EndpointConnectionLifecycleListener connectionLifecycleListener = new EndpointConnectionLifecycleListener();
 
-    TcpIpEndpointManager(NetworkingService networkingService, EndpointQualifier qualifier,
+    TcpIpEndpointManager(NetworkingService networkingService, EndpointConfig endpointConfig,
                          ChannelInitializerProvider channelInitializerProvider, IOService ioService,
                          LoggingService loggingService, MetricsRegistry metricsRegistry,
                          HazelcastProperties properties, Set<ProtocolType> supportedProtocolTypes) {
         this.networkingService = networkingService;
-        this.endpointQualifier = qualifier;
+        this.endpointConfig = endpointConfig;
+        this.endpointQualifier = endpointConfig != null ? endpointConfig.getQualifier() : null;
         this.channelInitializerProvider = channelInitializerProvider;
         this.ioService = ioService;
         this.logger = loggingService.getLogger(TcpIpEndpointManager.class);
@@ -128,7 +132,7 @@ public class TcpIpEndpointManager
         boolean spoofingChecks = properties != null && properties.getBoolean(GroupProperty.BIND_SPOOFING_CHECKS);
         this.bindHandler = new BindHandler(this, ioService, logger, spoofingChecks, supportedProtocolTypes);
 
-        if (qualifier == null) {
+        if (endpointQualifier == null) {
             metricsRegistry.scanAndRegister(this, "tcp.connection");
         } else {
             metricsRegistry.scanAndRegister(this, endpointQualifier.toMetricsPrefixString() + ".tcp.connection");
@@ -298,6 +302,10 @@ public class TcpIpEndpointManager
             throws IOException {
         Networking networking = getNetworkingService().getNetworking();
         Channel channel = networking.register(endpointQualifier, channelInitializerProvider, socketChannel, clientMode);
+        // Advanced Network
+        if (endpointConfig != null) {
+            setChannelOptions(channel, endpointConfig);
+        }
         acceptedChannels.add(channel);
         return channel;
     }

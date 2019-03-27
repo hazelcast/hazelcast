@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -37,11 +37,11 @@ import static com.hazelcast.nio.ConnectionType.REST_CLIENT;
 class TcpIpUnifiedEndpointManager
         extends TcpIpEndpointManager {
 
-    TcpIpUnifiedEndpointManager(NetworkingService root, EndpointQualifier qualifier,
+    TcpIpUnifiedEndpointManager(NetworkingService root, EndpointConfig endpointConfig,
                                 ChannelInitializerProvider channelInitializerProvider,
                                 IOService ioService, LoggingService loggingService, MetricsRegistry metricsRegistry,
                                 HazelcastProperties properties) {
-        super(root, qualifier, channelInitializerProvider, ioService, loggingService,
+        super(root, endpointConfig, channelInitializerProvider, ioService, loggingService,
                 metricsRegistry, properties, ProtocolType.valuesAsSet());
     }
 
