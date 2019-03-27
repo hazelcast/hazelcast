@@ -18,7 +18,7 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -40,8 +40,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.util.HashUtil.hashToIndex;
@@ -51,7 +52,7 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.INFO;
+
 
 /**
  * A non blocking {@link Networking} implementation that makes use of
@@ -100,6 +101,18 @@ public final class NioNetworking implements Networking {
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
 
+    // Currently this is a course grained aggregation of the bytes/send reveived.
+    // In the future you probably want to split this up in member and client and potentially
+    // wan specific.
+    @Probe
+    private volatile long bytesSend;
+    @Probe
+    private volatile long bytesReceived;
+    @Probe
+    private volatile long packetsSend;
+    @Probe
+    private volatile long packetsReceived;
+
     public NioNetworking(Context ctx) {
         this.threadNamePrefix = ctx.threadNamePrefix;
         this.metricsRegistry = ctx.metricsRegistry;
@@ -113,9 +126,8 @@ public final class NioNetworking implements Networking {
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
 
-        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
-            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, ProbeLevel.INFO);
-        }
+        metricsRegistry.scanAndRegister(this, "tcp");
+        metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, INFO);
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -145,7 +157,7 @@ public final class NioNetworking implements Networking {
                     + outputThreadCount + " output threads");
         }
 
-        logger.log(selectorMode != SELECT ? INFO : FINE, "IO threads selector mode is " + selectorMode);
+        logger.log(selectorMode != SELECT ? Level.INFO : FINE, "IO threads selector mode is " + selectorMode);
 
         this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
             @Override
@@ -288,6 +300,7 @@ public final class NioNetworking implements Networking {
     }
 
     private class PublishAllTask implements Runnable {
+
         @Override
         public void run() {
             for (NioChannel channel : channels) {
@@ -313,6 +326,35 @@ public final class NioNetworking implements Networking {
                     });
                 }
             }
+
+            bytesSend = bytesTransceived(outputThreads);
+            bytesReceived = bytesTransceived(inputThreads);
+            packetsSend = packetsTransceived(outputThreads);
+            packetsReceived = packetsTransceived(inputThreads);
+        }
+
+        private long bytesTransceived(NioThread[] threads) {
+            if (threads == null) {
+                return 0;
+            }
+
+            long result = 0;
+            for (NioThread nioThread : threads) {
+                result += nioThread.bytesTransceived;
+            }
+            return result;
+        }
+
+        private long packetsTransceived(NioThread[] threads) {
+            if (threads == null) {
+                return 0;
+            }
+
+            long result = 0;
+            for (NioThread nioThread : threads) {
+                result += nioThread.framesTransceived + nioThread.priorityFramesTransceived;
+            }
+            return result;
         }
     }
 
