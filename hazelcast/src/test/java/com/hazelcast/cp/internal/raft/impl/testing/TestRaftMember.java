@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.raft.impl.testing;
 
 import com.hazelcast.core.Endpoint;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 public class TestRaftMember implements Endpoint {
@@ -38,7 +39,7 @@ public class TestRaftMember implements Endpoint {
 
     @Override
     public SocketAddress getSocketAddress() {
-        return null;
+        return new InetSocketAddress(port);
     }
 
     public int getPort() {

@@ -38,10 +38,13 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newGroupWithService;
+import static org.hamcrest.Matchers.either;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -124,10 +127,12 @@ public class LocalQueryTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("value" + i)).get();
         }
 
-        RaftNodeImpl follower = group.getAnyFollowerNode();
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        Object result0 = followers[0].query(new QueryRaftRunnable(), QueryPolicy.ANY_LOCAL).get();
+        Object result1 = followers[1].query(new QueryRaftRunnable(), QueryPolicy.ANY_LOCAL).get();
 
-        Object result = follower.query(new QueryRaftRunnable(), QueryPolicy.ANY_LOCAL).get();
-        assertEquals("value" + count, result);
+        String latestValue = "value" + count;
+        assertThat(latestValue, either(is(result0)).or(is(result1)));
     }
 
     @Test
