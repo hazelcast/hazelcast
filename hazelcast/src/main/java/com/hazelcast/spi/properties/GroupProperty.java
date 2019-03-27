@@ -371,9 +371,9 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.socket.client.buffer.direct", false);
 
     public static final HazelcastProperty SOCKET_LINGER_SECONDS
-            = new HazelcastProperty("hazelcast.socket.linger.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.socket.linger.seconds", -1, SECONDS);
     public static final HazelcastProperty SOCKET_CONNECT_TIMEOUT_SECONDS
-            = new HazelcastProperty("hazelcast.socket.connect.timeout.seconds", 0, SECONDS);
+            = new HazelcastProperty("hazelcast.socket.connect.timeout.seconds", 10, SECONDS);
     public static final HazelcastProperty SOCKET_KEEP_ALIVE
             = new HazelcastProperty("hazelcast.socket.keep.alive", true);
     public static final HazelcastProperty SOCKET_NO_DELAY
