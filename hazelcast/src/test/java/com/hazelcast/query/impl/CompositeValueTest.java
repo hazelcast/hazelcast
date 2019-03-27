@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -70,20 +71,20 @@ public class CompositeValueTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testSpecialValuesOrdering() {
-        assertThat(NULL, comparesEqualTo(NULL));
+        MatcherAssert.<ComparableIdentifiedDataSerializable>assertThat(NULL, comparesEqualTo(NULL));
         assertThat(NULL, equalTo(NULL));
-        assertThat(NULL, greaterThan(NEGATIVE_INFINITY));
-        assertThat(NULL, lessThan(POSITIVE_INFINITY));
+        MatcherAssert.<ComparableIdentifiedDataSerializable>assertThat(NULL, greaterThan(NEGATIVE_INFINITY));
+        MatcherAssert.<ComparableIdentifiedDataSerializable>assertThat(NULL, lessThan(POSITIVE_INFINITY));
 
-        assertThat(NEGATIVE_INFINITY, lessThan(NULL));
-        assertThat(NEGATIVE_INFINITY, lessThan(POSITIVE_INFINITY));
+        MatcherAssert.<ComparableIdentifiedDataSerializable>assertThat(NEGATIVE_INFINITY, lessThan(NULL));
+        MatcherAssert.<ComparableIdentifiedDataSerializable>assertThat(NEGATIVE_INFINITY, lessThan(POSITIVE_INFINITY));
 
-        assertThat(POSITIVE_INFINITY, greaterThan(NULL));
-        assertThat(POSITIVE_INFINITY, greaterThan(NEGATIVE_INFINITY));
+        MatcherAssert.<ComparableIdentifiedDataSerializable>assertThat(POSITIVE_INFINITY, greaterThan(NULL));
+        MatcherAssert.<ComparableIdentifiedDataSerializable>assertThat(POSITIVE_INFINITY, greaterThan(NEGATIVE_INFINITY));
 
-        assertThat(NULL, lessThan((Comparable) "a"));
-        assertThat(NEGATIVE_INFINITY, lessThan((Comparable) "a"));
-        assertThat(POSITIVE_INFINITY, greaterThan((Comparable) "a"));
+        MatcherAssert.<Comparable>assertThat(NULL, lessThan((Comparable) "a"));
+        MatcherAssert.<Comparable>assertThat(NEGATIVE_INFINITY, lessThan((Comparable) "a"));
+        MatcherAssert.<Comparable>assertThat(POSITIVE_INFINITY, greaterThan((Comparable) "a"));
     }
 
     @Test
