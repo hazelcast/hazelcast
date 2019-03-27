@@ -497,6 +497,12 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
 
         @Override
         public void run() {
+            NioThread owner = NioChannelWriter.this.ioThread;
+            if (owner != Thread.currentThread()) {
+                owner.addTaskAndWakeup(this);
+                return;
+            }
+
             try {
                 channel.closeOutbound();
             } catch (IOException e) {
