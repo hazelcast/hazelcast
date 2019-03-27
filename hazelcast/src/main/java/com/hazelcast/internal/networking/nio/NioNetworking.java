@@ -156,8 +156,8 @@ public final class NioNetworking implements Networking {
             }
         });
 
-        this.inputThreads = new NioThread[inputThreadCount];
-        for (int i = 0; i < inputThreads.length; i++) {
+        NioThread[] inThreads = new NioThread[inputThreadCount];
+        for (int i = 0; i < inThreads.length; i++) {
             NioThread thread = new NioThread(
                     createThreadPoolName(threadNamePrefix, "IO") + "in-" + i,
                     loggingService.getLogger(NioThread.class),
@@ -166,13 +166,14 @@ public final class NioNetworking implements Networking {
                     idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
-            inputThreads[i] = thread;
+            inThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp.inputThread[" + thread.getName() + "]");
             thread.start();
         }
+        this.inputThreads = inThreads;
 
-        this.outputThreads = new NioThread[outputThreadCount];
-        for (int i = 0; i < outputThreads.length; i++) {
+        NioThread[] outThreads = new NioThread[outputThreadCount];
+        for (int i = 0; i < outThreads.length; i++) {
             NioThread thread = new NioThread(
                     createThreadPoolName(threadNamePrefix, "IO") + "out-" + i,
                     loggingService.getLogger(NioThread.class),
@@ -181,10 +182,11 @@ public final class NioNetworking implements Networking {
                     idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
-            outputThreads[i] = thread;
+            outThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
             thread.start();
         }
+        this.outputThreads = outThreads;
 
         startIOBalancer();
     }
