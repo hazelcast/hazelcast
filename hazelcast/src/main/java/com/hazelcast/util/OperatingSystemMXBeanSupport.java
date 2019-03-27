@@ -19,7 +19,6 @@ package com.hazelcast.util;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
@@ -38,7 +37,7 @@ public final class OperatingSystemMXBeanSupport {
      * Reads a long attribute from OperatingSystemMXBean.
      *
      * @param attributeName name of the attribute
-     * @param defaultValue default value if the attribute value is null
+     * @param defaultValue  default value if the attribute value is null
      * @return value of the attribute
      */
     public static long readLongAttribute(String attributeName, long defaultValue) {
@@ -46,10 +45,7 @@ public final class OperatingSystemMXBeanSupport {
             String methodName = "get" + attributeName;
             OperatingSystemMXBean systemMXBean = OPERATING_SYSTEM_MX_BEAN;
             Method method = systemMXBean.getClass().getMethod(methodName);
-            // the method is public in Java 9
-            if (!Modifier.isPublic(method.getModifiers())) {
-                method.setAccessible(true);
-            }
+            method.setAccessible(true);
 
             Object value = method.invoke(systemMXBean);
             if (value == null) {
