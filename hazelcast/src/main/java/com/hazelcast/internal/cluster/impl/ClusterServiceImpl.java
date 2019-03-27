@@ -26,6 +26,7 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -68,6 +69,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -319,11 +321,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         assert !isJoined() : "Cannot reset local member UUID when joined.";
 
         Address memberAddress = node.getThisAddress();
+        Map<EndpointQualifier, Address> addressMap = localMember.getAddressMap();
         String newUuid = UuidUtil.createMemberUuid(memberAddress);
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
 
-        MemberImpl memberWithNewUuid = new MemberImpl.Builder(memberAddress)
+        MemberImpl memberWithNewUuid = new MemberImpl.Builder(addressMap)
                 .version(localMember.getVersion())
                 .localMember(true)
                 .uuid(newUuid)

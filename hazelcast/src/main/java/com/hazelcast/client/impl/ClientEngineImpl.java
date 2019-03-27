@@ -582,7 +582,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         @Override
         public void run() {
             InternalOperationService service = nodeEngine.getOperationService();
-            Address thisAddr = getThisAddress();
+            Address thisAddr = node.getThisAddress();
             for (Map.Entry<String, String> entry : ownershipMappings.entrySet()) {
                 String clientUuid = entry.getKey();
                 String memberUuid = entry.getValue();
