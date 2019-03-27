@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
@@ -50,6 +51,9 @@ class BinaryMapEntryCostEstimator
         return estimate;
     }
 
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single partition thread at any given time can change the volatile"
+                    + " field.")
     @Override
     public void adjustEstimateBy(long adjustment) {
         this.estimate += adjustment;
