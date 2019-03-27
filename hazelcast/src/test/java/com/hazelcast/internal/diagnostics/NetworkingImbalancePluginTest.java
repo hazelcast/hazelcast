@@ -79,4 +79,23 @@ public class NetworkingImbalancePluginTest extends AbstractDiagnosticsPluginTest
             }
         });
     }
+
+    @Test
+    public void noNaNPercentagesForZeroAmounts() {
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                hz.getMap("foo").put("key", "value");
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                plugin.run(logWriter);
+
+                assertNotContains("NaN");
+            }
+        });
+    }
 }
