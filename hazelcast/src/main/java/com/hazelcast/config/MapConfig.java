@@ -88,6 +88,11 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
 
     /**
+     * The number of minimum and non-zero time to wait eviction in seconds.
+     */
+    public static final int MIN_ALLOWED_MAX_IDLE_SECONDS = 2;
+
+    /**
      * Default policy for eviction.
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
@@ -434,12 +439,22 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * Maximum number of seconds for each entry to stay idle in the map. Entries that are
      * idle (not touched) for more than {@code maxIdleSeconds} will get automatically evicted from the map.
      * Entry is touched if {@code get()}, {@code getAll()}, {@code put()} or {@code containsKey()} is called.
-     * Any integer between {@code 0} and {@code Integer.MAX_VALUE}.
+     * {@code 0} and any integer between {@value #MIN_ALLOWED_MAX_IDLE_SECONDS} and {@code Integer.MAX_VALUE} (inclusive)
+     * are allowed.
      * {@code 0} means infinite. Default is {@code 0}.
      *
      * @param maxIdleSeconds the maxIdleSeconds (the maximum number of seconds for each entry to stay idle in the map) to set
+     * @throws IllegalArgumentException if maxIdleSeconds is negative or non-zero and less
+     * than {@value #MIN_ALLOWED_MAX_IDLE_SECONDS}.
      */
     public MapConfig setMaxIdleSeconds(int maxIdleSeconds) {
+        if (maxIdleSeconds < 0) {
+            throw new IllegalArgumentException("Parameter maxIdleSeconds can not get a negative value");
+        }
+        if (maxIdleSeconds != DEFAULT_MAX_IDLE_SECONDS && maxIdleSeconds < MIN_ALLOWED_MAX_IDLE_SECONDS) {
+            throw new IllegalArgumentException("Parameter maxIdleSeconds must be greater or equal than "
+                    + MIN_ALLOWED_MAX_IDLE_SECONDS);
+        }
         this.maxIdleSeconds = maxIdleSeconds;
         return this;
     }

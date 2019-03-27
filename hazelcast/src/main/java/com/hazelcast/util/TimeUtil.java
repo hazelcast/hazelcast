@@ -69,4 +69,20 @@ public final class TimeUtil {
     public static long zeroOutMs(long timestamp) {
         return SECONDS.toMillis(MILLISECONDS.toSeconds(timestamp));
     }
+
+    /**
+     * Compares two time values that can be present in different time units.
+     * @param leftTime the first input time value
+     * @param leftTimeUnit the first input time unit
+     * @param rightTime the second input time value
+     * @param rightTimeUnit the second input time unit
+     * @throws NullPointerException if {@param leftTimeUnit} or {@param rightTimeUnit} is <code>null</code>
+     * @return <code>-1</code> if left time is less than right time, <code>0</code> if they are equal,
+     * <code>1</code> if left time is greater that right time
+     */
+    public static int compare(long leftTime, TimeUnit leftTimeUnit, long rightTime, TimeUnit rightTimeUnit) {
+        long leftTimeInMillis = leftTimeUnit.toMillis(leftTime);
+        long rightTimeInMillis = rightTimeUnit.toMillis(rightTime);
+        return (leftTimeInMillis < rightTimeInMillis) ? -1 : ((leftTimeInMillis == rightTimeInMillis) ? 0 : 1);
+    }
 }

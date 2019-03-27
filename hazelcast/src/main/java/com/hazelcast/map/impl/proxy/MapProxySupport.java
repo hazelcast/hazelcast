@@ -138,6 +138,8 @@ abstract class MapProxySupport<K, V>
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
     protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
+    protected static final String MAX_IDLE_TIME_IS_TOO_SMALL = "Parameter maxIdle in seconds representation must be greater than"
+            + " or equal to " + MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS;
 
     private static final int INITIAL_WAIT_LOAD_SLEEP_MILLIS = 10;
     private static final int MAXIMAL_WAIT_LOAD_SLEEP_MILLIS = 1000;
