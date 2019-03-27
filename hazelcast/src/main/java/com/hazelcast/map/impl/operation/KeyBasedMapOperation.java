@@ -90,7 +90,7 @@ public abstract class KeyBasedMapOperation extends MapOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        super.writeInternal(out);
         out.writeData(dataKey);
         out.writeLong(threadId);
         out.writeData(dataValue);
@@ -103,7 +103,7 @@ public abstract class KeyBasedMapOperation extends MapOperation
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        super.readInternal(in);
         dataKey = in.readData();
         threadId = in.readLong();
         dataValue = in.readData();

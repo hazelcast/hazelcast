@@ -52,14 +52,14 @@ public abstract class ReadonlyKeyBasedMapOperation extends MapOperation implemen
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        super.writeInternal(out);
         out.writeData(dataKey);
         out.writeLong(threadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        super.readInternal(in);
         dataKey = in.readData();
         threadId = in.readLong();
     }
