@@ -58,8 +58,8 @@ final class RetryUtils {
                 }
                 long waitIntervalMs = backoffIntervalForRetry(retryCount);
                 LOGGER.warning(
-                        String.format("Couldn't connect to the Kubernetes master, [%s] retrying in %s seconds...", retryCount,
-                                waitIntervalMs / MS_IN_SECOND));
+                        String.format("Couldn't discover Hazelcast members using Kubernetes API, [%s] retrying in %s seconds...",
+                                retryCount, waitIntervalMs / MS_IN_SECOND));
                 sleep(waitIntervalMs);
             }
         }
