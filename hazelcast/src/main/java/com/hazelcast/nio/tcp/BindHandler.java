@@ -191,7 +191,7 @@ final class BindHandler {
         }
         boolean returnValue = tcpIpEndpointManager.registerConnection(remoteEndpoint, connection);
 
-        if (remoteAddressAliases != null) {
+        if (remoteAddressAliases != null && returnValue) {
             for (Address remoteAddressAlias : remoteAddressAliases) {
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias);
