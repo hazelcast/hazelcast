@@ -38,6 +38,7 @@ import java.util.Collections;
 @Category(QuickTest.class)
 public class ThreadLeakClientTest extends AbstractThreadLeakTest {
     public final void assertThreadLeaks() {
+        Hazelcast.shutdownAll();
         super.assertThreadLeaks();
         HazelcastClient.shutdownAll();
     }
@@ -69,14 +70,10 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
 
     @Test (expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotStartDueToAuthenticationError() {
-        try {
             Hazelcast.newHazelcastInstance();
             ClientConfig config = new ClientConfig();
             config.getGroupConfig().setName("invalid cluster");
             HazelcastClient.newHazelcastClient(config);
-        } finally {
-            Hazelcast.shutdownAll();
-        }
     }
 
     @Test (expected = IllegalStateException.class)
@@ -90,7 +87,6 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
 
     @Test (expected = HazelcastException.class)
     public void testThreadLeakWhenClientCanNotStartDueToIncorrectUserCodeDeploymentClass() {
-        try {
             Hazelcast.newHazelcastInstance();
 
             ClientConfig config = new ClientConfig();
@@ -99,9 +95,6 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
             config.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
             HazelcastClient.newHazelcastClient(config);
-        } finally {
-            Hazelcast.shutdownAll();
-        }
     }
 
 
