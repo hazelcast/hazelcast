@@ -435,7 +435,8 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      * idle (not touched) for more than {@code maxIdleSeconds} will get automatically evicted from the map.
      * Entry is touched if {@code get()}, {@code getAll()}, {@code put()} or {@code containsKey()} is called.
      * Any integer between {@code 0} and {@code Integer.MAX_VALUE}.
-     * {@code 0} means infinite. Default is {@code 0}.
+     * {@code 0} means infinite. Default is {@code 0}. The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      *
      * @param maxIdleSeconds the maxIdleSeconds (the maximum number of seconds for each entry to stay idle in the map) to set
      */

@@ -776,7 +776,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <pre>
      *   ICompletableFuture future = map.putAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when ready get the result
@@ -930,10 +931,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
-     * <p>
-     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
-     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
      * <pre>
      *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when you want to make sure set operation is complete:
@@ -1011,7 +1008,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <pre>
      *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when you want to make sure set operation is complete:
@@ -1248,7 +1246,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -1336,7 +1335,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -1454,7 +1454,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -1650,7 +1651,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
