@@ -50,12 +50,9 @@ public class CacheListenerRegistrationMessageTask
 
     @Override
     protected CacheListenerRegistrationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheListenerRegistrationCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = CacheListenerRegistrationCodec.decodeRequest(clientMessage);
         parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

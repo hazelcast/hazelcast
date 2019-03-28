@@ -45,12 +45,9 @@ public class ExecutorServiceCancelOnAddressMessageTask
 
     @Override
     protected ExecutorServiceCancelOnAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ExecutorServiceCancelOnAddressCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = ExecutorServiceCancelOnAddressCodec.decodeRequest(clientMessage);
         parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

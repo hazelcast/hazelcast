@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.client.impl.protocol.util.BufferBuilder;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;

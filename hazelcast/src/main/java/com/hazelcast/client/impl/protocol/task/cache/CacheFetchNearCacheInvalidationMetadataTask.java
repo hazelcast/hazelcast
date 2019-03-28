@@ -49,12 +49,9 @@ public class CacheFetchNearCacheInvalidationMetadataTask
 
     @Override
     protected CacheFetchNearCacheInvalidationMetadataCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheFetchNearCacheInvalidationMetadataCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = CacheFetchNearCacheInvalidationMetadataCodec.decodeRequest(clientMessage);
         parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

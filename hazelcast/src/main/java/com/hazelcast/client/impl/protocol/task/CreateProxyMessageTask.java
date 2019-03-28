@@ -50,12 +50,9 @@ public class CreateProxyMessageTask extends AbstractInvocationMessageTask<Client
 
     @Override
     protected ClientCreateProxyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientCreateProxyCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = ClientCreateProxyCodec.decodeRequest(clientMessage);
         parameters.target = clientEngine.memberAddressOf(parameters.target);
+        return parameters;
     }
 
     @Override

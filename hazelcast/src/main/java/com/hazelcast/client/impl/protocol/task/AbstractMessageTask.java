@@ -91,10 +91,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         return new ClientEndpointImpl(clientEngine, nodeEngine, connection);
     }
 
-    protected void postDecodeParameters() {
-
-    }
-
     protected abstract P decodeClientMessage(ClientMessage clientMessage);
 
     protected abstract ClientMessage encodeResponse(Object response);
@@ -126,9 +122,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
         parameters = decodeClientMessage(clientMessage);
-        // todo: inline postDecodeParameters to avoid an additional virtual call
-        //  write assertion to ensure all Address parameters are decoded
-        postDecodeParameters();
         assert addressesDecodedWithTranslation() : formatWrongAddressInDecodedMessage();
         Credentials credentials = endpoint.getCredentials();
         interceptBefore(credentials);
