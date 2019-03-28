@@ -359,10 +359,10 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      */
     public MapConfig setEvictionPercentage(final int evictionPercentage) {
         if (evictionPercentage < MIN_EVICTION_PERCENTAGE) {
-            throw new IllegalArgumentException("eviction percentage must be greater or equal than 0");
+            throw new IllegalArgumentException("Eviction percentage must be greater than or equal to 0");
         }
         if (evictionPercentage > MAX_EVICTION_PERCENTAGE) {
-            throw new IllegalArgumentException("eviction percentage must be smaller or equal than 100");
+            throw new IllegalArgumentException("Eviction percentage must be smaller than or equal to 100");
         }
         this.evictionPercentage = evictionPercentage;
         return this;
@@ -452,7 +452,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
             throw new IllegalArgumentException("Parameter maxIdleSeconds can not get a negative value");
         }
         if (maxIdleSeconds != DEFAULT_MAX_IDLE_SECONDS && maxIdleSeconds < MIN_ALLOWED_MAX_IDLE_SECONDS) {
-            throw new IllegalArgumentException("Parameter maxIdleSeconds must be greater or equal than "
+            throw new IllegalArgumentException("Parameter maxIdleSeconds must be greater than or equal to "
                     + MIN_ALLOWED_MAX_IDLE_SECONDS);
         }
         this.maxIdleSeconds = maxIdleSeconds;
