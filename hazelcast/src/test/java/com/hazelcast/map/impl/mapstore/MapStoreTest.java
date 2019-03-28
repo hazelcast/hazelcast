@@ -390,6 +390,46 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals(1L, store.get("one").longValue());
     }
 
+    @Test
+    public void test_givenKeyNotExists_mapLoaderShouldServeOldValueForMutatingOperations() {
+        ConcurrentMap<String, Long> store = new ConcurrentHashMap<String, Long>();
+        MapStore<String, Long> myMapStore = new SimpleMapStore<String, Long>(store);
+        Config config = getConfig();
+        config.getMapConfig("myMap")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setImplementation(myMapStore));
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
+        IMap<String, Long> myMap = hc.getMap("myMap");
+
+        // partitions may be created lazily when we first do an operation, causing
+        // map loader to be triggered for all entries during initialization. So
+        // we make sure to initialize all required partitions before hand.
+        myMap.get("replace");
+        myMap.get("replaceIfSame");
+        myMap.get("remove");
+        myMap.get("put");
+        myMap.get("putIfAbsent");
+
+        store.put("replace", -1L);
+        store.put("replaceIfSame", -2L);
+        store.put("remove", -3L);
+        store.put("put", -4L);
+        store.put("putIfAbsent", -5L);
+
+        assertEquals(-1, (long) myMap.replace("replace", 1L));
+        assertTrue(myMap.replace("replaceIfSame", -2L, 2L));
+        assertEquals(-3, (long) myMap.remove("remove"));
+        assertEquals(-4, (long) myMap.put("put", 4L));
+        assertEquals(-5, (long) myMap.putIfAbsent("putIfAbsent", 5L));
+
+        assertEquals(1L, (long) store.get("replace"));
+        assertEquals(2L, (long) store.get("replaceIfSame"));
+        assertNull(store.get("remove"));
+        assertEquals(4L, (long) store.get("put"));
+        assertEquals(-5L, (long) store.get("putIfAbsent"));
+    }
+
     @Test(timeout = 120000)
     public void issue587CallMapLoaderDuringRemoval() {
         final AtomicInteger loadCount = new AtomicInteger(0);

@@ -830,21 +830,32 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return newValue != null;
     }
 
-    // TODO why does not replace method load data from map store if currently not available in memory.
     @Override
     public Object replace(Data key, Object update) {
         checkIfLoaded();
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
-        if (record == null || record.getValue() == null) {
+        Object oldValue;
+        if (record == null) {
+            oldValue = mapDataStore.load(key);
+        } else {
+            oldValue = record.getValue();
+        }
+        if (oldValue == null) {
             return null;
         }
-        Object oldValue = record.getValue();
         update = mapServiceContext.interceptPut(name, oldValue, update);
         update = mapDataStore.add(key, update, now);
+        if (record == null) {
+            record = createRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            storage.put(key, record);
+            stats.setLastUpdateTime(now);
+            mutationObserver.onPutRecord(key, record);
+        } else {
+            updateRecord(key, record, update, now, true);
+        }
         onStore(record);
-        updateRecord(key, record, update, now, true);
         setExpirationTimes(record.getTtl(), record.getMaxIdle(), record, mapContainer.getMapConfig(), false);
         saveIndex(record, oldValue);
         return oldValue;
@@ -856,17 +867,29 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
+        Object current;
         if (record == null) {
+            current = mapDataStore.load(key);
+        } else {
+            current = record.getValue();
+        }
+        if (current == null) {
             return false;
         }
-        Object current = record.getValue();
         if (!valueComparator.isEqual(expect, current, serializationService)) {
             return false;
         }
         update = mapServiceContext.interceptPut(name, current, update);
         update = mapDataStore.add(key, update, now);
+        if (record == null) {
+            record = createRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            storage.put(key, record);
+            stats.setLastUpdateTime(now);
+            mutationObserver.onPutRecord(key, record);
+        } else {
+            updateRecord(key, record, update, now, true);
+        }
         onStore(record);
-        updateRecord(key, record, update, now, true);
         setExpirationTimes(record.getTtl(), record.getMaxIdle(), record, mapContainer.getMapConfig(), false);
         saveIndex(record, current);
         return true;
