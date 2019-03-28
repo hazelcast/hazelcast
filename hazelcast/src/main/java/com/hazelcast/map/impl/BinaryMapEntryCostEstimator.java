@@ -53,7 +53,7 @@ class BinaryMapEntryCostEstimator
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single partition thread at any given time can change the volatile"
-                    + " field.")
+                    + " field, but multiple threads can read it.")
     @Override
     public void adjustEstimateBy(long adjustment) {
         this.estimate += adjustment;
