@@ -82,7 +82,6 @@ public final class LifecycleServiceImpl implements LifecycleService {
             }
         }
         buildInfo = BuildInfoProvider.getBuildInfo();
-        fireLifecycleEvent(STARTING);
     }
 
     private ILogger getLogger() {
@@ -131,11 +130,6 @@ public final class LifecycleServiceImpl implements LifecycleService {
         });
     }
 
-    public void setStarted() {
-        active.set(true);
-        fireLifecycleEvent(STARTED);
-    }
-
     @Override
     public boolean isRunning() {
         return active.get();
@@ -149,6 +143,12 @@ public final class LifecycleServiceImpl implements LifecycleService {
     @Override
     public void terminate() {
         doShutdown(false);
+    }
+
+    public void start() {
+        fireLifecycleEvent(STARTING);
+        active.set(true);
+        fireLifecycleEvent(STARTED);
     }
 
     private void doShutdown(boolean isGraceful) {

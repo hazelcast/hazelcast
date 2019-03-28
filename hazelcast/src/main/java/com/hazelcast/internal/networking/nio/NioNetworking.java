@@ -19,6 +19,7 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -39,10 +40,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.util.HashUtil.hashToIndex;
@@ -52,7 +53,6 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
-
 
 /**
  * A non blocking {@link Networking} implementation that makes use of
@@ -85,6 +85,7 @@ public final class NioNetworking implements Networking {
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
     private final MetricsRegistry metricsRegistry;
+    private final AtomicBoolean metricsRegistryScheduled = new AtomicBoolean(false);
     private final LoggingService loggingService;
     private final String threadNamePrefix;
     private final ChannelErrorHandler errorHandler;
@@ -125,9 +126,6 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
-
-        metricsRegistry.scanAndRegister(this, "tcp");
-        metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, INFO);
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -158,6 +156,10 @@ public final class NioNetworking implements Networking {
         }
 
         logger.log(selectorMode != SELECT ? Level.INFO : FINE, "IO threads selector mode is " + selectorMode);
+
+        if (metricsRegistryScheduled.compareAndSet(false, true) && metricsRegistry.minimumLevel().isEnabled(ProbeLevel.DEBUG)) {
+            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, ProbeLevel.INFO);
+        }
 
         this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
             @Override
