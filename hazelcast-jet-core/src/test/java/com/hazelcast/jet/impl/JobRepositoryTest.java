@@ -42,7 +42,7 @@ import java.util.Collection;
 import java.util.Properties;
 
 import static com.hazelcast.jet.impl.JobRepository.RANDOM_IDS_MAP_NAME;
-import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_SCAN_PERIOD;
+import static com.hazelcast.jet.impl.util.JetProperties.JOB_SCAN_PERIOD;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertFalse;

@@ -51,6 +51,7 @@ public final class XmlJetConfigLocator {
 
     private static final String HAZELCAST_CLIENT_DEFAULT_XML = "hazelcast-jet-client-default.xml";
     private static final String HAZELCAST_MEMBER_DEFAULT_XML = "hazelcast-jet-member-default.xml";
+    private static final String HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_XML = "hazelcast-jet-enterprise-member-default.xml";
     private static final String HAZELCAST_JET_DEFAULT_XML = "hazelcast-jet-default.xml";
 
     private XmlJetConfigLocator() {
@@ -61,8 +62,13 @@ public final class XmlJetConfigLocator {
     }
 
     public static InputStream getMemberConfigStream(Properties properties) {
-        return getConfigStream(properties, HAZELCAST_MEMBER_CONFIG_PROPERTY,
-                HAZELCAST_MEMBER_XML, HAZELCAST_MEMBER_DEFAULT_XML);
+        return getConfigStream(Stream.of(
+                () -> fromProperties(HAZELCAST_MEMBER_CONFIG_PROPERTY, properties),
+                () -> XmlJetConfigLocator.fromWorkingDirectory(HAZELCAST_MEMBER_XML),
+                () -> XmlJetConfigLocator.fromClasspath(HAZELCAST_MEMBER_XML),
+                () -> XmlJetConfigLocator.fromClasspath(HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_XML),
+                () -> XmlJetConfigLocator.defaultFromClasspath(HAZELCAST_MEMBER_DEFAULT_XML)
+        ));
     }
 
     public static InputStream getClientConfigStream(Properties properties) {
@@ -77,12 +83,17 @@ public final class XmlJetConfigLocator {
      */
     private static InputStream getConfigStream(Properties properties, String propertyName,
                                                String xmlName, String defaultXmlName) {
+        return getConfigStream(Stream.of(
+                () -> fromProperties(propertyName, properties),
+                () -> XmlJetConfigLocator.fromWorkingDirectory(xmlName),
+                () -> XmlJetConfigLocator.fromClasspath(xmlName),
+                () -> XmlJetConfigLocator.defaultFromClasspath(defaultXmlName)
+        ));
+    }
+
+    private static InputStream getConfigStream(Stream<Callable<InputStream>> candidates) {
         try {
-            return Stream.<Callable<InputStream>>of(
-                    () -> fromProperties(propertyName, properties),
-                    () -> XmlJetConfigLocator.fromWorkingDirectory(xmlName),
-                    () -> XmlJetConfigLocator.fromClasspath(xmlName),
-                    () -> XmlJetConfigLocator.defaultFromClasspath(defaultXmlName))
+            return candidates
                     .map(Util::uncheckCall)
                     .filter(Objects::nonNull)
                     .findFirst().orElseThrow(() -> new JetException("Could not find any Jet configuration file."));

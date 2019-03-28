@@ -23,8 +23,11 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.InputStream;
 import java.util.Properties;
+
+import static com.hazelcast.jet.impl.util.JetProperties.JET_HOME;
 
 /**
  * Configuration object for a Jet instance.
@@ -45,6 +48,12 @@ public class JetConfig {
     public static final String DEFAULT_GROUP_NAME = "jet";
 
     private static final ILogger LOGGER = Logger.getLogger(JetConfig.class);
+
+    static {
+        String value = jetHome();
+        LOGGER.info("jet.home is " + value);
+        System.setProperty(JET_HOME.getName(), value);
+    }
 
     private Config hazelcastConfig = defaultHazelcastConfig();
     private InstanceConfig instanceConfig = new InstanceConfig();
@@ -296,6 +305,16 @@ public class JetConfig {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(DEFAULT_JET_MULTICAST_PORT);
         config.getGroupConfig().setName(DEFAULT_GROUP_NAME);
+        config.getHotRestartPersistenceConfig().setBaseDir(new File(jetHome(), "recovery").getAbsoluteFile());
         return config;
+    }
+
+    /**
+     * Returns the absolute path for jet.home based from the system property
+     * {@link com.hazelcast.jet.impl.util.JetProperties#JET_HOME}
+     */
+    private static String jetHome() {
+
+        return new File(System.getProperty(JET_HOME.getName(), JET_HOME.getDefaultValue())).getAbsolutePath();
     }
 }

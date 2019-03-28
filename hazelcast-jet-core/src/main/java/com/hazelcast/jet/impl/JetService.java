@@ -29,7 +29,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.impl.util.JetGroupProperty;
+import com.hazelcast.jet.impl.util.JetProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperations;
@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.JetGroupProperty.JET_SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.jet.impl.util.JetProperties.JET_SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 import static java.lang.Boolean.parseBoolean;
@@ -103,7 +103,7 @@ public class JetService
         HazelcastProperties jetProperties = new HazelcastProperties(config.getProperties());
         taskletExecutionService = new TaskletExecutionService(nodeEngine,
                 config.getInstanceConfig().getCooperativeThreadCount(),
-                jetProperties.getNanos(JetGroupProperty.JET_MINIMUM_IDLE_MICROSECONDS));
+                jetProperties.getNanos(JetProperties.JET_MINIMUM_IDLE_MICROSECONDS));
         jobRepository = new JobRepository(jetInstance);
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();

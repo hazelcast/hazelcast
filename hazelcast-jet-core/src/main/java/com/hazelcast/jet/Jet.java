@@ -35,6 +35,8 @@ import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetNodeContext;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.metrics.JetMetricsService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Preconditions;
@@ -47,14 +49,16 @@ import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
 import static com.hazelcast.jet.impl.metrics.JetMetricsService.applyMetricsConfig;
-import static com.hazelcast.jet.impl.util.JetGroupProperty.JET_SHUTDOWNHOOK_ENABLED;
-import static com.hazelcast.jet.impl.util.JetGroupProperty.JOB_RESULTS_TTL_SECONDS;
+import static com.hazelcast.jet.impl.util.JetProperties.JET_SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.jet.impl.util.JetProperties.JOB_RESULTS_TTL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 
 /**
  * Entry point to the Jet product.
  */
 public final class Jet {
+
+    private static final ILogger LOGGER = Logger.getLogger(Jet.class);
 
     private Jet() {
     }
@@ -170,6 +174,13 @@ public final class Jet {
 
         hzConfig.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig);
+
+        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled() &&
+            !hzConfig.getHotRestartPersistenceConfig().isEnabled()) {
+            LOGGER.warning("Lossless recovery is enabled but Hot Restart is disabled. Auto-enabling Hot Restart. " +
+                    "The following path will be used: " + hzConfig.getHotRestartPersistenceConfig().getBaseDir());
+            hzConfig.getHotRestartPersistenceConfig().setEnabled(true);
+        }
 
         MetricsConfig metricsConfig = jetConfig.getMetricsConfig();
         applyMetricsConfig(hzConfig, metricsConfig);

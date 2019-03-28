@@ -27,7 +27,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the names and default values for internal Hazelcast Jet properties.
  */
-public final class JetGroupProperty {
+public final class JetProperties {
 
     public static final HazelcastProperty JOB_SCAN_PERIOD
             = new HazelcastProperty("jet.job.scan.period", SECONDS.toMillis(5), MILLISECONDS);
@@ -35,6 +35,8 @@ public final class JetGroupProperty {
             = new HazelcastProperty("jet.shutdownhook.enabled", SHUTDOWNHOOK_ENABLED.getDefaultValue());
     public static final HazelcastProperty JOB_RESULTS_TTL_SECONDS
             = new HazelcastProperty("jet.job.results.ttl.seconds", DAYS.toSeconds(7), SECONDS);
+    public static final HazelcastProperty JET_HOME
+            = new HazelcastProperty("jet.home", "");
 
     /**
      * The minimum time in microseconds the worker threads will sleep if none
@@ -50,6 +52,6 @@ public final class JetGroupProperty {
     public static final HazelcastProperty JET_MINIMUM_IDLE_MICROSECONDS
             = new HazelcastProperty("jet.minimum.idle.microseconds", 25, MICROSECONDS);
 
-    private JetGroupProperty() {
+    private JetProperties() {
     }
 }

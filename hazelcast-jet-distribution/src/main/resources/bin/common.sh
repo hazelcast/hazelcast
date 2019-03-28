@@ -48,5 +48,6 @@ fi
 
 CLASSPATH="$JET_HOME/lib/${hazelcast.jet.artifact}-${project.version}.jar:$CLASSPATH"
 JAVA_OPTS="$JAVA_OPTS -Dhazelcast.config=$JET_HOME/config/hazelcast.xml \
+-Djet.home=$JET_HOME \
 -Dhazelcast.client.config=$JET_HOME/config/hazelcast-client.xml \
 -Dhazelcast.jet.config=$JET_HOME/config/hazelcast-jet.xml"
