@@ -48,12 +48,9 @@ public class CacheManagementConfigMessageTask
 
     @Override
     protected CacheManagementConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheManagementConfigCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = CacheManagementConfigCodec.decodeRequest(clientMessage);
         parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

@@ -57,12 +57,9 @@ public class ScheduledExecutorTaskGetResultFromAddressMessageTask
 
     @Override
     protected ScheduledExecutorGetResultFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorGetResultFromAddressCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = ScheduledExecutorGetResultFromAddressCodec.decodeRequest(clientMessage);
         parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

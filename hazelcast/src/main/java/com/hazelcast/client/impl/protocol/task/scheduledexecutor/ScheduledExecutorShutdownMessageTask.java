@@ -53,12 +53,9 @@ public class ScheduledExecutorShutdownMessageTask
 
     @Override
     protected ScheduledExecutorShutdownCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorShutdownCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = ScheduledExecutorShutdownCodec.decodeRequest(clientMessage);
         parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

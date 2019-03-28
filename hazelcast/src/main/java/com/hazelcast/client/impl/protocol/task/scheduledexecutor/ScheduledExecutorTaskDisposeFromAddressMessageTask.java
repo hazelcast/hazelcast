@@ -54,12 +54,9 @@ public class ScheduledExecutorTaskDisposeFromAddressMessageTask
 
     @Override
     protected ScheduledExecutorDisposeFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorDisposeFromAddressCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = ScheduledExecutorDisposeFromAddressCodec.decodeRequest(clientMessage);
         parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override

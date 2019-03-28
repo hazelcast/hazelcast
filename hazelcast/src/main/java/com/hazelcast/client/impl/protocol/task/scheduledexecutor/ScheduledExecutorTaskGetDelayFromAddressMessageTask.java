@@ -55,12 +55,9 @@ public class ScheduledExecutorTaskGetDelayFromAddressMessageTask
 
     @Override
     protected ScheduledExecutorGetDelayFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorGetDelayFromAddressCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected void postDecodeParameters() {
+        parameters = ScheduledExecutorGetDelayFromAddressCodec.decodeRequest(clientMessage);
         parameters.address = clientEngine.memberAddressOf(parameters.address);
+        return parameters;
     }
 
     @Override
