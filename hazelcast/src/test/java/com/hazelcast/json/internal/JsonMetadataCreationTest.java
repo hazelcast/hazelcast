@@ -236,6 +236,9 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
             localMap.put(createJsonValue("key", i), createJsonValue("value", i));
         }
         map.putAll(localMap);
+
+        waitAllForSafeState(instances);
+
         assertMetadataCreated(map.getName());
     }
 
