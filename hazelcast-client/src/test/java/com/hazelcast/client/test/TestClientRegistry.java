@@ -223,6 +223,9 @@ class TestClientRegistry {
 
         @Override
         public boolean write(final OutboundFrame frame) {
+            if (!isAlive()) {
+                return false;
+            }
             final Node node = serverNodeEngine.getNode();
             if (node.getState() == NodeState.SHUT_DOWN) {
                 return false;

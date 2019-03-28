@@ -40,7 +40,19 @@ import java.util.Map;
  */
 public interface ClientEngine extends Consumer<ClientMessage> {
 
-    void bind(ClientEndpoint endpoint);
+    /**
+     * Registers client endpoint to endpointManager.
+     * Only authenticated endpoints should be registered here.
+     * bind can be called twice for same connection, as long as client is allowed to be registered all calls to this
+     * method returns true
+     *
+     * A selector could prevent endpoint to be registered
+     * see {@link #applySelector}
+     *
+     * @param endpoint to be registered to client engine
+     * @return false if client is not allowed to join because of a selector, true otherwise
+     */
+    boolean bind(ClientEndpoint endpoint);
 
     Collection<Client> getClients();
 
@@ -57,8 +69,8 @@ public interface ClientEngine extends Consumer<ClientMessage> {
     ILogger getLogger(Class clazz);
 
     /**
-     * @return  the address of this member that listens for CLIENT protocol connections. When advanced network config
-     *          is in use, it will be different from the MEMBER listening address reported eg by {@code Node.getThisAddress()}
+     * @return the address of this member that listens for CLIENT protocol connections. When advanced network config
+     * is in use, it will be different from the MEMBER listening address reported eg by {@code Node.getThisAddress()}
      */
     Address getThisAddress();
 
@@ -79,7 +91,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      *
      * The returned map can be used to get information about connected clients to the cluster.
      *
-     * @return Map<ClientType , Integer> .
+     * @return Map<ClientType, Integer> .
      */
     Map<ClientType, Integer> getConnectedClientStats();
 
@@ -176,7 +188,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * provided client address can be located.
      *
      * @param clientAddress the client address of the member
-     * @return              the member address of the member
+     * @return the member address of the member
      */
     Address memberAddressOf(Address clientAddress);
 
@@ -185,7 +197,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
      * of {@link #memberAddressOf(Address)}.
      *
      * @param memberAddress the member address of the member
-     * @return              the client address of the member
+     * @return the client address of the member
      */
     Address clientAddressOf(Address memberAddress);
 }

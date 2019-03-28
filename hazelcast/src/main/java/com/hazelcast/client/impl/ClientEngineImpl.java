@@ -40,6 +40,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -71,7 +72,6 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
 
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
@@ -265,8 +265,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return clazz == PingMessageTask.class
                 || clazz == GetPartitionsMessageTask.class
                 || clazz == AuthenticationMessageTask.class
-                || clazz == AuthenticationCustomCredentialsMessageTask.class
-                ;
+                || clazz == AuthenticationCustomCredentialsMessageTask.class;
     }
 
     private boolean isQuery(MessageTask messageTask) {
@@ -329,14 +328,43 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     @Override
-    public void bind(final ClientEndpoint endpoint) {
-        final Connection conn = endpoint.getConnection();
+    public boolean bind(final ClientEndpoint endpoint) {
+        if (!clientSelector.select(endpoint)) {
+            return false;
+        }
+
+        if (!endpointManager.registerEndpoint(endpoint)) {
+            // connection exists just reauthenticated to promote to become an owner connection
+            return true;
+        }
+
+        Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
             InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
             //socket address can be null if connection closed before bind
             if (socketAddress != null) {
                 Address address = new Address(socketAddress);
                 ((TcpIpConnection) conn).setEndPoint(address);
+            }
+        }
+
+        // Second check to catch concurrent change done via applySelector
+        if (!clientSelector.select(endpoint)) {
+            endpointManager.removeEndpoint(endpoint);
+            return false;
+        }
+        return true;
+    }
+
+
+    @Override
+    public void applySelector(ClientSelector newSelector) {
+        logger.info("Applying a new client selector :" + newSelector);
+        clientSelector = newSelector;
+
+        for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
+            if (!clientSelector.select(endpoint)) {
+                endpoint.getConnection().close("Client disconnected from cluster via Management Center", null);
             }
         }
     }
@@ -392,11 +420,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
 
     @Override
     public Collection<Client> getClients() {
-        final Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
-        final Set<Client> clients = createHashSet(endpoints.size());
-        for (ClientEndpoint endpoint : endpoints) {
-            clients.add(endpoint);
-        }
+        Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
+        Set<Client> clients = createHashSet(endpoints.size());
+        clients.addAll(endpoints);
         return clients;
     }
 
@@ -473,29 +499,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     @Override
     public boolean isClientAllowed(Client client) {
         return clientSelector.select(client);
-    }
-
-    @Override
-    public void applySelector(ClientSelector newSelector) {
-        logger.info("Applying a new client selector :" + newSelector);
-        clientSelector = newSelector;
-        Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
-        for (ClientEndpoint endpoint : endpoints) {
-            if (clientSelector.select(endpoint)) {
-                continue;
-            }
-            String clientUuid = endpoint.getUuid();
-            String memberUuid = ownershipMappings.get(clientUuid);
-            ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid, memberUuid);
-            InternalOperationService service = nodeEngine.getOperationService();
-            Address thisAddress = getThisAddress();
-            Future future = service.createInvocationBuilder(ClientEngineImpl.SERVICE_NAME, op, thisAddress).invoke();
-            try {
-                future.get();
-            } catch (Exception e) {
-                logger.warning("Could not apply new selector for " + endpoint);
-            }
-        }
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {
