@@ -28,28 +28,37 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
+import java.util.Set;
+
+import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
+import static classloading.ThreadLeakTestUtils.getThreads;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ThreadLeakClientTest extends AbstractThreadLeakTest {
-    public final void assertThreadLeaks() {
-        Hazelcast.shutdownAll();
-        super.assertThreadLeaks();
+public class ThreadLeakClientTest {
+
+    @After
+    public void shutdownInstances() {
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
     public void testThreadLeak() {
+        Set<Thread> testStartThreads = getThreads();
         HazelcastInstance member = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         client.shutdown();
         member.shutdown();
+
+        assertHazelcastThreadShutdown(testStartThreads);
     }
 
     @Test
@@ -58,14 +67,20 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
 
+        Set<Thread> testStartThreads = getThreads();
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
         client.shutdown();
+        assertHazelcastThreadShutdown(testStartThreads);
     }
 
     @Test(expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotStart() {
-        HazelcastClient.newHazelcastClient();
+        Set<Thread> testStartThreads = getThreads();
+        try {
+            HazelcastClient.newHazelcastClient();
+        } finally {
+            assertHazelcastThreadShutdown(testStartThreads);
+        }
     }
 
     @Test(expected = IllegalStateException.class)
@@ -73,7 +88,13 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
         Hazelcast.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.getGroupConfig().setName("invalid cluster");
-        HazelcastClient.newHazelcastClient(config);
+        Set<Thread> testStartThreads = getThreads();
+        try {
+            HazelcastClient.newHazelcastClient(config);
+        } finally {
+            Hazelcast.shutdownAll();
+            assertHazelcastThreadShutdown(testStartThreads);
+        }
     }
 
     @Test(expected = IllegalStateException.class)
@@ -82,7 +103,12 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
         config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
                 new DiscoveryStrategyConfig(new ClientDiscoverySpiTest.NoMemberDiscoveryStrategyFactory(),
                         Collections.<String, Comparable>emptyMap()));
-        HazelcastClient.newHazelcastClient(config);
+        Set<Thread> testStartThreads = getThreads();
+        try {
+            HazelcastClient.newHazelcastClient(config);
+        } finally {
+            assertHazelcastThreadShutdown(testStartThreads);
+        }
     }
 
     @Test(expected = HazelcastException.class)
@@ -93,8 +119,13 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         clientUserCodeDeploymentConfig.addClass("invalid.class.test");
         config.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
-
-        HazelcastClient.newHazelcastClient(config);
+        Set<Thread> testStartThreads = getThreads();
+        try {
+            HazelcastClient.newHazelcastClient(config);
+        } finally {
+            Hazelcast.shutdownAll();
+            assertHazelcastThreadShutdown(testStartThreads);
+        }
     }
 
     @Test(expected = HazelcastSerializationException.class)
@@ -103,7 +134,11 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addDataSerializableFactoryClass(5, "invalid.factory");
         config.setSerializationConfig(serializationConfig);
-
-        HazelcastClient.newHazelcastClient(config);
+        Set<Thread> testStartThreads = getThreads();
+        try {
+            HazelcastClient.newHazelcastClient(config);
+        } finally {
+            assertHazelcastThreadShutdown(testStartThreads);
+        }
     }
 }
