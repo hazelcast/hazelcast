@@ -63,20 +63,20 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
         client.shutdown();
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotStart() {
         HazelcastClient.newHazelcastClient();
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotStartDueToAuthenticationError() {
-            Hazelcast.newHazelcastInstance();
-            ClientConfig config = new ClientConfig();
-            config.getGroupConfig().setName("invalid cluster");
-            HazelcastClient.newHazelcastClient(config);
+        Hazelcast.newHazelcastInstance();
+        ClientConfig config = new ClientConfig();
+        config.getGroupConfig().setName("invalid cluster");
+        HazelcastClient.newHazelcastClient(config);
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotConstructDueToNoMemberDiscoveryStrategyConfig() {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
@@ -85,20 +85,19 @@ public class ThreadLeakClientTest extends AbstractThreadLeakTest {
         HazelcastClient.newHazelcastClient(config);
     }
 
-    @Test (expected = HazelcastException.class)
+    @Test(expected = HazelcastException.class)
     public void testThreadLeakWhenClientCanNotStartDueToIncorrectUserCodeDeploymentClass() {
-            Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
-            ClientConfig config = new ClientConfig();
-            ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-            clientUserCodeDeploymentConfig.addClass("invalid.class.test");
-            config.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+        ClientConfig config = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass("invalid.class.test");
+        config.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
-            HazelcastClient.newHazelcastClient(config);
+        HazelcastClient.newHazelcastClient(config);
     }
 
-
-    @Test (expected = HazelcastSerializationException.class)
+    @Test(expected = HazelcastSerializationException.class)
     public void testThreadLeakWhenClientCanNotConstructDueToIncorrectSerializationServiceFactoryClassName() {
         ClientConfig config = new ClientConfig();
         SerializationConfig serializationConfig = new SerializationConfig();
