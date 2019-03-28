@@ -150,8 +150,9 @@ public final class NioNetworking implements Networking {
     @Override
     public void start() {
         if (logger.isFineEnabled()) {
-            logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: " + inputThreadCount
-                    + " input threads and " + outputThreadCount + " output threads");
+            logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
+                    + inputThreadCount + " input threads and "
+                    + outputThreadCount + " output threads");
         }
 
         logger.log(selectorMode != SELECT ? Level.INFO : FINE, "IO threads selector mode is " + selectorMode);
@@ -171,8 +172,12 @@ public final class NioNetworking implements Networking {
 
         NioThread[] inThreads = new NioThread[inputThreadCount];
         for (int i = 0; i < inThreads.length; i++) {
-            NioThread thread = new NioThread(createThreadPoolName(threadNamePrefix, "IO") + "in-" + i,
-                    loggingService.getLogger(NioThread.class), errorHandler, selectorMode, idleStrategy);
+            NioThread thread = new NioThread(
+                    createThreadPoolName(threadNamePrefix, "IO") + "in-" + i,
+                    loggingService.getLogger(NioThread.class),
+                    errorHandler,
+                    selectorMode,
+                    idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inThreads[i] = thread;
@@ -183,8 +188,12 @@ public final class NioNetworking implements Networking {
 
         NioThread[] outThreads = new NioThread[outputThreadCount];
         for (int i = 0; i < outThreads.length; i++) {
-            NioThread thread = new NioThread(createThreadPoolName(threadNamePrefix, "IO") + "out-" + i,
-                    loggingService.getLogger(NioThread.class), errorHandler, selectorMode, idleStrategy);
+            NioThread thread = new NioThread(
+                    createThreadPoolName(threadNamePrefix, "IO") + "out-" + i,
+                    loggingService.getLogger(NioThread.class),
+                    errorHandler,
+                    selectorMode,
+                    idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outThreads[i] = thread;
@@ -228,8 +237,7 @@ public final class NioNetworking implements Networking {
 
     @Override
     public Channel register(EndpointQualifier endpointQualifier, ChannelInitializerProvider channelInitializerProvider,
-                            SocketChannel socketChannel, boolean clientMode)
-            throws IOException {
+                            SocketChannel socketChannel, boolean clientMode) throws IOException {
         ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
         assert initializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
         NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, metricsRegistry, closeListenerExecutor);
@@ -256,7 +264,11 @@ public final class NioNetworking implements Networking {
             throw new IllegalStateException("NioNetworking is shutdown!");
         }
 
-        return new NioOutboundPipeline(channel, threads[index], errorHandler, loggingService.getLogger(NioOutboundPipeline.class),
+        return new NioOutboundPipeline(
+                channel,
+                threads[index],
+                errorHandler,
+                loggingService.getLogger(NioOutboundPipeline.class),
                 ioBalancer);
     }
 
@@ -267,7 +279,11 @@ public final class NioNetworking implements Networking {
             throw new IllegalStateException("NioNetworking is shutdown!");
         }
 
-        return new NioInboundPipeline(channel, threads[index], errorHandler, loggingService.getLogger(NioInboundPipeline.class),
+        return new NioInboundPipeline(
+                channel,
+                threads[index],
+                errorHandler,
+                loggingService.getLogger(NioInboundPipeline.class),
                 ioBalancer);
     }
 
@@ -286,6 +302,7 @@ public final class NioNetworking implements Networking {
     }
 
     private class PublishAllTask implements Runnable {
+
         @Override
         public void run() {
             for (NioChannel channel : channels) {
