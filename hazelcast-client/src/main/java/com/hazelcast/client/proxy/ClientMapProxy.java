@@ -126,7 +126,6 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -176,7 +175,6 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.Preconditions.checkMinTimeIfPositive;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
@@ -203,9 +201,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
     protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
-
-    protected static final String MAX_IDLE_TIME_IS_TOO_SMALL = "Parameter maxIdle in seconds representation must be greater than"
-            + " or equal to " + RecordStore.MIN_ALLOWED_MAX_IDLE;
 
     @SuppressWarnings("unchecked")
     protected static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
@@ -343,8 +338,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public V put(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTimeIfPositive(maxIdle, maxIdleUnit, RecordStore.MIN_ALLOWED_MAX_IDLE, TimeUnit.SECONDS,
-                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         return putInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
@@ -454,8 +447,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTimeIfPositive(maxIdle, maxIdleUnit, RecordStore.MIN_ALLOWED_MAX_IDLE, TimeUnit.SECONDS,
-                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         return putAsyncInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
@@ -497,8 +488,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTimeIfPositive(maxIdle, maxIdleUnit, RecordStore.MIN_ALLOWED_MAX_IDLE, TimeUnit.SECONDS,
-                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         return setAsyncInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
@@ -609,8 +598,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public void putTransient(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTimeIfPositive(maxIdle, maxIdleUnit, RecordStore.MIN_ALLOWED_MAX_IDLE, TimeUnit.SECONDS,
-                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         putTransientInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
@@ -651,8 +638,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public V putIfAbsent(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTimeIfPositive(maxIdle, maxIdleUnit, RecordStore.MIN_ALLOWED_MAX_IDLE, TimeUnit.SECONDS,
-                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         return putIfAbsentInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }
@@ -723,8 +708,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public void set(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        checkMinTimeIfPositive(maxIdle, maxIdleUnit, RecordStore.MIN_ALLOWED_MAX_IDLE, TimeUnit.SECONDS,
-                MAX_IDLE_TIME_IS_TOO_SMALL);
 
         setInternal(ttl, ttlUnit, maxIdle, maxIdleUnit, key, value);
     }

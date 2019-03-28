@@ -29,13 +29,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkHasNext;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
-import static com.hazelcast.util.Preconditions.checkMinTimeIfPositive;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static org.junit.Assert.assertEquals;
@@ -368,60 +366,5 @@ public class PreconditionsTest {
     public void test_hasNextReturnsIterator_whenNonEmptyIteratorGiven() throws Exception {
         Iterator<Integer> iterator = Arrays.asList(1, 2).iterator();
         assertEquals(iterator, checkHasNext(iterator, ""));
-    }
-
-    @Test
-    public void testCheckMinTimeIfPositiveTimeIsGreaterSameTimeUnit() {
-        long time = 3;
-        TimeUnit timeUnit = TimeUnit.SECONDS;
-
-        long minTime = 2;
-        TimeUnit minTimeUnit = TimeUnit.SECONDS;
-
-        checkMinTimeIfPositive(time, timeUnit, minTime, minTimeUnit, "valid value");
-    }
-
-    @Test
-    public void testCheckMinTimeIfPositiveTimeIsEqualSameTimeUnit() {
-        long time = 2;
-        TimeUnit timeUnit = TimeUnit.SECONDS;
-
-        long minTime = 2;
-        TimeUnit minTimeUnit = TimeUnit.SECONDS;
-
-        checkMinTimeIfPositive(time, timeUnit, minTime, minTimeUnit, "valid value");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testCheckMinTimeIfPositiveTimeIsLessSameTimeUnit() {
-        long time = 1;
-        TimeUnit timeUnit = TimeUnit.SECONDS;
-
-        long minTime = 2;
-        TimeUnit minTimeUnit = TimeUnit.SECONDS;
-
-        checkMinTimeIfPositive(time, timeUnit, minTime, minTimeUnit, "invalid value, time is lower than min value");
-    }
-
-    @Test
-    public void testCheckMinTimeIfPositiveTimeIsZeroSameTimeUnit() {
-        long time = 0;
-        TimeUnit timeUnit = TimeUnit.SECONDS;
-
-        long minTime = 2;
-        TimeUnit minTimeUnit = TimeUnit.SECONDS;
-
-        checkMinTimeIfPositive(time, timeUnit, minTime, minTimeUnit, "valid value");
-    }
-
-    @Test
-    public void testCheckMinTimeIfPositiveTimeIsZeroDifferentTimeUnit() {
-        long time = 0;
-        TimeUnit timeUnit = TimeUnit.DAYS;
-
-        long minTime = 2;
-        TimeUnit minTimeUnit = TimeUnit.SECONDS;
-
-        checkMinTimeIfPositive(time, timeUnit, minTime, minTimeUnit, "valid value");
     }
 }

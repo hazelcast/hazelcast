@@ -122,22 +122,6 @@ public class MapConfigTest {
         assertEquals(1234, new MapConfig().setMaxIdleSeconds(1234).getMaxIdleSeconds());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetMaxIdleSecondsToNegative() {
-        new MapConfig().setMaxIdleSeconds(-1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetMaxIdleSecondsToNotAllowed() {
-        new MapConfig().setMaxIdleSeconds(MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS - 1);
-    }
-
-    @Test
-    public void testSetMaxIdleSecondsToDefault() {
-        assertEquals(MapConfig.DEFAULT_MAX_IDLE_SECONDS,
-                new MapConfig().setMaxIdleSeconds(MapConfig.DEFAULT_MAX_IDLE_SECONDS).getMaxIdleSeconds());
-    }
-
     @Test
     public void testGetMaxSize() {
         assertEquals(MaxSizeConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());

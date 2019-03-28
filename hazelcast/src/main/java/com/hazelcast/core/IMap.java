@@ -776,8 +776,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). If the MaxIdle is positive, it must not be less than
-     * {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent.
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <pre>
      *   ICompletableFuture future = map.putAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when ready get the result
@@ -853,8 +853,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param maxIdleUnit time unit for the Max-Idle
      * @return ICompletableFuture from which the old value of the key can be retrieved
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
-     * @throws IllegalArgumentException if maxIdle is greater than zero and less
-     * than {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent
      * @see ICompletableFuture
      * @see #setAsync(Object, Object, long, TimeUnit)
      */
@@ -933,10 +931,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
-     * <p>
-     * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
-     * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
      * <pre>
      *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when you want to make sure set operation is complete:
@@ -1010,12 +1004,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
-     * from the map configuration will be used (default: forever). If the MaxIdle is positive, it must not be less than
-     *      * {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent.
+     * from the map configuration will be used (default: forever).
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever).
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <pre>
      *   ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
      *   // do some other stuff, when you want to make sure set operation is complete:
@@ -1082,8 +1076,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @return ICompletableFuture on which client code can block waiting for the operation to complete
      * or provide an {@link ExecutionCallback} to be invoked upon set operation completion
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
-     * @throws IllegalArgumentException if maxIdle is greater than zero and less
-     * than {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent
      * @see ICompletableFuture
      */
     ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
@@ -1254,8 +1246,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). If the MaxIdle is positive, it must not be less than
-     *      * {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent.
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -1302,8 +1294,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param maxIdleUnit time unit for the Max-Idle
      * @return old value of the entry
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
-     * @throws IllegalArgumentException if maxIdle is greater than zero and less
-     * than {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent
      */
     V put(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
 
@@ -1345,8 +1335,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). If the MaxIdle is positive, it must not be less than
-     *      * {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent.
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -1366,8 +1356,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
-     * @throws IllegalArgumentException if maxIdle is greater than zero and less
-     * than {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent
      */
     void putTransient(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
 
@@ -1466,8 +1454,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). If the MaxIdle is positive, it must not be less than
-     *      * {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent.
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -1511,8 +1499,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param maxIdleUnit time unit for the Max-Idle
      * @return old value of the entry
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
-     * @throws IllegalArgumentException if maxIdle is greater than zero and less
-     * than {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent
      */
     V putIfAbsent(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
     /**
@@ -1665,8 +1651,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * The entry will expire and get evicted after the Max Idle time. If the MaxIdle is 0,
      * then the entry lives forever. If the MaxIdle is negative, then the MaxIdle
-     * from the map configuration will be used (default: forever). If the MaxIdle is positive, it must not be less than
-     *      * {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent.
+     * from the map configuration will be used (default: forever). The time precision is limited by 1 second. The MaxIdle that
+     * less than 1 second can lead to unexpected behaviour.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -1699,8 +1685,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *                    (0 means infinite, negative means map config default)
      * @param maxIdleUnit time unit for the Max-Idle
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
-     * @throws IllegalArgumentException if maxIdle is greater than zero and less
-     * than {@value com.hazelcast.config.MapConfig#MIN_ALLOWED_MAX_IDLE_SECONDS} in seconds equivalent
      */
     void set(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
 

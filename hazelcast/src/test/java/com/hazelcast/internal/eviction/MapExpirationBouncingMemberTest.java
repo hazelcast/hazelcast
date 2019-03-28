@@ -17,7 +17,6 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
@@ -96,7 +95,7 @@ public class MapExpirationBouncingMemberTest extends AbstractExpirationBouncingM
     protected Config getConfig() {
         Config config = super.getConfig();
         config.getMapConfig(name)
-                .setMaxIdleSeconds(MapConfig.MIN_ALLOWED_MAX_IDLE_SECONDS)
+                .setMaxIdleSeconds(ONE_SECOND)
                 .setBackupCount(backupCount);
         return config;
     }
