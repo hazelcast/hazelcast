@@ -57,11 +57,6 @@ public interface RecordStore<R extends Record> {
      */
     long DEFAULT_MAX_IDLE = -1L;
 
-    /**
-     * Minimum non-zero Max Idle value of a record.
-     */
-    long MIN_ALLOWED_MAX_IDLE = 2L;
-
     LocalRecordStoreStats getLocalRecordStoreStats();
 
     String getName();
