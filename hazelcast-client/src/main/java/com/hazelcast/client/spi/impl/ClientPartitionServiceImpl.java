@@ -118,8 +118,8 @@ public final class ClientPartitionServiceImpl
 
     private void waitForPartitionsFetchedOnce() {
         while (partitionCount == 0 && client.getConnectionManager().isAlive()) {
-            Connection ownerConnection = this.ownerConnection;
-            if (ownerConnection == null) {
+            Connection currentOwnerConnection = this.ownerConnection;
+            if (currentOwnerConnection == null) {
                 sleepBeforeNextTry();
                 continue;
             }
@@ -132,11 +132,20 @@ public final class ClientPartitionServiceImpl
             // invocation should go to owner connection because the listener is added to owner connection
             // and partition state version should be fetched from one member to keep it consistent
             ClientInvocationFuture future =
-                    new ClientInvocation(client, requestMessage, null, ownerConnection).invokeUrgent();
+                    new ClientInvocation(client, requestMessage, null, currentOwnerConnection).invokeUrgent();
             try {
                 ClientMessage responseMessage = future.get();
                 ClientGetPartitionsCodec.ResponseParameters response =
                         ClientGetPartitionsCodec.decodeResponse(responseMessage);
+                Connection connection = responseMessage.getConnection();
+                if (!currentOwnerConnection.equals(ownerConnection)) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(" We will not apply the response, since response come from an old connection  " + connection
+                                + ". Current connection " + this.ownerConnection + " state version:"
+                                + (response.partitionStateVersionExist ? response.partitionStateVersion : "NotAvailable"));
+                    }
+                    continue;
+                }
                 processPartitionResponse(response.partitions,
                         response.partitionStateVersion, response.partitionStateVersionExist);
             } catch (Exception e) {
