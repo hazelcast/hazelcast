@@ -42,13 +42,12 @@ Hazelcast IMDG Open Source Enhancements:
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
-**3.12-BETA-2**
-
+* Members now fail fast when the `max-idle-seconds` element for the entries in a map is set to 1 second. See the note in the Configuring Map Eviction section for this element. [#14697]
 * Removed group password from the Hazelcast’s default XML configuration file. Also improved the non-empty password `INFO` message. It's now only logged if security is disabled, password is not empty and password is not the Hazelcast default one. [#14603]
-
-**3.12-BETA-1**
-
+* Improved the code comments for the `HazelcastInstance` interface. [#14439]
 * Improved the Javadoc of `HazelcastClient` so that the code comments now use "unisocket client" instead of "dumb client". [#14213]
+* Added the ability to perform an LDAP `subtree` search for groups in Hazelcast Management Center’s LDAP authenticator. [#14118]
+* Added the ability to set the `EvictionConfig.comparatorClassName()` in the client’s declarative configuration, too. [#14093]
 * Introduced the `/ready` endpoint to the REST API to allow checking a member if it is ready to be used after it joins to the cluster. [#14089]
 * Improved the syncing of XSD files. [#14070]
 * The `IMap.removeAll()` method now supports `PartitionPredicate`. [#12238]
@@ -56,19 +55,20 @@ The following are the other improvements performed to solve the enhancement issu
 
 4. Fixes
 
-**3.12-BETA-2**
-
+* Fixed an issue where the `like` and `ilike` predicates didn’t catch any entity with the `text` field containing the '\n' character. [#14751]
+* Fixed an issue where ``NullPointerException``s was thrown recursively when a client is connected to an unreachable member during a split-brain. [#14722]
+* Fixed an issue where Hazelcast running on RHEL (OpenJDK8) shows `unknown gc` in the logs, instead of `major gc` and `minor gc`. [#14701]
 * Fixed an issue where the IP client selector was not working for the local clients. [#14654]
 * Fixed the wording of a misleading error in the first attempt to connect to a wrongly configured cluster. The error message has been changed to “Unable to connect to any cluster”.  https://github.com/hazelcast/hazelcast/issues/14574[[#14574]]
+* Fixed an issue where a connection configured using `AdvancedNetworkConfig` was not denied correctly for some inappropriate endpoints. [#14532]
 * Fixed the REST service which was not working when the REST endpoint is configured for   `AdvancedNetworkConfig`. [#14516]
 * Fixed an issue where the `setAsync()` method was throwing `NullPointerException`. [#14445]
 * Fixed an issue where the collection attributes indexed with `[any]` were causing incorrect SQL query results, if the first data inserted to the map has no value for the attribute or the collection is empty. [#14358]
 * Fixed an issue where `mapEvictionPolicy` couldn’t be specified in the JSON configuration file. [#14092]
+* Fixed an issue where the rolling upgrade was failing when all members change their IP addresses. [#14088]
+* Fixed an issue where the resources were not wholly cleared when destroying `DurableExecutorService` causing some resources to be left in the heap. [#14087]
 * Fixed the discrepancy between the XSD on the website and the one in the download package. [#13011]
 * Fixed an issue where `TcpIpConnectionManager` was putting the connections in a map under the remote endpoint bind address but not under the address to which Hazelcast connects. [#11256]
-
-**3.12-BETA-1**
-
 * Fixed an issue where the REST API was not handling the HTTP requests without headers correctly: when a client sends an HTTP request without headers to the Hazelcast REST API, the `HttpCommand` class was wrongly expecting an additional new line. [#14353]
 * Fixed an issue where `QueryCache` was not returning the copies of the found objects. [#14333]
 * Fixed an issue where the MultiMap's `RemoveOperation` was iterating through the backing collection, which caused performance degradation (when using the `SET` collection type). [#14145]
