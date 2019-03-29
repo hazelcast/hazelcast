@@ -555,6 +555,8 @@ public class MigrationManager {
         migrationQueue.clear();
         activeMigrationInfo = null;
         completedMigrations.clear();
+        shutdownRequestedAddresses.clear();
+        migrationAllowed.set(true);
     }
 
     void start() {
