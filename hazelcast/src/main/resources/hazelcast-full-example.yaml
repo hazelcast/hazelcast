@@ -377,8 +377,7 @@ hazelcast:
   #         You can give an IP addresses range using the wildcard (*) on the last digit of
   #         IP address (e.g. 192.168.1.* or 192.168.1.100-110).
   # - "tcp-ip":
-  #     Set its "enabled" attribute to true for discovery by TCP/IP. It has the following sub-elements
-  #     to fine tune the multicast discovery.
+  #     It has the following sub-elements.
   #     - "enabled":
   #         Specifies whether the TCP/IP discovery is enabled or not. Default value is false.
   #     - "connection-timeout-seconds":
@@ -510,7 +509,7 @@ hazelcast:
   #
   # This element has the following sub-element:
   # * "icmp":
-  #   ICMP can be used in addition to the other detectors. It operates at layer 3 detects network
+  #   ICMP can be used in addition to the other detectors. It operates at layer 3 and detects network
   #   and hardware issues more quickly.
   #
   #   It has the following sub-elements:
@@ -2681,7 +2680,7 @@ hazelcast:
   #
   #      This element has the following sub-element:
   #      * "icmp":
-  #          ICMP can be used in addition to the other detectors. It operates at layer 3 detects network
+  #          ICMP can be used in addition to the other detectors. It operates at layer 3 and detects network
   #          and hardware issues more quickly.
   #
   #          It has the following sub-elements:
@@ -2707,7 +2706,9 @@ hazelcast:
   #  * "client-server-socket-endpoint-config":
   #      Configures the server socket used for the member-client communication.
   #  * "wan-server-socket-endpoint-config":
-  #      Configures the server socket used for the WAN replication.
+  #      Configures the server sockets used for the WAN replication's inbound WAN connections.
+  #      Multiple WAN server sockets can be configured to allow configuring separate server sockets
+  #      for each inbound WAN connection.
   #  * "memcache-server-socket-endpoint-config":
   #
   #      These four server socket elements have the following sub-elements:
