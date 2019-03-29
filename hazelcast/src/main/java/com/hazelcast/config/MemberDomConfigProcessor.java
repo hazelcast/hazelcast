@@ -686,7 +686,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         handleServerSocketEndpointConfig(config, node);
     }
 
-    private void handleWanServerSocketEndpointConfig(Node node) throws Exception {
+    protected void handleWanServerSocketEndpointConfig(Node node) throws Exception {
         ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
         config.setProtocolType(ProtocolType.WAN);
         handleServerSocketEndpointConfig(config, node);
@@ -717,9 +717,13 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         handleEndpointConfig(config, node);
     }
 
-    private void handleServerSocketEndpointConfig(ServerSocketEndpointConfig endpointConfig, Node node)
-            throws Exception {
+    private void handleServerSocketEndpointConfig(ServerSocketEndpointConfig endpointConfig, Node node) throws Exception {
         String name = getAttribute(node, "name");
+        handleServerSocketEndpointConfig(endpointConfig, node, name);
+    }
+
+    protected void handleServerSocketEndpointConfig(ServerSocketEndpointConfig endpointConfig, Node node, String name)
+            throws Exception {
         endpointConfig.setName(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);

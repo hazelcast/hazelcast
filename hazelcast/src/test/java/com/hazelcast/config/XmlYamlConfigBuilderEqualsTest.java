@@ -113,6 +113,37 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
     }
 
+    @Test
+    public void testFullExampleWithAdvancedNetwork() throws IOException {
+        String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
+        String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");
+
+        // remove imports to prevent the test from failing with importing non-existing files
+        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
+        fullExampleYaml = fullExampleYaml
+                .replace("\r", "")
+                .replace("import:\n    - your-configuration-YAML-file", "");
+
+        // create file to the working directory needed for the EncryptionReplacer
+        createPasswordFile("password.txt", "h4z3lc4$t");
+
+        Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
+        Config yamlConfig = new InMemoryYamlConfig(fullExampleYaml);
+
+        // enabling advanced network configuration to compare the advanced
+        // network config instead of the regular network configs
+        xmlConfig.getAdvancedNetworkConfig().setEnabled(true);
+        yamlConfig.getAdvancedNetworkConfig().setEnabled(true);
+
+        sortClientPermissionConfigs(xmlConfig);
+        sortClientPermissionConfigs(yamlConfig);
+
+        String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
+        String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
+
+        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+    }
+
     public String readResourceToString(String resource) throws IOException {
         InputStream xmlInputStream = XmlYamlConfigBuilderEqualsTest.class.getClassLoader().getResourceAsStream(resource);
         return new String(IOUtil.toByteArray(xmlInputStream));

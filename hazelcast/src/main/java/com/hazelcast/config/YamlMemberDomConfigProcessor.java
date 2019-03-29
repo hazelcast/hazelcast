@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -908,6 +908,16 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             }
         }
         handlePortAttributes(node, endpointConfig);
+    }
+
+    @Override
+    protected void handleWanServerSocketEndpointConfig(Node node) throws Exception {
+        for (Node wanEndpointNode : childElements(node)) {
+            ServerSocketEndpointConfig config = new ServerSocketEndpointConfig();
+            config.setProtocolType(ProtocolType.WAN);
+            String name = wanEndpointNode.getNodeName();
+            handleServerSocketEndpointConfig(config, wanEndpointNode, name);
+        }
     }
 
     @Override
