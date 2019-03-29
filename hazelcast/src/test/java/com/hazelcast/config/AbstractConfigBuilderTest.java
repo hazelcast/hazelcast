@@ -538,17 +538,25 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(MEMCACHE, memcacheEndpointConfig.getProtocolType());
         assertEquals("42000-42100", memcacheEndpointConfig.getOutboundPortDefinitions().iterator().next());
 
-        // WAN server socket config
-        EndpointConfig wanServerSockerEndpointConfig = advancedNetworkConfig.getEndpointConfigs()
-                                                                            .get(EndpointQualifier.resolve(WAN, "WAN_SERVER"));
-        assertEquals(WAN, wanServerSockerEndpointConfig.getProtocolType());
-        assertEquals("52000-52100", wanServerSockerEndpointConfig.getOutboundPortDefinitions().iterator().next());
+        // WAN server socket configs
+        EndpointConfig wanServerSockerEndpointConfig1 = advancedNetworkConfig.getEndpointConfigs()
+                                                                             .get(EndpointQualifier.resolve(WAN, "WAN_SERVER1"));
+        EndpointConfig wanServerSockerEndpointConfig2 = advancedNetworkConfig.getEndpointConfigs()
+                                                                             .get(EndpointQualifier.resolve(WAN, "WAN_SERVER2"));
+        assertEquals(WAN, wanServerSockerEndpointConfig1.getProtocolType());
+        assertEquals("52000-52100", wanServerSockerEndpointConfig1.getOutboundPortDefinitions().iterator().next());
+        assertEquals(WAN, wanServerSockerEndpointConfig2.getProtocolType());
+        assertEquals("53000-53100", wanServerSockerEndpointConfig2.getOutboundPortDefinitions().iterator().next());
 
         // WAN endpoint config
-        EndpointConfig wanEndpointConfig = advancedNetworkConfig.getEndpointConfigs()
-                                                                .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT"));
-        assertEquals(WAN, wanEndpointConfig.getProtocolType());
-        assertEquals("62000-62100", wanEndpointConfig.getOutboundPortDefinitions().iterator().next());
+        EndpointConfig wanEndpointConfig1 = advancedNetworkConfig.getEndpointConfigs()
+                                                                 .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT1"));
+        EndpointConfig wanEndpointConfig2 = advancedNetworkConfig.getEndpointConfigs()
+                                                                 .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT2"));
+        assertEquals(WAN, wanEndpointConfig1.getProtocolType());
+        assertEquals("62000-62100", wanEndpointConfig1.getOutboundPortDefinitions().iterator().next());
+        assertEquals(WAN, wanEndpointConfig2.getProtocolType());
+        assertEquals("63000-63100", wanEndpointConfig2.getOutboundPortDefinitions().iterator().next());
 
         // client server socket config
         EndpointConfig clientServerSocketConfig = advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.CLIENT);

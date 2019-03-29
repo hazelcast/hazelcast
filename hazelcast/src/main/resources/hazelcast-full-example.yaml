@@ -3021,12 +3021,12 @@ hazelcast:
           password: thepassword
           iteration-count: 1000
     wan-server-socket-endpoint-config:
-      name: wan-server-socket-config
-      interfaces:
-        enabled: false
+      wan-server-socket-config:
         interfaces:
-          - 192.168.8.101
-          - 10.20.10.100
+          enabled: false
+          interfaces:
+            - 192.168.8.101
+            - 10.20.10.100
     memcache-server-socket-endpoint-config:
       name: memcache
       port:
