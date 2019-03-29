@@ -1856,7 +1856,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
      *
-     * @param key the key to lock
+     * @param key the key to unlock
      * @throws NullPointerException         if the specified key is null
      * @throws IllegalMonitorStateException if the current thread does not hold this lock
      */
@@ -1873,7 +1873,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
      *
-     * @param key the key to lock
+     * @param key the key to unlock
      * @throws NullPointerException if the specified key is null
      */
     void forceUnlock(K key);
