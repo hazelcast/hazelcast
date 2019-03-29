@@ -1217,6 +1217,17 @@ public class MembershipManager {
 
         @Override
         public void run() {
+            try {
+                innerRun();
+            } catch (Throwable e) {
+                logger.warning("Exception thrown while running DecideNewMembersViewTask", e);
+            } finally {
+                // Resume migrations, they are disabled when mastership claim is started
+                node.getPartitionService().resumeMigration();
+            }
+        }
+
+        private void innerRun() {
             MembersView newMembersView = decideNewMembersView(localMemberMap, membersToAsk);
             clusterServiceLock.lock();
             try {
@@ -1245,8 +1256,6 @@ public class MembershipManager {
                 sendMemberListToOthers();
                 logger.info("Mastership is claimed with: " + newMembersView);
             } finally {
-                // Resume migrations, they are disabled when mastership claim is started
-                node.getPartitionService().resumeMigration();
                 clusterServiceLock.unlock();
             }
         }
