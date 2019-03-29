@@ -156,12 +156,6 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw rethrow(e);
-        } catch (IllegalStateException e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
-            if (null != connection) {
-                connection.close("Could not connect to " + address + " as owner", e);
-            }
-            throw e;
         } catch (ClientNotAllowedInClusterException e) {
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
