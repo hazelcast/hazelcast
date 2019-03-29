@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.hazelcast.com/schema/jet-config"
+           targetNamespace="http://www.hazelcast.com/schema/jet-config"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:element name="hazelcast-jet">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="instance" minOccurs="0">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="cooperative-thread-count" type="positive-int" minOccurs="0"/>
+                            <xs:element name="flow-control-period" type="positive-int" minOccurs="0"/>
+                            <xs:element name="backup-count" type="backup-count" minOccurs="0" />
+                            <xs:element name="scale-up-delay-millis" type="non-negative-long" minOccurs="0" />
+                            <xs:element name="lossless-restart-enabled" type="xs:boolean" minOccurs="0" />
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="properties" minOccurs="0">
+                    <xs:complexType>
+                        <xs:choice minOccurs="0" maxOccurs="unbounded">
+                            <xs:element name="property" type="property"/>
+                        </xs:choice>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="edge-defaults" minOccurs="0">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="queue-size" type="positive-int" minOccurs="0"/>
+                            <xs:element name="packet-size-limit" type="positive-int" minOccurs="0"/>
+                            <xs:element name="receive-window-multiplier" type="positive-int" minOccurs="0"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="metrics" minOccurs="0">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="retention-seconds" type="positive-int" minOccurs="0"/>
+                            <xs:element name="collection-interval-seconds" type="positive-int" minOccurs="0"/>
+                            <xs:element name="metrics-for-data-structures" type="xs:boolean" minOccurs="0"/>
+                        </xs:all>
+                        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
+                        <xs:attribute name="jmxEnabled" type="xs:boolean" default="true"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+
+
+    <!-- COMPLEX TYPES -->
+
+    <xs:complexType name="property">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="name" use="required" type="non-space-string"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- SIMPLE TYPES -->
+
+    <xs:simpleType name="positive-int">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="non-negative-long">
+        <xs:restriction base="xs:long">
+            <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="backup-count">
+        <xs:restriction base="xs:byte">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="6"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="non-space-string">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\S.*"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.hazelcast.com/schema/jet-spring"
+           xmlns:tool="http://www.springframework.org/schema/tool"
+           xmlns:hz="http://www.hazelcast.com/schema/spring"
+           targetNamespace="http://www.hazelcast.com/schema/jet-spring"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://www.springframework.org/schema/tool"
+               schemaLocation="http://www.springframework.org/schema/tool/spring-tool.xsd"/>
+    <xs:import namespace="http://www.hazelcast.com/schema/spring"
+               schemaLocation="hazelcast-spring-3.12.xsd"/>
+
+    <xs:element name="instance">
+        <xs:annotation>
+            <xs:documentation>
+                Configure the hazelcast jet instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.jet.JetInstance"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="hz:hazelcast-bean">
+                    <xs:sequence>
+                        <xs:element ref="hz:config" minOccurs="0"/>
+                        <xs:element name="instance-config" type="instance-config" minOccurs="0"/>
+                        <xs:element name="default-edge-config" type="edge-config" minOccurs="0"/>
+                        <xs:element name="properties" type="hz:properties" minOccurs="0"/>
+                        <xs:element name="metrics-config" type="metrics-config" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="client">
+        <xs:annotation>
+            <xs:documentation>
+                Configure the Hazelcast Jet client
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.jet.JetInstance"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="hz:hazelcast-bean">
+                    <xs:choice minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="spring-aware" type="xs:string" minOccurs="0"/>
+                        <xs:element name="group" type="hz:group" minOccurs="0"/>
+                        <xs:element name="properties" type="hz:properties" minOccurs="0"/>
+                        <xs:element name="network" type="hz:network-client" minOccurs="0"/>
+                        <xs:element name="security" type="hz:client-security" minOccurs="0"/>
+                        <xs:element name="listeners" type="hz:listeners" minOccurs="0"/>
+                        <xs:element name="serialization" type="hz:serialization" minOccurs="0"/>
+                        <xs:element name="proxy-factories" type="hz:proxy-factories" minOccurs="0"/>
+                        <xs:element name="load-balancer" type="hz:load-balancer" minOccurs="0"/>
+                        <xs:element name="near-cache" type="hz:near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="query-caches" type="hz:query-caches-client" minOccurs="0"/>
+                        <xs:element name="connection-strategy" type="hz:connection-strategy" minOccurs="0"/>
+                        <xs:element name="user-code-deployment" type="hz:user-code-deployment-client" minOccurs="0"/>
+                        <xs:element name="flake-id-generator" type="hz:client-flake-id-generator" minOccurs="0"/>
+                    </xs:choice>
+                    <xs:attribute name="executor-pool-size" type="xs:int"/>
+                    <xs:attribute name="credentials-ref" type="xs:string"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="hazelcast">
+        <xs:annotation>
+            <xs:documentation>
+                Obtain HazelcastInstance from JetInstance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.HazelcastInstance"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="hz:hazelcast-bean">
+                    <xs:attribute name="jet-instance-ref" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[The name of the JetInstance bean that this bean depends on.]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="map" type="hz:hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a Hazelcast Jet IMapJet instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.jet.IMapJet"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="list" type="hz:hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a Hazelcast Jet IListJet instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.jet.IListJet"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="instance-config">
+        <xs:attribute name="cooperative-thread-Count" type="hz:parameterized-positive-integer"/>
+        <xs:attribute name="flow-control-period-ms" type="hz:parameterized-positive-integer"/>
+        <xs:attribute name="backup-count" type="hz:parameterized-backup-count"/>
+        <xs:attribute name="scale-up-delay-millis" type="parameterized-non-negative-long"/>
+        <xs:attribute name="lossless-restart-enabled" type="hz:parameterized-boolean"/>
+    </xs:complexType>
+
+    <xs:complexType name="edge-config">
+        <xs:attribute name="queue-size" type="hz:parameterized-positive-integer"/>
+        <xs:attribute name="packet-size-limit" type="hz:parameterized-positive-integer"/>
+        <xs:attribute name="receive-window-multiplier" type="hz:parameterized-positive-integer"/>
+    </xs:complexType>
+
+    <xs:complexType name="metrics-config">
+        <xs:attribute name="enabled" type="hz:parameterized-boolean"/>
+        <xs:attribute name="jmxEnabled" type="hz:parameterized-boolean"/>
+        <xs:attribute name="retention-seconds" type="hz:parameterized-positive-integer"/>
+        <xs:attribute name="collection-interval-seconds" type="hz:parameterized-positive-integer"/>
+        <xs:attribute name="metrics-for-data-structures-enabled" type="hz:parameterized-boolean"/>
+    </xs:complexType>
+
+    <xs:simpleType name="nonNegativeLong" id="nonNegativeLong">
+        <xs:restriction base="xs:long">
+            <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="parameterized-non-negative-long">
+        <xs:union memberTypes="xs:nonNegativeInteger hz:parameterizedValueType"/>
+    </xs:simpleType>
+
+</xs:schema>

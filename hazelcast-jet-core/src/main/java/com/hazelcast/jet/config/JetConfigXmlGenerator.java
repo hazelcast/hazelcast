@@ -64,7 +64,7 @@ public final class JetConfigXmlGenerator {
         gen.open("hazelcast-jet", "xmlns", "http://www.hazelcast.com/schema/jet-config",
                 "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance",
                 "xsi:schemaLocation", "http://www.hazelcast.com/schema/jet-config "
-                        + "http://www.hazelcast.com/schema/jet-config/hazelcast-jet-config-3.0.xsd");
+                        + "http://www.hazelcast.com/schema/jet-config/hazelcast-jet-config-3.1.xsd");
 
 
         gen.appendProperties(jetConfig.getProperties());
