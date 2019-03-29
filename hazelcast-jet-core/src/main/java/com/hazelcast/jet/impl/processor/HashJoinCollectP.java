@@ -19,7 +19,9 @@ package com.hazelcast.jet.impl.processor;
 import com.hazelcast.jet.core.AbstractProcessor;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -29,7 +31,7 @@ import java.util.function.Function;
  * broadcasts it to all local second-pipeline processors.
  */
 public class HashJoinCollectP<K, E, V> extends AbstractProcessor {
-    private final Map<K, V> map = new HashMap<>();
+    private final Map<K, List<V>> map = new HashMap<>();
     @Nonnull private final Function<E, K> keyFn;
     @Nonnull private final Function<E, V> projectFn;
 
@@ -44,11 +46,9 @@ public class HashJoinCollectP<K, E, V> extends AbstractProcessor {
         E e = (E) item;
         K key = keyFn.apply(e);
         V value = projectFn.apply(e);
-        V previous = map.put(key, value);
-        if (previous != null) {
-            throw new IllegalStateException(String.format("Duplicate values for key '%s': '%s' and '%s'",
-                    key, previous, value));
-        }
+
+        map.computeIfAbsent(key, k -> new ArrayList<>())
+                .add(value);
         return true;
     }
 

@@ -32,8 +32,12 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Implements the {@linkplain HashJoinTransform
@@ -61,10 +65,12 @@ import static java.util.Collections.singletonList;
 public class HashJoinP<E0> extends AbstractProcessor {
 
     private final List<Function<E0, Object>> keyFns;
-    private final List<Map<Object, Object>> lookupTables;
+    private final List<Map<Object, List<Object>>> lookupTables;
     private final List<Tag> tags;
     private final BiFunction mapToOutputBiFn;
-    private final TriFunction mapToOutputTriFn;
+
+    private final FlatMapper<E0, Object> flatMapper;
+
     private boolean ordinal0consumed;
 
     public HashJoinP(
@@ -77,7 +83,27 @@ public class HashJoinP<E0> extends AbstractProcessor {
         this.lookupTables = prependNull(Collections.nCopies(keyFns.size(), null));
         this.tags = tags.isEmpty() ? emptyList() : prependNull(tags);
         this.mapToOutputBiFn = mapToOutputBiFn;
-        this.mapToOutputTriFn = mapToOutputTriFn;
+
+        if (tags.isEmpty()) {
+            if (this.keyFns.size() == 2) {
+                BiFunction mapToOutput = requireNonNull(mapToOutputBiFn, "mapToOutputBiFn function should be provided");
+                this.flatMapper = flatMapper(object -> traverseStream(
+                        lookupJoined(1, object).stream()
+                                .map(joinedObject -> tuple2(object, joinedObject))
+                ).map(joinedTuple -> mapToOutput.apply(joinedTuple.f0(), joinedTuple.f1())));
+            } else {
+                TriFunction mapToOutput = requireNonNull(mapToOutputTriFn, "mapToOutputTriFn function should be provided");
+                this.flatMapper = flatMapper(object -> traverseStream(
+                        lookupJoined(1, object).stream().flatMap(firstJoined ->
+                                lookupJoined(2, object).stream().map(secondJoined ->
+                                        tuple3(object, firstJoined, secondJoined)
+                                )
+                        )
+                ).map(joinedTuple ->  mapToOutput.apply(joinedTuple.f0(), joinedTuple.f1(), joinedTuple.f2())));
+            }
+        } else {
+            this.flatMapper = null;
+        }
     }
 
     @Override
@@ -94,22 +120,24 @@ public class HashJoinP<E0> extends AbstractProcessor {
         E0 e0 = (E0) item;
         ordinal0consumed = true;
         if (tags.isEmpty()) {
-            Object result = keyFns.size() == 2
-                    ? mapToOutputBiFn.apply(e0, lookupJoined(1, e0))
-                    : mapToOutputTriFn.apply(e0, lookupJoined(1, e0), lookupJoined(2, e0));
-            return result == null || tryEmit(result);
+            return flatMapper.tryProcess(e0);
         }
         ItemsByTag map = new ItemsByTag();
         for (int i = 1; i < keyFns.size(); i++) {
-            map.put(tags.get(i), lookupJoined(i, e0));
+            map.put(tags.get(i), lookupJoined(i, e0).get(0));
         }
         Object result = mapToOutputBiFn.apply(e0, map);
         return result == null || tryEmit(result);
     }
 
-    @Nullable
-    private Object lookupJoined(int ordinal, E0 item) {
-        return lookupTables.get(ordinal).get(keyFns.get(ordinal).apply(item));
+    @Nonnull
+    private List<Object> lookupJoined(int ordinal, E0 item) {
+        Map<Object, List<Object>> lookupTableForOrdinal = lookupTables.get(ordinal);
+
+        Object lookupTableKey = keyFns.get(ordinal).apply(item);
+        List<Object> objects = lookupTableForOrdinal.get(lookupTableKey);
+
+        return objects == null ? new ArrayList<>() : objects;
     }
 
     private static <E> List<E> prependNull(List<E> in) {
