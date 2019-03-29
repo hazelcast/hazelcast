@@ -16,16 +16,16 @@
 
 package com.hazelcast.internal.util;
 
-import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.createRequirement;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import static com.hazelcast.internal.util.ModularJavaUtils.PackageAccessRequirement.createRequirement;
 
 /**
  * Helper class for simplify work with Java module system (Java 9+) in older Java versions.
@@ -71,13 +71,20 @@ public final class ModularJavaUtils {
                         createRequirement(true, "java.nio"),
                         createRequirement(true, "sun.nio.ch")
                         });
-        requirements.put("jdk.management",
-                new PackageAccessRequirement[] { createRequirement(true, "com.sun.management.internal") });
+        requirements.put("jdk.management", getJdkManagementRequirements());
         requirements.put("java.management", new PackageAccessRequirement[] { createRequirement(true, "sun.management") });
         checkPackageRequirements(logger, requirements);
     }
 
-    protected static void checkPackageRequirements(ILogger logger, Map<String, PackageAccessRequirement[]> requirements) {
+    private static PackageAccessRequirement[] getJdkManagementRequirements() {
+        if (JavaVm.CURRENT_VM == JavaVm.OPENJ9) {
+            return new PackageAccessRequirement[] {createRequirement(true, "com.sun.management.internal"),
+                                                   createRequirement(true, "com.ibm.lang.management.internal")};
+        }
+        return new PackageAccessRequirement[] {createRequirement(true, "com.sun.management.internal")};
+    }
+
+    static void checkPackageRequirements(ILogger logger, Map<String, PackageAccessRequirement[]> requirements) {
         if (!hasHazelcastPackageAccess(requirements)) {
             String hazelcastModule = getHazelcastModuleName();
             if (hazelcastModule == null) {
@@ -131,14 +138,14 @@ public final class ModularJavaUtils {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, PackageAccessRequirement[]> moduleEntry : requirements.entrySet()) {
             for (PackageAccessRequirement requirement : moduleEntry.getValue()) {
-                sb.append((requirement.forReflection ? " --add-opens " : " --add-exports ") + moduleEntry.getKey() + "/"
-                        + requirement.packageName + "=" + hzModuleName);
+                sb.append(requirement.forReflection ? " --add-opens " : " --add-exports ").append(moduleEntry.getKey())
+                        .append("/").append(requirement.packageName).append("=").append(hzModuleName);
             }
         }
         return sb.toString();
     }
 
-    public static final class PackageAccessRequirement {
+    static final class PackageAccessRequirement {
         private final String packageName;
         private final boolean forReflection;
 
@@ -147,15 +154,15 @@ public final class ModularJavaUtils {
             this.forReflection = forReflection;
         }
 
-        public static PackageAccessRequirement createRequirement(boolean forReflection, String packageName) {
+        static PackageAccessRequirement createRequirement(boolean forReflection, String packageName) {
             return new PackageAccessRequirement(forReflection, packageName);
         }
 
-        public String getPackageName() {
+        String getPackageName() {
             return packageName;
         }
 
-        public boolean isForReflection() {
+        boolean isForReflection() {
             return forReflection;
         }
     }
