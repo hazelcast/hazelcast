@@ -149,9 +149,9 @@ public class TaskletExecutionService {
                 .map(blockingTaskletExecutor::submit)
                 .collect(toList());
 
-        // do not return from this method until all workers have started. Otherwise
+        // Do not return from this method until all workers have started. Otherwise
         // on cancellation there is a race where the executor might not have started
-        // the worker yet. This would results in taskletDone() never being called for
+        // the worker yet. This would result in taskletDone() never being called for
         // a worker.
         uncheckRun(startedLatch::await);
     }
@@ -264,7 +264,13 @@ public class TaskletExecutionService {
         private final CopyOnWriteArrayList<TaskletTracker> trackers;
         @Probe
         private final AtomicLong iterationCount = new AtomicLong();
+
         private final ProgressTracker progressTracker = new ProgressTracker();
+        // prevent lambda allocation on each iteration
+        private final Consumer<TaskletTracker> runTasklet = this::runTasklet;
+
+        private boolean finestLogEnabled;
+        private Thread myThread;
 
         CooperativeWorker() {
             this.trackers = new CopyOnWriteArrayList<>();
@@ -272,14 +278,14 @@ public class TaskletExecutionService {
 
         @Override
         public void run() {
+            myThread = currentThread();
             IdleStrategy idlerLocal = idlerCooperative;
             long idleCount = 0;
-            // capture thread once and prevent lambda allocation on each iteration
-            Consumer<TaskletTracker> runTasklet = t -> runTasklet(Thread.currentThread(), t);
 
             while (!isShutdown) {
+                finestLogEnabled = logger.isFinestEnabled();
                 progressTracker.reset();
-                // use garbage-free iterator -- relies on implementation in COWArrayList that doesn't use an Iterator
+                // garbage-free iteration -- relies on implementation in COWArrayList that doesn't use an Iterator
                 trackers.forEach(runTasklet);
                 lazyIncrement(iterationCount);
                 if (progressTracker.isMadeProgress()) {
@@ -292,13 +298,13 @@ public class TaskletExecutionService {
             trackers.clear();
         }
 
-        private void runTasklet(Thread thread, TaskletTracker t) {
+        private void runTasklet(TaskletTracker t) {
             long start = 0;
-            if (logger.isFinestEnabled()) {
+            if (finestLogEnabled) {
                 start = System.nanoTime();
             }
             try {
-                thread.setContextClassLoader(t.jobClassLoader);
+                myThread.setContextClassLoader(t.jobClassLoader);
                 final ProgressState result = t.tasklet.call();
                 if (result.isDone()) {
                     dismissTasklet(t);
@@ -312,7 +318,7 @@ public class TaskletExecutionService {
                 dismissTasklet(t);
             }
 
-            if (logger.isFinestEnabled()) {
+            if (finestLogEnabled) {
                 long elapsedMs = NANOSECONDS.toMillis((System.nanoTime() - start));
                 if (elapsedMs > COOPERATIVE_LOGGING_THRESHOLD) {
                     logger.finest("Cooperative tasklet call of '" + t.tasklet + "' took more than "
