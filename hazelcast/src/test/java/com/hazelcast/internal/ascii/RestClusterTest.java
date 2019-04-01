@@ -38,8 +38,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterStateEventually;
@@ -248,8 +248,8 @@ public class RestClusterTest {
         String groupName = config.getGroupConfig().getName();
         try {
             assertEquals("{\"status\":\"success\"}", communicator.shutdownMember(groupName, getPassword()));
-        } catch (ConnectException ignored) {
-            // if node shuts down before response is received, `java.net.ConnectException: Connection refused` is expected
+        } catch (SocketException ignored) {
+            // if the node shuts down before response is received, a `SocketException` (or instance of its subclass) is expected
         } catch (NoHttpResponseException ignored) {
             // `NoHttpResponseException` is also a possible outcome when a node shut down before it has a chance
             // to send a response back to a client.
