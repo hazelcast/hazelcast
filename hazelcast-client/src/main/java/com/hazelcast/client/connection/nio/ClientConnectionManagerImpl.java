@@ -39,6 +39,7 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -672,9 +673,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
             switch (authenticationStatus) {
                 case AUTHENTICATED:
-                    if (!checkFailoverSupportIfNeeded()) {
-                        onFailure(new IllegalStateException("Cluster does not support failover. "
-                                + "This feature is available in Hazelcast Enterprise"));
+                    if (!checkFailoverSupportIfNeeded(result)) {
                         return;
                     }
                     handleSuccessResult(result);
@@ -713,7 +712,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
         }
 
-        private boolean checkFailoverSupportIfNeeded() {
+        private boolean checkFailoverSupportIfNeeded(ClientAuthenticationCodec.ResponseParameters result) {
             if (!asOwner) {
                 return true;
             }
@@ -721,9 +720,31 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (!isFailoverAskedToCluster) {
                 return true;
             }
+
+            if (!result.serverHazelcastVersionExist
+                    || BuildInfo.calculateVersion(result.serverHazelcastVersion) < BuildInfo.calculateVersion("3.12")) {
+                //this means that server is too old and failover not supported
+                //IllegalStateException will cause client to give up trying on this cluster
+                onFailure(new ClientNotAllowedInClusterException("Cluster does not support failover. "
+                        + "This feature is available in Hazelcast Enterprise with version 3.12 and after"));
+                return false;
+            }
+
             try {
-                return ClientIsFailoverSupportedCodec.decodeResponse(isFailoverFuture.get()).response;
+                boolean isAllowed = ClientIsFailoverSupportedCodec.decodeResponse(isFailoverFuture.get()).response;
+                if (!isAllowed) {
+                    //in this path server is new but not enterprise.
+                    //IllegalStateException will cause client to give up trying on this cluster
+                    onFailure(new ClientNotAllowedInClusterException("Cluster does not support failover. "
+                            + "This feature is available in Hazelcast Enterprise"));
+                    return false;
+                }
+                return true;
             } catch (Exception e) {
+                //server version is 3.12 or newer, but an exception occured while getting the isFailover supported info
+                //Exception is delegated without wrapping `IllegalStateException` to so that we will continue
+                // trying same connection
+                onFailure(e);
                 return false;
             }
         }

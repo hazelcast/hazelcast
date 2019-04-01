@@ -156,12 +156,6 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw rethrow(e);
-        } catch (IllegalStateException e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
-            if (null != connection) {
-                connection.close("Could not connect to " + address + " as owner", e);
-            }
-            throw e;
         } catch (ClientNotAllowedInClusterException e) {
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
@@ -220,7 +214,11 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
     private void beforeClusterSwitch(CandidateClusterContext context) {
         //reset near caches, clears all near cache data
-        client.getNearCacheManager().clearAllNearCaches();
+        try {
+            client.getNearCacheManager().clearAllNearCaches();
+        } catch (Throwable e) {
+            logger.warning("Error when clearing near caches before cluster switch ", e);
+        }
         //clear the member list
         client.getClientClusterService().reset();
         //clear the partition table
@@ -276,7 +274,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             public Void call() {
                 try {
                     connectToClusterInternal();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
                     new Thread(new Runnable() {
                         @Override

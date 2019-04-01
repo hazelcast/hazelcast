@@ -74,7 +74,7 @@ public class FailoverTest extends ClientTestSupport {
         networkConfig2.setAddresses(Collections.singletonList(address2.getHost() + ":" + address2.getPort()));
 
         ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
-        clientFailoverConfig.addClientConfig(clientConfig).addClientConfig(clientConfig2);
+        clientFailoverConfig.addClientConfig(clientConfig).addClientConfig(clientConfig2).setTryCount(1);
 
         HazelcastClient.newHazelcastFailoverClient(clientFailoverConfig);
     }
