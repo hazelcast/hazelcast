@@ -214,7 +214,11 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
     private void beforeClusterSwitch(CandidateClusterContext context) {
         //reset near caches, clears all near cache data
-        client.getNearCacheManager().clearAllNearCaches();
+        try {
+            client.getNearCacheManager().clearAllNearCaches();
+        } catch (Throwable e) {
+            logger.warning("Error when clearing near caches before cluster switch ", e);
+        }
         //clear the member list
         client.getClientClusterService().reset();
         //clear the partition table
@@ -270,7 +274,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             public Void call() {
                 try {
                     connectToClusterInternal();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
                     new Thread(new Runnable() {
                         @Override
