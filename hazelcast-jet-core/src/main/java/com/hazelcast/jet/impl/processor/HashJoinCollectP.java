@@ -21,21 +21,36 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Implements the "collector" pipeline in a hash join transformation. This
- * pipeline collects the entire joined stream into a hashmap and then
- * broadcasts it to all local second-pipeline processors.
+ * Implements the "collector" stage in a hash join transformation. This
+ * stage collects the entire joined stream into a hashtable and then
+ * broadcasts it to all local second-stage processors.
  */
-public class HashJoinCollectP<K, E, V> extends AbstractProcessor {
-    private final Map<K, List<V>> map = new HashMap<>();
-    @Nonnull private final Function<E, K> keyFn;
-    @Nonnull private final Function<E, V> projectFn;
+public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
 
-    public HashJoinCollectP(@Nonnull Function<E, K> keyFn, @Nonnull Function<E, V> projectFn) {
+    private static final BiFunction<Object, Object, Object> MERGE_FN = (o, n) -> {
+        if (o instanceof HashJoinArrayList) {
+            ((HashJoinArrayList) o).add(n);
+            return o;
+        } else {
+            HashJoinArrayList res = new HashJoinArrayList();
+            res.add(o);
+            res.add(n);
+            return res;
+        }
+    };
+
+    // the value is either a V or a HashJoinArrayList (if multiple values for
+    // the key were observed)
+    private final Map<K, Object> lookupTable = new HashMap<>();
+    @Nonnull private final Function<T, K> keyFn;
+    @Nonnull private final Function<T, V> projectFn;
+
+    public HashJoinCollectP(@Nonnull Function<T, K> keyFn, @Nonnull Function<T, V> projectFn) {
         this.keyFn = keyFn;
         this.projectFn = projectFn;
     }
@@ -43,17 +58,23 @@ public class HashJoinCollectP<K, E, V> extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     protected boolean tryProcess0(@Nonnull Object item) {
-        E e = (E) item;
-        K key = keyFn.apply(e);
-        V value = projectFn.apply(e);
-
-        map.computeIfAbsent(key, k -> new ArrayList<>())
-                .add(value);
+        T t = (T) item;
+        K key = keyFn.apply(t);
+        V value = projectFn.apply(t);
+        lookupTable.merge(key, value, MERGE_FN);
         return true;
     }
 
     @Override
     public boolean complete() {
-        return tryEmit(map);
+        return tryEmit(lookupTable);
+    }
+
+    // We need a custom ArrayList subclass because the user's V type could be
+    // ArrayList and then the logic that relies on instanceof would break
+    static final class HashJoinArrayList extends ArrayList<Object> {
+        HashJoinArrayList() {
+            super(2);
+        }
     }
 }

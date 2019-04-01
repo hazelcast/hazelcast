@@ -44,33 +44,58 @@
  * specify more than one input stage for the aggregation (using {@code
  * stage.aggregate2()}, {@code stage.aggregate3()} or {@code
  * stage.aggregateBuilder()}, the data from all streams will be combined
- * into the aggregation result. The {@link com.hazelcast.jet.aggregate.AggregateOperation
- * AggregateOperation} you supply must define a separate {@link
+ * into the aggregation result. The {@link
+ * com.hazelcast.jet.aggregate.AggregateOperation AggregateOperation} you
+ * supply must define a separate {@link
  * com.hazelcast.jet.aggregate.AggregateOperation#accumulateFn accumulate}
  * primitive for each contributing stream. Refer to its Javadoc for further
  * details.
  *
- * <h3>Hash-join</h3>
+ * <h3>Hash-Join</h3>
  *
- * Hash-join is a special kind of joining transform, specifically tailored
- * to the use case of data enrichment. It is an asymmetrical join that
- * joins one or more <em>enriching</em> stages to the <em>primary</em> stage
- * The source for an enriching stage is most typically a
- * key-value store (such as a Hazelcast {@code IMap}). It must be a batch
- * stage and each item must have a distinct join key. The primary stage,
- * on the other hand, may be either a batch or a stream stage and may
- * contain duplicate keys.
+ * The hash-join is a joining transform designed for the use case of data
+ * enrichment with static data. It is an asymmetric join that joins the
+ * <em>enriching</em> stage(s) to the <em>primary</em> stage. The
+ * <em>enriching</em> stages must be batch stages &mdash; they must
+ * represent finite datasets. The primary stage may be either a batch or a
+ * stream stage.
  * <p>
- * For each of the enriching stages there is a separate pair of functions
- * to extract the joining key on both sides. For example, a {@code Trade}
- * can be joined with both a {@code Broker} on {@code trade.getBrokerId()
- * == broker.getId()} and a {@code Product} on {@code trade.getProductId()
- * == product.getId()}, and all this can happen in a single hash-join
- * transform.
+ * You must provide a separate pair of functions for each of the enriching
+ * stages: one to extract the key from the primary item and one to extract
+ * it from the enriching item. For example, you can join a {@code Trade}
+ * with a {@code Broker} on {@code trade.getBrokerId() == broker.getId()}
+ * and a {@code Product} on {@code trade.getProductId() == product.getId()},
+ * and all this can happen in a single hash-join transform.
  * <p>
- * Implementationally, the hash-join transform is optimized for throughput
- * so that each computing member has a local copy of all the enriching
- * data, stored in hashtables (hence the name). The enriching streams are
- * consumed in full before ingesting any data from the primary stream.
+ * The hash-join transform is optimized for throughput &mdash; each cluster
+ * member materializes a local copy of all the enriching data, stored in
+ * hashtables (hence the name). It consumes the enriching streams in full
+ * before ingesting any data from the primary stream.
+ * <p>
+ * The output is just like an SQL left-outer join: for each primary item
+ * there are N output items, one for each matching item in the enriching
+ * set. If an enriching set doesn't have a matching item, the output will
+ * have a {@code null} instead of the enriching item. The join also allows
+ * duplicate keys on both enriching and primary inputs: the output is a
+ * cartesian product of all the matching entries.
+ * <p>
+ * Example:<pre>
+ * +------------------------+-----------------+---------------------------+
+ * |     Primary input      | Enriching input |          Output           |
+ * +------------------------+-----------------+---------------------------+
+ * | Trade{ticker=AA,amt=1} | Ticker{id=AA}   | Tuple2{                   |
+ * | Trade{ticker=BB,amt=2} | Ticker{id=BB}   |   Trade{ticker=AA,amt=1}, |
+ * | Trade{ticker=AA,amt=3} |                 |   Ticker{id=AA}           |
+ * |                        |                 | }                         |
+ * |                        |                 | Tuple2{                   |
+ * |                        |                 |   Trade{ticker=BB,amt=2}, |
+ * |                        |                 |   Ticker{id=BB}           |
+ * |                        |                 | }                         |
+ * |                        |                 | Tuple2{                   |
+ * |                        |                 |   Trade{ticker=AA,amt=3}, |
+ * |                        |                 |   Ticker{id=AA}           |
+ * |                        |                 | }                         |
+ * +------------------------+-----------------+---------------------------+
+ * </pre>
  */
 package com.hazelcast.jet.pipeline;

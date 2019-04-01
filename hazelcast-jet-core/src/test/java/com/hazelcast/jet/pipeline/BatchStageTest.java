@@ -534,12 +534,14 @@ public class BatchStageTest extends PipelineTestSupport {
     public void hashJoinBuilder() {
         // Given
         List<Integer> input = sequence(itemCount);
-        String prefix1 = "A-";
-        String prefix2 = "B-";
+        String prefixA = "A-";
+        String prefixB = "B-";
+        String prefixC = "C-";
+        String prefixD = "D-";
         BatchStage<Entry<Integer, String>> enrichingStage1 =
-                batchStageFromList(input).map(i -> entry(i, prefix1 + i));
+                batchStageFromList(input).flatMap(i -> traverseItems(entry(i, prefixA + i), entry(i, prefixB + i)));
         BatchStage<Entry<Integer, String>> enrichingStage2 =
-                batchStageFromList(input).map(i -> entry(i, prefix2 + i));
+                batchStageFromList(input).flatMap(i -> traverseItems(entry(i, prefixC + i), entry(i, prefixD + i)));
 
         // When
         HashJoinBuilder<Integer> b = batchStageFromList(input).hashJoinBuilder();
@@ -554,8 +556,13 @@ public class BatchStageTest extends PipelineTestSupport {
         TriFunction<Integer, String, String, String> formatFn =
                 (i, v1, v2) -> String.format("(%04d, %s, %s)", i, v1, v2);
         assertEquals(
-                streamToString(input.stream(),
-                        i -> formatFn.apply(i, prefix1 + i, prefix2 + i)),
+                streamToString(input.stream().flatMap(
+                        i -> Stream.of(
+                                tuple3(i, prefixA, prefixC),
+                                tuple3(i, prefixA, prefixD),
+                                tuple3(i, prefixB, prefixC),
+                                tuple3(i, prefixB, prefixD))),
+                        t -> formatFn.apply(t.f0(), t.f1() + t.f0(), t.f2() + t.f0())),
                 streamToString(sinkList.stream().map(o -> (Tuple2<Integer, ItemsByTag>) o),
                         t2 -> formatFn.apply(t2.f0(), t2.f1().get(tagA), t2.f1().get(tagB)))
         );
