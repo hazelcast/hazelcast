@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_RETIRES;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_CA_CERTIFICATE;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
@@ -53,6 +54,7 @@ final class HazelcastKubernetesDiscoveryStrategy
 
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
+    private static final int DEFAULT_KUBERNETES_API_RETRIES = 3;
 
     private final String namespace;
 
@@ -73,15 +75,11 @@ final class HazelcastKubernetesDiscoveryStrategy
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
         namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
         Boolean resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, false);
+        int kubernetesApiRetries
+                = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_RETIRES, DEFAULT_KUBERNETES_API_RETRIES);
         String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
-        String apiToken = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN, null);
-        if (apiToken == null) {
-            apiToken = readAccountToken();
-        }
-        String caCertificate = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_CA_CERTIFICATE, null);
-        if (caCertificate == null) {
-            caCertificate = readCaCertificate();
-        }
+        String apiToken = getApiToken(properties);
+        String caCertificate = caCertificate(properties);
 
         logger.info("Kubernetes Discovery properties: { "
                 + "service-dns: " + serviceDns + ", "
@@ -92,9 +90,10 @@ final class HazelcastKubernetesDiscoveryStrategy
                 + "service-label-value: " + serviceLabelValue + ", "
                 + "namespace: " + namespace + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
+                + "kubernetes-api-retries: " + kubernetesApiRetries + ", "
                 + "kubernetes-master: " + kubernetesMaster + "}");
 
-        client = buildKubernetesClient(namespace, kubernetesMaster, apiToken, caCertificate);
+        client = buildKubernetesClient(namespace, kubernetesMaster, apiToken, caCertificate, kubernetesApiRetries);
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns, port, serviceDnsTimeout);
         } else {
@@ -102,6 +101,22 @@ final class HazelcastKubernetesDiscoveryStrategy
                     resolveNotReadyAddresses, client);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
+    }
+
+    private String getApiToken(Map<String, Comparable> properties) {
+        String apiToken = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN);
+        if (apiToken == null) {
+            apiToken = readAccountToken();
+        }
+        return apiToken;
+    }
+
+    private String caCertificate(Map<String, Comparable> properties) {
+        String caCertificate = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_CA_CERTIFICATE);
+        if (caCertificate == null) {
+            caCertificate = readCaCertificate();
+        }
+        return caCertificate;
     }
 
     private String getNamespaceOrDefault() {
@@ -240,8 +255,8 @@ final class HazelcastKubernetesDiscoveryStrategy
     }
 
     private KubernetesClient buildKubernetesClient(String namespace, String kubernetesMaster, String accessToken,
-                                                   String caCertificate) {
-        return new KubernetesClient(namespace, kubernetesMaster, accessToken, caCertificate);
+                                                   String caCertificate, int retries) {
+        return new KubernetesClient(namespace, kubernetesMaster, accessToken, caCertificate, retries);
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")

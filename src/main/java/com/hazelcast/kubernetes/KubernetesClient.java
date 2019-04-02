@@ -43,7 +43,6 @@ import static java.util.Collections.emptyList;
 class KubernetesClient {
     private static final ILogger LOGGER = Logger.getLogger(KubernetesClient.class);
 
-    private static final int RETRIES = 10;
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList(
             "\"reason\":\"Forbidden\"",
             "\"reason\":\"Unauthorized\"",
@@ -53,14 +52,16 @@ class KubernetesClient {
     private final String kubernetesMaster;
     private final String apiToken;
     private final String caCertificate;
+    private final int retries;
 
     private boolean isNoPublicIpAlreadyLogged;
 
-    KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate) {
+    KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.apiToken = apiToken;
         this.caCertificate = caCertificate;
+        this.retries = retries;
     }
 
     /**
@@ -459,7 +460,7 @@ class KubernetesClient {
                                          .get())
                         .asObject();
             }
-        }, RETRIES, NON_RETRYABLE_KEYWORDS);
+        }, retries, NON_RETRYABLE_KEYWORDS);
     }
 
     @SuppressWarnings("checkstyle:magicnumber")

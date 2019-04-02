@@ -123,7 +123,8 @@ There are 4 properties to configure the plugin, all of them are optional.
  * `namespace`: Kubernetes Namespace where Hazelcast is running; if not specified, the value is taken from the environment variables `KUBERNETES_NAMESPACE` or `OPENSHIFT_BUILD_NAMESPACE`
  * `service-name`: service name used to scan only PODs connected to the given service; if not specified, then all PODs in the namespace are checked
  * `service-label-name`, `service-label-value`: service label and value used to tag services that should form the Hazelcast cluster together
- * `resolve-not-ready-addresses`: if set to `true`, it checks also the addresses of PODs which are not ready; `false` by default 
+ * `resolve-not-ready-addresses`: if set to `true`, it checks also the addresses of PODs which are not ready; `false` by default
+ * `kubernetes-api-retries`: number of retries in case of issues while connecting to Kubernetes API; defaults to `3` 
  * `kubernetes-master`: URL of Kubernetes Master; `https://kubernetes.default.svc` by default
  * `api-token`: API Token to Kubernetes API; if not specified, the value is taken from the file `/var/run/secrets/kubernetes.io/serviceaccount/token`
  * `ca-certificate`: CA Certificate for Kubernetes API; if not specified, the value is taken from the file `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`

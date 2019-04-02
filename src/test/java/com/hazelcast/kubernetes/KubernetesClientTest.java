@@ -47,6 +47,7 @@ public class KubernetesClientTest {
     private static final String TOKEN = "sample-token";
     private static final String CA_CERTIFICATE = "sample-ca-certificate";
     private static final String NAMESPACE = "sample-namespace";
+    private static final int RETRIES = 3;
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
@@ -56,7 +57,7 @@ public class KubernetesClientTest {
     @Before
     public void setUp() {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        kubernetesClient = new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE);
+        kubernetesClient = new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES);
         stubFor(get(urlMatching("/api/.*")).atPriority(5)
                                            .willReturn(aResponse().withStatus(401).withBody("\"reason\":\"Forbidden\"")));
     }

@@ -92,6 +92,12 @@ public final class KubernetesProperties {
     public static final PropertyDefinition RESOLVE_NOT_READY_ADDRESSES = property("resolve-not-ready-addresses", BOOLEAN);
 
     /**
+     * <p>Configuration key: <tt>kubernetes-api-retries</tt></p>
+     * Defines the number of retries to Kubernetes API. Defaults to: 3.
+     */
+    public static final PropertyDefinition KUBERNETES_API_RETIRES = property("kubernetes-api-retries", INTEGER);
+
+    /**
      * <p>Configuration key: <tt>kubernetes-master</tt></p>
      * Defines an alternative address for the kubernetes master. Defaults to: <tt>https://kubernetes.default.svc</tt>
      */
