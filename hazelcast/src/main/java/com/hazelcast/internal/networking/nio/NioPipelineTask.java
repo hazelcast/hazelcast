@@ -28,7 +28,7 @@ import static java.lang.Thread.currentThread;
  * NioThread that doesn't own the pipeline any longer. Therefor this task does a
  * check when it is executed if the owner of the pipeline is the same as the
  * current thread. If it is, then the {@link #run0()} is called. If it isn't, the
- * task is send to the {@link NioPipeline#addTaskAndWakeup(Runnable)} which will
+ * task is send to the {@link NioPipeline#ownerAddTaskAndWakeup(Runnable)} which will
  * make sure the task is send to the right NioThread.
  */
 abstract class NioPipelineTask implements Runnable {
@@ -52,7 +52,7 @@ abstract class NioPipelineTask implements Runnable {
             // the pipeline is migrating or already has migrated
             // lets lets reschedule this task on the pipeline so
             // it will be picked up by the new owner.
-            pipeline.addTaskAndWakeup(this);
+            pipeline.ownerAddTaskAndWakeup(this);
         }
     }
 
