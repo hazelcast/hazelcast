@@ -40,10 +40,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HashUtil;
+import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
@@ -64,9 +63,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private final ClientExecutionServiceImpl clientExecutionService;
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
+    private final AtomicReference<PartitionTable> partitionTable =
+            new AtomicReference<PartitionTable>(new PartitionTable(null, -1, new Int2ObjectHashMap<Address>()));
     private volatile int partitionCount;
-    private AtomicReference<PartitionTable> partitionTable =
-            new AtomicReference<PartitionTable>(new PartitionTable(null, -1, Collections.<Integer, Address>emptyMap()));
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -82,9 +81,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private static class PartitionTable {
         final Connection connection;
         final int partitionSateVersion;
-        final Map<Integer, Address> partitions;
+        final Int2ObjectHashMap<Address> partitions;
 
-        PartitionTable(Connection connection, int partitionSateVersion, Map<Integer, Address> partitions) {
+        PartitionTable(Connection connection, int partitionSateVersion, Int2ObjectHashMap<Address> partitions) {
             this.connection = connection;
             this.partitionSateVersion = partitionSateVersion;
             this.partitions = partitions;
@@ -96,7 +95,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         //we are keeping the partition map as is because, user may want its operations run on connected members even if
         //owner connection is gone, and partition table is missing.
         // See @{link com.hazelcast.client.spi.properties.ClientProperty#ALLOW_INVOCATIONS_WHEN_DISCONNECTED}
-        Map<Integer, Address> partitions = getPartitions();
+        Int2ObjectHashMap<Address> partitions = getPartitions();
         partitionTable.set(new PartitionTable(ownerConnection, -1, partitions));
 
         if (((ClientConnection) ownerConnection).getConnectedServerVersion() >= BuildInfo.calculateVersion("3.9")) {
@@ -117,8 +116,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private void waitForPartitionsFetchedOnce() {
-        while (getPartitions().isEmpty() && client.getConnectionManager().isAlive()) {
+    private void waitForPartitionCountSetOnce() {
+        while (partitionCount == 0 && client.getConnectionManager().isAlive()) {
             ClientClusterService clusterService = client.getClientClusterService();
             Collection<Member> memberList = clusterService.getMemberList();
             Connection currentOwnerConnection = this.partitionTable.get().connection;
@@ -178,7 +177,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             if (!shouldBeApplied(connection, partitions, partitionStateVersion, partitionStateVersionExist, current)) {
                 return;
             }
-            Map<Integer, Address> newPartitions = Collections.unmodifiableMap(convertToPartitionToAddressMap(partitions));
+            Int2ObjectHashMap<Address> newPartitions = convertToPartitionToAddressMap(partitions);
             PartitionTable newMetaData = new PartitionTable(connection, partitionStateVersion, newPartitions);
             if (this.partitionTable.compareAndSet(current, newMetaData)) {
                 // partition count is set once at the start. Even if we reset the partition table when switching cluster
@@ -206,7 +205,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             }
             return false;
         }
-        if (!current.connection.equals(connection)) {
+        if (!connection.equals(current.connection)) {
             if (logger.isFinestEnabled()) {
                 logFailure(connection, partitionStateVersion, partitionStateVersionExist, current,
                         "response is from old connection");
@@ -233,8 +232,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 + ". Current state version: " + current.partitionSateVersion));
     }
 
-    private Map<Integer, Address> convertToPartitionToAddressMap(Collection<Map.Entry<Address, List<Integer>>> partitions) {
-        Map<Integer, Address> newPartitions = new HashMap<Integer, Address>();
+    private Int2ObjectHashMap<Address> convertToPartitionToAddressMap(Collection<Map.Entry<Address, List<Integer>>> partitions) {
+        Int2ObjectHashMap<Address> newPartitions = new Int2ObjectHashMap<Address>();
         for (Map.Entry<Address, List<Integer>> entry : partitions) {
             Address address = entry.getKey();
             for (Integer partition : entry.getValue()) {
@@ -245,8 +244,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     public void reset() {
-        partitionTable.set(new PartitionTable(null, -1,
-                Collections.<Integer, Address>emptyMap()));
+        partitionTable.set(new PartitionTable(null, -1, new Int2ObjectHashMap<Address>()));
     }
 
     @Override
@@ -254,7 +252,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return getPartitions().get(partitionId);
     }
 
-    private Map<Integer, Address> getPartitions() {
+    private Int2ObjectHashMap<Address> getPartitions() {
         return partitionTable.get().partitions;
     }
 
@@ -277,7 +275,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     @Override
     public int getPartitionCount() {
         if (partitionCount == 0) {
-            waitForPartitionsFetchedOnce();
+            waitForPartitionCountSetOnce();
         }
         return partitionCount;
     }
