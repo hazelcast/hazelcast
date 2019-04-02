@@ -20,7 +20,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
@@ -42,13 +41,7 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     @Override
     public void run() throws Exception {
         QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
-        // partition scan only, since we can't run partition queries on global indexes
-        result = queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
-
-        // we have to increment query count here manually since we are not even
-        // trying to use indexes
-        Indexes indexes = mapServiceContext.getMapContainer(getName()).getIndexes();
-        indexes.getIndexesStats().incrementQueryCount();
+        result = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
     }
 
     @Override
@@ -72,4 +65,5 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     public int getId() {
         return MapDataSerializerHook.QUERY_PARTITION;
     }
+
 }

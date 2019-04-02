@@ -29,8 +29,10 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
@@ -172,7 +174,7 @@ public class QueryRunner {
     }
 
     // MIGRATION UNSAFE QUERYING - MIGRATION STAMPS ARE NOT VALIDATED, so assumes a run on partition-thread
-    // for a single partition. If the index is global it won't be asked
+    // for a single partition.
     public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         List<Integer> partitions = singletonList(partitionId);
@@ -182,8 +184,14 @@ public class QueryRunner {
 
         Collection<QueryableEntry> entries = null;
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes != null && !indexes.isGlobal()) {
+        if (indexes != null) {
             entries = indexes.query(predicate);
+            if (entries != null && indexes.isGlobal()) {
+                // Even if we are using global indexes, we are already running
+                // on a partition thread, so we don't need to validate migrations
+                // stamps here.
+                entries = new PartitionFilteredEntries(nodeEngine.getPartitionService(), partitionId, entries);
+            }
         }
 
         Result result;
@@ -195,16 +203,6 @@ public class QueryRunner {
             result = populateNonEmptyResult(query, entries, partitions);
         }
 
-        return result;
-    }
-
-    Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
-        Collection<Integer> partitions = singletonList(partitionId);
-        Result result = createResult(query, partitions);
-        partitionScanExecutor.execute(query.getMapName(), predicate, partitions, result);
-        result.completeConstruction(partitions);
         return result;
     }
 
@@ -289,4 +287,116 @@ public class QueryRunner {
     private boolean validateMigrationStamp(int migrationStamp) {
         return mapServiceContext.getService().validateMigrationStamp(migrationStamp);
     }
+
+    @SuppressWarnings("NullableProblems")
+    private static final class PartitionFilteredEntries implements Collection<QueryableEntry> {
+
+        private final IPartitionService partitionService;
+        private final int partitionId;
+        private final Collection<QueryableEntry> unfilteredEntries;
+
+        public PartitionFilteredEntries(IPartitionService partitionService, int partitionId,
+                                        Collection<QueryableEntry> unfilteredEntries) {
+            this.partitionService = partitionService;
+            this.partitionId = partitionId;
+            this.unfilteredEntries = unfilteredEntries;
+        }
+
+        @Override
+        public int size() {
+            // Never used as an exact size, so we may return the original
+            // unfiltered size as an estimate. See ParallelAccumulationExecutor.
+            return unfilteredEntries.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Iterator<QueryableEntry> iterator() {
+            return new Iterator<QueryableEntry>() {
+
+                private final Iterator<QueryableEntry> unfilteredIterator = unfilteredEntries.iterator();
+                private QueryableEntry filteredNext;
+
+                @Override
+                public boolean hasNext() {
+                    while (unfilteredIterator.hasNext()) {
+                        QueryableEntry next = unfilteredIterator.next();
+
+                        if (partitionService.getPartitionId(next.getKeyData()) == partitionId) {
+                            filteredNext = next;
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                @Override
+                public QueryableEntry next() {
+                    return filteredNext;
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
+
+        @Override
+        public Object[] toArray() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean add(QueryableEntry queryableEntry) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends QueryableEntry> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
 }
