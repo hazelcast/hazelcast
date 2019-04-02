@@ -139,6 +139,7 @@ class ClusterConnector {
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
+            setOwnerConnectionAddress(null);
             logger.warning("Exception during initial connection to " + address + ", exception " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
