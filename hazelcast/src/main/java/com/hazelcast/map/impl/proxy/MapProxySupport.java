@@ -474,7 +474,17 @@ abstract class MapProxySupport<K, V>
                 timeInMsOrOneIfResultIsZero(ttl, timeunit), timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
         operation.setThreadId(getThreadId());
         try {
-            return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            final InternalCompletableFuture<Data> result;
+            if (statisticsEnabled) {
+                long startTimeNanos = System.nanoTime();
+                result = operationService
+                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                result.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos), CALLER_RUNS);
+            } else {
+                result = operationService
+                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            }
+            return result;
         } catch (Throwable t) {
             throw rethrow(t);
         }

@@ -336,6 +336,21 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     @Override
+    public long getSetOperationCount() {
+        throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
+    }
+
+    @Override
+    public long getTotalSetLatency() {
+        throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
+    }
+
+    @Override
+    public long getMaxSetLatency() {
+        throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("getCount", getCount);

@@ -29,6 +29,7 @@ import java.util.Map;
  * member may also hold backup entries of other members. LocalMapStats
  * provides the count of owned and backup entries besides their size in memory.
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 public interface LocalMapStats extends LocalInstanceStats {
 
     /**
@@ -121,6 +122,13 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getPutOperationCount();
 
     /**
+     * Returns the number of set operations
+     *
+     * @return number of set operations
+     */
+    long getSetOperationCount();
+
+    /**
      * Returns the number of get operations
      *
      * @return number of get operations
@@ -142,6 +150,13 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getTotalPutLatency();
 
     /**
+     * Returns the total latency of set operations. To get the average latency, divide by the number of sets
+     *
+     * @return the total latency of set operations
+     */
+    long getTotalSetLatency();
+
+    /**
      * Returns the total latency of get operations. To get the average latency, divide by the number of gets
      *
      * @return the total latency of get operations
@@ -161,6 +176,13 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return the maximum latency of put operations
      */
     long getMaxPutLatency();
+
+    /**
+     * Returns the maximum latency of set operations.
+     *
+     * @return the maximum latency of set operations
+     */
+    long getMaxSetLatency();
 
     /**
      * Returns the maximum latency of get operations.

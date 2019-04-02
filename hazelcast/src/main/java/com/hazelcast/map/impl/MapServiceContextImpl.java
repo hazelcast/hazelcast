@@ -44,6 +44,7 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperationProviders;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
+import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.query.AccumulationExecutor;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
@@ -768,7 +769,9 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation) {
         final long durationNanos = System.nanoTime() - startTime;
-        if (operation instanceof BasePutOperation) {
+        if (operation instanceof SetOperation) {
+            localMapStats.incrementSetLatencyNanos(durationNanos);
+        } else if (operation instanceof BasePutOperation) {
             localMapStats.incrementPutLatencyNanos(durationNanos);
         } else if (operation instanceof BaseRemoveOperation) {
             localMapStats.incrementRemoveLatencyNanos(durationNanos);

@@ -27,7 +27,7 @@ import com.hazelcast.spi.Operation;
 import java.util.concurrent.TimeUnit;
 
 public class MapSetWithMaxIdleMessageTask
-        extends AbstractMapPutWithMaxIdleMessageTask<MapSetWithMaxIdleCodec.RequestParameters> {
+        extends AbstractMapSetWithMaxIdleMessageTask<MapSetWithMaxIdleCodec.RequestParameters> {
 
     public MapSetWithMaxIdleMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
