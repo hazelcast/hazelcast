@@ -342,8 +342,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         map.entrySet(new PartitionPredicate(10, Predicates.equal("this", 10)));
         assertEquals(1, stats().getQueryCount());
-        assertEquals(0, stats().getIndexedQueryCount());
-        assertEquals(0, valueStats().getQueryCount());
+        assertEquals(1, stats().getIndexedQueryCount());
+        assertEquals(1, valueStats().getQueryCount());
     }
 
     @Test
@@ -669,7 +669,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "ResultOfMethodCallIgnored"})
     private QueryType[] initQueryTypes() {
         final IMap map = this.map;
 
