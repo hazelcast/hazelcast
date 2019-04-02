@@ -607,6 +607,8 @@ public class MigrationManager {
         migrationQueue.clear();
         activeMigrationInfo = null;
         completedMigrations.clear();
+        shutdownRequestedMembers.clear();
+        migrationTasksAllowed.set(true);
     }
 
     void start() {

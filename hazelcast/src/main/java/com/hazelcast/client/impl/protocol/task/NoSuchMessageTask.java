@@ -47,6 +47,11 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
     }
 
     @Override
+    protected boolean requiresAuthentication() {
+        return false;
+    }
+
+    @Override
     public String getServiceName() {
         return null;
     }
