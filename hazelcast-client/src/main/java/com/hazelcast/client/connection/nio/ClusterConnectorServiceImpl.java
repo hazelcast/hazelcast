@@ -151,18 +151,21 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
             fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onClusterConnect();
         } catch (ConfigurationException e) {
+            setOwnerConnectionAddress(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
+            setOwnerConnectionAddress(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
             }
             throw e;
         } catch (Exception e) {
+            setOwnerConnectionAddress(null);
             logger.warning("Exception during initial connection to " + address + ": " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + address + " as owner", e);
