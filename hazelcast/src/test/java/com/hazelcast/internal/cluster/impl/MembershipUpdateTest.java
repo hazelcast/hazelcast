@@ -58,7 +58,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
 
@@ -751,7 +750,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     // On a joining member assert that no operations are executed before pre join operations execution is completed.
     @Test
-    public void noOperationExecuted_beforePreJoinOpIsDone() {
+    public void noOperationExecuted_beforePreJoinOpIsDone() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         PreJoinAwareServiceImpl service = new PreJoinAwareServiceImpl(latch);
         final Config config = getConfigWithService(service, PreJoinAwareServiceImpl.SERVICE_NAME);
@@ -779,11 +778,10 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             }
         });
 
-        final AtomicReference<HazelcastInstance> instanceReference = new AtomicReference<HazelcastInstance>(null);
-        spawn(new Runnable() {
+        Future<HazelcastInstance> future = spawn(new Callable<HazelcastInstance>() {
             @Override
-            public void run() {
-                instanceReference.set(factory.newHazelcastInstance(instance2Address, config));
+            public HazelcastInstance call() {
+                return factory.newHazelcastInstance(instance2Address, config);
             }
         });
 
@@ -792,7 +790,11 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         latch.countDown();
         sleepSeconds(5);
         sendOpsFromMaster.cancel(true);
+
+        HazelcastInstance instance2 = future.get();
+        assertClusterSize(2, instance2);
         assertFalse(service.otherOpExecutedBeforePreJoin.get());
+        assertTrue(service.preJoinOpExecutionCompleted.get());
     }
 
     @Test
