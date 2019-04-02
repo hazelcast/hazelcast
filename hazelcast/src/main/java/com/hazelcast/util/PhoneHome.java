@@ -208,7 +208,7 @@ public class PhoneHome {
             conn.setConnectTimeout(TIMEOUT * 2);
             conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
-        } catch (IOException ignored) {
+        } catch (Exception ignored) {
             ignore(ignored);
         } finally {
             closeResource(in);
