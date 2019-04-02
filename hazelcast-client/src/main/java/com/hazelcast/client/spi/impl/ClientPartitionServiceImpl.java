@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
@@ -30,6 +31,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -37,36 +39,32 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HashUtil;
+import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * The {@link ClientPartitionService} implementation.
  */
-public final class ClientPartitionServiceImpl
-        extends ClientAddPartitionListenerCodec.AbstractEventHandler
-        implements EventHandler<ClientMessage>, ClientPartitionService {
+public final class ClientPartitionServiceImpl implements ClientPartitionService {
 
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
     private static final long BLOCKING_GET_ONCE_SLEEP_MILLIS = 100;
     private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
-    private final ConcurrentHashMap<Integer, Address> partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
     private final ClientExecutionServiceImpl clientExecutionService;
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
-
+    private final AtomicReference<PartitionTable> partitionTable =
+            new AtomicReference<PartitionTable>(new PartitionTable(null, -1, new Int2ObjectHashMap<Address>()));
     private volatile int partitionCount;
-    private volatile int lastPartitionStateVersion = -1;
-    private volatile Connection ownerConnection;
-    private final Object lock = new Object();
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -79,20 +77,36 @@ public final class ClientPartitionServiceImpl
         clientExecutionService.scheduleWithRepetition(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
+    private static class PartitionTable {
+        final Connection connection;
+        final int partitionSateVersion;
+        final Int2ObjectHashMap<Address> partitions;
+
+        PartitionTable(Connection connection, int partitionSateVersion, Int2ObjectHashMap<Address> partitions) {
+            this.connection = connection;
+            this.partitionSateVersion = partitionSateVersion;
+            this.partitions = partitions;
+        }
+    }
+
     public void listenPartitionTable(Connection ownerConnection) throws Exception {
         //when we connect to cluster back we need to reset partition state version
-        lastPartitionStateVersion = -1;
-        this.ownerConnection = ownerConnection;
+        //we are keeping the partition map as is because, user may want its operations run on connected members even if
+        //owner connection is gone, and partition table is missing.
+        // See @{link com.hazelcast.client.spi.properties.ClientProperty#ALLOW_INVOCATIONS_WHEN_DISCONNECTED}
+        Int2ObjectHashMap<Address> partitions = getPartitions();
+        partitionTable.set(new PartitionTable(ownerConnection, -1, partitions));
+
         if (((ClientConnection) ownerConnection).getConnectedServerVersion() >= BuildInfo.calculateVersion("3.9")) {
             //Servers after 3.9 supports listeners
             ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
             ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
-            invocation.setEventHandler(this);
+            invocation.setEventHandler(new PartitionEventHandler(ownerConnection));
             invocation.invokeUrgent().get();
         }
     }
 
-    public void refreshPartitions() {
+    void refreshPartitions() {
         try {
             // use internal execution service for all partition refresh process (do not use the user executor thread)
             clientExecutionService.execute(new RefreshTask());
@@ -101,25 +115,13 @@ public final class ClientPartitionServiceImpl
         }
     }
 
-    @Override
-    public void handlePartitionsEventV15(Collection<Map.Entry<Address, List<Integer>>> collection, int partitionStateVersion) {
-        processPartitionResponse(collection, partitionStateVersion, true);
-    }
-
-    @Override
-    public void beforeListenerRegister() {
-
-    }
-
-    @Override
-    public void onListenerRegister() {
-
-    }
-
-    private void waitForPartitionsFetchedOnce() {
+    private void waitForPartitionCountSetOnce() {
         while (partitionCount == 0 && client.getConnectionManager().isAlive()) {
-            Connection currentOwnerConnection = this.ownerConnection;
-            if (currentOwnerConnection == null) {
+            ClientClusterService clusterService = client.getClientClusterService();
+            Collection<Member> memberList = clusterService.getMemberList();
+            Connection currentOwnerConnection = this.partitionTable.get().connection;
+            //if member list is empty or owner is null, we will sleep and retry
+            if (memberList.isEmpty() || currentOwnerConnection == null) {
                 sleepBeforeNextTry();
                 continue;
             }
@@ -138,15 +140,7 @@ public final class ClientPartitionServiceImpl
                 ClientGetPartitionsCodec.ResponseParameters response =
                         ClientGetPartitionsCodec.decodeResponse(responseMessage);
                 Connection connection = responseMessage.getConnection();
-                if (!currentOwnerConnection.equals(ownerConnection)) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(" We will not apply the response, since response come from an old connection  " + connection
-                                + ". Current connection " + this.ownerConnection + " state version:"
-                                + (response.partitionStateVersionExist ? response.partitionStateVersion : "NotAvailable"));
-                    }
-                    continue;
-                }
-                processPartitionResponse(response.partitions,
+                processPartitionResponse(connection, response.partitions,
                         response.partitionStateVersion, response.partitionStateVersionExist);
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
@@ -170,38 +164,96 @@ public final class ClientPartitionServiceImpl
         return clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).isEmpty();
     }
 
-    private boolean processPartitionResponse(Collection<Map.Entry<Address, List<Integer>>> partitions,
-                                             int partitionStateVersion,
-                                             boolean partitionStateVersionExist) {
-        synchronized (lock) {
-            if (!partitionStateVersionExist || partitionStateVersion > lastPartitionStateVersion) {
-                for (Map.Entry<Address, List<Integer>> entry : partitions) {
-                    Address address = entry.getKey();
-                    for (Integer partition : entry.getValue()) {
-                        this.partitions.put(partition, address);
-                    }
+    /**
+     * The partitions can be empty on the response, client will not apply the empty partition table,
+     * see {@link ClientPartitionListenerService#getPartitions(PartitionTableView)}
+     */
+    private void processPartitionResponse(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
+                                          int partitionStateVersion,
+                                          boolean partitionStateVersionExist) {
+
+        while (true) {
+            PartitionTable current = this.partitionTable.get();
+            if (!shouldBeApplied(connection, partitions, partitionStateVersion, partitionStateVersionExist, current)) {
+                return;
+            }
+            Int2ObjectHashMap<Address> newPartitions = convertToPartitionToAddressMap(partitions);
+            PartitionTable newMetaData = new PartitionTable(connection, partitionStateVersion, newPartitions);
+            if (this.partitionTable.compareAndSet(current, newMetaData)) {
+                // partition count is set once at the start. Even if we reset the partition table when switching cluster
+                //we want to remember the partition count. That is why it is a different field.
+                if (partitionCount == 0) {
+                    partitionCount = newPartitions.size();
                 }
-                partitionCount = this.partitions.size();
-                lastPartitionStateVersion = partitionStateVersion;
                 if (logger.isFinestEnabled()) {
                     logger.finest("Processed partition response. partitionStateVersion : "
                             + (partitionStateVersionExist ? partitionStateVersion : "NotAvailable")
-                            + ", partitionCount :" + partitionCount);
+                            + ", partitionCount :" + newPartitions.size() + ", connection : " + connection);
                 }
+                return;
             }
 
         }
-        return partitionCount > 0;
     }
 
-    public void stop() {
-        partitions.clear();
+    private boolean shouldBeApplied(Connection connection, Collection<Map.Entry<Address, List<Integer>>> partitions,
+                                    int partitionStateVersion, boolean partitionStateVersionExist, PartitionTable current) {
+        if (partitions.isEmpty()) {
+            if (logger.isFinestEnabled()) {
+                logFailure(connection, partitionStateVersion, partitionStateVersionExist, current,
+                        "response is empty");
+            }
+            return false;
+        }
+        if (!connection.equals(current.connection)) {
+            if (logger.isFinestEnabled()) {
+                logFailure(connection, partitionStateVersion, partitionStateVersionExist, current,
+                        "response is from old connection");
+            }
+            return false;
+        }
+        if (partitionStateVersionExist && partitionStateVersion <= current.partitionSateVersion) {
+            if (logger.isFinestEnabled()) {
+                logFailure(connection, partitionStateVersion, partitionStateVersionExist, current,
+                        "response state version is old");
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private void logFailure(Connection connection, int partitionStateVersion,
+                            boolean partitionStateVersionExist, PartitionTable current, String cause) {
+
+        logger.finest(" We will not apply the response, since " + cause + " . Response is from " + connection
+                + ". Current connection " + current.connection
+                + " response state version:"
+                + (partitionStateVersionExist ? partitionStateVersion : "NotAvailable"
+                + ". Current state version: " + current.partitionSateVersion));
+    }
+
+    private Int2ObjectHashMap<Address> convertToPartitionToAddressMap(Collection<Map.Entry<Address, List<Integer>>> partitions) {
+        Int2ObjectHashMap<Address> newPartitions = new Int2ObjectHashMap<Address>();
+        for (Map.Entry<Address, List<Integer>> entry : partitions) {
+            Address address = entry.getKey();
+            for (Integer partition : entry.getValue()) {
+                newPartitions.put(partition, address);
+            }
+        }
+        return newPartitions;
+    }
+
+    public void reset() {
+        partitionTable.set(new PartitionTable(null, -1, new Int2ObjectHashMap<Address>()));
     }
 
     @Override
     public Address getPartitionOwner(int partitionId) {
-        waitForPartitionsFetchedOnce();
-        return partitions.get(partitionId);
+        return getPartitions().get(partitionId);
+    }
+
+    private Int2ObjectHashMap<Address> getPartitions() {
+        return partitionTable.get().partitions;
     }
 
     @Override
@@ -222,7 +274,9 @@ public final class ClientPartitionServiceImpl
 
     @Override
     public int getPartitionCount() {
-        waitForPartitionsFetchedOnce();
+        if (partitionCount == 0) {
+            waitForPartitionCountSetOnce();
+        }
         return partitionCount;
     }
 
@@ -259,6 +313,31 @@ public final class ClientPartitionServiceImpl
         }
     }
 
+    private final class PartitionEventHandler extends ClientAddPartitionListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private final Connection clientConnection;
+
+        private PartitionEventHandler(Connection clientConnection) {
+            this.clientConnection = clientConnection;
+        }
+
+        @Override
+        public void handlePartitionsEventV15(Collection<Map.Entry<Address, List<Integer>>> response, int stateVersion) {
+            processPartitionResponse(clientConnection, response, stateVersion, true);
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
     private final class RefreshTask implements Runnable {
 
         private RefreshTask() {
@@ -290,8 +369,10 @@ public final class ClientPartitionServiceImpl
             if (responseMessage == null) {
                 return;
             }
+            Connection connection = responseMessage.getConnection();
             ClientGetPartitionsCodec.ResponseParameters response = ClientGetPartitionsCodec.decodeResponse(responseMessage);
-            processPartitionResponse(response.partitions, response.partitionStateVersion, response.partitionStateVersionExist);
+            processPartitionResponse(connection, response.partitions,
+                    response.partitionStateVersion, response.partitionStateVersionExist);
         }
 
         @Override
