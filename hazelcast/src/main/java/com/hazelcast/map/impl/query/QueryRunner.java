@@ -30,6 +30,7 @@ import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -340,6 +341,7 @@ public class QueryRunner {
                     return false;
                 }
 
+                @SuppressFBWarnings("IT_NO_SUCH_ELEMENT")
                 @Override
                 public QueryableEntry next() {
                     return filteredNext;
