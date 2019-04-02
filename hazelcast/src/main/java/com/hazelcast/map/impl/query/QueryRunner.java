@@ -26,6 +26,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.PredicateUtils;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -189,7 +190,7 @@ public class QueryRunner {
             entries = indexes.query(predicate);
             if (entries != null && indexes.isGlobal()) {
                 // Even if we are using global indexes, we are already running
-                // on a partition thread, so we don't need to validate migrations
+                // on a partition thread, so we don't need to validate migration
                 // stamps here.
                 entries = new PartitionFilteredEntries(nodeEngine.getPartitionService(), partitionId, entries);
             }
@@ -307,7 +308,7 @@ public class QueryRunner {
         public int size() {
             // Never used as an exact size, so we may return the original
             // unfiltered size as an estimate. See ParallelAccumulationExecutor.
-            return unfilteredEntries.size();
+            return PredicateUtils.estimatedSizeOf(unfilteredEntries);
         }
 
         @Override
