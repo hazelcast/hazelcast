@@ -214,6 +214,8 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     private Comparable sanitizeScalar(Object input) {
+        input = Optionals.unwrapIfOptional(input);
+
         if (input == null || input instanceof Comparable) {
             Comparable value = (Comparable) input;
             if (value == null) {

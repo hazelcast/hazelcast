@@ -26,6 +26,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Extractable;
+import com.hazelcast.query.impl.Optionals;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.AbstractJsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
@@ -71,10 +72,9 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
 
     private boolean applyForMultiResult(MultiResult result) {
         List results = result.getResults();
-        for (Object o : results) {
-            Comparable entryValue = (Comparable) o;
+        for (Object value : results) {
             // it's enough if there's only one result in the MultiResult that satisfies the predicate
-            boolean satisfied = convertAndApplyForSingleAttributeValue(entryValue);
+            boolean satisfied = convertAndApplyForSingleAttributeValue(value);
             if (satisfied) {
                 return true;
             }
@@ -89,6 +89,8 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
             }
             attributeValue = AbstractJsonGetter.convertFromJsonValue((JsonValue) attributeValue);
         }
+
+        attributeValue = Optionals.unwrapIfOptional(attributeValue);
         return applyForSingleAttributeValue((Comparable) attributeValue);
     }
 
