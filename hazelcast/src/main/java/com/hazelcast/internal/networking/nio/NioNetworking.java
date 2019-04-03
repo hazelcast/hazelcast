@@ -230,6 +230,7 @@ public final class NioNetworking implements Networking {
         shutdown(outputThreads);
         outputThreads = null;
         closeListenerExecutor.shutdown();
+        metricsRegistry.deregister(ioBalancer);
     }
 
     private void shutdown(NioThread[] threads) {
@@ -238,6 +239,7 @@ public final class NioNetworking implements Networking {
         }
         for (NioThread thread : threads) {
             thread.shutdown();
+            metricsRegistry.deregister(thread);
         }
     }
 
