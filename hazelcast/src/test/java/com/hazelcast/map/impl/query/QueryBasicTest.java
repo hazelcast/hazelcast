@@ -22,8 +22,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
@@ -34,6 +32,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
+import com.hazelcast.query.SampleTestObjects.ObjectWithOptional;
 import com.hazelcast.query.SampleTestObjects.State;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.SampleTestObjects.ValueType;
@@ -55,6 +54,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -183,7 +183,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
@@ -205,7 +205,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
@@ -267,6 +267,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         testIterator(map.values(predicate).iterator(), 2);
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void testIterator(Iterator it, int size) {
         for (int i = 0; i < size * 2; i++) {
             assertTrue("i is " + i, it.hasNext());
@@ -324,7 +325,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
@@ -346,7 +347,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
@@ -885,22 +886,9 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     private void addPortableFactories(Config config) {
         config.getSerializationConfig()
-                .addPortableFactory(1, new PortableFactory() {
-                    @Override
-                    public Portable create(int classId) {
-                        return new GrandParentPortableObject(1L);
-                    }
-                }).addPortableFactory(2, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new ParentPortableObject(1L);
-            }
-        }).addPortableFactory(3, new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new ChildPortableObject(1L);
-            }
-        });
+                .addPortableFactory(1, classId -> new GrandParentPortableObject(1L))
+                .addPortableFactory(2, classId -> new ParentPortableObject(1L))
+                .addPortableFactory(3, classId -> new ChildPortableObject(1L));
     }
 
     @Test(expected = QueryException.class)
@@ -971,4 +959,82 @@ public class QueryBasicTest extends HazelcastTestSupport {
         values = map.values(new SqlPredicate("child.child.timestamp > 0"));
         assertEquals(1, values.size());
     }
+
+    @Test
+    public void testOptionalFullScanQuerying() {
+        String name = randomMapName();
+        Config config = smallInstanceConfig();
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, ObjectWithOptional<Integer>> map = instance.getMap(name);
+
+        for (int i = 0; i < 10; ++i) {
+            map.put(i, new ObjectWithOptional<>(i % 2 == 0 ? i : null));
+        }
+
+        Set<Integer> result = map.keySet(Predicates.equal("attribute", null));
+        assertEqualSets(result, 1, 3, 5, 7, 9);
+
+        result = map.keySet(Predicates.notEqual("attribute", null));
+        assertEqualSets(result, 0, 2, 4, 6, 8);
+
+        result = map.keySet(Predicates.greaterThan("attribute", 4));
+        assertEqualSets(result, 6, 8);
+    }
+
+    @Test
+    public void testOptionalUnorderedIndexQuerying() {
+        String name = randomMapName();
+        Config config = smallInstanceConfig();
+        config.getMapConfig(name).addMapIndexConfig(new MapIndexConfig("attribute", false));
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, ObjectWithOptional<Integer>> map = instance.getMap(name);
+
+        for (int i = 0; i < 10; ++i) {
+            map.put(i, new ObjectWithOptional<>(i % 2 == 0 ? i : null));
+        }
+
+        Set<Integer> result = map.keySet(Predicates.equal("attribute", null));
+        assertEqualSets(result, 1, 3, 5, 7, 9);
+        assertEquals(1, map.getLocalMapStats().getIndexedQueryCount());
+
+        result = map.keySet(Predicates.notEqual("attribute", null));
+        assertEqualSets(result, 0, 2, 4, 6, 8);
+        assertEquals(1, map.getLocalMapStats().getIndexedQueryCount());
+
+        result = map.keySet(Predicates.greaterThan("attribute", 4));
+        assertEqualSets(result, 6, 8);
+        assertEquals(2, map.getLocalMapStats().getIndexedQueryCount());
+    }
+
+    @Test
+    public void testOptionalOrderedIndexQuerying() {
+        String name = randomMapName();
+        Config config = smallInstanceConfig();
+        config.getMapConfig(name).addMapIndexConfig(new MapIndexConfig("attribute", true));
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, ObjectWithOptional<Integer>> map = instance.getMap(name);
+
+        for (int i = 0; i < 10; ++i) {
+            map.put(i, new ObjectWithOptional<>(i % 2 == 0 ? i : null));
+        }
+
+        Set<Integer> result = map.keySet(Predicates.equal("attribute", null));
+        assertEqualSets(result, 1, 3, 5, 7, 9);
+        assertEquals(1, map.getLocalMapStats().getIndexedQueryCount());
+
+        result = map.keySet(Predicates.notEqual("attribute", null));
+        assertEqualSets(result, 0, 2, 4, 6, 8);
+        assertEquals(1, map.getLocalMapStats().getIndexedQueryCount());
+
+        result = map.keySet(Predicates.greaterThan("attribute", 4));
+        assertEqualSets(result, 6, 8);
+        assertEquals(2, map.getLocalMapStats().getIndexedQueryCount());
+    }
+
+
+    @SafeVarargs
+    private static <E> void assertEqualSets(Set<E> actual, E... expected) {
+        assertEquals(new HashSet<>(Arrays.asList(expected)), actual);
+    }
+
 }
