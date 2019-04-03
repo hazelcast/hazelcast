@@ -25,4 +25,5 @@ https\://www.hazelcast.com/schema/spring/hazelcast-spring-3.11.xsd=hazelcast-spr
 http\://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd=hazelcast-spring-3.12.xsd
 https\://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd=hazelcast-spring-3.12.xsd
 http\://www.hazelcast.com/schema/spring/hazelcast-spring-3.13.xsd=hazelcast-spring-3.13.xsd
+https\://www.hazelcast.com/schema/spring/hazelcast-spring-3.13.xsd=hazelcast-spring-3.13.xsd
 http\://www.hazelcast.com/schema/spring/hazelcast-spring.xsd=hazelcast-spring-3.13.xsd
