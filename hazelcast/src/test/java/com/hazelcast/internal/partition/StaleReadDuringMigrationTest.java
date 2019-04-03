@@ -77,7 +77,7 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
         final int partitionId = 0;
         final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
         final InternalPartitionImpl partition = (InternalPartitionImpl) partitionService.getPartition(partitionId);
-        partition.setMigrating(true);
+        partition.setMigrating();
 
         final InternalOperationService operationService = getOperationService(instance);
         final InvocationBuilder invocationBuilder = operationService
