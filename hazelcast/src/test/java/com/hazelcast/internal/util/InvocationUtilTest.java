@@ -89,7 +89,7 @@ public class InvocationUtilTest extends HazelcastTestSupport {
         final InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
         final int randomPartitionId = (int) (Math.random() * partitionService.getPartitionCount());
         final InternalPartitionImpl partition = (InternalPartitionImpl) partitionService.getPartition(randomPartitionId);
-        partition.setMigrating(true);
+        partition.setMigrating();
 
         final String operationResponse = "operationResponse";
         final Operation operation = new LocalOperation(operationResponse)
@@ -104,7 +104,7 @@ public class InvocationUtilTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
 
                 }
-                partition.setMigrating(false);
+                partition.resetMigrating();
             }
         });
 

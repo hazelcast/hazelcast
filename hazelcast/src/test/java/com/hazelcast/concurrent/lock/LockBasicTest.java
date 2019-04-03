@@ -328,7 +328,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         final int leaseTime = 1000;
 
         lock.lock(leaseTime, TimeUnit.MILLISECONDS);
-        partition.setMigrating(true);
+        partition.setMigrating();
 
         spawn(new Runnable() {
             @Override
@@ -338,7 +338,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                partition.setMigrating(false);
+                partition.resetMigrating();
             }
         });
 

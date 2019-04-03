@@ -313,18 +313,22 @@ public class PartitionStateManager {
         return newState;
     }
 
-    public void setMigratingFlag(int partitionId) {
+    public boolean trySetMigratingFlag(int partitionId) {
         if (logger.isFinestEnabled()) {
             logger.finest("Setting partition-migrating flag. partitionId=" + partitionId);
         }
-        partitions[partitionId].setMigrating(true);
+        return partitions[partitionId].setMigrating();
     }
 
     public void clearMigratingFlag(int partitionId) {
         if (logger.isFinestEnabled()) {
             logger.finest("Clearing partition-migrating flag. partitionId=" + partitionId);
         }
-        partitions[partitionId].setMigrating(false);
+        partitions[partitionId].resetMigrating();
+    }
+
+    public boolean isMigrating(int partitionId) {
+        return partitions[partitionId].isMigrating();
     }
 
     /** Sets the replica members for the {@code partitionId}. */
