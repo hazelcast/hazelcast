@@ -26,7 +26,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Extractable;
-import com.hazelcast.query.impl.Optionals;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.AbstractJsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
@@ -36,6 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.PlatformSpecific.OPTIONALS;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
@@ -90,7 +90,7 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
             attributeValue = AbstractJsonGetter.convertFromJsonValue((JsonValue) attributeValue);
         }
 
-        attributeValue = Optionals.unwrapIfOptional(attributeValue);
+        attributeValue = OPTIONALS.unwrapIfOptional(attributeValue);
         return applyForSingleAttributeValue((Comparable) attributeValue);
     }
 

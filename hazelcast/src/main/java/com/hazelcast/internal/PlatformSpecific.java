@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal;
 
+import com.hazelcast.internal.util.JavaVersion;
+import com.hazelcast.internal.util.Optionals;
+
 /**
  * Utility class to construct instances depending on the runtime platform.
  * Steps to introduce Java 6 / 8 alternative implementations:
@@ -60,7 +63,27 @@ package com.hazelcast.internal;
  */
 public final class PlatformSpecific {
 
+    /**
+     * Exposes Java 8+ optionals support.
+     *
+     * @see Optionals
+     */
+    public static final Optionals OPTIONALS;
+
+    static  {
+        OPTIONALS = createOptionals();
+    }
+
     private PlatformSpecific() {
 
     }
+
+    private static Optionals createOptionals() {
+        if (JavaVersion.isAtLeast(JavaVersion.JAVA_1_8)) {
+            return new Optionals.Java8PlusImpl();
+        } else {
+            return new Optionals.PreJava8Impl();
+        }
+    }
+
 }

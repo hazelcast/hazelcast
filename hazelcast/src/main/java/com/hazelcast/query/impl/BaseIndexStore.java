@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.hazelcast.internal.PlatformSpecific.OPTIONALS;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 /**
@@ -214,7 +215,7 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     private Comparable sanitizeScalar(Object input) {
-        input = Optionals.unwrapIfOptional(input);
+        input = OPTIONALS.unwrapIfOptional(input);
 
         if (input == null || input instanceof Comparable) {
             Comparable value = (Comparable) input;
