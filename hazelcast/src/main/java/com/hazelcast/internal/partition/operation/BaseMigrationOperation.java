@@ -216,7 +216,10 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
                     + ". Current active migration is " + currentActiveMigration);
         }
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        partitionStateManager.setMigratingFlag(migrationInfo.getPartitionId());
+        if (!partitionStateManager.trySetMigratingFlag(migrationInfo.getPartitionId())) {
+            throw new RetryableHazelcastException("Cannot set migrating flag, "
+                    + "probably previous migration's finalization is not completed yet.");
+        }
     }
 
     void onMigrationStart() {
