@@ -16,10 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.internal.RequiresJdk8;
-
-import java.util.Optional;
-
 /**
  * Provides utilities to work with Java 8+ optionals.
  */
