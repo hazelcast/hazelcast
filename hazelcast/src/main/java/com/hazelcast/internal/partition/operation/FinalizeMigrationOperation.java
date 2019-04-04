@@ -68,8 +68,25 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
 
     @Override
     public void run() {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        int partitionId = migrationInfo.getPartitionId();
 
+        if (isOldBackupReplicaOwner() && partitionStateManager.isMigrating(partitionId)) {
+            // On old backup replica, migrating flag is not set during migration.
+            // Because replica is copied from partition owner to new backup replica.
+            // Old backup owner is not notified about migration until migration is committed
+            // and completed migration is published by master.
+            // If this partition's migrating flag is set, then it means another migration
+            // is submitted to this member for the same partition and it's already executed.
+            // This finalization is now obsolete.
+            getLogger().fine("Cannot execute migration finalization, because this member was previous owner of a backup replica,"
+                    + " and a new migration operation has already superseded this finalization. "
+                    + "This operation is now obsolete. -> " + migrationInfo);
+            return;
+        }
+
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         notifyServices(nodeEngine);
 
         if (endpoint == MigrationEndpoint.SOURCE && success) {
@@ -78,10 +95,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
             rollbackDestination();
         }
 
-        InternalPartitionServiceImpl partitionService = getService();
-        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        partitionStateManager.clearMigratingFlag(migrationInfo.getPartitionId());
-
+        partitionStateManager.clearMigratingFlag(partitionId);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }
@@ -100,9 +114,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         // Old backup owner is not notified about migration until migration
         // is committed on destination. This is the only place on backup owner
         // knows replica is moved away from itself.
-        PartitionReplica source = migrationInfo.getSource();
-        if (source != null && migrationInfo.getSourceCurrentReplicaIndex() > 0
-                && source.isIdentical(nodeEngine.getLocalMember())) {
+        if (isOldBackupReplicaOwner()) {
             // execute beforeMigration on old backup before commit/rollback
             for (MigrationAwareService service : migrationAwareServices) {
                 beforeMigration(event, service);
@@ -215,6 +227,12 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         } catch (Throwable e) {
             getLogger().warning("Error while finalizing migration -> " + event, e);
         }
+    }
+
+    private boolean isOldBackupReplicaOwner() {
+        PartitionReplica source = migrationInfo.getSource();
+        return source != null && migrationInfo.getSourceCurrentReplicaIndex() > 0
+                && source.isIdentical(getNodeEngine().getLocalMember());
     }
 
     @Override
