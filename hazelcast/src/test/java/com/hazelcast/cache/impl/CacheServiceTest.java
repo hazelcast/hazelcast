@@ -42,8 +42,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -115,6 +117,31 @@ public class CacheServiceTest {
     }
 
     @Test
+    public void testPutCacheConfigConcurrently_whenExceptionThrownFromAdditionalSetup() {
+        CacheService cacheService = new TestCacheService(mockNodeEngine, true);
+
+        executorService = Executors.newFixedThreadPool(CONCURRENCY);
+        List<Future<CacheConfig>> futures = new ArrayList<Future<CacheConfig>>();
+        for (int i = 0; i < CONCURRENCY; i++) {
+            futures.add(
+                executorService.submit(new PutCacheConfigRunnable(cacheService, latch))
+            );
+        }
+        latch.countDown();
+        final AtomicInteger exceptionCounter = new AtomicInteger();
+        FutureUtil.waitWithDeadline(futures, 10, TimeUnit.SECONDS, new FutureUtil.ExceptionHandler() {
+            @Override
+            public void handleException(Throwable throwable) {
+                exceptionCounter.getAndIncrement();
+            }
+        });
+
+        assertNull(cacheService.getCacheConfig(PREFIXED_CACHE_NAME));
+        // ensure all executions completed exceptionally
+        assertEquals(CONCURRENCY, exceptionCounter.get());
+    }
+
+    @Test
     public void testPutCacheConfig_whenExceptionThrownFromAdditionalSetup() {
         CacheService cacheService = new TestCacheService(mockNodeEngine, true);
 
@@ -123,8 +150,8 @@ public class CacheServiceTest {
             // ensure the exception was not swallowed
             fail("ConfigurationException should have been thrown");
         } catch (ConfigurationException e) {
-            // assert the CacheConfigFuture was completed
-            assertEquals(3, cacheService.getCacheConfig(PREFIXED_CACHE_NAME).getBackupCount());
+            // assert the CacheConfigFuture was not put in the configs map
+            assertNull(cacheService.getCacheConfig(PREFIXED_CACHE_NAME));
         }
     }
 

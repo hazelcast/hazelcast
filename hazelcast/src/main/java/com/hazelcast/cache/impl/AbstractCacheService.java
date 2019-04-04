@@ -407,9 +407,12 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 }
                 logger.info("Added cache config: " + cacheConfig);
                 additionalCacheConfigSetup(null, config);
-            } finally {
                 // now it is safe for others to obtain the new cache config
                 future.complete();
+            } catch (RuntimeException e) {
+                configs.remove(cacheConfig.getNameWithPrefix(), future);
+                future.complete(e);
+                throw e;
             }
         } else {
             additionalCacheConfigSetup(localConfig, config);
