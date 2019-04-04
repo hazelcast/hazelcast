@@ -54,7 +54,10 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
 
         InternalPartitionServiceImpl service = getService();
         PartitionStateManager partitionStateManager = service.getPartitionStateManager();
-        partitionStateManager.setMigratingFlag(getPartitionId());
+        if (!partitionStateManager.trySetMigratingFlag(getPartitionId())) {
+            throw new IllegalStateException("Cannot set migrating flag, "
+                    + "probably previous migration's finalization is not completed yet.");
+        }
     }
 
     @Override

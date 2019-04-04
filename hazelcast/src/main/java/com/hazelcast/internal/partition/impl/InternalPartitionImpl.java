@@ -60,8 +60,23 @@ public class InternalPartitionImpl implements InternalPartition {
         return isMigrating;
     }
 
-    public void setMigrating(boolean isMigrating) {
-        this.isMigrating = isMigrating;
+    /**
+     * Sets migrating flag if it's not set already.
+     * @return true if migrating flag is updated, false otherwise
+     */
+    public boolean setMigrating() {
+        if (isMigrating) {
+            return false;
+        }
+        isMigrating = true;
+        return true;
+    }
+
+    /**
+     * Resets migrating flag.
+     */
+    public void resetMigrating() {
+        isMigrating = false;
     }
 
     @Override
@@ -234,7 +249,7 @@ public class InternalPartitionImpl implements InternalPartition {
         assert localReplica != null;
         this.replicas = new PartitionReplica[MAX_REPLICA_COUNT];
         this.localReplica = localReplica;
-        setMigrating(false);
+        resetMigrating();
     }
 
     @Override
