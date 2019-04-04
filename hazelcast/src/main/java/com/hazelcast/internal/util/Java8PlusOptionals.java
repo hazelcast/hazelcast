@@ -20,18 +20,16 @@ import com.hazelcast.internal.RequiresJdk8;
 
 import java.util.Optional;
 
-/**
- * Provides utilities to work with Java 8+ optionals.
- */
-public interface Optionals {
+@RequiresJdk8
+public class Java8PlusOptionals implements Optionals {
 
-    /**
-     * Unwraps the given potentially optional value.
-     *
-     * @param value the potentially optional value to unwrap.
-     * @return an unwrapped value, if the given value is optional; the
-     * original given value, if it's not optional.
-     */
-    Object unwrapIfOptional(Object value);
+    @Override
+    public Object unwrapIfOptional(Object value) {
+        if (!(value instanceof Optional)) {
+            return value;
+        }
+        Optional optional = (Optional) value;
+        return optional.isPresent() ? optional.get() : null;
+    }
 
 }

@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal;
 
+import com.hazelcast.internal.util.Java8PlusOptionals;
 import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.internal.util.Optionals;
+import com.hazelcast.internal.util.PreJava8Optionals;
 
 /**
  * Utility class to construct instances depending on the runtime platform.
@@ -80,9 +82,9 @@ public final class PlatformSpecific {
 
     private static Optionals createOptionals() {
         if (JavaVersion.isAtLeast(JavaVersion.JAVA_1_8)) {
-            return new Optionals.Java8PlusImpl();
+            return new Java8PlusOptionals();
         } else {
-            return new Optionals.PreJava8Impl();
+            return new PreJava8Optionals();
         }
     }
 

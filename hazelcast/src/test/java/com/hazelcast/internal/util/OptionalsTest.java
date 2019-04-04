@@ -37,7 +37,7 @@ public class OptionalsTest {
     public void testPreJava8() {
         assumeTrue(JavaVersion.isAtMost(JavaVersion.JAVA_1_7));
 
-        assertInstanceOf(Optionals.PreJava8Impl.class, OPTIONALS);
+        assertInstanceOf(PreJava8Optionals.class, OPTIONALS);
 
         Object value = new Object();
         assertSame(value, OPTIONALS.unwrapIfOptional(value));
@@ -50,7 +50,7 @@ public class OptionalsTest {
     public void testJava8Plus() {
         assumeTrue(JavaVersion.isAtLeast(JavaVersion.JAVA_1_8));
 
-        assertInstanceOf(Optionals.Java8PlusImpl.class, OPTIONALS);
+        assertInstanceOf(Java8PlusOptionals.class, OPTIONALS);
 
         Object value = new Object();
         assertSame(value, OPTIONALS.unwrapIfOptional(value));
