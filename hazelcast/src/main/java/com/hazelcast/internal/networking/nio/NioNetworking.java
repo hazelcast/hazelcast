@@ -29,7 +29,6 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
-import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
@@ -99,8 +98,6 @@ public final class NioNetworking implements Networking {
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
     private volatile ExecutorService closeListenerExecutor;
-    private final ConcurrencyDetection concurrencyDetection;
-    private final boolean writeThroughEnabled;
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
@@ -129,8 +126,6 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
-        this.concurrencyDetection = ctx.concurrencyDetection;
-        this.writeThroughEnabled = ctx.writeThroughEnabled;
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -158,7 +153,6 @@ public final class NioNetworking implements Networking {
             logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
                     + inputThreadCount + " input threads and "
                     + outputThreadCount + " output threads");
-            logger.fine("write through enabled:" + writeThroughEnabled);
         }
 
         logger.log(selectorMode != SELECT ? Level.INFO : FINE, "IO threads selector mode is " + selectorMode);
@@ -275,9 +269,7 @@ public final class NioNetworking implements Networking {
                 threads[index],
                 errorHandler,
                 loggingService.getLogger(NioOutboundPipeline.class),
-                ioBalancer,
-                concurrencyDetection,
-                writeThroughEnabled);
+                ioBalancer);
     }
 
     private NioInboundPipeline newInboundPipeline(NioChannel channel) {
@@ -387,27 +379,12 @@ public final class NioNetworking implements Networking {
         // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
         private SelectorMode selectorMode = SelectorMode.getConfiguredValue();
         private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
-        private ConcurrencyDetection concurrencyDetection;
-
-        // if the calling thread is allowed to write through to the socket if that is possible.
-        // this is an optimization that can speed up low threaded setups
-        private boolean writeThroughEnabled;
 
         public Context() {
             String selectorModeString = SelectorMode.getConfiguredString();
             if (selectorModeString.startsWith(SELECT_NOW_STRING + ",")) {
                 idleStrategy = createBackoffIdleStrategy(selectorModeString);
             }
-        }
-
-        public Context writeThroughEnabled(boolean writeThroughEnabled) {
-            this.writeThroughEnabled = writeThroughEnabled;
-            return this;
-        }
-
-        public Context concurrencyDetection(ConcurrencyDetection concurrencyDetection) {
-            this.concurrencyDetection = concurrencyDetection;
-            return this;
         }
 
         public Context selectorWorkaroundTest(boolean selectorWorkaroundTest) {

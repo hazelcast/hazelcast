@@ -80,7 +80,6 @@ import static com.hazelcast.client.spi.properties.ClientProperty.ALLOW_INVOCATIO
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
-import static com.hazelcast.client.spi.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -183,9 +182,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         .errorHandler(new ClientConnectionChannelErrorHandler())
                         .inputThreadCount(inputThreads)
                         .outputThreadCount(outputThreads)
-                        .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
-                        .writeThroughEnabled(properties.getBoolean(IO_WRITE_THROUGH_ENABLED))
-                        .concurrencyDetection(client.getConcurrencyDetection()));
+                        .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS)));
     }
 
 
