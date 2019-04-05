@@ -78,7 +78,7 @@
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
-        <hazelcast.version>3.12-BETA-2</hazelcast.version>
+        <hazelcast.version>3.12</hazelcast.version>
         <hazelcast.protocol.version>1.8.0-5</hazelcast.protocol.version>
 
         <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
