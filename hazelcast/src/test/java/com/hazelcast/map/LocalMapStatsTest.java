@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -185,13 +186,125 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSet() throws Exception {
+    public void testSet() {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.set(i, i);
         }
         LocalMapStats localMapStats = getMapStats();
-        assertEquals(100, localMapStats.getPutOperationCount());
+        assertEquals(0, localMapStats.getPutOperationCount());
+        assertEquals(100, localMapStats.getSetOperationCount());
+        assertEquals(0, localMapStats.getHits());
+        assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
+        assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+    }
+
+    @Test
+    public void testSetAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.set(i, i);
+            map.set(i, i);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(0, localMapStats.getPutOperationCount());
+        assertEquals(200, localMapStats.getSetOperationCount());
+        assertEquals(100, localMapStats.getHits());
+        assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
+        assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+    }
+
+    @Test
+    public void testSetWithTtlAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.set(i, i, 1, TimeUnit.MINUTES);
+            map.set(i, i, 1, TimeUnit.MINUTES);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(0, localMapStats.getPutOperationCount());
+        assertEquals(200, localMapStats.getSetOperationCount());
+        assertEquals(100, localMapStats.getHits());
+        assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
+        assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+    }
+
+    @Test
+    public void testSetWithTtlAndMaxIdleAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.set(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+            map.set(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+        }
+        LocalMapStats localMapStats = getMapStats();
+        assertEquals(0, localMapStats.getPutOperationCount());
+        assertEquals(200, localMapStats.getSetOperationCount());
+        assertEquals(100, localMapStats.getHits());
+        assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
+        assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+    }
+
+    @Test
+    public void testSetAsyncAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 130; i++) {
+            map.setAsync(i, i);
+            map.setAsync(i, i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                LocalMapStats localMapStats = getMapStats();
+                assertEquals(0, localMapStats.getPutOperationCount());
+                assertEquals(260, localMapStats.getSetOperationCount());
+                assertEquals(130, localMapStats.getHits());
+                assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
+                assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+            }
+        });
+    }
+
+    @Test
+    public void testSetAsyncWithTtlAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 57; i++) {
+            map.setAsync(i, i, 1, TimeUnit.MINUTES);
+            map.setAsync(i, i, 1, TimeUnit.MINUTES);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                LocalMapStats localMapStats = getMapStats();
+                assertEquals(0, localMapStats.getPutOperationCount());
+                assertEquals(114, localMapStats.getSetOperationCount());
+                assertEquals(57, localMapStats.getHits());
+                assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
+                assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+            }
+        });
+    }
+
+    @Test
+    public void testSetAsyncWithTtlAndMaxIdleAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.setAsync(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+            map.setAsync(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                LocalMapStats localMapStats = getMapStats();
+                assertEquals(0, localMapStats.getPutOperationCount());
+                assertEquals(200, localMapStats.getSetOperationCount());
+                assertEquals(100, localMapStats.getHits());
+                assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
+                assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+            }
+        });
     }
 
 

@@ -859,17 +859,145 @@ public class ClientMapTest extends HazelcastTestSupport {
         int operationCount = 1000;
         for (int i = 0; i < operationCount; i++) {
             map.put(i, i);
+            map.set(i, i);
             map.get(i);
             map.remove(i);
         }
 
         LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
         assertEquals("put count", operationCount, localMapStats.getPutOperationCount());
+        assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
         assertEquals("get count", operationCount, localMapStats.getGetOperationCount());
         assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
         assertTrue("put latency", 0 < localMapStats.getTotalPutLatency());
+        assertTrue("set latency", 0 < localMapStats.getTotalSetLatency());
         assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
         assertTrue("remove latency", 0 < localMapStats.getTotalRemoveLatency());
+    }
+
+    @Test
+    public void testMapSetWithTtlStatistics() {
+        String name = randomString();
+        IMap<Integer, Integer> map = client.getMap(name);
+
+        int operationCount = 1000;
+        for (int i = 0; i < operationCount; i++) {
+            map.set(i, i, 1, TimeUnit.MINUTES);
+            map.remove(i);
+        }
+
+        LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+        assertEquals("put count", 0, localMapStats.getPutOperationCount());
+        assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
+        assertEquals("get count", 0, localMapStats.getGetOperationCount());
+        assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+        assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+        assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
+        assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
+        assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+    }
+
+    @Test
+    public void testMapSetWithTtlAndMaxIdleStatistics() {
+        String name = randomString();
+        IMap<Integer, Integer> map = client.getMap(name);
+
+        int operationCount = 467;
+        for (int i = 0; i < operationCount; i++) {
+            map.set(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+            map.remove(i);
+        }
+
+        LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+        assertEquals("put count", 0, localMapStats.getPutOperationCount());
+        assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
+        assertEquals("get count", 0, localMapStats.getGetOperationCount());
+        assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+        assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+        assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
+        assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
+        assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+    }
+
+    @Test
+    public void testMapSetAsyncStatistics() {
+        final String name = randomString();
+        IMap<Integer, Integer> map = client.getMap(name);
+
+        final int operationCount = 127;
+        for (int i = 0; i < operationCount; i++) {
+            map.setAsync(i, i);
+            map.remove(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+                assertEquals("put count", 0, localMapStats.getPutOperationCount());
+                assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
+                assertEquals("get count", 0, localMapStats.getGetOperationCount());
+                assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+                assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+                assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
+                assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
+                assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+            }
+        });
+    }
+
+    @Test
+    public void testMapSetAsyncWithTtlStatistics() {
+        final String name = randomString();
+        IMap<Integer, Integer> map = client.getMap(name);
+
+        final int operationCount = 333;
+        for (int i = 0; i < operationCount; i++) {
+            map.setAsync(i, i, 1, TimeUnit.MINUTES);
+            map.remove(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+                assertEquals("put count", 0, localMapStats.getPutOperationCount());
+                assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
+                assertEquals("get count", 0, localMapStats.getGetOperationCount());
+                assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+                assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+                assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
+                assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
+                assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+            }
+        });
+    }
+
+    @Test
+    public void testMapSetAsyncWithTtlAndMaxIdleStatistics() {
+        final String name = randomString();
+        IMap<Integer, Integer> map = client.getMap(name);
+
+        final int operationCount = 467;
+        for (int i = 0; i < operationCount; i++) {
+            map.setAsync(i, i, 1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+            map.remove(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+                assertEquals("put count", 0, localMapStats.getPutOperationCount());
+                assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
+                assertEquals("get count", 0, localMapStats.getGetOperationCount());
+                assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+                assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+                assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
+                assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
+                assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+            }
+        });
     }
 
     @Test

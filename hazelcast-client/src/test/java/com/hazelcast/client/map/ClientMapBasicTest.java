@@ -1304,18 +1304,23 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         int operationCount = 1123;
         for (int i = 0; i < operationCount; i++) {
             map.put(i, i);
+            map.set(i, i);
             map.get(i);
             map.remove(i);
         }
 
         assertEquals("put count: stats1" + stats1 + " stats2:" + stats2, operationCount,
                 stats1.getPutOperationCount() + stats2.getPutOperationCount());
+        assertEquals("set count: stats1" + stats1 + " stats2:" + stats2, operationCount,
+                stats1.getSetOperationCount() + stats2.getSetOperationCount());
         assertEquals("get count : stats1" + stats1 + " stats2:" + stats2, operationCount,
                 stats1.getGetOperationCount() + stats2.getGetOperationCount());
         assertEquals("remove count : stats1" + stats1 + " stats2:" + stats2, operationCount,
                 stats1.getRemoveOperationCount() + stats2.getRemoveOperationCount());
         assertTrue("put latency : stats1" + stats1 + " stats2:" + stats2,
                 0 < stats1.getTotalPutLatency() + stats2.getTotalPutLatency());
+        assertTrue("set latency : stats1" + stats1 + " stats2:" + stats2,
+                0 < stats1.getTotalSetLatency() + stats2.getTotalSetLatency());
         assertTrue("get latency : stats1" + stats1 + " stats2:" + stats2,
                 0 < stats1.getTotalGetLatency() + stats2.getTotalGetLatency());
         assertTrue("remove latency : stats1" + stats1 + " stats2:" + stats2,

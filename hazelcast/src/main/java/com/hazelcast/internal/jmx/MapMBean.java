@@ -30,6 +30,7 @@ import java.util.Set;
 /**
  * Management bean for {@link com.hazelcast.core.IMap}
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
 
@@ -114,6 +115,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return localMapStatsDelegate.getLocalStats().getPutOperationCount();
     }
 
+    @ManagedAnnotation("localSetOperationCount")
+    @ManagedDescription("the number of set operations on this member")
+    public long getLocalSetOperationCount() {
+        return localMapStatsDelegate.getLocalStats().getSetOperationCount();
+    }
+
     @ManagedAnnotation("localGetOperationCount")
     @ManagedDescription("number of get operations on this member")
     public long getLocalGetOperationCount() {
@@ -132,6 +139,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return localMapStatsDelegate.getLocalStats().getTotalPutLatency();
     }
 
+    @ManagedAnnotation("localTotalSetLatency")
+    @ManagedDescription("the total latency of set operations. To get the average latency, divide to number of sets")
+    public long getLocalTotalSetLatency() {
+        return localMapStatsDelegate.getLocalStats().getTotalSetLatency();
+    }
+
     @ManagedAnnotation("localTotalGetLatency")
     @ManagedDescription("the total latency of get operations. To get the average latency, divide to number of gets")
     public long getLocalTotalGetLatency() {
@@ -148,6 +161,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedDescription("the maximum latency of put operations. To get the average latency, divide to number of puts")
     public long getLocalMaxPutLatency() {
         return localMapStatsDelegate.getLocalStats().getMaxPutLatency();
+    }
+
+    @ManagedAnnotation("localMaxSetLatency")
+    @ManagedDescription("the maximum latency of set operations. To get the average latency, divide to number of sets")
+    public long getLocalMaxSetLatency() {
+        return localMapStatsDelegate.getLocalStats().getMaxSetLatency();
     }
 
     @ManagedAnnotation("localMaxGetLatency")
