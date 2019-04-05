@@ -75,4 +75,11 @@ public interface CallIdSequence {
      * <strong>ONLY FOR TESTING. Must not be used for production code.</strong>
      */
     long getLastCallId();
+
+    /**
+     * Returns the number of concurrent invocations.
+     *
+     * @return the number of concurrent invocations. Returns -1 if not known.
+     */
+    long concurrentInvocations();
 }

@@ -218,31 +218,6 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.io.output.thread.count", IO_THREAD_COUNT);
 
     /**
-     * Optimization that allows sending of packets over the network to be done on the calling thread if the
-     * conditions are right. This can reduce latency and increase performance for low threaded environments.
-     *
-     * It is disabled by default.
-     */
-    public static final HazelcastProperty IO_WRITE_THROUGH_ENABLED
-            = new HazelcastProperty("hazelcast.io.write.through", false);
-
-    /**
-     * Property needed for concurrency detection so that write through can be done correctly.
-     * This property sets the window the concurrency detection will signalling
-     * that concurrency has been detected, even if there are no further updates in that window.
-     *
-     * Normally in a concurrency system the windows keeps sliding forward so it will always remain
-     * concurrent.
-     *
-     * Setting it too high effectively disabled the optimization because once concurrency has been detected
-     * it will keep that way. Setting it too low could lead to suboptimal performance because the system
-     * will try write through and other optimization even though the system is concurrent.
-     */
-    public static final HazelcastProperty CONCURRENT_WINDOW_MS
-            = new HazelcastProperty("hazelcast.concurrent.window.ms", 100, MILLISECONDS);
-
-
-    /**
      * The interval in seconds between {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
      * <p/>
