@@ -153,8 +153,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 node.getLogger(OutboundResponseHandler.class));
 
         this.invocationRegistry = new InvocationRegistry(
-                node.getLogger(OperationServiceImpl.class),
-                backpressureRegulator.newCallIdSequence(nodeEngine.getConcurrencyDetection()));
+                node.getLogger(OperationServiceImpl.class), backpressureRegulator.newCallIdSequence());
 
         this.invocationMonitor = new InvocationMonitor(
                 nodeEngine, thisAddress, node.getProperties(), invocationRegistry,
