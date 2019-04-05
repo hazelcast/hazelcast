@@ -62,6 +62,10 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         return instance.getReplicatedMap(replicatedMapName).getReplicatedMapStats();
     }
 
+    protected HazelcastInstance getInstance() {
+        return instance;
+    }
+
     @Test
     public void testGetOperationCount() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
@@ -366,9 +370,9 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
         replicatedMapConfig.setName(name);
         replicatedMapConfig.setStatisticsEnabled(false);
-        instance.getConfig().addReplicatedMapConfig(replicatedMapConfig);
+        getInstance().getConfig().addReplicatedMapConfig(replicatedMapConfig);
 
-        ReplicatedMap<Integer, Integer> replicatedMap = instance.getReplicatedMap(name);
+        ReplicatedMap<Integer, Integer> replicatedMap = getInstance().getReplicatedMap(name);
         replicatedMap.put(1, 1);
         replicatedMap.get(1);
 
@@ -383,9 +387,9 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
         replicatedMapConfig.setName(name);
         replicatedMapConfig.setStatisticsEnabled(false);
-        instance.getConfig().addReplicatedMapConfig(replicatedMapConfig);
+        getInstance().getConfig().addReplicatedMapConfig(replicatedMapConfig);
 
-        ReplicatedMap<Integer, Integer> replicatedMap = instance.getReplicatedMap(name);
+        ReplicatedMap<Integer, Integer> replicatedMap = getInstance().getReplicatedMap(name);
         LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
         LocalReplicatedMapStats stats2 = replicatedMap.getReplicatedMapStats();
         LocalReplicatedMapStats stats3 = replicatedMap.getReplicatedMapStats();
