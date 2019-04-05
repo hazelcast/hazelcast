@@ -43,4 +43,6 @@ public interface ClientInvocationService {
     boolean isRedoOperation();
 
     Consumer<ClientMessage> getResponseHandler();
+
+    long concurrentInvocations();
 }

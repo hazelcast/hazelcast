@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -96,7 +95,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
         BackpressureRegulator backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
 
-        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence(ConcurrencyDetection.createEnabled(100));
+        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
 
         assertInstanceOf(CallIdSequenceWithBackpressure.class, callIdSequence);
         assertEquals(backpressureRegulator.getMaxConcurrentInvocations(), callIdSequence.getMaxConcurrentInvocations());
@@ -109,7 +108,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
         BackpressureRegulator backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
 
-        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence(ConcurrencyDetection.createDisabled());
+        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
 
         assertInstanceOf(CallIdSequenceWithoutBackpressure.class, callIdSequence);
     }

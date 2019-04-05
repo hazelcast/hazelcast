@@ -157,11 +157,6 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
             }
         } while (!cleanPipeline);
 
-        if (migrationRequested()) {
-            startMigration();
-            return;
-        }
-
         if (unregisterRead) {
             unregisterOp(OP_READ);
         }
@@ -271,7 +266,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
 
     @Override
     public NioInboundPipeline wakeup() {
-        ownerAddTaskAndWakeup(new NioPipelineTask(this) {
+        addTaskAndWakeup(new NioPipelineTask(this) {
             @Override
             protected void run0() throws IOException {
                 registerOp(OP_READ);
