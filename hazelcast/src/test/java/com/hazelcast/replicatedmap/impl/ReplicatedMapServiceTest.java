@@ -16,7 +16,9 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -26,6 +28,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -52,5 +56,21 @@ public class ReplicatedMapServiceTest extends HazelcastTestSupport {
         ReplicatedMapService service = new ReplicatedMapService(nodeEngine);
 
         service.shutdown(true);
+    }
+
+    @Test
+    public void testGetLocalReplicatedMapStatsNoObjectGenerationIfDisabledStats() {
+        String name = randomMapName();
+        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
+        replicatedMapConfig.setName(name);
+        replicatedMapConfig.setStatisticsEnabled(false);
+        nodeEngine.getConfig().addReplicatedMapConfig(replicatedMapConfig);
+        ReplicatedMapService service = new ReplicatedMapService(nodeEngine);
+
+        LocalReplicatedMapStats stats = service.getLocalReplicatedMapStats(name);
+        LocalReplicatedMapStats stats2 = service.getLocalReplicatedMapStats(name);
+        LocalReplicatedMapStats stats3 = service.getLocalReplicatedMapStats(name);
+        assertSame(stats, stats2);
+        assertSame(stats2, stats3);
     }
 }

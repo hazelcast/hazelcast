@@ -96,7 +96,7 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
     }
 
     public LocalReplicatedMapStatsImpl getStats() {
-        return replicatedMapService.getLocalMapStatsImpl(name);
+        return replicatedMapService.getLocalReplicatedMapStatsImpl(name);
     }
 
     @Override

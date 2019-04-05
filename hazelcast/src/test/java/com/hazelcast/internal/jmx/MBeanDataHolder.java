@@ -56,6 +56,13 @@ public final class MBeanDataHolder {
         mbs = ManagementFactory.getPlatformMBeanServer();
     }
 
+    public MBeanDataHolder(TestHazelcastInstanceFactory factory, Config config) {
+        config.setInstanceName("hz:\",=*?" + ID_GEN.getAndIncrement());
+        config.setProperty(GroupProperty.ENABLE_JMX.getName(), "true");
+        hz = factory.newHazelcastInstance(config);
+        mbs = ManagementFactory.getPlatformMBeanServer();
+    }
+
     public MBeanDataHolder(HazelcastInstance instance) {
         hz = instance;
         mbs = ManagementFactory.getPlatformMBeanServer();

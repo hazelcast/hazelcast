@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -29,7 +28,6 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -39,7 +37,6 @@ import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersionOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.replicatedmap.merge.MergePolicyProvider;
 import com.hazelcast.spi.EventPublishingService;
@@ -62,7 +59,6 @@ import com.hazelcast.util.ContextMutexFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -73,10 +69,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static java.lang.Math.max;
 
 /**
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
@@ -105,16 +99,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         }
     };
 
-    private final ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
-            new ConcurrentHashMap<String, LocalReplicatedMapStatsImpl>();
-    private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction =
-            new ConstructorFunction<String, LocalReplicatedMapStatsImpl>() {
-                @Override
-                public LocalReplicatedMapStatsImpl createNew(String arg) {
-                    return new LocalReplicatedMapStatsImpl();
-                }
-            };
-
     private final Config config;
     private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
@@ -124,6 +108,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final QuorumService quorumService;
     private final ReplicatedMapEventPublishingService eventPublishingService;
     private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
+    private final LocalReplicatedMapStatsProvider statsProvider;
 
     private ScheduledFuture antiEntropyFuture;
     private MergePolicyProvider mergePolicyProvider;
@@ -139,6 +124,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this);
         this.quorumService = nodeEngine.getQuorumService();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
+        this.statsProvider = new LocalReplicatedMapStatsProvider(config, partitionContainers);
     }
 
     @Override
@@ -172,37 +158,24 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         }
     }
 
-    public LocalReplicatedMapStatsImpl getLocalMapStatsImpl(String name) {
-        return getOrPutIfAbsent(statsMap, name, statsConstructorFunction);
+    /**
+     * Gets the {@link LocalReplicatedMapStatsImpl} implementation of {@link LocalReplicatedMapStats} for the provided
+     * {@param name} of the replicated map. This is used for operations that mutate replicated map's local statistics.
+     * @param name of the replicated map.
+     * @return replicated map's local statistics object.
+     */
+    public LocalReplicatedMapStatsImpl getLocalReplicatedMapStatsImpl(String name) {
+        return statsProvider.getLocalReplicatedMapStatsImpl(name);
     }
 
-    public LocalReplicatedMapStatsImpl createReplicatedMapStats(String name) {
-        LocalReplicatedMapStatsImpl stats = getLocalMapStatsImpl(name);
-        long hits = 0;
-        long count = 0;
-        long memoryUsage = 0;
-        boolean isBinary = (getReplicatedMapConfig(name).getInMemoryFormat() == InMemoryFormat.BINARY);
-        for (PartitionContainer container : partitionContainers) {
-            ReplicatedRecordStore store = container.getRecordStore(name);
-            if (store == null) {
-                continue;
-            }
-            Iterator<ReplicatedRecord> iterator = store.recordIterator();
-            while (iterator.hasNext()) {
-                ReplicatedRecord record = iterator.next();
-                stats.setLastAccessTime(max(stats.getLastAccessTime(), record.getLastAccessTime()));
-                stats.setLastUpdateTime(max(stats.getLastUpdateTime(), record.getUpdateTime()));
-                hits += record.getHits();
-                if (isBinary) {
-                    memoryUsage += ((HeapData) record.getValueInternal()).getHeapCost();
-                }
-                count++;
-            }
-        }
-        stats.setOwnedEntryCount(count);
-        stats.setHits(hits);
-        stats.setOwnedEntryMemoryCost(memoryUsage);
-        return stats;
+    /**
+     * Gets the replicated map's local statistics. If the statistics is disabled so method returns always the same object which is
+     * empty and immutable.
+     * @param name of the replicated map.
+     * @return replicated map's local statistics object.
+     */
+    public LocalReplicatedMapStats getLocalReplicatedMapStats(String name) {
+        return statsProvider.getLocalReplicatedMapStats(name);
     }
 
     @Override
@@ -364,7 +337,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         Map<String, LocalReplicatedMapStats> mapStats = new
                 HashMap<String, LocalReplicatedMapStats>(maps.size());
         for (String map : maps) {
-            mapStats.put(map, createReplicatedMapStats(map));
+            mapStats.put(map, getLocalReplicatedMapStats(map));
         }
         return mapStats;
     }

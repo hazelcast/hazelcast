@@ -140,4 +140,19 @@ public class LocalReplicatedMapStatsImplTest {
     public void testNearCacheStats() {
         localReplicatedMapStats.getNearCacheStats();
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testQueryCount() {
+        localReplicatedMapStats.getQueryCount();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIndexedQueryCount() {
+        localReplicatedMapStats.getIndexedQueryCount();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetIndexStats() {
+        localReplicatedMapStats.getIndexStats();
+    }
 }
