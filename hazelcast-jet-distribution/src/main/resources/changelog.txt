@@ -1,3 +1,36 @@
+** Hazelcast Jet 3.0 **
+
+* 3.0 is the first major release of Hazelcast Jet past 0.x, and is versioned at 3.x to align
+it better with IMDG 3.x versions that it is based on
+* Starting with 3.0, main Job API and the pipeline API will be backwards compatible in further minor
+versions. Core API will only be compatible between patch versions.
+  - Several APIs have been streamlined in preparation for this change. Please see the breaking changes
+  section of the release notes for a list of specific changes.
+* Pipeline API has the following new additions:
+  - Support for async map/filter/flatMapUsingContext methods
+  - Support for emitting early results for a window before a window has completed
+* Being able to atomically create a job only if it's not already running using
+  JetInstance.newJobIfAbsent
+* [Jet Enterprise] Support for job upgrades and A/B testing via taking a named snapshot and then starting the job
+  from the saved snapshot.
+* [Jet Enterprise] Being able to restart the whole cluster and restoring jobs by using
+  IMDG Hot Restart to persist the cluster to disk
+* New Jet Command Line Interface for job management of a cluster
+* Support for improved Watermark diagnostics in Jet Management Center
+* Support for showing map stats in Jet Management Center
+* Full support for JDK 11
+* Update Hazelcast version to 3.12
+
+** Hazelcast Jet 0.7.2 **
+
+* Fix for missing config schema file in previous release
+
+** Hazelcast Jet 0.7.1 **
+
+* Full support for running Hazelcast Jet on Kubernetes
+* Hazelcast Jet Helm Charts are released
+* TopN and BottomN aggregate operations are added
+
 ** Hazelcast Jet 0.7 **
 
 * Several new additions to pipeline API including:

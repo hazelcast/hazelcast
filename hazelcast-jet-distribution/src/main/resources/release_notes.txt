@@ -5,6 +5,89 @@ issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
 
 The label in the brackets refer to the respective module.
 
+** Hazelcast Jet 3.0 **
+
+1. New Features
+
+[jet-enterprise] Support for job upgrades [#1154]
+[jet-enterprise] Support for lossless recovery through use of Hot Restart [#1159, #1174]
+[pipeline-api] Add async support for mapUsingContext [#1193]
+[pipeline-api] Support for early window results [#1244]
+[core] New Command Line interface, `jet.sh` for job management [#1202]
+[core] Implement support for exclusive job execution [#1203]
+[core] Update IMDG version to 3.12 [#1343]
+
+2. Enhancements
+
+[pipeline-api] Remove watermarks from a pipeline with no windowing stages [#1091]
+[pipeline-api] Optimize mapWithMerging to use less memory [#1107]
+[pipeline-api] Improve performance of global aggregation [#1242]
+[pipeline-api] Don't require User Code Deployment when reading from remote IMDG journal [#1306]
+[core] Automatically restart job if a partition is being migrated when reading from IMap [#1243]
+[core] Reuse same maps when taking snapshots [#1104]
+[core] Added new metrics for monitoring watermarks and latencies [#1173]
+[core] Make minimum idle time in execution service configurable [#1317]
+[code-samples] Introduce Tensorflow integration sample [#172]
+[code-samples] Introduce Early Window Results sample [#181]
+
+
+3. Fixes
+
+[core] Support non-smart clients by routing job requests to master [#1129]
+[core] Jet client should be automatically shut down when using JetBootstrap [#1225]
+[core] Support for JDK9-11 builds [#1223]
+[core] Prevent mutation of JobConfig affecting the job after job is submitted [#1233]
+[core] Fix race in cooperative worker shutdown [#1296]
+[core] Simplify garbage collection for job resources [#1320]
+[core] Fix for potential race during initialization of multiple JetInstances [#1322]
+[core] Improve exception when JetBootstrap is used without the submit script [#1321]
+[pipeline-api] Global session windows should have local parallelism of one [#1300]
+[hadoop] Fix creation of RecordWriter to receive its own copy [#1309]
+
+4. Breaking Changes
+
+[pipeline-api] When reading from a source, user must now specify how the timestamps should be handled [#1166]
+[pipeline-api] DistributedFunction.constantKey() is removed [#1242]
+[pipeline-api] Some methods in ContextFactory have been renamed [#1285]
+[pipeline-api] mapUsingIMap and mapUsingReplicated map operations have been simplified and now make use of async calls [#1292]
+[pipeline-api] Functional interfaces such as `DistributedFunction` have been renamed as `FunctionEx`. Unused functional interfaces
+have been removed [#1293]
+[pipeline-api] Window operators now emit `KeyedWindowResult` or `WindowResult` instead of `TimestampedItem` or `TimestampedEntry` [#1244]
+[pipeline-api] TimestampedItem and TimestampedEntry have been removed [#1307]
+[core-api] Edge.allToOne() now has a constant key parameter [#1242]
+[core-api] Watermark policies except `limitingLag` is removed [#1184]
+[core-api] maxRetain option from EdgeConfig is removed [#1184]
+[core] MetricsConfig.setMetricsForDataStructures is renamed to setMetricsForDataStructuresEnabled [#1201]
+[core] jet-submit.sh script has been superseded by `jet.sh submit` command [#1202]
+[core] When submitting jobs, if a job with same name already exists an exception will be thrown [#1203]
+[core] Group password is deprecated and removed [#1302]
+
+** Hazelcast Jet 0.7.2 **
+
+1. Fixes
+
+[core] Fix for missing config schema file in previous release
+
+** Hazelcast Jet 0.7.1 **
+
+1. New Features
+
+[kubernetes] Full support for running Hazelcast Jet on Kubernetes
+[kubernetes] Hazelcast Jet Helm Charts are released
+
+2. Enhancements
+
+[pipeline-api] TopN and BottomN aggregate operations are added [#1140]
+
+3. Fixes
+
+[pipeline-api] All of ClientConfig must be serialized when connecting to remote IMDG sources and sinks [#1147]
+[core] Add scaleUpDelay config option to XML config [#1148]
+[core] Extract lambdas to avoid allocating new lambdas during processing [#1106, #1249]
+[core] Fix for a race during snapshot creation which could result in snapshot not completing [#1101]
+[core] Don't materialize distinct keys in SessionWindowP [#1121]
+[core] Do not add Watermarks to a stream if there are no windowing stages [#1144]
+
 ** Hazelcast Jet 0.7 **
 
 1. New Features
