@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -152,8 +151,8 @@ class BackpressureRegulator {
         }
     }
 
-    CallIdSequence newCallIdSequence(ConcurrencyDetection concurrencyDetection) {
-        return CallIdFactory.newCallIdSequence(maxConcurrentInvocations, backoffTimeoutMs, concurrencyDetection);
+    CallIdSequence newCallIdSequence() {
+        return CallIdFactory.newCallIdSequence(enabled, maxConcurrentInvocations, backoffTimeoutMs);
     }
 
     /**
