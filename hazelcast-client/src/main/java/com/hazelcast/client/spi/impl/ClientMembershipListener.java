@@ -34,11 +34,9 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 import static java.util.Collections.unmodifiableSet;
 
 class ClientMembershipListener extends ClientAddMembershipListenerCodec.AbstractEventHandler
-        implements EventHandler<ClientMessage>  {
+        implements EventHandler<ClientMessage> {
 
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
 
@@ -59,7 +57,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     private volatile CountDownLatch initialListFetchedLatch;
 
-    public ClientMembershipListener(HazelcastClientInstanceImpl client) {
+    ClientMembershipListener(HazelcastClientInstanceImpl client) {
         this.client = client;
         logger = client.getLoggingService().getLogger(ClientMembershipListener.class);
         connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
@@ -84,18 +82,14 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     @Override
     public void handleMemberListEventV10(Collection<Member> initialMembers) {
-        Map<String, Member> prevMembers = Collections.emptyMap();
+        Set<Member> prevMembers = Collections.emptySet();
         if (!members.isEmpty()) {
-            prevMembers = new HashMap<String, Member>(members.size());
-            for (Member member : members) {
-                prevMembers.put(member.getUuid(), member);
-            }
+            prevMembers = new LinkedHashSet<Member>(members.size());
+            prevMembers.addAll(members);
             members.clear();
         }
 
-        for (Member initialMember : initialMembers) {
-            members.add(initialMember);
-        }
+        members.addAll(initialMembers);
 
         if (prevMembers.isEmpty()) {
             //this means this is the first time client connected to cluster
@@ -169,20 +163,19 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         }
     }
 
-    private List<MembershipEvent> detectMembershipEvents(Map<String, Member> prevMembers) {
+    private List<MembershipEvent> detectMembershipEvents(Set<Member> prevMembers) {
         List<MembershipEvent> events = new LinkedList<MembershipEvent>();
         Set<Member> eventMembers = unmodifiableSet(members);
 
         List<Member> newMembers = new LinkedList<Member>();
         for (Member member : members) {
-            Member former = prevMembers.remove(member.getUuid());
-            if (former == null) {
+            if (!prevMembers.remove(member)) {
                 newMembers.add(member);
             }
         }
 
         // removal events should be added before added events
-        for (Member member : prevMembers.values()) {
+        for (Member member : prevMembers) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
             Address address = member.getAddress();
             if (clusterService.getMember(address) == null) {
@@ -231,7 +224,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                 + '}';
     }
 
-    public void clearMembers() {
+    void clearMembers() {
         members = new LinkedHashSet<Member>();
     }
 }
