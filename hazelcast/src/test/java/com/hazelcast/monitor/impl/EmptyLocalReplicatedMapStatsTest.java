@@ -130,4 +130,19 @@ public class EmptyLocalReplicatedMapStatsTest {
     public void testGetIndexStats() {
         localReplicatedMapStats.getIndexStats();
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetOperationCount() {
+        localReplicatedMapStats.getSetOperationCount();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetMaxSetLatency() {
+        localReplicatedMapStats.getMaxSetLatency();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testTotalSetLatency() {
+        localReplicatedMapStats.getTotalSetLatency();
+    }
 }

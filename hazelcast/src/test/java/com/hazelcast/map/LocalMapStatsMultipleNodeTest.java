@@ -139,16 +139,19 @@ public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
         }, true);
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
+            map.set(i, i);
             assertEquals(i, map.get(i));
         }
         LocalMapStats localMapStats = map.getLocalMapStats();
-        assertEquals(1000, localMapStats.getHits());
+        assertEquals(2000, localMapStats.getHits());
         assertEquals(1000, localMapStats.getPutOperationCount());
+        assertEquals(1000, localMapStats.getSetOperationCount());
         assertEquals(1000, localMapStats.getGetOperationCount());
         assertOpenEventually(entryEvictedLatch);
         localMapStats = map.getLocalMapStats();
-        assertEquals(1000, localMapStats.getHits());
+        assertEquals(2000, localMapStats.getHits());
         assertEquals(1000, localMapStats.getPutOperationCount());
+        assertEquals(1000, localMapStats.getSetOperationCount());
         assertEquals(1000, localMapStats.getGetOperationCount());
     }
 

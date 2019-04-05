@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 
 public class MapSetMessageTask
-        extends AbstractMapPutMessageTask<MapSetCodec.RequestParameters> {
+        extends AbstractMapSetMessageTask<MapSetCodec.RequestParameters> {
 
     public MapSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

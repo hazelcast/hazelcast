@@ -42,6 +42,7 @@ Hazelcast IMDG Open Source Enhancements:
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
+* Improved the YAML configuration so that you can configure multiple WAN member sockets. [#14800] 
 * Members now fail fast when the `max-idle-seconds` element for the entries in a map is set to 1 second. See the note in the Configuring Map Eviction section for this element. [#14697]
 * Removed group password from the Hazelcast’s default XML configuration file. Also improved the non-empty password `INFO` message. It's now only logged if security is disabled, password is not empty and password is not the Hazelcast default one. [#14603]
 * Improved the code comments for the `HazelcastInstance` interface. [#14439]
@@ -55,6 +56,8 @@ The following are the other improvements performed to solve the enhancement issu
 
 4. Fixes
 
+* Fixed an issue where the outbound pipeline was not waking up properly after merging the write-through changes. [#14830]
+* Fixed an issue where a Hazelcast Java client was not able to connect to the cluster (which has the `advanced-network` configuration) after a split-brain syndrome is healed. [#14768]
 * Fixed an issue where the `like` and `ilike` predicates didn’t catch any entity with the `text` field containing the '\n' character. [#14751]
 * Fixed an issue where ``NullPointerException``s was thrown recursively when a client is connected to an unreachable member during a split-brain. [#14722]
 * Fixed an issue where Hazelcast running on RHEL (OpenJDK8) shows `unknown gc` in the logs, instead of `major gc` and `minor gc`. [#14701]
@@ -67,8 +70,6 @@ The following are the other improvements performed to solve the enhancement issu
 * Fixed an issue where `mapEvictionPolicy` couldn’t be specified in the JSON configuration file. [#14092]
 * Fixed an issue where the rolling upgrade was failing when all members change their IP addresses. [#14088]
 * Fixed an issue where the resources were not wholly cleared when destroying `DurableExecutorService` causing some resources to be left in the heap. [#14087]
-* Fixed the discrepancy between the XSD on the website and the one in the download package. [#13011]
-* Fixed an issue where `TcpIpConnectionManager` was putting the connections in a map under the remote endpoint bind address but not under the address to which Hazelcast connects. [#11256]
 * Fixed an issue where the REST API was not handling the HTTP requests without headers correctly: when a client sends an HTTP request without headers to the Hazelcast REST API, the `HttpCommand` class was wrongly expecting an additional new line. [#14353]
 * Fixed an issue where `QueryCache` was not returning the copies of the found objects. [#14333]
 * Fixed an issue where the MultiMap's `RemoveOperation` was iterating through the backing collection, which caused performance degradation (when using the `SET` collection type). [#14145]
@@ -76,7 +77,10 @@ The following are the other improvements performed to solve the enhancement issu
 * Fixed an issue where the newly joining members could not form a cluster when the existing members are killed. [#14051]
 * Fixed an issue where the `IMap.get()` method was not resetting the idle time counter when `read-backup-data` is enabled. [#14026]
 * Fixed an issue where the `addIndex()` method was performing a full copy of entries when a new member joins the cluster, which is not needed. [#13964]
+* Fixed an issue where the initialization failure of `discoveryService` was causing some threads to remain open and the JVM could not be terminated because of these threads. [#13821]
+* Fixed the discrepancy between the XSD on the website and the one in the download package. [#13011]
 * `PagingPredicate` with comparator was failing to serialize when sending from the client or member when the cluster size is more than 1. This has been fixed by making the `PagingPredicateQuery` comparator serializable. [#12208]
+* Fixed an issue where `TcpIpConnectionManager` was putting the connections in a map under the remote endpoint bind address but not under the address to which Hazelcast connects. [#11256]
 
 5. Removed/Deprecated Features
 
