@@ -873,6 +873,10 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertTrue("set latency", 0 < localMapStats.getTotalSetLatency());
         assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
         assertTrue("remove latency", 0 < localMapStats.getTotalRemoveLatency());
+        assertTrue("max put latency", 0 < localMapStats.getMaxPutLatency());
+        assertTrue("max set latency", 0 < localMapStats.getMaxSetLatency());
+        assertTrue("max get latency", 0 < localMapStats.getMaxGetLatency());
+        assertTrue("max remove latency", 0 < localMapStats.getMaxRemoveLatency());
     }
 
     @Test
@@ -891,10 +895,9 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
         assertEquals("get count", 0, localMapStats.getGetOperationCount());
         assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
-        assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+
         assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
-        assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
-        assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+        assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
     }
 
     @Test
@@ -913,10 +916,9 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
         assertEquals("get count", 0, localMapStats.getGetOperationCount());
         assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
-        assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+
         assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
-        assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
-        assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+        assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
     }
 
     @Test
@@ -938,10 +940,9 @@ public class ClientMapTest extends HazelcastTestSupport {
                 assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
                 assertEquals("get count", 0, localMapStats.getGetOperationCount());
                 assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
-                assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+
                 assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
-                assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
-                assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+                assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
             }
         });
     }
@@ -965,10 +966,9 @@ public class ClientMapTest extends HazelcastTestSupport {
                 assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
                 assertEquals("get count", 0, localMapStats.getGetOperationCount());
                 assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
-                assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+
                 assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
-                assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
-                assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+                assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
             }
         });
     }
@@ -992,10 +992,9 @@ public class ClientMapTest extends HazelcastTestSupport {
                 assertEquals("set count", operationCount, localMapStats.getSetOperationCount());
                 assertEquals("get count", 0, localMapStats.getGetOperationCount());
                 assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
-                assertEquals("put latency", 0, localMapStats.getTotalPutLatency());
+
                 assertTrue("set latency", localMapStats.getTotalSetLatency() > 0);
-                assertEquals("get latency", 0, localMapStats.getTotalGetLatency());
-                assertTrue("remove latency", localMapStats.getTotalRemoveLatency() > 0);
+                assertTrue("max set latency", localMapStats.getMaxSetLatency() > 0);
             }
         });
     }
