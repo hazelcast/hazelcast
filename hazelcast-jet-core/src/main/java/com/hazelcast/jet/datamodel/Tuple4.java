@@ -100,6 +100,6 @@ public final class Tuple4<E0, E1, E2, E3> {
 
     @Override
     public String toString() {
-        return "Tuple5{" + f0 + ", " + f1 + ", " + f2 + ", " + f3 + '}';
+        return "(" + f0 + ", " + f1 + ", " + f2 + ", " + f3 + ')';
     }
 }
