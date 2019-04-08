@@ -164,7 +164,8 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
         assertEquals(1, localHitsNotUpdated);
         assertEquals(1, localEntryCount);
         assertEquals(1, localEntryCountNotUpdated);
-        assertTrueDelayed(1, new AssertTask() {
+        sleepAtLeastSeconds(1);
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {

@@ -49,11 +49,7 @@ public final class MBeanDataHolder {
      * Initialize with new hazelcast instance and MBean server
      */
     public MBeanDataHolder(TestHazelcastInstanceFactory factory) {
-        Config config = new Config();
-        config.setInstanceName("hz:\",=*?" + ID_GEN.getAndIncrement());
-        config.setProperty(GroupProperty.ENABLE_JMX.getName(), "true");
-        hz = factory.newHazelcastInstance(config);
-        mbs = ManagementFactory.getPlatformMBeanServer();
+       this(factory, new Config());
     }
 
     public MBeanDataHolder(TestHazelcastInstanceFactory factory, Config config) {
