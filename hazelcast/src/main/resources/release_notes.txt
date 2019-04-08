@@ -56,6 +56,7 @@ The following are the other improvements performed to solve the enhancement issu
 
 4. Fixes
 
+* Fixed an issue where the state of member list on the clients were broken after a hot restart in the cluster. [#14839]
 * Fixed an issue where the outbound pipeline was not waking up properly after merging the write-through changes. [#14830]
 * Fixed an issue where a Hazelcast Java client was not able to connect to the cluster (which has the `advanced-network` configuration) after a split-brain syndrome is healed. [#14768]
 * Fixed an issue where the `like` and `ilike` predicates didn’t catch any entity with the `text` field containing the '\n' character. [#14751]
