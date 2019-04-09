@@ -39,8 +39,8 @@ public class AppendTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
-        publisher.publish(0, new Employee(1, 1, 1));
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        out.write(0, new Employee(1, 1, 1));
 
         assertEquals(1, stream.asFrame().count());
         assertEquals(1, stream.asFrame().memoryInfo().segmentsInUse());
@@ -57,11 +57,11 @@ public class AppendTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         long count = 10000;
         for (long k = 0; k < count; k++) {
-            publisher.publish(k, new Employee(1, 1, 1));
+            out.write(k, new Employee(1, 1, 1));
         }
 
         assertEquals(count, stream.asFrame().count());
@@ -80,10 +80,10 @@ public class AppendTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         int itemCount = 100 * 1000;
         for (int k = 0; k < itemCount; k++) {
-            publisher.publish(k, new Employee(k, k, k));
+            out.write(k, new Employee(k, k, k));
         }
 
         assertEquals(itemCount, stream.asFrame().count());
@@ -105,11 +105,11 @@ public class AppendTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         int itemCount = 100 * 1000;
         for (int k = 0; k < itemCount; k++) {
-            publisher.publish(k, new Employee(k, k, k));
+            out.write(k, new Employee(k, k, k));
         }
 
         assertEquals(itemCount, stream.asFrame().count());
@@ -131,11 +131,11 @@ public class AppendTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         int itemCount = 100 * 1000;
         for (int k = 0; k < itemCount; k++) {
-            publisher.publish(k, new Employee(k, k, k));
+            out.write(k, new Employee(k, k, k));
         }
 
         //   assertEquals(itemCount, stream.count());
@@ -157,11 +157,11 @@ public class AppendTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         int itemCount = 100 * 1000;
         for (int k = 0; k < itemCount; k++) {
-            publisher.publish(k, new Employee(k, k, k));
+            out.write(k, new Employee(k, k, k));
             sleepSeconds(1);
             // System.out.println(stream.memoryUsage());
         }

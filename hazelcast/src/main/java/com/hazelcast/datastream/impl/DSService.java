@@ -98,7 +98,7 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         // todo: it can be event data.
     }
 
-    public void subscribe(String streamName, DSSubscriberImpl subscriber, long[] offsets) {
+    public void subscribe(String streamName, DataInputStreamImpl subscriber, long[] offsets) {
         List<InternalCompletableFuture> futures = new LinkedList<>();
         OperationService operationService = nodeEngine.getOperationService();
         for (int k = 0; k < nodeEngine.getPartitionService().getPartitionCount(); k++) {

@@ -19,8 +19,8 @@ package com.hazelcast.datastream.impl;
 import com.hazelcast.core.IMap;
 import com.hazelcast.datastream.DataFrame;
 import com.hazelcast.datastream.DataStream;
-import com.hazelcast.datastream.DataStreamPublisher;
-import com.hazelcast.datastream.DataStreamSubscriber;
+import com.hazelcast.datastream.DataOutputStream;
+import com.hazelcast.datastream.DataInputStream;
 import com.hazelcast.datastream.impl.operations.FillOperation;
 import com.hazelcast.datastream.impl.operations.HeadOperation;
 import com.hazelcast.datastream.impl.operations.IteratorOperation;
@@ -76,59 +76,21 @@ public class DSProxy<E> extends AbstractDistributedObject<DSService> implements 
         return (Long) future.join();
     }
 
-    @Override
-    public void fill(long count, Supplier<E> supplier) {
-        checkNotNull(supplier, "supplier can't be null");
-        checkNotNegative(count, "count can't be smaller than 0");
 
-        int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
-        long countPerPartition = count / partitionCount;
-        long remaining = count % partitionCount;
-
-        SerializationService ss = getNodeEngine().getSerializationService();
-        List<InternalCompletableFuture> futures = new LinkedList<>();
-        for (int k = 0; k < partitionCount; k++) {
-            long c = k == partitionCount - 1
-                    ? countPerPartition + remaining
-                    : countPerPartition;
-
-            // we need to clone the supplier
-            Supplier s = ss.toObject(ss.toData(supplier));
-            Operation op = new FillOperation(name, s, c)
-                    .setPartitionId(k);
-            InternalCompletableFuture<Object> f = operationService.invokeOnPartition(op);
-            futures.add(f);
-        }
-
-        for (InternalCompletableFuture f : futures) {
-            f.join();
-        }
-    }
 
     public Iterator<E> iterator(int partitionId) {
         Operation op = new IteratorOperation(name).setPartitionId(partitionId);
         return (Iterator) operationService.invokeOnPartition(op).join();
     }
 
-    public void populate(IMap src) {
-        checkNotNull(src, "map can't be null");
-
-        try {
-            operationService.invokeOnAllPartitions(
-                    DSService.SERVICE_NAME, new PopulateOperationFactory(name, src.getName()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Override
+    public DataOutputStream<E> newOutputStream() {
+        return new DataOutputStreamImpl<>(serializationService, operationService, partitionService, name);
     }
 
     @Override
-    public DataStreamPublisher<E> createPublisher() {
-        return new DSPublisherImpl<>(serializationService, operationService, partitionService, name);
-    }
-
-    @Override
-    public DataStreamSubscriber<E> createSubscriber() {
-        return new DSSubscriberImpl<>(serializationService, getService(), name);
+    public DataInputStream<E> newInputStream() {
+        return new DataInputStreamImpl<>(serializationService, getService(), name);
     }
 
     @Override

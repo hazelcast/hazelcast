@@ -42,9 +42,9 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
-        publisher.publish(0L, new Employee(1, 1, 1));
+        out.write(0L, new Employee(1, 1, 1));
     }
 
     @Test
@@ -59,9 +59,9 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<BooleanObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<BooleanObject> publisher = stream.createPublisher();
+        DataOutputStream<BooleanObject> out = stream.newOutputStream();
 
-        publisher.publish(0L, new BooleanObject());
+        out.write(0L, new BooleanObject());
     }
 
     public static class BooleanObject implements Serializable {
@@ -81,9 +81,9 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<ByteObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<ByteObject> publisher = stream.createPublisher();
+        DataOutputStream<ByteObject> out = stream.newOutputStream();
 
-        publisher.publish(0L, new ByteObject());
+        out.write(0L, new ByteObject());
     }
 
     public static class ByteObject implements Serializable {
@@ -102,9 +102,9 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<CharObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<CharObject> publisher = stream.createPublisher();
+        DataOutputStream<CharObject> out = stream.newOutputStream();
 
-        publisher.publish(0L, new CharObject());
+        out.write(0L, new CharObject());
     }
 
     public static class CharObject implements Serializable {
@@ -123,9 +123,9 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<ShortObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<ShortObject> publisher = stream.createPublisher();
+        DataOutputStream<ShortObject> out = stream.newOutputStream();
 
-        publisher.publish(0L, new ShortObject());
+        out.write(0L, new ShortObject());
     }
 
     public static class ShortObject implements Serializable {
@@ -144,8 +144,8 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<IntObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<IntObject> publisher = stream.createPublisher();
-        publisher.publish(0L, new IntObject());
+        DataOutputStream<IntObject> out = stream.newOutputStream();
+        out.write(0L, new IntObject());
     }
 
     public static class IntObject implements Serializable {
@@ -171,12 +171,12 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<IntObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<IntObject> publisher = stream.createPublisher();
+        DataOutputStream<IntObject> out = stream.newOutputStream();
 
         int itemCount = 100 * 1000;
         Random random = new Random();
         for (int k = 0; k < itemCount; k++) {
-            publisher.publish((long) k, new IntObject(random.nextInt()));
+            out.write((long) k, new IntObject(random.nextInt()));
             // System.out.println(stream.memoryUsage());
         }
 
@@ -194,9 +194,9 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<LongObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<LongObject> publisher = stream.createPublisher();
+        DataOutputStream<LongObject> out = stream.newOutputStream();
 
-        publisher.publish(0L, new LongObject());
+        out.write(0L, new LongObject());
     }
 
     public static class LongObject implements Serializable {
@@ -214,9 +214,9 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<FloatObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<FloatObject> publisher = stream.createPublisher();
+        DataOutputStream<FloatObject> out = stream.newOutputStream();
 
-        publisher.publish(0L, new FloatObject());
+        out.write(0L, new FloatObject());
     }
 
     public static class FloatObject implements Serializable {
@@ -234,8 +234,8 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<DoubleObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<DoubleObject> publisher = stream.createPublisher();
-        publisher.publish(0L, new DoubleObject());
+        DataOutputStream<DoubleObject> out = stream.newOutputStream();
+        out.write(0L, new DoubleObject());
     }
 
     public static class DoubleObject implements Serializable {
@@ -261,9 +261,9 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<MultipleScalarsObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<MultipleScalarsObject> publisher = stream.createPublisher();
+        DataOutputStream<MultipleScalarsObject> out = stream.newOutputStream();
 
-        publisher.publish(0L, new MultipleScalarsObject());
+        out.write(0L, new MultipleScalarsObject());
     }
 
     public static class MultipleScalarsObject implements Serializable {
@@ -295,7 +295,7 @@ public class IndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<MultipleScalarsObject> stream = hz.getDataStream("foo");
-        DataStreamPublisher<MultipleScalarsObject> publisher = stream.createPublisher();
+        DataOutputStream<MultipleScalarsObject> out = stream.newOutputStream();
 
         int itemCount = 100 * 1000;
         Random random = new Random();
@@ -309,7 +309,7 @@ public class IndexTest extends HazelcastTestSupport {
             record.c = (char) random.nextInt();
             record.s = (short) random.nextInt();
             record.bt = (byte) random.nextInt();
-            publisher.publish((long) k, record);
+            out.write((long) k, record);
         }
 
         assertEquals(itemCount, stream.asFrame().count());

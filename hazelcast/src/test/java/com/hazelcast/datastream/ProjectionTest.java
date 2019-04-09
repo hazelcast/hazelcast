@@ -45,13 +45,13 @@ public class ProjectionTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
-        publisher.publish((long) 0, new Employee(19, 10, 100));
-        publisher.publish((long) 1, new Employee(20, 20, 200));
-        publisher.publish((long) 2, new Employee(21, 30, 300));
-        publisher.publish((long) 3, new Employee(22, 40, 400));
-        publisher.publish((long) 3, new Employee(23, 50, 500));
+        out.write((long) 0, new Employee(19, 10, 100));
+        out.write((long) 1, new Employee(20, 20, 200));
+        out.write((long) 2, new Employee(21, 30, 300));
+        out.write((long) 3, new Employee(22, 40, 400));
+        out.write((long) 3, new Employee(23, 50, 500));
 
 
         PreparedProjection<Employee> compiledPredicate = stream.asFrame().prepare(
@@ -75,9 +75,9 @@ public class ProjectionTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         for (int k = 0; k < 1000; k++) {
-            publisher.publish((long) k, new Employee(k, k, k));
+            out.write((long) k, new Employee(k, k, k));
         }
 
         PreparedProjection<AgeSalary> preparedProjection = stream.asFrame().prepare(
@@ -99,9 +99,9 @@ public class ProjectionTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         for (int k = 0; k < 100; k++) {
-            publisher.publish((long) k, new Employee(k, k, k));
+            out.write((long) k, new Employee(k, k, k));
         }
         System.out.println("employees consumed memory:" + stream.asFrame().memoryInfo().consumedBytes());
 
@@ -126,13 +126,13 @@ public class ProjectionTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        DataStream<Employee> employees = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = employees.createPublisher();
+        DataStream<Employee> stream = hz.getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         int count = 50 * 1000 * 1000;
-        employees.fill(count, new EmployeeSupplier());
+        stream.newOutputStream().fill(count, new EmployeeSupplier());
 
-        PreparedProjection<AgeSalary> preparedProjection = employees.asFrame().prepare(
+        PreparedProjection<AgeSalary> preparedProjection = stream.asFrame().prepare(
                 new ProjectionRecipe<AgeSalary>(AgeSalary.class, true, new SqlPredicate("true")));
         Map<String, Object> bindings = new HashMap<String, Object>();
 

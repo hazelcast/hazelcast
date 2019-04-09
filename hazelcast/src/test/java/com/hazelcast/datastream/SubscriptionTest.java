@@ -41,16 +41,14 @@ public class SubscriptionTest extends HazelcastTestSupport {
         }
 
         DataStream<Employee> stream = hz.getDataStream("employeesDataset");
-        stream.populate(employeesMap);
+        stream.newOutputStream().populate(employeesMap);
 
-        stream.createSubscriber().add(new DataStreamConsumer<Employee>() {
+        stream.newInputStream().add(new DataStreamConsumer<Employee>() {
             @Override
             public long consume(long offset, Employee record) {
                 System.out.println(record);
                 return 0;
             }
         });
-
-
     }
 }

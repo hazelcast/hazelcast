@@ -38,9 +38,9 @@ public class DataStreamTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         for (int k = 0; k < 5; k++) {
-            publisher.publish(k, new Employee(k, k, k));
+            out.write(k, new Employee(k, k, k));
         }
     }
 
@@ -55,9 +55,9 @@ public class DataStreamTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         for (int k = 0; k < 5; k++) {
-            publisher.publish(k, new Employee(k, k, k));
+            out.write(k, new Employee(k, k, k));
         }
 
         assertEquals(20 * 5, stream.asFrame().memoryInfo().consumedBytes());

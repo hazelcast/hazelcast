@@ -42,13 +42,13 @@ public class FetchAggregateTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         int maxAge = Integer.MIN_VALUE;
         Random random = new Random();
         for (int k = 0; k < 1000; k++) {
             int age = random.nextInt(100000);
             maxAge = Math.max(maxAge, age);
-            publisher.publish(k, new Employee(age, k, k));
+            out.write(k, new Employee(age, k, k));
         }
 
         assertEquals(new Integer(maxAge), stream.asFrame().aggregate("maxAge"));

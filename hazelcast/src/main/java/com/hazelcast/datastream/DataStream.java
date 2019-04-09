@@ -18,8 +18,6 @@ package com.hazelcast.datastream;
 
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.IMap;
-import com.hazelcast.util.function.Supplier;
 
 /**
  * todo:
@@ -30,13 +28,9 @@ import com.hazelcast.util.function.Supplier;
  */
 public interface DataStream<R> extends DistributedObject {
 
-    void fill(long count, Supplier<R> supplier);
+    DataOutputStream<R> newOutputStream();
 
-    void populate(IMap<?, R> src);
-
-    DataStreamPublisher<R> createPublisher();
-
-    DataStreamSubscriber<R> createSubscriber();
+    DataInputStream<R> newInputStream();
 
     long tail(String partitionKey);
 

@@ -43,13 +43,13 @@ public class QueryTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
-        publisher.publish(1L, new Employee(20, 100, 200));
-        publisher.publish(1L, new Employee(21, 101, 200));
-        publisher.publish(1L, new Employee(22, 103, 200));
-        publisher.publish(1L, new Employee(23, 100, 201));
-        publisher.publish(1L, new Employee(24, 100, 202));
-        publisher.publish(1L, new Employee(20, 100, 204));
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        out.write(1L, new Employee(20, 100, 200));
+        out.write(1L, new Employee(21, 101, 200));
+        out.write(1L, new Employee(22, 103, 200));
+        out.write(1L, new Employee(23, 100, 201));
+        out.write(1L, new Employee(24, 100, 202));
+        out.write(1L, new Employee(20, 100, 204));
 
         PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("age==$age or iq=20 or salary=50"));
         Map<String, Object> bindings = new HashMap<String, Object>();
@@ -68,13 +68,13 @@ public class QueryTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
-        publisher.publish(1L, new Employee(20, 100, 200));
-        publisher.publish(1L, new Employee(21, 101, 200));
-        publisher.publish(1L, new Employee(22, 103, 200));
-        publisher.publish(1L, new Employee(23, 100, 201));
-        publisher.publish(1L, new Employee(24, 100, 202));
-        publisher.publish(1L, new Employee(20, 100, 204));
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        out.write(1L, new Employee(20, 100, 200));
+        out.write(1L, new Employee(21, 101, 200));
+        out.write(1L, new Employee(22, 103, 200));
+        out.write(1L, new Employee(23, 100, 201));
+        out.write(1L, new Employee(24, 100, 202));
+        out.write(1L, new Employee(20, 100, 204));
 
         PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("age==$age"));
         Map<String, Object> bindings = new HashMap<String, Object>();
@@ -93,13 +93,13 @@ public class QueryTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
-        publisher.publish(1L, new Employee(20, 100, 200));
-        publisher.publish(1L, new Employee(21, 101, 200));
-        publisher.publish(1L, new Employee(22, 103, 200));
-        publisher.publish(1L, new Employee(23, 100, 201));
-        publisher.publish(1L, new Employee(24, 100, 202));
-        publisher.publish(1L, new Employee(20, 100, 204));
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        out.write(1L, new Employee(20, 100, 200));
+        out.write(1L, new Employee(21, 101, 200));
+        out.write(1L, new Employee(22, 103, 200));
+        out.write(1L, new Employee(23, 100, 201));
+        out.write(1L, new Employee(24, 100, 202));
+        out.write(1L, new Employee(20, 100, 204));
 
         PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("true"));
         Map<String, Object> bindings = new HashMap<String, Object>();
@@ -120,14 +120,14 @@ public class QueryTest extends HazelcastTestSupport {
         int resultCount = 0;
         int queryAge = 20;
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         Random random = new Random();
         for (long k = 0; k < count; k++) {
             int age = random.nextInt(50);
             if (age == queryAge) {
                 resultCount++;
             }
-            publisher.publish(k, new Employee(age, 100, 200));
+            out.write(k, new Employee(age, 100, 200));
         }
 
         PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("age=$age"));
@@ -148,8 +148,8 @@ public class QueryTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
-        publisher.publish(1L, new Employee(20, 100, 200));
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        out.write(1L, new Employee(20, 100, 200));
 
         PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("age==10"));
         Map<String, Object> bindings = new HashMap<String, Object>();
@@ -168,8 +168,8 @@ public class QueryTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
-        publisher.publish(1L, new Employee(20, 100, 200));
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        out.write(1L, new Employee(20, 100, 200));
 
         PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("age==$age and iq=100"));
         Map<String, Object> bindings = new HashMap<String, Object>();

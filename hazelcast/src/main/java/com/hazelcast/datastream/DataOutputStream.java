@@ -17,20 +17,26 @@
 package com.hazelcast.datastream;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IMap;
+import com.hazelcast.util.function.Supplier;
 
 /**
  * A publisher for the {@link DataStream}.
  *
  * @param <R>
  */
-public interface DataStreamPublisher<R> {
+public interface DataOutputStream<R> {
 
     /**
      * Publishes on a random partition.
      *
      * @param record the record to publish.
      */
-    void publish(R record);
+    void write(R record);
+
+    void fill(long count, Supplier<R> supplier);
+
+    void populate(IMap src);
 
     /**
      * Publishes the record on the specified partition.
@@ -39,7 +45,7 @@ public interface DataStreamPublisher<R> {
      * @param record
      * @param <P>
      */
-    <P> void publish(P partitionKey, R record);
+    <P> void write(P partitionKey, R record);
 
-    <P> ICompletableFuture publishAsync(P partitionKey, R record);
+    <P> ICompletableFuture writeAsync(P partitionKey, R record);
 }

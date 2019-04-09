@@ -41,7 +41,7 @@ public class PopulateTest extends HazelcastTestSupport {
         }
 
         DataStream<Employee> stream = hz.getDataStream("employeesDataset");
-        stream.populate(employeesMap);
+        stream.newOutputStream().populate(employeesMap);
 
         //assertEquals(itemCount, stream.count());
 

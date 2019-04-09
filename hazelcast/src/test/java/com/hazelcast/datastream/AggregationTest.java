@@ -47,19 +47,19 @@ public class AggregationTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        DataStream<Employee> dataStream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = dataStream.createPublisher();
+        DataStream<Employee> stream = hz.getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
         int itemCount = 1000 * 1000;
         long maxAge = Long.MIN_VALUE;
         Random random = new Random();
         for (int k = 0; k < itemCount; k++) {
             int age = random.nextInt(10000000);
             maxAge = Math.max(maxAge, age);
-            publisher.publish((long) k, new Employee(age, k, k));
+            out.write((long) k, new Employee(age, k, k));
         }
 
         Aggregator aggregator = new MaxAggregator();
-        PreparedAggregation preparedAggregation = dataStream.asFrame().prepare(
+        PreparedAggregation preparedAggregation = stream.asFrame().prepare(
                 new AggregationRecipe<Long, Age>(Age.class, aggregator, new SqlPredicate("true")));
         Map<String, Object> bindings = new HashMap<String, Object>();
         // bindings.put("age", 200);
@@ -79,14 +79,14 @@ public class AggregationTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(1).newInstances(config);
 
         DataStream<Employee> dataStream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = dataStream.createPublisher();
+        DataOutputStream<Employee> out = dataStream.newOutputStream();
 
         long maxAge = Long.MIN_VALUE;
         Random random = new Random();
         for (long k = 0; k < 1000; k++) {
             int age = random.nextInt(100000);
             maxAge = Math.max(maxAge, age);
-            publisher.publish(k, new Employee(age, (int) k, (int) k));
+            out.write(k, new Employee(age, (int) k, (int) k));
         }
 
         Aggregator aggregator = new MaxAggregator();
@@ -113,13 +113,13 @@ public class AggregationTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         long maxAge = Long.MIN_VALUE;
         Random random = new Random();
         for (int k = 0; k < 1000; k++) {
             int age = random.nextInt(100000);
             maxAge = Math.max(maxAge, age);
-            publisher.publish((long) k, new Employee(age, k, k));
+            out.write((long) k, new Employee(age, k, k));
         }
 
         Aggregator aggregator = new MaxAggregator();
@@ -143,7 +143,7 @@ public class AggregationTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
         double totalAge = 0;
         Random random = new Random();
         int count = 1000;
@@ -151,7 +151,7 @@ public class AggregationTest extends HazelcastTestSupport {
             int age = random.nextInt(100000);
             totalAge += age;
 
-            publisher.publish((long) k, new Employee(age, k, k));
+            out.write((long) k, new Employee(age, k, k));
         }
 
         Aggregator aggregator = new LongAverageAggregator();

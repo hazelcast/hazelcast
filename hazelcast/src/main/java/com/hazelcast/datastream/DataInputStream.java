@@ -21,7 +21,7 @@ package com.hazelcast.datastream;
  *
  * @param <E>
  */
-public interface DataStreamSubscriber<E> {
+public interface DataInputStream<E> {
 
     void add(DataStreamConsumer<E> consumer);
 

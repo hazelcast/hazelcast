@@ -41,21 +41,21 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
-        DataStream<Employee> employees = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = employees.createPublisher();
+        DataStream<Employee> stream = cluster[0].getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         int initialAge = 20;
         for (int k = 0; k < 50; k++) {
-            publisher.publish((long) k, new Employee(20, k, k));
+            out.write((long) k, new Employee(20, k, k));
         }
-        System.out.println("employees consumed memory:" + employees.asFrame().memoryInfo().consumedBytes());
+        System.out.println("employees consumed memory:" + stream.asFrame().memoryInfo().consumedBytes());
 
-        PreparedEntryProcessor<AgeSalary> preparedEntryProcessor = employees.asFrame().prepare(
+        PreparedEntryProcessor<AgeSalary> preparedEntryProcessor = stream.asFrame().prepare(
                 new EntryProcessorRecipe(new SqlPredicate("age=20"), new MultiplyMutator("age", 10)));
 
         preparedEntryProcessor.execute(new HashMap<>());
 
-        PreparedQuery<Employee> preparedQuery = employees.asFrame().prepare(new SqlPredicate("true"));
+        PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("true"));
         List<Employee> employeeList = preparedQuery.execute(new HashMap<>());
         for (Employee employee : employeeList) {
             assertEquals(initialAge * 2, employee.age);
@@ -72,19 +72,19 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
-        DataStream<Employee> employees = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = employees.createPublisher();
+        DataStream<Employee> stream = cluster[0].getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
         int initialAge = 20;
         for (int k = 0; k < 50; k++) {
-            publisher.publish((long) k, new Employee(20, k, k));
+            out.write((long) k, new Employee(20, k, k));
         }
 
-        PreparedEntryProcessor<AgeSalary> preparedEntryProcessor = employees.asFrame().prepare(
+        PreparedEntryProcessor<AgeSalary> preparedEntryProcessor = stream.asFrame().prepare(
                 new EntryProcessorRecipe(new SqlPredicate("true"), new IncreaseAgeSalary()));
 
         preparedEntryProcessor.execute(new HashMap<>());
 
-        PreparedQuery<Employee> preparedQuery = employees.asFrame().prepare(new SqlPredicate("true"));
+        PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("true"));
         List<Employee> employeeList = preparedQuery.execute(new HashMap<>());
         for (Employee employee : employeeList) {
             assertEquals(initialAge * 2, employee.age);

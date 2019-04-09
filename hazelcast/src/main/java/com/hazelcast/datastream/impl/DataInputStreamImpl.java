@@ -17,19 +17,19 @@
 package com.hazelcast.datastream.impl;
 
 import com.hazelcast.datastream.DataStreamConsumer;
-import com.hazelcast.datastream.DataStreamSubscriber;
+import com.hazelcast.datastream.DataInputStream;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 
 
-public class DSSubscriberImpl<E> implements DataStreamSubscriber<E> {
+class DataInputStreamImpl<E> implements DataInputStream<E> {
 
     private final InternalSerializationService serializationService;
     private final DSService service;
     private final String dataStreamName;
 
-    public DSSubscriberImpl(InternalSerializationService serializationService,
-                            DSService service,
-                            String dataStreamName) {
+    DataInputStreamImpl(InternalSerializationService serializationService,
+                               DSService service,
+                               String dataStreamName) {
         this.serializationService = serializationService;
         this.service = service;
         this.dataStreamName = dataStreamName;

@@ -39,15 +39,15 @@ public class LongDataSeriesTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(1).newInstances(config);
 
-        DataStream<Employee> dataSeries = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = dataSeries.createPublisher();
+        DataStream<Employee> stream = cluster[0].getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
-        publisher.publish(1, new Employee(10, 0, 0));
-        publisher.publish(1, new Employee(20, 0, 0));
-        publisher.publish(1, new Employee(30, 0, 0));
+        out.write(1, new Employee(10, 0, 0));
+        out.write(1, new Employee(20, 0, 0));
+        out.write(1, new Employee(30, 0, 0));
 
 
-        LongDataSeries ageDS = dataSeries.asFrame().getLongDataSeries("age");
+        LongDataSeries ageDS = stream.asFrame().getLongDataSeries("age");
         assertEquals(20, ageDS.average(), 0.1f);
     }
 
@@ -62,18 +62,18 @@ public class LongDataSeriesTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(1).newInstances(config);
 
-        DataStream<Employee> dataSeries = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = dataSeries.createPublisher();
+        DataStream<Employee> stream = cluster[0].getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         long maxAge = Long.MIN_VALUE;
         Random random = new Random();
         for (long k = 0; k < 1000; k++) {
             int age = random.nextInt(100000);
             maxAge = Math.max(maxAge, age);
-            publisher.publish(k, new Employee(age, (int) k, (int) k));
+            out.write(k, new Employee(age, (int) k, (int) k));
         }
 
-        LongDataSeries ageDS = dataSeries.asFrame().getLongDataSeries("age");
+        LongDataSeries ageDS = stream.asFrame().getLongDataSeries("age");
         assertEquals(maxAge, ageDS.max());
     }
 
@@ -87,18 +87,18 @@ public class LongDataSeriesTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(1).newInstances(config);
 
-        DataStream<Employee> dataSeries = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = dataSeries.createPublisher();
+        DataStream<Employee> stream = cluster[0].getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         long minAge = Long.MAX_VALUE;
         Random random = new Random();
         for (long k = 0; k < 1000; k++) {
             int age = 10000 + random.nextInt(100000);
             minAge = Math.min(minAge, age);
-            publisher.publish(k, new Employee(age, (int) k, (int) k));
+            out.write(k, new Employee(age, (int) k, (int) k));
         }
 
-        LongDataSeries ageDS = dataSeries.asFrame().getLongDataSeries("age");
+        LongDataSeries ageDS = stream.asFrame().getLongDataSeries("age");
         assertEquals(minAge, ageDS.min());
     }
 
@@ -112,18 +112,18 @@ public class LongDataSeriesTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(1).newInstances(config);
 
-        DataStream<Employee> dataSeries = cluster[0].getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = dataSeries.createPublisher();
+        DataStream<Employee> stream = cluster[0].getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         long sum = 0;
         Random random = new Random();
         for (long k = 0; k < 1000; k++) {
             int age = 10000 + random.nextInt(100000);
             sum += age;
-            publisher.publish(k, new Employee(age, (int) k, (int) k));
+            out.write(k, new Employee(age, (int) k, (int) k));
         }
 
-        LongDataSeries ageDS = dataSeries.asFrame().getLongDataSeries("age");
+        LongDataSeries ageDS = stream.asFrame().getLongDataSeries("age");
         assertEquals(sum, ageDS.sum());
     }
 }

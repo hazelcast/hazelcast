@@ -43,13 +43,13 @@ public class QueryWithIndexTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
-        publisher.publish(1L, new Employee(20, 100, 200));
-        publisher.publish(1L, new Employee(20, 101, 200));
-        publisher.publish(1L, new Employee(20, 103, 200));
-        publisher.publish(1L, new Employee(21, 100, 201));
-        publisher.publish(1L, new Employee(22, 100, 202));
+        out.write(1L, new Employee(20, 100, 200));
+        out.write(1L, new Employee(20, 101, 200));
+        out.write(1L, new Employee(20, 103, 200));
+        out.write(1L, new Employee(21, 100, 201));
+        out.write(1L, new Employee(22, 100, 202));
 
         PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("age==20"));
         Map<String, Object> bindings = new HashMap<String, Object>();

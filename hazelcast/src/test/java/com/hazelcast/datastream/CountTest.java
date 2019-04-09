@@ -38,10 +38,10 @@ public class CountTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         for (int k = 0; k < 5; k++) {
-            publisher.publish((long) k, new Employee(k, k, k));
+            out.write((long) k, new Employee(k, k, k));
         }
 
         assertEquals(5, stream.asFrame().count());

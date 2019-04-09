@@ -52,7 +52,7 @@ public class HeadTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        stream.createPublisher().publish("f", new Employee(1, 1, 1));
+        stream.newOutputStream().write("f", new Employee(1, 1, 1));
         assertEquals(0, stream.head("f"));
     }
 
@@ -69,10 +69,10 @@ public class HeadTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataStreamPublisher publisher = stream.createPublisher();
+        DataOutputStream out = stream.newOutputStream();
         long prev = -1;
         for (int k = 0; k < 10000; k++) {
-            publisher.publish(new Employee(1, 1, 1));
+            out.write(new Employee(1, 1, 1));
             long head = stream.head("f");
             if (head != prev) {
                 long tail = stream.tail("f");

@@ -49,12 +49,12 @@ public class IteratorTest extends HazelcastTestSupport {
         List<Employee> employeeList = new ArrayList<>();
         EmployeeSupplier supplier = new EmployeeSupplier();
         DSProxy<Employee> stream = (DSProxy) hz.getDataStream("employees");
-        DataStreamPublisher<Employee> publisher = stream.createPublisher();
+        DataOutputStream<Employee> out = stream.newOutputStream();
 
         for (long k = 0; k < 1000; k++) {
             Employee employee = supplier.get();
             employeeList.add(employee);
-            publisher.publish(0, employee);
+            out.write(0, employee);
         }
 
         stream.asFrame().freeze();
