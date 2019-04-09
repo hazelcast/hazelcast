@@ -84,7 +84,7 @@ public class DSPartitionListeners {
         }
 
         void onAppend() {
-            System.out.println("on Append called: segment "+segment);
+           // System.out.println("on Append called: segment "+segment);
             if(segment == null){
                 this.segment = partition.findSegment(offset);
                 if(segment == null){

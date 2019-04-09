@@ -470,7 +470,7 @@ public class DSPartition {
     public Segment findSegment(long offset) {
         Segment current = oldestTenuredSegment;
         while (current != null) {
-            System.out.println("tenured: "+current.head()+" current.tail:"+current.tail());
+           // System.out.println("tenured: "+current.head()+" current.tail:"+current.tail());
             if (current.head() <= offset && current.tail() >= offset) {
                 return current;
             } else {
@@ -479,7 +479,7 @@ public class DSPartition {
         }
 
         if (edenSegment != null) {
-            System.out.println("edenSegment: "+edenSegment.head()+" current.tail:"+edenSegment.tail());
+           // System.out.println("edenSegment: "+edenSegment.head()+" current.tail:"+edenSegment.tail());
 
             if (edenSegment.head() <= offset && edenSegment.tail() >= offset) {
                 return edenSegment;

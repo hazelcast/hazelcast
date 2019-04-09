@@ -35,18 +35,20 @@ public class SubscriptionTest extends HazelcastTestSupport {
 
         DataStream<Employee> stream = hz.getDataStream("employees");
 
+        int partitionId = getNodeEngineImpl(hz).getPartitionService().getPartitionId("foo");
+
         spawn(new Runnable() {
             @Override
             public void run() {
                 DataOutputStream out = stream.newOutputStream();
                 for(int k=0;k<100;k++){
-                //    out.write("foo",new Employee(k,k,k));
+                    out.write("foo",new Employee(k,k,k));
                     sleepSeconds(1);
                 }
             }
         });
 
-        DataInputStream<Employee> in = stream.newInputStream("foo",0);
+        DataInputStream<Employee> in = stream.newInputStream(partitionId,0);
         for(;;) {
             Employee employee = in.read();
             System.out.println(employee);

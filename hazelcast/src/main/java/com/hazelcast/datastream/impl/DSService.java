@@ -109,7 +109,7 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
             }
         }
 
-        for (int k=0;k<partitions.size();k++){
+        for (int k=0;k<partitionIds.size();k++){
             int partitionId = partitionIds.get(k);
             long offset = offsets == null ? -1 : offsets.get(k);
             Operation operation = new AddListenerOperation(streamName, offset, subscriber)
