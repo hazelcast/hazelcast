@@ -39,7 +39,6 @@ import com.hazelcast.util.function.Supplier;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -48,7 +47,6 @@ public class DSProxy<E> extends AbstractDistributedObject<DSService> implements 
 
     protected final IPartitionService partitionService;
     protected final OperationService operationService;
-    protected final Object[] bogusKeys;
     private final String name;
     private final InternalSerializationService serializationService;
     private final DataFrameImpl<E> frame;
@@ -60,17 +58,6 @@ public class DSProxy<E> extends AbstractDistributedObject<DSService> implements 
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.frame = new DataFrameImpl<>(name, operationService, nodeEngine, service);
-        this.bogusKeys = new Object[nodeEngine.getPartitionService().getPartitionCount()];
-        int count = bogusKeys.length;
-        long l = 0;
-        while (count > 0) {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(l);
-            if (bogusKeys[partitionId] == null) {
-                bogusKeys[partitionId] = bogusKeys;
-                count--;
-            }
-            l++;
-        }
     }
 
     @Override
@@ -123,39 +110,6 @@ public class DSProxy<E> extends AbstractDistributedObject<DSService> implements 
         return (Iterator) operationService.invokeOnPartition(op).join();
     }
 
-    // needed for Jet integration
-    public Iterator<Map.Entry> shiterator(int partitionId) {
-        Iterator it = iterator(partitionId);
-        Object bogusKey = bogusKeys[partitionId];
-        return new Iterator<Map.Entry>() {
-            @Override
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            @Override
-            public Map.Entry next() {
-                Object value = it.next();
-                return new Map.Entry() {
-                    @Override
-                    public Object getKey() {
-                        return bogusKey;
-                    }
-
-                    @Override
-                    public Object getValue() {
-                        return value;
-                    }
-
-                    @Override
-                    public Object setValue(Object value) {
-                        throw new UnsupportedOperationException();
-                    }
-                };
-            }
-        };
-    }
-
     public void populate(IMap src) {
         checkNotNull(src, "map can't be null");
 
@@ -169,12 +123,12 @@ public class DSProxy<E> extends AbstractDistributedObject<DSService> implements 
 
     @Override
     public DataStreamPublisher<E> createPublisher() {
-        return new DSPublisherImpl<E>(serializationService, operationService, partitionService, name);
+        return new DSPublisherImpl<>(serializationService, operationService, partitionService, name);
     }
 
     @Override
     public DataStreamSubscriber<E> createSubscriber() {
-        return new DSSubscriberImpl<E>(serializationService, getService(), name);
+        return new DSSubscriberImpl<>(serializationService, getService(), name);
     }
 
     @Override
