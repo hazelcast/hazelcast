@@ -19,6 +19,8 @@ package com.hazelcast.datastream;
 
 import com.hazelcast.core.DistributedObject;
 
+import java.util.List;
+
 /**
  * todo:
  * - option to read from the stream
@@ -30,11 +32,39 @@ public interface DataStream<R> extends DistributedObject {
 
     DataOutputStream<R> newOutputStream();
 
-    DataInputStream<R> newInputStream();
+    /**
+     * DataInputStream that receives data for a single partition.
+     *
+     * @param partition
+     * @param offset
+     * @param <P>
+     * @return
+     */
+    <P> DataInputStream<R> newInputStream(P partition, long offset);
 
-    long tail(String partitionKey);
+    /**
+     * DataInputStream that receives data for the given partitions.
+     *
+     * Input
+     * @param partitions
+     * @param offsets
+     * @param <P>
+     * @return
+     */
+    <P> DataInputStream<R> newInputStream(List<P> partitions, List<Long> offsets);
 
-    long head(String partitionKey);
+    /**
+     * DataInputStream that receives data for all partitions.
+     *
+     * @param offsets
+     * @param <P>
+     * @return
+     */
+    <P> DataInputStream<R> newInputStream(List<Long> offsets);
+
+    <P> long tail(P partitionKey);
+
+    <P> long head(P partitionKey);
 
     DataFrame<R> asFrame();
 }

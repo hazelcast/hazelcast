@@ -16,15 +16,12 @@
 
 package com.hazelcast.datastream.impl;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.datastream.DataFrame;
-import com.hazelcast.datastream.DataStream;
-import com.hazelcast.datastream.DataOutputStream;
 import com.hazelcast.datastream.DataInputStream;
-import com.hazelcast.datastream.impl.operations.FillOperation;
+import com.hazelcast.datastream.DataOutputStream;
+import com.hazelcast.datastream.DataStream;
 import com.hazelcast.datastream.impl.operations.HeadOperation;
 import com.hazelcast.datastream.impl.operations.IteratorOperation;
-import com.hazelcast.datastream.impl.operations.PopulateOperationFactory;
 import com.hazelcast.datastream.impl.operations.TailOperation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -33,23 +30,19 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.function.Supplier;
 
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.singletonList;
 
-public class DSProxy<E> extends AbstractDistributedObject<DSService> implements DataStream<E> {
+public class DSProxy<R> extends AbstractDistributedObject<DSService> implements DataStream<R> {
 
     protected final IPartitionService partitionService;
     protected final OperationService operationService;
     private final String name;
     private final InternalSerializationService serializationService;
-    private final DataFrameImpl<E> frame;
+    private final DataFrameImpl<R> frame;
 
     public DSProxy(String name, NodeEngine nodeEngine, DSService service) {
         super(nodeEngine, service);
@@ -61,7 +54,7 @@ public class DSProxy<E> extends AbstractDistributedObject<DSService> implements 
     }
 
     @Override
-    public long tail(String partitionKey) {
+    public <P> long tail(P partitionKey) {
         int partitionId = partitionService.getPartitionId(partitionKey);
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnPartition(new TailOperation(name).setPartitionId(partitionId));
@@ -69,32 +62,40 @@ public class DSProxy<E> extends AbstractDistributedObject<DSService> implements 
     }
 
     @Override
-    public long head(String partitionKey) {
+    public <P> long head(P partitionKey) {
         int partitionId = partitionService.getPartitionId(partitionKey);
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnPartition(new HeadOperation(name).setPartitionId(partitionId));
         return (Long) future.join();
     }
 
-
-
-    public Iterator<E> iterator(int partitionId) {
+    public Iterator<R> iterator(int partitionId) {
         Operation op = new IteratorOperation(name).setPartitionId(partitionId);
         return (Iterator) operationService.invokeOnPartition(op).join();
     }
 
     @Override
-    public DataOutputStream<E> newOutputStream() {
+    public DataOutputStream<R> newOutputStream() {
         return new DataOutputStreamImpl<>(serializationService, operationService, partitionService, name);
     }
 
     @Override
-    public DataInputStream<E> newInputStream() {
-        return new DataInputStreamImpl<>(serializationService, getService(), name);
+    public <P> DataInputStream<R> newInputStream(P partition, long offset) {
+        return newInputStream(singletonList(partition), singletonList(offset));
     }
 
     @Override
-    public DataFrame<E> asFrame() {
+    public <P> DataInputStream<R> newInputStream(List<P> partitions, List<Long> offsets) {
+        return new DataInputStreamImpl<>(serializationService, getService(), name, partitions, offsets);
+    }
+
+    @Override
+    public <P> DataInputStream<R> newInputStream(List<Long> offsets) {
+        return new DataInputStreamImpl<>(serializationService, getService(), name, null, offsets);
+    }
+
+    @Override
+    public DataFrame<R> asFrame() {
         return frame;
     }
 

@@ -23,7 +23,11 @@ package com.hazelcast.datastream;
  */
 public interface DataInputStream<E> {
 
-    void add(DataStreamConsumer<E> consumer);
+//    void add(DataStreamConsumer<E> consumer);
+//
+//    void add(DataStreamConsumer<E> consumer, long[] offsets);
 
-    void add(DataStreamConsumer<E> consumer, long[] offsets);
+    Object read(long timeoutMs) throws InterruptedException;
+
+    Object poll();
 }

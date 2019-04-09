@@ -16,32 +16,55 @@
 
 package com.hazelcast.datastream.impl;
 
-import com.hazelcast.datastream.DataStreamConsumer;
 import com.hazelcast.datastream.DataInputStream;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
+
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
-class DataInputStreamImpl<E> implements DataInputStream<E> {
+class DataInputStreamImpl<R> implements DataInputStream<R> {
 
     private final InternalSerializationService serializationService;
     private final DSService service;
     private final String dataStreamName;
+    private final BlockingQueue<Data> queue = new LinkedBlockingQueue<>();
 
-    DataInputStreamImpl(InternalSerializationService serializationService,
+    public DataInputStreamImpl(InternalSerializationService serializationService,
                                DSService service,
-                               String dataStreamName) {
+                               String name,
+                               List<?> partitions,
+                               List<Long> offsets) {
         this.serializationService = serializationService;
         this.service = service;
-        this.dataStreamName = dataStreamName;
+        this.dataStreamName = name;
+        service.startListening(dataStreamName, this, partitions, offsets);
+    }
+
+    public void received(Packet packet){
+        queue.offer(packet);
     }
 
     @Override
-    public void add(DataStreamConsumer<E> consumer) {
-        service.subscribe(dataStreamName, this, null);
+    public R read(long timeoutMs) throws InterruptedException {
+        Data data = queue.poll(timeoutMs, MILLISECONDS);
+        if(data == null){
+            return null;
+        }
+        return serializationService.toObject(data);
     }
 
     @Override
-    public void add(DataStreamConsumer<E> consumer, long[] offsets) {
-        service.subscribe(dataStreamName, this, offsets);
+    public Object poll() {
+        Data data = queue.poll();
+        if(data == null){
+            return null;
+        }
+        return serializationService.toObject(data);
     }
 }

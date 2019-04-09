@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.function.Consumer;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -98,13 +99,25 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         // todo: it can be event data.
     }
 
-    public void subscribe(String streamName, DataInputStreamImpl subscriber, long[] offsets) {
+    public void startListening(String streamName, DataInputStreamImpl subscriber,List<?> partitions, List<Long> offsets) {
         List<InternalCompletableFuture> futures = new LinkedList<>();
         OperationService operationService = nodeEngine.getOperationService();
-        for (int k = 0; k < nodeEngine.getPartitionService().getPartitionCount(); k++) {
-            long offset = offsets == null ? -1 : offsets[k];
+
+        List<Integer> partitionIds = new ArrayList<>();
+        if(partitions == null){
+            for(int k=0;k<nodeEngine.getPartitionService().getPartitionCount();k++){
+                partitionIds.add(k);
+            }
+        }else{
+            for(Object partition: partitions){
+                partitionIds.add(nodeEngine.getPartitionService().getPartitionId(partition));
+            }
+        }
+
+        for (int partitionId: partitionIds){
+            long offset = offsets == null ? -1 : offsets.get(partitionId);
             Operation operation = new AddRemoteListenerOperation(streamName, offset)
-                    .setPartitionId(k);
+                    .setPartitionId(partitionId);
             futures.add(operationService.invokeOnPartition(operation));
         }
 
