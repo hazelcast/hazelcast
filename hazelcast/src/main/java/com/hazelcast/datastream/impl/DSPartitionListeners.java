@@ -27,7 +27,7 @@ public class DSPartitionListeners {
     private final DSService service;
     private final DSPartition partition;
     private final ArrayList<RemoteListener> removeListeners = new ArrayList<RemoteListener>();
-    private final ArrayList<LocalListener> removeListeners = new ArrayList<LocalListener>();
+    private final ArrayList<LocalListener> localListeners = new ArrayList<LocalListener>();
 
     DSPartitionListeners(DSService service, String name, DSPartition partition) {
         this.name = name;
