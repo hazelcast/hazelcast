@@ -23,14 +23,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class AddDataStreamSubscriptionOperation extends DataStreamOperation {
+public class AddRemoteListenerOperation extends DataStreamOperation {
 
     private long offset;
 
-    public AddDataStreamSubscriptionOperation() {
+    public AddRemoteListenerOperation() {
     }
 
-    public AddDataStreamSubscriptionOperation(String name, long offset) {
+    public AddRemoteListenerOperation(String name, long offset) {
         super(name);
         this.offset = offset;
     }
@@ -43,7 +43,7 @@ public class AddDataStreamSubscriptionOperation extends DataStreamOperation {
 
     @Override
     public int getId() {
-        return DSDataSerializerHook.SUBSCRIBE_OPERATION;
+        return DSDataSerializerHook.ADD_REMOTE_LISTENER_OPERATION;
     }
 
     @Override

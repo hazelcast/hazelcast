@@ -433,6 +433,25 @@ public class DSPartition {
         return head;
     }
 
+    public Segment findSegment(long offset) {
+        Segment current = oldestTenuredSegment;
+        while (current!=null){
+            if (current.head() <= offset && current.tail() >= offset) {
+                return current;
+            } else {
+                current = current.next;
+            }
+        }
+
+        if(edenSegment!=null){
+           if(edenSegment.head() <= offset && edenSegment.tail() >= offset){
+               return edenSegment;
+           }
+        }
+
+        return null;
+    }
+
     class IteratorImpl implements Iterator {
         private Segment segment;
         private int recordIndex = -1;

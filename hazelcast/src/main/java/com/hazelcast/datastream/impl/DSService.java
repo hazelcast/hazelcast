@@ -19,7 +19,7 @@ package com.hazelcast.datastream.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.datastream.impl.operations.AddDataStreamSubscriptionOperation;
+import com.hazelcast.datastream.impl.operations.AddRemoteListenerOperation;
 import com.hazelcast.internal.codeneneration.Compiler;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -103,7 +103,7 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         OperationService operationService = nodeEngine.getOperationService();
         for (int k = 0; k < nodeEngine.getPartitionService().getPartitionCount(); k++) {
             long offset = offsets == null ? -1 : offsets[k];
-            Operation operation = new AddDataStreamSubscriptionOperation(streamName, offset)
+            Operation operation = new AddRemoteListenerOperation(streamName, offset)
                     .setPartitionId(k);
             futures.add(operationService.invokeOnPartition(operation));
         }

@@ -17,8 +17,11 @@
 package com.hazelcast.datastream.impl;
 
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.ArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DSPartitionListeners {
@@ -26,7 +29,7 @@ public class DSPartitionListeners {
     private final String name;
     private final DSService service;
     private final DSPartition partition;
-    private final ArrayList<RemoteListener> removeListeners = new ArrayList<RemoteListener>();
+    private final ArrayList<RemoteListener> remoteListeners = new ArrayList<RemoteListener>();
     private final ArrayList<LocalListener> localListeners = new ArrayList<LocalListener>();
 
     DSPartitionListeners(DSService service, String name, DSPartition partition) {
@@ -36,12 +39,21 @@ public class DSPartitionListeners {
     }
 
     public void register(String uuid, Connection connection, long offset) {
-        removeListeners.add(new RemoteListener(uuid, connection, offset));
+        remoteListeners.add(new RemoteListener(uuid, connection, offset));
     }
 
-    public void onAppend(DSPartition partition) {
-        for (RemoteListener subscription : removeListeners) {
+    public void registerLocalListener(Consumer consumer, Executor executor, long offset) {
+        localListeners.add(new LocalListener(offset, consumer, executor));
+    }
 
+    // called from the partition thread
+    public void onAppend(DSPartition partition) {
+        for (RemoteListener subscription : remoteListeners) {
+
+        }
+
+        for(LocalListener localListener:localListeners){
+            localListener.onAppend();
         }
     }
 
@@ -60,6 +72,71 @@ public class DSPartitionListeners {
     }
 
     private class LocalListener{
-        // todo: villiams listener
+        private final Segment segment;
+        private long offset;
+        private Consumer<Data> consumer;
+        private Executor executor;
+
+        public LocalListener(long offset, Consumer<Data> consumer, Executor executor) {
+            this.offset = offset;
+            this.consumer = consumer;
+            this.executor = executor;
+            this.segment = partition.findSegment(offset);
+        }
+
+        public void onAppend() {
+
+        }
     }
+
+//    class IteratorImpl implements Iterator {
+//        private Segment segment;
+//        private int recordIndex = -1;
+//
+//        public IteratorImpl(Segment segment) {
+//            this.segment = segment;
+//        }
+//
+//        @Override
+//        public boolean hasNext() {
+//            if (segment == null) {
+//                return false;
+//            }
+//
+//            if (recordIndex == -1) {
+//                if (!segment.acquire()) {
+//                    segment = segment.next;
+//                    return hasNext();
+//                } else {
+//                    recordIndex = 0;
+//                }
+//            }
+//
+//            if (recordIndex >= segment.count()) {
+//                segment.release();
+//                recordIndex = -1;
+//                segment = segment.next;
+//                return hasNext();
+//            }
+//
+//            return true;
+//        }
+//
+//        @Override
+//        public Object next() {
+//            if (!hasNext()) {
+//                throw new NoSuchElementException();
+//            }
+//
+//            Object o = encoder.newInstance();
+//            encoder.readRecord(o, segment.dataAddress(), recordIndex * recordModel.getPayloadSize());
+//            recordIndex++;
+//            return o;
+//        }
+//
+//        @Override
+//        public void remove() {
+//            throw new UnsupportedOperationException();
+//        }
+//    }
 }
