@@ -113,7 +113,7 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         }
     }
 
-    public DSPartitionListeners getOrCreateSubscription(String name, int partitionId, DSPartition partition) {
+    public DSPartitionListeners getOrCreatePartitionListeners(String name, int partitionId, DSPartition partition) {
         String id = name + "_" + partitionId;
         DSPartitionListeners subscription = subscriptions.get(id);
         if (subscription == null) {

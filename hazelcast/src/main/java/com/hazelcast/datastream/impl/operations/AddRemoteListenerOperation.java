@@ -37,7 +37,7 @@ public class AddRemoteListenerOperation extends DataStreamOperation {
 
     @Override
     public void run() throws Exception {
-        DSPartitionListeners subscription = service.getOrCreateSubscription(getName(), getPartitionId(), partition);
+        DSPartitionListeners subscription = service.getOrCreatePartitionListeners(getName(), getPartitionId(), partition);
         subscription.register(getCallerUuid(), getConnection(), offset);
     }
 

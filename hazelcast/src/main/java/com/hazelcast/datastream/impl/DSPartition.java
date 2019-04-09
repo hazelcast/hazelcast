@@ -86,7 +86,7 @@ public class DSPartition {
         this.serializationService = serializationService;
         this.recordModel = new RecordModel(config.getValueClass(), config.getIndices());
         this.encoder = newEncoder();
-        this.listeners = dsService.getOrCreateSubscription(config.getName(), partitionId, this);
+        this.listeners = dsService.getOrCreatePartitionListeners(config.getName(), partitionId, this);
         //System.out.println(config);
 
         //System.out.println("record payload size:" + recordModel.getPayloadSize());

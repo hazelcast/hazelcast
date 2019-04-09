@@ -23,8 +23,8 @@ public class AddLocalListenerOperation extends DataStreamOperation {
 
     @Override
     public void run() throws Exception {
-        DSPartitionListeners subscription = service.getOrCreateSubscription(getName(), getPartitionId(), partition);
-        subscription.registerLocalListener(consumer,executor,offset);
+        DSPartitionListeners listeners = service.getOrCreatePartitionListeners(getName(), getPartitionId(), partition);
+        listeners.registerLocalListener(consumer, executor, offset);
     }
 
     @Override
