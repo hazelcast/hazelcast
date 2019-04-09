@@ -41,9 +41,9 @@ public class SubscriptionTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 DataOutputStream out = stream.newOutputStream();
-                for(int k=0;k<100;k++){
+                for(int k=0;k<10000000;k++){
                     out.write("foo",new Employee(k,k,k));
-                    sleepSeconds(1);
+                    sleepMillis(100);
                 }
             }
         });
