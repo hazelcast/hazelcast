@@ -47,7 +47,6 @@
                 <xs:element name="event-journal" type="event-journal" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="datastream" type="datastream" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="replicatedmap" type="replicatedmap" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="cache" type="cache" minOccurs="0" maxOccurs="unbounded"/>

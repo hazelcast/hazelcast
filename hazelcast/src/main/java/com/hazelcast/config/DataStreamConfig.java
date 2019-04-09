@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
@@ -32,7 +33,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Configuration for the {@link com.hazelcast.datastream.DataStream}.
  */
 public class DataStreamConfig {
-    public static final int KB = 1024;
+    private static final int KB = 1024;
+
     private String name;
     private Class valueClass;
     // todo: is there a good reason to make initial not equal to max?
@@ -55,7 +57,7 @@ public class DataStreamConfig {
     }
 
     public DataStreamConfig(String name) {
-        this.name = name;
+        setName(name);
     }
 
     public DataStreamConfig(DataStreamConfig defConfig) {
@@ -73,11 +75,16 @@ public class DataStreamConfig {
     }
 
     public DataStreamConfig addAttachedAggregator(String id, Supplier<Aggregator> supplier) {
+        checkNotNull(id, "id can't be null");
+        checkNotNull(supplier,"supplier can't be null");
+
         this.attachedAggregators.put(id, supplier);
         return this;
     }
 
     public DataStreamConfig addIndexField(String field) {
+        checkNotNull(field, "field can't be null");
+
         indices.add(field);
         return this;
     }
@@ -123,7 +130,7 @@ public class DataStreamConfig {
      * @return
      */
     public DataStreamConfig setMaxSegmentSize(int maxSegmentSize) {
-        this.maxSegmentSize = maxSegmentSize;
+        this.maxSegmentSize = checkPositive(maxSegmentSize, "maxSegmentSize should be larger than 0");
         return this;
     }
 
@@ -138,7 +145,7 @@ public class DataStreamConfig {
      * @return
      */
     public DataStreamConfig setSegmentsPerPartition(int segmentsPerPartition) {
-        this.segmentsPerPartition = segmentsPerPartition;
+        this.segmentsPerPartition = checkPositive(segmentsPerPartition, "segmentsPerPartition should be larger than 0");
         return this;
     }
 
@@ -167,7 +174,7 @@ public class DataStreamConfig {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = checkHasText(name,"name is empty or null");
     }
 
     public String getName() {
