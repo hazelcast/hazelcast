@@ -80,13 +80,13 @@ public class DSProxy<R> extends AbstractDistributedObject<DSService> implements 
     }
 
     @Override
-    public <P> DataInputStream<R> newInputStream(P partition, long offset) {
+    public DataInputStream<R> newInputStream(int partition, long offset) {
         return newInputStream(singletonList(partition), singletonList(offset));
     }
 
     @Override
-    public <P> DataInputStream<R> newInputStream(List<P> partitions, List<Long> offsets) {
-        return new DataInputStreamImpl<>(serializationService, getService(), name, partitions, offsets);
+    public DataInputStream<R> newInputStream(List<Integer> partitionIds, List<Long> offsets) {
+        return new DataInputStreamImpl<>(serializationService, getService(), name, partitionIds, offsets);
     }
 
     @Override

@@ -39,12 +39,12 @@ class DataInputStreamImpl<R> implements DataInputStream<R>, Consumer<Packet> {
     DataInputStreamImpl(InternalSerializationService serializationService,
                         DSService service,
                         String name,
-                        List<?> partitions,
+                        List<Integer> partitionIds,
                         List<Long> offsets) {
         this.serializationService = serializationService;
         this.service = service;
         this.dataStreamName = name;
-        service.startListening(dataStreamName, this, partitions, offsets);
+        service.startListening(dataStreamName, this, partitionIds, offsets);
     }
 
     @Override

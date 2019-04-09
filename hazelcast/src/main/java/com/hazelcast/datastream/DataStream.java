@@ -35,12 +35,11 @@ public interface DataStream<R> extends DistributedObject {
     /**
      * DataInputStream that receives data for a single partition.
      *
-     * @param partition
+     * @param partitionId
      * @param offset
-     * @param <P>
      * @return
      */
-    <P> DataInputStream<R> newInputStream(P partition, long offset);
+    DataInputStream<R> newInputStream(int partitionId, long offset);
 
     /**
      * DataInputStream that receives data for the given partitions.
@@ -48,10 +47,9 @@ public interface DataStream<R> extends DistributedObject {
      * Input
      * @param partitions
      * @param offsets
-     * @param <P>
      * @return
      */
-    <P> DataInputStream<R> newInputStream(List<P> partitions, List<Long> offsets);
+    DataInputStream<R> newInputStream(List<Integer> partitions, List<Long> offsets);
 
     /**
      * DataInputStream that receives data for all partitions.

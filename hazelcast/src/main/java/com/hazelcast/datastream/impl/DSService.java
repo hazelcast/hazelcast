@@ -32,7 +32,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.function.Consumer;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -99,18 +98,13 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         // todo: it can be event data.
     }
 
-    public void startListening(String streamName, DataInputStreamImpl subscriber,List<?> partitions, List<Long> offsets) {
+    public void startListening(String streamName, DataInputStreamImpl subscriber,List<Integer> partitionIds, List<Long> offsets) {
         List<InternalCompletableFuture> futures = new LinkedList<>();
         OperationService operationService = nodeEngine.getOperationService();
 
-        List<Integer> partitionIds = new ArrayList<>();
-        if(partitions == null){
+        if(partitionIds == null){
             for(int k=0;k<nodeEngine.getPartitionService().getPartitionCount();k++){
                 partitionIds.add(k);
-            }
-        }else{
-            for(Object partition: partitions){
-                partitionIds.add(nodeEngine.getPartitionService().getPartitionId(partition));
             }
         }
 
