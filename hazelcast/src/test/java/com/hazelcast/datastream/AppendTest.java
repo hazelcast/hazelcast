@@ -40,7 +40,9 @@ public class AppendTest extends HazelcastTestSupport {
 
         DataStream<Employee> stream = hz.getDataStream("employees");
         DataOutputStream<Employee> out = stream.newOutputStream();
-        out.write(0, new Employee(1, 1, 1));
+        out.write("foo", new Employee(1, 1, 1));
+        out.write("foo", new Employee(2, 2, 2));
+        out.write("foo", new Employee(3, 3, 3));
 
         assertEquals(1, stream.asFrame().count());
         assertEquals(1, stream.asFrame().memoryInfo().segmentsInUse());

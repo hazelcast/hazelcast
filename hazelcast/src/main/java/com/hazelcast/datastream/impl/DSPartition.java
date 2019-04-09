@@ -17,9 +17,7 @@
 package com.hazelcast.datastream.impl;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastream.AggregationRecipe;
 import com.hazelcast.datastream.EntryProcessorRecipe;
@@ -42,7 +40,6 @@ import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Supplier;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.nio.file.DirectoryStream;
@@ -234,13 +231,7 @@ public class DSPartition {
             tenuredSegmentCount--;
         }
     }
-
-    public static void main(String[] args) throws FileNotFoundException {
-        Config config = new XmlConfigBuilder("/java/Tests/simple_map/hazelcast.xml").build();
-        DataStreamConfig config1 = config.getDataStreamConfig("datastream");
-        System.out.println(config1);
-    }
-
+    
     public void deleteRetiredSegments() {
         if (config.getTenuringAgeMillis() == Integer.MAX_VALUE) {
             // tenuring is disabled, so there will never be retired segments to delete
