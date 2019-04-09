@@ -20,7 +20,6 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastream.AggregationRecipe;
 import com.hazelcast.datastream.EntryProcessorRecipe;
 import com.hazelcast.datastream.MemoryInfo;
@@ -114,15 +113,15 @@ public class DSPartition {
                          .sorted()
                          .forEach(p -> newSegment(parseOffset(p)));
         } catch (IOException e) {
-            throw new HazelcastException(e);
+            System.out.println("WARNING: Base directory for Franz is not there: " + BASE_DIR.getAbsolutePath());
         }
     }
 
     private long parseOffset(Path p) {
-        final String fname = p.getFileName().toString();
-        final String offsetTemplate = "0123456789ABCDEF";
-        final String fileEnding = offsetTemplate + ".segment";
-        final String offsetStr = fname.substring(fname.length() - fileEnding.length(), offsetTemplate.length());
+        String offsetTemplate = "0123456789ABCDEF";
+        String fileEnding = offsetTemplate + ".segment";
+        String fname = p.getFileName().toString();
+        String offsetStr = fname.substring(fname.length() - fileEnding.length(), offsetTemplate.length());
         return Long.parseLong(offsetStr, 16);
     }
 
