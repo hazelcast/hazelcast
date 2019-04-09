@@ -26,7 +26,8 @@ public class DSPartitionListeners {
     private final String name;
     private final DSService service;
     private final DSPartition partition;
-    private final ArrayList<Subscription> subscriptions = new ArrayList<Subscription>();
+    private final ArrayList<RemoteListener> removeListeners = new ArrayList<RemoteListener>();
+    private final ArrayList<LocalListener> removeListeners = new ArrayList<LocalListener>();
 
     DSPartitionListeners(DSService service, String name, DSPartition partition) {
         this.name = name;
@@ -35,26 +36,30 @@ public class DSPartitionListeners {
     }
 
     public void register(String uuid, Connection connection, long offset) {
-        subscriptions.add(new Subscription(uuid, connection, offset));
+        removeListeners.add(new RemoteListener(uuid, connection, offset));
     }
 
     public void onAppend(DSPartition partition) {
-        for (Subscription subscription : subscriptions) {
+        for (RemoteListener subscription : removeListeners) {
 
         }
     }
 
-    private class Subscription {
+    private class RemoteListener {
         private final String uuid;
         private long offset;
         private Connection connection;
         private final AtomicLong bytesInFlight;
 
-        Subscription(String uuid, Connection connection, long offset) {
+        RemoteListener(String uuid, Connection connection, long offset) {
             this.bytesInFlight = service.getBytesInFlight(uuid);
             this.uuid = uuid;
             this.connection = connection;
             this.offset = offset;
         }
+    }
+
+    private class LocalListener{
+        // todo: villiams listener
     }
 }
