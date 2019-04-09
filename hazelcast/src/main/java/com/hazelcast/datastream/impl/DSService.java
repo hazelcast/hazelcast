@@ -46,7 +46,7 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
     private final ConcurrentMap<String, DSContainer> containers = new ConcurrentHashMap<String, DSContainer>();
     private final Compiler compiler = new Compiler("datastream-src");
     //  private final OperationService operationService;
-    private final ConcurrentHashMap<String, DSPartitionSubscriptions> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, DSPartitionListeners> subscriptions = new ConcurrentHashMap<>();
     private int bytesInFlight;
     private final ConcurrentMap<String, AtomicLong> bytesInFlightMap = new ConcurrentHashMap<>();
 
@@ -113,12 +113,12 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         }
     }
 
-    public DSPartitionSubscriptions getOrCreateSubscription(String name, int partitionId, DSPartition partition) {
+    public DSPartitionListeners getOrCreateSubscription(String name, int partitionId, DSPartition partition) {
         String id = name + "_" + partitionId;
-        DSPartitionSubscriptions subscription = subscriptions.get(id);
+        DSPartitionListeners subscription = subscriptions.get(id);
         if (subscription == null) {
-            subscription = new DSPartitionSubscriptions(this, name, partition);
-            DSPartitionSubscriptions old = subscriptions.putIfAbsent(id, subscription);
+            subscription = new DSPartitionListeners(this, name, partition);
+            DSPartitionListeners old = subscriptions.putIfAbsent(id, subscription);
             if (old != null) {
                 subscription = old;
             }

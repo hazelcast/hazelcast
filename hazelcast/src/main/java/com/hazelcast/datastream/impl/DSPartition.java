@@ -70,7 +70,7 @@ public class DSPartition {
     private Segment youngestTenuredSegment;
     private int tenuredSegmentCount;
     private boolean frozen;
-    private final DSPartitionSubscriptions subscriptions;
+    private final DSPartitionListeners listeners;
     private long head = 0;
 
     public DSPartition(DSService dsService,
@@ -86,7 +86,7 @@ public class DSPartition {
         this.serializationService = serializationService;
         this.recordModel = new RecordModel(config.getValueClass(), config.getIndices());
         this.encoder = newEncoder();
-        this.subscriptions = dsService.getOrCreateSubscription(config.getName(), partitionId, this);
+        this.listeners = dsService.getOrCreateSubscription(config.getName(), partitionId, this);
         //System.out.println(config);
 
         //System.out.println("record payload size:" + recordModel.getPayloadSize());
@@ -244,7 +244,7 @@ public class DSPartition {
         ensureEdenExists();
 
         edenSegment.insert(valueData);
-        subscriptions.onAppend(this);
+        listeners.onAppend(this);
     }
 
     public long count() {

@@ -21,14 +21,14 @@ import com.hazelcast.nio.Connection;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class DSPartitionSubscriptions {
+public class DSPartitionListeners {
 
     private final String name;
     private final DSService service;
     private final DSPartition partition;
     private final ArrayList<Subscription> subscriptions = new ArrayList<Subscription>();
 
-    DSPartitionSubscriptions(DSService service, String name, DSPartition partition) {
+    DSPartitionListeners(DSService service, String name, DSPartition partition) {
         this.name = name;
         this.service = service;
         this.partition = partition;

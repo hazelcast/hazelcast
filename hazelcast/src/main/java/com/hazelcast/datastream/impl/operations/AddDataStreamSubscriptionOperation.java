@@ -17,7 +17,7 @@
 package com.hazelcast.datastream.impl.operations;
 
 import com.hazelcast.datastream.impl.DSDataSerializerHook;
-import com.hazelcast.datastream.impl.DSPartitionSubscriptions;
+import com.hazelcast.datastream.impl.DSPartitionListeners;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -37,7 +37,7 @@ public class AddDataStreamSubscriptionOperation extends DataStreamOperation {
 
     @Override
     public void run() throws Exception {
-        DSPartitionSubscriptions subscription = service.getOrCreateSubscription(getName(), getPartitionId(), partition);
+        DSPartitionListeners subscription = service.getOrCreateSubscription(getName(), getPartitionId(), partition);
         subscription.register(getCallerUuid(), getConnection(), offset);
     }
 
