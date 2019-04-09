@@ -56,6 +56,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class DSPartition {
 
     private final Compiler compiler;
+    private int partitionId;
     private final DataStreamConfig config;
     private final SerializationService serializationService;
     private final RecordModel recordModel;
@@ -78,6 +79,7 @@ public class DSPartition {
                        DataStreamConfig config,
                        SerializationService serializationService,
                        Compiler compiler) {
+        this.partitionId = partitionId;
         this.config = config;
         this.compiler = compiler;
         this.maxTenuringAgeNanos = config.getTenuringAgeMillis() == Long.MAX_VALUE
@@ -119,6 +121,8 @@ public class DSPartition {
         }
 
         return new Segment(
+                config.getName(),
+                partitionId,
                 config.getInitialSegmentSize(),
                 config.getMaxSegmentSize(),
                 youngestTenuredSegment != null ? youngestTenuredSegment.tail() : head,

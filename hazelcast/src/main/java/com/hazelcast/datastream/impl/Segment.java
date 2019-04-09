@@ -17,13 +17,22 @@
 package com.hazelcast.datastream.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import com.hazelcast.spi.serialization.SerializationService;
 import sun.misc.Unsafe;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
@@ -49,18 +58,24 @@ public class Segment {
     private final long indicesAddress;
     private final Map<String, Aggregator> aggregators;
     private final long startOffset;
+    private final String filename;
+
     private long lastInsertNanos = startNanos;
     private long dataAddress;
     private long segmentSize;
     private long index = 0;
 
-    Segment(long initialSegmentSize,
+    Segment(String name,
+            int partitionId,
+            long initialSegmentSize,
             long maxSegmentSize,
             long startOffset,
             SerializationService serializationService,
             RecordModel recordModel,
             RecordEncoder encoder,
-            Map<String, Aggregator> aggregators) {
+            Map<String, Aggregator> aggregators
+    ) {
+        this.filename = String.format("%s-%s-%s.segment", name, partitionId, startOffset);
         this.startOffset = startOffset;
         this.recordModel = recordModel;
         this.maxSegmentSize = maxSegmentSize;
@@ -90,12 +105,12 @@ public class Segment {
     public boolean acquire() {
         for (; ; ) {
             int currentUsed = ownershipCount;
-
             if (currentUsed == 0) {
                 // the segment has been destroyed.
-                return false;
+                if (!loadFromFile()) {
+                    return false;
+                }
             }
-
             int newUsed = currentUsed + 1;
             if (OWNERSHIP_COUNT.compareAndSet(this, currentUsed, newUsed)) {
                 return true;
@@ -109,6 +124,7 @@ public class Segment {
             int newUsed = currentUsed - 1;
             if (OWNERSHIP_COUNT.compareAndSet(this, currentUsed, newUsed)) {
                 if (newUsed == 0) {
+                    saveToFile();
                     destroy0();
                 }
                 return;
@@ -201,6 +217,44 @@ public class Segment {
         unsafe.freeMemory(dataAddress);
         if (indicesAddress != 0) {
             unsafe.freeMemory(indicesAddress);
+        }
+    }
+
+    private boolean loadFromFile() {
+        File segmentFile = new File(filename);
+        long reportedFileSize = segmentFile.length();
+        long newPointer = unsafe.allocateMemory(reportedFileSize);
+        long totalRead = 0;
+        try (InputStream in = new FileInputStream(segmentFile)) {
+            byte[] buf = new byte[1 << 14];
+            for (int readCount = 0; readCount != -1; readCount = in.read(buf)) {
+                if (totalRead + readCount > reportedFileSize) {
+                    throw new HazelcastException(String.format(
+                            "%s: reported file size was %,3d, but managed to read %,3d bytes",
+                            filename, reportedFileSize, totalRead + readCount));
+                }
+                MEM.copyFromByteArray(buf, 0, newPointer + totalRead, readCount);
+                totalRead += readCount;
+            }
+            return true;
+        } catch (FileNotFoundException e) {
+            return false;
+        } catch (IOException e) {
+            throw new HazelcastException("Failed to load data from file " + filename, e);
+        }
+    }
+
+    private void saveToFile() {
+        try (OutputStream out = new FileOutputStream(filename)) {
+            byte[] buf = new byte[1 << 14];
+            long fileSize = index * recordModel.getSize();
+            for (long offset = 0; offset < fileSize; offset += buf.length) {
+                int batchSize = Math.min(buf.length, (int) (fileSize - offset));
+                MEM.copyToByteArray(dataAddress + offset, buf, 0, batchSize);
+                out.write(buf, 0, batchSize);
+            }
+        } catch (IOException e) {
+            throw new HazelcastException("Failed to save data to file " + filename, e);
         }
     }
 }
