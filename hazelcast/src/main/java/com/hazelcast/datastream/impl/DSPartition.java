@@ -20,6 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastream.AggregationRecipe;
 import com.hazelcast.datastream.EntryProcessorRecipe;
 import com.hazelcast.datastream.MemoryInfo;
@@ -40,8 +41,13 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Supplier;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -50,10 +56,13 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.StreamSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class DSPartition {
+
+    public static final File BASE_DIR = new File("franz");
 
     private final Compiler compiler;
     private int partitionId;
@@ -78,7 +87,8 @@ public class DSPartition {
                        int partitionId,
                        DataStreamConfig config,
                        SerializationService serializationService,
-                       Compiler compiler) {
+                       Compiler compiler
+    ) {
         this.partitionId = partitionId;
         this.config = config;
         this.compiler = compiler;
@@ -89,9 +99,31 @@ public class DSPartition {
         this.recordModel = new RecordModel(config.getValueClass(), config.getIndices());
         this.encoder = newEncoder();
         this.listeners = dsService.getOrCreateSubscription(config.getName(), partitionId, this);
+        loadSegmentFiles();
         //System.out.println(config);
 
         //System.out.println("record payload size:" + recordModel.getPayloadSize());
+    }
+
+    private void loadSegmentFiles() {
+        String name = config.getName();
+        try (DirectoryStream<Path> paths = Files.newDirectoryStream(BASE_DIR.toPath(), String.format(
+                "%02x%s-%08x-*.segment", name.length(), name, partitionId))
+        ) {
+            StreamSupport.stream(paths.spliterator(), false)
+                         .sorted()
+                         .forEach(p -> newSegment(parseOffset(p)));
+        } catch (IOException e) {
+            throw new HazelcastException(e);
+        }
+    }
+
+    private long parseOffset(Path p) {
+        final String fname = p.getFileName().toString();
+        final String offsetTemplate = "0123456789ABCDEF";
+        final String fileEnding = offsetTemplate + ".segment";
+        final String offsetStr = fname.substring(fname.length() - fileEnding.length(), offsetTemplate.length());
+        return Long.parseLong(offsetStr, 16);
     }
 
     private RecordEncoder newEncoder() {
@@ -107,12 +139,12 @@ public class DSPartition {
         }
     }
 
-    private Segment newSegment() {
+    private Segment newSegment(long offset) {
         Map<String, Supplier<Aggregator>> attachedAggregators = config.getAttachedAggregators();
 
         Map<String, Aggregator> aggregators;
         if (attachedAggregators.isEmpty()) {
-            aggregators = Collections.EMPTY_MAP;
+            aggregators = Collections.emptyMap();
         } else {
             aggregators = new HashMap<>();
             for (Map.Entry<String, Supplier<Aggregator>> entry : attachedAggregators.entrySet()) {
@@ -125,7 +157,7 @@ public class DSPartition {
                 partitionId,
                 config.getInitialSegmentSize(),
                 config.getMaxSegmentSize(),
-                youngestTenuredSegment != null ? youngestTenuredSegment.tail() : head,
+                offset,
                 serializationService,
                 recordModel,
                 encoder, aggregators);
@@ -158,7 +190,7 @@ public class DSPartition {
 
         tenureEden();
         trim();
-        edenSegment = newSegment();
+        edenSegment = newSegment(youngestTenuredSegment != null ? youngestTenuredSegment.tail() : head);
     }
 
     private void tenureEden() {
