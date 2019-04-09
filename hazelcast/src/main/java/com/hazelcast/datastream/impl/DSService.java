@@ -113,7 +113,7 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         }
     }
 
-    public DSPartitionSubscriptions getOrCreateSubscription(String name, int partitionId, DSPartition partition){
+    public DSPartitionSubscriptions getOrCreateSubscription(String name, int partitionId, DSPartition partition) {
         String id = name + "_" + partitionId;
         DSPartitionSubscriptions subscription = subscriptions.get(id);
         if (subscription == null) {
@@ -132,10 +132,10 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
 
     public AtomicLong getBytesInFlight(String uuid) {
         AtomicLong b = bytesInFlightMap.get(uuid);
-        if(b == null){
+        if (b == null) {
             b = new AtomicLong(bytesInFlight);
             AtomicLong found = bytesInFlightMap.putIfAbsent(uuid, b);
-            b = found == null?b:found;
+            b = found == null ? b : found;
         }
         return b;
     }

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.config;
 
 import com.hazelcast.aggregation.Aggregator;
@@ -12,12 +28,16 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
+/**
+ * Configuration for the {@link com.hazelcast.datastream.DataStream}.
+ */
 public class DataStreamConfig {
+    public static final int KB = 1024;
     private String name;
     private Class valueClass;
     // todo: is there a good reason to make initial not equal to max?
-    private long initialSegmentSize = 1024 * 1024;
-    private int maxSegmentSize = 1024 * 1024;
+    private long initialSegmentSize = KB * KB;
+    private int maxSegmentSize = KB * KB;
     private int segmentsPerPartition = Integer.MAX_VALUE;
     private Set<String> indices = new HashSet<String>();
 
@@ -96,6 +116,12 @@ public class DataStreamConfig {
         return maxSegmentSize;
     }
 
+    /**
+     * Sets the maximum segment size in bytes.
+     *
+     * @param maxSegmentSize
+     * @return
+     */
     public DataStreamConfig setMaxSegmentSize(int maxSegmentSize) {
         this.maxSegmentSize = maxSegmentSize;
         return this;
@@ -105,6 +131,12 @@ public class DataStreamConfig {
         return segmentsPerPartition;
     }
 
+    /**
+     * Sets the maximum number of segments per partition.
+     *
+     * @param segmentsPerPartition
+     * @return
+     */
     public DataStreamConfig setSegmentsPerPartition(int segmentsPerPartition) {
         this.segmentsPerPartition = segmentsPerPartition;
         return this;
@@ -114,6 +146,12 @@ public class DataStreamConfig {
         return initialSegmentSize;
     }
 
+    /**
+     * Sets the size in bytes for the initial segment size.
+     *
+     * @param initialSegmentSize
+     * @return
+     */
     public DataStreamConfig setInitialSegmentSize(long initialSegmentSize) {
         this.initialSegmentSize = checkPositive(initialSegmentSize, "initialSegmentSize should be larger than 0");
         return this;

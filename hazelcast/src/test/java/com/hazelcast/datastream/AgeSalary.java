@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,26 @@ public class AgeSalary {
 
     @Override
     public String toString() {
-        return "AgeSalary{" +
-                "age=" + age +
-                ", salary=" + salary +
-                '}';
+        return "AgeSalary{"
+                + "age=" + age
+                + ", salary=" + salary
+                + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AgeSalary ageSalary = (AgeSalary) o;
 
-        if (age != ageSalary.age) return false;
+        if (age != ageSalary.age) {
+            return false;
+        }
         return salary == ageSalary.salary;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,12 @@ import static org.junit.Assert.assertEquals;
 public class HeadTest extends HazelcastTestSupport {
 
     @Test
-    public void whenEmpty(){
+    public void whenEmpty() {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
-                .addDataStreamConfig
-                        (new DataStreamConfig("employees")
-                                .setInitialSegmentSize(1024)
-                                .setValueClass(Employee.class));
+                .addDataStreamConfig(new DataStreamConfig("employees")
+                        .setInitialSegmentSize(1024)
+                        .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -43,18 +42,17 @@ public class HeadTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenFewItemsAdded(){
+    public void whenFewItemsAdded() {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
-                .addDataStreamConfig
-                        (new DataStreamConfig("employees")
-                                .setInitialSegmentSize(1024)
-                                .setValueClass(Employee.class));
+                .addDataStreamConfig(new DataStreamConfig("employees")
+                        .setInitialSegmentSize(1024)
+                        .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        stream.createPublisher().publish("f", new Employee(1,1,1));
+        stream.createPublisher().publish("f", new Employee(1, 1, 1));
         assertEquals(0, stream.head("f"));
     }
 
@@ -63,8 +61,8 @@ public class HeadTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(8*1024)
-                        .setMaxSegmentSize(8*1024)
+                        .setInitialSegmentSize(8 * 1024)
+                        .setMaxSegmentSize(8 * 1024)
                         .setSegmentsPerPartition(3)
                         //.setTenuringAge(10, TimeUnit.SECONDS)
                         .setValueClass(Employee.class));
@@ -76,9 +74,9 @@ public class HeadTest extends HazelcastTestSupport {
         for (int k = 0; k < 10000; k++) {
             publisher.publish(new Employee(1, 1, 1));
             long head = stream.head("f");
-            if(head!=prev){
+            if (head != prev) {
                 long tail = stream.tail("f");
-                System.out.println("at:"+k+" head:"+head+" tail:"+ tail +" diff:"+(tail-head));
+                System.out.println("at:" + k + " head:" + head + " tail:" + tail + " diff:" + (tail - head));
                 prev = head;
             }
 //            assertEquals(20 * (k+1), head);

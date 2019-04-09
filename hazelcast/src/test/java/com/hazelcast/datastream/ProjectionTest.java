@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,7 @@ public class ProjectionTest extends HazelcastTestSupport {
         DataStreamPublisher<Employee> publisher = employees.createPublisher();
 
         int count = 50 * 1000 * 1000;
-        employees.fill(count, new EmployeeSupplier() );
+        employees.fill(count, new EmployeeSupplier());
 
         PreparedProjection<AgeSalary> preparedProjection = employees.asFrame().prepare(
                 new ProjectionRecipe<AgeSalary>(AgeSalary.class, true, new SqlPredicate("true")));
@@ -140,7 +140,7 @@ public class ProjectionTest extends HazelcastTestSupport {
         MemoryInfo memoryInfo = ageSalaries.asFrame().memoryInfo();
         System.out.println(memoryInfo);
 
-        assertEquals(count * (INT_SIZE_IN_BYTES+ INT_SIZE_IN_BYTES), memoryInfo.consumedBytes());
+        assertEquals(count * (INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES), memoryInfo.consumedBytes());
         assertEquals(count, ageSalaries.asFrame().count());
     }
 

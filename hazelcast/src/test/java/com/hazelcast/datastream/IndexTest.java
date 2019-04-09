@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class IndexTest extends HazelcastTestSupport {
         DataStream<Employee> stream = hz.getDataStream("employees");
         DataStreamPublisher<Employee> publisher = stream.createPublisher();
 
-        publisher.publish(0l, new Employee(1, 1, 1));
+        publisher.publish(0L, new Employee(1, 1, 1));
     }
 
     @Test
@@ -61,7 +61,7 @@ public class IndexTest extends HazelcastTestSupport {
         DataStream<BooleanObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<BooleanObject> publisher = stream.createPublisher();
 
-        publisher.publish(0l, new BooleanObject());
+        publisher.publish(0L, new BooleanObject());
     }
 
     public static class BooleanObject implements Serializable {
@@ -83,7 +83,7 @@ public class IndexTest extends HazelcastTestSupport {
         DataStream<ByteObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<ByteObject> publisher = stream.createPublisher();
 
-        publisher.publish(0l, new ByteObject());
+        publisher.publish(0L, new ByteObject());
     }
 
     public static class ByteObject implements Serializable {
@@ -104,7 +104,7 @@ public class IndexTest extends HazelcastTestSupport {
         DataStream<CharObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<CharObject> publisher = stream.createPublisher();
 
-        publisher.publish(0, new CharObject());
+        publisher.publish(0L, new CharObject());
     }
 
     public static class CharObject implements Serializable {
@@ -125,7 +125,7 @@ public class IndexTest extends HazelcastTestSupport {
         DataStream<ShortObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<ShortObject> publisher = stream.createPublisher();
 
-        publisher.publish(0l, new ShortObject());
+        publisher.publish(0L, new ShortObject());
     }
 
     public static class ShortObject implements Serializable {
@@ -145,7 +145,7 @@ public class IndexTest extends HazelcastTestSupport {
 
         DataStream<IntObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<IntObject> publisher = stream.createPublisher();
-        publisher.publish(0l, new IntObject());
+        publisher.publish(0L, new IntObject());
     }
 
     public static class IntObject implements Serializable {
@@ -196,7 +196,7 @@ public class IndexTest extends HazelcastTestSupport {
         DataStream<LongObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<LongObject> publisher = stream.createPublisher();
 
-        publisher.publish(0l, new LongObject());
+        publisher.publish(0L, new LongObject());
     }
 
     public static class LongObject implements Serializable {
@@ -216,7 +216,7 @@ public class IndexTest extends HazelcastTestSupport {
         DataStream<FloatObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<FloatObject> publisher = stream.createPublisher();
 
-        publisher.publish(0l, new FloatObject());
+        publisher.publish(0L, new FloatObject());
     }
 
     public static class FloatObject implements Serializable {
@@ -235,7 +235,7 @@ public class IndexTest extends HazelcastTestSupport {
 
         DataStream<DoubleObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<DoubleObject> publisher = stream.createPublisher();
-        publisher.publish(0l, new DoubleObject());
+        publisher.publish(0L, new DoubleObject());
     }
 
     public static class DoubleObject implements Serializable {
@@ -263,7 +263,7 @@ public class IndexTest extends HazelcastTestSupport {
         DataStream<MultipleScalarsObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<MultipleScalarsObject> publisher = stream.createPublisher();
 
-        publisher.publish(0l, new MultipleScalarsObject());
+        publisher.publish(0L, new MultipleScalarsObject());
     }
 
     public static class MultipleScalarsObject implements Serializable {
@@ -294,7 +294,7 @@ public class IndexTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        DataStream< MultipleScalarsObject> stream = hz.getDataStream("foo");
+        DataStream<MultipleScalarsObject> stream = hz.getDataStream("foo");
         DataStreamPublisher<MultipleScalarsObject> publisher = stream.createPublisher();
 
         int itemCount = 100 * 1000;

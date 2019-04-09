@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,11 +54,11 @@ public class TailTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         DataStream<Employee> stream = hz.getDataStream("employees");
         DataStreamPublisher publisher = stream.createPublisher();
-        for (int k = 0; k < 1000*1000; k++) {
+        for (int k = 0; k < 1000 * 1000; k++) {
             publisher.publish(new Employee(1, 1, 1));
-            assertEquals(20 * (k+1), stream.tail("f"));
-            if(k%10000==0){
-                System.out.println("at:"+k);
+            assertEquals(20 * (k + 1), stream.tail("f"));
+            if (k % 10000 == 0) {
+                System.out.println("at:" + k);
             }
         }
 

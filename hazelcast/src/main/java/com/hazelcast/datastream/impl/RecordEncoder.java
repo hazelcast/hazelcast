@@ -21,7 +21,7 @@ import sun.misc.Unsafe;
 
 /**
  * Responsible for reading and writing a record to offheap.
- *
+ * <p>
  * todo: for every field there will probably be a method generated? e.g. putPrice and getPrice
  */
 public abstract class RecordEncoder<R> {

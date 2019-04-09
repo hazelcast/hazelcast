@@ -82,23 +82,23 @@ public class LongDataSeriesImpl implements LongDataSeries {
 
     @Override
     public long min() {
-        return (Long)execute(minRecipe);
+        return (Long) execute(minRecipe);
     }
 
     @Override
     public long max() {
-        return (Long)execute(maxRecipe);
+        return (Long) execute(maxRecipe);
     }
 
 
     @Override
     public long sum() {
-        return (Long)execute(sumRecipe);
+        return (Long) execute(sumRecipe);
     }
 
     @Override
     public double average() {
-        return (Double)execute(averageRecipe);
+        return (Double) execute(averageRecipe);
     }
 
     private Number execute(String preparationId) {

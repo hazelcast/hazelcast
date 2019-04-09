@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,24 +38,34 @@ public class Employee implements Serializable, Extractable {
 
     @Override
     public String toString() {
-        return "Employee{" +
-                "age=" + age +
-                ", iq=" + iq +
-                ", height=" + height +
-                ", money=" + salary +
-                '}';
+        return "Employee{"
+                + "age=" + age
+                + ", iq=" + iq
+                + ", height=" + height
+                + ", money=" + salary
+                + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Employee employee = (Employee) o;
 
-        if (age != employee.age) return false;
-        if (iq != employee.iq) return false;
-        if (height != employee.height) return false;
+        if (age != employee.age) {
+            return false;
+        }
+        if (iq != employee.iq) {
+            return false;
+        }
+        if (height != employee.height) {
+            return false;
+        }
         return salary == employee.salary;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,9 @@ public class AppendTest extends HazelcastTestSupport {
     public void whenSimple() {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
-                .addDataStreamConfig
-                        (new DataStreamConfig("employees")
-                                .setInitialSegmentSize(1024)
-                                .setValueClass(Employee.class));
+                .addDataStreamConfig(new DataStreamConfig("employees")
+                        .setInitialSegmentSize(1024)
+                        .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -80,7 +79,7 @@ public class AppendTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        DataStream< Employee> stream = hz.getDataStream("employees");
+        DataStream<Employee> stream = hz.getDataStream("employees");
         DataStreamPublisher<Employee> publisher = stream.createPublisher();
         int itemCount = 100 * 1000;
         for (int k = 0; k < itemCount; k++) {
@@ -110,7 +109,7 @@ public class AppendTest extends HazelcastTestSupport {
 
         int itemCount = 100 * 1000;
         for (int k = 0; k < itemCount; k++) {
-            publisher.publish(k,new Employee(k, k, k));
+            publisher.publish(k, new Employee(k, k, k));
         }
 
         assertEquals(itemCount, stream.asFrame().count());

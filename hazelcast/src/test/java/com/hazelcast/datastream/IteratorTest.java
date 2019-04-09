@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class IteratorTest extends HazelcastTestSupport {
         DSProxy<Employee> stream = (DSProxy) hz.getDataStream("employees");
         DataStreamPublisher<Employee> publisher = stream.createPublisher();
 
-        for(long k=0;k<1000;k++){
+        for (long k = 0; k < 1000; k++) {
             Employee employee = supplier.get();
             employeeList.add(employee);
             publisher.publish(0, employee);
@@ -65,8 +65,8 @@ public class IteratorTest extends HazelcastTestSupport {
         it.forEachRemaining(actual::add);
 
         assertEquals(employeeList.size(), actual.size());
-        for(int k=0;k<employeeList.size();k++){
-            assertEquals("at index:"+k, employeeList.get(k), actual.get(k));
+        for (int k = 0; k < employeeList.size(); k++) {
+            assertEquals("at index:" + k, employeeList.get(k), actual.get(k));
         }
     }
 }

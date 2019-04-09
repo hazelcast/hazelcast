@@ -55,7 +55,7 @@ public class MemoryInfo implements Serializable {
         return "MemoryInfo{"
                 + "count=" + count
                 + ", consumedBytes=" + consumedBytes
-                + ", consumedBytesPerEntry=" + (consumedBytes/count)
+                + ", consumedBytesPerEntry=" + (consumedBytes / count)
                 + ", allocatedBytes=" + allocatedBytes
                 + ", storageEfficiency=" + ((100d * consumedBytes) / allocatedBytes) + "%"
                 + ", segmentsInUse=" + segmentsInUse

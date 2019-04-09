@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,14 +117,14 @@ public class QueryTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
 
         long count = 100000;
-        int resultCount=0;
+        int resultCount = 0;
         int queryAge = 20;
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
         DataStreamPublisher<Employee> publisher = stream.createPublisher();
         Random random = new Random();
-        for (long k = 0; k <count;k++){
+        for (long k = 0; k < count; k++) {
             int age = random.nextInt(50);
-            if(age == queryAge){
+            if (age == queryAge) {
                 resultCount++;
             }
             publisher.publish(k, new Employee(age, 100, 200));
@@ -132,7 +132,7 @@ public class QueryTest extends HazelcastTestSupport {
 
         PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("age=$age"));
         Map<String, Object> bindings = new HashMap<String, Object>();
-        bindings.put("age",queryAge);
+        bindings.put("age", queryAge);
         assertEquals(resultCount, preparedQuery.execute(bindings).size());
     }
 

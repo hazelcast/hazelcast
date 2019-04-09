@@ -23,6 +23,11 @@ import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 
+/**
+ * A recipe for creating a projection using the {@link DataStream}.
+ *
+ * @param <E>
+ */
 public class ProjectionRecipe<E> implements DataSerializable {
 
     private String className;

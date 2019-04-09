@@ -34,12 +34,12 @@ public class DSPartitionSubscriptions {
         this.partition = partition;
     }
 
-    public void register(String uuid, Connection connection, long offset){
+    public void register(String uuid, Connection connection, long offset) {
         subscriptions.add(new Subscription(uuid, connection, offset));
     }
 
-    public void onAppend(DSPartition partition){
-        for(Subscription subscription: subscriptions){
+    public void onAppend(DSPartition partition) {
+        for (Subscription subscription : subscriptions) {
 
         }
     }
@@ -50,11 +50,11 @@ public class DSPartitionSubscriptions {
         private Connection connection;
         private final AtomicLong bytesInFlight;
 
-        Subscription(String uuid, Connection connection, long offset){
-           this.bytesInFlight  = service.getBytesInFlight(uuid);
-           this.uuid = uuid;
-           this.connection=connection;
-           this.offset = offset;
+        Subscription(String uuid, Connection connection, long offset) {
+            this.bytesInFlight = service.getBytesInFlight(uuid);
+            this.uuid = uuid;
+            this.connection = connection;
+            this.offset = offset;
         }
     }
 }

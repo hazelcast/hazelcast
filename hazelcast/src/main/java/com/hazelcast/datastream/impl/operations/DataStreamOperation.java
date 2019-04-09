@@ -31,10 +31,10 @@ import java.io.IOException;
 public abstract class DataStreamOperation extends Operation
         implements IdentifiedDataSerializable, NamedOperation {
 
-    private String name;
     protected DSService service;
     protected DSContainer container;
     protected DSPartition partition;
+    protected String name;
 
     public DataStreamOperation() {
     }

@@ -37,7 +37,7 @@ public class AddDataStreamSubscriptionOperation extends DataStreamOperation {
 
     @Override
     public void run() throws Exception {
-        DSPartitionSubscriptions subscription = service.getOrCreateSubscription(getName(),getPartitionId(), partition );
+        DSPartitionSubscriptions subscription = service.getOrCreateSubscription(getName(), getPartitionId(), partition);
         subscription.register(getCallerUuid(), getConnection(), offset);
     }
 

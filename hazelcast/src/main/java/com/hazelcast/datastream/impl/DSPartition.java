@@ -419,12 +419,12 @@ public class DSPartition {
         return head;
     }
 
-    public long tail(){
-        if(edenSegment!=null){
+    public long tail() {
+        if (edenSegment != null) {
             return edenSegment.tail();
         }
 
-        if(youngestTenuredSegment!=null){
+        if (youngestTenuredSegment != null) {
             return youngestTenuredSegment.tail();
         }
 

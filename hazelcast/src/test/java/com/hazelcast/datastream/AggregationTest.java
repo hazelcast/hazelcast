@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class AggregationTest extends HazelcastTestSupport {
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
                                 .setSegmentsPerPartition(Integer.MAX_VALUE)
-                                .setMaxSegmentSize(16*1024)
+                                .setMaxSegmentSize(16 * 1024)
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -86,7 +86,7 @@ public class AggregationTest extends HazelcastTestSupport {
         for (long k = 0; k < 1000; k++) {
             int age = random.nextInt(100000);
             maxAge = Math.max(maxAge, age);
-            publisher.publish(k, new Employee(age, (int)k, (int)k));
+            publisher.publish(k, new Employee(age, (int) k, (int) k));
         }
 
         Aggregator aggregator = new MaxAggregator();
