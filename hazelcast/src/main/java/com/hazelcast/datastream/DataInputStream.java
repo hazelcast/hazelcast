@@ -25,7 +25,9 @@ package com.hazelcast.datastream;
  */
 public interface DataInputStream<E> {
 
-    Object read(long timeoutMs) throws InterruptedException;
+    E read() throws InterruptedException;
 
-    Object poll();
+    E read(long timeoutMs) throws InterruptedException;
+
+    E poll();
 }

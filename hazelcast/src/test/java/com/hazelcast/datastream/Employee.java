@@ -22,7 +22,9 @@ import com.hazelcast.query.impl.Extractable;
 import java.io.Serializable;
 
 public class Employee implements Serializable, Extractable {
+    public int a;
     public int age;
+    public int b;
     public long iq;
     public int height;
     public int salary = 100;

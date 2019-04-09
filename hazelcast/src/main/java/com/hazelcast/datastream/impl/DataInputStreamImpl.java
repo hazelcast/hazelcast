@@ -53,12 +53,17 @@ class DataInputStreamImpl<R> implements DataInputStream<R>, Consumer<Packet> {
     }
 
     @Override
+    public R read() throws InterruptedException {
+        return serializationService.toObject(queue.take());
+    }
+
+    @Override
     public R read(long timeoutMs) throws InterruptedException {
         return serializationService.toObject(queue.poll(timeoutMs, MILLISECONDS));
     }
 
     @Override
-    public Object poll() {
+    public R poll() {
         return serializationService.toObject(queue.poll());
     }
 }

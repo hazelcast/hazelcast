@@ -36,16 +36,13 @@ public class LongDataSeriesTest extends HazelcastTestSupport {
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
                                 .setValueClass(Employee.class));
-
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(1).newInstances(config);
 
         DataStream<Employee> stream = cluster[0].getDataStream("employees");
         DataOutputStream<Employee> out = stream.newOutputStream();
-
         out.write(1, new Employee(10, 0, 0));
         out.write(1, new Employee(20, 0, 0));
         out.write(1, new Employee(30, 0, 0));
-
 
         LongDataSeries ageDS = stream.asFrame().getLongDataSeries("age");
         assertEquals(20, ageDS.average(), 0.1f);

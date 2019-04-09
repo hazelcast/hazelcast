@@ -26,10 +26,10 @@ import org.junit.Test;
 public class SubscriptionTest extends HazelcastTestSupport {
 
     @Test
-    public void test() {
+    public void test() throws InterruptedException {
         Config config = new Config()
                 .addDataStreamConfig(
-                        new DataStreamConfig("employeesDataset")
+                        new DataStreamConfig("employees")
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -40,15 +40,23 @@ public class SubscriptionTest extends HazelcastTestSupport {
             employeesMap.put((long) k, new Employee(k, k, k));
         }
 
-        DataStream<Employee> stream = hz.getDataStream("employeesDataset");
+        DataStream<Employee> stream = hz.getDataStream("employees");
         stream.newOutputStream().populate(employeesMap);
 
-        stream.newInputStream().add(new DataStreamConsumer<Employee>() {
-            @Override
-            public long consume(long offset, Employee record) {
-                System.out.println(record);
-                return 0;
-            }
-        });
+        DataInputStream<Employee> in = stream.newInputStream("foo",0);
+        for(;;) {
+            Employee employee = in.read();
+            System.out.println(employee);
+        }
+
+
+        //
+//        stream.newInputStream().add(new DataStreamConsumer<Employee>() {
+//            @Override
+//            public long consume(long offset, Employee record) {
+//                System.out.println(record);
+//                return 0;
+//            }
+//        });
     }
 }
