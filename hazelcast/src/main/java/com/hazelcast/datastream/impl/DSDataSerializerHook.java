@@ -42,8 +42,7 @@ import com.hazelcast.datastream.impl.entryprocessor.ExecuteEntryProcessorOperati
 import com.hazelcast.datastream.impl.entryprocessor.ExecuteEntryProcessorOperationFactory;
 import com.hazelcast.datastream.impl.entryprocessor.PrepareEntryProcessorOperation;
 import com.hazelcast.datastream.impl.entryprocessor.PrepareEntryProcessorOperationFactory;
-import com.hazelcast.datastream.impl.operations.AddLocalListenerOperation;
-import com.hazelcast.datastream.impl.operations.AddRemoteListenerOperation;
+import com.hazelcast.datastream.impl.operations.AddListenerOperation;
 import com.hazelcast.datastream.impl.operations.AppendOperation;
 import com.hazelcast.datastream.impl.operations.CountOperation;
 import com.hazelcast.datastream.impl.operations.CountOperationFactory;
@@ -108,10 +107,9 @@ public final class DSDataSerializerHook implements DataSerializerHook {
     public static final int FREEZE_OPERATION_FACTORY = 28;
     public static final int FILL_OPERATION = 29;
     public static final int ITERATOR_OPERATION = 30;
-    public static final int ADD_REMOTE_LISTENER_OPERATION = 31;
-    public static final int ADD_LOCAL_LISTENER_OPERATION = 32;
-    public static final int HEAD_OPERATION = 33;
-    public static final int TAIL_OPERATION = 34;
+    public static final int ADD_LISTENER_OPERATION = 31;
+    public static final int HEAD_OPERATION = 32;
+    public static final int TAIL_OPERATION = 33;
 
     @Override
     public int getFactoryId() {
@@ -182,11 +180,9 @@ public final class DSDataSerializerHook implements DataSerializerHook {
                     return new FillOperation();
                 case ITERATOR_OPERATION:
                     return new IteratorOperation();
-                case ADD_REMOTE_LISTENER_OPERATION:
-                    return new AddRemoteListenerOperation();
-                case ADD_LOCAL_LISTENER_OPERATION:
-                    return new AddLocalListenerOperation();
-                case HEAD_OPERATION:
+                case ADD_LISTENER_OPERATION:
+                    return new AddListenerOperation();
+                 case HEAD_OPERATION:
                     return new HeadOperation();
                 case TAIL_OPERATION:
                     return new TailOperation();

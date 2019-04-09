@@ -19,13 +19,11 @@ package com.hazelcast.datastream;
 /**
  * A Subscriber for the {@link DataStream}.
  *
+ * Implementations are thread-safe.
+ *
  * @param <E>
  */
 public interface DataInputStream<E> {
-
-//    void add(DataStreamConsumer<E> consumer);
-//
-//    void add(DataStreamConsumer<E> consumer, long[] offsets);
 
     Object read(long timeoutMs) throws InterruptedException;
 

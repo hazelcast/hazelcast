@@ -21,7 +21,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.function.Consumer;
 
 import java.util.ArrayList;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DSPartitionListeners {
@@ -38,12 +37,12 @@ public class DSPartitionListeners {
         this.partition = partition;
     }
 
-    public void register(String uuid, Connection connection, long offset) {
+    public void registerRemoteListener(String uuid, Connection connection, long offset) {
         remoteListeners.add(new RemoteListener(uuid, connection, offset));
     }
 
-    public void registerLocalListener(Consumer consumer, Executor executor, long offset) {
-        localListeners.add(new LocalListener(offset, consumer, executor));
+    public void registerLocalListener(Consumer consumer, long offset) {
+        localListeners.add(new LocalListener(offset, consumer));
     }
 
     // called from the partition thread
@@ -75,12 +74,10 @@ public class DSPartitionListeners {
         private final Segment segment;
         private long offset;
         private Consumer<Data> consumer;
-        private Executor executor;
 
-        public LocalListener(long offset, Consumer<Data> consumer, Executor executor) {
+        public LocalListener(long offset, Consumer<Data> consumer) {
             this.offset = offset;
             this.consumer = consumer;
-            this.executor = executor;
             this.segment = partition.findSegment(offset);
         }
 

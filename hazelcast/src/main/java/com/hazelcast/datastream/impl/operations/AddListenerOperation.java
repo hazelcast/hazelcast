@@ -20,30 +20,37 @@ import com.hazelcast.datastream.impl.DSDataSerializerHook;
 import com.hazelcast.datastream.impl.DSPartitionListeners;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
 
-public class AddRemoteListenerOperation extends DataStreamOperation {
+public class AddListenerOperation extends DataStreamOperation {
 
+    private transient Consumer consumer;
     private long offset;
 
-    public AddRemoteListenerOperation() {
+    public AddListenerOperation() {
     }
 
-    public AddRemoteListenerOperation(String name, long offset) {
+    public AddListenerOperation(String name, long offset, Consumer consumer) {
         super(name);
         this.offset = offset;
+        this.consumer = consumer;
     }
 
     @Override
     public void run() throws Exception {
         DSPartitionListeners subscription = service.getOrCreatePartitionListeners(getName(), getPartitionId(), partition);
-        subscription.register(getCallerUuid(), getConnection(), offset);
+        if(executedLocally()){
+            subscription.registerLocalListener(consumer, offset);
+        }else{
+            subscription.registerRemoteListener(getCallerUuid(), getConnection(), offset);
+        }
     }
 
     @Override
     public int getId() {
-        return DSDataSerializerHook.ADD_REMOTE_LISTENER_OPERATION;
+        return DSDataSerializerHook.ADD_LISTENER_OPERATION;
     }
 
     @Override

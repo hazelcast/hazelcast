@@ -20,6 +20,7 @@ import com.hazelcast.datastream.DataInputStream;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -28,43 +29,36 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
-class DataInputStreamImpl<R> implements DataInputStream<R> {
+class DataInputStreamImpl<R> implements DataInputStream<R>, Consumer<Packet> {
 
     private final InternalSerializationService serializationService;
     private final DSService service;
     private final String dataStreamName;
     private final BlockingQueue<Data> queue = new LinkedBlockingQueue<>();
 
-    public DataInputStreamImpl(InternalSerializationService serializationService,
-                               DSService service,
-                               String name,
-                               List<?> partitions,
-                               List<Long> offsets) {
+    DataInputStreamImpl(InternalSerializationService serializationService,
+                        DSService service,
+                        String name,
+                        List<?> partitions,
+                        List<Long> offsets) {
         this.serializationService = serializationService;
         this.service = service;
         this.dataStreamName = name;
         service.startListening(dataStreamName, this, partitions, offsets);
     }
 
-    public void received(Packet packet){
+    @Override
+    public void accept(Packet packet) {
         queue.offer(packet);
     }
 
     @Override
     public R read(long timeoutMs) throws InterruptedException {
-        Data data = queue.poll(timeoutMs, MILLISECONDS);
-        if(data == null){
-            return null;
-        }
-        return serializationService.toObject(data);
+        return serializationService.toObject(queue.poll(timeoutMs, MILLISECONDS));
     }
 
     @Override
     public Object poll() {
-        Data data = queue.poll();
-        if(data == null){
-            return null;
-        }
-        return serializationService.toObject(data);
+        return serializationService.toObject(queue.poll());
     }
 }
