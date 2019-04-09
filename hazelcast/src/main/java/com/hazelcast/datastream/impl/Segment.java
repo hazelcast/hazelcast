@@ -2,7 +2,7 @@
  * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * you may not use this segmentFile except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -32,6 +32,7 @@ import java.io.OutputStream;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+import static com.hazelcast.datastream.impl.DSPartition.BASE_DIR;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
@@ -58,7 +59,7 @@ public class Segment {
     private final long indicesAddress;
     private final Map<String, Aggregator> aggregators;
     private final long startOffset;
-    private final String filename;
+    private final File segmentFile;
 
     private long lastInsertNanos = startNanos;
     private long dataAddress;
@@ -75,7 +76,8 @@ public class Segment {
             RecordEncoder encoder,
             Map<String, Aggregator> aggregators
     ) {
-        this.filename = String.format("%s-%s-%s.segment", name, partitionId, startOffset);
+        this.segmentFile = new File(BASE_DIR,
+                String.format("%02x%s-%08x-%016x.segment", name.length(), name, partitionId, startOffset));
         this.startOffset = startOffset;
         this.recordModel = recordModel;
         this.maxSegmentSize = maxSegmentSize;
@@ -221,7 +223,6 @@ public class Segment {
     }
 
     private boolean loadFromFile() {
-        File segmentFile = new File(filename);
         long reportedFileSize = segmentFile.length();
         long newPointer = unsafe.allocateMemory(reportedFileSize);
         long totalRead = 0;
@@ -230,8 +231,8 @@ public class Segment {
             for (int readCount = 0; readCount != -1; readCount = in.read(buf)) {
                 if (totalRead + readCount > reportedFileSize) {
                     throw new HazelcastException(String.format(
-                            "%s: reported file size was %,3d, but managed to read %,3d bytes",
-                            filename, reportedFileSize, totalRead + readCount));
+                            "%s: reported file size was %,3d, but more data was there, at least %,3d bytes",
+                            segmentFile, reportedFileSize, totalRead + readCount));
                 }
                 MEM.copyFromByteArray(buf, 0, newPointer + totalRead, readCount);
                 totalRead += readCount;
@@ -240,12 +241,12 @@ public class Segment {
         } catch (FileNotFoundException e) {
             return false;
         } catch (IOException e) {
-            throw new HazelcastException("Failed to load data from file " + filename, e);
+            throw new HazelcastException("Failed to load data from file " + segmentFile, e);
         }
     }
 
     private void saveToFile() {
-        try (OutputStream out = new FileOutputStream(filename)) {
+        try (OutputStream out = new FileOutputStream(segmentFile)) {
             byte[] buf = new byte[1 << 14];
             long fileSize = index * recordModel.getSize();
             for (long offset = 0; offset < fileSize; offset += buf.length) {
@@ -254,7 +255,7 @@ public class Segment {
                 out.write(buf, 0, batchSize);
             }
         } catch (IOException e) {
-            throw new HazelcastException("Failed to save data to file " + filename, e);
+            throw new HazelcastException("Failed to save data to file " + segmentFile, e);
         }
     }
 }
