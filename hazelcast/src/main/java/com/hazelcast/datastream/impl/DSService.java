@@ -21,6 +21,7 @@ import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.datastream.impl.operations.AddListenerOperation;
 import com.hazelcast.internal.codeneneration.Compiler;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.ManagedService;
@@ -114,8 +115,9 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
             }
         }
 
-        for (int partitionId: partitionIds){
-            long offset = offsets == null ? -1 : offsets.get(partitionId);
+        for (int k=0;k<partitions.size();k++){
+            int partitionId = partitionIds.get(k);
+            long offset = offsets == null ? -1 : offsets.get(k);
             Operation operation = new AddListenerOperation(streamName, offset, subscriber)
                     .setPartitionId(partitionId);
             futures.add(operationService.invokeOnPartition(operation));
@@ -130,7 +132,7 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         String id = name + "_" + partitionId;
         DSPartitionListeners subscription = subscriptions.get(id);
         if (subscription == null) {
-            subscription = new DSPartitionListeners(this, name, partition);
+            subscription = new DSPartitionListeners(this, name, partition, (InternalSerializationService) nodeEngine.getSerializationService());
             DSPartitionListeners old = subscriptions.putIfAbsent(id, subscription);
             if (old != null) {
                 subscription = old;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.datastream.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.function.Consumer;
@@ -30,11 +31,13 @@ public class DSPartitionListeners {
     private final DSPartition partition;
     private final ArrayList<RemoteListener> remoteListeners = new ArrayList<RemoteListener>();
     private final ArrayList<LocalListener> localListeners = new ArrayList<LocalListener>();
+    private final InternalSerializationService ss;
 
-    DSPartitionListeners(DSService service, String name, DSPartition partition) {
+    DSPartitionListeners(DSService service, String name, DSPartition partition, InternalSerializationService ss) {
         this.name = name;
         this.service = service;
         this.partition = partition;
+        this.ss = ss;
     }
 
     public void registerRemoteListener(String uuid, Connection connection, long offset) {
@@ -51,7 +54,7 @@ public class DSPartitionListeners {
 
         }
 
-        for(LocalListener localListener:localListeners){
+        for (LocalListener localListener : localListeners) {
             localListener.onAppend();
         }
     }
@@ -70,19 +73,40 @@ public class DSPartitionListeners {
         }
     }
 
-    private class LocalListener{
-        private final Segment segment;
+    private class LocalListener {
+        private Segment segment;
         private long offset;
         private Consumer<Data> consumer;
 
-        public LocalListener(long offset, Consumer<Data> consumer) {
+        LocalListener(long offset, Consumer<Data> consumer) {
             this.offset = offset;
             this.consumer = consumer;
-            this.segment = partition.findSegment(offset);
         }
 
-        public void onAppend() {
+        void onAppend() {
+            System.out.println("on Append called: segment "+segment);
+            if(segment == null){
+                this.segment = partition.findSegment(offset);
+                if(segment == null){
+                    return;
+                }
+            }
 
+            for (; ; ) {
+                int offsetInSegment = (int) (offset - segment.head());
+                if (offsetInSegment >= partition.tail()) {
+                    segment = segment.next;
+                    if (segment == null) {
+                        return;
+                    }
+                    continue;
+                }
+                Object o = partition.encoder().newInstance();
+                offset += partition.model().getPayloadSize();
+                partition.encoder().readRecord(o, segment.dataAddress(), offsetInSegment);
+                consumer.accept(ss.toData(o));
+                return;
+            }
         }
     }
 

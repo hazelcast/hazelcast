@@ -19,7 +19,6 @@ package com.hazelcast.datastream;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
@@ -34,14 +33,18 @@ public class SubscriptionTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        IMap<Long, Employee> employeesMap = hz.getMap("employeesMap");
-        int itemCount = 10000;
-        for (int k = 0; k < itemCount; k++) {
-            employeesMap.put((long) k, new Employee(k, k, k));
-        }
-
         DataStream<Employee> stream = hz.getDataStream("employees");
-        stream.newOutputStream().populate(employeesMap);
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                DataOutputStream out = stream.newOutputStream();
+                for(int k=0;k<100;k++){
+                //    out.write("foo",new Employee(k,k,k));
+                    sleepSeconds(1);
+                }
+            }
+        });
 
         DataInputStream<Employee> in = stream.newInputStream("foo",0);
         for(;;) {

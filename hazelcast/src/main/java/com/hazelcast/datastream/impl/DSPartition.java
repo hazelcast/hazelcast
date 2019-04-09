@@ -101,14 +101,22 @@ public class DSPartition {
         //System.out.println("record payload size:" + recordModel.getPayloadSize());
     }
 
+    public RecordModel model() {
+        return recordModel;
+    }
+
+    public RecordEncoder encoder() {
+        return encoder;
+    }
+
     private void loadSegmentFiles() {
         String name = config.getName();
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(BASE_DIR.toPath(), String.format(
                 "%02x%s-%08x-*.segment", name.length(), name, partitionId))
         ) {
             StreamSupport.stream(paths.spliterator(), false)
-                         .sorted()
-                         .forEach(p -> newSegment(parseOffset(p)));
+                    .sorted()
+                    .forEach(p -> newSegment(parseOffset(p)));
         } catch (IOException e) {
             System.out.println("WARNING: Base directory for Franz is not there: " + BASE_DIR.getAbsolutePath());
         }
@@ -230,7 +238,7 @@ public class DSPartition {
             tenuredSegmentCount--;
         }
     }
-    
+
     public void deleteRetiredSegments() {
         if (config.getTenuringAgeMillis() == Integer.MAX_VALUE) {
             // tenuring is disabled, so there will never be retired segments to delete
@@ -461,7 +469,8 @@ public class DSPartition {
 
     public Segment findSegment(long offset) {
         Segment current = oldestTenuredSegment;
-        while (current!=null){
+        while (current != null) {
+            System.out.println("tenured: "+current.head()+" current.tail:"+current.tail());
             if (current.head() <= offset && current.tail() >= offset) {
                 return current;
             } else {
@@ -469,10 +478,12 @@ public class DSPartition {
             }
         }
 
-        if(edenSegment!=null){
-           if(edenSegment.head() <= offset && edenSegment.tail() >= offset){
-               return edenSegment;
-           }
+        if (edenSegment != null) {
+            System.out.println("edenSegment: "+edenSegment.head()+" current.tail:"+edenSegment.tail());
+
+            if (edenSegment.head() <= offset && edenSegment.tail() >= offset) {
+                return edenSegment;
+            }
         }
 
         return null;

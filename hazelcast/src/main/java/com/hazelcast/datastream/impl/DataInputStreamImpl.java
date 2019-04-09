@@ -18,7 +18,6 @@ package com.hazelcast.datastream.impl;
 
 import com.hazelcast.datastream.DataInputStream;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.function.Consumer;
 
@@ -29,7 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
-class DataInputStreamImpl<R> implements DataInputStream<R>, Consumer<Packet> {
+class DataInputStreamImpl<R> implements DataInputStream<R>, Consumer<Data> {
 
     private final InternalSerializationService serializationService;
     private final DSService service;
@@ -48,7 +47,7 @@ class DataInputStreamImpl<R> implements DataInputStream<R>, Consumer<Packet> {
     }
 
     @Override
-    public void accept(Packet packet) {
+    public void accept(Data packet) {
         queue.offer(packet);
     }
 
