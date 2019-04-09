@@ -412,6 +412,7 @@ public class DSPartition {
 
     public Iterator iterator() {
         // we are not including eden for now. we rely on frozen partition
+        // todo: we probably want to return youngestSegment for iteration
         return new IteratorImpl(oldestTenuredSegment);
     }
 
