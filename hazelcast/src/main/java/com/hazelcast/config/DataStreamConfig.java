@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.util.function.Supplier;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,7 +43,8 @@ public class DataStreamConfig {
     private int maxSegmentSize = KB * KB;
     private int segmentsPerPartition = Integer.MAX_VALUE;
     private Set<String> indices = new HashSet<String>();
-
+    private boolean storageEnabled = false;
+    private File storageDir = new File("datastream-storage");
     // to get rid of 'too' old segments.
     // so data is inserted on the segment as long as the tenuringAgeMillis has not been reached.
     // once it is reached, a new segment is created and this one is moved one to the back.
@@ -52,6 +54,8 @@ public class DataStreamConfig {
     private long tenuringAgeMillis = Long.MAX_VALUE;
 
     private Map<String, Supplier<Aggregator>> attachedAggregators = new HashMap<String, Supplier<Aggregator>>();
+
+
 
     public DataStreamConfig() {
     }
@@ -68,6 +72,25 @@ public class DataStreamConfig {
         this.segmentsPerPartition = defConfig.segmentsPerPartition;
         this.tenuringAgeMillis = defConfig.tenuringAgeMillis;
         this.indices = defConfig.indices;
+        this.storageEnabled = defConfig.storageEnabled;
+        this.storageDir = defConfig.storageDir;
+    }
+
+    public File getStorageDir() {
+        return storageDir;
+    }
+
+    public DataStreamConfig setStorageDir(File storageDir) {
+        this.storageDir = checkNotNull(storageDir,"storageDir can't be null");
+        return this;
+    }
+
+    public boolean isStorageEnabled() {
+        return storageEnabled;
+    }
+
+    public void setStorageEnabled(boolean storageEnabled) {
+        this.storageEnabled = storageEnabled;
     }
 
     public Map<String, Supplier<Aggregator>> getAttachedAggregators() {

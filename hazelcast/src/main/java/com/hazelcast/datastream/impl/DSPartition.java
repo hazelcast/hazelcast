@@ -58,8 +58,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class DSPartition {
 
-    public static final File BASE_DIR = new File("franz");
-
     private final Compiler compiler;
     private int partitionId;
     private final DataStreamConfig config;
@@ -111,14 +109,14 @@ public class DSPartition {
 
     private void loadSegmentFiles() {
         String name = config.getName();
-        try (DirectoryStream<Path> paths = Files.newDirectoryStream(BASE_DIR.toPath(), String.format(
+        try (DirectoryStream<Path> paths = Files.newDirectoryStream(config.getStorageDir().toPath(), String.format(
                 "%02x%s-%08x-*.segment", name.length(), name, partitionId))
         ) {
             StreamSupport.stream(paths.spliterator(), false)
                     .sorted()
                     .forEach(p -> newSegment(parseOffset(p)));
         } catch (IOException e) {
-            System.out.println("WARNING: Base directory for Franz is not there: " + BASE_DIR.getAbsolutePath());
+            System.out.println("WARNING: Base directory for Franz is not there: " + config.getStorageDir().getAbsolutePath());
         }
     }
 
@@ -156,15 +154,8 @@ public class DSPartition {
             }
         }
 
-        return new Segment(
-                config.getName(),
-                partitionId,
-                config.getInitialSegmentSize(),
-                config.getMaxSegmentSize(),
-                offset,
-                serializationService,
-                recordModel,
-                encoder, aggregators);
+        return new Segment(config.getName(), partitionId, offset, serializationService,
+                recordModel, encoder, aggregators, config);
     }
 
     public DataStreamConfig getConfig() {
@@ -470,7 +461,7 @@ public class DSPartition {
     public Segment findSegment(long offset) {
         Segment current = oldestTenuredSegment;
         while (current != null) {
-           // System.out.println("tenured: "+current.head()+" current.tail:"+current.tail());
+            // System.out.println("tenured: "+current.head()+" current.tail:"+current.tail());
             if (current.head() <= offset && current.tail() >= offset) {
                 return current;
             } else {
@@ -479,7 +470,7 @@ public class DSPartition {
         }
 
         if (edenSegment != null) {
-           // System.out.println("edenSegment: "+edenSegment.head()+" current.tail:"+edenSegment.tail());
+            // System.out.println("edenSegment: "+edenSegment.head()+" current.tail:"+edenSegment.tail());
 
             if (edenSegment.head() <= offset && edenSegment.tail() >= offset) {
                 return edenSegment;

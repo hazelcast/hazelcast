@@ -17,6 +17,7 @@
 package com.hazelcast.datastream.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -32,7 +33,6 @@ import java.io.OutputStream;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import static com.hazelcast.datastream.impl.DSPartition.BASE_DIR;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
@@ -68,19 +68,18 @@ public class Segment {
 
     Segment(String name,
             int partitionId,
-            long initialSegmentSize,
-            long maxSegmentSize,
             long startOffset,
             SerializationService serializationService,
             RecordModel recordModel,
             RecordEncoder encoder,
-            Map<String, Aggregator> aggregators
+            Map<String, Aggregator> aggregators,
+            DataStreamConfig config
     ) {
-        this.segmentFile = new File(BASE_DIR,
+        this.segmentFile = new File(config.getStorageDir(),
                 String.format("%02x%s-%08x-%016x.segment", name.length(), name, partitionId, startOffset));
         this.startOffset = startOffset;
         this.recordModel = recordModel;
-        this.maxSegmentSize = maxSegmentSize;
+        this.maxSegmentSize = config.getMaxSegmentSize();
         this.serializationService = serializationService;
         this.aggregators = aggregators;
 
@@ -91,8 +90,8 @@ public class Segment {
                 unsafe.putInt(indicesAddress + k * 4, -1);
             }
         }
-        this.dataAddress = unsafe.allocateMemory(initialSegmentSize);
-        this.segmentSize = initialSegmentSize;
+        this.dataAddress = unsafe.allocateMemory(config.getInitialSegmentSize());
+        this.segmentSize = config.getInitialSegmentSize();
         this.encoder = encoder;
     }
 
