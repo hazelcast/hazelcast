@@ -1,5 +1,12 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.11.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.11.3 ====
+
+1. Fixes 
+
+* Fixed an issue where the map statistics are not updated when the `IMap.delete()` method is called from the client. [#14471]
+* Fixed the issues that occurred on the client map when the remote members are shut down. [#13396]
+
 ==== 3.11.2 ====
 
 1. Enhancements 
