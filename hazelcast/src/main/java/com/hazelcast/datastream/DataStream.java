@@ -43,8 +43,9 @@ public interface DataStream<R> extends DistributedObject {
 
     /**
      * DataInputStream that receives data for the given partitions.
-     *
+     * <p>
      * Input
+     *
      * @param partitions
      * @param offsets
      * @return
@@ -60,8 +61,30 @@ public interface DataStream<R> extends DistributedObject {
      */
     <P> DataInputStream<R> newInputStream(List<Long> offsets);
 
+    /**
+     * Gets the tail for the given partition.
+     * <p>
+     * The tail is the side where items are added to.
+     * <p>
+     * The tail is the offset to the first available byte.
+     *
+     * @param partitionKey
+     * @param <P>
+     * @return the tail.
+     */
     <P> long tail(P partitionKey);
 
+    /**
+     * Returns the head for the given partition.
+     * <p>
+     * The head is pointing to the oldest byte.
+     * <p>
+     * If head and tail are equal, no messages are available in the partition.
+     *
+     * @param partitionKey
+     * @param <P>
+     * @return the tail.
+     */
     <P> long head(P partitionKey);
 
     DataFrame<R> asFrame();

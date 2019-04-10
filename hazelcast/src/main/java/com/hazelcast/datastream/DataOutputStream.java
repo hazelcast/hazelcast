@@ -22,30 +22,73 @@ import com.hazelcast.util.function.Supplier;
 
 /**
  * A publisher for the {@link DataStream}.
+ * <p>
+ * todo: do we want to return the offset after the write? So we can identify the message?
  *
  * @param <R>
  */
 public interface DataOutputStream<R> {
 
     /**
-     * Publishes on a random partition.
+     * Writes the record on a random partition.
+     * <p>
+     * Writing to a random partition helps to spread load over the partitions, but there is
+     * no guarantee on the order of processing of messages. If ordering between 2 messages
+     * is relevant, the a write on the same partition needs to be done. But be warned:
+     * if you write to a single partition, you can get imbalances.
      *
      * @param record the record to publish.
+     * @throws NullPointerException if record is null.
      */
     void write(R record);
 
+    /**
+     * Asynchronously writes the record to a random partition.
+     *
+     * @param record the record to write.
+     * @return the ICom
+     * @see #write(Object) for more detail about this method.
+     */
+    ICompletableFuture writeAsync(R record);
+
+    /**
+     * Fills the Stream with data provided by the Supplier.
+     * <p>
+     * The main use-case for this method is testing. To load huge quantities of data
+     * in memory can be very time consuming.
+     *
+     * @param count
+     * @param supplier
+     * @throws IllegalArgumentException if count smaller than 0.
+     * @throws NullPointerException     if supplier is null.
+     */
     void fill(long count, Supplier<R> supplier);
 
+    /**
+     * Pulls all values from the map into the DataStream.
+     *
+     * @param src
+     * @throws NullPointerException if src is null.
+     */
     void populate(IMap src);
 
     /**
-     * Publishes the record on the specified partition.
+     * Writes the record on the specified partition.
      *
      * @param partitionKey
      * @param record
      * @param <P>
+     * @throws NullPointerException if record is null.
      */
     <P> void write(P partitionKey, R record);
 
+    /**
+     * Asynchronously writes the record on the specified partition.
+     *
+     * @param partitionKey
+     * @param record
+     * @param <P>
+     * @return
+     */
     <P> ICompletableFuture writeAsync(P partitionKey, R record);
 }

@@ -18,7 +18,7 @@ package com.hazelcast.datastream;
 
 /**
  * A Subscriber for the {@link DataStream}.
- *
+ * <p>
  * Implementations are thread-safe.
  *
  * @param <E>

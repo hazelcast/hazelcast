@@ -38,7 +38,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Supplier;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.nio.file.DirectoryStream;

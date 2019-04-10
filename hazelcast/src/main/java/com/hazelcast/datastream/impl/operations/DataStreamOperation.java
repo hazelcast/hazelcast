@@ -18,8 +18,8 @@ package com.hazelcast.datastream.impl.operations;
 
 import com.hazelcast.datastream.impl.DSContainer;
 import com.hazelcast.datastream.impl.DSDataSerializerHook;
-import com.hazelcast.datastream.impl.DSService;
 import com.hazelcast.datastream.impl.DSPartition;
+import com.hazelcast.datastream.impl.DSService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

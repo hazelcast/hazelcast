@@ -41,15 +41,15 @@ public class SubscriptionTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 DataOutputStream out = stream.newOutputStream();
-                for(int k=0;k<10000000;k++){
-                    out.write("foo",new Employee(k,k,k));
+                for (int k = 0; k < 10000000; k++) {
+                    out.write("foo", new Employee(k, k, k));
                     sleepMillis(100);
                 }
             }
         });
 
-        DataInputStream<Employee> in = stream.newInputStream(partitionId,0);
-        for(;;) {
+        DataInputStream<Employee> in = stream.newInputStream(partitionId, 0);
+        for (; ; ) {
             Employee employee = in.read();
             System.out.println(employee);
         }

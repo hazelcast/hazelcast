@@ -182,7 +182,7 @@ public final class DSDataSerializerHook implements DataSerializerHook {
                     return new IteratorOperation();
                 case ADD_LISTENER_OPERATION:
                     return new AddListenerOperation();
-                 case HEAD_OPERATION:
+                case HEAD_OPERATION:
                     return new HeadOperation();
                 case TAIL_OPERATION:
                     return new TailOperation();

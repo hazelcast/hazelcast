@@ -99,17 +99,17 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
         // todo: it can be event data.
     }
 
-    public void startListening(String streamName, DataInputStreamImpl subscriber,List<Integer> partitionIds, List<Long> offsets) {
+    public void startListening(String streamName, DataInputStreamImpl subscriber, List<Integer> partitionIds, List<Long> offsets) {
         List<InternalCompletableFuture> futures = new LinkedList<>();
         OperationService operationService = nodeEngine.getOperationService();
 
-        if(partitionIds == null){
-            for(int k=0;k<nodeEngine.getPartitionService().getPartitionCount();k++){
+        if (partitionIds == null) {
+            for (int k = 0; k < nodeEngine.getPartitionService().getPartitionCount(); k++) {
                 partitionIds.add(k);
             }
         }
 
-        for (int k=0;k<partitionIds.size();k++){
+        for (int k = 0; k < partitionIds.size(); k++) {
             int partitionId = partitionIds.get(k);
             long offset = offsets == null ? -1 : offsets.get(k);
             Operation operation = new AddListenerOperation(streamName, offset, subscriber)

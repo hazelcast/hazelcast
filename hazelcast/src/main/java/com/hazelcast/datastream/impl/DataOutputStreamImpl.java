@@ -98,9 +98,14 @@ class DataOutputStreamImpl<R> implements DataOutputStream<R> {
 
     @Override
     public void write(R record) {
+        writeAsync(record).join();
+    }
+
+    @Override
+    public InternalCompletableFuture writeAsync(R record) {
         ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
         int partitionId = threadLocalRandom.nextInt(partitionService.getPartitionCount());
-        publishAsync(partitionId, record).join();
+        return publishAsync(partitionId, record);
     }
 
     @Override

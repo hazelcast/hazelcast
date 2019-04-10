@@ -25,7 +25,7 @@ public class DSRecord implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(offset);
-      // out.writeInt(data);
+        // out.writeInt(data);
     }
 
     @Override
