@@ -58,7 +58,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.ServiceLoader;
@@ -87,6 +86,7 @@ import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.singleton;
 
@@ -289,7 +289,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 return new CacheProxy(cacheConfig, nodeEngine, this);
             }
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
@@ -406,21 +406,21 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                     setManagementEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
                 }
                 logger.info("Added cache config: " + cacheConfig);
-                additionalCacheConfigSetup(null, config);
+                additionalCacheConfigSetup(config, false);
                 // now it is safe for others to obtain the new cache config
                 future.complete();
-            } catch (RuntimeException e) {
+            } catch (Throwable e) {
                 configs.remove(cacheConfig.getNameWithPrefix(), future);
                 future.complete(e);
-                throw e;
+                throw rethrow(e);
             }
         } else {
-            additionalCacheConfigSetup(localConfig, config);
+            additionalCacheConfigSetup(localConfig, true);
         }
         return localConfig;
     }
 
-    protected void additionalCacheConfigSetup(CacheConfig localConfig, CacheConfig config) {
+    protected void additionalCacheConfigSetup(CacheConfig config, boolean existingConfig) {
         // overridden in other context
     }
 
@@ -867,6 +867,16 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         }
     }
 
+    /**
+     * {@link java.util.concurrent.Future Future} implementation that holds a {@code CacheConfig}.
+     * Reason for using this future in {@link #configs} map instead of the plain {@code CacheConfig}
+     * is that some additional configuration is required even after the {@code CacheConfig} has been
+     * constructed. The {@code CacheConfig} is put in a {@code CacheConfigFuture} which is
+     * only completed after additional configuration is done, so the {@code CacheConfig} becomes
+     * available to consumers only after all configuration is done.
+     *
+     * @see #additionalCacheConfigSetup(CacheConfig, CacheConfig)
+     */
     private static class CacheConfigFuture extends SimpleCompletableFuture<CacheConfig> {
         private final CacheConfig cacheConfig;
 

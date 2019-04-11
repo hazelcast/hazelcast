@@ -183,7 +183,7 @@ public class CacheServiceTest {
         }
 
         @Override
-        protected void additionalCacheConfigSetup(CacheConfig localConfig, CacheConfig config) {
+        protected void additionalCacheConfigSetup(CacheConfig config, boolean existingConfig) {
             if (throwsException) {
                 throw new ConfigurationException("fail");
             }
