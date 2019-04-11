@@ -27,7 +27,7 @@ import sun.misc.Unsafe;
  * <p>
  * todo: for every field there will probably be a method generated? e.g. putPrice and getPrice
  */
-public abstract class RecordEncoder<R> {
+public abstract class RecordEncoder<R> implements DSEncoder {
 
     protected final Unsafe unsafe = UnsafeUtil.UNSAFE;
     protected final RecordModel recordModel;
