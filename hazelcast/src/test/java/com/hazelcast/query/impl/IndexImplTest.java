@@ -60,6 +60,7 @@ public class IndexImplTest {
         QueryableEntry entry = mock(QueryableEntry.class);
         Data keyData = mock(Data.class);
         when(entry.getKeyData()).thenReturn(keyData);
+        when(entry.getExtractors()).thenReturn(index.extractors);
         return entry;
     }
 }

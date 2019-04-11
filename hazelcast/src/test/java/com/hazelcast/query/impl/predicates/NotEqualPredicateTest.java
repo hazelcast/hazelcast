@@ -16,7 +16,11 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -111,9 +115,19 @@ public class NotEqualPredicateTest {
             .verify();
     }
 
-    private QueryableEntry newMockEntry(Object attributeValue) {
-        QueryableEntry mockEntry = mock(QueryableEntry.class);
-        when(mockEntry.getAttributeValue(anyString())).thenReturn(attributeValue);
-        return mockEntry;
+    private class DummyObject {
+        private String name;
+
+        DummyObject(String name) {
+            this.name = name;
+        }
+    }
+
+    private QueryableEntry newMockEntry(String attributeValue) {
+        InternalSerializationService ss = mock(InternalSerializationService.class);
+        when(ss.toObject(anyString())).thenReturn(attributeValue);
+        QueryableEntry entry = new QueryEntry(ss, mock(Data.class),
+                new DummyObject(attributeValue), Extractors.newBuilder(ss).build());
+        return entry;
     }
 }

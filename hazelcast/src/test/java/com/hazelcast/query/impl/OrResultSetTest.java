@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -94,11 +93,6 @@ public class OrResultSetTest extends HazelcastTestSupport {
 
         @Override
         public Object getKey() {
-            return null;
-        }
-
-        @Override
-        public Comparable getAttributeValue(String attributeName) throws QueryException {
             return null;
         }
 

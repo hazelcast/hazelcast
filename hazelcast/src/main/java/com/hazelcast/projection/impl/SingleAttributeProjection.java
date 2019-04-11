@@ -20,10 +20,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
-import com.hazelcast.query.impl.Extractable;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
+import static com.hazelcast.query.impl.MapEntryAttributeExtractor.extractAttributeValue;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkHasText;
 
@@ -35,9 +39,12 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  *
  * @param <I> type of the input
  */
+@SuppressFBWarnings("SE_NO_SERIALVERSIONID")
 public final class SingleAttributeProjection<I, O> extends Projection<I, O> implements IdentifiedDataSerializable {
 
     private String attributePath;
+
+    private transient AttributeOrigin attributeOrigin;
 
     SingleAttributeProjection() {
     }
@@ -45,14 +52,14 @@ public final class SingleAttributeProjection<I, O> extends Projection<I, O> impl
     public SingleAttributeProjection(String attributePath) {
         checkHasText(attributePath, "attributePath must not be null or empty");
         checkFalse(attributePath.contains("[any]"), "attributePath must not contain [any] operators");
-        this.attributePath = attributePath;
+        this.attributePath = canonicalizeAttribute(attributePath);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public O transform(I input) {
-        if (input instanceof Extractable) {
-            return (O) ((Extractable) input).getAttributeValue(attributePath);
+        if (input instanceof QueryableEntry) {
+            return (O) extractAttributeValue((QueryableEntry) input, attributePath, getAttributeOrigin());
         }
         throw new IllegalArgumentException("The given map entry is not extractable");
     }
@@ -75,5 +82,12 @@ public final class SingleAttributeProjection<I, O> extends Projection<I, O> impl
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         attributePath = in.readUTF();
+    }
+
+    private AttributeOrigin getAttributeOrigin() {
+        if (attributeOrigin == null) {
+            attributeOrigin = AttributeOrigin.fromName(attributePath);
+        }
+        return attributeOrigin;
     }
 }

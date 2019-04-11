@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.Extractable;
+import com.hazelcast.query.impl.MapEntryAttributeExtractor;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.AbstractJsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+import static com.hazelcast.query.impl.MapEntryAttributeExtractor.extractAttributeValue;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 
@@ -48,6 +49,8 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
 
     String attributeName;
 
+    private transient AttributeOrigin attributeNameType;
+
     private transient volatile AttributeType attributeType;
 
     protected AbstractPredicate() {
@@ -57,9 +60,16 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
         this.attributeName = canonicalizeAttribute(attributeName);
     }
 
+    public AttributeOrigin getAttributeOrigin() {
+        if (attributeNameType == null) {
+            attributeNameType = AttributeOrigin.fromName(attributeName);
+        }
+        return attributeNameType;
+    }
+
     @Override
     public boolean apply(Map.Entry<K, V> mapEntry) {
-        Object attributeValue = readAttributeValue(mapEntry);
+        Object attributeValue = extractAttributeValue((QueryableEntry) mapEntry, attributeName, getAttributeOrigin());
         if (attributeValue instanceof MultiResult) {
             return applyForMultiResult((MultiResult) attributeValue);
         } else if (attributeValue instanceof Collection || attributeValue instanceof Object[]) {
@@ -114,7 +124,7 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
                 // Returning unconverted value is an optimization since the given value will be compared with null.
                 return givenAttributeValue;
             }
-            type = QueryableEntry.extractAttributeType(entryAttributeValue);
+            type = MapEntryAttributeExtractor.extractAttributeType(entryAttributeValue);
             attributeType = type;
         }
 
@@ -138,11 +148,6 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
                         + " for attribute: " + attributeName);
             }
         }
-    }
-
-    private Object readAttributeValue(Map.Entry entry) {
-        Extractable extractable = (Extractable) entry;
-        return extractable.getAttributeValue(attributeName);
     }
 
     Object convertEnumValue(Object attributeValue) {

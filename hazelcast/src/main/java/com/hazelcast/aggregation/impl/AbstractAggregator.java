@@ -18,11 +18,14 @@ package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.internal.json.NonTerminalJsonValue;
-import com.hazelcast.query.impl.Extractable;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.MultiResult;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.query.impl.MapEntryAttributeExtractor.extractAttributeValue;
 
 /**
  * Abstract class providing convenience for concrete implementations of an {@link Aggregator}
@@ -45,6 +48,8 @@ import java.util.Map;
 public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
 
     protected String attributePath;
+
+    private transient AttributeOrigin attributeOrigin;
 
     public AbstractAggregator() {
         this(null);
@@ -79,6 +84,13 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
         }
     }
 
+    private AttributeOrigin getAttributeOrigin() {
+        if (attributeOrigin == null) {
+            attributeOrigin = AttributeOrigin.fromName(attributePath);
+        }
+        return attributeOrigin;
+    }
+
     /**
      * Extract the value of the given attributePath from the given entry.
      */
@@ -88,8 +100,8 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
             if (input instanceof Map.Entry) {
                 return (T) ((Map.Entry) input).getValue();
             }
-        } else if (input instanceof Extractable) {
-            return (T) ((Extractable) input).getAttributeValue(attributePath);
+        } else if (input instanceof QueryableEntry) {
+            return (T) extractAttributeValue((QueryableEntry) input, attributePath, getAttributeOrigin());
         }
         throw new IllegalArgumentException("Can't extract " + attributePath + " from the given input");
     }

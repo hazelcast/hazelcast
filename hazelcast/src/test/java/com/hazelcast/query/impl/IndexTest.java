@@ -410,11 +410,6 @@ public class IndexTest {
         }
 
         @Override
-        public Comparable getAttributeValue(String attributeName) throws QueryException {
-            return attributeValue;
-        }
-
-        @Override
         public Object getTargetObject(boolean key) {
             return key ? true : attributeValue;
         }

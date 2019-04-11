@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Set;
@@ -54,8 +55,10 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private final String name;
     private final String[] components;
+    private final AttributeOrigin[] componentOrigins;
     private final boolean ordered;
     private final PerIndexStats stats;
+    private final AttributeOrigin attributeOrigin;
 
     private volatile TypeConverter converter;
 
@@ -64,12 +67,21 @@ public abstract class AbstractIndex implements InternalIndex {
                          Extractors extractors, IndexCopyBehavior copyBehavior, PerIndexStats stats) {
         this.name = name;
         this.components = components;
+        if (components != null) {
+            this.componentOrigins = new AttributeOrigin[components.length];
+            for (int i = 0; i < this.components.length; i++) {
+                this.componentOrigins[i] = AttributeOrigin.fromName(this.components[i]);
+            }
+        } else {
+            this.componentOrigins = null;
+        }
         this.ordered = ordered;
         this.ss = ss;
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
         this.indexStore = createIndexStore(ordered, stats);
         this.stats = stats;
+        this.attributeOrigin = AttributeOrigin.fromName(name);
     }
 
     protected abstract IndexStore createIndexStore(boolean ordered, PerIndexStats stats);
@@ -221,11 +233,14 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private Object extractAttributeValue(Data key, Object value) {
         if (components == null) {
-            return QueryableEntry.extractAttributeValue(extractors, ss, name, key, value, null);
+            QueryEntry queryEntry = new QueryEntry(ss, key, value, extractors);
+            return MapEntryAttributeExtractor.extractAttributeValue(queryEntry, name, attributeOrigin);
         } else {
             Comparable[] valueComponents = new Comparable[components.length];
+            QueryEntry queryEntry = new QueryEntry(ss, key, value, extractors);
             for (int i = 0; i < components.length; ++i) {
-                Object extractedValue = QueryableEntry.extractAttributeValue(extractors, ss, components[i], key, value, null);
+                Object extractedValue = MapEntryAttributeExtractor.extractAttributeValue(queryEntry, components[i],
+                        componentOrigins[i]);
                 if (extractedValue instanceof MultiResult) {
                     throw new IllegalStateException(
                             "Collection/array attributes are not supported by composite indexes: " + components[i]);
@@ -255,14 +270,15 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private TypeConverter obtainConverter(QueryableEntry entry) {
         if (components == null) {
-            return entry.getConverter(name);
+            return MapEntryAttributeExtractor.getConverter(entry, name, attributeOrigin);
         } else {
             CompositeConverter existingConverter = (CompositeConverter) converter;
             TypeConverter[] converters = new TypeConverter[components.length];
             for (int i = 0; i < components.length; ++i) {
                 TypeConverter existingComponentConverter = getNonTransientComponentConverter(existingConverter, i);
                 if (existingComponentConverter == null) {
-                    converters[i] = entry.getConverter(components[i]);
+                    converters[i] = MapEntryAttributeExtractor.getConverter(entry,
+                            components[i], AttributeOrigin.fromName(components[i]));
                     assert converters[i] != null;
                 } else {
                     // preserve the old one to avoid downgrading

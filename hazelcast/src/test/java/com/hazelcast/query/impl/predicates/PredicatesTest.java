@@ -20,13 +20,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.impl.QueryContext;
@@ -73,7 +71,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class PredicatesTest extends HazelcastTestSupport {
 
-    private static final String ATTRIBUTE = "DUMMY_ATTRIBUTE_IGNORED";
+    private static final String ATTRIBUTE = "innerValue";
 
     private final InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
@@ -180,19 +178,19 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testPredicatesAgainstANullField() {
-        assertFalse_withNullEntry(lessEqual("nullField", 1));
+        assertFalse_withNullEntry(lessEqual(ATTRIBUTE, 1));
 
-        assertFalse_withNullEntry(in("nullField", 1));
-        assertFalse_withNullEntry(lessThan("nullField", 1));
-        assertFalse_withNullEntry(greaterEqual("nullField", 1));
-        assertFalse_withNullEntry(greaterThan("nullField", 1));
-        assertFalse_withNullEntry(equal("nullField", 1));
-        assertFalse_withNullEntry(notEqual("nullField", null));
-        assertFalse_withNullEntry(between("nullField", 1, 1));
-        assertTrue_withNullEntry(like("nullField", null));
-        assertTrue_withNullEntry(ilike("nullField", null));
-        assertTrue_withNullEntry(regex("nullField", null));
-        assertTrue_withNullEntry(notEqual("nullField", 1));
+        assertFalse_withNullEntry(in(ATTRIBUTE, 1));
+        assertFalse_withNullEntry(lessThan(ATTRIBUTE, 1));
+        assertFalse_withNullEntry(greaterEqual(ATTRIBUTE, 1));
+        assertFalse_withNullEntry(greaterThan(ATTRIBUTE, 1));
+        assertFalse_withNullEntry(equal(ATTRIBUTE, 1));
+        assertFalse_withNullEntry(notEqual(ATTRIBUTE, null));
+        assertFalse_withNullEntry(between(ATTRIBUTE, 1, 1));
+        assertTrue_withNullEntry(like(ATTRIBUTE, null));
+        assertTrue_withNullEntry(ilike(ATTRIBUTE, null));
+        assertTrue_withNullEntry(regex(ATTRIBUTE, null));
+        assertTrue_withNullEntry(notEqual(ATTRIBUTE, 1));
     }
 
     @Test
@@ -309,63 +307,14 @@ public class PredicatesTest extends HazelcastTestSupport {
         DummyEntry(Comparable attribute) {
             super(ss, toData("1"), attribute, Extractors.newBuilder(ss).build());
         }
-
-        @Override
-        public Comparable getAttributeValue(String attributeName) throws QueryException {
-            return (Comparable) getValue();
-        }
     }
 
-    private final class NullDummyEntry extends QueryableEntry {
+    private class DummyObject {
+        private Object innerValue;
 
-        private Integer nullField;
-
-        private NullDummyEntry() {
+        DummyObject(Object innerValue) {
+            this.innerValue = innerValue;
         }
-
-        public Integer getNullField() {
-            return nullField;
-        }
-
-        public void setNullField(Integer nullField) {
-            this.nullField = nullField;
-        }
-
-        @Override
-        public Object getValue() {
-            return null;
-        }
-
-        @Override
-        public Object setValue(Object value) {
-            return null;
-        }
-
-        @Override
-        public Object getKey() {
-            return 1;
-        }
-
-        @Override
-        public Comparable getAttributeValue(String attributeName) throws QueryException {
-            return null;
-        }
-
-        @Override
-        protected Object getTargetObject(boolean key) {
-            return null;
-        }
-
-        @Override
-        public Data getKeyData() {
-            return null;
-        }
-
-        @Override
-        public Data getValueData() {
-            return null;
-        }
-
     }
 
     private Entry createEntry(final Object key, final Object value) {
@@ -373,18 +322,18 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     private void assertPredicateTrue(Predicate p, Comparable comparable) {
-        assertTrue(p.apply(new DummyEntry(comparable)));
+        assertTrue(p.apply(createEntry(1, new DummyObject(comparable))));
     }
 
     private void assertPredicateFalse(Predicate p, Comparable comparable) {
-        assertFalse(p.apply(new DummyEntry(comparable)));
+        assertFalse(p.apply(createEntry(1, new DummyObject(comparable))));
     }
 
     private void assertTrue_withNullEntry(Predicate p) {
-        assertTrue(p.apply(new NullDummyEntry()));
+        assertTrue(p.apply(createEntry(1, new DummyObject(null))));
     }
 
     private void assertFalse_withNullEntry(Predicate p) {
-        assertFalse(p.apply(new NullDummyEntry()));
+        assertFalse(p.apply(createEntry(1, new DummyObject(null))));
     }
 }

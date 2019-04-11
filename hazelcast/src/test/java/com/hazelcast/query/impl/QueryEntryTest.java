@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -72,7 +73,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
-        Object result = queryEntry.getAttributeValue("n");
+        Object result = MapEntryAttributeExtractor.extractAttributeValue(queryEntry, "n", AttributeOrigin.WITHIN_VALUE);
 
         assertEquals("peter", result);
     }
@@ -85,7 +86,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
-        Object result = queryEntry.getAttributeValue(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
+        Object result = MapEntryAttributeExtractor.extractAttributeValue(queryEntry, QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n", AttributeOrigin.WITHIN_KEY);
 
         assertEquals("peter", result);
     }
@@ -96,7 +97,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         SerializableObject value = new SerializableObject();
         QueryableEntry queryEntry = createEntry(key, value, newExtractor());
 
-        Object result = queryEntry.getAttributeValue(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
+        Object result = MapEntryAttributeExtractor.extractAttributeValue(queryEntry, QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n", AttributeOrigin.WITHIN_KEY);
 
         assertEquals("peter", result);
     }
@@ -108,7 +109,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         value.name = "somename";
         QueryableEntry queryEntry = createEntry(key, value, newExtractor());
 
-        Object result = queryEntry.getAttributeValue("name");
+        Object result = MapEntryAttributeExtractor.extractAttributeValue(queryEntry, "name", AttributeOrigin.WITHIN_VALUE);
 
         assertEquals("somename", result);
         assertEquals(0, value.deserializationCount);

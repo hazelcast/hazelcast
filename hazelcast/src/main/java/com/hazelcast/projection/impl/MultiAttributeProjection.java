@@ -20,10 +20,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
-import com.hazelcast.query.impl.Extractable;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.AttributeOrigin;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
+import static com.hazelcast.query.impl.MapEntryAttributeExtractor.extractAttributeValue;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkHasText;
 
@@ -35,9 +39,12 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  *
  * @param <I> type of the input
  */
+@SuppressFBWarnings("SE_NO_SERIALVERSIONID")
 public final class MultiAttributeProjection<I> extends Projection<I, Object[]> implements IdentifiedDataSerializable {
 
     private String[] attributePaths;
+
+    private transient AttributeOrigin[] attributeOrigins;
 
     MultiAttributeProjection() {
     }
@@ -51,16 +58,18 @@ public final class MultiAttributeProjection<I> extends Projection<I, Object[]> i
             checkFalse(path.contains("[any]"), "attributePath must not contain [any] operators");
         }
         this.attributePaths = attributePath;
+        for (int i = 0; i < this.attributePaths.length; i++) {
+            this.attributePaths[i] = canonicalizeAttribute(attributePaths[i]);
+        }
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Object[] transform(I input) {
-        if (input instanceof Extractable) {
-            Extractable extractable = ((Extractable) input);
+        if (input instanceof QueryableEntry) {
             Object[] result = new Object[attributePaths.length];
             for (int i = 0; i < attributePaths.length; i++) {
-                result[i] = extractable.getAttributeValue(attributePaths[i]);
+                result[i] = extractAttributeValue((QueryableEntry) input, attributePaths[i], getAttributeOrigin(i));
             }
             return result;
         }
@@ -85,6 +94,16 @@ public final class MultiAttributeProjection<I> extends Projection<I, Object[]> i
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.attributePaths = in.readUTFArray();
+    }
+
+    private AttributeOrigin getAttributeOrigin(int index) {
+        if (attributeOrigins == null) {
+            attributeOrigins = new AttributeOrigin[this.attributePaths.length];
+        }
+        if (attributeOrigins[index] == null) {
+            attributeOrigins[index] = AttributeOrigin.fromName(attributePaths[index]);
+        }
+        return attributeOrigins[index];
     }
 
 }
