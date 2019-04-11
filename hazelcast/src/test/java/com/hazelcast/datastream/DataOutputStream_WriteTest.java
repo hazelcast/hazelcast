@@ -40,7 +40,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
 
         DataStream<String> stream = hz.getDataStream("employees");
         DataOutputStream<String> out = stream.newOutputStream();
-        out.write("foo", "0");
+        out.write("foo", "1");
         System.out.println(stream.tail("foo"));
         out.write("foo", "22");
         System.out.println(stream.tail("foo"));

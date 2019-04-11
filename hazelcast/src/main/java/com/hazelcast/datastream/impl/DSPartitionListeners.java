@@ -18,6 +18,7 @@ package com.hazelcast.datastream.impl;
 
 import com.hazelcast.datastream.impl.encoders.DSEncoder;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.function.Consumer;
@@ -46,7 +47,10 @@ public class DSPartitionListeners {
     }
 
     public void registerLocalListener(Consumer consumer, long offset) {
-        localListeners.add(new LocalListener(offset, consumer));
+        LocalListener l = new LocalListener(offset, consumer);
+        localListeners.add(l);
+        // this will trigger sending whatever is available.
+        l.onAppend();
     }
 
     // called from the partition thread
@@ -75,40 +79,42 @@ public class DSPartitionListeners {
     }
 
     private class LocalListener {
+        private final DSEncoder encoder;
         private Segment segment;
-        private long dataOffset;
+        private long offset;
         private Consumer<Data> consumer;
 
-        LocalListener(long dataOffset, Consumer<Data> consumer) {
-            this.dataOffset = dataOffset;
+        LocalListener(long offset, Consumer<Data> consumer) {
+            this.offset = offset;
             this.consumer = consumer;
+            this.encoder = partition.encoder();
         }
 
+        //todo: we need to acquire the segment.
         void onAppend() {
             // System.out.println("on Append called: segment "+segment);
             if (segment == null) {
-                this.segment = partition.findSegment(dataOffset);
+                this.segment = partition.findSegment(offset);
                 if (segment == null) {
                     return;
                 }
             }
 
             for (; ; ) {
-                int offsetInSegment = (int) (dataOffset - segment.head());
-                if (offsetInSegment >= partition.tail()) {
+                int dataOffset = (int) (this.offset - segment.head());
+                if (dataOffset >= segment.dataOffset()) {
                     segment = segment.next;
                     if (segment == null) {
                         return;
                     }
+                    offset = segment.head();
                     continue;
                 }
-                DSEncoder encoder = partition.encoder();
-                encoder.dataOffset = offsetInSegment;
+                encoder.dataOffset = dataOffset;
                 encoder.dataAddress = segment.dataAddress();
-                Object o = encoder.load();
-                dataOffset = encoder.dataOffset;
+                HeapData o = encoder.load();
+                this.offset = segment.head() + encoder.dataOffset;
                 consumer.accept(ss.toData(o));
-                return;
             }
         }
     }
