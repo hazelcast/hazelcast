@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.getConfigByTag;
@@ -2325,6 +2326,14 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                         return null;
                     }
                 });
+            } else if ("executor".equals(nodeName)) {
+                String className = checkHasText(getAttribute(n, "class-name"), "class-name cannot be empty");
+                try {
+                    Executor executor = ClassLoaderUtil.newInstance(config.getClassLoader(), className);
+                    topicConfig.setExecutor(executor);
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
             }
         }
         config.addReliableTopicConfig(topicConfig);

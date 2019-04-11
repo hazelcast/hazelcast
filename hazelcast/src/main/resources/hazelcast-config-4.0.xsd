@@ -1233,6 +1233,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="executor" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="class-name" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The fully qualified class name of the java.util.concurrent.Executor
+                                implementation.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>

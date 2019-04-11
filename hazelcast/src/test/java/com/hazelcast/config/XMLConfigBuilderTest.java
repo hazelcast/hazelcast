@@ -23,6 +23,7 @@ import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.config.helpers.DummyExecutor;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -725,6 +726,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "           <message-listeners>"
                 + "               <message-listener>MessageListenerImpl</message-listener>"
                 + "           </message-listeners>"
+                + "           <executor class-name='" + DummyExecutor.class.getName() + "'/>"
                 + "    </reliable-topic>"
                 + HAZELCAST_END_TAG;
 

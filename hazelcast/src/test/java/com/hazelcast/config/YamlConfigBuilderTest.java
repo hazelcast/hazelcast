@@ -21,6 +21,7 @@ import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.config.helpers.DummyExecutor;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -709,6 +710,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      message-listeners:\n"
                 + "        - MessageListenerImpl\n"
                 + "        - MessageListenerImpl2\n"
+                + "      executor:\n"
+                + "        class-name: " + DummyExecutor.class.getName() + "\n"
                 + "    default:\n"
                 + "      read-batch-size: 42\n";
 

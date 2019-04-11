@@ -26,6 +26,7 @@ import com.hazelcast.config.ConfigCompatibilityChecker.QuorumConfigChecker;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.helpers.DummyExecutor;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.quorum.QuorumType;
@@ -1256,7 +1257,8 @@ public class ConfigXmlGeneratorTest {
                 .setReadBatchSize(10)
                 .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK)
                 .setStatisticsEnabled(true)
-                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
+                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")))
+                .setExecutor(new DummyExecutor());
 
         cfg.addReliableTopicConfig(expectedConfig);
 
