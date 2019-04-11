@@ -20,13 +20,16 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
+import com.hazelcast.spi.LockInterceptorService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.NotifiableEventListener;
@@ -75,7 +78,8 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
-        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener {
+        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener,
+        LockInterceptorService<Data> {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -245,6 +249,14 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void onClusterStateChange(ClusterState newState) {
         mapServiceContext.onClusterStateChange(newState);
+    }
+
+    @Override
+    public void onBeforeLock(String distributedObjectName, Data key) {
+        int partitionId = mapServiceContext.getNodeEngine().getPartitionService().getPartitionId(key);
+        RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
+        // we have no use for the return value, invoked just for the side-effects
+        recordStore.getRecordOrNull(key);
     }
 
     public static ObjectNamespace getObjectNamespace(String mapName) {
