@@ -44,7 +44,7 @@ public class AppendTest extends HazelcastTestSupport {
         out.write("foo", new Employee(2, 2, 2));
         out.write("foo", new Employee(3, 3, 3));
 
-        assertEquals(1, stream.asFrame().count());
+        assertEquals(3, stream.asFrame().count());
         assertEquals(1, stream.asFrame().memoryInfo().segmentsInUse());
     }
 

@@ -20,10 +20,18 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 public class SubscriptionTest extends HazelcastTestSupport {
 
+    // todo
+    @Ignore
     @Test
     public void test() throws InterruptedException {
         Config config = new Config()
@@ -36,32 +44,32 @@ public class SubscriptionTest extends HazelcastTestSupport {
         DataStream<Employee> stream = hz.getDataStream("employees");
 
         int partitionId = getNodeEngineImpl(hz).getPartitionService().getPartitionId("foo");
-
+        int produceCount = 1000;
+        List<Employee> produced = new LinkedList<>();
         spawn(new Runnable() {
             @Override
             public void run() {
                 DataOutputStream out = stream.newOutputStream();
-                for (int k = 0; k < 10000000; k++) {
-                    out.write("foo", new Employee(k, k, k));
-                    sleepMillis(100);
+                for (int k = 0; k < produceCount; k++) {
+                    Employee record = new Employee(k, k, k);
+                    produced.add(record);
+                    out.write("foo", record);
+                    sleepMillis(1);
                 }
             }
         });
 
+        Thread.sleep(1000);
+
+        List<Employee> consumed = new LinkedList<>();
         DataInputStream<Employee> in = stream.newInputStream(partitionId, 0);
-        for (; ; ) {
+        do {
             Employee employee = in.read();
-            System.out.println(employee);
-        }
+            consumed.add(employee);
+            System.out.println(consumed.size()+" employee:"+employee);
+        } while (consumed.size() != produceCount);
 
 
-        //
-//        stream.newInputStream().add(new DataStreamConsumer<Employee>() {
-//            @Override
-//            public long consume(long offset, Employee record) {
-//                System.out.println(record);
-//                return 0;
-//            }
-//        });
+        assertEquals(produced,consumed);
     }
 }

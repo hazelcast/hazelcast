@@ -43,7 +43,7 @@ public class DataStreamConfig {
     private int maxSegmentSize = KB * KB;
     private int segmentsPerPartition = Integer.MAX_VALUE;
     private Set<String> indices = new HashSet<String>();
-    private boolean storageEnabled = false;
+    private boolean storageEnabled;
     private File storageDir = new File("datastream-storage");
     // to get rid of 'too' old segments.
     // so data is inserted on the segment as long as the tenuringAgeMillis has not been reached.

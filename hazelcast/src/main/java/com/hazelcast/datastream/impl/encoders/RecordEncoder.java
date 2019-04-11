@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastream.impl;
+package com.hazelcast.datastream.impl.encoders;
 
+import com.hazelcast.datastream.impl.RecordModel;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import sun.misc.Unsafe;
 

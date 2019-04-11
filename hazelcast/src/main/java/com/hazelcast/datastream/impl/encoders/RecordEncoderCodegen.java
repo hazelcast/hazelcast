@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastream.impl;
+package com.hazelcast.datastream.impl.encoders;
 
+import com.hazelcast.datastream.impl.RecordModel;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import sun.misc.Unsafe;
 
@@ -58,7 +59,7 @@ public class RecordEncoderCodegen {
         add("import com.hazelcast.datastream.impl.*;\n");
         add("import static com.hazelcast.datastream.impl.IndexOffsets.offsetInIndex;\n");
 
-        add("public class " + className() + " extends com.hazelcast.datastream.impl.RecordEncoder<%s> {\n\n",
+        add("public class " + className() + " extends com.hazelcast.datastream.impl.encoders.RecordEncoder<%s> {\n\n",
                 recordModel.getRecordClassName());
         generateConstructor();
         generateNewInstanceMethod();

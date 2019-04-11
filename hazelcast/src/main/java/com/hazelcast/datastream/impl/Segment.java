@@ -19,6 +19,7 @@ package com.hazelcast.datastream.impl;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datastream.impl.encoders.RecordEncoder;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import com.hazelcast.spi.serialization.SerializationService;
 import sun.misc.Unsafe;
@@ -60,6 +61,7 @@ public class Segment {
     private final Map<String, Aggregator> aggregators;
     private final long startOffset;
     private final File segmentFile;
+    private final DataStreamConfig config;
 
     private long lastInsertNanos = startNanos;
     private long dataAddress;
@@ -75,6 +77,7 @@ public class Segment {
             Map<String, Aggregator> aggregators,
             DataStreamConfig config
     ) {
+        this.config = config;
         this.segmentFile = new File(config.getStorageDir(),
                 String.format("%02x%s-%08x-%016x.segment", name.length(), name, partitionId, startOffset));
         this.startOffset = startOffset;
@@ -221,7 +224,16 @@ public class Segment {
         }
     }
 
+    /**
+     * Loads the segment from file.
+     *
+     * @return true if loaded, false otherwise.
+     */
     private boolean loadFromFile() {
+        if(!config.isStorageEnabled()){
+            return false;
+        }
+
         long reportedFileSize = segmentFile.length();
         long newPointer = unsafe.allocateMemory(reportedFileSize);
         long totalRead = 0;
@@ -245,6 +257,10 @@ public class Segment {
     }
 
     private void saveToFile() {
+        if(!config.isStorageEnabled()){
+            return;
+        }
+
         try (OutputStream out = new FileOutputStream(segmentFile)) {
             byte[] buf = new byte[1 << 14];
             long fileSize = index * recordModel.getSize();

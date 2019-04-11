@@ -26,6 +26,8 @@ import com.hazelcast.datastream.impl.aggregation.AggregateFJResult;
 import com.hazelcast.datastream.impl.aggregation.AggregationSegmentRun;
 import com.hazelcast.datastream.impl.aggregation.AggregationSegmentRunCodegen;
 import com.hazelcast.datastream.impl.aggregation.AggregatorRecursiveTask;
+import com.hazelcast.datastream.impl.encoders.RecordEncoder;
+import com.hazelcast.datastream.impl.encoders.RecordEncoderCodegen;
 import com.hazelcast.datastream.impl.entryprocessor.EntryProcessorSegmentRun;
 import com.hazelcast.datastream.impl.entryprocessor.EntryProcessorSegmentRunCodegen;
 import com.hazelcast.datastream.impl.projection.ProjectionSegmentRun;
