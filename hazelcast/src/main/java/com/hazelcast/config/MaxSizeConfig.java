@@ -206,4 +206,22 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
         result = 31 * result + size;
         return result;
     }
+
+    @BinaryInterface
+    static class MaxSizeConfigReadOnly extends MaxSizeConfig {
+
+        MaxSizeConfigReadOnly(MaxSizeConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MaxSizeConfig setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

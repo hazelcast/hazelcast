@@ -42,9 +42,9 @@ public class ReplicatedMapConfigTest {
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
                         new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                .withPrefabValues(ReplicatedMapConfigReadOnly.class,
-                        new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig("red")),
-                        new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig("black")))
+                .withPrefabValues(ReplicatedMapConfig.ReplicatedMapConfigReadOnly.class,
+                        new ReplicatedMapConfig.ReplicatedMapConfigReadOnly(new ReplicatedMapConfig("red")),
+                        new ReplicatedMapConfig.ReplicatedMapConfigReadOnly(new ReplicatedMapConfig("black")))
                 .verify();
     }
 }

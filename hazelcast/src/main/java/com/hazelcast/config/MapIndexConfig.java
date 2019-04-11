@@ -189,4 +189,21 @@ public class MapIndexConfig implements IdentifiedDataSerializable {
         result = 31 * result + (ordered ? 1 : 0);
         return result;
     }
+
+    static class MapIndexConfigReadOnly extends MapIndexConfig {
+
+        MapIndexConfigReadOnly(MapIndexConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MapIndexConfig setAttribute(String attribute) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapIndexConfig setOrdered(boolean ordered) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

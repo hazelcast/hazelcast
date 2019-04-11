@@ -90,12 +90,12 @@ public class QueueConfigTest {
         EqualsVerifier.forClass(QueueConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
-                .withPrefabValues(QueueConfigReadOnly.class,
-                        new QueueConfigReadOnly(new QueueConfig("red")),
-                        new QueueConfigReadOnly(new QueueConfig("black")))
-                .withPrefabValues(QueueStoreConfigReadOnly.class,
-                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
-                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
+                .withPrefabValues(QueueConfig.QueueConfigReadOnly.class,
+                        new QueueConfig.QueueConfigReadOnly(new QueueConfig("red")),
+                        new QueueConfig.QueueConfigReadOnly(new QueueConfig("black")))
+                .withPrefabValues(QueueStoreConfig.QueueStoreConfigReadOnly.class,
+                        new QueueStoreConfig.QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
+                        new QueueStoreConfig.QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
                         new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))

@@ -28,6 +28,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
@@ -156,7 +157,8 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
      * messages produced by local publisher can be processed by several threads with
      * no ordering guarantee.
      *
-     * @param multiThreadingEnabled set to {@code true} to enable multi-threaded message processing, {@code false} to disable
+     * @param multiThreadingEnabled set to {@code true} to enable multi-threaded message processing,
+     *                              {@code false} to disable
      * @return the updated TopicConfig
      */
     public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
@@ -296,5 +298,52 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
         statisticsEnabled = in.readBoolean();
         multiThreadingEnabled = in.readBoolean();
         listenerConfigs = readNullableList(in);
+    }
+
+    static class TopicConfigReadOnly extends TopicConfig {
+
+        TopicConfigReadOnly(TopicConfig config) {
+            super(config);
+        }
+
+        @Override
+        public List<ListenerConfig> getMessageListenerConfigs() {
+            List<ListenerConfig> messageListenerConfigs = super.getMessageListenerConfigs();
+            List<ListenerConfig> readOnlyMessageListenerConfigs = new ArrayList<ListenerConfig>(messageListenerConfigs.size());
+            for (ListenerConfig messageListenerConfig : messageListenerConfigs) {
+                readOnlyMessageListenerConfigs.add(messageListenerConfig.getAsReadOnly());
+            }
+            return unmodifiableList(readOnlyMessageListenerConfigs);
+        }
+
+        @Override
+        public TopicConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
     }
 }

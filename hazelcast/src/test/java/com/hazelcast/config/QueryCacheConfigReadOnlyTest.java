@@ -58,12 +58,12 @@ public class QueryCacheConfigReadOnlyTest {
 
     @Test
     public void getEvictionConfigShouldReturnReadOnlyConfig() {
-        assertTrue(getReadOnlyConfig().getEvictionConfig() instanceof EvictionConfigReadOnly);
+        assertTrue(getReadOnlyConfig().getEvictionConfig() instanceof EvictionConfig.EvictionConfigReadOnly);
     }
 
     @Test
     public void getPredicateConfigShouldReturnReadOnlyConfig() {
-        assertTrue(getReadOnlyConfig().getPredicateConfig() instanceof PredicateConfigReadOnly);
+        assertTrue(getReadOnlyConfig().getPredicateConfig() instanceof PredicateConfig.PredicateConfigReadOnly);
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache;
+package com.hazelcast.config;
 
 import com.hazelcast.cache.CachePartitionLostListenerTest.EventCollectingCachePartitionLostListener;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.config.CachePartitionLostListenerConfig;
-import com.hazelcast.config.CachePartitionLostListenerConfigReadOnly;
-import com.hazelcast.config.CacheSimpleConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -106,7 +101,8 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCachePartitionLostListenerReadOnlyConfig_withClassName() {
-        CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfig().getAsReadOnly();
+        CachePartitionLostListenerConfig.CachePartitionLostListenerConfigReadOnly readOnly
+                = new CachePartitionLostListenerConfig().getAsReadOnly();
         readOnly.setClassName("com.hz");
     }
 
@@ -114,14 +110,15 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
     public void testCachePartitionLostListenerReadOnlyConfig_withImplementation() {
         CachePartitionLostListener listener = mock(CachePartitionLostListener.class);
         CachePartitionLostListenerConfig listenerConfig = new CachePartitionLostListenerConfig(listener);
-        CachePartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
+        CachePartitionLostListenerConfig.CachePartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
         assertEquals(listener, readOnly.getImplementation());
         readOnly.setImplementation(mock(CachePartitionLostListener.class));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCachePartitionLostListenerReadOnlyConfig_withEventListenerImplementation() {
-        CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfig().getAsReadOnly();
+        CachePartitionLostListenerConfig.CachePartitionLostListenerConfigReadOnly readOnly
+                = new CachePartitionLostListenerConfig().getAsReadOnly();
         readOnly.setImplementation(mock(EventListener.class));
     }
 

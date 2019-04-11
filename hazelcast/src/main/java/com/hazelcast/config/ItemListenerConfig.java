@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.EventListener;
 
 /**
  * Contains the configuration for an Item Listener.
@@ -132,5 +133,32 @@ public class ItemListenerConfig extends ListenerConfig {
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         includeValue = in.readBoolean();
+    }
+
+    static class ItemListenerConfigReadOnly extends ItemListenerConfig {
+
+        ItemListenerConfigReadOnly(ItemListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public ItemListenerConfig setImplementation(ItemListener implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ItemListenerConfig setIncludeValue(boolean includeValue) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

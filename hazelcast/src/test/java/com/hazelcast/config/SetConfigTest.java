@@ -39,9 +39,9 @@ public class SetConfigTest {
         EqualsVerifier.forClass(SetConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
-                .withPrefabValues(SetConfigReadOnly.class,
-                        new SetConfigReadOnly(new SetConfig("red")),
-                        new SetConfigReadOnly(new SetConfig("black")))
+                .withPrefabValues(SetConfig.SetConfigReadOnly.class,
+                        new SetConfig.SetConfigReadOnly(new SetConfig("red")),
+                        new SetConfig.SetConfigReadOnly(new SetConfig("black")))
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
                         new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))

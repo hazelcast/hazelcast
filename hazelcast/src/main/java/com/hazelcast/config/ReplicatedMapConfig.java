@@ -473,4 +473,70 @@ public class ReplicatedMapConfig implements SplitBrainMergeTypeProvider, Identif
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
+
+    static class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
+
+        ReplicatedMapConfigReadOnly(ReplicatedMapConfig replicatedMapConfig) {
+            super(replicatedMapConfig);
+        }
+
+        @Override
+        public ReplicatedMapConfig setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setName(String name) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public void setAsyncFillup(boolean asyncFillup) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setQuorumName(String quorumName) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public ReplicatedMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+            throw throwReadOnly();
+        }
+
+        private UnsupportedOperationException throwReadOnly() {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

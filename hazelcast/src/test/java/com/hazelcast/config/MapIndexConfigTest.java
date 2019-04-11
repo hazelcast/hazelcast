@@ -54,9 +54,9 @@ public class MapIndexConfigTest {
         EqualsVerifier.forClass(MapIndexConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
-                .withPrefabValues(MapIndexConfigReadOnly.class,
-                        new MapIndexConfigReadOnly(new MapIndexConfig("red", false)),
-                        new MapIndexConfigReadOnly(new MapIndexConfig("black", true)))
+                .withPrefabValues(MapIndexConfig.MapIndexConfigReadOnly.class,
+                        new MapIndexConfig.MapIndexConfigReadOnly(new MapIndexConfig("red", false)),
+                        new MapIndexConfig.MapIndexConfigReadOnly(new MapIndexConfig("black", true)))
                 .verify();
     }
 }

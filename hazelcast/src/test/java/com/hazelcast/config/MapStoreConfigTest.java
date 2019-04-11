@@ -63,7 +63,7 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
 
     @Test
     public void getAsReadOnly() {
-        MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
+        MapStoreConfig.MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
         assertEquals("some.class", readOnlyCfg.getClassName());
         assertEquals(cfgNonNullClassName, readOnlyCfg);
         // also test returning cached read only instance
@@ -286,9 +286,9 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
         EqualsVerifier.forClass(MapStoreConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
-                .withPrefabValues(MapStoreConfigReadOnly.class,
-                        new MapStoreConfigReadOnly(cfgNotEnabled),
-                        new MapStoreConfigReadOnly(cfgNonNullClassName))
+                .withPrefabValues(MapStoreConfig.MapStoreConfigReadOnly.class,
+                        new MapStoreConfig.MapStoreConfigReadOnly(cfgNotEnabled),
+                        new MapStoreConfig.MapStoreConfigReadOnly(cfgNonNullClassName))
                 .verify();
     }
 }

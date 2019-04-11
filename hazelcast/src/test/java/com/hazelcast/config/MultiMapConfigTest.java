@@ -73,9 +73,9 @@ public class MultiMapConfigTest {
         EqualsVerifier.forClass(MultiMapConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
-                .withPrefabValues(MultiMapConfigReadOnly.class,
-                        new MultiMapConfigReadOnly(new MultiMapConfig("red")),
-                        new MultiMapConfigReadOnly(new MultiMapConfig("black")))
+                .withPrefabValues(MultiMapConfig.MultiMapConfigReadOnly.class,
+                        new MultiMapConfig.MultiMapConfigReadOnly(new MultiMapConfig("red")),
+                        new MultiMapConfig.MultiMapConfigReadOnly(new MultiMapConfig("black")))
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
                         new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))

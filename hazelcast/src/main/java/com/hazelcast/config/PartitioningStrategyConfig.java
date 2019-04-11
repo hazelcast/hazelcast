@@ -143,4 +143,26 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
         result = 31 * result + (partitioningStrategy != null ? partitioningStrategy.hashCode() : 0);
         return result;
     }
+
+    static class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
+
+        PartitioningStrategyConfigReadOnly(PartitioningStrategyConfig config) {
+            super(config);
+        }
+
+        @Override
+        public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public PartitioningStrategyConfig setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

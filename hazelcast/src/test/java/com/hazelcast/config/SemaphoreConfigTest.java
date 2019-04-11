@@ -56,9 +56,9 @@ public class SemaphoreConfigTest {
         EqualsVerifier.forClass(SemaphoreConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
-                .withPrefabValues(SemaphoreConfigReadOnly.class,
-                        new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("red")),
-                        new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("black")))
+                .withPrefabValues(SemaphoreConfig.SemaphoreConfigReadOnly.class,
+                        new SemaphoreConfig.SemaphoreConfigReadOnly(new SemaphoreConfig().setName("red")),
+                        new SemaphoreConfig.SemaphoreConfigReadOnly(new SemaphoreConfig().setName("black")))
                 .verify();
     }
 }

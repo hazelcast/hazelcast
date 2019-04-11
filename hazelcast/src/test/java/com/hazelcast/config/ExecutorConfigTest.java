@@ -60,9 +60,9 @@ public class ExecutorConfigTest {
         EqualsVerifier.forClass(ExecutorConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                .withPrefabValues(ExecutorConfigReadOnly.class,
-                        new ExecutorConfigReadOnly(new ExecutorConfig("red")),
-                        new ExecutorConfigReadOnly(new ExecutorConfig("black")))
+                .withPrefabValues(ExecutorConfig.ExecutorConfigReadOnly.class,
+                        new ExecutorConfig.ExecutorConfigReadOnly(new ExecutorConfig("red")),
+                        new ExecutorConfig.ExecutorConfigReadOnly(new ExecutorConfig("black")))
                 .verify();
     }
 }

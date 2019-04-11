@@ -236,4 +236,41 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         result = 31 * result + (republishingEnabled ? 1 : 0);
         return result;
     }
+
+    @BinaryInterface
+    static class WanReplicationRefReadOnly extends WanReplicationRef {
+
+        WanReplicationRefReadOnly(WanReplicationRef ref) {
+            super(ref);
+        }
+
+        @Override
+        public WanReplicationRef setName(String name) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public WanReplicationRef setMergePolicy(String mergePolicy) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public WanReplicationRef setFilters(List<String> filters) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public WanReplicationRef addFilter(String filter) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public WanReplicationRef setRepublishingEnabled(boolean republishingEnabled) {
+            throw throwReadOnly();
+        }
+
+        private UnsupportedOperationException throwReadOnly() {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

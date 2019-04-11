@@ -124,9 +124,9 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
                 .withPrefabValues(EvictionConfig.class,
                         new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
                         new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
-                .withPrefabValues(QueryCacheConfigReadOnly.class,
-                        new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
-                        new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
+                .withPrefabValues(QueryCacheConfig.QueryCacheConfigReadOnly.class,
+                        new QueryCacheConfig.QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
+                        new QueryCacheConfig.QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
                 .verify();
     }
 }

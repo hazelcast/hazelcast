@@ -202,4 +202,21 @@ public class MapAttributeConfig implements IdentifiedDataSerializable {
         result = 31 * result + (extractor != null ? extractor.hashCode() : 0);
         return result;
     }
+
+    static class MapAttributeConfigReadOnly extends MapAttributeConfig {
+
+        MapAttributeConfigReadOnly(MapAttributeConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MapAttributeConfig setName(String attribute) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapAttributeConfig setExtractor(String type) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

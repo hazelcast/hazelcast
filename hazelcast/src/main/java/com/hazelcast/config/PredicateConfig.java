@@ -225,4 +225,31 @@ public class PredicateConfig implements IdentifiedDataSerializable {
         sql = in.readUTF();
         implementation = in.readObject();
     }
+
+    static class PredicateConfigReadOnly extends PredicateConfig {
+
+        PredicateConfigReadOnly(PredicateConfig config) {
+            super(config);
+        }
+
+        @Override
+        public PredicateConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public PredicateConfig setImplementation(Predicate implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setSql(String sql) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public String toString() {
+            return "PredicateConfigReadOnly{} " + super.toString();
+        }
+    }
 }

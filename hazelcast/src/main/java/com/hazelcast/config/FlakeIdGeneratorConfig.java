@@ -301,4 +301,45 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         nodeIdOffset = in.readLong();
         statisticsEnabled = in.readBoolean();
     }
+
+    static class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
+
+        FlakeIdGeneratorConfigReadOnly(FlakeIdGeneratorConfig config) {
+            super(config);
+        }
+
+        @Override
+        public void setName(String name) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public FlakeIdGeneratorConfig setIdOffset(long idOffset) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public FlakeIdGeneratorConfig setNodeIdOffset(long nodeIdOffset) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public FlakeIdGeneratorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw throwReadOnly();
+        }
+
+        private UnsupportedOperationException throwReadOnly() {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

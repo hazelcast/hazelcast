@@ -39,9 +39,9 @@ public class ListConfigTest {
         EqualsVerifier.forClass(ListConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
-                .withPrefabValues(ListConfigReadOnly.class,
-                        new ListConfigReadOnly(new ListConfig("red")),
-                        new ListConfigReadOnly(new ListConfig("black")))
+                .withPrefabValues(ListConfig.ListConfigReadOnly.class,
+                        new ListConfig.ListConfigReadOnly(new ListConfig("red")),
+                        new ListConfig.ListConfigReadOnly(new ListConfig("black")))
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
                         new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))

@@ -37,9 +37,9 @@ public class QueueStoreConfigTest {
         EqualsVerifier.forClass(QueueStoreConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)
-                .withPrefabValues(QueueStoreConfigReadOnly.class,
-                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
-                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
+                .withPrefabValues(QueueStoreConfig.QueueStoreConfigReadOnly.class,
+                        new QueueStoreConfig.QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
+                        new QueueStoreConfig.QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
                 .verify();
     }
 }

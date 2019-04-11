@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.BinaryInterface;
 /**
  * Read only version of {@link CacheEvictionConfig}.
  *
- * @deprecated Use {@link com.hazelcast.config.EvictionConfigReadOnly} instead of this
+ * @deprecated Use {@link EvictionConfigReadOnly} instead of this
  */
 @Deprecated
 @BinaryInterface
