@@ -20,7 +20,9 @@ import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import sun.misc.Unsafe;
 
 /**
- * Responsible for reading and writing a record to offheap.
+ * Responsible for reading//writing a record from/to offheap.
+ *
+ * The concrete implementations will be generated at runtime.
  * <p>
  * todo: for every field there will probably be a method generated? e.g. putPrice and getPrice
  */

@@ -55,8 +55,6 @@ public class DataStreamConfig {
 
     private Map<String, Supplier<Aggregator>> attachedAggregators = new HashMap<String, Supplier<Aggregator>>();
 
-
-
     public DataStreamConfig() {
     }
 
@@ -150,7 +148,8 @@ public class DataStreamConfig {
      * Sets the maximum segment size in bytes.
      *
      * @param maxSegmentSize
-     * @return
+     * @return this.
+     * @throws IllegalArgumentException if maxSegmentSize smaller than 1.
      */
     public DataStreamConfig setMaxSegmentSize(int maxSegmentSize) {
         this.maxSegmentSize = checkPositive(maxSegmentSize, "maxSegmentSize should be larger than 0");
@@ -165,7 +164,8 @@ public class DataStreamConfig {
      * Sets the maximum number of segments per partition.
      *
      * @param segmentsPerPartition
-     * @return
+     * @return this
+     * @throws IllegalArgumentException if segmentsPerPartition smaller than 1.
      */
     public DataStreamConfig setSegmentsPerPartition(int segmentsPerPartition) {
         this.segmentsPerPartition = checkPositive(segmentsPerPartition, "segmentsPerPartition should be larger than 0");
@@ -180,31 +180,65 @@ public class DataStreamConfig {
      * Sets the size in bytes for the initial segment size.
      *
      * @param initialSegmentSize
-     * @return
+     * @return this
+     * @throws IllegalArgumentException if initialSegmentSize smaller than 1.
      */
     public DataStreamConfig setInitialSegmentSize(long initialSegmentSize) {
         this.initialSegmentSize = checkPositive(initialSegmentSize, "initialSegmentSize should be larger than 0");
         return this;
     }
 
+    /**
+     * Gets the value class.
+     *
+     * @return the value class, or null if the value should be interpreted as a blob.
+     */
     public Class getValueClass() {
         return valueClass;
     }
 
+    /**
+     * Sets the value class.
+     *
+     * If the value is set, the DataStream will analyze the content. If it isn't set, the
+     * DataStream will assume it is a blob and will not try to understand.
+     *
+     * @param valueClass
+     * @return
+     */
     public DataStreamConfig setValueClass(Class valueClass) {
-        this.valueClass = checkNotNull(valueClass, "valueClass");
+        this.valueClass = valueClass;
         return this;
     }
 
+    /**
+     * Sets the name of the data-stream.
+     *
+     * todo: probably we want to add constraints to the name so we can use the name as part of the filename
+     * when writing to disk.
+     *
+     * @param name
+     */
     public void setName(String name) {
         this.name = checkHasText(name,"name is empty or null");
     }
 
+    /**
+     * Gets the name of the data-stream.
+     *
+     * @return
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the DataStreamConfig as a readonly configuration.
+     *
+     * @return
+     */
     public DataStreamConfig getAsReadOnly() {
+        //todo: we need to return an immutable wrapper.
         return this;
     }
 
