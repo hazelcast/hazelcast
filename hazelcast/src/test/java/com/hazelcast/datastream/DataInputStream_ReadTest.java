@@ -53,7 +53,6 @@ public class DataInputStream_ReadTest extends HazelcastTestSupport {
                 for (int k = 0; k < produceCount; k++) {
                     Employee record = new Employee(k, k, k);
                     produced.add(record);
-                    out.write("foo", record);
                     sleepMillis(1);
                 }
             }
@@ -66,10 +65,9 @@ public class DataInputStream_ReadTest extends HazelcastTestSupport {
         do {
             Employee employee = in.read();
             consumed.add(employee);
-            System.out.println(consumed.size()+" employee:"+employee);
         } while (consumed.size() != produceCount);
 
 
-        assertEquals(produced,consumed);
+        assertEquals(produced, consumed);
     }
 }

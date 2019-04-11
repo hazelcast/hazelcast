@@ -22,6 +22,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -30,7 +33,7 @@ import static org.junit.Assert.assertNull;
 public class DataOutputStream_WriteTest extends HazelcastTestSupport {
 
     @Test
-    public void whenVariableLength() throws InterruptedException {
+    public void whenVariableLengthAndFewItems() throws InterruptedException {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
@@ -57,6 +60,39 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         assertEquals("22", in.read());
         assertEquals("333", in.read());
         assertNull(in.poll());
+    }
+
+    @Test
+    public void whenVariableLengthAndManyItems() throws InterruptedException {
+        Config config = new Config()
+                .setProperty(PARTITION_COUNT.getName(), "1")
+                .addDataStreamConfig(new DataStreamConfig("employees")
+                        .setInitialSegmentSize(128)
+                        .setMaxSegmentSize(128));
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        List<Employee> produced = new LinkedList<>();
+        DataStream<Employee> stream = hz.getDataStream("employees");
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        int count = 5;
+        for (int k = 0; k < count; k++) {
+            Employee record = new Employee(k, k, k);
+            produced.add(record);
+            out.write(record);
+        }
+
+        assertEquals(count, stream.asFrame().count());
+
+        DataInputStream<Employee> in = stream.newInputStream(0, 0);
+        List<Employee> consumed = new LinkedList<>();
+        for (int k = 0; k < count; k++) {
+            Employee read = in.read();
+            System.out.println(read);
+            consumed.add(read);
+        }
+
+        assertNull(in.poll());
+        assertEquals(produced, consumed);
     }
 
     @Test

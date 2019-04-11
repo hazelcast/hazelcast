@@ -112,9 +112,10 @@ public class DSPartitionListeners {
                 }
                 encoder.dataOffset = dataOffset;
                 encoder.dataAddress = segment.dataAddress();
-                HeapData o = encoder.load();
+                HeapData load = encoder.load();
+                System.out.println("loaded:"+ss.toObject(load));
+                consumer.accept(load);
                 this.offset = segment.head() + encoder.dataOffset;
-                consumer.accept(ss.toData(o));
             }
         }
     }
