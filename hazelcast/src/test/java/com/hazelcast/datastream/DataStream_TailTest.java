@@ -25,7 +25,7 @@ import org.junit.Test;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
-public class HeadTest extends HazelcastTestSupport {
+public class DataStream_TailTest extends HazelcastTestSupport {
 
     @Test
     public void whenEmpty() {
@@ -38,7 +38,7 @@ public class HeadTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        assertEquals(0, stream.head("f"));
+        assertEquals(0, stream.tail("f"));
     }
 
     @Test
@@ -46,52 +46,21 @@ public class HeadTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024)
-                        .setValueClass(Employee.class));
-
-        HazelcastInstance hz = createHazelcastInstance(config);
-
-        DataStream<Employee> stream = hz.getDataStream("employees");
-        stream.newOutputStream().write("f", new Employee(1, 1, 1));
-        assertEquals(0, stream.head("f"));
-    }
-
-    @Test
-    public void whenManyItemsAdded() {
-        Config config = new Config()
-                .setProperty(PARTITION_COUNT.getName(), "1")
-                .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(8 * 1024)
-                        .setMaxSegmentSize(8 * 1024)
+                        .setInitialSegmentSize(1024 * 1024)
+                        .setMaxSegmentSize(1024 * 1024)
                         .setSegmentsPerPartition(3)
-                        //.setTenuringAge(10, TimeUnit.SECONDS)
                         .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
         DataStream<Employee> stream = hz.getDataStream("employees");
         DataOutputStream out = stream.newOutputStream();
-        long prev = -1;
-        for (int k = 0; k < 10000; k++) {
+        for (int k = 0; k < 1000 * 1000; k++) {
             out.write(new Employee(1, 1, 1));
-            long head = stream.head("f");
-            if (head != prev) {
-                long tail = stream.tail("f");
-                System.out.println("at:" + k + " head:" + head + " tail:" + tail + " diff:" + (tail - head));
-                prev = head;
+            assertEquals(20 * (k + 1), stream.tail("f"));
+            if (k % 10000 == 0) {
+                System.out.println("at:" + k);
             }
-//            assertEquals(20 * (k+1), head);
-//            head
-//            if(k%10000==0){
-//
-//            }
         }
 
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println(stream.head("f"));
     }
 }

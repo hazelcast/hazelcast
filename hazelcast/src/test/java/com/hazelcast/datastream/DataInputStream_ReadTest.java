@@ -28,7 +28,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class SubscriptionTest extends HazelcastTestSupport {
+public class DataInputStream_ReadTest extends HazelcastTestSupport {
 
     // todo
     @Ignore

@@ -19,41 +19,46 @@ package com.hazelcast.datastream;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 
-public class QueryWithIndexTest extends HazelcastTestSupport {
+public class DataFrame_CountTest extends HazelcastTestSupport {
 
     @Test
-    public void compileQuery() {
+    public void whenNotEmpty() {
         Config config = new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "10")
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
-                                .setValueClass(Employee.class)
-                                .addIndexField("age"));
+                                .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
         DataOutputStream<Employee> out = stream.newOutputStream();
 
-        out.write(1L, new Employee(20, 100, 200));
-        out.write(1L, new Employee(20, 101, 200));
-        out.write(1L, new Employee(20, 103, 200));
-        out.write(1L, new Employee(21, 100, 201));
-        out.write(1L, new Employee(22, 100, 202));
+        for (int k = 0; k < 5; k++) {
+            out.write((long) k, new Employee(k, k, k));
+        }
 
-        PreparedQuery<Employee> preparedQuery = stream.asFrame().prepare(new SqlPredicate("age==20"));
-        Map<String, Object> bindings = new HashMap<String, Object>();
-        bindings.put("age", 20);
-        assertEquals(3, preparedQuery.execute(bindings).size());
+        assertEquals(5, stream.asFrame().count());
+    }
+
+    @Test
+    public void whenEmpty() {
+        Config config = new Config()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .addDataStreamConfig(
+                        new DataStreamConfig("employees")
+                                .setValueClass(Employee.class));
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+
+        DataStream<Employee> stream = hz.getDataStream("employees");
+
+        assertEquals(0, stream.asFrame().count());
     }
 }

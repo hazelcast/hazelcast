@@ -28,7 +28,7 @@ import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
-public class FetchAggregateTest extends HazelcastTestSupport {
+public class DataFrame_AggregateTest extends HazelcastTestSupport {
 
     @Test
     public void maxAgeAggregation() {

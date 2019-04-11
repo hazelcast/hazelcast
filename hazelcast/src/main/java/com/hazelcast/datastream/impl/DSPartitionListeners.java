@@ -16,7 +16,7 @@
 
 package com.hazelcast.datastream.impl;
 
-import com.hazelcast.datastream.impl.encoders.RecordEncoder;
+import com.hazelcast.datastream.impl.encoders.DSEncoder;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -102,7 +102,7 @@ public class DSPartitionListeners {
                     }
                     continue;
                 }
-                RecordEncoder encoder = partition.encoder();
+                DSEncoder encoder = partition.encoder();
                 encoder.dataOffset = offsetInSegment;
                 encoder.dataAddress = segment.dataAddress();
                 Object o = encoder.load();

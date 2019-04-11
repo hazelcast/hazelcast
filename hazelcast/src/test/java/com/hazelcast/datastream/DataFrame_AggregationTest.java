@@ -33,7 +33,7 @@ import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
-public class AggregationTest extends HazelcastTestSupport {
+public class DataFrame_AggregationTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void whenBlob() {

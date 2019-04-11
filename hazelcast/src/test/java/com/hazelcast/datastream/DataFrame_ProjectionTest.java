@@ -33,7 +33,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
-public class ProjectionTest extends HazelcastTestSupport {
+public class DataFrame_ProjectionTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void whenBlob() {

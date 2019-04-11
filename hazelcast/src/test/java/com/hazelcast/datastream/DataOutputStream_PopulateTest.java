@@ -23,7 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-public class PopulateTest extends HazelcastTestSupport {
+public class DataOutputStream_PopulateTest extends HazelcastTestSupport {
 
     @Test
     public void test() {

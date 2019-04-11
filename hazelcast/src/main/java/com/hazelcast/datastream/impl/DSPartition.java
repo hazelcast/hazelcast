@@ -26,6 +26,8 @@ import com.hazelcast.datastream.impl.aggregation.AggregateFJResult;
 import com.hazelcast.datastream.impl.aggregation.AggregationSegmentRun;
 import com.hazelcast.datastream.impl.aggregation.AggregationSegmentRunCodegen;
 import com.hazelcast.datastream.impl.aggregation.AggregatorRecursiveTask;
+import com.hazelcast.datastream.impl.encoders.DSEncoder;
+import com.hazelcast.datastream.impl.encoders.HeapDataEncoder;
 import com.hazelcast.datastream.impl.encoders.RecordEncoder;
 import com.hazelcast.datastream.impl.encoders.RecordEncoderCodegen;
 import com.hazelcast.datastream.impl.entryprocessor.EntryProcessorSegmentRun;
@@ -64,7 +66,7 @@ public class DSPartition {
     private final InternalSerializationService serializationService;
     private final RecordModel recordModel;
     private final long maxTenuringAgeNanos;
-    private final RecordEncoder encoder;
+    private final DSEncoder encoder;
     private final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     // the segment receiving the writes.
@@ -110,7 +112,7 @@ public class DSPartition {
         return recordModel;
     }
 
-    public RecordEncoder encoder() {
+    public DSEncoder encoder() {
         return encoder;
     }
 
@@ -135,10 +137,13 @@ public class DSPartition {
         return Long.parseLong(offsetStr, 16);
     }
 
-    private RecordEncoder newEncoder() {
+    private DSEncoder newEncoder() {
         if(recordModel == null){
-            return null;
+            HeapDataEncoder encoder = new HeapDataEncoder();
+            encoder.serializationService = serializationService;
+            return encoder;
         }
+
         RecordEncoderCodegen codegen = new RecordEncoderCodegen(recordModel);
         codegen.generate();
 //        System.out.println(codegen.getCode());

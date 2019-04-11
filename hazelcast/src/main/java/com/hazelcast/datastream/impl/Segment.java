@@ -19,7 +19,7 @@ package com.hazelcast.datastream.impl;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastream.impl.encoders.RecordEncoder;
+import com.hazelcast.datastream.impl.encoders.DSEncoder;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import com.hazelcast.spi.serialization.SerializationService;
 import sun.misc.Unsafe;
@@ -50,7 +50,7 @@ public class Segment {
     // we start with 1 because the partition is using the segment.
     private volatile int ownershipCount = 1;
 
-    private final RecordEncoder encoder;
+    private final DSEncoder encoder;
     private final SerializationService serializationService;
     private final Unsafe unsafe = UnsafeUtil.UNSAFE;
     private final RecordModel recordModel;
@@ -73,7 +73,7 @@ public class Segment {
             long startOffset,
             SerializationService serializationService,
             RecordModel recordModel,
-            RecordEncoder encoder,
+            DSEncoder encoder,
             Map<String, Aggregator> aggregators,
             DataStreamConfig config
     ) {
@@ -86,8 +86,10 @@ public class Segment {
         this.serializationService = serializationService;
         this.aggregators = aggregators;
 
-        this.indicesAddress = recordModel.getIndexSize() == 0 ? 0 : unsafe.allocateMemory(recordModel.getIndexSize());
-        if (indicesAddress != 0) {
+        if(recordModel == null||recordModel.getIndexSize()==0){
+            this.indicesAddress = 0;
+        }else{
+            this.indicesAddress = unsafe.allocateMemory(recordModel.getIndexSize());
             // set -1 on each bucket in the index
             for (int k = 0; k < recordModel.getIndexSize() / 4; k++) {
                 unsafe.putInt(indicesAddress + k * 4, -1);

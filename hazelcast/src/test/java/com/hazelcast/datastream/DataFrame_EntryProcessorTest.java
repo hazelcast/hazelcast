@@ -29,7 +29,7 @@ import java.util.List;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
-public class EntryProcessorTest extends HazelcastTestSupport {
+public class DataFrame_EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
     public void testFieldMutator() {

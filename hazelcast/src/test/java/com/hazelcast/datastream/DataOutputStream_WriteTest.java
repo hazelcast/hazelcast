@@ -25,8 +25,39 @@ import org.junit.Test;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-public class AppendTest extends HazelcastTestSupport {
+public class DataOutputStream_WriteTest extends HazelcastTestSupport {
+
+    @Test
+    public void whenVariableLength() throws InterruptedException {
+        Config config = new Config()
+                .setProperty(PARTITION_COUNT.getName(), "1")
+                .addDataStreamConfig(new DataStreamConfig("employees")
+                        .setInitialSegmentSize(1024));
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+
+        DataStream<String> stream = hz.getDataStream("employees");
+        DataOutputStream<String> out = stream.newOutputStream();
+        out.write("foo", "0");
+        System.out.println(stream.tail("foo"));
+        out.write("foo", "22");
+        System.out.println(stream.tail("foo"));
+        out.write("foo", "333");
+        System.out.println(stream.tail("foo"));
+
+        assertEquals(3, stream.asFrame().count());
+        assertEquals(1, stream.asFrame().memoryInfo().segmentsInUse());
+        assertEquals(54, stream.tail("foo"));
+        assertEquals(0, stream.head("foo"));
+
+        DataInputStream in = stream.newInputStream(0, 0);
+        assertEquals("1", in.read());
+        assertEquals("22", in.read());
+        assertEquals("333", in.read());
+        assertNull(in.poll());
+    }
 
     @Test
     public void whenSimple() {

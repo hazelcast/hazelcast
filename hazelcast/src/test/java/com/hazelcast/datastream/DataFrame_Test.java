@@ -25,42 +25,41 @@ import org.junit.Test;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
-public class TailTest extends HazelcastTestSupport {
+public class DataFrame_Test extends HazelcastTestSupport {
 
     @Test
-    public void whenEmpty() {
+    public void test() {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
-                .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024)
-                        .setValueClass(Employee.class));
+                .addDataStreamConfig(
+                        new DataStreamConfig("employees")
+                                .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
         DataStream<Employee> stream = hz.getDataStream("employees");
-        assertEquals(0, stream.tail("f"));
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        for (int k = 0; k < 5; k++) {
+            out.write(k, new Employee(k, k, k));
+        }
     }
 
     @Test
-    public void whenFewItemsAdded() {
+    public void testMemoryConsumption() {
         Config config = new Config()
-                .setProperty(PARTITION_COUNT.getName(), "1")
-                .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024 * 1024)
-                        .setMaxSegmentSize(1024 * 1024)
-                        .setSegmentsPerPartition(3)
-                        .setValueClass(Employee.class));
+                .setProperty(PARTITION_COUNT.getName(), "2")
+                .addDataStreamConfig(
+                        new DataStreamConfig("employees")
+                                .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
+
         DataStream<Employee> stream = hz.getDataStream("employees");
-        DataOutputStream out = stream.newOutputStream();
-        for (int k = 0; k < 1000 * 1000; k++) {
-            out.write(new Employee(1, 1, 1));
-            assertEquals(20 * (k + 1), stream.tail("f"));
-            if (k % 10000 == 0) {
-                System.out.println("at:" + k);
-            }
+        DataOutputStream<Employee> out = stream.newOutputStream();
+        for (int k = 0; k < 5; k++) {
+            out.write(k, new Employee(k, k, k));
         }
 
+        assertEquals(20 * 5, stream.asFrame().memoryInfo().consumedBytes());
     }
 }

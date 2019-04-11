@@ -32,7 +32,7 @@ import java.util.Random;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
-public class QueryTest extends HazelcastTestSupport {
+public class DataFrame_QueryTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void whenBlob() {
