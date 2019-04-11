@@ -17,32 +17,50 @@
 package com.hazelcast.datastream.impl.encoders;
 
 import com.hazelcast.datastream.impl.RecordModel;
-import com.hazelcast.internal.memory.impl.UnsafeUtil;
-import sun.misc.Unsafe;
+import com.hazelcast.internal.serialization.impl.HeapData;
+
+import static java.lang.String.format;
 
 /**
  * Responsible for reading//writing a record from/to offheap.
- *
+ * <p>
  * The concrete implementations will be generated at runtime.
  * <p>
  * todo: for every field there will probably be a method generated? e.g. putPrice and getPrice
  */
-public abstract class RecordEncoder<R> implements DSEncoder {
+public abstract class RecordEncoder<R> extends DSEncoder {
 
-    protected final Unsafe unsafe = UnsafeUtil.UNSAFE;
-    protected final RecordModel recordModel;
-    protected final long recordDataOffset;
-    protected final int recordPayloadSize;
+    public RecordModel recordModel;
+    public long recordDataOffset;
+    public int recordPayloadSize;
 
-    protected RecordEncoder(RecordModel recordModel) {
+    public void setRecordModel(RecordModel recordModel) {
         this.recordModel = recordModel;
         this.recordDataOffset = recordModel.getDataOffset();
         this.recordPayloadSize = recordModel.getPayloadSize();
     }
 
+    @Override
+    public HeapData load() {
+        R record = newInstance();
+        readRecord(record);
+        return serializationService.toData(record);
+    }
+
+    @Override
+    public boolean store(Object object) {
+        Object record = serializationService.toObject(object);
+        if (record.getClass() != recordModel.getRecordClass()) {
+            throw new RuntimeException(format("Expected value of class '%s', but found '%s' ",
+                    record.getClass().getName(), recordModel.getRecordClass().getClass().getName()));
+        }
+
+        return writeRecord((R)record);
+    }
+
     public abstract R newInstance();
 
-    public abstract void writeRecord(R record, long segmentAddress, int recordOffset, long indicesAddress);
+    protected abstract boolean writeRecord(R record);
 
-    public abstract void readRecord(R record, long segmentAddress, int recordOffset);
+    protected abstract void readRecord(R record);
 }

@@ -35,6 +35,20 @@ import static org.junit.Assert.assertEquals;
 
 public class AggregationTest extends HazelcastTestSupport {
 
+    @Test(expected = IllegalStateException.class)
+    public void whenBlob() {
+        Config config = new Config()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .addDataStreamConfig(
+                        new DataStreamConfig("employees"));
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+
+        DataStream<Employee> stream = hz.getDataStream("employees");
+        DataFrame<Employee> frame = stream.asFrame();
+        frame.prepare(new AggregationRecipe<>());
+    }
+
     @Test
     public void whenForkJoinUsed() {
         Config config = new Config()

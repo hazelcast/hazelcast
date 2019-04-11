@@ -18,6 +18,7 @@ package com.hazelcast.datastream.impl;
 
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.internal.codeneneration.Compiler;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class DSContainer {
@@ -42,7 +43,12 @@ public class DSContainer {
     public DSPartition getPartition(int partitionId) {
         DSPartition partition = partitions[partitionId];
         if (partition == null) {
-            partition = new DSPartition(service, partitionId, config, nodeEngine.getSerializationService(), compiler);
+            partition = new DSPartition(
+                    service,
+                    partitionId,
+                    config,
+                    (InternalSerializationService) nodeEngine.getSerializationService(),
+                    compiler);
             partitions[partitionId] = partition;
         }
         return partition;

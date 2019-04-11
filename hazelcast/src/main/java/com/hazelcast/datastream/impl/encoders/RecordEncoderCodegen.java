@@ -57,21 +57,13 @@ public class RecordEncoderCodegen {
         add("import java.util.*;\n");
         add("import com.hazelcast.util.*;\n");
         add("import com.hazelcast.datastream.impl.*;\n");
-        add("import static com.hazelcast.datastream.impl.IndexOffsets.offsetInIndex;\n");
-
+        add("import static com.hazelcast.datastream.impl.IndexOffsets.offsetInIndex;\n\n");
         add("public class " + className() + " extends com.hazelcast.datastream.impl.encoders.RecordEncoder<%s> {\n\n",
                 recordModel.getRecordClassName());
-        generateConstructor();
         generateNewInstanceMethod();
         generateWriteRecordMethod();
         generateReadRecordMethod();
         add("}\n");
-    }
-
-    private void generateConstructor() {
-        add("    public %s(RecordModel recordModel){\n", className());
-        add("        super(recordModel);\n");
-        add("    }\n\n");
     }
 
     private void generateNewInstanceMethod() {
@@ -111,11 +103,14 @@ public class RecordEncoderCodegen {
     }
 
     private void generateWriteRecordMethod() {
-        add("    public void writeRecord(%s record, long segmentAddress, int recordOffset, long indicesAddress){\n",
+        add("    public boolean writeRecord(%s record){\n",
                 recordModel.getRecordClassName());
 
+        // if there is not enough space, then return false;
+        add("        if(dataLength-dataOffset<%s)return false;\n\n",recordModel.getSize());
+
         // todo: with nullable fields, enums strings etc.. instead of doing a dumb copyMemory; we could generate per field
-        add("        unsafe.copyMemory(record, recordDataOffset, null, segmentAddress+recordOffset, recordPayloadSize);\n");
+        add("        unsafe.copyMemory(record, recordDataOffset, null, dataAddress+dataOffset, recordPayloadSize);\n");
 
         List<String> indexFields = recordModel.getIndexFields();
         if (!indexFields.isEmpty()) {
@@ -131,7 +126,7 @@ public class RecordEncoderCodegen {
                 add("        int next_%s=unsafe.getInt(bucketAddress_%s);\n", fieldName, fieldName);
 
                 // then we update the next pointer in the record to point to the existing value
-                add("        unsafe.putInt(segmentAddress+recordOffset+%s, next_%s);\n",
+                add("        unsafe.putInt(dataAddress+dataOffset+%s, next_%s);\n",
                         recordModel.offsetNextForIndex(fieldName), fieldName);
 
                 // and then we write the newest value to the index.
@@ -139,12 +134,14 @@ public class RecordEncoderCodegen {
                 add("\n");
             }
         }
+        add("        dataOffset+=%s;\n",recordModel.getSize());
+        add("        return true;\n");
         add("    }\n\n");
     }
 
     private void generateReadRecordMethod() {
-        add("    public void readRecord(%s record, long segmentAddress, int recordOffset){\n", recordModel.getRecordClassName());
-        add("        long recordAddress = segmentAddress + recordOffset;\n");
+        add("    public void readRecord(%s record){\n", recordModel.getRecordClassName());
+        add("        long recordAddress = dataAddress + dataOffset;\n");
 
         for (String fieldName : recordModel.getFields().keySet()) {
             add("        record." + fieldName + "=");
@@ -152,9 +149,9 @@ public class RecordEncoderCodegen {
             add(";\n");
         }
 
+        add("        dataOffset+=%s;\n",recordModel.getSize());
         add("    }\n\n");
     }
-
 
     protected void addGetField(String attributeName) {
         Field field = recordModel.getField(attributeName);

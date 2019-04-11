@@ -35,8 +35,8 @@ import com.hazelcast.datastream.impl.projection.ProjectionSegmentRunCodegen;
 import com.hazelcast.datastream.impl.query.QuerySegmentRun;
 import com.hazelcast.datastream.impl.query.QuerySegmentRunCodegen;
 import com.hazelcast.internal.codeneneration.Compiler;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Supplier;
 
@@ -50,7 +50,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.StreamSupport;
@@ -62,7 +61,7 @@ public class DSPartition {
     private final Compiler compiler;
     private int partitionId;
     private final DataStreamConfig config;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final RecordModel recordModel;
     private final long maxTenuringAgeNanos;
     private final RecordEncoder encoder;
@@ -81,7 +80,7 @@ public class DSPartition {
     public DSPartition(DSService dsService,
                        int partitionId,
                        DataStreamConfig config,
-                       SerializationService serializationService,
+                       InternalSerializationService serializationService,
                        Compiler compiler
     ) {
         this.partitionId = partitionId;
@@ -91,13 +90,20 @@ public class DSPartition {
                 ? Long.MAX_VALUE
                 : MILLISECONDS.toNanos(config.getTenuringAgeMillis());
         this.serializationService = serializationService;
-        this.recordModel = new RecordModel(config.getValueClass(), config.getIndices());
+        this.recordModel = initRecordModel(config);
         this.encoder = newEncoder();
         this.listeners = dsService.getOrCreatePartitionListeners(config.getName(), partitionId, this);
         loadSegmentFiles();
         //System.out.println(config);
 
         //System.out.println("record payload size:" + recordModel.getPayloadSize());
+    }
+
+    private RecordModel initRecordModel(DataStreamConfig config) {
+        if(config.getValueClass()==null){
+            return null;
+        }
+        return new RecordModel(config.getValueClass(), config.getIndices());
     }
 
     public RecordModel model() {
@@ -130,13 +136,19 @@ public class DSPartition {
     }
 
     private RecordEncoder newEncoder() {
+        if(recordModel == null){
+            return null;
+        }
         RecordEncoderCodegen codegen = new RecordEncoderCodegen(recordModel);
         codegen.generate();
 //        System.out.println(codegen.getCode());
         Class<RecordEncoder> encoderClazz = compiler.compile(codegen.className(), codegen.getCode());
         try {
-            Constructor<RecordEncoder> constructor = encoderClazz.getConstructor(RecordModel.class);
-            return constructor.newInstance(recordModel);
+            Constructor<RecordEncoder> constructor = encoderClazz.getConstructor();
+            RecordEncoder encoder = constructor.newInstance();
+            encoder.setRecordModel(recordModel);
+            encoder.serializationService = serializationService;
+            return encoder;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -168,9 +180,6 @@ public class DSPartition {
 
         if (edenSegment == null) {
             // eden doesn't exist.
-            createEden = true;
-        } else if (!edenSegment.ensureCapacity()) {
-            // eden is full
             createEden = true;
         } else if (maxTenuringAgeNanos != Long.MAX_VALUE
                 && System.nanoTime() - edenSegment.firstInsertNanos() < maxTenuringAgeNanos) {
@@ -269,7 +278,18 @@ public class DSPartition {
 
         ensureEdenExists();
 
-        edenSegment.insert(valueData);
+        if(!edenSegment.write(valueData)){
+            if(edenSegment.dataOffset()==0){
+                throw new IllegalArgumentException("object "+valueData+" too big to be written");
+            }
+
+            tenureEden();
+            ensureEdenExists();
+            if(!edenSegment.write(valueData)) {
+                throw new IllegalArgumentException("object "+valueData+" too big to be written");
+            }
+        }
+
         listeners.onAppend(this);
     }
 
@@ -313,6 +333,10 @@ public class DSPartition {
     }
 
     public void prepareQuery(String preparationId, Predicate predicate) {
+        if(recordModel==null){
+            throw new IllegalStateException("Can't create prepared query for blobs");
+        }
+
         SegmentRunCodegen codeGenerator = new QuerySegmentRunCodegen(
                 preparationId, predicate, recordModel);
         codeGenerator.generate();
@@ -339,6 +363,9 @@ public class DSPartition {
     }
 
     public void prepareProjection(String preparationId, ProjectionRecipe extraction) {
+        if(recordModel==null){
+            throw new IllegalStateException("Can't prepare projection for blobs");
+        }
         SegmentRunCodegen codegen = new ProjectionSegmentRunCodegen(
                 preparationId, extraction, recordModel);
         codegen.generate();
@@ -358,6 +385,10 @@ public class DSPartition {
     }
 
     public void prepareAggregation(String preparationId, AggregationRecipe aggregationRecipe) {
+        if(recordModel==null){
+            throw new IllegalStateException("Can't create aggregation query for blobs");
+        }
+
         SegmentRunCodegen codegen = new AggregationSegmentRunCodegen(
                 preparationId, aggregationRecipe, recordModel);
         codegen.generate();
@@ -413,6 +444,10 @@ public class DSPartition {
     }
 
     public void prepareEntryProcessor(String preparationId, EntryProcessorRecipe recipe) {
+        if(recordModel==null){
+            throw new IllegalStateException("Can't prepared entryprocessor for blobs");
+        }
+
         EntryProcessorSegmentRunCodegen codegen = new EntryProcessorSegmentRunCodegen(
                 preparationId, recipe, recordModel);
         codegen.generate();
@@ -439,7 +474,8 @@ public class DSPartition {
     public Iterator iterator() {
         // we are not including eden for now. we rely on frozen partition
         // todo: we probably want to return youngestSegment for iteration
-        return new IteratorImpl(oldestTenuredSegment);
+       // return new IteratorImpl(oldestTenuredSegment);
+        throw new UnsupportedOperationException();
     }
 
     public long head() {
@@ -481,54 +517,56 @@ public class DSPartition {
         return null;
     }
 
-    class IteratorImpl implements Iterator {
-        private Segment segment;
-        private int recordIndex = -1;
-
-        public IteratorImpl(Segment segment) {
-            this.segment = segment;
-        }
-
-        @Override
-        public boolean hasNext() {
-            if (segment == null) {
-                return false;
-            }
-
-            if (recordIndex == -1) {
-                if (!segment.acquire()) {
-                    segment = segment.next;
-                    return hasNext();
-                } else {
-                    recordIndex = 0;
-                }
-            }
-
-            if (recordIndex >= segment.count()) {
-                segment.release();
-                recordIndex = -1;
-                segment = segment.next;
-                return hasNext();
-            }
-
-            return true;
-        }
-
-        @Override
-        public Object next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-
-            Object o = encoder.newInstance();
-            encoder.readRecord(o, segment.dataAddress(), recordIndex * recordModel.getPayloadSize());
-            recordIndex++;
-            return o;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-    }
+//    class IteratorImpl implements Iterator {
+//        private Segment segment;
+//        private int recordIndex = -1;
+//
+//        public IteratorImpl(Segment segment) {
+//            this.segment = segment;
+//        }
+//
+//        @Override
+//        public boolean hasNext() {
+//            if (segment == null) {
+//                return false;
+//            }
+//
+//            if (recordIndex == -1) {
+//                if (!segment.acquire()) {
+//                    segment = segment.next;
+//                    return hasNext();
+//                } else {
+//                    recordIndex = 0;
+//                }
+//            }
+//
+//            if (recordIndex >= segment.count()) {
+//                segment.release();
+//                recordIndex = -1;
+//                segment = segment.next;
+//                return hasNext();
+//            }
+//
+//            return true;
+//        }
+//
+//        @Override
+//        public Object next() {
+//            if (!hasNext()) {
+//                throw new NoSuchElementException();
+//            }
+//
+//            Object o = encoder.newInstance();
+//            encoder.dataAddress = segment.dataAddress();
+//            encoder.dataOffset =
+//            encoder.readRecord(o, segment.dataAddress(), recordIndex * recordModel.getPayloadSize());
+//            recordIndex++;
+//            return o;
+//        }
+//
+//        @Override
+//        public void remove() {
+//            throw new UnsupportedOperationException();
+//        }
+//    }
 }

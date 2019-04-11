@@ -16,6 +16,7 @@
 
 package com.hazelcast.datastream.impl;
 
+import com.hazelcast.datastream.impl.encoders.RecordEncoder;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -75,25 +76,25 @@ public class DSPartitionListeners {
 
     private class LocalListener {
         private Segment segment;
-        private long offset;
+        private long dataOffset;
         private Consumer<Data> consumer;
 
-        LocalListener(long offset, Consumer<Data> consumer) {
-            this.offset = offset;
+        LocalListener(long dataOffset, Consumer<Data> consumer) {
+            this.dataOffset = dataOffset;
             this.consumer = consumer;
         }
 
         void onAppend() {
             // System.out.println("on Append called: segment "+segment);
             if (segment == null) {
-                this.segment = partition.findSegment(offset);
+                this.segment = partition.findSegment(dataOffset);
                 if (segment == null) {
                     return;
                 }
             }
 
             for (; ; ) {
-                int offsetInSegment = (int) (offset - segment.head());
+                int offsetInSegment = (int) (dataOffset - segment.head());
                 if (offsetInSegment >= partition.tail()) {
                     segment = segment.next;
                     if (segment == null) {
@@ -101,9 +102,11 @@ public class DSPartitionListeners {
                     }
                     continue;
                 }
-                Object o = partition.encoder().newInstance();
-                offset += partition.model().getPayloadSize();
-                partition.encoder().readRecord(o, segment.dataAddress(), offsetInSegment);
+                RecordEncoder encoder = partition.encoder();
+                encoder.dataOffset = offsetInSegment;
+                encoder.dataAddress = segment.dataAddress();
+                Object o = encoder.load();
+                dataOffset = encoder.dataOffset;
                 consumer.accept(ss.toData(o));
                 return;
             }

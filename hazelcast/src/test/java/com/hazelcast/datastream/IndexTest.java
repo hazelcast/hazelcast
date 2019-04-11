@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -28,6 +29,7 @@ import java.util.Random;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 public class IndexTest extends HazelcastTestSupport {
 
     @Test

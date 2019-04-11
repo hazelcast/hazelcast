@@ -39,7 +39,7 @@ public class DataStreamConfig {
     private String name;
     private Class valueClass;
     // todo: is there a good reason to make initial not equal to max?
-    private long initialSegmentSize = KB * KB;
+    private int initialSegmentSize = KB * KB;
     private int maxSegmentSize = KB * KB;
     private int segmentsPerPartition = Integer.MAX_VALUE;
     private Set<String> indices = new HashSet<String>();
@@ -172,7 +172,7 @@ public class DataStreamConfig {
         return this;
     }
 
-    public long getInitialSegmentSize() {
+    public int getInitialSegmentSize() {
         return initialSegmentSize;
     }
 
@@ -183,7 +183,7 @@ public class DataStreamConfig {
      * @return this
      * @throws IllegalArgumentException if initialSegmentSize smaller than 1.
      */
-    public DataStreamConfig setInitialSegmentSize(long initialSegmentSize) {
+    public DataStreamConfig setInitialSegmentSize(int initialSegmentSize) {
         this.initialSegmentSize = checkPositive(initialSegmentSize, "initialSegmentSize should be larger than 0");
         return this;
     }

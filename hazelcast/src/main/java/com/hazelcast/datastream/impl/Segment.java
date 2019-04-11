@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
-import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 public class Segment {
@@ -65,8 +64,9 @@ public class Segment {
 
     private long lastInsertNanos = startNanos;
     private long dataAddress;
-    private long segmentSize;
-    private long index = 0;
+    private int segmentSize;
+    private int dataOffset = 0;
+    private int recordCount;
 
     Segment(String name,
             int partitionId,
@@ -106,6 +106,8 @@ public class Segment {
         return startOffset + consumedBytes();
     }
 
+
+
     public boolean acquire() {
         for (; ; ) {
             int currentUsed = ownershipCount;
@@ -137,7 +139,7 @@ public class Segment {
     }
 
     public long count() {
-        return index;
+        return recordCount;
     }
 
     public long indicesAddress() {
@@ -146,6 +148,10 @@ public class Segment {
 
     public long dataAddress() {
         return dataAddress;
+    }
+
+    public int dataOffset() {
+        return dataOffset;
     }
 
     public Map<String, Aggregator> getAggregators() {
@@ -165,39 +171,44 @@ public class Segment {
     }
 
     public long consumedBytes() {
+
         // todo: the indices are not included
-        return index * recordModel.getSize();
+        return dataOffset;
     }
 
-    public void insert(Object valueData) {
-        Object record = serializationService.toObject(valueData);
-        if (record.getClass() != recordModel.getRecordClass()) {
-            throw new RuntimeException(format("Expected value of class '%s', but found '%s' ",
-                    record.getClass().getName(), recordModel.getRecordClass().getClass().getName()));
-        }
+    public boolean write(Object valueData) {
+        encoder.dataAddress = dataAddress;
+        encoder.dataOffset = dataOffset;
+        encoder.dataLength = segmentSize;
+        encoder.indicesAddress = indicesAddress;
 
-        int recordOffset = (int) (index * recordModel.getSize());
-        encoder.writeRecord(record, dataAddress, recordOffset, indicesAddress);
-        for (Aggregator aggregator : aggregators.values()) {
-            aggregator.accumulate(record);
+        if(!encoder.store(valueData)){
+            return false;
         }
-        index++;
+        dataOffset = encoder.dataOffset;
+
+        //todo: enable aggregators
+//        for (Aggregator aggregator : aggregators.values()) {
+//            aggregator.accumulate(record);
+//        }
+        recordCount++;
         lastInsertNanos = System.nanoTime();
+        return true;
     }
 
     public boolean ensureCapacity() {
-        long requiredSegmentSize = (index + 1) * recordModel.getSize();
+        //long requiredSegmentSize = (index + 1) * recordModel.getSize();
+//
+//        if (requiredSegmentSize < segmentSize) {
+//            return true;
+//        }
+//
+//        if (maxSegmentSize <= requiredSegmentSize) {
+//            // we can't grow any further.
+//            return false;
+//        }
 
-        if (requiredSegmentSize < segmentSize) {
-            return true;
-        }
-
-        if (maxSegmentSize <= requiredSegmentSize) {
-            // we can't grow any further.
-            return false;
-        }
-
-        long newSegmentSize = Math.min(maxSegmentSize, 2 * this.segmentSize);
+        int newSegmentSize = (int)Math.min(maxSegmentSize, 2 * this.segmentSize);
         System.out.println("Growing segment from:" + this.segmentSize + " to:" + newSegmentSize);
 
         long newPointer = unsafe.allocateMemory(newSegmentSize);
@@ -263,7 +274,7 @@ public class Segment {
 
         try (OutputStream out = new FileOutputStream(segmentFile)) {
             byte[] buf = new byte[1 << 14];
-            long fileSize = index * recordModel.getSize();
+            long fileSize = dataOffset;
             for (long offset = 0; offset < fileSize; offset += buf.length) {
                 int batchSize = Math.min(buf.length, (int) (fileSize - offset));
                 MEM.copyToByteArray(dataAddress + offset, buf, 0, batchSize);

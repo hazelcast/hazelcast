@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
@@ -33,6 +34,20 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
 public class ProjectionTest extends HazelcastTestSupport {
+
+    @Test(expected = IllegalStateException.class)
+    public void whenBlob() {
+        Config config = new Config()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .addDataStreamConfig(
+                        new DataStreamConfig("employees"));
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+
+        DataStream<Employee> stream = hz.getDataStream("employees");
+        DataFrame<Employee> frame = stream.asFrame();
+        frame.prepare(new ProjectionRecipe<>());
+    }
 
     @Test
     public void compileIdentityProjection() {
