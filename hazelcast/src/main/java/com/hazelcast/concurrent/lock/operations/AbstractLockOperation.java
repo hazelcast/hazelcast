@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.LockInterceptorService;
 import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
@@ -120,6 +121,14 @@ public abstract class AbstractLockOperation extends Operation
 
     protected final void setReferenceCallId(long refCallId) {
         this.referenceCallId = refCallId;
+    }
+
+    protected final void interceptLockOperation() {
+        // if service is a LockInterceptorService, notify it a key is about to be locked
+        Object targetService = getNodeEngine().getService(namespace.getServiceName());
+        if (targetService instanceof LockInterceptorService) {
+            ((LockInterceptorService) targetService).onBeforeLock(namespace.getObjectName(), key);
+        }
     }
 
     @Override
