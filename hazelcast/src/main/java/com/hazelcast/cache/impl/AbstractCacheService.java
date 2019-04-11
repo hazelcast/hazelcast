@@ -37,6 +37,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.util.InvocationUtil;
+import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -57,8 +58,8 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.ServiceLoader;
 import com.hazelcast.wan.WanReplicationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -67,9 +68,11 @@ import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -83,6 +86,7 @@ import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.singleton;
 
@@ -96,7 +100,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     /**
      * Map from full prefixed cache name to {@link CacheConfig}
      */
-    protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
+    protected final ConcurrentMap<String, CacheConfigFuture> configs = new ConcurrentHashMap<String, CacheConfigFuture>();
 
     /**
      * Map from full prefixed cache name to {@link CacheContext}
@@ -175,13 +179,17 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     public Object getMergePolicy(String name) {
-        CacheConfig cacheConfig = configs.get(name);
+        CacheConfig cacheConfig = getCacheConfig(name);
         String mergePolicyName = cacheConfig.getMergePolicy();
         return mergePolicyProvider.getMergePolicy(mergePolicyName);
     }
 
     public ConcurrentMap<String, CacheConfig> getConfigs() {
-        return configs;
+        ConcurrentMap<String, CacheConfig> cacheConfigs = MapUtil.createConcurrentHashMap(configs.size());
+        for (Map.Entry<String, CacheConfigFuture> config : configs.entrySet()) {
+            cacheConfigs.put(config.getKey(), config.getValue().join());
+        }
+        return cacheConfigs;
     }
 
     protected void postInit(NodeEngine nodeEngine, Properties properties) {
@@ -281,7 +289,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 return new CacheProxy(cacheConfig, nodeEngine, this);
             }
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
@@ -385,32 +393,50 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     public CacheConfig putCacheConfigIfAbsent(CacheConfig config) {
         // ensure all configs registered in CacheService are not PreJoinCacheConfig's
         CacheConfig cacheConfig = asCacheConfig(config);
-        CacheConfig localConfig = configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
-        if (localConfig == null) {
-            if (cacheConfig.isStatisticsEnabled()) {
-                setStatisticsEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
+        CacheConfigFuture future = new CacheConfigFuture(nodeEngine, cacheConfig);
+        CacheConfigFuture localConfigFuture = configs.putIfAbsent(cacheConfig.getNameWithPrefix(), future);
+        // if the existing cache config future is not yet fully configured, we block here
+        CacheConfig localConfig = localConfigFuture == null ? null : localConfigFuture.join();
+        if (localConfigFuture == null) {
+            try {
+                if (cacheConfig.isStatisticsEnabled()) {
+                    setStatisticsEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
+                }
+                if (cacheConfig.isManagementEnabled()) {
+                    setManagementEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
+                }
+                logger.info("Added cache config: " + cacheConfig);
+                additionalCacheConfigSetup(config, false);
+                // now it is safe for others to obtain the new cache config
+                future.complete();
+            } catch (Throwable e) {
+                configs.remove(cacheConfig.getNameWithPrefix(), future);
+                future.complete(e);
+                throw rethrow(e);
             }
-            if (cacheConfig.isManagementEnabled()) {
-                setManagementEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
-            }
-        }
-        if (localConfig == null) {
-            logger.info("Added cache config: " + cacheConfig);
+        } else {
+            additionalCacheConfigSetup(localConfig, true);
         }
         return localConfig;
     }
 
+    protected void additionalCacheConfigSetup(CacheConfig config, boolean existingConfig) {
+        // overridden in other context
+    }
+
     @Override
     public CacheConfig deleteCacheConfig(String cacheNameWithPrefix) {
-        CacheConfig config = configs.remove(cacheNameWithPrefix);
-        if (config != null) {
+        CacheConfigFuture cacheConfigFuture = configs.remove(cacheNameWithPrefix);
+        CacheConfig cacheConfig = null;
+        if (cacheConfigFuture != null) {
             // decouple this cache from the tenant
             // the tenant will unregister it's event listeners so the tenant itself
             // can be garbage collected
-            getTenantControl(config).unregister();
-            logger.info("Removed cache config: " + config);
+            cacheConfig = cacheConfigFuture.join();
+            getTenantControl(cacheConfig).unregister();
+            logger.info("Removed cache config: " + cacheConfig);
         }
-        return config;
+        return cacheConfig;
     }
 
     @Override
@@ -439,7 +465,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public void setStatisticsEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled) {
-        cacheConfig = cacheConfig != null ? cacheConfig : configs.get(cacheNameWithPrefix);
+        cacheConfig = cacheConfig != null ? cacheConfig : getCacheConfig(cacheNameWithPrefix);
         if (cacheConfig != null) {
             String cacheManagerName = cacheConfig.getUriString();
             cacheConfig.setStatisticsEnabled(enabled);
@@ -456,7 +482,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public void setManagementEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled) {
-        cacheConfig = cacheConfig != null ? cacheConfig : configs.get(cacheNameWithPrefix);
+        cacheConfig = cacheConfig != null ? cacheConfig : getCacheConfig(cacheNameWithPrefix);
         if (cacheConfig != null) {
             String cacheManagerName = cacheConfig.getUriString();
             cacheConfig.setManagementEnabled(enabled);
@@ -472,7 +498,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public CacheConfig getCacheConfig(String cacheNameWithPrefix) {
-        return configs.get(cacheNameWithPrefix);
+        CacheConfigFuture future = configs.get(cacheNameWithPrefix);
+        return future == null ? null : future.join();
     }
 
     @Override
@@ -520,7 +547,11 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public Collection<CacheConfig> getCacheConfigs() {
-        return configs.values();
+        List<CacheConfig> cacheConfigs = new ArrayList<CacheConfig>(configs.size());
+        for (CacheConfigFuture future : configs.values()) {
+            cacheConfigs.add(future.join());
+        }
+        return cacheConfigs;
     }
 
     public Object toObject(Object data) {
@@ -690,8 +721,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     public Operation getPreJoinOperation() {
         OnJoinCacheOperation preJoinCacheOperation;
         preJoinCacheOperation = new OnJoinCacheOperation();
-        for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
-            CacheConfig cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue());
+        for (Map.Entry<String, CacheConfigFuture> cacheConfigEntry : configs.entrySet()) {
+            CacheConfig cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue().join());
             preJoinCacheOperation.addCacheConfig(cacheConfig);
         }
         return preJoinCacheOperation;
@@ -759,7 +790,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      */
     @Override
     public String getQuorumName(String cacheName) {
-        CacheConfig cacheConfig = configs.get(cacheName);
+        CacheConfig cacheConfig = getCacheConfig(cacheName);
         if (cacheConfig == null) {
             return null;
         }
@@ -833,6 +864,29 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         ExpirationManager expManager = expirationManager;
         if (expManager != null) {
             expManager.onClusterStateChange(newState);
+        }
+    }
+
+    /**
+     * {@link java.util.concurrent.Future Future} implementation that holds a {@code CacheConfig}.
+     * Reason for using this future in {@link #configs} map instead of the plain {@code CacheConfig}
+     * is that some additional configuration is required even after the {@code CacheConfig} has been
+     * constructed. The {@code CacheConfig} is put in a {@code CacheConfigFuture} which is
+     * only completed after additional configuration is done, so the {@code CacheConfig} becomes
+     * available to consumers only after all configuration is done.
+     *
+     * @see #additionalCacheConfigSetup(CacheConfig, CacheConfig)
+     */
+    private static class CacheConfigFuture extends SimpleCompletableFuture<CacheConfig> {
+        private final CacheConfig cacheConfig;
+
+        CacheConfigFuture(NodeEngine nodeEngine, CacheConfig cacheConfig) {
+            super(nodeEngine);
+            this.cacheConfig = cacheConfig;
+        }
+
+        void complete() {
+            this.complete(cacheConfig);
         }
     }
 }
