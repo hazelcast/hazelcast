@@ -25,7 +25,8 @@ import com.hazelcast.monitor.NearCacheStats;
 import java.util.Map;
 
 /**
- * Implementation of {@link LocalReplicatedMapStats} with empty and immutable inner state. This is used when the statistic is
+ * Implementation of {@link LocalReplicatedMapStats} with empty and immutable
+ * inner state. This is used when the statistic is
  * disabled in {@link ReplicatedMapConfig}.
  */
 @SuppressWarnings("checkstyle:methodcount")
