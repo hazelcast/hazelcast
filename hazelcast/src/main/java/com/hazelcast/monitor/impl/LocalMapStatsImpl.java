@@ -36,6 +36,7 @@ import static com.hazelcast.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.util.TimeUtil.timeInMsOrOneIfResultIsZero;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -604,18 +605,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + '}';
     }
 
-    /**
-     * Converts the value in nanoseconds to milliseconds representation. The value in range 0-999999ns will be counted as 1 ms.
-     * This is done to differ an empty zero value from a value that less than our current resolution which is 1 ms.
-     * @param nanos the value in nanoseconds that will be converted to milliseconds.
-     * @return value in milliseconds.
-     */
     private static long convertNanosToMillis(long nanos) {
-        long millis = NANOSECONDS.toMillis(nanos);
-        if (millis == 0 && nanos > 0) {
-            millis = 1;
-        }
-        return millis;
+        return timeInMsOrOneIfResultIsZero(nanos, NANOSECONDS);
     }
 
     private static long convertMillisToNanos(long millis) {
