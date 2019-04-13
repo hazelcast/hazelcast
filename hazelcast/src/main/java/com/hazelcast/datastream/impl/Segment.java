@@ -21,7 +21,6 @@ import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastream.impl.encoders.DSEncoder;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
-import com.hazelcast.spi.serialization.SerializationService;
 import sun.misc.Unsafe;
 
 import java.io.File;
@@ -37,11 +36,24 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
+/**
+ * Todo:
+ * One of the requirement should be that if you a previous segment acquires the next segment so that
+ * a next segment can't thrown away until the previous segment has been thrown away. Otherwise we can
+ * run into gaps while iterating over the chain of segments. You could have a reference to an old segment
+ * and when you jump to the younger one in front of it, you find out that this younger segment already
+ * has its memory freed.
+ *
+ * So probably when we link 2 segments, the older segment should do 1 acquire on the younger segment and
+ * when the older segment is deleted, then it will call a release on the younger segment.
+ */
 public class Segment {
 
     private final static AtomicIntegerFieldUpdater OWNERSHIP_COUNT = newUpdater(Segment.class, "ownershipCount");
 
+    // points to the next segment (this segment is younger)
     public volatile Segment next;
+    // points to the previous segment (this segment is older).
     public volatile Segment previous;
 
     // Provides 'smart pointer' like behavior so the segment can be shared between threads once it is tenured.
@@ -51,9 +63,7 @@ public class Segment {
     private volatile int ownershipCount = 1;
 
     private final DSEncoder encoder;
-    private final SerializationService serializationService;
     private final Unsafe unsafe = UnsafeUtil.UNSAFE;
-    private final RecordModel recordModel;
     private final long startNanos = System.nanoTime();
     private final long maxSegmentSize;
     private final long indicesAddress;
@@ -71,7 +81,6 @@ public class Segment {
     Segment(String name,
             int partitionId,
             long startOffset,
-            SerializationService serializationService,
             RecordModel recordModel,
             DSEncoder encoder,
             Map<String, Aggregator> aggregators,
@@ -81,9 +90,7 @@ public class Segment {
         this.segmentFile = new File(config.getStorageDir(),
                 String.format("%02x%s-%08x-%016x.segment", name.length(), name, partitionId, startOffset));
         this.startOffset = startOffset;
-        this.recordModel = recordModel;
         this.maxSegmentSize = config.getMaxSegmentSize();
-        this.serializationService = serializationService;
         this.aggregators = aggregators;
 
         if(recordModel == null||recordModel.getIndexSize()==0){
@@ -100,16 +107,31 @@ public class Segment {
         this.encoder = encoder;
     }
 
+    /**
+     * Returns the byte offset of the head. This uniquely identifies a byte in the partition/data-structure.
+     *
+     * @return
+     */
     public long head() {
         return startOffset;
     }
 
+    /**
+     * Returns the byte offset of the tail (so the side where data gets written too).
+     *
+     * If head == tail, then the partition is empty.
+     *
+     * @return
+     */
     public long tail() {
         return startOffset + consumedBytes();
     }
 
-
-
+    /**
+     * This method is thread-safe.
+     *
+     * @return
+     */
     public boolean acquire() {
         for (; ; ) {
             int currentUsed = ownershipCount;
@@ -126,6 +148,9 @@ public class Segment {
         }
     }
 
+    /**
+     * This method is thread-safe.
+     */
     public void release() {
         for (; ; ) {
             int currentUsed = ownershipCount;

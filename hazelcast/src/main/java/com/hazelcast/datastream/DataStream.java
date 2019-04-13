@@ -87,5 +87,10 @@ public interface DataStream<R> extends DistributedObject {
      */
     <P> long head(P partitionKey);
 
+    /**
+     * Returns a DataFrame representation of this DataStream.
+     *
+     * @return the DataFrame.
+     */
     DataFrame<R> asFrame();
 }

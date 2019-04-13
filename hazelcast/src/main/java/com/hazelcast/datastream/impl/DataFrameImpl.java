@@ -21,7 +21,7 @@ import com.hazelcast.datastream.AggregationRecipe;
 import com.hazelcast.datastream.DataFrame;
 import com.hazelcast.datastream.EntryProcessorRecipe;
 import com.hazelcast.datastream.LongDataSeries;
-import com.hazelcast.datastream.MemoryInfo;
+import com.hazelcast.datastream.DataStreamStats;
 import com.hazelcast.datastream.PreparedAggregation;
 import com.hazelcast.datastream.PreparedEntryProcessor;
 import com.hazelcast.datastream.PreparedProjection;
@@ -190,7 +190,7 @@ public class DataFrameImpl<R> implements DataFrame<R> {
     }
 
     @Override
-    public MemoryInfo memoryInfo() {
+    public DataStreamStats memoryInfo() {
         try {
             Map<Integer, Object> result = operationService.invokeOnAllPartitions(
                     DSService.SERVICE_NAME, new MemoryUsageOperationFactory(name));
@@ -200,22 +200,22 @@ public class DataFrameImpl<R> implements DataFrame<R> {
             long count = 0;
             int segmentsUsed = 0;
             for (Object value : result.values()) {
-                MemoryInfo memoryInfo = (MemoryInfo) value;
+                DataStreamStats memoryInfo = (DataStreamStats) value;
                 allocated += memoryInfo.allocatedBytes();
                 consumed += memoryInfo.consumedBytes();
                 segmentsUsed += memoryInfo.segmentsInUse();
                 count += memoryInfo.count();
             }
-            return new MemoryInfo(consumed, allocated, segmentsUsed, count);
+            return new DataStreamStats(consumed, allocated, segmentsUsed, count);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public MemoryInfo memoryInfo(int partitionId) {
+    public DataStreamStats memoryInfo(int partitionId) {
         Operation op = new MemoryUsageOperation(name).setPartitionId(partitionId);
-        InternalCompletableFuture<MemoryInfo> f = operationService.invokeOnPartition(op);
+        InternalCompletableFuture<DataStreamStats> f = operationService.invokeOnPartition(op);
         return f.join();
     }
 

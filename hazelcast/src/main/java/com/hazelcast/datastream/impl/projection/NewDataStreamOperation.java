@@ -52,7 +52,7 @@ public class NewDataStreamOperation extends DataStreamOperation {
     @Override
     public void run() throws Exception {
         DSPartition srcPartition = partition;
-        DataStreamConfig srcConfig = srcPartition.getConfig();
+        DataStreamConfig srcConfig = srcPartition.config();
 
         // the dst configuration isn't optimal. But will do for now (large enough the hold the original payload)
         DataStreamConfig dstConfig = new DataStreamConfig(dstName)

@@ -152,7 +152,7 @@ public class DataFrame_ProjectionTest extends HazelcastTestSupport {
         Map<String, Object> bindings = new HashMap<String, Object>();
 
         DataStream ageSalaries = preparedProjection.newDataStream("ageSalary", bindings);
-        MemoryInfo memoryInfo = ageSalaries.asFrame().memoryInfo();
+        DataStreamStats memoryInfo = ageSalaries.asFrame().memoryInfo();
         System.out.println(memoryInfo);
 
         assertEquals(count * (INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES), memoryInfo.consumedBytes());

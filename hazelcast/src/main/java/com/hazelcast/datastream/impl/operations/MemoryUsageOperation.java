@@ -16,13 +16,13 @@
 
 package com.hazelcast.datastream.impl.operations;
 
-import com.hazelcast.datastream.MemoryInfo;
+import com.hazelcast.datastream.DataStreamStats;
 import com.hazelcast.datastream.impl.DSDataSerializerHook;
 
 
 public class MemoryUsageOperation extends DataStreamOperation {
 
-    private MemoryInfo response;
+    private DataStreamStats response;
 
     public MemoryUsageOperation() {
     }

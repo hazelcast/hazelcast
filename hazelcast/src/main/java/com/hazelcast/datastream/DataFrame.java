@@ -47,9 +47,9 @@ public interface DataFrame<R> {
      */
     long count();
 
-    MemoryInfo memoryInfo();
+    DataStreamStats memoryInfo();
 
-    MemoryInfo memoryInfo(int partitionId);
+    DataStreamStats memoryInfo(int partitionId);
 
     LongDataSeries getLongDataSeries(String field);
 }

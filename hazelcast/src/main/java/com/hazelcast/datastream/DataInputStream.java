@@ -25,9 +25,28 @@ package com.hazelcast.datastream;
  */
 public interface DataInputStream<E> {
 
+    /**
+     * Reads a single message from the stream. Will block until a message is received,
+     * or when the calling thread is interrupted.
+     *
+     * @return
+     * @throws InterruptedException
+     */
     E read() throws InterruptedException;
 
+    /**
+     *
+     * @param timeoutMs
+     * @return
+     * @throws InterruptedException
+     */
     E read(long timeoutMs) throws InterruptedException;
 
+    /**
+     * Polls the DataInputStream if there is a message. If a message is available, it is returned,
+     * but if none is available, null is returned.
+     *
+     * @return the message or null.
+     */
     E poll();
 }

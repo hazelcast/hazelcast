@@ -20,7 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.datastream.AggregationRecipe;
 import com.hazelcast.datastream.EntryProcessorRecipe;
-import com.hazelcast.datastream.MemoryInfo;
+import com.hazelcast.datastream.DataStreamStats;
 import com.hazelcast.datastream.ProjectionRecipe;
 import com.hazelcast.datastream.impl.aggregation.AggregateFJResult;
 import com.hazelcast.datastream.impl.aggregation.AggregationSegmentRun;
@@ -61,7 +61,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class DSPartition {
 
     private final Compiler compiler;
-    private int partitionId;
+    private final int partitionId;
     private final DataStreamConfig config;
     private final InternalSerializationService serializationService;
     private final RecordModel recordModel;
@@ -79,12 +79,11 @@ public class DSPartition {
     private final DSPartitionListeners listeners;
     private long head = 0;
 
-    public DSPartition(DSService dsService,
+    public DSPartition(DSService service,
                        int partitionId,
                        DataStreamConfig config,
                        InternalSerializationService serializationService,
-                       Compiler compiler
-    ) {
+                       Compiler compiler) {
         this.partitionId = partitionId;
         this.config = config;
         this.compiler = compiler;
@@ -92,16 +91,13 @@ public class DSPartition {
                 ? Long.MAX_VALUE
                 : MILLISECONDS.toNanos(config.getTenuringAgeMillis());
         this.serializationService = serializationService;
-        this.recordModel = initRecordModel(config);
-        this.encoder = newEncoder();
-        this.listeners = dsService.getOrCreatePartitionListeners(config.getName(), partitionId, this);
+        this.recordModel = createRecordModel(config);
+        this.encoder = createEncoder();
+        this.listeners = service.getOrCreatePartitionListeners(config.getName(), partitionId, this);
         loadSegmentFiles();
-        //System.out.println(config);
-
-        //System.out.println("record payload size:" + recordModel.getPayloadSize());
     }
 
-    private RecordModel initRecordModel(DataStreamConfig config) {
+    private RecordModel createRecordModel(DataStreamConfig config) {
         if(config.getValueClass()==null){
             return null;
         }
@@ -114,6 +110,27 @@ public class DSPartition {
 
     public DSEncoder encoder() {
         return encoder;
+    }
+
+    public DataStreamConfig config() {
+        return config;
+    }
+
+    public long head() {
+        return head;
+    }
+
+    public long tail() {
+        if (edenSegment != null) {
+            return edenSegment.tail();
+        }
+
+        if (youngestTenuredSegment != null) {
+            return youngestTenuredSegment.tail();
+        }
+
+        //todo;
+        return head;
     }
 
     private void loadSegmentFiles() {
@@ -137,7 +154,7 @@ public class DSPartition {
         return Long.parseLong(offsetStr, 16);
     }
 
-    private DSEncoder newEncoder() {
+    private DSEncoder createEncoder() {
         if(recordModel == null){
             HeapDataEncoder encoder = new HeapDataEncoder();
             encoder.serializationService = serializationService;
@@ -172,12 +189,7 @@ public class DSPartition {
             }
         }
 
-        return new Segment(config.getName(), partitionId, offset, serializationService,
-                recordModel, encoder, aggregators, config);
-    }
-
-    public DataStreamConfig getConfig() {
-        return config;
+        return new Segment(config.getName(), partitionId, offset, recordModel, encoder, aggregators, config);
     }
 
     private void ensureEdenExists() {
@@ -275,7 +287,6 @@ public class DSPartition {
         }
     }
 
-
     public void append(Object valueData) {
         if (frozen) {
             throw new IllegalStateException("Can't append on a frozen datastream");
@@ -298,6 +309,11 @@ public class DSPartition {
         listeners.onAppend(this);
     }
 
+    /**
+     * Returns the entry count currently stored in this partition.
+     *
+     * @return the count.
+     */
     public long count() {
         long count = 0;
 
@@ -314,7 +330,7 @@ public class DSPartition {
         return count;
     }
 
-    public MemoryInfo memoryInfo() {
+    public DataStreamStats memoryInfo() {
         long consumedBytes = 0;
         long allocatedBytes = 0;
         int segmentsUsed = 0;
@@ -334,7 +350,7 @@ public class DSPartition {
             segment = segment.previous;
         }
 
-        return new MemoryInfo(consumedBytes, allocatedBytes, segmentsUsed, count());
+        return new DataStreamStats(consumedBytes, allocatedBytes, segmentsUsed, count());
     }
 
     public void prepareQuery(String preparationId, Predicate predicate) {
@@ -481,23 +497,6 @@ public class DSPartition {
         // todo: we probably want to return youngestSegment for iteration
        // return new IteratorImpl(oldestTenuredSegment);
         throw new UnsupportedOperationException();
-    }
-
-    public long head() {
-        return head;
-    }
-
-    public long tail() {
-        if (edenSegment != null) {
-            return edenSegment.tail();
-        }
-
-        if (youngestTenuredSegment != null) {
-            return youngestTenuredSegment.tail();
-        }
-
-        //todo;
-        return head;
     }
 
     public Segment findSegment(long offset) {

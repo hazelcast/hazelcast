@@ -16,18 +16,24 @@
 
 package com.hazelcast.datastream;
 
-import java.io.Serializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 
 /**
- *
+ * Contains various statistics about the {@link DataStream}.
  */
-public class MemoryInfo implements Serializable {
-    private final long consumedBytes;
-    private final long allocatedBytes;
-    private final int segmentsInUse;
-    private final long count;
+public class DataStreamStats implements DataSerializable {
+    private long consumedBytes;
+    private long allocatedBytes;
+    private int segmentsInUse;
+    private long count;
 
-    public MemoryInfo(long consumedBytes, long allocatedBytes, int segmentsInUse, long count) {
+    private DataStreamStats(){}
+
+    public DataStreamStats(long consumedBytes, long allocatedBytes, int segmentsInUse, long count) {
         this.consumedBytes = consumedBytes;
         this.allocatedBytes = allocatedBytes;
         this.segmentsInUse = segmentsInUse;
@@ -48,6 +54,22 @@ public class MemoryInfo implements Serializable {
 
     public long count() {
         return count;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(consumedBytes);
+        out.writeLong(allocatedBytes);
+        out.writeInt(segmentsInUse);
+        out.writeLong(count);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.consumedBytes = in.readLong();
+        this.allocatedBytes = in.readLong();
+        this.segmentsInUse = in.readInt();
+        this.count = in.readLong();
     }
 
     @Override
