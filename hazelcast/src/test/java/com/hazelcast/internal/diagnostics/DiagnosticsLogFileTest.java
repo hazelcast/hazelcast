@@ -54,7 +54,6 @@ public class DiagnosticsLogFileTest extends HazelcastTestSupport {
 
         createHazelcastInstance(config);
         assertContainsFileEventually(diagnosticsFolder);
-
     }
 
     @Test
