@@ -44,58 +44,13 @@ public final class RuntimeMetricSet {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
 
-        metricsRegistry.register(runtime, "runtime.freeMemory", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.freeMemory();
-                    }
-                }
-        );
-
-        metricsRegistry.register(runtime, "runtime.totalMemory", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.totalMemory();
-                    }
-                }
-        );
-
-        metricsRegistry.register(runtime, "runtime.maxMemory", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.maxMemory();
-                    }
-                }
-        );
-
+        metricsRegistry.register(runtime, "runtime.freeMemory", MANDATORY, Runtime::freeMemory);
+        metricsRegistry.register(runtime, "runtime.totalMemory", MANDATORY, Runtime::totalMemory);
+        metricsRegistry.register(runtime, "runtime.maxMemory", MANDATORY, Runtime::maxMemory);
         metricsRegistry.register(runtime, "runtime.usedMemory", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.totalMemory() - runtime.freeMemory();
-                    }
-                }
+                (LongProbeFunction<Runtime>) runtime1 -> runtime1.totalMemory() - runtime1.freeMemory()
         );
-
-        metricsRegistry.register(runtime, "runtime.availableProcessors", MANDATORY,
-                new LongProbeFunction<Runtime>() {
-                    @Override
-                    public long get(Runtime runtime) {
-                        return runtime.availableProcessors();
-                    }
-                }
-        );
-
-        metricsRegistry.register(mxBean, "runtime.uptime", MANDATORY,
-                new LongProbeFunction<RuntimeMXBean>() {
-                    @Override
-                    public long get(RuntimeMXBean runtimeMXBean) {
-                        return runtimeMXBean.getUptime();
-                    }
-                }
-        );
+        metricsRegistry.register(runtime, "runtime.availableProcessors", MANDATORY, Runtime::availableProcessors);
+        metricsRegistry.register(mxBean, "runtime.uptime", MANDATORY, RuntimeMXBean::getUptime);
     }
 }

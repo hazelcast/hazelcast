@@ -65,19 +65,9 @@ public class ProbeBuilderImplTest {
         ProbeBuilder builder = registry.newProbeBuilder()
                                        .withTag("tag1", "value1");
         builder.register(this, "probe1", ProbeLevel.INFO, ProbeUnit.COUNT,
-                new LongProbeFunction<ProbeBuilderImplTest>() {
-                    @Override
-                    public long get(ProbeBuilderImplTest source) {
-                        return source.probe1;
-                    }
-                });
+                (LongProbeFunction<ProbeBuilderImplTest>) source -> source.probe1);
         builder.register(this, "secondProbe", ProbeLevel.INFO, ProbeUnit.BYTES,
-                new LongProbeFunction<ProbeBuilderImplTest>() {
-                    @Override
-                    public long get(ProbeBuilderImplTest source) {
-                        return source.probe2;
-                    }
-                });
+                (LongProbeFunction<ProbeBuilderImplTest>) source -> source.probe2);
 
         assertProbes(registry);
     }
@@ -85,7 +75,7 @@ public class ProbeBuilderImplTest {
     private void assertProbes(MetricsRegistryImpl registry) {
         final String p1Name = "[tag1=value1,unit=count,metric=probe1]";
         final String p2Name = "[tag1=value1,unit=bytes,metric=secondProbe]";
-        assertEquals(new HashSet<String>(asList(p1Name, p2Name)), registry.getNames());
+        assertEquals(new HashSet<>(asList(p1Name, p2Name)), registry.getNames());
 
         registry.render(new ProbeRenderer() {
             @Override
