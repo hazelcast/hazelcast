@@ -40,13 +40,14 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
@@ -82,18 +83,18 @@ import static java.util.logging.Level.FINE;
  */
 public final class NioNetworking implements Networking {
 
+    private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
     private final MetricsRegistry metricsRegistry;
-    private final AtomicBoolean metricsRegistryScheduled = new AtomicBoolean(false);
     private final LoggingService loggingService;
     private final String threadNamePrefix;
     private final ChannelErrorHandler errorHandler;
     private final int balancerIntervalSeconds;
     private final int inputThreadCount;
     private final int outputThreadCount;
-    private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<NioChannel, Boolean>());
+    private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<>());
     private final ChannelCloseListener channelCloseListener = new ChannelCloseListenerImpl();
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
@@ -104,8 +105,9 @@ public final class NioNetworking implements Networking {
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
+    private volatile ScheduledFuture publishFuture;
 
-    // Currently this is a course grained aggregation of the bytes/send reveived.
+    // Currently this is a course grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
     @Probe
@@ -154,7 +156,11 @@ public final class NioNetworking implements Networking {
     }
 
     @Override
-    public void start() {
+    public void restart() {
+        if (!started.compareAndSet(false, true)) {
+            throw new IllegalStateException("Can't (re)start an already running NioNetworking");
+        }
+
         if (logger.isFineEnabled()) {
             logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
                     + inputThreadCount + " input threads and "
@@ -164,17 +170,12 @@ public final class NioNetworking implements Networking {
 
         logger.log(selectorMode != SELECT ? Level.INFO : FINE, "IO threads selector mode is " + selectorMode);
 
-        if (metricsRegistryScheduled.compareAndSet(false, true) && metricsRegistry.minimumLevel().isEnabled(ProbeLevel.DEBUG)) {
-            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, ProbeLevel.INFO);
-        }
+        publishFuture = metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS, ProbeLevel.INFO);
 
-        this.closeListenerExecutor = newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName(threadNamePrefix + "-NioNetworking-closeListenerExecutor");
-                return t;
-            }
+        this.closeListenerExecutor = newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r);
+            t.setName(threadNamePrefix + "-NioNetworking-closeListenerExecutor");
+            return t;
         });
 
         NioThread[] inThreads = new NioThread[inputThreadCount];
@@ -220,6 +221,24 @@ public final class NioNetworking implements Networking {
 
     @Override
     public void shutdown() {
+        if (!started.compareAndSet(true, false)) {
+            return;
+        }
+
+        // if there are any channels left, we close them.
+        for (Channel channel : channels) {
+            if (!channel.isClosed()) {
+                closeResource(channel);
+            }
+        }
+        //and clear them to prevent memory leaks.
+        channels.clear();
+
+        // we unregister the publish future to prevent memory leaks.
+        if (publishFuture != null) {
+            publishFuture.cancel(false);
+            publishFuture = null;
+        }
         ioBalancer.stop();
 
         if (logger.isFinestEnabled()) {
@@ -231,6 +250,7 @@ public final class NioNetworking implements Networking {
         shutdown(outputThreads);
         outputThreads = null;
         closeListenerExecutor.shutdown();
+        closeListenerExecutor = null;
         metricsRegistry.deregister(ioBalancer);
     }
 
@@ -245,8 +265,14 @@ public final class NioNetworking implements Networking {
     }
 
     @Override
-    public Channel register(EndpointQualifier endpointQualifier, ChannelInitializerProvider channelInitializerProvider,
-                            SocketChannel socketChannel, boolean clientMode) throws IOException {
+    public Channel register(EndpointQualifier endpointQualifier,
+                            ChannelInitializerProvider channelInitializerProvider,
+                            SocketChannel socketChannel,
+                            boolean clientMode) throws IOException {
+        if (!started.get()) {
+            throw new IllegalArgumentException("Can't register a channel when networking isn't started");
+        }
+
         ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
         assert initializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
         NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, metricsRegistry, closeListenerExecutor);
@@ -302,11 +328,8 @@ public final class NioNetworking implements Networking {
         @Override
         public void onClose(Channel channel) {
             NioChannel nioChannel = (NioChannel) channel;
-
             channels.remove(channel);
-
             ioBalancer.channelRemoved(nioChannel.inboundPipeline(), nioChannel.outboundPipeline());
-
             metricsRegistry.deregister(nioChannel.inboundPipeline());
             metricsRegistry.deregister(nioChannel.outboundPipeline());
         }
@@ -317,26 +340,16 @@ public final class NioNetworking implements Networking {
         @Override
         public void run() {
             for (NioChannel channel : channels) {
-                final NioInboundPipeline inboundPipeline = channel.inboundPipeline;
+                NioInboundPipeline inboundPipeline = channel.inboundPipeline;
                 NioThread inputThread = inboundPipeline.owner();
                 if (inputThread != null) {
-                    inputThread.addTaskAndWakeup(new Runnable() {
-                        @Override
-                        public void run() {
-                            inboundPipeline.publishMetrics();
-                        }
-                    });
+                    inputThread.addTaskAndWakeup(inboundPipeline::publishMetrics);
                 }
 
-                final NioOutboundPipeline outboundPipeline = channel.outboundPipeline;
+                NioOutboundPipeline outboundPipeline = channel.outboundPipeline;
                 NioThread outputThread = outboundPipeline.owner();
                 if (outputThread != null) {
-                    outputThread.addTaskAndWakeup(new Runnable() {
-                        @Override
-                        public void run() {
-                            outboundPipeline.publishMetrics();
-                        }
-                    });
+                    outputThread.addTaskAndWakeup(outboundPipeline::publishMetrics);
                 }
             }
 

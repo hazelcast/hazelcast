@@ -216,7 +216,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void startNetworking() {
-        networking.start();
+        networking.restart();
     }
 
     public synchronized void shutdown() {
