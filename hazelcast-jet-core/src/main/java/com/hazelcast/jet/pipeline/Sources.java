@@ -461,6 +461,23 @@ public final class Sources {
      * and add a subsequent {@link GeneralStage#map map} or
      * {@link GeneralStage#filter filter} stage.
      *
+     * <h4>Issue when "catching up"</h4>
+     *
+     * This processor does not coalesce watermarks from partitions. It reads
+     * partitions one by one: it emits events from one partition and then from
+     * another one in batches. This adds time disorder to events: it might emit
+     * very recent event from partition1 while not yet emitting an old event
+     * from partition2; and it generates watermarks based on this order. Even
+     * if items in your partitions are ordered by timestamp, you can't use
+     * allowed lag of 0. Most notably, the "catching up" happens after the job
+     * is restarted, when events since the last snapshot are reprocessed in a
+     * burst. In order to not lose any events, the lag should be configured to
+     * at least {@code snapshotInterval + timeToRestart + normalEventLag}. The
+     * reason for this behavior that the default partition count in the cluster
+     * is pretty high and cannot by changed per object and for low-traffic maps
+     * it takes long until all partitions see an event to allow emitting of a
+     * coalesced watermark.
+     *
      * @param map          the map to draw data from
      * @param predicateFn  the predicate to filter the events. If you want to specify just the
      *                     projection, use {@link Util#mapPutEvents} to pass

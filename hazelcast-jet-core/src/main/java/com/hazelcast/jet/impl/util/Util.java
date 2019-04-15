@@ -612,4 +612,8 @@ public final class Util {
             return wrapped.apply(t);
         }
     }
+
+    public static String sanitizeLoggerNamePart(String name) {
+        return name.replace('.', '_');
+    }
 }

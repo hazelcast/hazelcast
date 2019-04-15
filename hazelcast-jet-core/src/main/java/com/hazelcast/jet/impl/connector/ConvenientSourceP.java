@@ -88,7 +88,7 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) {
         src = createFn.apply(context);
-        // createFn is allowed to return null, that's why we need this flag:
+        // createFn is allowed to return null, we'll call `destroyFn` even for null `src`
         initialized = true;
     }
 

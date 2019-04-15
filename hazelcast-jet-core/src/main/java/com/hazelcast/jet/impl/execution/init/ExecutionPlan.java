@@ -79,6 +79,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.readList;
+import static com.hazelcast.jet.impl.util.Util.sanitizeLoggerNamePart;
 import static com.hazelcast.jet.impl.util.Util.writeList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -152,7 +153,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, true,
                             "ssFrom:" + vertex.name()),
                     new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount),
-                    nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "." + vertex.name()),
+                    nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "."
+                            + sanitizeLoggerNamePart(vertex.name())),
                     vertex.name(), vertex.isHigherPriorityUpstream());
             tasklets.add(ssTasklet);
 
@@ -162,8 +164,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 String loggerName = createLoggerName(
                         processor.getClass().getName(),
                         jobConfig.getName(),
-                        vertex.name()
-                        , globalProcessorIndex
+                        vertex.name(),
+                        globalProcessorIndex
                 );
                 ProcCtx context = new ProcCtx(
                         instance,
@@ -231,6 +233,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     public static String createLoggerName(
             String processorClassName, String jobName, String vertexName, int processorIndex
     ) {
+        vertexName = sanitizeLoggerNamePart(vertexName);
         if (StringUtil.isNullOrEmptyAfterTrim(jobName)) {
             return processorClassName + '.' + vertexName + '#' + processorIndex;
         } else {
