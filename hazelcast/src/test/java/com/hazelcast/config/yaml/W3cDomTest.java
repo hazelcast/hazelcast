@@ -53,8 +53,6 @@ public class W3cDomTest extends HazelcastTestSupport {
 
     @Test
     public void testW3cDomAdapter() {
-        assumeThatJDK8OrHigher();
-
         InputStream inputStream = YamlTest.class.getClassLoader().getResourceAsStream("yaml-test-root-map-extended.yaml");
         YamlNode yamlRoot = YamlLoader.load(inputStream, "root-map");
         Node domRoot = W3cDomUtil.asW3cNode(yamlRoot);

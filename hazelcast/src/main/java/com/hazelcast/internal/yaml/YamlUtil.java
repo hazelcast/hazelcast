@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.yaml;
 
-import com.hazelcast.internal.util.JavaVersion;
-
 import java.util.regex.Pattern;
 
 /**
@@ -101,20 +99,6 @@ public final class YamlUtil {
                     node.getClass().getSimpleName()));
         }
         return (T) node;
-    }
-
-    /**
-     * Checks if the runtime environment is Java8 or higher. If the
-     * runtime is an older version the check throws
-     * {@link UnsupportedOperationException}.
-     *
-     * @throws UnsupportedOperationException If the runtime environment
-     *                                       is not Java8 or higher
-     */
-    public static void ensureRunningOnJava8OrHigher() {
-        if (!JavaVersion.isAtLeast(JavaVersion.JAVA_1_8)) {
-            throw new UnsupportedOperationException("Processing YAML documents requires Java 8 or higher version");
-        }
     }
 
     /**

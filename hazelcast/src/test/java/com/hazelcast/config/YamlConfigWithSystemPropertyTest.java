@@ -30,7 +30,6 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLDecoder;
 
-import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 
@@ -45,8 +44,6 @@ public class YamlConfigWithSystemPropertyTest {
 
     @Before
     public void setUp() {
-        assumeThatJDK8OrHigher();
-
         System.clearProperty("hazelcast.config");
     }
 
