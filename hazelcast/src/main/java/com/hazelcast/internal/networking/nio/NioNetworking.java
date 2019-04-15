@@ -126,6 +126,7 @@ public final class NioNetworking implements Networking {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
+        metricsRegistry.scanAndRegister(this, "tcp");
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
