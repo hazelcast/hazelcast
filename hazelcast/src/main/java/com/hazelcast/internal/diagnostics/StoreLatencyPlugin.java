@@ -90,20 +90,10 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
             = new ConcurrentHashMap<String, ServiceProbes>();
 
     private final ConstructorFunction<String, ServiceProbes> metricsPerServiceConstructorFunction
-            = new ConstructorFunction<String, ServiceProbes>() {
-        @Override
-        public ServiceProbes createNew(String serviceName) {
-            return new ServiceProbes(serviceName);
-        }
-    };
+            = ServiceProbes::new;
 
     private final ConstructorFunction<String, InstanceProbes> instanceProbesConstructorFunction
-            = new ConstructorFunction<String, InstanceProbes>() {
-        @Override
-        public InstanceProbes createNew(String dataStructureName) {
-            return new InstanceProbes(dataStructureName);
-        }
-    };
+            = InstanceProbes::new;
 
     private final long periodMillis;
     private final long resetPeriodMillis;
