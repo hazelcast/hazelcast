@@ -57,23 +57,13 @@ public class RenderTest {
 
     private void registerLongMetric(String name, final int value) {
         metricsRegistry.register(this, name, ProbeLevel.INFO,
-                new LongProbeFunction<RenderTest>() {
-                    @Override
-                    public long get(RenderTest source) throws Exception {
-                        return value;
-                    }
-                });
+                (LongProbeFunction<RenderTest>) source -> value);
     }
 
 
     private void registerDoubleMetric(String name, final int value) {
         metricsRegistry.register(this, name, ProbeLevel.INFO,
-                new DoubleProbeFunction<RenderTest>() {
-                    @Override
-                    public double get(RenderTest source) throws Exception {
-                        return value;
-                    }
-                });
+                (DoubleProbeFunction<RenderTest>) source -> value);
     }
 
     @Test(expected = NullPointerException.class)
@@ -116,11 +106,8 @@ public class RenderTest {
         final ExpectedRuntimeException ex = new ExpectedRuntimeException();
 
         metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
-                new LongProbeFunction<RenderTest>() {
-                    @Override
-                    public long get(RenderTest source) throws Exception {
-                        throw ex;
-                    }
+                (LongProbeFunction<RenderTest>) source -> {
+                    throw ex;
                 });
 
         metricsRegistry.render(renderer);

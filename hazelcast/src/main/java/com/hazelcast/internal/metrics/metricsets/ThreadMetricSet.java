@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 
 import java.lang.management.ManagementFactory;
@@ -42,41 +41,9 @@ public final class ThreadMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
-
-        metricsRegistry.register(mxBean, "thread.threadCount", MANDATORY,
-                new LongProbeFunction<ThreadMXBean>() {
-                    @Override
-                    public long get(ThreadMXBean threadMXBean) {
-                        return threadMXBean.getThreadCount();
-                    }
-                }
-        );
-
-        metricsRegistry.register(mxBean, "thread.peakThreadCount", MANDATORY,
-                new LongProbeFunction<ThreadMXBean>() {
-                    @Override
-                    public long get(ThreadMXBean threadMXBean) {
-                        return threadMXBean.getPeakThreadCount();
-                    }
-                }
-        );
-
-        metricsRegistry.register(mxBean, "thread.daemonThreadCount", MANDATORY,
-                new LongProbeFunction<ThreadMXBean>() {
-                    @Override
-                    public long get(ThreadMXBean threadMXBean) {
-                        return threadMXBean.getDaemonThreadCount();
-                    }
-                }
-        );
-
-        metricsRegistry.register(mxBean, "thread.totalStartedThreadCount", MANDATORY,
-                new LongProbeFunction<ThreadMXBean>() {
-                    @Override
-                    public long get(ThreadMXBean threadMXBean) {
-                        return threadMXBean.getTotalStartedThreadCount();
-                    }
-                }
-        );
+        metricsRegistry.register(mxBean, "thread.threadCount", MANDATORY, ThreadMXBean::getThreadCount);
+        metricsRegistry.register(mxBean, "thread.peakThreadCount", MANDATORY, ThreadMXBean::getPeakThreadCount);
+        metricsRegistry.register(mxBean, "thread.daemonThreadCount", MANDATORY, ThreadMXBean::getDaemonThreadCount);
+        metricsRegistry.register(mxBean, "thread.totalStartedThreadCount", MANDATORY, ThreadMXBean::getTotalStartedThreadCount);
     }
 }

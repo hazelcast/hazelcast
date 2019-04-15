@@ -63,12 +63,7 @@ public class ProbeLevelTest extends HazelcastTestSupport {
     public void assertProbeExist(ProbeLevel probeLevel, ProbeLevel minimumLevel) {
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, minimumLevel);
 
-        metricsRegistry.register(this, "foo", probeLevel, new LongProbeFunction<ProbeLevelTest>() {
-            @Override
-            public long get(ProbeLevelTest source) throws Exception {
-                return 10;
-            }
-        });
+        metricsRegistry.register(this, "foo", probeLevel, (LongProbeFunction<ProbeLevelTest>) source -> 10);
 
         assertContains(metricsRegistry.getNames(), "foo");
         assertEquals(10, metricsRegistry.newLongGauge("foo").read());
@@ -77,12 +72,7 @@ public class ProbeLevelTest extends HazelcastTestSupport {
     public void assertNotProbeExist(ProbeLevel probeLevel, ProbeLevel minimumLevel) {
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, minimumLevel);
 
-        metricsRegistry.register(this, "foo", probeLevel, new LongProbeFunction<ProbeLevelTest>() {
-            @Override
-            public long get(ProbeLevelTest source) throws Exception {
-                return 10;
-            }
-        });
+        metricsRegistry.register(this, "foo", probeLevel, (LongProbeFunction<ProbeLevelTest>) source -> 10);
 
         assertFalse(metricsRegistry.getNames().contains("foo"));
         assertEquals(0, metricsRegistry.newLongGauge("foo").read());

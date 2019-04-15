@@ -44,30 +44,15 @@ public final class ClassLoadingMetricSet {
         ClassLoadingMXBean mxBean = ManagementFactory.getClassLoadingMXBean();
 
         metricsRegistry.register(mxBean, "classloading.loadedClassesCount", MANDATORY,
-                new LongProbeFunction<ClassLoadingMXBean>() {
-                    @Override
-                    public long get(ClassLoadingMXBean classLoadingMXBean) {
-                        return classLoadingMXBean.getLoadedClassCount();
-                    }
-                }
+                (LongProbeFunction<ClassLoadingMXBean>) classLoadingMXBean -> classLoadingMXBean.getLoadedClassCount()
         );
 
         metricsRegistry.register(mxBean, "classloading.totalLoadedClassesCount", MANDATORY,
-                new LongProbeFunction<ClassLoadingMXBean>() {
-                    @Override
-                    public long get(ClassLoadingMXBean classLoadingMXBean) {
-                        return classLoadingMXBean.getTotalLoadedClassCount();
-                    }
-                }
+                (LongProbeFunction<ClassLoadingMXBean>) classLoadingMXBean -> classLoadingMXBean.getTotalLoadedClassCount()
         );
 
         metricsRegistry.register(mxBean, "classloading.unloadedClassCount", MANDATORY,
-                new LongProbeFunction<ClassLoadingMXBean>() {
-                    @Override
-                    public long get(ClassLoadingMXBean classLoadingMXBean) {
-                        return classLoadingMXBean.getUnloadedClassCount();
-                    }
-                }
+                (LongProbeFunction<ClassLoadingMXBean>) classLoadingMXBean -> classLoadingMXBean.getUnloadedClassCount()
         );
     }
 }

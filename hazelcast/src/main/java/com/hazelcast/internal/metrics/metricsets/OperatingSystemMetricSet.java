@@ -90,19 +90,11 @@ public final class OperatingSystemMetricSet {
         }
 
         if (long.class.equals(method.getReturnType())) {
-            metricsRegistry.register(osBean, name, MANDATORY, new LongProbeFunction() {
-                @Override
-                public long get(Object bean) throws Exception {
-                    return (Long) method.invoke(bean, EMPTY_ARGS) * multiplier;
-                }
-            });
+            metricsRegistry.register(osBean, name, MANDATORY,
+                    (LongProbeFunction) bean -> (Long) method.invoke(bean, EMPTY_ARGS) * multiplier);
         } else {
-            metricsRegistry.register(osBean, name, MANDATORY, new DoubleProbeFunction() {
-                @Override
-                public double get(Object bean) throws Exception {
-                    return (Double) method.invoke(bean, EMPTY_ARGS) * multiplier;
-                }
-            });
+            metricsRegistry.register(osBean, name, MANDATORY,
+                    (DoubleProbeFunction) bean -> (Double) method.invoke(bean, EMPTY_ARGS) * multiplier);
         }
     }
 
