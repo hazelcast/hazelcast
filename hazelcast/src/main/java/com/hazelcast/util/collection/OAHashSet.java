@@ -351,6 +351,11 @@ public class OAHashSet<E> extends AbstractSet<E> {
         return hashCode;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
     private void increaseCapacity() {
         final int newCapacity = capacity << 1;
         if (newCapacity < 0) {

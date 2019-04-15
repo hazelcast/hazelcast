@@ -466,8 +466,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
             justification = "deliberate, documented choice")
     private final class EntryIterator
-            extends AbstractIterator implements Iterator<Entry<Long, Long>>, Entry<Long, Long>
-    {
+            extends AbstractIterator implements Iterator<Entry<Long, Long>>, Entry<Long, Long> {
         private long key;
         private long value;
 
