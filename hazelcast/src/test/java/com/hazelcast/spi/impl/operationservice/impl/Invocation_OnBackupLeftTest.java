@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
 
-    private static final Set<String> backupRunning = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private static final Set<String> backupRunning = newSetFromMap(new ConcurrentHashMap<>());
 
     // we use 20 seconds so we don't get spurious build failures
     private static final int COMPLETION_TIMEOUT_SECONDS = 20;

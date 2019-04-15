@@ -65,7 +65,7 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_invocationFutureCanceled_thenCallbackRunsEventually() throws InterruptedException {
+    public void when_invocationFutureCanceled_thenCallbackRunsEventually() {
         // Given
         final LatchAwaitOperation latchAwaitOp = new LatchAwaitOperation();
         final DoneCallback cb = new DoneCallback();

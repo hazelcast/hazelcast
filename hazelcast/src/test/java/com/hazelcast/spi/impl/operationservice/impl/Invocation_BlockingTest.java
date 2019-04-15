@@ -347,7 +347,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
      * only 1 thread will be able to swap out CONTINUE_WAIT and all other threads will fail with an OperationTimeoutExcepyion
      */
     @Test
-    public void async_whenMultipleAndThenOnSameFuture() throws Exception {
+    public void async_whenMultipleAndThenOnSameFuture() {
         int callTimeout = 5000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
 
@@ -460,17 +460,15 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         lock.lock();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                try {
-                    // because max timeout=6000 we get timeout exception which we should not
-                    instances[1].getLock(name).lock();
-                    latch.countDown();
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
-                }
+        new Thread(() -> {
+            try {
+                // because max timeout=6000 we get timeout exception which we should not
+                instances[1].getLock(name).lock();
+                latch.countDown();
+            } catch (Exception ignored) {
+                ignored.printStackTrace();
             }
-        }.start();
+        }).start();
 
         // wait for enough time which is greater than max-timeout (6000)
         sleepSeconds(10);
@@ -488,15 +486,12 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         final ILock lock = hz.getLock(randomName());
         lock.lock();
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    lock.tryLock(10, SECONDS);
-                    latch.countDown();
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
-                }
+        spawn(() -> {
+            try {
+                lock.tryLock(10, SECONDS);
+                latch.countDown();
+            } catch (Exception ignored) {
+                ignored.printStackTrace();
             }
         });
 

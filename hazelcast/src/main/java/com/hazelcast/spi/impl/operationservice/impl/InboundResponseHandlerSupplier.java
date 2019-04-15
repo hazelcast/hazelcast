@@ -75,12 +75,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
 
-    private static final ThreadLocal<MutableInteger> INT_HOLDER = new ThreadLocal<MutableInteger>() {
-        @Override
-        protected MutableInteger initialValue() {
-            return new MutableInteger();
-        }
-    };
+    private static final ThreadLocal<MutableInteger> INT_HOLDER = ThreadLocal.withInitial(MutableInteger::new);
 
     private static final long IDLE_MAX_SPINS = 20;
     private static final long IDLE_MAX_YIELDS = 50;
@@ -263,7 +258,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         private ResponseThread(String hzName, int threadIndex) {
             super(createThreadName(hzName, "response-" + threadIndex));
             this.inboundResponseHandler = new InboundResponseHandler(invocationRegistry, nodeEngine);
-            this.responseQueue = new MPSCQueue<Packet>(this, getIdleStrategy(properties, IDLE_STRATEGY));
+            this.responseQueue = new MPSCQueue<>(this, getIdleStrategy(properties, IDLE_STRATEGY));
         }
 
         @Override
