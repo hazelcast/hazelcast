@@ -28,20 +28,20 @@ import java.io.IOException;
 public class DataStreamStats implements DataSerializable {
     private long consumedBytes;
     private long allocatedBytes;
-    private int segmentsInUse;
+    private int regionsInUse;
     private long count;
 
     private DataStreamStats(){}
 
-    public DataStreamStats(long consumedBytes, long allocatedBytes, int segmentsInUse, long count) {
+    public DataStreamStats(long consumedBytes, long allocatedBytes, int regionsInUse, long count) {
         this.consumedBytes = consumedBytes;
         this.allocatedBytes = allocatedBytes;
-        this.segmentsInUse = segmentsInUse;
+        this.regionsInUse = regionsInUse;
         this.count = count;
     }
 
-    public int segmentsInUse() {
-        return segmentsInUse;
+    public int regionsInUse() {
+        return regionsInUse;
     }
 
     public long consumedBytes() {
@@ -60,7 +60,7 @@ public class DataStreamStats implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(consumedBytes);
         out.writeLong(allocatedBytes);
-        out.writeInt(segmentsInUse);
+        out.writeInt(regionsInUse);
         out.writeLong(count);
     }
 
@@ -68,7 +68,7 @@ public class DataStreamStats implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         this.consumedBytes = in.readLong();
         this.allocatedBytes = in.readLong();
-        this.segmentsInUse = in.readInt();
+        this.regionsInUse = in.readInt();
         this.count = in.readLong();
     }
 
@@ -80,7 +80,7 @@ public class DataStreamStats implements DataSerializable {
                 + ", consumedBytesPerEntry=" + (consumedBytes / count)
                 + ", allocatedBytes=" + allocatedBytes
                 + ", storageEfficiency=" + ((100d * consumedBytes) / allocatedBytes) + "%"
-                + ", segmentsInUse=" + segmentsInUse
+                + ", regionsInUse=" + regionsInUse
                 + '}';
     }
 }

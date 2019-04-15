@@ -70,11 +70,11 @@ public class DSPartition {
     private final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     // the segment receiving the writes.
-    private Segment edenSegment;
+    private Region eden;
     // the segment first in line to be evicted
-    private Segment oldestTenuredSegment;
-    private Segment youngestTenuredSegment;
-    private int tenuredSegmentCount;
+    private Region oldestTenured;
+    private Region youngestTenured;
+    private int tenuredRegionsCount;
     private boolean frozen;
     private final DSPartitionListeners listeners;
     private long head = 0;
@@ -94,7 +94,7 @@ public class DSPartition {
         this.recordModel = createRecordModel(config);
         this.encoder = createEncoder();
         this.listeners = service.getOrCreatePartitionListeners(config.getName(), partitionId, this);
-        loadSegmentFiles();
+        loadRegionFiles();
     }
 
     private RecordModel createRecordModel(DataStreamConfig config) {
@@ -121,19 +121,19 @@ public class DSPartition {
     }
 
     public long tail() {
-        if (edenSegment != null) {
-            return edenSegment.tail();
+        if (eden != null) {
+            return eden.tail();
         }
 
-        if (youngestTenuredSegment != null) {
-            return youngestTenuredSegment.tail();
+        if (youngestTenured != null) {
+            return youngestTenured.tail();
         }
 
         //todo;
         return head;
     }
 
-    private void loadSegmentFiles() {
+    private void loadRegionFiles() {
         String name = config.getName();
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(config.getStorageDir().toPath(), String.format(
                 "%02x%s-%08x-*.segment", name.length(), name, partitionId))
@@ -176,7 +176,7 @@ public class DSPartition {
         }
     }
 
-    private Segment newSegment(long offset) {
+    private Region newSegment(long offset) {
         Map<String, Supplier<Aggregator>> attachedAggregators = config.getAttachedAggregators();
 
         Map<String, Aggregator> aggregators;
@@ -189,17 +189,17 @@ public class DSPartition {
             }
         }
 
-        return new Segment(config.getName(), partitionId, offset, recordModel, encoder, aggregators, config);
+        return new Region(config.getName(), partitionId, offset, recordModel, encoder, aggregators, config);
     }
 
     private void ensureEdenExists() {
         boolean createEden = false;
 
-        if (edenSegment == null) {
+        if (eden == null) {
             // eden doesn't exist.
             createEden = true;
         } else if (maxTenuringAgeNanos != Long.MAX_VALUE
-                && System.nanoTime() - edenSegment.firstInsertNanos() < maxTenuringAgeNanos) {
+                && System.nanoTime() - eden.firstInsertNanos() < maxTenuringAgeNanos) {
             // eden is expired
             createEden = true;
         }
@@ -212,48 +212,48 @@ public class DSPartition {
 
         tenureEden();
         trim();
-        edenSegment = newSegment(youngestTenuredSegment != null ? youngestTenuredSegment.tail() : head);
+        eden = newSegment(youngestTenured != null ? youngestTenured.tail() : head);
     }
 
     private void tenureEden() {
-        if (edenSegment == null) {
+        if (eden == null) {
             return;
         }
 
-        if (oldestTenuredSegment == null) {
-            oldestTenuredSegment = edenSegment;
-            head = oldestTenuredSegment.head();
-            youngestTenuredSegment = edenSegment;
+        if (oldestTenured == null) {
+            oldestTenured = eden;
+            head = oldestTenured.head();
+            youngestTenured = eden;
         } else {
-            edenSegment.previous = youngestTenuredSegment;
-            youngestTenuredSegment.next = edenSegment;
-            youngestTenuredSegment = edenSegment;
+            eden.previous = youngestTenured;
+            youngestTenured.next = eden;
+            youngestTenured = eden;
         }
 
-        edenSegment = null;
-        tenuredSegmentCount++;
+        eden = null;
+        tenuredRegionsCount++;
     }
 
     // get rid of the oldest tenured segment if needed.
     private void trim() {
-        int totalSegmentCount = tenuredSegmentCount + 1;
+        int totalSegmentCount = tenuredRegionsCount + 1;
 
         if (totalSegmentCount > config.getSegmentsPerPartition()) {
             // we need to delete the oldest segment
 
-            Segment victimSegment = oldestTenuredSegment;
+            Region victimSegment = oldestTenured;
             victimSegment.destroy();
 
-            head = oldestTenuredSegment.head();
-            if (oldestTenuredSegment == youngestTenuredSegment) {
-                oldestTenuredSegment = null;
-                youngestTenuredSegment = null;
+            head = oldestTenured.head();
+            if (oldestTenured == youngestTenured) {
+                oldestTenured = null;
+                youngestTenured = null;
             } else {
-                oldestTenuredSegment = victimSegment.next;
-                oldestTenuredSegment.previous = null;
+                oldestTenured = victimSegment.next;
+                oldestTenured.previous = null;
             }
 
-            tenuredSegmentCount--;
+            tenuredRegionsCount--;
         }
     }
 
@@ -268,14 +268,14 @@ public class DSPartition {
             return;
         }
 
-//        Segment segment = oldestTenuredSegment;
+//        Segment segment = oldestTenured;
 //        while (segment != null) {
 //            Segment next = segment.next;
 //
 //
 //
 //            segment = next;
-//            //todo: also deal with youngestTenuredSegment if last
+//            //todo: also deal with youngestTenured if last
 //        }
     }
 
@@ -294,14 +294,14 @@ public class DSPartition {
 
         ensureEdenExists();
 
-        if(!edenSegment.write(valueData)){
-            if(edenSegment.dataOffset()==0){
+        if(!eden.write(valueData)){
+            if(eden.dataOffset()==0){
                 throw new IllegalArgumentException("object "+valueData+" too big to be written");
             }
 
             tenureEden();
             ensureEdenExists();
-            if(!edenSegment.write(valueData)) {
+            if(!eden.write(valueData)) {
                 throw new IllegalArgumentException("object "+valueData+" too big to be written");
             }
         }
@@ -317,11 +317,11 @@ public class DSPartition {
     public long count() {
         long count = 0;
 
-        if (edenSegment != null) {
-            count += edenSegment.count();
+        if (eden != null) {
+            count += eden.count();
         }
 
-        Segment segment = youngestTenuredSegment;
+        Region segment = youngestTenured;
         while (segment != null) {
             count += segment.count();
             segment = segment.previous;
@@ -335,15 +335,15 @@ public class DSPartition {
         long allocatedBytes = 0;
         int segmentsUsed = 0;
 
-        if (edenSegment != null) {
-            consumedBytes += edenSegment.consumedBytes();
-            allocatedBytes += edenSegment.allocatedBytes();
+        if (eden != null) {
+            consumedBytes += eden.consumedBytes();
+            allocatedBytes += eden.allocatedBytes();
             segmentsUsed++;
         }
 
-        segmentsUsed += tenuredSegmentCount;
+        segmentsUsed += tenuredRegionsCount;
 
-        Segment segment = youngestTenuredSegment;
+        Region segment = youngestTenured;
         while (segment != null) {
             consumedBytes += segment.consumedBytes();
             allocatedBytes += segment.allocatedBytes();
@@ -358,7 +358,7 @@ public class DSPartition {
             throw new IllegalStateException("Can't create prepared query for blobs");
         }
 
-        SegmentRunCodegen codeGenerator = new QuerySegmentRunCodegen(
+        RegionRunCodegen codeGenerator = new QuerySegmentRunCodegen(
                 preparationId, predicate, recordModel);
         codeGenerator.generate();
 
@@ -374,11 +374,11 @@ public class DSPartition {
 
         // very hacky; just want to trigger an index being used.
         if (run.indicesAvailable) {
-            run.runAllWithIndex(edenSegment);
-            run.runAllWithIndex(oldestTenuredSegment);
+            run.runAllWithIndex(eden);
+            run.runAllWithIndex(oldestTenured);
         } else {
-            run.runAllFullScan(edenSegment);
-            run.runAllFullScan(oldestTenuredSegment);
+            run.runAllFullScan(eden);
+            run.runAllFullScan(oldestTenured);
         }
         return run.result();
     }
@@ -387,7 +387,7 @@ public class DSPartition {
         if(recordModel==null){
             throw new IllegalStateException("Can't prepare projection for blobs");
         }
-        SegmentRunCodegen codegen = new ProjectionSegmentRunCodegen(
+        RegionRunCodegen codegen = new ProjectionSegmentRunCodegen(
                 preparationId, extraction, recordModel);
         codegen.generate();
 
@@ -401,8 +401,8 @@ public class DSPartition {
         run.recordDataSize = recordModel.getSize();
         run.consumer = consumer;
         run.bind(bindings);
-        run.runAllFullScan(edenSegment);
-        run.runAllFullScan(youngestTenuredSegment);
+        run.runAllFullScan(eden);
+        run.runAllFullScan(youngestTenured);
     }
 
     public void prepareAggregation(String preparationId, AggregationRecipe aggregationRecipe) {
@@ -410,7 +410,7 @@ public class DSPartition {
             throw new IllegalStateException("Can't create aggregation query for blobs");
         }
 
-        SegmentRunCodegen codegen = new AggregationSegmentRunCodegen(
+        RegionRunCodegen codegen = new AggregationSegmentRunCodegen(
                 preparationId, aggregationRecipe, recordModel);
         codegen.generate();
 
@@ -422,7 +422,7 @@ public class DSPartition {
 
         CompletableFuture<Aggregator> f = new CompletableFuture<>();
 
-        AggregatorRecursiveTask task = new AggregatorRecursiveTask(f, youngestTenuredSegment, () -> {
+        AggregatorRecursiveTask task = new AggregatorRecursiveTask(f, youngestTenured, () -> {
             AggregationSegmentRun run = newInstance(clazz);
             run.recordDataSize = recordModel.getSize();
             run.bind(bindings);
@@ -434,7 +434,7 @@ public class DSPartition {
         AggregationSegmentRun edenRun = newInstance(clazz);
         edenRun.recordDataSize = recordModel.getSize();
         edenRun.bind(bindings);
-        edenRun.runSingleFullScan(edenSegment);
+        edenRun.runSingleFullScan(eden);
 
         return new AggregateFJResult(edenRun.result(), f);
     }
@@ -445,18 +445,18 @@ public class DSPartition {
 
         run.recordDataSize = recordModel.getSize();
         run.bind(bindings);
-        run.runAllFullScan(edenSegment);
-        run.runAllFullScan(youngestTenuredSegment);
+        run.runAllFullScan(eden);
+        run.runAllFullScan(youngestTenured);
         return run.result();
     }
 
     public Aggregator fetchAggregate(String aggregateId) {
         Aggregator aggregator = config.getAttachedAggregators().get(aggregateId).get();
-        if (edenSegment != null) {
-            aggregator.combine(edenSegment.getAggregators().get(aggregateId));
+        if (eden != null) {
+            aggregator.combine(eden.getAggregators().get(aggregateId));
         }
 
-        Segment segment = youngestTenuredSegment;
+        Region segment = youngestTenured;
         while (segment != null) {
             aggregator.combine(segment.getAggregators().get(aggregateId));
             segment = segment.previous;
@@ -482,8 +482,8 @@ public class DSPartition {
 
         run.recordDataSize = recordModel.getSize();
         run.bind(bindings);
-        run.runAllFullScan(edenSegment);
-        run.runAllFullScan(youngestTenuredSegment);
+        run.runAllFullScan(eden);
+        run.runAllFullScan(youngestTenured);
     }
 
     public void freeze() {
@@ -495,12 +495,12 @@ public class DSPartition {
     public Iterator iterator() {
         // we are not including eden for now. we rely on frozen partition
         // todo: we probably want to return youngestSegment for iteration
-       // return new IteratorImpl(oldestTenuredSegment);
+       // return new IteratorImpl(oldestTenured);
         throw new UnsupportedOperationException();
     }
 
-    public Segment findSegment(long offset) {
-        Segment current = oldestTenuredSegment;
+    public Region findSegment(long offset) {
+        Region current = oldestTenured;
         while (current != null) {
             // System.out.println("tenured: "+current.head()+" current.tail:"+current.tail());
             if (current.head() <= offset && current.tail() >= offset) {
@@ -510,11 +510,11 @@ public class DSPartition {
             }
         }
 
-        if (edenSegment != null) {
-            // System.out.println("edenSegment: "+edenSegment.head()+" current.tail:"+edenSegment.tail());
+        if (eden != null) {
+            // System.out.println("eden: "+eden.head()+" current.tail:"+eden.tail());
 
-            if (edenSegment.head() <= offset && edenSegment.tail() >= offset) {
-                return edenSegment;
+            if (eden.head() <= offset && eden.tail() >= offset) {
+                return eden;
             }
         }
 

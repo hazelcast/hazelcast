@@ -32,7 +32,7 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 import java.util.Set;
 
-public abstract class SegmentRunCodegen {
+public abstract class RegionRunCodegen {
 
     protected final Predicate query;
     protected final RecordModel recordModel;
@@ -43,7 +43,7 @@ public abstract class SegmentRunCodegen {
     private final Unsafe unsafe = UnsafeUtil.UNSAFE;
     private final Set<String> attributes;
 
-    public SegmentRunCodegen(String compilationId, Predicate query, RecordModel recordModel) {
+    public RegionRunCodegen(String compilationId, Predicate query, RecordModel recordModel) {
         this.compilationId = compilationId;
         this.query = query;
         this.recordModel = recordModel;
@@ -66,12 +66,12 @@ public abstract class SegmentRunCodegen {
         }
     }
 
-    public SegmentRunCodegen add(String s, Object... args) {
+    public RegionRunCodegen add(String s, Object... args) {
         codeBuffer.append(String.format(s, (Object[]) args));
         return this;
     }
 
-    public SegmentRunCodegen add(long i) {
+    public RegionRunCodegen add(long i) {
         codeBuffer.append(i);
         return this;
     }

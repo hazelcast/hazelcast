@@ -80,7 +80,7 @@ public class DSPartitionListeners {
 
     private class LocalListener {
         private final DSEncoder encoder;
-        private Segment segment;
+        private Region segment;
         private long offset;
         private Consumer<Data> consumer;
 

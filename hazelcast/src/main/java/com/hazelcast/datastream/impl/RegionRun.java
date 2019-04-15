@@ -21,7 +21,7 @@ import sun.misc.Unsafe;
 
 import java.util.Map;
 
-public abstract class SegmentRun<R> {
+public abstract class RegionRun<R> {
 
     public final Unsafe unsafe = UnsafeUtil.UNSAFE;
 
@@ -32,7 +32,7 @@ public abstract class SegmentRun<R> {
     public long indexOffset;
     public boolean indicesAvailable;
 
-    public final void runAllFullScan(Segment segment) {
+    public final void runAllFullScan(Region segment) {
         while (segment != null) {
             dataAddress = segment.dataAddress();
             recordCount = segment.count();
@@ -41,7 +41,7 @@ public abstract class SegmentRun<R> {
         }
     }
 
-    public final void runSingleFullScan(Segment segment) {
+    public final void runSingleFullScan(Region segment) {
         if (segment == null) {
             return;
         }
@@ -55,7 +55,7 @@ public abstract class SegmentRun<R> {
 
     protected abstract void runFullScan();
 
-    public final void runAllWithIndex(Segment segment) {
+    public final void runAllWithIndex(Region segment) {
         while (segment != null) {
             dataAddress = segment.dataAddress();
             recordCount = segment.count();

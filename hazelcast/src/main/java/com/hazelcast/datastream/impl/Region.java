@@ -47,14 +47,14 @@ import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
  * So probably when we link 2 segments, the older segment should do 1 acquire on the younger segment and
  * when the older segment is deleted, then it will call a release on the younger segment.
  */
-public class Segment {
+public class Region {
 
-    private final static AtomicIntegerFieldUpdater OWNERSHIP_COUNT = newUpdater(Segment.class, "ownershipCount");
+    private final static AtomicIntegerFieldUpdater OWNERSHIP_COUNT = newUpdater(Region.class, "ownershipCount");
 
     // points to the next segment (this segment is younger)
-    public volatile Segment next;
+    public volatile Region next;
     // points to the previous segment (this segment is older).
-    public volatile Segment previous;
+    public volatile Region previous;
 
     // Provides 'smart pointer' like behavior so the segment can be shared between threads once it is tenured.
     // A segment is 'immutable' from that point on, but its resources need to be released once nobody is referring
@@ -78,13 +78,13 @@ public class Segment {
     private int dataOffset = 0;
     private int recordCount;
 
-    Segment(String name,
-            int partitionId,
-            long startOffset,
-            RecordModel recordModel,
-            DSEncoder encoder,
-            Map<String, Aggregator> aggregators,
-            DataStreamConfig config
+    Region(String name,
+           int partitionId,
+           long startOffset,
+           RecordModel recordModel,
+           DSEncoder encoder,
+           Map<String, Aggregator> aggregators,
+           DataStreamConfig config
     ) {
         this.config = config;
         this.segmentFile = new File(config.getStorageDir(),

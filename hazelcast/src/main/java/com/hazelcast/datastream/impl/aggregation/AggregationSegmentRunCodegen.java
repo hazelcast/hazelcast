@@ -25,14 +25,14 @@ import com.hazelcast.aggregation.impl.MaxAggregator;
 import com.hazelcast.aggregation.impl.MinAggregator;
 import com.hazelcast.datastream.AggregationRecipe;
 import com.hazelcast.datastream.impl.RecordModel;
-import com.hazelcast.datastream.impl.SegmentRunCodegen;
+import com.hazelcast.datastream.impl.RegionRunCodegen;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
-public class AggregationSegmentRunCodegen extends SegmentRunCodegen {
+public class AggregationSegmentRunCodegen extends RegionRunCodegen {
 
     private final Set<Field> extractedFields;
     private final Class<?> projectionClass;

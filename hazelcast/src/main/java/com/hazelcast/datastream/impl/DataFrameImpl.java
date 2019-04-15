@@ -198,15 +198,15 @@ public class DataFrameImpl<R> implements DataFrame<R> {
             long allocated = 0;
             long consumed = 0;
             long count = 0;
-            int segmentsUsed = 0;
+            int regionsUsed = 0;
             for (Object value : result.values()) {
                 DataStreamStats memoryInfo = (DataStreamStats) value;
                 allocated += memoryInfo.allocatedBytes();
                 consumed += memoryInfo.consumedBytes();
-                segmentsUsed += memoryInfo.segmentsInUse();
+                regionsUsed += memoryInfo.regionsInUse();
                 count += memoryInfo.count();
             }
-            return new DataStreamStats(consumed, allocated, segmentsUsed, count);
+            return new DataStreamStats(consumed, allocated, regionsUsed, count);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

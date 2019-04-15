@@ -16,12 +16,12 @@
 
 package com.hazelcast.datastream.impl.query;
 
-import com.hazelcast.datastream.impl.SegmentRun;
+import com.hazelcast.datastream.impl.RegionRun;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public abstract class QuerySegmentRun extends SegmentRun<List> {
+public abstract class QuerySegmentRun extends RegionRun<List> {
     protected List result = new LinkedList();
 
     @Override

@@ -18,14 +18,14 @@ package com.hazelcast.datastream.impl.projection;
 
 import com.hazelcast.datastream.ProjectionRecipe;
 import com.hazelcast.datastream.impl.RecordModel;
-import com.hazelcast.datastream.impl.SegmentRunCodegen;
+import com.hazelcast.datastream.impl.RegionRunCodegen;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ProjectionSegmentRunCodegen extends SegmentRunCodegen {
+public class ProjectionSegmentRunCodegen extends RegionRunCodegen {
 
     private final ProjectionRecipe projectionRecipe;
     private final Class<?> projectionClass;

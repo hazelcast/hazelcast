@@ -16,9 +16,9 @@
 
 package com.hazelcast.datastream.impl.entryprocessor;
 
-import com.hazelcast.datastream.impl.SegmentRun;
+import com.hazelcast.datastream.impl.RegionRun;
 
-public abstract class EntryProcessorSegmentRun extends SegmentRun<Object> {
+public abstract class EntryProcessorSegmentRun extends RegionRun<Object> {
 
     @Override
     public Object result() {

@@ -17,7 +17,7 @@
 package com.hazelcast.datastream.impl.query;
 
 import com.hazelcast.datastream.impl.RecordModel;
-import com.hazelcast.datastream.impl.SegmentRunCodegen;
+import com.hazelcast.datastream.impl.RegionRunCodegen;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
 
@@ -25,7 +25,7 @@ import java.lang.reflect.Field;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
-public class QuerySegmentRunCodegen extends SegmentRunCodegen {
+public class QuerySegmentRunCodegen extends RegionRunCodegen {
 
     public QuerySegmentRunCodegen(String compilationId, Predicate query, RecordModel recordModel) {
         super(compilationId, query, recordModel);

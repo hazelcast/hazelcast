@@ -17,8 +17,8 @@
 package com.hazelcast.datastream.impl.aggregation;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.datastream.impl.SegmentRun;
+import com.hazelcast.datastream.impl.RegionRun;
 
-public abstract class AggregationSegmentRun extends SegmentRun<Aggregator> {
+public abstract class AggregationSegmentRun extends RegionRun<Aggregator> {
 
 }

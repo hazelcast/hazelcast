@@ -23,14 +23,14 @@ import com.hazelcast.datastream.MultiplyMutator;
 import com.hazelcast.datastream.Mutator;
 import com.hazelcast.datastream.RecordMutator;
 import com.hazelcast.datastream.impl.RecordModel;
-import com.hazelcast.datastream.impl.SegmentRunCodegen;
+import com.hazelcast.datastream.impl.RegionRunCodegen;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
-public class EntryProcessorSegmentRunCodegen extends SegmentRunCodegen {
+public class EntryProcessorSegmentRunCodegen extends RegionRunCodegen {
 
     private final Mutator mutator;
     private final Class projectionClass;

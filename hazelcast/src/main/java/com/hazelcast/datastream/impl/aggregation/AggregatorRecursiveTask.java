@@ -17,8 +17,8 @@
 package com.hazelcast.datastream.impl.aggregation;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.datastream.impl.Segment;
-import com.hazelcast.datastream.impl.SegmentRun;
+import com.hazelcast.datastream.impl.Region;
+import com.hazelcast.datastream.impl.RegionRun;
 import com.hazelcast.util.function.Supplier;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,13 +27,13 @@ import java.util.concurrent.RecursiveTask;
 
 public class AggregatorRecursiveTask extends RecursiveTask<Aggregator> {
 
-    private final Segment segment;
-    private final Supplier<SegmentRun<Aggregator>> runSupplier;
+    private final Region segment;
+    private final Supplier<RegionRun<Aggregator>> runSupplier;
     private final CompletableFuture<Aggregator> f;
 
     public AggregatorRecursiveTask(CompletableFuture<Aggregator> f,
-                                   Segment segment,
-                                   Supplier<SegmentRun<Aggregator>> runSupplier) {
+                                   Region segment,
+                                   Supplier<RegionRun<Aggregator>> runSupplier) {
         this.f = f;
         this.segment = segment;
         this.runSupplier = runSupplier;
@@ -49,13 +49,13 @@ public class AggregatorRecursiveTask extends RecursiveTask<Aggregator> {
     }
 
     private Aggregator compute0() {
-        SegmentRun<Aggregator> run = runSupplier.get();
+        RegionRun<Aggregator> run = runSupplier.get();
 
         if (segment == null) {
             return run.result();
         }
 
-        Segment previous = segment.previous;
+        Region previous = segment.previous;
         ForkJoinTask<Aggregator> fork = null;
         if (previous != null) {
             fork = new AggregatorRecursiveTask(null, previous, runSupplier).fork();

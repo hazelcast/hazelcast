@@ -51,7 +51,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         System.out.println(stream.tail("foo"));
 
         assertEquals(3, stream.asFrame().count());
-        assertEquals(1, stream.asFrame().memoryInfo().segmentsInUse());
+        assertEquals(1, stream.asFrame().memoryInfo().regionsInUse());
         assertEquals(54, stream.tail("foo"));
         assertEquals(0, stream.head("foo"));
 
@@ -112,7 +112,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         out.write("foo", new Employee(3, 3, 3));
 
         assertEquals(3, stream.asFrame().count());
-        assertEquals(1, stream.asFrame().memoryInfo().segmentsInUse());
+        assertEquals(1, stream.asFrame().memoryInfo().regionsInUse());
     }
 
     @Test
@@ -134,7 +134,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         }
 
         assertEquals(count, stream.asFrame().count());
-        assertEquals(10, stream.asFrame().memoryInfo().segmentsInUse());
+        assertEquals(10, stream.asFrame().memoryInfo().regionsInUse());
     }
 
     @Test
@@ -156,7 +156,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         }
 
         assertEquals(itemCount, stream.asFrame().count());
-        assertEquals(2, stream.asFrame().memoryInfo().segmentsInUse());
+        assertEquals(2, stream.asFrame().memoryInfo().regionsInUse());
         System.out.println(stream.asFrame().memoryInfo());
     }
 
@@ -182,7 +182,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         }
 
         assertEquals(itemCount, stream.asFrame().count());
-        assertEquals(1961, stream.asFrame().memoryInfo().segmentsInUse());
+        assertEquals(1961, stream.asFrame().memoryInfo().regionsInUse());
         System.out.println(stream.asFrame().memoryInfo());
     }
 
@@ -208,7 +208,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         }
 
         //   assertEquals(itemCount, stream.count());
-        assertEquals(10, stream.asFrame().memoryInfo().segmentsInUse());
+        assertEquals(10, stream.asFrame().memoryInfo().regionsInUse());
         System.out.println(stream.asFrame().memoryInfo());
     }
 
