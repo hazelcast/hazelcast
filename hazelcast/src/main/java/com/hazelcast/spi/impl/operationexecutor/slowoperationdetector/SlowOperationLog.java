@@ -87,7 +87,7 @@ final class SlowOperationLog {
     }
 
     SlowOperationDTO createDTO() {
-        List<SlowOperationInvocationDTO> invocationDTOList = new ArrayList<SlowOperationInvocationDTO>(invocations.size());
+        List<SlowOperationInvocationDTO> invocationDTOList = new ArrayList<>(invocations.size());
         for (Map.Entry<Integer, Invocation> invocationEntry : invocations.entrySet()) {
             int id = invocationEntry.getKey();
             invocationDTOList.add(invocationEntry.getValue().createDTO(id));
