@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.RootCauseMatcher;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,11 +49,6 @@ import static org.junit.Assert.assertTrue;
 public class YamlClientConfigImportVariableReplacementTest extends AbstractClientConfigImportVariableReplacementTest {
     @Rule
     public ExpectedException rule = ExpectedException.none();
-
-    @Before
-    public void assumeRunningOnJdk8() {
-        assumeThatJDK8OrHigher();
-    }
 
     @Override
     @Test(expected = InvalidConfigurationException.class)

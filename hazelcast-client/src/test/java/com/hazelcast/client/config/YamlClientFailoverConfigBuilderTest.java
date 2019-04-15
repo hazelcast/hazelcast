@@ -31,7 +31,6 @@ import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.util.Properties;
 
-import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -43,8 +42,6 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
 
     @Before
     public void init() throws Exception {
-        assumeThatJDK8OrHigher();
-
         URL schemaResource = YamlClientFailoverConfigBuilderTest.class.getClassLoader()
                                                                       .getResource("hazelcast-client-failover-sample.yaml");
         fullClientConfig = new YamlClientFailoverConfigBuilder(schemaResource).build();
