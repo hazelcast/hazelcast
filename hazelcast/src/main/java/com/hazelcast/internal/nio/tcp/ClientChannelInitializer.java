@@ -35,7 +35,7 @@ public class ClientChannelInitializer
     public void initChannel(Channel channel) {
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
         SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(CLIENT,
-                new ClientMessageDecoder(connection, ioService.getClientEngine()));
+                new ClientMessageDecoder(connection, ioService.getClientEngine(), ioService.properties()));
 
         channel.outboundPipeline().addLast(new ClientMessageEncoder());
         channel.inboundPipeline().addLast(protocolDecoder);

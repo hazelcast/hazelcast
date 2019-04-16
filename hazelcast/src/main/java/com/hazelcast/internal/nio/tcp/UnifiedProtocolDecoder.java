@@ -152,7 +152,7 @@ public class UnifiedProtocolDecoder
                 .setOption(DIRECT_BUF, false);
 
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
-        channel.inboundPipeline().replace(this, new ClientMessageDecoder(connection, ioService.getClientEngine()));
+        channel.inboundPipeline().replace(this, new ClientMessageDecoder(connection, ioService.getClientEngine(), props));
     }
 
     private void initChannelForText(String protocol, boolean restApi) {

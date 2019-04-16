@@ -247,7 +247,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 },
                 new Object[]{new NoDataMemberInClusterException(randomString())},
                 new Object[]{new ReplicatedMapCantBeCreatedOnLiteMemberException(randomString())},
-                new Object[]{new MaxMessageSizeExceeded()},
+                new Object[]{new MaxMessageSizeExceeded(randomString())},
                 new Object[]{new WanReplicationQueueFullException(randomString())},
                 new Object[]{new AssertionError(randomString())},
                 new Object[]{new OutOfMemoryError(randomString())},

@@ -71,7 +71,7 @@ public class ClientPlainChannelInitializer implements ChannelInitializer {
             public void accept(ClientMessage message) {
                 connection.handleClientMessage(message);
             }
-        });
+        }, null);
         channel.inboundPipeline().addLast(decoder);
 
         channel.outboundPipeline().addLast(new ClientMessageEncoder());

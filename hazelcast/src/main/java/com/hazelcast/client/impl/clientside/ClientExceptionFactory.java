@@ -536,7 +536,7 @@ public class ClientExceptionFactory {
         register(ClientProtocolErrorCodes.MAX_MESSAGE_SIZE_EXCEEDED, MaxMessageSizeExceeded.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
-                return new MaxMessageSizeExceeded();
+                return new MaxMessageSizeExceeded(message);
             }
         });
         register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WanReplicationQueueFullException.class, new ExceptionFactory() {
