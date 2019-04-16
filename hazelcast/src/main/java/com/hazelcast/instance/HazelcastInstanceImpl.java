@@ -25,6 +25,10 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.datastream.DataStream;
+import com.hazelcast.datastream.impl.DSService;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -59,8 +63,6 @@ import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -176,6 +178,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public <E> DataStream<E> getDataStream(String name) {
+        checkNotNull(name, "Retrieving a datastream instance with a null name is not allowed!");
+        return getDistributedObject(DSService.SERVICE_NAME, name);
     }
 
     @Override

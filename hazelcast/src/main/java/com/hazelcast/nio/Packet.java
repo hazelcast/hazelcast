@@ -320,7 +320,7 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 6}
          */
-        UNDEFINED6,
+        STREAM,
         /**
          * Unused packet type. Available for future use.
          * <p>

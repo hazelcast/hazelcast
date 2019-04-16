@@ -79,6 +79,8 @@ public class Config {
 
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
+    private final Map<String, DataStreamConfig> dataStreamConfigs = new ConcurrentHashMap<String, DataStreamConfig>();
+
     private final Map<String, CacheSimpleConfig> cacheConfigs = new ConcurrentHashMap<String, CacheSimpleConfig>();
 
     private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
@@ -382,6 +384,59 @@ public class Config {
         this.networkConfig = networkConfig;
         return this;
     }
+
+    // =====
+
+    public DataStreamConfig findDataStreamConfig(String name) {
+        name = getBaseName(name);
+        DataStreamConfig config = lookupByPattern(configPatternMatcher, dataStreamConfigs, name);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getDataStreamConfig("default").getAsReadOnly();
+    }
+
+    public DataStreamConfig getDataStreamConfigOrNull(String name) {
+        name = getBaseName(name);
+        return lookupByPattern(configPatternMatcher, dataStreamConfigs, name);
+    }
+
+    public DataStreamConfig getDataStreamConfig(String name) {
+        name = getBaseName(name);
+        DataStreamConfig config = lookupByPattern(configPatternMatcher, dataStreamConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        DataStreamConfig defConfig = dataStreamConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new DataStreamConfig();
+            defConfig.setName("default");
+            dataStreamConfigs.put(defConfig.getName(), defConfig);
+        }
+        config = new DataStreamConfig(defConfig);
+        config.setName(name);
+        dataStreamConfigs.put(config.getName(), config);
+        return config;
+    }
+
+    public Config addDataStreamConfig(DataStreamConfig dataStreamConfig) {
+        this.dataStreamConfigs.put(dataStreamConfig.getName(), dataStreamConfig);
+        return this;
+    }
+
+    /**
+     * Returns the map of {@link com.hazelcast.core.IMap} configurations,
+     * mapped by config name. The config name may be a pattern with which the
+     * configuration was initially obtained.
+     *
+     * @return the map configurations mapped by config name
+     */
+    public Map<String, DataStreamConfig> getDataStreamConfigs() {
+        return dataStreamConfigs;
+    }
+
+
+    // ======
 
     /**
      * Returns a read-only {@link com.hazelcast.core.IMap} configuration for

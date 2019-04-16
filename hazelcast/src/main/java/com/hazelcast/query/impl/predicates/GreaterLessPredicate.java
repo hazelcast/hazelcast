@@ -56,6 +56,14 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         this.less = less;
     }
 
+    public boolean isEqual() {
+        return equal;
+    }
+
+    public boolean isLess() {
+        return less;
+    }
+
     @Override
     protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
         if (attributeValue == null) {
@@ -183,4 +191,7 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         return less && equal;
     }
 
+    public Comparable getValue() {
+        return value;
+    }
 }

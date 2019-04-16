@@ -22,6 +22,8 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.datastream.DataStream;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IAtomicLong;
@@ -45,7 +47,6 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -92,6 +93,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public <E> DataStream<E> getDataStream(String name) {
+        return getOriginal().getDataStream(name);
     }
 
     @Override

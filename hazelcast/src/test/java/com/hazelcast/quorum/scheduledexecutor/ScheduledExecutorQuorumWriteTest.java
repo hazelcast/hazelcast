@@ -210,7 +210,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     public void scheduleOnMembers_callable_quorum() throws Exception {
         Map<Member, IScheduledFuture<?>> futures = (Map<Member, IScheduledFuture<?>>) exec(0)
                 .scheduleOnMembers(callable(), asList(member(0)),
-                10, TimeUnit.MILLISECONDS);
+                        10, TimeUnit.MILLISECONDS);
         wait(futures);
     }
 
@@ -218,7 +218,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     public void scheduleOnMembers_callable_noQuorum() throws Exception {
         Map<Member, IScheduledFuture<?>> futures = (Map<Member, IScheduledFuture<?>>) exec(3)
                 .scheduleOnMembers(callable(),
-                asList(member(3)), 10, TimeUnit.MILLISECONDS);
+                        asList(member(3)), 10, TimeUnit.MILLISECONDS);
         wait(futures);
     }
 

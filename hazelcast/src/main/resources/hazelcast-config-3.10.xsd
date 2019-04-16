@@ -635,6 +635,28 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="datastream">
+        <xs:all>
+            <xs:element name="initialRegionSize" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="maxRegionSize" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="maxRegionsPerPartition" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="tenuringAgeMillis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="key-class" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="value-class" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="indices" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the queue.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="queue">
         <xs:all>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
