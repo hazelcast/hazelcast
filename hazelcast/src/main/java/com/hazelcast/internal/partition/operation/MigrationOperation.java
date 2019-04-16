@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
@@ -37,7 +36,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.partition.MigrationEndpoint;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -56,11 +54,8 @@ import java.util.logging.Level;
  */
 public class MigrationOperation extends BaseMigrationOperation implements TargetAware, Versioned {
 
-    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new OperationResponseHandler() {
-        @Override
-        public void sendResponse(Operation op, Object obj) {
-            throw new HazelcastException("Migration operations can not send response!");
-        }
+    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = (op, obj) -> {
+        throw new HazelcastException("Migration operations can not send response!");
     };
 
     private ReplicaFragmentMigrationState fragmentMigrationState;
@@ -247,13 +242,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        // RU_COMPAT_3_11
-        Version version = out.getVersion();
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            out.writeObject(fragmentMigrationState);
-        } else {
-            fragmentMigrationState.writeData(out);
-        }
+        out.writeObject(fragmentMigrationState);
         out.writeBoolean(firstFragment);
         out.writeBoolean(lastFragment);
     }
@@ -261,14 +250,7 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        // RU_COMPAT_3_11
-        Version version = in.getVersion();
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            fragmentMigrationState = in.readObject();
-        } else {
-            fragmentMigrationState = new ReplicaFragmentMigrationState();
-            fragmentMigrationState.readData(in);
-        }
+        fragmentMigrationState = in.readObject();
         firstFragment = in.readBoolean();
         lastFragment = in.readBoolean();
     }

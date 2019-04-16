@@ -38,8 +38,6 @@ import java.util.Collections;
  * The response to a {@link PartitionReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
  * synchronization request state and retry the request if this node is still a replica of this partition.
  */
-// RU_COMPAT_39: Do not remove Versioned interface!
-// Version info is needed on 3.9 members while deserializing the operation.
 public class PartitionReplicaSyncRetryResponse
         extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation, Versioned {
@@ -97,7 +95,7 @@ public class PartitionReplicaSyncRetryResponse
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int len = in.readInt();
-        namespaces = new ArrayList<ServiceNamespace>(len);
+        namespaces = new ArrayList<>(len);
         for (int i = 0; i < len; i++) {
             ServiceNamespace ns = in.readObject();
             namespaces.add(ns);

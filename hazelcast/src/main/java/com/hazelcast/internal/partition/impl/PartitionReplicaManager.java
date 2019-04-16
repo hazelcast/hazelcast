@@ -112,7 +112,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         replicaSyncTimeoutScheduler = EntryTaskSchedulerFactory.newScheduler(globalScheduler,
                 new ReplicaSyncTimeoutProcessor(), ScheduleType.POSTPONE);
 
-        replicaSyncRequests = newSetFromMap(new ConcurrentHashMap<ReplicaFragmentSyncInfo, Boolean>(partitionCount));
+        replicaSyncRequests = newSetFromMap(new ConcurrentHashMap<>(partitionCount));
     }
 
     /**
@@ -233,7 +233,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     private List<ServiceNamespace> registerSyncInfoForNamespaces(int partitionId,
             Collection<ServiceNamespace> requestedNamespaces, int replicaIndex, PartitionReplica target, int permits) {
 
-        List<ServiceNamespace> namespaces = new ArrayList<ServiceNamespace>(permits);
+        List<ServiceNamespace> namespaces = new ArrayList<>(permits);
         for (ServiceNamespace namespace : requestedNamespaces) {
             if (namespaces.size() == permits) {
                 if (logger.isFinestEnabled()) {
@@ -427,15 +427,14 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @return copy of ongoing replica-sync operations
      */
     List<ReplicaFragmentSyncInfo> getOngoingReplicaSyncRequests() {
-        return new ArrayList<ReplicaFragmentSyncInfo>(replicaSyncRequests);
+        return new ArrayList<>(replicaSyncRequests);
     }
 
     /**
      * @return copy of scheduled replica-sync requests
      */
     List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> getScheduledReplicaSyncRequests() {
-        final List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>>
-                entries = new ArrayList<ScheduledEntry<ReplicaFragmentSyncInfo, Void>>();
+        final List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> entries = new ArrayList<>();
         for (ReplicaFragmentSyncInfo syncInfo : replicaSyncRequests) {
             ScheduledEntry<ReplicaFragmentSyncInfo, Void> entry = replicaSyncTimeoutScheduler.get(syncInfo);
             if (entry != null) {

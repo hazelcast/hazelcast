@@ -87,7 +87,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        notifyServices(nodeEngine);
+        notifyServices();
 
         if (endpoint == MigrationEndpoint.SOURCE && success) {
             commitSource();
@@ -106,7 +106,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
      * rollback logic. If this node was the source and backup replica for a partition, the services will first be notified that
      * the migration is starting.
      */
-    private void notifyServices(NodeEngineImpl nodeEngine) {
+    private void notifyServices() {
         PartitionMigrationEvent event = getPartitionMigrationEvent();
 
         Collection<MigrationAwareService> migrationAwareServices = getMigrationAwareServices();

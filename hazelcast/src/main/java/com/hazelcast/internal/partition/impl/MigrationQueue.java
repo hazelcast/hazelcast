@@ -34,7 +34,7 @@ class MigrationQueue {
 
     private final AtomicInteger migrateTaskCount = new AtomicInteger();
 
-    private final BlockingQueue<MigrationRunnable> queue = new LinkedBlockingQueue<MigrationRunnable>();
+    private final BlockingQueue<MigrationRunnable> queue = new LinkedBlockingQueue<>();
 
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED",
             justification = "offer will always be successful since queue is unbounded")
@@ -49,7 +49,7 @@ class MigrationQueue {
     }
 
     public void clear() {
-        List<MigrationRunnable> sink = new ArrayList<MigrationRunnable>();
+        List<MigrationRunnable> sink = new ArrayList<>();
         queue.drainTo(sink);
 
         for (MigrationRunnable task : sink) {

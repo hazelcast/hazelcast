@@ -22,8 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ServiceNamespace;
 
-import java.io.IOException;
-
 /**
  * Internal {@link ServiceNamespace} implementation used by partitioning system to identify
  * non-fragmented service structures. All partition replica data belonging to service which do not implement
@@ -56,11 +54,11 @@ public final class NonFragmentedServiceNamespace implements ServiceNamespace, Id
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
     }
 
     @Override

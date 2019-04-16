@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -28,7 +27,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -86,27 +84,14 @@ public final class PartitionStateOperation extends AbstractPartitionOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        // RU_COMPAT_3_11
-        Version version = in.getVersion();
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            partitionState = in.readObject();
-        } else {
-            partitionState = new PartitionRuntimeState();
-            partitionState.readData(in);
-        }
+        partitionState = in.readObject();
         sync = in.readBoolean();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        // RU_COMPAT_3_11
-        Version version = out.getVersion();
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            out.writeObject(partitionState);
-        } else {
-            partitionState.writeData(out);
-        }
+        out.writeObject(partitionState);
         out.writeBoolean(sync);
     }
 

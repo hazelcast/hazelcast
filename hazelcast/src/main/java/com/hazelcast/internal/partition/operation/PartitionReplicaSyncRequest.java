@@ -56,8 +56,6 @@ import java.util.List;
  * </ul>
  * An empty response can be sent if the current replica version is 0.
  */
-// RU_COMPAT_39: Do not remove Versioned interface!
-// Version info is needed on 3.9 members while deserializing the operation.
 public final class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
 
@@ -264,7 +262,7 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int len = in.readInt();
-        namespaces = new ArrayList<ServiceNamespace>(len);
+        namespaces = new ArrayList<>(len);
         for (int i = 0; i < len; i++) {
             ServiceNamespace ns = in.readObject();
             namespaces.add(ns);

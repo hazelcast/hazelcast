@@ -18,7 +18,6 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.ILogger;
 
@@ -51,12 +50,7 @@ class PublishPartitionRuntimeStateTask implements Runnable {
                 logger.info("Remaining migration tasks in queue => " + partitionService.getMigrationQueueSize()
                     + ". (" + migrationManager.getStats().formatToString(logger.isFineEnabled()) + ")");
             } else if (node.getState() == NodeState.ACTIVE) {
-                if (node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V3_12)) {
-                    partitionService.checkClusterPartitionRuntimeStates();
-                } else {
-                    // RU_COMPAT_3_11
-                    partitionService.publishPartitionRuntimeState();
-                }
+                partitionService.checkClusterPartitionRuntimeStates();
             }
         }
     }

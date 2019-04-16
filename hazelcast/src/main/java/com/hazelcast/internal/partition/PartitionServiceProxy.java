@@ -66,7 +66,7 @@ public class PartitionServiceProxy implements PartitionService {
 
         int partitionCount = partitionService.getPartitionCount();
         Map<Integer, Partition> map = createHashMap(partitionCount);
-        Set<Partition> set = new TreeSet<Partition>();
+        Set<Partition> set = new TreeSet<>();
         for (int i = 0; i < partitionCount; i++) {
             Partition partition = new PartitionProxy(i);
             set.add(partition);
@@ -121,7 +121,7 @@ public class PartitionServiceProxy implements PartitionService {
             return true;
         }
 
-        final Collection<Future<Boolean>> futures = new ArrayList<Future<Boolean>>(members.size());
+        final Collection<Future<Boolean>> futures = new ArrayList<>(members.size());
         for (Member member : members) {
             final Address target = member.getAddress();
             final Operation operation = new SafeStateCheckOperation();
@@ -229,10 +229,7 @@ public class PartitionServiceProxy implements PartitionService {
         @Override
         public int compareTo(Object o) {
             PartitionProxy partition = (PartitionProxy) o;
-            int otherPartitionId = partition.partitionId;
-            return (partitionId < otherPartitionId)
-                    ? -1
-                    : ((partitionId == otherPartitionId) ? 0 : 1);
+            return Integer.compare(partitionId, partition.partitionId);
         }
 
         @Override
