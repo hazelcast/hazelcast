@@ -74,7 +74,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
@@ -107,7 +107,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
@@ -151,7 +151,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
@@ -208,7 +208,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
@@ -275,7 +275,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(CLEAN, result);
 
         AtomicReference<ClientMessage> resultingMessage = new AtomicReference<>();
-        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessage::set, null);
         decoder.setNormalPacketsRead(SwCounter.newSwCounter());
 
         buffer.position(buffer.limit());
