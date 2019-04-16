@@ -93,15 +93,8 @@
                 <configuration>
                     <includeDependencySources>true</includeDependencySources>
                     <dependencySourceIncludes>
-                        <dependencySourceInclude>com.hazelcast:hazelcast</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast:hazelcast-client</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast:hazelcast-spring</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast.jet:hazelcast-jet</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast.jet:hazelcast-jet-core</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast.jet:hazelcast-jet-avro</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast.jet:hazelcast-jet-kafka</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast.jet:hazelcast-jet-hadoop</dependencySourceInclude>
-                        <dependencySourceInclude>com.hazelcast.jet:hazelcast-jet-spring</dependencySourceInclude>
+                        <dependencySourceInclude>com.hazelcast:*</dependencySourceInclude>
+                        <dependencySourceInclude>com.hazelcast.jet:*</dependencySourceInclude>
                     </dependencySourceIncludes>
                     <additionalDependencies>
                         <!-- This dependency is only referenced from some internal packages and not used during runtime
@@ -121,6 +114,12 @@
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <!-- workaround, otherwise javadoc from core module is not included-->
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
