@@ -31,7 +31,8 @@ public class DataStreamStats implements DataSerializable {
     private int regionsInUse;
     private long count;
 
-    private DataStreamStats(){}
+    private DataStreamStats() {
+    }
 
     public DataStreamStats(long consumedBytes, long allocatedBytes, int regionsInUse, long count) {
         this.consumedBytes = consumedBytes;

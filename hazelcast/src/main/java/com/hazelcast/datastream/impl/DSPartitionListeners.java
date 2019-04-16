@@ -113,7 +113,7 @@ public class DSPartitionListeners {
                 encoder.dataOffset = dataOffset;
                 encoder.dataAddress = region.dataAddress();
                 HeapData load = encoder.load();
-                System.out.println("loaded:"+ss.toObject(load));
+                System.out.println("loaded:" + ss.toObject(load));
                 consumer.accept(load);
                 this.offset = region.head() + encoder.dataOffset;
             }

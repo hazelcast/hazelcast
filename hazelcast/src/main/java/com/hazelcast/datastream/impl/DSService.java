@@ -124,20 +124,16 @@ public class DSService implements ManagedService, RemoteService, Consumer<Packet
 
     public DSPartitionListeners getOrCreatePartitionListeners(String name, int partitionId, DSPartition partition) {
         String id = name + "_" + partitionId;
-        DSPartitionListeners subscription = subscriptions.get(id);
-        if (subscription == null) {
-            subscription = new DSPartitionListeners(this, name, partition, (InternalSerializationService) nodeEngine.getSerializationService());
-            DSPartitionListeners old = subscriptions.putIfAbsent(id, subscription);
+        DSPartitionListeners listeners = subscriptions.get(id);
+        if (listeners == null) {
+            listeners = new DSPartitionListeners(this, name, partition, (InternalSerializationService) nodeEngine.getSerializationService());
+            DSPartitionListeners old = subscriptions.putIfAbsent(id, listeners);
             if (old != null) {
-                subscription = old;
+                listeners = old;
             }
         }
-        return subscription;
+        return listeners;
     }
-
-//    public DSSubscriptions getOrCreateSubscriptions(String uuid) {
-//
-//    }
 
     public AtomicLong getBytesInFlight(String uuid) {
         AtomicLong b = bytesInFlightMap.get(uuid);

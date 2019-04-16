@@ -55,7 +55,7 @@ public abstract class RecordEncoder<R> extends DSEncoder {
                     record.getClass().getName(), recordModel.getRecordClass().getClass().getName()));
         }
 
-        return writeRecord((R)record);
+        return writeRecord((R) record);
     }
 
     public abstract R newInstance();

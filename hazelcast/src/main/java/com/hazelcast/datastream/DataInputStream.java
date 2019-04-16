@@ -35,7 +35,6 @@ public interface DataInputStream<E> {
     E read() throws InterruptedException;
 
     /**
-     *
      * @param timeoutMs
      * @return
      * @throws InterruptedException

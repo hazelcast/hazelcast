@@ -43,7 +43,7 @@ import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
  * run into gaps while iterating over the chain of regions. You could have a reference to an old region
  * and when you jump to the younger one in front of it, you find out that this younger region already
  * has its memory freed.
- *
+ * <p>
  * So probably when we link 2 regions, the older region should do 1 acquire on the younger region and
  * when the older region is deleted, then it will call a release on the younger region.
  */
@@ -87,15 +87,14 @@ public class Region {
            DataStreamConfig config
     ) {
         this.config = config;
-        this.regionFile = new File(config.getStorageDir(),
-                String.format("%02x%s-%08x-%016x.region", name.length(), name, partitionId, startOffset));
+        this.regionFile = newRegionFile(name, partitionId, startOffset);
         this.startOffset = startOffset;
         this.maxRegionSize = config.getMaxRegionSize();
         this.aggregators = aggregators;
 
-        if(recordModel == null||recordModel.getIndexSize()==0){
+        if (recordModel == null || recordModel.getIndexSize() == 0) {
             this.indicesAddress = 0;
-        }else{
+        } else {
             this.indicesAddress = unsafe.allocateMemory(recordModel.getIndexSize());
             // set -1 on each bucket in the index
             for (int k = 0; k < recordModel.getIndexSize() / 4; k++) {
@@ -105,6 +104,15 @@ public class Region {
         this.dataAddress = unsafe.allocateMemory(config.getInitialRegionSize());
         this.regionSize = config.getInitialRegionSize();
         this.encoder = encoder;
+    }
+
+    private File newRegionFile(String name, int partitionId, long startOffset) {
+        if(!config.isStorageEnabled()){
+            return null;
+        }
+
+        return new File(config.getStorageDir(),
+                String.format("%02x%s-%08x-%016x.region", name.length(), name, partitionId, startOffset));
     }
 
     /**
@@ -118,7 +126,7 @@ public class Region {
 
     /**
      * Returns the byte offset of the tail (so the side where data gets written too).
-     *
+     * <p>
      * If head == tail, then the partition is empty.
      *
      * @return
@@ -209,7 +217,7 @@ public class Region {
         encoder.dataLength = regionSize;
         encoder.indicesAddress = indicesAddress;
 
-        if(!encoder.store(valueData)){
+        if (!encoder.store(valueData)) {
             return false;
         }
         dataOffset = encoder.dataOffset;
@@ -235,7 +243,7 @@ public class Region {
 //            return false;
 //        }
 
-        int newRegionSize = (int)Math.min(maxRegionSize, 2 * this.regionSize);
+        int newRegionSize = (int) Math.min(maxRegionSize, 2 * this.regionSize);
         System.out.println("Growing region from:" + this.regionSize + " to:" + newRegionSize);
 
         long newPointer = unsafe.allocateMemory(newRegionSize);
@@ -246,10 +254,6 @@ public class Region {
         this.regionSize = newRegionSize;
         this.dataAddress = newPointer;
         return true;
-    }
-
-    public void destroy() {
-        release();
     }
 
     // does the actual destruction; will only be done where the last user ends using the region
@@ -268,7 +272,7 @@ public class Region {
      * @return true if loaded, false otherwise.
      */
     private boolean loadFromFile() {
-        if(!config.isStorageEnabled()){
+        if (!config.isStorageEnabled()) {
             return false;
         }
 
@@ -295,7 +299,7 @@ public class Region {
     }
 
     private void saveToFile() {
-        if(!config.isStorageEnabled()){
+        if (!config.isStorageEnabled()) {
             return;
         }
 

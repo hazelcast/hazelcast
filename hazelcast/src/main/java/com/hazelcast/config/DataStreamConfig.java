@@ -39,7 +39,7 @@ public class DataStreamConfig {
     private String name;
     private Class valueClass;
     // todo: is there a good reason to make initial not equal to max?
-    private int initialRegionSize = KB * KB;
+    private int initialRegionSize = -1;
     private int maxRegionSize = KB * KB;
     private int maxRegionsPerPartition = Integer.MAX_VALUE;
     private Set<String> indices = new HashSet<String>();
@@ -52,6 +52,8 @@ public class DataStreamConfig {
 
     // if you want to do time based insertion, perhaps best to keep the maxRegionSize as Long.MAX_VALUE?
     private long tenuringAgeMillis = Long.MAX_VALUE;
+
+    private long retentionPeriodMillis = Long.MAX_VALUE;
 
     private Map<String, Supplier<Aggregator>> attachedAggregators = new HashMap<String, Supplier<Aggregator>>();
 
@@ -72,6 +74,19 @@ public class DataStreamConfig {
         this.indices = defConfig.indices;
         this.storageEnabled = defConfig.storageEnabled;
         this.storageDir = defConfig.storageDir;
+    }
+
+    public long getRetentionPeriodMillis() {
+        return retentionPeriodMillis;
+    }
+
+    public DataStreamConfig setRetentionPeriodMillis(long retentionPeriodMillis) {
+        this.retentionPeriodMillis = retentionPeriodMillis;
+        return this;
+    }
+
+    public DataStreamConfig setRetentionPeriodMillis(long retentionPeriod, TimeUnit unit){
+        return setRetentionPeriodMillis(unit.toMillis(retentionPeriod));
     }
 
     public File getStorageDir() {
@@ -156,12 +171,21 @@ public class DataStreamConfig {
         return this;
     }
 
-    public int getRegionsPerPartition() {
+   // public DataStreamConfig setMaxRegionSize()
+
+    /**
+     * Gets the maximum number of retained regions per partition.
+     *
+     * @return the maximum number of retained regions per partition.
+     */
+    public int getMaxRegionsPerPartition() {
         return maxRegionsPerPartition;
     }
 
     /**
      * Sets the maximum number of regions per partition.
+     *
+     * If not explicitly configured, the default is Integer.MAX_VALUE.
      *
      * @param maxRegionsPerPartition
      * @return this
@@ -173,6 +197,9 @@ public class DataStreamConfig {
     }
 
     public int getInitialRegionSize() {
+        if(initialRegionSize==-1){
+            return getMaxRegionSize();
+        }
         return initialRegionSize;
     }
 

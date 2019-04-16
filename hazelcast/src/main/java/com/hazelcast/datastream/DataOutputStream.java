@@ -38,18 +38,19 @@ public interface DataOutputStream<R> {
      * if you write to a single partition, you can get imbalances.
      *
      * @param record the record to publish.
+     * @return the byte-offset of the written record.
      * @throws NullPointerException if record is null.
      */
-    void write(R record);
+    long write(R record);
 
     /**
      * Asynchronously writes the record to a random partition.
      *
      * @param record the record to write.
-     * @return the ICom
+     * @return the ICompletableFuture that has the byteoffset of the record written.
      * @see #write(Object) for more detail about this method.
      */
-    ICompletableFuture writeAsync(R record);
+    ICompletableFuture<Long> writeAsync(R record);
 
     /**
      * Fills the Stream with data provided by the Supplier.
@@ -80,7 +81,7 @@ public interface DataOutputStream<R> {
      * @param <P>
      * @throws NullPointerException if record is null.
      */
-    <P> void write(P partitionKey, R record);
+    <P> long write(P partitionKey, R record);
 
     /**
      * Asynchronously writes the record on the specified partition.
@@ -90,5 +91,5 @@ public interface DataOutputStream<R> {
      * @param <P>
      * @return
      */
-    <P> ICompletableFuture writeAsync(P partitionKey, R record);
+    <P> ICompletableFuture<Long> writeAsync(P partitionKey, R record);
 }

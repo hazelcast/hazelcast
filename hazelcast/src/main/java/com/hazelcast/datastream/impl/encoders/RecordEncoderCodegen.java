@@ -107,7 +107,7 @@ public class RecordEncoderCodegen {
                 recordModel.getRecordClassName());
 
         // if there is not enough space, then return false;
-        add("        if(dataLength-dataOffset<%s)return false;\n\n",recordModel.getSize());
+        add("        if(dataLength-dataOffset<%s)return false;\n\n", recordModel.getSize());
 
         // todo: with nullable fields, enums strings etc.. instead of doing a dumb copyMemory; we could generate per field
         add("        unsafe.copyMemory(record, recordDataOffset, null, dataAddress+dataOffset, recordPayloadSize);\n");
@@ -134,7 +134,7 @@ public class RecordEncoderCodegen {
                 add("\n");
             }
         }
-        add("        dataOffset+=%s;\n",recordModel.getSize());
+        add("        dataOffset+=%s;\n", recordModel.getSize());
         add("        return true;\n");
         add("    }\n\n");
     }
@@ -149,7 +149,7 @@ public class RecordEncoderCodegen {
             add(";\n");
         }
 
-        add("        dataOffset+=%s;\n",recordModel.getSize());
+        add("        dataOffset+=%s;\n", recordModel.getSize());
         add("    }\n\n");
     }
 

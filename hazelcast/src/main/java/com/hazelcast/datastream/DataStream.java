@@ -26,6 +26,10 @@ import java.util.List;
  * - option to read from the stream
  * - aggregation needs to have same type field. Which
  *
+ * there is an issue with tenuring; what does it exactly mean.
+ * tenuring is the age when a region becomes immutable. but once it has tenured, it can either be deleted,
+ * or be made durable and then deleted.
+ *
  * @param <R>
  */
 public interface DataStream<R> extends DistributedObject {

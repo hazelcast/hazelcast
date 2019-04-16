@@ -92,28 +92,28 @@ class DataOutputStreamImpl<R> implements DataOutputStream<R> {
         }
     }
 
-    public <P> void write(P partitionKey, R record) {
-        writeAsync(partitionKey, record);
+    public <P> long write(P partitionKey, R record) {
+        return writeAsync(partitionKey, record).join();
     }
 
     @Override
-    public void write(R record) {
-        writeAsync(record).join();
+    public long write(R record) {
+       return writeAsync(record).join();
     }
 
     @Override
-    public InternalCompletableFuture writeAsync(R record) {
+    public InternalCompletableFuture<Long> writeAsync(R record) {
         ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
         int partitionId = threadLocalRandom.nextInt(partitionService.getPartitionCount());
         return publishAsync(partitionId, record);
     }
 
     @Override
-    public <P> InternalCompletableFuture<R> writeAsync(P partitionKey, R record) {
+    public <P> InternalCompletableFuture<Long> writeAsync(P partitionKey, R record) {
         return publishAsync(partitionService.getPartitionId(partitionKey), record);
     }
 
-    private InternalCompletableFuture<R> publishAsync(int partitionId, R record) {
+    private InternalCompletableFuture<Long> publishAsync(int partitionId, R record) {
         checkNotNull(record, "record can't be null");
 
         Operation op = new AppendOperation(name, serializationService.toData(record))

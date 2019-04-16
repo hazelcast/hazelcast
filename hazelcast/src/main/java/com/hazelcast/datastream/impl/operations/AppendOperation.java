@@ -26,6 +26,7 @@ import java.io.IOException;
 public class AppendOperation extends DataStreamOperation {
 
     private Data value;
+    private transient long offset;
 
     public AppendOperation() {
     }
@@ -37,7 +38,12 @@ public class AppendOperation extends DataStreamOperation {
 
     @Override
     public void run() throws Exception {
-        partition.append(value);
+        offset = partition.append(value);
+    }
+
+    @Override
+    public Long getResponse() {
+        return offset;
     }
 
     @Override

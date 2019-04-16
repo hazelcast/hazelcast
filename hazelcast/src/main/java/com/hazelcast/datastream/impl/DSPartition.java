@@ -19,8 +19,8 @@ package com.hazelcast.datastream.impl;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.DataStreamConfig;
 import com.hazelcast.datastream.AggregationRecipe;
-import com.hazelcast.datastream.EntryProcessorRecipe;
 import com.hazelcast.datastream.DataStreamStats;
+import com.hazelcast.datastream.EntryProcessorRecipe;
 import com.hazelcast.datastream.ProjectionRecipe;
 import com.hazelcast.datastream.impl.aggregation.AggregateFJResult;
 import com.hazelcast.datastream.impl.aggregation.AggregationRegionRun;
@@ -38,6 +38,7 @@ import com.hazelcast.datastream.impl.query.QueryRegionRun;
 import com.hazelcast.datastream.impl.query.QueryRegionRunCodegen;
 import com.hazelcast.internal.codeneneration.Compiler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Supplier;
@@ -56,6 +57,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.StreamSupport;
 
+import static java.lang.System.nanoTime;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class DSPartition {
@@ -74,7 +76,7 @@ public class DSPartition {
     // the region first in line to be evicted
     private Region oldestTenured;
     private Region youngestTenured;
-    private int tenuredRegionsCount;
+    private int tenuredCount;
     private boolean frozen;
     private final DSPartitionListeners listeners;
     private long head = 0;
@@ -91,14 +93,18 @@ public class DSPartition {
                 ? Long.MAX_VALUE
                 : MILLISECONDS.toNanos(config.getTenuringAgeMillis());
         this.serializationService = serializationService;
-        this.recordModel = createRecordModel(config);
+        this.recordModel = createRecordModel();
         this.encoder = createEncoder();
-        this.listeners = service.getOrCreatePartitionListeners(config.getName(), partitionId, this);
+        this.listeners = null;//service.getOrCreatePartitionListeners(config.getName(), partitionId, this);
         loadRegionFiles();
     }
 
-    private RecordModel createRecordModel(DataStreamConfig config) {
-        if(config.getValueClass()==null){
+    public int regionCount() {
+        return tenuredCount + (eden == null ? 0 : 1);
+    }
+
+    private RecordModel createRecordModel() {
+        if (config.getValueClass() == null) {
             return null;
         }
         return new RecordModel(config.getValueClass(), config.getIndices());
@@ -116,10 +122,20 @@ public class DSPartition {
         return config;
     }
 
+    /**
+     * Returns the byte-offset of the head.
+     *
+     * @return the byte-offset of the head.
+     */
     public long head() {
         return head;
     }
 
+    /**
+     * Returns the byte-offset of the tail.
+     *
+     * @return the byte-offset of the tail.
+     */
     public long tail() {
         if (eden != null) {
             return eden.tail();
@@ -134,6 +150,10 @@ public class DSPartition {
     }
 
     private void loadRegionFiles() {
+        if (!config.isStorageEnabled()) {
+            return;
+        }
+
         String name = config.getName();
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(config.getStorageDir().toPath(), String.format(
                 "%02x%s-%08x-*.region", name.length(), name, partitionId))
@@ -155,7 +175,7 @@ public class DSPartition {
     }
 
     private DSEncoder createEncoder() {
-        if(recordModel == null){
+        if (recordModel == null) {
             HeapDataEncoder encoder = new HeapDataEncoder();
             encoder.serializationService = serializationService;
             return encoder;
@@ -163,7 +183,6 @@ public class DSPartition {
 
         RecordEncoderCodegen codegen = new RecordEncoderCodegen(recordModel);
         codegen.generate();
-//        System.out.println(codegen.getCode());
         Class<RecordEncoder> encoderClazz = compiler.compile(codegen.className(), codegen.getCode());
         try {
             Constructor<RecordEncoder> constructor = encoderClazz.getConstructor();
@@ -174,6 +193,28 @@ public class DSPartition {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void ensureEdenExists() {
+        boolean createEden = false;
+
+        if (eden == null) {
+            // eden doesn't exist.
+            createEden = true;
+        } else if (maxTenuringAgeNanos != Long.MAX_VALUE && nanoTime() - eden.firstInsertNanos() < maxTenuringAgeNanos) {
+            // eden is expired
+            createEden = true;
+        }
+
+        if (!createEden) {
+            return;
+        }
+
+        //System.out.println("creating new eden region");
+
+        tenureEden();
+        eden = newRegion(youngestTenured != null ? youngestTenured.tail() : head);
+        trimOldestIfNeeded();
     }
 
     private Region newRegion(long offset) {
@@ -192,68 +233,44 @@ public class DSPartition {
         return new Region(config.getName(), partitionId, offset, recordModel, encoder, aggregators, config);
     }
 
-    private void ensureEdenExists() {
-        boolean createEden = false;
-
-        if (eden == null) {
-            // eden doesn't exist.
-            createEden = true;
-        } else if (maxTenuringAgeNanos != Long.MAX_VALUE
-                && System.nanoTime() - eden.firstInsertNanos() < maxTenuringAgeNanos) {
-            // eden is expired
-            createEden = true;
-        }
-
-        if (!createEden) {
-            return;
-        }
-
-        //System.out.println("creating new eden region");
-
-        tenureEden();
-        trim();
-        eden = newRegion(youngestTenured != null ? youngestTenured.tail() : head);
-    }
-
     private void tenureEden() {
         if (eden == null) {
             return;
         }
 
         if (oldestTenured == null) {
+            // only eden exists.
             oldestTenured = eden;
             head = oldestTenured.head();
             youngestTenured = eden;
         } else {
+            // there are tenured regions. So we add the eden region to the right
+            // side of the tenured regions list.
             eden.previous = youngestTenured;
             youngestTenured.next = eden;
             youngestTenured = eden;
         }
 
         eden = null;
-        tenuredRegionsCount++;
+        tenuredCount++;
     }
 
     // get rid of the oldest tenured region if needed.
-    private void trim() {
-        int totalRegionCount = tenuredRegionsCount + 1;
-
-        if (totalRegionCount > config.getRegionsPerPartition()) {
+    private void trimOldestIfNeeded() {
+        if (regionCount() > config.getMaxRegionsPerPartition()) {
             // we need to delete the oldest region
 
-            Region victimRegion = oldestTenured;
-            victimRegion.destroy();
-
-            head = oldestTenured.head();
+            Region victim = oldestTenured;
+            head = victim.head();
             if (oldestTenured == youngestTenured) {
                 oldestTenured = null;
                 youngestTenured = null;
             } else {
-                oldestTenured = victimRegion.next;
+                oldestTenured = victim.next;
                 oldestTenured.previous = null;
             }
-
-            tenuredRegionsCount--;
+            victim.release();
+            tenuredCount--;
         }
     }
 
@@ -263,7 +280,7 @@ public class DSPartition {
             return;
         }
 
-        if (config.getRegionsPerPartition() == Integer.MAX_VALUE) {
+        if (config.getMaxRegionsPerPartition() == Integer.MAX_VALUE) {
             // there is no limit on the number of regions per partition, so there is nothing to delete
             return;
         }
@@ -287,26 +304,33 @@ public class DSPartition {
         }
     }
 
-    public void append(Object valueData) {
+    public long append(Object valueData) {
         if (frozen) {
             throw new IllegalStateException("Can't append on a frozen datastream");
         }
 
         ensureEdenExists();
-
-        if(!eden.write(valueData)){
-            if(eden.dataOffset()==0){
-                throw new IllegalArgumentException("object "+valueData+" too big to be written");
+        long offset = eden.tail();
+        if (!eden.write(valueData)) {
+            if (eden.dataOffset() == 0) {
+                throw new IllegalArgumentException("object " + valueData + " too big to be written");
             }
 
             tenureEden();
             ensureEdenExists();
-            if(!eden.write(valueData)) {
-                throw new IllegalArgumentException("object "+valueData+" too big to be written");
+            offset = eden.tail();
+
+            if (!eden.write(valueData)) {
+                throw new IllegalArgumentException("object " + valueData + " too big to be written");
             }
         }
 
-        listeners.onAppend(this);
+        // check should not be needed
+        if (listeners != null) {
+            listeners.onAppend(this);
+        }
+
+        return offset;
     }
 
     /**
@@ -341,7 +365,7 @@ public class DSPartition {
             regionsUsed++;
         }
 
-        regionsUsed += tenuredRegionsCount;
+        regionsUsed += tenuredCount;
 
         Region region = youngestTenured;
         while (region != null) {
@@ -354,7 +378,7 @@ public class DSPartition {
     }
 
     public void prepareQuery(String preparationId, Predicate predicate) {
-        if(recordModel==null){
+        if (recordModel == null) {
             throw new IllegalStateException("Can't create prepared query for blobs");
         }
 
@@ -384,7 +408,7 @@ public class DSPartition {
     }
 
     public void prepareProjection(String preparationId, ProjectionRecipe extraction) {
-        if(recordModel==null){
+        if (recordModel == null) {
             throw new IllegalStateException("Can't prepare projection for blobs");
         }
         RegionRunCodegen codegen = new ProjectionRegionRunCodegen(
@@ -406,7 +430,7 @@ public class DSPartition {
     }
 
     public void prepareAggregation(String preparationId, AggregationRecipe aggregationRecipe) {
-        if(recordModel==null){
+        if (recordModel == null) {
             throw new IllegalStateException("Can't create aggregation query for blobs");
         }
 
@@ -465,7 +489,7 @@ public class DSPartition {
     }
 
     public void prepareEntryProcessor(String preparationId, EntryProcessorRecipe recipe) {
-        if(recordModel==null){
+        if (recordModel == null) {
             throw new IllegalStateException("Can't prepared entryprocessor for blobs");
         }
 
@@ -489,13 +513,13 @@ public class DSPartition {
     public void freeze() {
         frozen = true;
         tenureEden();
-        trim();
+        trimOldestIfNeeded();
     }
 
     public Iterator iterator() {
         // we are not including eden for now. we rely on frozen partition
         // todo: we probably want to return youngestSegment for iteration
-       // return new IteratorImpl(oldestTenured);
+        // return new IteratorImpl(oldestTenured);
         throw new UnsupportedOperationException();
     }
 
@@ -525,6 +549,18 @@ public class DSPartition {
         }
 
         return null;
+    }
+
+    public HeapData load(long offset) {
+        Region region = findRegion(offset);
+        if(region == null){
+            throw new RuntimeException();
+        }
+        int dataOffset = (int) (offset - region.head());
+
+        encoder.dataOffset = dataOffset;
+        encoder.dataAddress = region.dataAddress();
+        return encoder.load();
     }
 
 //    class IteratorImpl implements Iterator {

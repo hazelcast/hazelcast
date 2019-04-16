@@ -22,7 +22,7 @@ public class HeapDataEncoder extends DSEncoder {
         byte[] bytes = new byte[size];
         dataOffset += INT_SIZE_IN_BYTES;
         unsafe.copyMemory(null, dataAddress + dataOffset, bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, size);
-        dataOffset+=size;
+        dataOffset += size;
         return new HeapData(bytes);
     }
 
@@ -31,8 +31,8 @@ public class HeapDataEncoder extends DSEncoder {
         HeapData data = serializationService.toData(object);
         byte[] bytes = data.toByteArray();
         //System.out.println("store size:"+bytes.length);
-        int remaining = dataLength-dataOffset;
-        if(remaining<bytes.length+INT_SIZE_IN_BYTES){
+        int remaining = dataLength - dataOffset;
+        if (remaining < bytes.length + INT_SIZE_IN_BYTES) {
             return false;
         }
         unsafe.putInt(dataAddress + dataOffset, bytes.length);
