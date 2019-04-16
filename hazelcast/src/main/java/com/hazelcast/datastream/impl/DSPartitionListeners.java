@@ -80,7 +80,7 @@ public class DSPartitionListeners {
 
     private class LocalListener {
         private final DSEncoder encoder;
-        private Region segment;
+        private Region region;
         private long offset;
         private Consumer<Data> consumer;
 
@@ -90,63 +90,63 @@ public class DSPartitionListeners {
             this.encoder = partition.encoder();
         }
 
-        //todo: we need to acquire the segment.
+        //todo: we need to acquire the region.
         void onAppend() {
-            // System.out.println("on Append called: segment "+segment);
-            if (segment == null) {
-                this.segment = partition.findSegment(offset);
-                if (segment == null) {
+            // System.out.println("on Append called: region "+region);
+            if (region == null) {
+                this.region = partition.findRegion(offset);
+                if (region == null) {
                     return;
                 }
             }
 
             for (; ; ) {
-                int dataOffset = (int) (this.offset - segment.head());
-                if (dataOffset >= segment.dataOffset()) {
-                    segment = segment.next;
-                    if (segment == null) {
+                int dataOffset = (int) (this.offset - region.head());
+                if (dataOffset >= region.dataOffset()) {
+                    region = region.next;
+                    if (region == null) {
                         return;
                     }
-                    offset = segment.head();
+                    offset = region.head();
                     continue;
                 }
                 encoder.dataOffset = dataOffset;
-                encoder.dataAddress = segment.dataAddress();
+                encoder.dataAddress = region.dataAddress();
                 HeapData load = encoder.load();
                 System.out.println("loaded:"+ss.toObject(load));
                 consumer.accept(load);
-                this.offset = segment.head() + encoder.dataOffset;
+                this.offset = region.head() + encoder.dataOffset;
             }
         }
     }
 
 //    class IteratorImpl implements Iterator {
-//        private Segment segment;
+//        private Segment region;
 //        private int recordIndex = -1;
 //
-//        public IteratorImpl(Segment segment) {
-//            this.segment = segment;
+//        public IteratorImpl(Segment region) {
+//            this.region = region;
 //        }
 //
 //        @Override
 //        public boolean hasNext() {
-//            if (segment == null) {
+//            if (region == null) {
 //                return false;
 //            }
 //
 //            if (recordIndex == -1) {
-//                if (!segment.acquire()) {
-//                    segment = segment.next;
+//                if (!region.acquire()) {
+//                    region = region.next;
 //                    return hasNext();
 //                } else {
 //                    recordIndex = 0;
 //                }
 //            }
 //
-//            if (recordIndex >= segment.count()) {
-//                segment.release();
+//            if (recordIndex >= region.count()) {
+//                region.release();
 //                recordIndex = -1;
-//                segment = segment.next;
+//                region = region.next;
 //                return hasNext();
 //            }
 //
@@ -160,7 +160,7 @@ public class DSPartitionListeners {
 //            }
 //
 //            Object o = encoder.newInstance();
-//            encoder.readRecord(o, segment.dataAddress(), recordIndex * recordModel.getPayloadSize());
+//            encoder.readRecord(o, region.dataAddress(), recordIndex * recordModel.getPayloadSize());
 //            recordIndex++;
 //            return o;
 //        }

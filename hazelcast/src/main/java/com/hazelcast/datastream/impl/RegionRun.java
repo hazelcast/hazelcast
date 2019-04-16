@@ -32,22 +32,22 @@ public abstract class RegionRun<R> {
     public long indexOffset;
     public boolean indicesAvailable;
 
-    public final void runAllFullScan(Region segment) {
-        while (segment != null) {
-            dataAddress = segment.dataAddress();
-            recordCount = segment.count();
+    public final void runAllFullScan(Region region) {
+        while (region != null) {
+            dataAddress = region.dataAddress();
+            recordCount = region.count();
             runFullScan();
-            segment = segment.previous;
+            region = region.previous;
         }
     }
 
-    public final void runSingleFullScan(Region segment) {
-        if (segment == null) {
+    public final void runSingleFullScan(Region region) {
+        if (region == null) {
             return;
         }
 
-        dataAddress = segment.dataAddress();
-        recordCount = segment.count();
+        dataAddress = region.dataAddress();
+        recordCount = region.count();
         runFullScan();
 
         //System.out.println("runSingleFullScan completed:" + Thread.currentThread().getName());
@@ -55,13 +55,13 @@ public abstract class RegionRun<R> {
 
     protected abstract void runFullScan();
 
-    public final void runAllWithIndex(Region segment) {
-        while (segment != null) {
-            dataAddress = segment.dataAddress();
-            recordCount = segment.count();
-            indicesAddress = segment.indicesAddress();
+    public final void runAllWithIndex(Region region) {
+        while (region != null) {
+            dataAddress = region.dataAddress();
+            recordCount = region.count();
+            indicesAddress = region.indicesAddress();
             runWithIndex();
-            segment = segment.previous;
+            region = region.previous;
         }
     }
 

@@ -48,8 +48,8 @@ public class PreparedAggregation<E> {
     }
 
     /**
-     * Executes the aggregation on forjoin pool. Only the eden segment is processed on partition thread, but
-     * all the tenured segments will be processed on the forkjoin pool.
+     * Executes the aggregation on forjoin pool. Only the eden region is processed on partition thread, but
+     * all the tenured region will be processed on the forkjoin pool.
      *
      * @param bindings
      * @return

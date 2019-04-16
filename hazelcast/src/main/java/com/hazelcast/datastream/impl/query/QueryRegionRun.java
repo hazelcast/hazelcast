@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastream.impl.entryprocessor;
+package com.hazelcast.datastream.impl.query;
 
 import com.hazelcast.datastream.impl.RegionRun;
 
-public abstract class EntryProcessorSegmentRun extends RegionRun<Object> {
+import java.util.LinkedList;
+import java.util.List;
+
+public abstract class QueryRegionRun extends RegionRun<List> {
+    protected List result = new LinkedList();
 
     @Override
-    public Object result() {
-        // there is no result
-        return null;
+    public List result() {
+        return result;
     }
 }

@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastream.impl.aggregation;
+package com.hazelcast.datastream.impl.projection;
 
-import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.datastream.impl.RegionRun;
+import com.hazelcast.util.function.Consumer;
 
-public abstract class AggregationSegmentRun extends RegionRun<Aggregator> {
+public abstract class ProjectionRegionRun extends RegionRun<Object> {
 
+    public Consumer consumer;
+
+    @Override
+    public Object result() {
+        return null;
+    }
 }

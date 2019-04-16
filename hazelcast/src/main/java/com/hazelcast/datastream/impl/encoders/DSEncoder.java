@@ -17,7 +17,7 @@ public abstract class DSEncoder {
     protected final Unsafe unsafe = UnsafeUtil.UNSAFE;
 
     public InternalSerializationService serializationService;
-    // points to the first byte in the segment.
+    // points to the first byte in the region.
     public long dataAddress;
     public int dataOffset;
     public long indicesAddress;

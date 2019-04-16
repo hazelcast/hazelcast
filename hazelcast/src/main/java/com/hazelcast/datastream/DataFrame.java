@@ -36,7 +36,7 @@ public interface DataFrame<R> {
     <E> E aggregate(String aggregatorId);
 
     /**
-     * No more mutations (important to close the eden segment so no processing on partition thread)
+     * No more mutations (important to close the eden region so no processing on partition thread)
      */
     void freeze();
 

@@ -30,15 +30,15 @@ import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
-public class EntryProcessorSegmentRunCodegen extends RegionRunCodegen {
+public class EntryProcessorRegionRunCodegen extends RegionRunCodegen {
 
     private final Mutator mutator;
     private final Class projectionClass;
     public Field field;
 
-    public EntryProcessorSegmentRunCodegen(String preparationId,
-                                           EntryProcessorRecipe recipe,
-                                           RecordModel recordModel) {
+    public EntryProcessorRegionRunCodegen(String preparationId,
+                                          EntryProcessorRecipe recipe,
+                                          RecordModel recordModel) {
         super(preparationId, recipe.getPredicate(), recordModel);
 
         this.mutator = recipe.getMutator();
@@ -51,13 +51,13 @@ public class EntryProcessorSegmentRunCodegen extends RegionRunCodegen {
 
     @Override
     public String className() {
-        return "EntryProcessorSegmentRun_" + compilationId;
+        return "EntryProcessorRegionRun_" + compilationId;
     }
 
     @Override
     public void generate() {
         add("import java.util.*;\n");
-        add("public class " + className() + " extends com.hazelcast.datastream.impl.entryprocessor.EntryProcessorSegmentRun {\n\n");
+        add("public class " + className() + " extends com.hazelcast.datastream.impl.entryprocessor.EntryProcessorRegionRun {\n\n");
 
         addMutatorField();
         add("\n");

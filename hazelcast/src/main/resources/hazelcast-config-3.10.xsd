@@ -637,9 +637,9 @@
 
     <xs:complexType name="datastream">
         <xs:all>
-            <xs:element name="initialSegmentSize" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
-            <xs:element name="maxSegmentSize" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
-            <xs:element name="segmentsPerPartition" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="initialRegionSize" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="maxRegionSize" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
+            <xs:element name="maxRegionsPerPartition" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
             <xs:element name="tenuringAgeMillis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1048576"/>
             <xs:element name="key-class" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="value-class" type="xs:string" minOccurs="0" maxOccurs="1"/>

@@ -32,7 +32,7 @@ public class DataStream_HeadTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024)
+                        .setInitialRegionSize(1024)
                         .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -46,7 +46,7 @@ public class DataStream_HeadTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024)
+                        .setInitialRegionSize(1024)
                         .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -61,9 +61,9 @@ public class DataStream_HeadTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(8 * 1024)
-                        .setMaxSegmentSize(8 * 1024)
-                        .setSegmentsPerPartition(3)
+                        .setInitialRegionSize(8 * 1024)
+                        .setMaxRegionSize(8 * 1024)
+                        .setMaxRegionsPerPartition(3)
                         //.setTenuringAge(10, TimeUnit.SECONDS)
                         .setValueClass(Employee.class));
 

@@ -25,14 +25,14 @@ import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ProjectionSegmentRunCodegen extends RegionRunCodegen {
+public class ProjectionRegionRunCodegen extends RegionRunCodegen {
 
     private final ProjectionRecipe projectionRecipe;
     private final Class<?> projectionClass;
 
-    public ProjectionSegmentRunCodegen(String compilationId,
-                                       ProjectionRecipe projectionRecipe,
-                                       RecordModel recordModel) {
+    public ProjectionRegionRunCodegen(String compilationId,
+                                      ProjectionRecipe projectionRecipe,
+                                      RecordModel recordModel) {
         super(compilationId, projectionRecipe.getPredicate(), recordModel);
 
         this.projectionRecipe = projectionRecipe;
@@ -45,13 +45,13 @@ public class ProjectionSegmentRunCodegen extends RegionRunCodegen {
 
     @Override
     public String className() {
-        return "ProjectionSegmentRun_" + compilationId;
+        return "ProjectionRegionRun_" + compilationId;
     }
 
     @Override
     public void generate() {
         add("import java.util.*;\n");
-        add("public class " + className() + " extends com.hazelcast.datastream.impl.projection.ProjectionSegmentRun {\n\n");
+        add("public class " + className() + " extends com.hazelcast.datastream.impl.projection.ProjectionRegionRun {\n\n");
         addParamFields();
         addBindMethod();
         addRunFullScanMethod();

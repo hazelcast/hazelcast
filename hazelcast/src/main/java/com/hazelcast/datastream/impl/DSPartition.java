@@ -23,19 +23,19 @@ import com.hazelcast.datastream.EntryProcessorRecipe;
 import com.hazelcast.datastream.DataStreamStats;
 import com.hazelcast.datastream.ProjectionRecipe;
 import com.hazelcast.datastream.impl.aggregation.AggregateFJResult;
-import com.hazelcast.datastream.impl.aggregation.AggregationSegmentRun;
-import com.hazelcast.datastream.impl.aggregation.AggregationSegmentRunCodegen;
+import com.hazelcast.datastream.impl.aggregation.AggregationRegionRun;
+import com.hazelcast.datastream.impl.aggregation.AggregationRegionRunCodegen;
 import com.hazelcast.datastream.impl.aggregation.AggregatorRecursiveTask;
 import com.hazelcast.datastream.impl.encoders.DSEncoder;
 import com.hazelcast.datastream.impl.encoders.HeapDataEncoder;
 import com.hazelcast.datastream.impl.encoders.RecordEncoder;
 import com.hazelcast.datastream.impl.encoders.RecordEncoderCodegen;
-import com.hazelcast.datastream.impl.entryprocessor.EntryProcessorSegmentRun;
-import com.hazelcast.datastream.impl.entryprocessor.EntryProcessorSegmentRunCodegen;
-import com.hazelcast.datastream.impl.projection.ProjectionSegmentRun;
-import com.hazelcast.datastream.impl.projection.ProjectionSegmentRunCodegen;
-import com.hazelcast.datastream.impl.query.QuerySegmentRun;
-import com.hazelcast.datastream.impl.query.QuerySegmentRunCodegen;
+import com.hazelcast.datastream.impl.entryprocessor.EntryProcessorRegionRun;
+import com.hazelcast.datastream.impl.entryprocessor.EntryProcessorRegionRunCodegen;
+import com.hazelcast.datastream.impl.projection.ProjectionRegionRun;
+import com.hazelcast.datastream.impl.projection.ProjectionRegionRunCodegen;
+import com.hazelcast.datastream.impl.query.QueryRegionRun;
+import com.hazelcast.datastream.impl.query.QueryRegionRunCodegen;
 import com.hazelcast.internal.codeneneration.Compiler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.Predicate;
@@ -69,9 +69,9 @@ public class DSPartition {
     private final DSEncoder encoder;
     private final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
-    // the segment receiving the writes.
+    // the region receiving the writes.
     private Region eden;
-    // the segment first in line to be evicted
+    // the region first in line to be evicted
     private Region oldestTenured;
     private Region youngestTenured;
     private int tenuredRegionsCount;
@@ -136,11 +136,11 @@ public class DSPartition {
     private void loadRegionFiles() {
         String name = config.getName();
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(config.getStorageDir().toPath(), String.format(
-                "%02x%s-%08x-*.segment", name.length(), name, partitionId))
+                "%02x%s-%08x-*.region", name.length(), name, partitionId))
         ) {
             StreamSupport.stream(paths.spliterator(), false)
                     .sorted()
-                    .forEach(p -> newSegment(parseOffset(p)));
+                    .forEach(p -> newRegion(parseOffset(p)));
         } catch (IOException e) {
             System.out.println("WARNING: Base directory for Franz is not there: " + config.getStorageDir().getAbsolutePath());
         }
@@ -148,7 +148,7 @@ public class DSPartition {
 
     private long parseOffset(Path p) {
         String offsetTemplate = "0123456789ABCDEF";
-        String fileEnding = offsetTemplate + ".segment";
+        String fileEnding = offsetTemplate + ".region";
         String fname = p.getFileName().toString();
         String offsetStr = fname.substring(fname.length() - fileEnding.length(), offsetTemplate.length());
         return Long.parseLong(offsetStr, 16);
@@ -176,7 +176,7 @@ public class DSPartition {
         }
     }
 
-    private Region newSegment(long offset) {
+    private Region newRegion(long offset) {
         Map<String, Supplier<Aggregator>> attachedAggregators = config.getAttachedAggregators();
 
         Map<String, Aggregator> aggregators;
@@ -208,11 +208,11 @@ public class DSPartition {
             return;
         }
 
-        //System.out.println("creating new eden segment");
+        //System.out.println("creating new eden region");
 
         tenureEden();
         trim();
-        eden = newSegment(youngestTenured != null ? youngestTenured.tail() : head);
+        eden = newRegion(youngestTenured != null ? youngestTenured.tail() : head);
     }
 
     private void tenureEden() {
@@ -234,22 +234,22 @@ public class DSPartition {
         tenuredRegionsCount++;
     }
 
-    // get rid of the oldest tenured segment if needed.
+    // get rid of the oldest tenured region if needed.
     private void trim() {
-        int totalSegmentCount = tenuredRegionsCount + 1;
+        int totalRegionCount = tenuredRegionsCount + 1;
 
-        if (totalSegmentCount > config.getSegmentsPerPartition()) {
-            // we need to delete the oldest segment
+        if (totalRegionCount > config.getRegionsPerPartition()) {
+            // we need to delete the oldest region
 
-            Region victimSegment = oldestTenured;
-            victimSegment.destroy();
+            Region victimRegion = oldestTenured;
+            victimRegion.destroy();
 
             head = oldestTenured.head();
             if (oldestTenured == youngestTenured) {
                 oldestTenured = null;
                 youngestTenured = null;
             } else {
-                oldestTenured = victimSegment.next;
+                oldestTenured = victimRegion.next;
                 oldestTenured.previous = null;
             }
 
@@ -257,24 +257,24 @@ public class DSPartition {
         }
     }
 
-    public void deleteRetiredSegments() {
+    public void deleteRetiredRegions() {
         if (config.getTenuringAgeMillis() == Integer.MAX_VALUE) {
-            // tenuring is disabled, so there will never be retired segments to delete
+            // tenuring is disabled, so there will never be retired regions to delete
             return;
         }
 
-        if (config.getSegmentsPerPartition() == Integer.MAX_VALUE) {
-            // there is no limit on the number of segments per partition, so there is nothing to delete
+        if (config.getRegionsPerPartition() == Integer.MAX_VALUE) {
+            // there is no limit on the number of regions per partition, so there is nothing to delete
             return;
         }
 
-//        Segment segment = oldestTenured;
-//        while (segment != null) {
-//            Segment next = segment.next;
+//        Region region = oldestTenured;
+//        while (region != null) {
+//            Segment next = region.next;
 //
 //
 //
-//            segment = next;
+//            region = next;
 //            //todo: also deal with youngestTenured if last
 //        }
     }
@@ -321,10 +321,10 @@ public class DSPartition {
             count += eden.count();
         }
 
-        Region segment = youngestTenured;
-        while (segment != null) {
-            count += segment.count();
-            segment = segment.previous;
+        Region region = youngestTenured;
+        while (region != null) {
+            count += region.count();
+            region = region.previous;
         }
 
         return count;
@@ -333,24 +333,24 @@ public class DSPartition {
     public DataStreamStats memoryInfo() {
         long consumedBytes = 0;
         long allocatedBytes = 0;
-        int segmentsUsed = 0;
+        int regionsUsed = 0;
 
         if (eden != null) {
             consumedBytes += eden.consumedBytes();
             allocatedBytes += eden.allocatedBytes();
-            segmentsUsed++;
+            regionsUsed++;
         }
 
-        segmentsUsed += tenuredRegionsCount;
+        regionsUsed += tenuredRegionsCount;
 
-        Region segment = youngestTenured;
-        while (segment != null) {
-            consumedBytes += segment.consumedBytes();
-            allocatedBytes += segment.allocatedBytes();
-            segment = segment.previous;
+        Region region = youngestTenured;
+        while (region != null) {
+            consumedBytes += region.consumedBytes();
+            allocatedBytes += region.allocatedBytes();
+            region = region.previous;
         }
 
-        return new DataStreamStats(consumedBytes, allocatedBytes, segmentsUsed, count());
+        return new DataStreamStats(consumedBytes, allocatedBytes, regionsUsed, count());
     }
 
     public void prepareQuery(String preparationId, Predicate predicate) {
@@ -358,7 +358,7 @@ public class DSPartition {
             throw new IllegalStateException("Can't create prepared query for blobs");
         }
 
-        RegionRunCodegen codeGenerator = new QuerySegmentRunCodegen(
+        RegionRunCodegen codeGenerator = new QueryRegionRunCodegen(
                 preparationId, predicate, recordModel);
         codeGenerator.generate();
 
@@ -366,8 +366,8 @@ public class DSPartition {
     }
 
     public List executeQuery(String preparationId, Map<String, Object> bindings) {
-        Class<QuerySegmentRun> clazz = compiler.load("QuerySegmentRun_" + preparationId);
-        QuerySegmentRun run = newInstance(clazz);
+        Class<QueryRegionRun> clazz = compiler.load("QueryRegionRun_" + preparationId);
+        QueryRegionRun run = newInstance(clazz);
 
         run.recordDataSize = recordModel.getSize();
         run.bind(bindings);
@@ -387,7 +387,7 @@ public class DSPartition {
         if(recordModel==null){
             throw new IllegalStateException("Can't prepare projection for blobs");
         }
-        RegionRunCodegen codegen = new ProjectionSegmentRunCodegen(
+        RegionRunCodegen codegen = new ProjectionRegionRunCodegen(
                 preparationId, extraction, recordModel);
         codegen.generate();
 
@@ -395,8 +395,8 @@ public class DSPartition {
     }
 
     public void executeProjectionPartitionThread(String preparationId, Map<String, Object> bindings, Consumer consumer) {
-        Class<ProjectionSegmentRun> clazz = compiler.load("ProjectionSegmentRun_" + preparationId);
-        ProjectionSegmentRun run = newInstance(clazz);
+        Class<ProjectionRegionRun> clazz = compiler.load("ProjectionRegionRun_" + preparationId);
+        ProjectionRegionRun run = newInstance(clazz);
 
         run.recordDataSize = recordModel.getSize();
         run.consumer = consumer;
@@ -410,7 +410,7 @@ public class DSPartition {
             throw new IllegalStateException("Can't create aggregation query for blobs");
         }
 
-        RegionRunCodegen codegen = new AggregationSegmentRunCodegen(
+        RegionRunCodegen codegen = new AggregationRegionRunCodegen(
                 preparationId, aggregationRecipe, recordModel);
         codegen.generate();
 
@@ -418,12 +418,12 @@ public class DSPartition {
     }
 
     public AggregateFJResult executeAggregateFJ(String preparationId, Map<String, Object> bindings) {
-        Class<AggregationSegmentRun> clazz = compiler.load("AggregationSegmentRun_" + preparationId);
+        Class<AggregationRegionRun> clazz = compiler.load("AggregationRegionRun_" + preparationId);
 
         CompletableFuture<Aggregator> f = new CompletableFuture<>();
 
         AggregatorRecursiveTask task = new AggregatorRecursiveTask(f, youngestTenured, () -> {
-            AggregationSegmentRun run = newInstance(clazz);
+            AggregationRegionRun run = newInstance(clazz);
             run.recordDataSize = recordModel.getSize();
             run.bind(bindings);
             return run;
@@ -431,7 +431,7 @@ public class DSPartition {
         forkJoinPool.execute(task);
 
         //eden needs to be executed on partition thread.
-        AggregationSegmentRun edenRun = newInstance(clazz);
+        AggregationRegionRun edenRun = newInstance(clazz);
         edenRun.recordDataSize = recordModel.getSize();
         edenRun.bind(bindings);
         edenRun.runSingleFullScan(eden);
@@ -440,8 +440,8 @@ public class DSPartition {
     }
 
     public Aggregator executeAggregationPartitionThread(String preparationId, Map<String, Object> bindings) {
-        Class<AggregationSegmentRun> clazz = compiler.load("AggregationSegmentRun_" + preparationId);
-        AggregationSegmentRun run = newInstance(clazz);
+        Class<AggregationRegionRun> clazz = compiler.load("AggregationRegionRun_" + preparationId);
+        AggregationRegionRun run = newInstance(clazz);
 
         run.recordDataSize = recordModel.getSize();
         run.bind(bindings);
@@ -456,10 +456,10 @@ public class DSPartition {
             aggregator.combine(eden.getAggregators().get(aggregateId));
         }
 
-        Region segment = youngestTenured;
-        while (segment != null) {
-            aggregator.combine(segment.getAggregators().get(aggregateId));
-            segment = segment.previous;
+        Region region = youngestTenured;
+        while (region != null) {
+            aggregator.combine(region.getAggregators().get(aggregateId));
+            region = region.previous;
         }
         return aggregator;
     }
@@ -469,7 +469,7 @@ public class DSPartition {
             throw new IllegalStateException("Can't prepared entryprocessor for blobs");
         }
 
-        EntryProcessorSegmentRunCodegen codegen = new EntryProcessorSegmentRunCodegen(
+        EntryProcessorRegionRunCodegen codegen = new EntryProcessorRegionRunCodegen(
                 preparationId, recipe, recordModel);
         codegen.generate();
 
@@ -477,8 +477,8 @@ public class DSPartition {
     }
 
     public void executeEntryProcessor(String preparationId, Map<String, Object> bindings) {
-        Class<EntryProcessorSegmentRun> clazz = compiler.load("EntryProcessorSegmentRun_" + preparationId);
-        EntryProcessorSegmentRun run = newInstance(clazz);
+        Class<EntryProcessorRegionRun> clazz = compiler.load("EntryProcessorRegionRun_" + preparationId);
+        EntryProcessorRegionRun run = newInstance(clazz);
 
         run.recordDataSize = recordModel.getSize();
         run.bind(bindings);
@@ -499,7 +499,13 @@ public class DSPartition {
         throw new UnsupportedOperationException();
     }
 
-    public Region findSegment(long offset) {
+    /**
+     * Finds the region which hold data with that given offset.
+     *
+     * @param offset
+     * @return
+     */
+    public Region findRegion(long offset) {
         Region current = oldestTenured;
         while (current != null) {
             // System.out.println("tenured: "+current.head()+" current.tail:"+current.tail());
@@ -522,32 +528,32 @@ public class DSPartition {
     }
 
 //    class IteratorImpl implements Iterator {
-//        private Segment segment;
+//        private Segment region;
 //        private int recordIndex = -1;
 //
-//        public IteratorImpl(Segment segment) {
-//            this.segment = segment;
+//        public IteratorImpl(Segment region) {
+//            this.region = region;
 //        }
 //
 //        @Override
 //        public boolean hasNext() {
-//            if (segment == null) {
+//            if (region == null) {
 //                return false;
 //            }
 //
 //            if (recordIndex == -1) {
-//                if (!segment.acquire()) {
-//                    segment = segment.next;
+//                if (!region.acquire()) {
+//                    region = region.next;
 //                    return hasNext();
 //                } else {
 //                    recordIndex = 0;
 //                }
 //            }
 //
-//            if (recordIndex >= segment.count()) {
-//                segment.release();
+//            if (recordIndex >= region.count()) {
+//                region.release();
 //                recordIndex = -1;
-//                segment = segment.next;
+//                region = region.next;
 //                return hasNext();
 //            }
 //
@@ -561,9 +567,9 @@ public class DSPartition {
 //            }
 //
 //            Object o = encoder.newInstance();
-//            encoder.dataAddress = segment.dataAddress();
+//            encoder.dataAddress = region.dataAddress();
 //            encoder.dataOffset =
-//            encoder.readRecord(o, segment.dataAddress(), recordIndex * recordModel.getPayloadSize());
+//            encoder.readRecord(o, region.dataAddress(), recordIndex * recordModel.getPayloadSize());
 //            recordIndex++;
 //            return o;
 //        }

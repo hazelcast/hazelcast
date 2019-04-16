@@ -55,8 +55,8 @@ public class DataFrame_AggregationTest extends HazelcastTestSupport {
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
-                                .setSegmentsPerPartition(Integer.MAX_VALUE)
-                                .setMaxSegmentSize(16 * 1024)
+                                .setMaxRegionsPerPartition(Integer.MAX_VALUE)
+                                .setMaxRegionSize(16 * 1024)
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);

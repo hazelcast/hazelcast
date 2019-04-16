@@ -25,9 +25,9 @@ import java.lang.reflect.Field;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
-public class QuerySegmentRunCodegen extends RegionRunCodegen {
+public class QueryRegionRunCodegen extends RegionRunCodegen {
 
-    public QuerySegmentRunCodegen(String compilationId, Predicate query, RecordModel recordModel) {
+    public QueryRegionRunCodegen(String compilationId, Predicate query, RecordModel recordModel) {
         super(compilationId, query, recordModel);
     }
 
@@ -36,7 +36,7 @@ public class QuerySegmentRunCodegen extends RegionRunCodegen {
         add("import java.util.*;\n");
         add("import static com.hazelcast.datastream.impl.IndexOffsets.offsetInIndex;\n");
         add("\n");
-        add("public class " + className() + " extends com.hazelcast.datastream.impl.query.QuerySegmentRun {\n\n");
+        add("public class " + className() + " extends com.hazelcast.datastream.impl.query.QueryRegionRun {\n\n");
         add("    {indicesAvailable=%s;}\n\n", queryAnalyzer.getIndexedEqualPredicate() != null);
         addParamFields();
         addBindMethod();
@@ -47,7 +47,7 @@ public class QuerySegmentRunCodegen extends RegionRunCodegen {
 
     @Override
     public String className() {
-        return "QuerySegmentRun_" + compilationId;
+        return "QueryRegionRun_" + compilationId;
     }
 
     private void addRunWithIndexMethod() {

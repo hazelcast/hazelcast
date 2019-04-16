@@ -32,7 +32,7 @@ public class DataStream_TailTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024)
+                        .setInitialRegionSize(1024)
                         .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -46,9 +46,9 @@ public class DataStream_TailTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024 * 1024)
-                        .setMaxSegmentSize(1024 * 1024)
-                        .setSegmentsPerPartition(3)
+                        .setInitialRegionSize(1024 * 1024)
+                        .setMaxRegionSize(1024 * 1024)
+                        .setMaxRegionsPerPartition(3)
                         .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);

@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastream.impl.query;
+package com.hazelcast.datastream.impl.aggregation;
 
+import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.datastream.impl.RegionRun;
 
-import java.util.LinkedList;
-import java.util.List;
+public abstract class AggregationRegionRun extends RegionRun<Aggregator> {
 
-public abstract class QuerySegmentRun extends RegionRun<List> {
-    protected List result = new LinkedList();
-
-    @Override
-    public List result() {
-        return result;
-    }
 }

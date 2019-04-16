@@ -57,9 +57,9 @@ public class NewDataStreamOperation extends DataStreamOperation {
         // the dst configuration isn't optimal. But will do for now (large enough the hold the original payload)
         DataStreamConfig dstConfig = new DataStreamConfig(dstName)
                 .setValueClass(NewDataStreamOperation.class.getClassLoader().loadClass(recordType))
-                .setInitialSegmentSize(srcConfig.getMaxSegmentSize())
-                .setMaxSegmentSize(srcConfig.getMaxSegmentSize())
-                .setSegmentsPerPartition(Integer.MAX_VALUE);
+                .setInitialRegionSize(srcConfig.getMaxRegionSize())
+                .setMaxRegionSize(srcConfig.getMaxRegionSize())
+                .setMaxRegionsPerPartition(Integer.MAX_VALUE);
 
         // in theory the size can be calculated based on record count + projection-record size
         DSPartition dstPartition = service

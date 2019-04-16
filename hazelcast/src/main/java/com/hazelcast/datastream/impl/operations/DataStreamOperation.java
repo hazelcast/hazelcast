@@ -49,7 +49,7 @@ public abstract class DataStreamOperation extends Operation
         service = getService();
         container = service.getDataStreamContainer(name);
         partition = container.getPartition(getPartitionId());
-        partition.deleteRetiredSegments();
+        partition.deleteRetiredRegions();
     }
 
     @Override

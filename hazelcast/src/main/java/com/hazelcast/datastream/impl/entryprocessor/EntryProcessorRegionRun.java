@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastream.impl.projection;
+package com.hazelcast.datastream.impl.entryprocessor;
 
 import com.hazelcast.datastream.impl.RegionRun;
-import com.hazelcast.util.function.Consumer;
 
-public abstract class ProjectionSegmentRun extends RegionRun<Object> {
-
-    public Consumer consumer;
+public abstract class EntryProcessorRegionRun extends RegionRun<Object> {
 
     @Override
     public Object result() {
+        // there is no result
         return null;
     }
 }

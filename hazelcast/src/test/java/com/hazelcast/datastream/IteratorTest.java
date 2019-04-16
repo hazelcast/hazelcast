@@ -39,9 +39,9 @@ public class IteratorTest extends HazelcastTestSupport {
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
-                                .setInitialSegmentSize(256)
-                                .setMaxSegmentSize(256)
-                                .setSegmentsPerPartition(Integer.MAX_VALUE)
+                                .setInitialRegionSize(256)
+                                .setMaxRegionSize(256)
+                                .setMaxRegionsPerPartition(Integer.MAX_VALUE)
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);

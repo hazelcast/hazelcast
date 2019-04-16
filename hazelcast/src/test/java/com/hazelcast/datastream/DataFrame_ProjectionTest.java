@@ -136,7 +136,7 @@ public class DataFrame_ProjectionTest extends HazelcastTestSupport {
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
-                                .setSegmentsPerPartition(Integer.MAX_VALUE)
+                                .setMaxRegionsPerPartition(Integer.MAX_VALUE)
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);

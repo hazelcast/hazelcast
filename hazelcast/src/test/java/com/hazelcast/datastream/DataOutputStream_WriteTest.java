@@ -37,7 +37,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024));
+                        .setInitialRegionSize(1024));
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -67,8 +67,8 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(128)
-                        .setMaxSegmentSize(128));
+                        .setInitialRegionSize(128)
+                        .setMaxRegionSize(128));
 
         HazelcastInstance hz = createHazelcastInstance(config);
         List<Employee> produced = new LinkedList<>();
@@ -100,7 +100,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(new DataStreamConfig("employees")
-                        .setInitialSegmentSize(1024)
+                        .setInitialRegionSize(1024)
                         .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -143,7 +143,7 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
-                                .setInitialSegmentSize(1024)
+                                .setInitialRegionSize(1024)
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -161,14 +161,14 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMultipleSegmentsNeeded() {
+    public void whenMultipleRegionsNeeded() {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
-                                .setInitialSegmentSize(1024)
-                                .setSegmentsPerPartition(Integer.MAX_VALUE)
-                                .setMaxSegmentSize(1024)
+                                .setInitialRegionSize(1024)
+                                .setMaxRegionsPerPartition(Integer.MAX_VALUE)
+                                .setMaxRegionSize(1024)
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -187,14 +187,14 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMultipleSegmentsNeeded_andLimitOnSegment() {
+    public void whenMultipleRegionsNeeded_andLimitOnSegment() {
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
-                                .setInitialSegmentSize(1024)
-                                .setMaxSegmentSize(1024)
-                                .setSegmentsPerPartition(10)
+                                .setInitialRegionSize(1024)
+                                .setMaxRegionSize(1024)
+                                .setMaxRegionsPerPartition(10)
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);
@@ -218,9 +218,9 @@ public class DataOutputStream_WriteTest extends HazelcastTestSupport {
                 .setProperty(PARTITION_COUNT.getName(), "1")
                 .addDataStreamConfig(
                         new DataStreamConfig("employees")
-                                .setInitialSegmentSize(1024)
+                                .setInitialRegionSize(1024)
                                 .setTenuringAgeMillis((int) SECONDS.toMillis(5))
-                                //   .setMaxSegmentSize(Long.MAX_VALUE)
+                                //   .setMaxRegionSize(Long.MAX_VALUE)
                                 .setValueClass(Employee.class));
 
         HazelcastInstance hz = createHazelcastInstance(config);

@@ -32,16 +32,16 @@ import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Set;
 
-public class AggregationSegmentRunCodegen extends RegionRunCodegen {
+public class AggregationRegionRunCodegen extends RegionRunCodegen {
 
     private final Set<Field> extractedFields;
     private final Class<?> projectionClass;
     private final Aggregator aggregator;
     private final AggregationRecipe recipe;
 
-    public AggregationSegmentRunCodegen(String compilationId,
-                                        AggregationRecipe recipe,
-                                        RecordModel recordModel) {
+    public AggregationRegionRunCodegen(String compilationId,
+                                       AggregationRecipe recipe,
+                                       RecordModel recordModel) {
         super(compilationId, recipe.getPredicate(), recordModel);
         this.recipe = recipe;
         try {
@@ -63,7 +63,7 @@ public class AggregationSegmentRunCodegen extends RegionRunCodegen {
 
     @Override
     public String className() {
-        return "AggregationSegmentRun_" + compilationId;
+        return "AggregationRegionRun_" + compilationId;
     }
 
     public Field field() {
@@ -73,7 +73,7 @@ public class AggregationSegmentRunCodegen extends RegionRunCodegen {
     @Override
     public void generate() {
         add("import java.util.*;\n");
-        add("public class " + className() + " extends com.hazelcast.datastream.impl.aggregation.AggregationSegmentRun {\n\n");
+        add("public class " + className() + " extends com.hazelcast.datastream.impl.aggregation.AggregationRegionRun {\n\n");
         addParamFields();
         addAggregatorField();
         addBindMethod();

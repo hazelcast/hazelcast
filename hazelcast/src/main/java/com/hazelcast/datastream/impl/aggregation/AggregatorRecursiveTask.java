@@ -27,15 +27,15 @@ import java.util.concurrent.RecursiveTask;
 
 public class AggregatorRecursiveTask extends RecursiveTask<Aggregator> {
 
-    private final Region segment;
+    private final Region region;
     private final Supplier<RegionRun<Aggregator>> runSupplier;
     private final CompletableFuture<Aggregator> f;
 
     public AggregatorRecursiveTask(CompletableFuture<Aggregator> f,
-                                   Region segment,
+                                   Region region,
                                    Supplier<RegionRun<Aggregator>> runSupplier) {
         this.f = f;
-        this.segment = segment;
+        this.region = region;
         this.runSupplier = runSupplier;
     }
 
@@ -51,22 +51,22 @@ public class AggregatorRecursiveTask extends RecursiveTask<Aggregator> {
     private Aggregator compute0() {
         RegionRun<Aggregator> run = runSupplier.get();
 
-        if (segment == null) {
+        if (region == null) {
             return run.result();
         }
 
-        Region previous = segment.previous;
+        Region previous = region.previous;
         ForkJoinTask<Aggregator> fork = null;
         if (previous != null) {
             fork = new AggregatorRecursiveTask(null, previous, runSupplier).fork();
         }
 
-        if (!segment.acquire()) {
+        if (!region.acquire()) {
             return fork == null ? run.result() : fork.join();
         }
 
         try {
-            run.runSingleFullScan(segment);
+            run.runSingleFullScan(region);
 
             Aggregator result = run.result();
 
@@ -76,7 +76,7 @@ public class AggregatorRecursiveTask extends RecursiveTask<Aggregator> {
 
             return result;
         } finally {
-            segment.release();
+            region.release();
         }
     }
 }

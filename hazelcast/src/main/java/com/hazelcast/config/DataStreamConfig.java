@@ -39,18 +39,18 @@ public class DataStreamConfig {
     private String name;
     private Class valueClass;
     // todo: is there a good reason to make initial not equal to max?
-    private int initialSegmentSize = KB * KB;
-    private int maxSegmentSize = KB * KB;
-    private int segmentsPerPartition = Integer.MAX_VALUE;
+    private int initialRegionSize = KB * KB;
+    private int maxRegionSize = KB * KB;
+    private int maxRegionsPerPartition = Integer.MAX_VALUE;
     private Set<String> indices = new HashSet<String>();
     private boolean storageEnabled;
     private File storageDir = new File("datastream-storage");
-    // to get rid of 'too' old segments.
-    // so data is inserted on the segment as long as the tenuringAgeMillis has not been reached.
-    // once it is reached, a new segment is created and this one is moved one to the back.
+    // to get rid of 'too' old regions.
+    // so data is inserted on the regions as long as the tenuringAgeMillis has not been reached.
+    // once it is reached, a new region is created and this one is moved one to the back.
     // perhaps call it tenuring age?
 
-    // if you want to do time based insertion, perhaps best to keep the maxSegmentSize as Long.MAX_VALUE?
+    // if you want to do time based insertion, perhaps best to keep the maxRegionSize as Long.MAX_VALUE?
     private long tenuringAgeMillis = Long.MAX_VALUE;
 
     private Map<String, Supplier<Aggregator>> attachedAggregators = new HashMap<String, Supplier<Aggregator>>();
@@ -65,9 +65,9 @@ public class DataStreamConfig {
     public DataStreamConfig(DataStreamConfig defConfig) {
         this.name = defConfig.name;
         this.valueClass = defConfig.valueClass;
-        this.initialSegmentSize = defConfig.initialSegmentSize;
-        this.maxSegmentSize = defConfig.maxSegmentSize;
-        this.segmentsPerPartition = defConfig.segmentsPerPartition;
+        this.initialRegionSize = defConfig.initialRegionSize;
+        this.maxRegionSize = defConfig.maxRegionSize;
+        this.maxRegionsPerPartition = defConfig.maxRegionsPerPartition;
         this.tenuringAgeMillis = defConfig.tenuringAgeMillis;
         this.indices = defConfig.indices;
         this.storageEnabled = defConfig.storageEnabled;
@@ -140,51 +140,51 @@ public class DataStreamConfig {
 //        return this;
 //    }
 
-    public int getMaxSegmentSize() {
-        return maxSegmentSize;
+    public int getMaxRegionSize() {
+        return maxRegionSize;
     }
 
     /**
-     * Sets the maximum segment size in bytes.
+     * Sets the maximum region size in bytes.
      *
-     * @param maxSegmentSize
+     * @param maxRegionSize
      * @return this.
-     * @throws IllegalArgumentException if maxSegmentSize smaller than 1.
+     * @throws IllegalArgumentException if maxRegionSize smaller than 1.
      */
-    public DataStreamConfig setMaxSegmentSize(int maxSegmentSize) {
-        this.maxSegmentSize = checkPositive(maxSegmentSize, "maxSegmentSize should be larger than 0");
+    public DataStreamConfig setMaxRegionSize(int maxRegionSize) {
+        this.maxRegionSize = checkPositive(maxRegionSize, "maxRegionSize should be larger than 0");
         return this;
     }
 
-    public int getSegmentsPerPartition() {
-        return segmentsPerPartition;
+    public int getRegionsPerPartition() {
+        return maxRegionsPerPartition;
     }
 
     /**
-     * Sets the maximum number of segments per partition.
+     * Sets the maximum number of regions per partition.
      *
-     * @param segmentsPerPartition
+     * @param maxRegionsPerPartition
      * @return this
-     * @throws IllegalArgumentException if segmentsPerPartition smaller than 1.
+     * @throws IllegalArgumentException if maxRegionsPerPartition smaller than 1.
      */
-    public DataStreamConfig setSegmentsPerPartition(int segmentsPerPartition) {
-        this.segmentsPerPartition = checkPositive(segmentsPerPartition, "segmentsPerPartition should be larger than 0");
+    public DataStreamConfig setMaxRegionsPerPartition(int maxRegionsPerPartition) {
+        this.maxRegionsPerPartition = checkPositive(maxRegionsPerPartition, "maxRegionsPerPartition should be larger than 0");
         return this;
     }
 
-    public int getInitialSegmentSize() {
-        return initialSegmentSize;
+    public int getInitialRegionSize() {
+        return initialRegionSize;
     }
 
     /**
-     * Sets the size in bytes for the initial segment size.
+     * Sets the size in bytes for the initial region size.
      *
-     * @param initialSegmentSize
+     * @param initialRegionSize
      * @return this
-     * @throws IllegalArgumentException if initialSegmentSize smaller than 1.
+     * @throws IllegalArgumentException if initialRegionSize smaller than 1.
      */
-    public DataStreamConfig setInitialSegmentSize(int initialSegmentSize) {
-        this.initialSegmentSize = checkPositive(initialSegmentSize, "initialSegmentSize should be larger than 0");
+    public DataStreamConfig setInitialRegionSize(int initialRegionSize) {
+        this.initialRegionSize = checkPositive(initialRegionSize, "initialRegionSize should be larger than 0");
         return this;
     }
 
@@ -247,9 +247,9 @@ public class DataStreamConfig {
         return "DataStreamConfig{"
                 + "name='" + name + '\''
                 + ", valueClass=" + valueClass
-                + ", initialSegmentSize=" + initialSegmentSize
-                + ", maxSegmentSize=" + maxSegmentSize
-                + ", segmentsPerPartition=" + segmentsPerPartition
+                + ", initialRegionSize=" + initialRegionSize
+                + ", maxRegionSize=" + maxRegionSize
+                + ", maxRegionsPerPartition=" + maxRegionsPerPartition
                 + ", indices=" + indices
                 + ", tenuringAgeMillis=" + tenuringAgeMillis
                 + ", attachedAggregators=" + attachedAggregators
