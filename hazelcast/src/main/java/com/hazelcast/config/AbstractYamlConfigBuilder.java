@@ -57,6 +57,16 @@ public abstract class AbstractYamlConfigBuilder {
     private Properties properties = System.getProperties();
 
     /**
+     * Gets the current used properties. Can be null if no properties are set.
+     *
+     * @return the current used properties
+     * @see #setPropertiesInternal(Properties)
+     */
+    protected Properties getProperties() {
+        return properties;
+    }
+
+    /**
      * Imports external YAML documents into the provided main YAML document.
      * <p/>
      * Since the YAML configuration uses mappings, in order to keep the
