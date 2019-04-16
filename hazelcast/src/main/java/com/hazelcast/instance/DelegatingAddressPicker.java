@@ -127,11 +127,11 @@ final class DelegatingAddressPicker
         InetSocketAddress publicAddress;
         ServerSocketChannel serverSocketChannel;
 
-        for (EndpointConfig config : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
-            if (!(config instanceof ServerSocketEndpointConfig)) {
+        for (EndpointConfig ec : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
+            if (!(ec instanceof ServerSocketEndpointConfig)) {
                 continue;
             }
-            ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) config;
+            ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) ec;
             EndpointQualifier qualifier = endpointConfig.getQualifier();
 
             bindAddress = memberAddressProvider.getBindAddress(qualifier);
@@ -140,7 +140,7 @@ final class DelegatingAddressPicker
 
             if (!bindAddresses.values().contains(bindAddress)) {
                 // bind new server socket
-                serverSocketChannel = createServerSocketChannel(logger, config, bindAddress.getAddress(),
+                serverSocketChannel = createServerSocketChannel(logger, ec, bindAddress.getAddress(),
                         bindAddress.getPort() == 0 ? endpointConfig.getPort() : bindAddress.getPort(),
                         endpointConfig.getPortCount(), endpointConfig.isPortAutoIncrement(),
                         endpointConfig.isReuseAddress(), false);
