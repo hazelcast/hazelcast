@@ -24,6 +24,7 @@ import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform;
 import com.hazelcast.jet.impl.processor.HashJoinCollectP.HashJoinArrayList;
 import com.hazelcast.jet.pipeline.BatchStage;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -72,6 +73,8 @@ public class HashJoinP<E0> extends AbstractProcessor {
 
     private boolean ordinal0Consumed;
 
+    @SuppressFBWarnings(value = "NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE",
+            justification = "https://github.com/spotbugs/spotbugs/issues/844")
     public HashJoinP(
             @Nonnull List<Function<E0, Object>> keyFns,
             @Nonnull List<Tag> tags,
