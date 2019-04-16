@@ -23,18 +23,15 @@ import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(NightlyTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class MulticastDiscoveryTest extends JetTestSupport {
 

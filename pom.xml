@@ -124,6 +124,8 @@
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
+
+        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
     </properties>
 
     <licenses>
@@ -336,10 +338,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>failedfirst</runOrder>
                     <forkCount>4</forkCount>
-                    <failIfNoTests>false</failIfNoTests>
                     <trimStackTrace>false</trimStackTrace>
                     <argLine>
                         ${argLine}
@@ -459,8 +459,12 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <forkCount>1</forkCount>
-                            <excludedGroups></excludedGroups>
+                            <forkCount combine.self="override">1</forkCount>
+                            <groups combine.self="override">
+                                com.hazelcast.test.annotation.NightlyTest,
+                                com.hazelcast.test.annotation.SlowTest
+                            </groups>
+                            <excludedGroups combine.self="override" />
                         </configuration>
                     </plugin>
                 </plugins>
@@ -486,11 +490,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <testFailureIgnore>true</testFailureIgnore>
-                            <argLine>@{argLine}</argLine>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.annotation.NightlyTest,
+                            <excludedGroups combine.self="override">
                                 com.hazelcast.jet.test.IgnoredForCoverage
                             </excludedGroups>
                         </configuration>
