@@ -46,12 +46,12 @@ public final class Versions {
     public static final Version V3_12 = Version.of(3, 12);
 
     /**
-     * Represents cluster version 3.13
+     * Represents cluster version 4.0
      */
-    public static final Version V3_13 = Version.of(3, 13);
+    public static final Version V4_0 = Version.of(4, 0);
 
     public static final Version PREVIOUS_CLUSTER_VERSION = V3_12;
-    public static final Version CURRENT_CLUSTER_VERSION = V3_13;
+    public static final Version CURRENT_CLUSTER_VERSION = V4_0;
 
     private Versions() {
     }
