@@ -133,6 +133,6 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected boolean isMatching(String urlString) {
-        return urlString.contains("hazelcast-3.") && urlString.contains("target");
+        return urlString.contains("hazelcast-4.") && urlString.contains("target");
     }
 }
