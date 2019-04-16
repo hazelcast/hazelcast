@@ -62,6 +62,8 @@ import static java.util.Objects.requireNonNull;
  * case ({@code tags == null && keyFns.size() == 2}).
  */
 @SuppressWarnings("unchecked")
+@SuppressFBWarnings(value = "NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE",
+        justification = "https://github.com/spotbugs/spotbugs/issues/844")
 public class HashJoinP<E0> extends AbstractProcessor {
 
     private final List<Function<E0, Object>> keyFns;
@@ -79,10 +81,10 @@ public class HashJoinP<E0> extends AbstractProcessor {
         this.keyFns = keyFns;
         this.lookupTables = new ArrayList<>(Collections.nCopies(keyFns.size(), null));
         BiFunction<E0, Object[], Object> mapTupleToOutputFn;
+        checkTrue(mapToOutputBiFn != null ^ mapToOutputTriFn != null,
+                "Exactly one of mapToOutputBiFn and mapToOutputTriFn must be non-null");
         if (!tags.isEmpty()) {
-            if (mapToOutputBiFn == null) {
-                throw new NullPointerException("mapToOutputBiFn required with tags");
-            }
+            requireNonNull(mapToOutputBiFn, "mapToOutputBiFn required with tags");
             mapTupleToOutputFn = (item, tuple) -> {
                 ItemsByTag res = new ItemsByTag();
                 for (int i = 0; i < tags.size(); i++) {

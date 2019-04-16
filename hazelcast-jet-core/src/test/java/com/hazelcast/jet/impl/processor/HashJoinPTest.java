@@ -62,7 +62,7 @@ public class HashJoinPTest extends JetTestSupport {
                 singletonList(e -> e),
                 emptyList(),
                 mapToOutputBiFn,
-                mapToOutputTriFn
+                null
         );
 
         verifyProcessor(supplier)
@@ -89,7 +89,7 @@ public class HashJoinPTest extends JetTestSupport {
                 singletonList(enrichingSideKeyFn),
                 emptyList(),
                 mapToOutputBiFn,
-                mapToOutputTriFn
+                null
         );
 
         verifyProcessor(supplier)
@@ -115,7 +115,7 @@ public class HashJoinPTest extends JetTestSupport {
         SupplierEx<Processor> supplier = () -> new HashJoinP<>(
                 asList(e -> e, e -> e),
                 emptyList(),
-                mapToOutputBiFn,
+                null,
                 mapToOutputTriFn
         );
 
@@ -144,7 +144,7 @@ public class HashJoinPTest extends JetTestSupport {
         SupplierEx<Processor> supplier = () -> new HashJoinP<>(
                 asList(e -> e, e -> e),
                 emptyList(),
-                mapToOutputBiFn,
+                null,
                 mapToOutputTriFn
         );
 
@@ -183,7 +183,7 @@ public class HashJoinPTest extends JetTestSupport {
                 asList(e -> e, e -> e),
                 asList(tag0(), tag1()),
                 mapToOutputBiFn,
-                mapToOutputTriFn
+                null
         );
 
         verifyProcessor(supplier)
@@ -212,7 +212,7 @@ public class HashJoinPTest extends JetTestSupport {
                 asList(e -> e, e -> e),
                 asList(tag0(), tag1()),
                 mapToOutputBiFn,
-                mapToOutputTriFn
+                null
         );
 
         verifyProcessor(supplier)
@@ -326,7 +326,7 @@ public class HashJoinPTest extends JetTestSupport {
                 singletonList(e -> e),
                 emptyList(),
                 mapToOutputBiFn,
-                mapToOutputTriFn
+                null
         );
 
         List<String> listItem = new ArrayList<>();
