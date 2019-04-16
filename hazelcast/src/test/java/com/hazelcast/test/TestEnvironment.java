@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.test.compatibility.SamplingSerializationService;
 
 @SuppressWarnings("WeakerAccess")
@@ -46,7 +47,7 @@ public final class TestEnvironment {
      * @return {@code true} when compatibility tests are to be executed on a mixed version cluster
      */
     public static boolean isRunningCompatibilityTest() {
-        return Boolean.getBoolean(EXECUTE_COMPATIBILITY_TESTS);
+        return Boolean.getBoolean(EXECUTE_COMPATIBILITY_TESTS) && Versions.CURRENT_CLUSTER_VERSION.getMinor() > 0;
     }
 
     public static boolean isRecordingSerializedClassNames() {
