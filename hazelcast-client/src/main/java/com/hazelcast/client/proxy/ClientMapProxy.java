@@ -102,7 +102,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
@@ -129,17 +128,6 @@ import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.mapreduce.Collator;
-import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.Job;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.KeyValueSource;
-import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.MappingJob;
-import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.ReducingSubmittableJob;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -153,7 +141,6 @@ import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.Preconditions;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -1499,43 +1486,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 MapProjectWithPredicateCodec.decodeResponse(response);
 
         return new UnmodifiableLazyList<R>(resultParameters.response, getSerializationService());
-    }
-
-
-    @Override
-    @SuppressWarnings({"deprecation"})
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
-        JobTracker jobTracker = getClient().getJobTracker("hz::aggregation-map-" + name);
-        return aggregate(supplier, aggregation, jobTracker);
-    }
-
-    @Override
-    @SuppressWarnings({"deprecation", "unchecked"})
-    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, SuppliedValue, Result> aggregation, JobTracker jobTracker) {
-        try {
-            Preconditions.isNotNull(jobTracker, "jobTracker");
-            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
-            Job<K, V> job = jobTracker.newJob(keyValueSource);
-            Mapper mapper = aggregation.getMapper(supplier);
-            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
-            ReducerFactory reducerFactory = aggregation.getReducerFactory();
-            Collator collator = aggregation.getCollator();
-
-            MappingJob mappingJob = job.mapper(mapper);
-            ReducingSubmittableJob reducingJob;
-            if (combinerFactory != null) {
-                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
-            } else {
-                reducingJob = mappingJob.reducer(reducerFactory);
-            }
-
-            ICompletableFuture<Result> future = reducingJob.submit(collator);
-            return future.get();
-        } catch (Exception e) {
-            throw new HazelcastException(e);
-        }
     }
 
     @Override

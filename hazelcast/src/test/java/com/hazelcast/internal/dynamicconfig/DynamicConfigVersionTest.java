@@ -17,7 +17,6 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -47,7 +46,6 @@ public class DynamicConfigVersionTest {
         Set<Class<?>> nonDynamicConfigClasses = new HashSet<Class<?>>();
         nonDynamicConfigClasses.add(WanReplicationConfig.class);
         nonDynamicConfigClasses.add(QuorumConfig.class);
-        nonDynamicConfigClasses.add(JobTrackerConfig.class);
         nonDynamicConfigClasses.add(ListenerConfig.class);
         NON_DYNAMIC_CONFIG_CLASSES = nonDynamicConfigClasses;
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce.helpers;
+package com.hazelcast.map.impl.querycache.utils;
 
 import java.io.Serializable;
 import java.util.Random;

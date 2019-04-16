@@ -93,6 +93,8 @@ public class ScheduledExecutorDataSerializerHook
 
     public static final int MERGE_BACKUP = 28;
 
+    public static final int HASH_MAP_ADAPTER = 29;
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -160,6 +162,8 @@ public class ScheduledExecutorDataSerializerHook
                         return new MergeOperation();
                     case MERGE_BACKUP:
                         return new MergeBackupOperation();
+                    case HASH_MAP_ADAPTER:
+                        return new HashMapAdapter<>();
                     default:
                         throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
                 }

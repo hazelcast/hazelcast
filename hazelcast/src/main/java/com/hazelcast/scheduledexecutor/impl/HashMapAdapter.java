@@ -14,61 +14,59 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce.impl;
+package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 
 /**
- * This {@link java.util.ArrayList} subclass exists to prevent
- * {@link com.hazelcast.mapreduce.impl.task.DefaultContext.CollectingCombinerFactory}
- * created collections to be mixed up with user provided List results from
- * {@link com.hazelcast.mapreduce.Combiner}s.
- * @param <E> element type of the collection
+ * Simple HashMap adapter class to implement DataSerializable serialization semantics
+ * to not loose hands on serialization while sending intermediate results.
+ *
+ * @param <K> key type
+ * @param <V> value type
  */
-public class CombinerResultList<E> extends ArrayList<E>
+public class HashMapAdapter<K, V>
+        extends HashMap<K, V>
         implements IdentifiedDataSerializable {
 
-    public CombinerResultList() {
+    public HashMapAdapter() {
     }
 
-    public CombinerResultList(Collection<? extends E> c) {
-        super(c);
+    public HashMapAdapter(int initialCapacity, float loadFactor) {
+        super(initialCapacity, loadFactor);
     }
 
     @Override
     public int getFactoryId() {
-        return MapReduceDataSerializerHook.F_ID;
+        return ScheduledExecutorDataSerializerHook.F_ID;
     }
 
     @Override
     public int getId() {
-        return MapReduceDataSerializerHook.COMBINER_RESULT_LIST;
+        return ScheduledExecutorDataSerializerHook.HASH_MAP_ADAPTER;
     }
 
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
 
-        int size = size();
-        out.writeInt(size);
-        for (int i = 0; i < size; i++) {
-            out.writeObject(get(i));
-        }
+        writeMap(this, out);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
 
-        int size = in.readInt();
-        for (int i = 0; i < size; i++) {
-            add(i, (E) in.readObject());
-        }
+        Map<K, V> map = readMap(in);
+        putAll(map);
     }
 }

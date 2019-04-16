@@ -48,7 +48,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ItemListenerConfig;
-import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -218,7 +217,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> mapMerkleTreeManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> cardinalityEstimatorManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> wanReplicationManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> jobTrackerManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> quorumManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
@@ -253,7 +251,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.mapMerkleTreeManagedMap = createManagedMap("mapMerkleTreeConfigs");
             this.cardinalityEstimatorManagedMap = createManagedMap("cardinalityEstimatorConfigs");
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
-            this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
             this.quorumManagedMap = createManagedMap("quorumConfigs");
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
@@ -325,8 +322,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleSet(node);
                     } else if ("topic".equals(nodeName)) {
                         handleTopic(node);
-                    } else if ("jobtracker".equals(nodeName)) {
-                        handleJobTracker(node);
                     } else if ("replicatedmap".equals(nodeName)) {
                         handleReplicatedMap(node);
                     } else if ("wan-replication".equals(nodeName)) {
@@ -1770,14 +1765,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             topicManagedMap.put(name, topicConfigBuilder.getBeanDefinition());
-        }
-
-        public void handleJobTracker(Node node) {
-            BeanDefinitionBuilder jobTrackerConfigBuilder = createBeanBuilder(JobTrackerConfig.class);
-            Node attName = node.getAttributes().getNamedItem("name");
-            String name = getTextContent(attName);
-            fillAttributeValues(node, jobTrackerConfigBuilder);
-            jobTrackerManagedMap.put(name, jobTrackerConfigBuilder.getBeanDefinition());
         }
 
         private void handleSecurity(Node node) {

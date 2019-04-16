@@ -830,15 +830,6 @@ hazelcast:
         capacity: 100
         time-to-live-seconds: 100
 
-  jobtracker:
-    jobTracker:
-      chunk-size: 100
-      queue-size: 200
-      retry-count: 10
-      max-thread-size: 20
-      communicate-stats: false
-      topology-changed-strategy: DISCARD_AND_RESTART
-
   lite-member:
     enabled: true
 

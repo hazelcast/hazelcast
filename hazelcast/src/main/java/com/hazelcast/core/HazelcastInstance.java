@@ -23,7 +23,6 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
@@ -110,18 +109,6 @@ public interface HazelcastInstance {
      * @since 3.2
      */
     <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
-
-    /**
-     * Creates or returns the job tracker instance with the specified name.
-     *
-     * @param name name of the job tracker
-     * @return job tracker instance with the specified name
-     * @since 3.2
-     * @deprecated MapReduce is deprecated and will be removed in 4.0.
-     * For map aggregations, you can use {@link com.hazelcast.aggregation.Aggregator} on IMap.
-     * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
-     */
-    JobTracker getJobTracker(String name);
 
     /**
      * Creates or returns the distributed multimap instance with the specified name.

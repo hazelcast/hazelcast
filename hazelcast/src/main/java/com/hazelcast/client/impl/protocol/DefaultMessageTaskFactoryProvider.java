@@ -471,43 +471,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         };
 
 //endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.mapreduce
-        factories[com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.mapreduce.MapReduceJobProcessInformationMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.mapreduce.MapReduceCancelMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.MapReduceForCustomCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.mapreduce.MapReduceForCustomMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.mapreduce.MapReduceForMapMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.MapReduceForListCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.mapreduce.MapReduceForListMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.MapReduceForSetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.mapreduce.MapReduceForSetMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.MapReduceForMultiMapCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.mapreduce.MapReduceForMultiMapMessageTask(clientMessage, node, connection);
-            }
-        };
-//endregion
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.replicatedmap
         factories[com.hazelcast.client.impl.protocol.codec.ReplicatedMapSizeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
