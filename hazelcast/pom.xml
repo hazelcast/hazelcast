@@ -76,7 +76,7 @@
                     </annotations>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java16</artifactId>
+                        <artifactId>java18</artifactId>
                         <version>1.0</version>
                     </signature>
                     <ignores>
@@ -85,7 +85,7 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java6-check</id>
+                        <id>source-java8-check</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>check</goal>
