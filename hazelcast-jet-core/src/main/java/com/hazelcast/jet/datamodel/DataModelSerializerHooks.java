@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static com.hazelcast.jet.datamodel.ItemsByTag.NONE;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.datamodel.Tuple4.tuple4;
@@ -343,7 +342,7 @@ class DataModelSerializerHooks {
             for (Entry<Tag<?>, Object> e : entries) {
                 out.writeObject(e.getKey());
                 Object val = e.getValue();
-                out.writeObject(val != NONE ? val : null);
+                out.writeObject(val);
             }
         }
 

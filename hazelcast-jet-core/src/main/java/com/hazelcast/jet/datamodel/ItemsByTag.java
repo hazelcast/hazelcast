@@ -35,7 +35,7 @@ import java.util.Set;
  * whose static type is encoded in the tags.
  */
 public final class ItemsByTag {
-    static final Object NONE = new Object();
+    private static final Object NONE = new Object();
 
     private final Map<Tag<?>, Object> map = new HashMap<>();
 
@@ -65,11 +65,11 @@ public final class ItemsByTag {
     @Nullable
     @SuppressWarnings("unchecked")
     public <E> E get(@Nonnull Tag<E> tag) {
-        Object got = map.get(tag);
-        if (got == null) {
+        Object got = map.getOrDefault(tag, NONE);
+        if (got == NONE) {
             throw new IllegalArgumentException("No value associated with " + tag);
         }
-        return got != NONE ? (E) got : null;
+        return (E) got;
     }
 
     /**
@@ -78,7 +78,7 @@ public final class ItemsByTag {
      * associated with a {@code null} value.
      */
     public <E> void put(@Nonnull Tag<E> tag, E value) {
-        map.put(tag, value != null ? value : NONE);
+        map.put(tag, value);
     }
 
     @Override

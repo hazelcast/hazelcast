@@ -34,6 +34,13 @@ import javax.annotation.Nonnull;
  * one of the {@code offer()} methods returns {@code false}, the calling
  * processor must return from its callback method and retry delivering the
  * same item when Jet calls its method again.
+ *
+ * <h4>Thread safety</h4>
+ * You must offer to outbox only from the thread that called the processor's
+ * methods. For example, you must not offer to outbox from a callback of an
+ * asynchronous operation. If you need that, you have to employ a concurrent
+ * queue, add to it in the callback and drain it in e.g. {@link
+ * Processor#tryProcess()}.
  */
 public interface Outbox {
 
@@ -50,6 +57,9 @@ public interface Outbox {
      * Items offered to outbox should not be subsequently mutated because the
      * same instance might be used by a downstream processor in different
      * thread, causing concurrent access.
+     * <p>
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * javadoc.
      *
      * @param ordinal output ordinal number or -1 to offer to all ordinals
      * @return {@code true} if the outbox accepted the item
@@ -60,6 +70,9 @@ public interface Outbox {
     /**
      * Offers the item to all supplied edge ordinals. See {@link #offer(int,
      * Object)} for more details.
+     * <p>
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * javadoc.
      *
      * @return {@code true} if the outbox accepted the item
      */
@@ -81,6 +94,9 @@ public interface Outbox {
      * <p>
      * Keys and values offered to snapshot are serialized and can be further
      * mutated as soon as this method returns.
+     * <p>
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * javadoc.
      *
      * @return {@code true} if the outbox accepted the item
      */
@@ -90,6 +106,9 @@ public interface Outbox {
     /**
      * Offers the item to all edges. See {@link #offer(int, Object)} for more
      * details.
+     * <p>
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * javadoc.
      *
      * @return {@code true} if the outbox accepted the item
      */
@@ -102,6 +121,9 @@ public interface Outbox {
      * Returns true if this outbox has an unfinished item and the same item
      * must be offered again. If it returns false, it is safe to offer a new
      * item.
+     * <p>
+     * Outbox is not thread safe, see {@link Outbox Thread safety} in class
+     * javadoc.
      */
     boolean hasUnfinishedItem();
 }
