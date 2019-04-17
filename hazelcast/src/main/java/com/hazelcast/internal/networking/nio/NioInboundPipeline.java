@@ -25,12 +25,14 @@ import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import javafx.concurrent.Task;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -58,11 +60,21 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
     private volatile long lastReadTime;
+    private final AtomicReference<TaskNode> taskQueue = new AtomicReference<>();
 
     private volatile long bytesReadLastPublish;
     private volatile long normalFramesReadLastPublish;
     private volatile long priorityFramesReadLastPublish;
     private volatile long processCountLastPublish;
+
+    private class TaskNode{
+        private final Runnable task;
+        private  TaskNode next;
+
+        public TaskNode(Runnable task) {
+            this.task = task;
+        }
+    }
 
     NioInboundPipeline(NioChannel channel,
                        NioThread owner,
@@ -104,7 +116,22 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     }
 
     @Override
+    public void execute(Runnable task) {
+        TaskNode update = new TaskNode(task);
+        for(;;){
+            TaskNode old = taskQueue.get();
+            update.next = old;
+            if(taskQueue.compareAndSet(old, update)){
+                owner.addTaskAndWakeup(this);
+                return;
+            }
+        }
+    }
+
+    @Override
     void process() throws Exception {
+        processTasks();
+
         processCount.inc();
         // we are going to set the timestamp even if the channel is going to fail reading. In that case
         // the connection is going to be closed anyway.
@@ -157,8 +184,30 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
             }
         } while (!cleanPipeline);
 
+        if(migrationReguested){
+            startMigration();
+            return;
+        }
+
         if (unregisterRead) {
             unregisterOp(OP_READ);
+        }
+    }
+
+    private void processTasks() {
+        for(;;){
+            TaskNode taskNode = taskQueue.get();
+            if(taskNode == null){
+                break;
+            }
+
+            if(taskQueue.compareAndSet(taskNode, null)){
+                do{
+                    taskNode.task.run();
+                    taskNode = taskNode.next;
+                }while (taskNode!=null);
+                break;
+            }
         }
     }
 
@@ -266,11 +315,15 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
 
     @Override
     public NioInboundPipeline wakeup() {
-        addTaskAndWakeup(new NioPipelineTask(this) {
+        execute(new Runnable() {
             @Override
-            protected void run0() throws IOException {
-                registerOp(OP_READ);
-                NioInboundPipeline.this.run();
+            public void run() {
+                try {
+                    registerOp(OP_READ);
+                    NioInboundPipeline.this.run();
+                }catch (Throwable t){
+                    onError(t);
+                }
             }
         });
 
