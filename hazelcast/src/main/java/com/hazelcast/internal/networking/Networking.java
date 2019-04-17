@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking;
 
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.nio.NetworkStats;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 
 import java.io.IOException;
@@ -67,4 +68,18 @@ public interface Networking {
      * Shuts down Networking.
      */
     void shutdown();
+
+    /**
+     * Gets network stats for outgoing traffic
+     *
+     * @return network stats for outgoing traffic per-protocol
+     */
+    NetworkStats getOutboundNetworkStats();
+
+    /**
+     * Gets network stats for incoming traffic
+     *
+     * @return network stats for incoming traffic per-protocol
+     */
+    NetworkStats getInboundNetworkStats();
 }

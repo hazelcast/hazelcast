@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -32,7 +33,6 @@ import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -43,6 +43,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
@@ -97,14 +99,13 @@ public final class NioNetworking implements Networking {
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
+    private final NetworkStats outboundNetworkStats = new NetworkStats();
+    private final NetworkStats inboundNetworkStats = new NetworkStats();
     private volatile ExecutorService closeListenerExecutor;
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
 
-    // Currently this is a course grained aggregation of the bytes/send reveived.
-    // In the future you probably want to split this up in member and client and potentially
-    // wan specific.
     @Probe
     private volatile long bytesSend;
     @Probe
@@ -127,6 +128,8 @@ public final class NioNetworking implements Networking {
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
         metricsRegistry.scanAndRegister(this, "tcp");
+        outboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesSend");
+        inboundNetworkStats.registerMetrics(metricsRegistry, "tcp.bytesReceived");
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -239,11 +242,23 @@ public final class NioNetworking implements Networking {
     }
 
     @Override
+    public NetworkStats getInboundNetworkStats() {
+        return inboundNetworkStats;
+    }
+
+    @Override
+    public NetworkStats getOutboundNetworkStats() {
+        return outboundNetworkStats;
+    }
+
+    @Override
     public Channel register(EndpointQualifier endpointQualifier, ChannelInitializerProvider channelInitializerProvider,
                             SocketChannel socketChannel, boolean clientMode) throws IOException {
         ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
         assert initializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
-        NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, metricsRegistry, closeListenerExecutor);
+        ProtocolType protocolType = endpointQualifier != null ? endpointQualifier.getType() : null;
+        NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, metricsRegistry,
+                closeListenerExecutor, protocolType);
 
         socketChannel.configureBlocking(false);
 
@@ -334,6 +349,12 @@ public final class NioNetworking implements Networking {
 
             bytesSend = bytesTransceived(outputThreads);
             bytesReceived = bytesTransceived(inputThreads);
+            for (ProtocolType protocolType : ProtocolType.values()) {
+                outboundNetworkStats.setBytesTransceivedForProtocol(protocolType,
+                        bytesTransceivedForProtocol(protocolType, outputThreads));
+                inboundNetworkStats.setBytesTransceivedForProtocol(protocolType,
+                        bytesTransceivedForProtocol(protocolType, inputThreads));
+            }
             packetsSend = packetsTransceived(outputThreads);
             packetsReceived = packetsTransceived(inputThreads);
         }
@@ -346,6 +367,18 @@ public final class NioNetworking implements Networking {
             long result = 0;
             for (NioThread nioThread : threads) {
                 result += nioThread.bytesTransceived;
+            }
+            return result;
+        }
+
+        private long bytesTransceivedForProtocol(ProtocolType protocolType, NioThread[] threads) {
+            if (threads == null) {
+                return 0;
+            }
+
+            long result = 0;
+            for (NioThread nioThread : threads) {
+                result += nioThread.bytesTransceivedPerProtocol.get(protocolType);
             }
             return result;
         }

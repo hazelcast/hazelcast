@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.AbstractChannel;
 import com.hazelcast.internal.networking.ChannelInitializer;
@@ -44,17 +45,20 @@ public final class NioChannel extends AbstractChannel {
     private final MetricsRegistry metricsRegistry;
     private final ChannelInitializer channelInitializer;
     private final NioChannelOptions config;
+    final ProtocolType protocolType;
 
     public NioChannel(SocketChannel socketChannel,
                       boolean clientMode,
                       ChannelInitializer channelInitializer,
                       MetricsRegistry metricsRegistry,
-                      Executor closeListenerExecutor) {
+                      Executor closeListenerExecutor,
+                      ProtocolType protocolType) {
         super(socketChannel, clientMode);
         this.channelInitializer = channelInitializer;
         this.metricsRegistry = metricsRegistry;
         this.closeListenerExecutor = closeListenerExecutor;
         this.config = new NioChannelOptions(socketChannel.socket());
+        this.protocolType = protocolType;
     }
 
     @Override

@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
-import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -62,12 +63,15 @@ public final class NioOutboundPipeline
     private ByteBuffer sendBuffer;
 
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
+
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
     @Probe(name = "normalFramesWritten")
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
+
+    private final PublishableMultiCounter<ProtocolType> bytesWrittenPerProtocol;
 
     private volatile long lastWriteTime;
 
@@ -82,6 +86,10 @@ public final class NioOutboundPipeline
                         ILogger logger,
                         IOBalancer balancer) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
+
+        bytesWrittenPerProtocol = channel.protocolType != null
+                ? new PublishableMultiCounterImpl<ProtocolType>(ProtocolType.class)
+                : new NoOpCounter<ProtocolType>();
     }
 
     @Override
@@ -272,6 +280,7 @@ public final class NioOutboundPipeline
         lastWriteTime = currentTimeMillis();
         int written = socketChannel.write(sendBuffer);
         bytesWritten.inc(written);
+        bytesWrittenPerProtocol.inc(channel.protocolType, written);
         //System.out.println(channel+" bytes written:"+written);
     }
 
@@ -287,6 +296,11 @@ public final class NioOutboundPipeline
         }
 
         owner.bytesTransceived += bytesWritten.get() - bytesWrittenLastPublish;
+
+        for (ProtocolType type : ProtocolType.values()) {
+            owner.bytesTransceivedPerProtocol.inc(type, bytesWrittenPerProtocol.publish(type));
+        }
+
         owner.framesTransceived += normalFramesWritten.get() - normalFramesWrittenLastPublish;
         owner.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesWrittenLastPublish;
         owner.processCount += processCount.get() - processCountLastPublish;

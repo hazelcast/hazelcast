@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -30,6 +31,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Random;
@@ -66,6 +68,9 @@ public class NioThread extends Thread implements OperationHostileThread {
 
     @Probe(level = INFO)
     volatile long bytesTransceived;
+
+    final MultiCounter bytesTransceivedPerProtocol = new MultiCounter();
+
     @Probe(level = INFO)
     volatile long framesTransceived;
     @Probe(level = INFO)
@@ -424,5 +429,24 @@ public class NioThread extends Thread implements OperationHostileThread {
     @Override
     public String toString() {
         return getName();
+    }
+
+    static final class MultiCounter {
+        private final EnumMap<ProtocolType, SwCounter> counters;
+
+        MultiCounter() {
+            counters = new EnumMap<ProtocolType, SwCounter>(ProtocolType.class);
+            for (ProtocolType protocolType : ProtocolType.values()) {
+                counters.put(protocolType, newSwCounter());
+            }
+        }
+
+        void inc(ProtocolType protocolType, long bytes) {
+            counters.get(protocolType).inc(bytes);
+        }
+
+        long get(ProtocolType protocolType) {
+            return counters.get(protocolType).get();
+        }
     }
 }

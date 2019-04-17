@@ -25,6 +25,7 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
+import com.hazelcast.internal.networking.nio.NetworkStats;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -85,6 +86,8 @@ public class MemberStateImpl implements MemberState {
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
     private WanSyncState wanSyncState = new WanSyncStateImpl();
+    private NetworkStats inboundNetworkStats;
+    private NetworkStats outboundNetworkStats;
 
     public MemberStateImpl() {
     }
@@ -316,6 +319,22 @@ public class MemberStateImpl implements MemberState {
         this.clientStats = clientStats;
     }
 
+    public NetworkStats getInboundNetworkStats() {
+        return inboundNetworkStats;
+    }
+
+    public void setInboundNetworkStats(NetworkStats inboundNetworkStats) {
+        this.inboundNetworkStats = inboundNetworkStats;
+    }
+
+    public NetworkStats getOutboundNetworkStats() {
+        return outboundNetworkStats;
+    }
+
+    public void setOutboundNetworkStats(NetworkStats outboundNetworkStats) {
+        this.outboundNetworkStats = outboundNetworkStats;
+    }
+
     @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
@@ -378,6 +397,8 @@ public class MemberStateImpl implements MemberState {
             clientStatsObject.add(entry.getKey(), entry.getValue());
         }
         root.add("clientStats", clientStatsObject);
+        root.add("inboundNetworkStats", inboundNetworkStats.toJson());
+        root.add("outboundNetworkStats", outboundNetworkStats.toJson());
         return root;
     }
 
@@ -546,6 +567,8 @@ public class MemberStateImpl implements MemberState {
                 + ", wanSyncState=" + wanSyncState
                 + ", flakeIdStats=" + flakeIdGeneratorStats
                 + ", clientStats=" + clientStats
+                + ", inboundNetworkStats=" + inboundNetworkStats
+                + ", outboundNetworkStats=" + outboundNetworkStats
                 + '}';
     }
 }

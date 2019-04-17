@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
@@ -383,6 +384,73 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         TaskNode(Runnable task, TaskNode next) {
             this.task = task;
             this.next = next;
+        }
+    }
+
+    interface PublishableMultiCounter<K> {
+        void inc(K key, long amount);
+        long publish(K key);
+    }
+
+    static class NoOpCounter<K> implements PublishableMultiCounter<K> {
+        @Override
+        public void inc(K key, long amount) {
+            // NO-OP
+        }
+
+        @Override
+        public long publish(K key) {
+            return 0;
+        }
+    }
+
+    static class PublishableMultiCounterImpl<K extends Enum<K>> implements PublishableMultiCounter<K> {
+        private final EnumMap<K, PublishableSwCounter> counters;
+
+        PublishableMultiCounterImpl(Class<K> keyType) {
+            counters = new EnumMap<K, PublishableSwCounter>(keyType);
+            for (K key : keyType.getEnumConstants()) {
+                counters.put(key, new PublishableSwCounter());
+            }
+        }
+
+        @Override
+        public void inc(K key, long amount) {
+            counters.get(key).inc(amount);
+        }
+
+        /**
+         * Publishes the bytes transceived since the last publish.
+         *
+         * @return number of bytes transceived since this method was last called
+         */
+        @Override
+        public long publish(K key) {
+            return counters.get(key).publishDelta();
+        }
+
+        /**
+         * A single writer counter that remembers its last published
+         * value and can publish the delta since the last publish.
+         */
+        private static final class PublishableSwCounter {
+            private final SwCounter counter = newSwCounter();
+            private long lastPublishedValue = 0;
+
+            public long inc(long amount) {
+                return counter.inc(amount);
+            }
+
+            public long get() {
+                return counter.get();
+            }
+
+            long publishDelta() {
+                long currentValue = counter.get();
+                long result = currentValue - lastPublishedValue;
+                lastPublishedValue = currentValue;
+                return result;
+            }
         }
     }
 }

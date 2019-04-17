@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelHandler;
+import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.InboundPipeline;
-import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -57,6 +58,9 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
+
+    private final PublishableMultiCounter<ProtocolType> bytesReadPerProtocol;
+
     private volatile long lastReadTime;
 
     private volatile long bytesReadLastPublish;
@@ -70,6 +74,10 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
                        ILogger logger,
                        IOBalancer balancer) {
         super(channel, owner, errorHandler, OP_READ, logger, balancer);
+
+        bytesReadPerProtocol = channel.protocolType != null
+                ? new PublishableMultiCounterImpl<ProtocolType>(ProtocolType.class)
+                : new NoOpCounter<ProtocolType>();
     }
 
     public long normalFramesRead() {
@@ -121,6 +129,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         // even if no bytes are read; it is still important that we process the pipeline.
 
         bytesRead.inc(readBytes);
+        bytesReadPerProtocol.inc(channel.protocolType, readBytes);
 
         // currently the whole pipeline is retried when one of the handlers is dirty; but only the dirty handler
         // and the remaining sequence should need to retry.
@@ -170,6 +179,9 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         // since this is executed by the owner, the owner field can't change while
         // this method is executed.
         owner.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
+        for (ProtocolType type : ProtocolType.values()) {
+            owner.bytesTransceivedPerProtocol.inc(type, bytesReadPerProtocol.publish(type));
+        }
         owner.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
         owner.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
         owner.processCount += processCount.get() - processCountLastPublish;
