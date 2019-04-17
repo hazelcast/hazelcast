@@ -55,7 +55,7 @@ jet.newJob(p).join();
 System.out.println(jet.getMap("counts").entrySet());
 ```
 
-#### Streaming Example
+#### Streaming Example
 
 ```java
 // enable event journal
