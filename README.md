@@ -18,9 +18,86 @@ Kafka, HDFS, Hazelcast IMDG, sockets and local data files (such as
 logs or CSVs).
 * API for custom connectors.
 * Dynamic node discovery for both on-premise and cloud deployments.
-* Virtualization support and resource management via Docker, Apache
-jclouds, Amazon Web Services, Microsoft Azure, Consul, Heroku,
-Kubernetes, Pivotal Cloud Foundry and Apache ZooKeeper.
+* Cloud Native - with available [Docker images](https://hub.docker.com/r/hazelcast/hazelcast-jet/) 
+and [Kubernetes support](https://github.com/hazelcast/hazelcast-jet-code-samples/tree/master/integration/kubernetes)
+including Helm Charts.
+
+### Hello World
+
+#### Batch Example
+
+```java
+// create a Jet node
+JetInstance jet = Jet.newJetInstance();
+
+// create a distributed map and put some data
+IMap<Integer, String> lines = jet.getMap("bookLines");
+lines.put(0, "It was the best of times");
+lines.put(1, "it was the worst of times");
+lines.put(2, "it was the age of wisdom");
+lines.put(3, "it was the age of foolishness");
+lines.put(4, "it was the epoch of belief");
+
+Pipeline p = Pipeline.create();
+
+Pattern delimiter = Pattern.compile("\\W+");
+
+// minimal word count
+p.drawFrom(Sources.map(lines))
+        .flatMap(e -> traverseArray(delimiter.split(e.getValue().toLowerCase())))
+        .filter(word -> !word.isEmpty())
+        .groupingKey(wholeItem())
+        .aggregate(counting())
+        .drainTo(Sinks.map("counts"));
+
+jet.newJob(p).join();
+
+System.out.println(jet.getMap("counts").entrySet());
+```
+
+#### Streaming Example
+
+```java
+// enable event journal
+JetConfig config = new JetConfig();
+config.getHazelcastConfig()
+        .addEventJournalConfig(new EventJournalConfig().setMapName("bookLines"));
+// create a Jet node
+JetInstance jet = Jet.newJetInstance(config);
+
+// create a distributed map and put some data
+IMap<Integer, String> lines = jet.getMap("bookLines");
+
+Pipeline p = Pipeline.create();
+
+Pattern delimiter = Pattern.compile("\\W+");
+
+// minimal streaming word count
+p.drawFrom(Sources.mapJournal(lines, JournalInitialPosition.START_FROM_OLDEST))
+        .withIngestionTimestamps()
+        .setLocalParallelism(1)
+        .flatMap(e -> traverseArray(delimiter.split(e.getValue().toLowerCase())))
+        .filter(word -> !word.isEmpty())
+        .groupingKey(wholeItem())
+        .window(WindowDefinition.tumbling(TimeUnit.SECONDS.toMillis(1)))
+        .aggregate(counting())
+        .drainTo(Sinks.logger());
+
+jet.newJob(p);
+
+lines.put(0, "It was the best of times");
+Thread.sleep(500);
+lines.put(1, "it was the worst of times");
+Thread.sleep(500);
+lines.put(2, "it was the age of wisdom");
+Thread.sleep(500);
+lines.put(3, "it was the age of foolishness");
+Thread.sleep(500);
+lines.put(4, "it was the epoch of belief");
+Thread.sleep(500);
+lines.put(5, "it was the epoch of incredulity");
+Thread.sleep(500);
+```
 
 ### Getting Started
 
