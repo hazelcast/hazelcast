@@ -181,7 +181,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
                 createThreadName(nodeEngine.getHazelcastInstance().getName(), "event"),
                 eventThreadCount,
                 eventQueueCapacity);
-        this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
+        this.segments = new ConcurrentHashMap<>();
     }
 
 

@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import static org.hamcrest.Matchers.hasItem;
@@ -55,12 +54,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(newConfigWithDummyService());
         HazelcastInstance hz2 = factory.newHazelcastInstance(newConfigWithDummyService());
 
-        Future<HazelcastInstance> future = spawn(new Callable<HazelcastInstance>() {
-            @Override
-            public HazelcastInstance call() throws Exception {
-                return factory.newHazelcastInstance(newConfigWithDummyService());
-            }
-        });
+        Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));
 
         InternalEventService eventService = getEventService(hz2);
         Set<String> registrationIds = new HashSet<String>();
@@ -95,12 +89,7 @@ public class EventServiceTest extends HazelcastTestSupport {
             registrationIds.add(registration.getId());
         }
 
-        Future<HazelcastInstance> future = spawn(new Callable<HazelcastInstance>() {
-            @Override
-            public HazelcastInstance call() throws Exception {
-                return factory.newHazelcastInstance(newConfigWithDummyService());
-            }
-        });
+        Future<HazelcastInstance> future = spawn(() -> factory.newHazelcastInstance(newConfigWithDummyService()));
 
         for (String registrationId : registrationIds) {
             eventService.deregisterListener(serviceName, topic, registrationId);

@@ -123,11 +123,7 @@ public class EventServiceSegment<S> {
         Collection<Registration> listenerList = registrations.get(topic);
         if (listenerList == null && forceCreate) {
             ConstructorFunction<String, Collection<Registration>> func
-                    = new ConstructorFunction<String, Collection<Registration>>() {
-                public Collection<Registration> createNew(String key) {
-                    return newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
-                }
-            };
+                    = key -> newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
             return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, func);
         }
         return listenerList;
