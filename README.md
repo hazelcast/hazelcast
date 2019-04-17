@@ -65,7 +65,7 @@ config.getHazelcastConfig()
 // create a Jet node
 JetInstance jet = Jet.newJetInstance(config);
 
-// create a distributed map and put some data
+// create a distributed map, we will put some data to stream later on
 IMap<Integer, String> lines = jet.getMap("bookLines");
 
 Pipeline p = Pipeline.create();
@@ -170,7 +170,6 @@ tests: Checkstyle, FindBugs, and JUnit tests.
 Java 8 and Java 9 are supported. 
 
 Maven version 3.5.2 is the minimum version required. 
-
 
 ### Contributing to Hazelcast Jet
 
