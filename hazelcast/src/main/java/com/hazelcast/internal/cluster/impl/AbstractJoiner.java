@@ -70,7 +70,7 @@ public abstract class AbstractJoiner
     protected final ILogger logger;
 
     // map blacklisted endpoints. Boolean value represents if blacklist is temporary or permanent
-    protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
+    protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<>();
     protected final ClusterJoinManager clusterJoinManager;
 
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
@@ -285,7 +285,7 @@ public abstract class AbstractJoiner
 
         OperationService operationService = node.nodeEngine.getOperationService();
         Collection<Member> memberList = clusterService.getMembers();
-        Collection<Future> futures = new ArrayList<Future>(memberList.size());
+        Collection<Future> futures = new ArrayList<>(memberList.size());
         for (Member member : memberList) {
             if (!member.localMember()) {
                 Operation op = new MergeClustersOp(targetAddress);

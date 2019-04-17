@@ -37,8 +37,6 @@ import java.util.List;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
-// RU_COMPAT_39: Do not remove Versioned interface!
-// Version info is needed on 3.9 members while deserializing the operation.
 public class MembersUpdateOp extends AbstractClusterOperation implements Versioned {
     /** The master cluster clock time. */
     long masterTime = Clock.currentTimeMillis();
@@ -114,13 +112,11 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
         targetUuid = in.readUTF();
         masterTime = in.readLong();
         int size = in.readInt();
-        memberInfos = new ArrayList<MemberInfo>(size);
+        memberInfos = new ArrayList<>(size);
         while (size-- > 0) {
-            MemberInfo memberInfo = new MemberInfo();
-            memberInfo.readData(in);
+            MemberInfo memberInfo = in.readObject();
             memberInfos.add(memberInfo);
         }
-
         partitionRuntimeState = in.readObject();
         returnResponse = in.readBoolean();
     }
@@ -136,7 +132,7 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
         out.writeLong(masterTime);
         out.writeInt(memberInfos.size());
         for (MemberInfo memberInfo : memberInfos) {
-            memberInfo.writeData(out);
+            out.writeObject(memberInfo);
         }
         out.writeObject(partitionRuntimeState);
         out.writeBoolean(returnResponse);

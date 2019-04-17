@@ -60,7 +60,7 @@ public final class MembersView implements IdentifiedDataSerializable, Versioned 
      * @return clone map
      */
     static MembersView cloneAdding(MembersView source, Collection<MemberInfo> newMembers) {
-        List<MemberInfo> list = new ArrayList<MemberInfo>(source.size() + newMembers.size());
+        List<MemberInfo> list = new ArrayList<>(source.size() + newMembers.size());
         list.addAll(source.getMembers());
         int newVersion = max(source.version, source.size());
         for (MemberInfo newMember : newMembers) {
@@ -80,7 +80,7 @@ public final class MembersView implements IdentifiedDataSerializable, Versioned 
      * @return a new {@code MemberMap}
      */
     public static MembersView createNew(int version, Collection<MemberImpl> members) {
-        List<MemberInfo> list = new ArrayList<MemberInfo>(members.size());
+        List<MemberInfo> list = new ArrayList<>(members.size());
 
         for (MemberImpl member : members) {
             list.add(new MemberInfo(member));
@@ -131,7 +131,7 @@ public final class MembersView implements IdentifiedDataSerializable, Versioned 
     }
 
     public Set<Address> getAddresses() {
-        Set<Address> addresses = new HashSet<Address>(members.size());
+        Set<Address> addresses = new HashSet<>(members.size());
         for (MemberInfo member : members) {
             addresses.add(member.getAddress());
         }
@@ -177,7 +177,7 @@ public final class MembersView implements IdentifiedDataSerializable, Versioned 
             throws IOException {
         version = in.readInt();
         int size = in.readInt();
-        List<MemberInfo> members = new ArrayList<MemberInfo>(size);
+        List<MemberInfo> members = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             MemberInfo member = new MemberInfo();
             member.readData(in);

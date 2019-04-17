@@ -48,13 +48,12 @@ public class MasterResponseOp extends AbstractClusterOperation {
 
     @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
-        masterAddress = new Address();
-        masterAddress.readData(in);
+        masterAddress = in.readObject();
     }
 
     @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
-        masterAddress.writeData(out);
+        out.writeObject(masterAddress);
     }
 
     @Override

@@ -109,7 +109,7 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private boolean isJoinMessage(Object msg) {
-        return msg != null && msg instanceof JoinMessage && !(msg instanceof SplitBrainJoinMessage);
+        return msg instanceof JoinMessage && !(msg instanceof SplitBrainJoinMessage);
     }
 
     private boolean isValidJoinMessage(Object msg) {
@@ -124,10 +124,7 @@ public class NodeMulticastListener implements MulticastListener {
         }
 
         ConfigCheck theirConfig = joinMessage.getConfigCheck();
-        if (!ourConfig.isSameGroup(theirConfig)) {
-            return false;
-        }
-        return true;
+        return ourConfig.isSameGroup(theirConfig);
     }
 
     private boolean isMessageToSelf(JoinMessage joinMessage) {

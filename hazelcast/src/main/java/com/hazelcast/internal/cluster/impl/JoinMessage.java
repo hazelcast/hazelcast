@@ -49,8 +49,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
 
     public JoinMessage(byte packetVersion, int buildNumber, MemberVersion memberVersion, Address address,
                        String uuid, boolean liteMember, ConfigCheck configCheck) {
-        this(packetVersion, buildNumber, memberVersion, address, uuid, liteMember, configCheck,
-                Collections.<Address>emptySet(), 0);
+        this(packetVersion, buildNumber, memberVersion, address, uuid, liteMember, configCheck, Collections.emptySet(), 0);
     }
 
     public JoinMessage(byte packetVersion, int buildNumber, MemberVersion memberVersion, Address address, String uuid,
@@ -99,7 +98,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
     }
 
     public Collection<Address> getMemberAddresses() {
-        return memberAddresses != null ? memberAddresses : Collections.<Address>emptySet();
+        return memberAddresses != null ? memberAddresses : Collections.emptySet();
     }
 
     public int getDataMemberCount() {
@@ -111,19 +110,16 @@ public class JoinMessage implements IdentifiedDataSerializable {
         packetVersion = in.readByte();
         buildNumber = in.readInt();
         memberVersion = in.readObject();
-        address = new Address();
-        address.readData(in);
+        address = in.readObject();
         uuid = in.readUTF();
-        configCheck = new ConfigCheck();
-        configCheck.readData(in);
+        configCheck = in.readObject();
         liteMember = in.readBoolean();
 
         int memberCount = in.readInt();
-        memberAddresses = new ArrayList<Address>(memberCount);
+        memberAddresses = new ArrayList<>(memberCount);
         for (int i = 0; i < memberCount; i++) {
-            Address member = new Address();
-            member.readData(in);
-            memberAddresses.add(member);
+            Address address = in.readObject();
+            memberAddresses.add(address);
         }
         dataMemberCount = in.readInt();
     }
@@ -133,16 +129,16 @@ public class JoinMessage implements IdentifiedDataSerializable {
         out.writeByte(packetVersion);
         out.writeInt(buildNumber);
         out.writeObject(memberVersion);
-        address.writeData(out);
+        out.writeObject(address);
         out.writeUTF(uuid);
-        configCheck.writeData(out);
+        out.writeObject(configCheck);
         out.writeBoolean(liteMember);
 
         int memberCount = getMemberCount();
         out.writeInt(memberCount);
         if (memberCount > 0) {
-            for (Address member : memberAddresses) {
-                member.writeData(out);
+            for (Address address : memberAddresses) {
+                out.writeObject(address);
             }
         }
         out.writeInt(dataMemberCount);

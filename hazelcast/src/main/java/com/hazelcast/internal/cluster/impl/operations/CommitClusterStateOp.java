@@ -102,7 +102,7 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(stateChange);
-        initiator.writeData(out);
+        out.writeObject(initiator);
         out.writeUTF(txnId);
         out.writeBoolean(isTransient);
     }
@@ -111,8 +111,7 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         stateChange = in.readObject();
-        initiator = new Address();
-        initiator.readData(in);
+        initiator = in.readObject();
         txnId = in.readUTF();
         isTransient = in.readBoolean();
     }

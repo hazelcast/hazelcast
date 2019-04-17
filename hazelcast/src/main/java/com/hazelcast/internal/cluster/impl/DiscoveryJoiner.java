@@ -73,7 +73,7 @@ public class DiscoveryJoiner
         MemberImpl localMember = node.nodeEngine.getLocalMember();
         Address localAddress = localMember.getAddress();
 
-        Collection<Address> possibleMembers = new ArrayList<Address>();
+        Collection<Address> possibleMembers = new ArrayList<>();
         for (DiscoveryNode discoveryNode : discoveredNodes) {
             Address discoveredAddress = usePublicAddress ? discoveryNode.getPublicAddress() : discoveryNode.getPrivateAddress();
             if (localAddress.equals(discoveredAddress)) {

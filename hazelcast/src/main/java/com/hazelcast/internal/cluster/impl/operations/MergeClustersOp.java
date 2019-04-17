@@ -58,12 +58,7 @@ public class MergeClustersOp extends AbstractClusterOperation {
         logger.warning(node.getThisAddress() + " is merging to " + newTargetAddress
                 + ", because: instructed by master " + masterAddress);
 
-        nodeEngine.getExecutionService().execute(SPLIT_BRAIN_HANDLER_EXECUTOR_NAME, new Runnable() {
-            @Override
-            public void run() {
-                clusterService.merge(newTargetAddress);
-            }
-        });
+        nodeEngine.getExecutionService().execute(SPLIT_BRAIN_HANDLER_EXECUTOR_NAME, () -> clusterService.merge(newTargetAddress));
     }
 
     @Override
@@ -73,13 +68,12 @@ public class MergeClustersOp extends AbstractClusterOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        newTargetAddress = new Address();
-        newTargetAddress.readData(in);
+        newTargetAddress = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        newTargetAddress.writeData(out);
+        out.writeObject(newTargetAddress);
     }
 
     @Override

@@ -23,7 +23,6 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
@@ -54,7 +53,6 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -95,8 +93,8 @@ public class ClusterJoinManager {
     private final ClusterClockImpl clusterClock;
     private final ClusterStateManager clusterStateManager;
 
-    private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<Address, MemberInfo>();
-    private final Map<String, Long> recentlyJoinedMemberUuids = new HashMap<String, Long>();
+    private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<>();
+    private final Map<String, Long> recentlyJoinedMemberUuids = new HashMap<>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
     private final long staleJoinPreventionDuration;
@@ -227,7 +225,7 @@ public class ClusterJoinManager {
      * @throws Exception in case any exception occurred while checking compatibilty
      * @see ConfigCheck
      */
-    public boolean validateJoinMessage(JoinMessage joinMessage) throws Exception {
+    public boolean validateJoinMessage(JoinMessage joinMessage) {
         if (joinMessage.getPacketVersion() != Packet.VERSION) {
             return false;
         }
@@ -306,24 +304,6 @@ public class ClusterJoinManager {
             return checkRecentlyJoinedMemberUuidBeforeJoin(target, uuid);
         }
 
-        // RU_COMPAT_3_11
-        if (clusterService.getClusterVersion().isLessThan(Versions.V3_12)
-                && node.getNodeExtension().getInternalHotRestartService().isEnabled()
-                && clusterService.isMissingMember(target, uuid)) {
-
-            Collection<MemberImpl> missingMembers = clusterService.getMembershipManager().getMissingMembers();
-            for (MemberImpl member : missingMembers) {
-                if (!uuid.equals(member.getUuid()) && target.equals(member.getAddress())) {
-                    MemberImpl joiningMember = new MemberImpl(target, MemberVersion.UNKNOWN, false, uuid);
-                    logger.warning("Address " + target + " was being used by " + member + " before. "
-                            + joiningMember + " is not allowed to join with an address which belongs to"
-                            + " a known missing member.");
-                    return true;
-                }
-            }
-            return false;
-        }
-
         if (clusterService.isMissingMember(target, uuid)) {
             return false;
         }
@@ -366,13 +346,7 @@ public class ClusterJoinManager {
 
     private void cleanupRecentlyJoinedMemberUuids() {
         long currentTime = Clock.currentTimeMillis();
-        Iterator<Long> it = recentlyJoinedMemberUuids.values().iterator();
-        while (it.hasNext()) {
-            long joinTime = it.next();
-            if ((currentTime - joinTime) >= staleJoinPreventionDuration) {
-                it.remove();
-            }
-        }
+        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDuration);
     }
 
     private boolean authenticate(JoinRequest joinRequest) {

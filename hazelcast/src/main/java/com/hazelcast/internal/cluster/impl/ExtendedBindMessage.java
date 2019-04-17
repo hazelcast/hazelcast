@@ -57,7 +57,7 @@ public class ExtendedBindMessage implements IdentifiedDataSerializable {
     public ExtendedBindMessage(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
                                Address targetAddress, boolean reply) {
         this.schemaVersion = schemaVersion;
-        this.localAddresses = new EnumMap<ProtocolType, Collection<Address>>(localAddresses);
+        this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
         this.reply = reply;
     }
@@ -114,8 +114,7 @@ public class ExtendedBindMessage implements IdentifiedDataSerializable {
             localAddresses = Collections.emptyMap();
             return;
         }
-        Map<ProtocolType, Collection<Address>> addressesPerProtocolType
-                = new EnumMap<ProtocolType, Collection<Address>>(ProtocolType.class);
+        Map<ProtocolType, Collection<Address>> addressesPerProtocolType = new EnumMap<>(ProtocolType.class);
         for (int i = 0; i < size; i++) {
             ProtocolType protocolType = ProtocolType.valueOf(in.readInt());
             Collection<Address> addresses = readCollection(in);

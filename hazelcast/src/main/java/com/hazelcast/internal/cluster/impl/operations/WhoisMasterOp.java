@@ -43,13 +43,12 @@ public class WhoisMasterOp extends AbstractClusterOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        joinMessage = new JoinMessage();
-        joinMessage.readData(in);
+        joinMessage = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        joinMessage.writeData(out);
+        out.writeObject(joinMessage);
     }
 
     @Override

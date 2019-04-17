@@ -29,7 +29,7 @@ public class PingFailureDetector<E> {
 
     private final int maxPingAttempts;
 
-    private final ConcurrentMap<E, AtomicInteger> pingAttempts = new ConcurrentHashMap<E, AtomicInteger>();
+    private final ConcurrentMap<E, AtomicInteger> pingAttempts = new ConcurrentHashMap<>();
 
     public PingFailureDetector(int maxPingAttempts) {
         this.maxPingAttempts = maxPingAttempts;

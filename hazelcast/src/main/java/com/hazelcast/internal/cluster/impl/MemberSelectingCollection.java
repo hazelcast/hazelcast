@@ -83,7 +83,7 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
 
     @Override
     public Object[] toArray() {
-        List<Object> result = new ArrayList<Object>();
+        List<Object> result = new ArrayList<>();
         for (M member : members) {
             if (selector.select(member)) {
                 result.add(member);
@@ -94,7 +94,7 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
 
     @Override
     public <T> T[] toArray(T[] a) {
-        List<Object> result = new ArrayList<Object>();
+        List<Object> result = new ArrayList<>();
         for (M member : members) {
             if (selector.select(member)) {
                 result.add(member);

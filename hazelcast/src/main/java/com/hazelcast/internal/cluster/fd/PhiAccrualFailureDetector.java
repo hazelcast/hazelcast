@@ -190,7 +190,7 @@ public class PhiAccrualFailureDetector implements FailureDetector {
      */
     private static class HeartbeatHistory {
         private final int maxSampleSize;
-        private final LinkedList<Long> intervals = new LinkedList<Long>();
+        private final LinkedList<Long> intervals = new LinkedList<>();
         private long intervalSum;
         private long squaredIntervalSum;
 

@@ -38,8 +38,6 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  */
 public final class ConfigCheck implements IdentifiedDataSerializable {
 
-    private static final String EMPTY_PWD = "";
-
     private String groupName;
 
     private String joinerType;
@@ -106,10 +104,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     }
 
     public boolean isSameGroup(ConfigCheck found) {
-        if (!equals(groupName, found.groupName)) {
-            return false;
-        }
-        return true;
+        return equals(groupName, found.groupName);
     }
 
     private void verifyApplicationValidationToken(ConfigCheck found) {
@@ -172,9 +167,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(groupName);
-
-        //TODO @tkountis remove in 4.0
-        out.writeUTF(EMPTY_PWD);
         out.writeUTF(joinerType);
         out.writeBoolean(partitionGroupEnabled);
         if (partitionGroupEnabled) {
@@ -203,8 +195,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
-        //TODO groupPassword/ignored - @tkountis remove in 4.0
-        in.readUTF();
         joinerType = in.readUTF();
         partitionGroupEnabled = in.readBoolean();
         if (partitionGroupEnabled) {
