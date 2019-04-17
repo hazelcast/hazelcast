@@ -731,7 +731,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
 
         private final MessageTask task;
 
-        public PriorityPartitionSpecificRunnable(MessageTask task) {
+        PriorityPartitionSpecificRunnable(MessageTask task) {
             this.task = task;
         }
 

@@ -81,7 +81,7 @@ public class ClientExpirationListenerTest extends HazelcastTestSupport {
 
         private final CountDownLatch expirationEventCount;
 
-        public ExpirationListener(CountDownLatch expirationEventCount) {
+        ExpirationListener(CountDownLatch expirationEventCount) {
             this.expirationEventCount = expirationEventCount;
         }
 
@@ -122,7 +122,7 @@ public class ClientExpirationListenerTest extends HazelcastTestSupport {
         private final CountDownLatch expirationEventArrivalCount;
         private final CountDownLatch evictionEventArrivalCount;
 
-        public ExpirationAndEvictionListener(CountDownLatch expirationEventArrivalCount, CountDownLatch evictionEventArrivalCount) {
+        ExpirationAndEvictionListener(CountDownLatch expirationEventArrivalCount, CountDownLatch evictionEventArrivalCount) {
             this.expirationEventArrivalCount = expirationEventArrivalCount;
             this.evictionEventArrivalCount = evictionEventArrivalCount;
         }

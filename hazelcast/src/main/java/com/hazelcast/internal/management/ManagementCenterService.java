@@ -734,7 +734,7 @@ public class ManagementCenterService {
             private final int taskId;
             private final ConsoleRequest task;
 
-            public AsyncConsoleRequestTask(int taskId, ConsoleRequest task) {
+            AsyncConsoleRequestTask(int taskId, ConsoleRequest task) {
                 this.taskId = taskId;
                 this.task = task;
             }

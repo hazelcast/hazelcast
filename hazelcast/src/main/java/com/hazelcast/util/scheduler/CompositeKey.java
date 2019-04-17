@@ -26,7 +26,7 @@ final class CompositeKey {
     private final Object key;
     private final long id;
 
-    public CompositeKey(Object key, long id) {
+    CompositeKey(Object key, long id) {
         this.key = key;
         this.id = id;
     }

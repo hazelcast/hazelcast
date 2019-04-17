@@ -33,10 +33,10 @@ class VoidOperation extends Operation implements PartitionAwareOperation {
 
     private long durationMs;
 
-    public VoidOperation() {
+    VoidOperation() {
     }
 
-    public VoidOperation(long durationMs) {
+    VoidOperation(long durationMs) {
         this.durationMs = durationMs;
     }
 

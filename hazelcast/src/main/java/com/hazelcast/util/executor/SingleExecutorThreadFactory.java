@@ -32,7 +32,7 @@ public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFac
 
     private class ManagedThread extends HazelcastManagedThread {
 
-        public ManagedThread(Runnable target) {
+        ManagedThread(Runnable target) {
             super(target, threadName);
         }
     }

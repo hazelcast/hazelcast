@@ -33,11 +33,11 @@ class MapReduceSimpleEntry<K, V>
     private K key;
     private V value;
 
-    public MapReduceSimpleEntry() {
+    MapReduceSimpleEntry() {
         this(null, null);
     }
 
-    public MapReduceSimpleEntry(K key, V value) {
+    MapReduceSimpleEntry(K key, V value) {
         this.key = key;
         this.value = value;
     }

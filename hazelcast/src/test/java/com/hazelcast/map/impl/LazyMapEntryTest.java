@@ -127,7 +127,7 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
         int serializedCount = 0;
         int deserializedCount = 0;
 
-        public MyObject() {
+        MyObject() {
         }
 
         @Override

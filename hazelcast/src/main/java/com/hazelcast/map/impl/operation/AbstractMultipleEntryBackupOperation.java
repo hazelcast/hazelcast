@@ -28,10 +28,10 @@ abstract class AbstractMultipleEntryBackupOperation extends MapOperation impleme
 
     EntryBackupProcessor backupProcessor;
 
-    public AbstractMultipleEntryBackupOperation() {
+    AbstractMultipleEntryBackupOperation() {
     }
 
-    public AbstractMultipleEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
+    AbstractMultipleEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
         super(name);
         this.backupProcessor = backupProcessor;
     }

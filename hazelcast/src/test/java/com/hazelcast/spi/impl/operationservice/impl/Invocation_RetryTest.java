@@ -262,7 +262,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         private long sleepMillis;
 
-        public SleepingOperation() {
+        SleepingOperation() {
         }
 
         SleepingOperation(long sleepMillis) {

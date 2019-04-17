@@ -59,10 +59,10 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     // and incremented by 1 for each lock and extendLease operation
     private transient int version;
 
-    public LockResourceImpl() {
+    LockResourceImpl() {
     }
 
-    public LockResourceImpl(Data key, LockStoreImpl lockStore) {
+    LockResourceImpl(Data key, LockStoreImpl lockStore) {
         this.key = key;
         this.lockStore = lockStore;
     }

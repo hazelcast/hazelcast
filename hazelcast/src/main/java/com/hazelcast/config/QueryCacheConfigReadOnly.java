@@ -28,7 +28,7 @@ import java.util.List;
  */
 class QueryCacheConfigReadOnly extends QueryCacheConfig {
 
-    public QueryCacheConfigReadOnly(QueryCacheConfig other) {
+    QueryCacheConfigReadOnly(QueryCacheConfig other) {
         super(other);
     }
 

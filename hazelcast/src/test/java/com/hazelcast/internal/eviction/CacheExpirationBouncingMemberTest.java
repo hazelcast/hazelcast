@@ -115,7 +115,7 @@ public class CacheExpirationBouncingMemberTest extends AbstractExpirationBouncin
 
         private final Cache<Integer, Integer> cache;
 
-        public Get(Cache cache) {
+        Get(Cache cache) {
             this.cache = cache;
         }
 
@@ -131,7 +131,7 @@ public class CacheExpirationBouncingMemberTest extends AbstractExpirationBouncin
 
         private final Cache<Integer, Integer> cache;
 
-        public Set(Cache cache) {
+        Set(Cache cache) {
             this.cache = cache;
         }
 

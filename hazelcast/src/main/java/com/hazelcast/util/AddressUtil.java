@@ -593,7 +593,7 @@ public final class AddressUtil {
 
     static class Ip4AddressMatcher extends AddressMatcher {
 
-        public Ip4AddressMatcher() {
+        Ip4AddressMatcher() {
             // d.d.d.d
             super(new String[IPV4_LENGTH]);
         }
@@ -638,7 +638,7 @@ public final class AddressUtil {
 
     static class Ip6AddressMatcher extends AddressMatcher {
 
-        public Ip6AddressMatcher() {
+        Ip6AddressMatcher() {
             // x:x:x:x:x:x:x:x%s
             super(new String[IPV6_LENGTH]);
         }

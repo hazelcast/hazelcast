@@ -30,7 +30,7 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     private long storeTime;
     private long sequence;
 
-    public DeletedDelayedEntry(K key, long storeTime, int partitionId) {
+    DeletedDelayedEntry(K key, long storeTime, int partitionId) {
         this.key = key;
         this.storeTime = storeTime;
         this.partitionId = partitionId;

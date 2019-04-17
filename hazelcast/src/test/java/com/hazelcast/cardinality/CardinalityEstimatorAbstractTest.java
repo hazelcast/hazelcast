@@ -68,7 +68,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
         estimator = local.getCardinalityEstimator(name);
     }
 
-    protected abstract HazelcastInstance[] newInstances(final Config config);
+    protected abstract HazelcastInstance[] newInstances(Config config);
 
     @Test
     public void estimate() {

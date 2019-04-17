@@ -23,7 +23,7 @@ class TransactionRecordKey {
     final String name;
     final Data key;
 
-    public TransactionRecordKey(String name, Data key) {
+    TransactionRecordKey(String name, Data key) {
         this.name = name;
         this.key = key;
     }

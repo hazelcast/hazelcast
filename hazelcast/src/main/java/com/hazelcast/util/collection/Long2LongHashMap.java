@@ -341,7 +341,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     private static class IteratorSupplier implements Supplier<Iterator<Long>> {
         private final LongIterator keyIterator;
 
-        public IteratorSupplier(LongIterator keyIterator) {
+        IteratorSupplier(LongIterator keyIterator) {
             this.keyIterator = keyIterator;
         }
 
@@ -354,7 +354,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     private static class EntryIteratorSupplier implements Supplier<Iterator<Entry<Long, Long>>> {
         private final EntryIterator entryIterator;
 
-        public EntryIteratorSupplier(EntryIterator entryIterator) {
+        EntryIteratorSupplier(EntryIterator entryIterator) {
             this.entryIterator = entryIterator;
         }
 
@@ -367,7 +367,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     private static class UnboxingBiConsumer implements LongLongConsumer {
         private final BiConsumer<? super Long, ? super Long> action;
 
-        public UnboxingBiConsumer(BiConsumer<? super Long, ? super Long> action) {
+        UnboxingBiConsumer(BiConsumer<? super Long, ? super Long> action) {
             this.action = action;
         }
 

@@ -28,14 +28,14 @@ class SlowOperation extends Operation {
     long durationMs;
 
     @SuppressWarnings("unused")
-    public SlowOperation() {
+    SlowOperation() {
     }
 
-    public SlowOperation(long durationMs) {
+    SlowOperation(long durationMs) {
         this.durationMs = durationMs;
     }
 
-    public SlowOperation(long durationMs, Object response) {
+    SlowOperation(long durationMs, Object response) {
         this.durationMs = durationMs;
         this.response = response;
     }

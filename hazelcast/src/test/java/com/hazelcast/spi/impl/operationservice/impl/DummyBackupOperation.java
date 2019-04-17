@@ -28,10 +28,10 @@ class DummyBackupOperation extends Operation implements BackupOperation {
 
     private String backupKey;
 
-    public DummyBackupOperation() {
+    DummyBackupOperation() {
     }
 
-    public DummyBackupOperation(String backupKey) {
+    DummyBackupOperation(String backupKey) {
         this.backupKey = backupKey;
     }
 

@@ -93,7 +93,7 @@ public class AddMembershipListenerMessageTask
         private final ClientEndpoint endpoint;
         private final boolean advancedNetworkConfigEnabled;
 
-        public MembershipListenerImpl(ClientEndpoint endpoint, boolean advancedNetworkConfigEnabled) {
+        MembershipListenerImpl(ClientEndpoint endpoint, boolean advancedNetworkConfigEnabled) {
             this.endpoint = endpoint;
             this.advancedNetworkConfigEnabled = advancedNetworkConfigEnabled;
         }

@@ -580,10 +580,10 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
         String instanceName;
 
-        public InstanceAsserterRunnable() {
+        InstanceAsserterRunnable() {
         }
 
-        public InstanceAsserterRunnable(String instanceName) {
+        InstanceAsserterRunnable(String instanceName) {
             this.instanceName = instanceName;
         }
 
@@ -645,7 +645,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
         private HazelcastInstance instance;
 
-        public ICountDownLatchAwaitCallable(String name) {
+        ICountDownLatchAwaitCallable(String name) {
             this.name = name;
         }
 
@@ -666,7 +666,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         static CountDownLatch startLatch;
         static CountDownLatch sleepLatch;
 
-        public SleepLatchRunnable() {
+        SleepLatchRunnable() {
             startLatch = new CountDownLatch(1);
             sleepLatch = new CountDownLatch(1);
         }

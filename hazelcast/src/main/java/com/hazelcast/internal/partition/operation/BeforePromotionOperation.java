@@ -39,7 +39,7 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
      * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
      * coding conventions.
      */
-    public BeforePromotionOperation() {
+    BeforePromotionOperation() {
         super(null);
     }
 

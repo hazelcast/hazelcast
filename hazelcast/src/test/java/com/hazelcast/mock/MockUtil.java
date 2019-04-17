@@ -52,7 +52,7 @@ public class MockUtil {
 
         private Object delegated;
 
-        public DelegatingAnswer(Object delegated) {
+        DelegatingAnswer(Object delegated) {
             this.delegated = delegated;
         }
 

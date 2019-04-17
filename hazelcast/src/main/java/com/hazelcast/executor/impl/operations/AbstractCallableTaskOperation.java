@@ -38,10 +38,10 @@ abstract class AbstractCallableTaskOperation extends Operation implements NamedO
     protected String uuid;
     private Data callableData;
 
-    public AbstractCallableTaskOperation() {
+    AbstractCallableTaskOperation() {
     }
 
-    public AbstractCallableTaskOperation(String name, String uuid, Data callableData) {
+    AbstractCallableTaskOperation(String name, String uuid, Data callableData) {
         this.name = name;
         this.uuid = uuid;
         this.callableData = callableData;

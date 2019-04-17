@@ -45,11 +45,11 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
     class TestFuture extends AbstractInvocationFuture {
         volatile boolean interruptDetected;
 
-        public TestFuture() {
+        TestFuture() {
             super(AbstractInvocationFuture_AbstractTest.this.executor, AbstractInvocationFuture_AbstractTest.this.logger);
         }
 
-        public TestFuture(Executor executor, ILogger logger) {
+        TestFuture(Executor executor, ILogger logger) {
             super(executor, logger);
         }
 

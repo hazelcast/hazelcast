@@ -134,7 +134,7 @@ public class CacheCreateConfigOperation
         final AtomicInteger counter;
         final CacheCreateConfigOperation operation;
 
-        public CacheConfigCreateCallback(CacheCreateConfigOperation op, int count) {
+        CacheConfigCreateCallback(CacheCreateConfigOperation op, int count) {
             this.operation = op;
             this.counter = new AtomicInteger(count);
         }

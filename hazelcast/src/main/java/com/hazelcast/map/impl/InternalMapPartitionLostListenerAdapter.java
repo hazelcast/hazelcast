@@ -31,7 +31,7 @@ class InternalMapPartitionLostListenerAdapter
 
     private final MapPartitionLostListener partitionLostListener;
 
-    public InternalMapPartitionLostListenerAdapter(MapPartitionLostListener partitionLostListener) {
+    InternalMapPartitionLostListenerAdapter(MapPartitionLostListener partitionLostListener) {
         this.partitionLostListener = partitionLostListener;
     }
 

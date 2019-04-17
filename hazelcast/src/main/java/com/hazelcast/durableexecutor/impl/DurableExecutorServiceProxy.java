@@ -295,9 +295,9 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
 
         final long taskId;
 
-        public DurableExecutorServiceDelegateFuture(InternalCompletableFuture future,
-                                                    SerializationService serializationService,
-                                                    T defaultValue, long taskId) {
+        DurableExecutorServiceDelegateFuture(InternalCompletableFuture future,
+                                             SerializationService serializationService,
+                                             T defaultValue, long taskId) {
             super(future, serializationService, defaultValue);
             this.taskId = taskId;
         }

@@ -23,7 +23,7 @@ package com.hazelcast.query.impl.getters;
 abstract class Getter {
     protected final Getter parent;
 
-    public Getter(final Getter parent) {
+    Getter(final Getter parent) {
         this.parent = parent;
     }
 

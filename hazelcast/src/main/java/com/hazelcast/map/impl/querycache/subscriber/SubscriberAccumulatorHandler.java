@@ -47,7 +47,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
     private final AtomicReferenceArray<Queue<Integer>> clearAllRemovedCountHolders;
     private final AtomicReferenceArray<Queue<Integer>> evictAllRemovedCountHolders;
 
-    public SubscriberAccumulatorHandler(boolean includeValue, InternalQueryCache queryCache,
+    SubscriberAccumulatorHandler(boolean includeValue, InternalQueryCache queryCache,
                                         InternalSerializationService serializationService) {
         this.includeValue = includeValue;
         this.queryCache = queryCache;

@@ -34,10 +34,10 @@ abstract class AbstractEventData implements EventData {
     protected Address caller;
     protected int eventType;
 
-    public AbstractEventData() {
+    AbstractEventData() {
     }
 
-    public AbstractEventData(String source, String mapName, Address caller, int eventType) {
+    AbstractEventData(String source, String mapName, Address caller, int eventType) {
         this.source = source;
         this.mapName = mapName;
         this.caller = caller;

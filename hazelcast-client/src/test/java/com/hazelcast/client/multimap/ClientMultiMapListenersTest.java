@@ -324,7 +324,7 @@ public class ClientMultiMapListenersTest {
         public final CountDownLatch evictLatch;
         public final CountDownLatch clearLatch;
 
-        public MyEntryListener(int latchCount) {
+        MyEntryListener(int latchCount) {
             addLatch = new CountDownLatch(latchCount);
             removeLatch = new CountDownLatch(latchCount);
             updateLatch = new CountDownLatch(1);
@@ -332,7 +332,7 @@ public class ClientMultiMapListenersTest {
             clearLatch = new CountDownLatch(1);
         }
 
-        public MyEntryListener(int addlatchCount, int removeLatchCount) {
+        MyEntryListener(int addlatchCount, int removeLatchCount) {
             addLatch = new CountDownLatch(addlatchCount);
             removeLatch = new CountDownLatch(removeLatchCount);
             updateLatch = new CountDownLatch(1);
@@ -343,11 +343,11 @@ public class ClientMultiMapListenersTest {
 
     static class CountDownValueNotNullListener extends MyEntryListener {
 
-        public CountDownValueNotNullListener(int latchCount) {
+        CountDownValueNotNullListener(int latchCount) {
             super(latchCount);
         }
 
-        public CountDownValueNotNullListener(int addlatchCount, int removeLatchCount) {
+        CountDownValueNotNullListener(int addlatchCount, int removeLatchCount) {
             super(addlatchCount, removeLatchCount);
         }
 
@@ -387,11 +387,11 @@ public class ClientMultiMapListenersTest {
 
     static class CountDownValueNullListener extends MyEntryListener {
 
-        public CountDownValueNullListener(int latchCount) {
+        CountDownValueNullListener(int latchCount) {
             super(latchCount);
         }
 
-        public CountDownValueNullListener(int addlatchCount, int removeLatchCount) {
+        CountDownValueNullListener(int addlatchCount, int removeLatchCount) {
             super(addlatchCount, removeLatchCount);
         }
 

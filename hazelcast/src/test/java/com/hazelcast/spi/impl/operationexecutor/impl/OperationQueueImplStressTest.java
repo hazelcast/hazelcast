@@ -63,7 +63,7 @@ public class OperationQueueImplStressTest extends HazelcastTestSupport {
     private class ProducerThread extends TestThread {
         private volatile long produced;
 
-        public ProducerThread() {
+        ProducerThread() {
             super("ProducerThread");
         }
 

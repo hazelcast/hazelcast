@@ -435,7 +435,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         public String[] model;
 
-        public CarPortable() {
+        CarPortable() {
         }
 
         CarPortable(String name, EnginePortable engine, WheelPortable... wheels) {
@@ -505,7 +505,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         Integer power;
         ChipPortable chip;
 
-        public EnginePortable() {
+        EnginePortable() {
             this.chip = new ChipPortable();
         }
 
@@ -567,7 +567,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         Integer power;
 
-        public ChipPortable() {
+        ChipPortable() {
             this.power = 15;
         }
 
@@ -631,7 +631,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         Portable[] nullChips;
         int[] serial;
 
-        public WheelPortable() {
+        WheelPortable() {
         }
 
         WheelPortable(String name, boolean nonNull) {

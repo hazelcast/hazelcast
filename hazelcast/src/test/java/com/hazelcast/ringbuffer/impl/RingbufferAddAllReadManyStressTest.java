@@ -141,7 +141,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
         private volatile long produced;
 
-        public ProduceThread() {
+        ProduceThread() {
             super("ProduceThread");
         }
 

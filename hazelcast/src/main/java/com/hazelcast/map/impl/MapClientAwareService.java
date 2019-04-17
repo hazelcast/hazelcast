@@ -30,7 +30,7 @@ class MapClientAwareService implements ClientAwareService {
 
     private final MapServiceContext mapServiceContext;
 
-    public MapClientAwareService(MapServiceContext mapServiceContext) {
+    MapClientAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 

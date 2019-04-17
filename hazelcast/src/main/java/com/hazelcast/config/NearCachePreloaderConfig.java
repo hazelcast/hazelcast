@@ -193,7 +193,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     private static class NearCachePreloaderConfigReadOnly extends NearCachePreloaderConfig {
 
         @SuppressWarnings("unused")
-        public NearCachePreloaderConfigReadOnly() {
+        NearCachePreloaderConfigReadOnly() {
         }
 
         NearCachePreloaderConfigReadOnly(NearCachePreloaderConfig nearCachePreloaderConfig) {

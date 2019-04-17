@@ -22,7 +22,7 @@ class TransactionLogRecordKey {
 
     private final String name;
 
-    public TransactionLogRecordKey(long itemId, String name) {
+    TransactionLogRecordKey(long itemId, String name) {
         this.itemId = itemId;
         this.name = name;
     }

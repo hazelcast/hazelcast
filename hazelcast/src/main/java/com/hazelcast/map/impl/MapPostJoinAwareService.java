@@ -34,7 +34,7 @@ class MapPostJoinAwareService implements PostJoinAwareService {
 
     private final MapServiceContext mapServiceContext;
 
-    public MapPostJoinAwareService(MapServiceContext mapServiceContext) {
+    MapPostJoinAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 
@@ -52,7 +52,7 @@ class MapPostJoinAwareService implements PostJoinAwareService {
     }
 
     private List<AccumulatorInfo> getAccumulatorInfoList() {
-        List<AccumulatorInfo> infoList = new ArrayList<AccumulatorInfo>();
+        List<AccumulatorInfo> infoList = new ArrayList<>();
 
         PublisherContext publisherContext = mapServiceContext.getQueryCacheContext().getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();

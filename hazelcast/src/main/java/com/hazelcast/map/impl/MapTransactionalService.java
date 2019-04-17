@@ -31,7 +31,7 @@ class MapTransactionalService implements TransactionalService {
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
 
-    public MapTransactionalService(MapServiceContext mapServiceContext) {
+    MapTransactionalService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
     }

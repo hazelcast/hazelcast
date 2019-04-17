@@ -31,7 +31,7 @@ class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
 
     private final K key;
 
-    public NullValueDelayedEntry(K key) {
+    NullValueDelayedEntry(K key) {
         this.key = key;
     }
 

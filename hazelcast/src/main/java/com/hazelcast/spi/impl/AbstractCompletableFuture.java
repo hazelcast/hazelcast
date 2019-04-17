@@ -330,7 +330,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         private final ExecutionCallback<V> callback;
         private final ILogger logger;
 
-        public ExecutionCallbackRunnable(Class<?> caller, Object result, ExecutionCallback<V> callback, ILogger logger) {
+        ExecutionCallbackRunnable(Class<?> caller, Object result, ExecutionCallback<V> callback, ILogger logger) {
             this.caller = caller;
             this.result = result;
             this.callback = callback;

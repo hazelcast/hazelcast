@@ -181,7 +181,7 @@ public class CacheEventListenerSplitBrainTest extends SplitBrainTestSupport {
 
         public AtomicInteger updated = new AtomicInteger();
 
-        public TestCacheEntryUpdatedListener() {
+        TestCacheEntryUpdatedListener() {
         }
 
         @Override

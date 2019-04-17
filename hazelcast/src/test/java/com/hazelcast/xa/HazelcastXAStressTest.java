@@ -80,7 +80,7 @@ public class HazelcastXAStressTest extends HazelcastTestSupport {
 
         int i;
 
-        public XATransactionRunnable(HazelcastXAResource xaResource, String name,
+        XATransactionRunnable(HazelcastXAResource xaResource, String name,
                                      ExecutorService executorServiceForCommit, int i) {
             this.xaResource = xaResource;
             this.name = name;

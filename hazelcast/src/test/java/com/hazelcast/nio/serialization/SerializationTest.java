@@ -352,7 +352,7 @@ public class SerializationTest extends HazelcastTestSupport {
     private static class Foo implements Serializable {
         public Bar bar;
 
-        public Foo() {
+         Foo() {
             this.bar = new Bar();
         }
 
@@ -407,10 +407,10 @@ public class SerializationTest extends HazelcastTestSupport {
 
         String value;
 
-        public ExternalizableString() {
+        ExternalizableString() {
         }
 
-        public ExternalizableString(String value) {
+        ExternalizableString(String value) {
             this.value = value;
         }
 

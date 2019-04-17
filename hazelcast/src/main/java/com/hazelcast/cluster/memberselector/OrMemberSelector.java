@@ -26,7 +26,7 @@ class OrMemberSelector implements MemberSelector {
 
     private final MemberSelector[] selectors;
 
-    public OrMemberSelector(MemberSelector... selectors) {
+    OrMemberSelector(MemberSelector... selectors) {
         this.selectors = selectors;
     }
 

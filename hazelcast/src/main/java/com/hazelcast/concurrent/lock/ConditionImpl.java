@@ -43,7 +43,7 @@ final class ConditionImpl implements ICondition {
     private final ObjectNamespace namespace;
     private final String conditionId;
 
-    public ConditionImpl(LockProxy lockProxy, String id) {
+    ConditionImpl(LockProxy lockProxy, String id) {
         this.lockProxy = lockProxy;
         this.partitionId = lockProxy.getPartitionId();
         this.namespace = lockProxy.getNamespace();

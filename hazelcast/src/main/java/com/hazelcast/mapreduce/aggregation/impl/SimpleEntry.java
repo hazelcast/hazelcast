@@ -33,7 +33,7 @@ final class SimpleEntry<K, V> extends QueryableEntry<K, V> {
     private K key;
     private V value;
 
-    public SimpleEntry() {
+    SimpleEntry() {
     }
 
     @Override

@@ -194,7 +194,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         final String description;
         transient Method method;
 
-        public BeanInfo(String name, String description, Method method) {
+        BeanInfo(String name, String description, Method method) {
             this.name = name;
             this.description = description;
             this.method = method;

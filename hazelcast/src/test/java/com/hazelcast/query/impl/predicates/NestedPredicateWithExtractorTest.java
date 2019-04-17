@@ -162,7 +162,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
 
     private static final class CustomPredicate extends AbstractPredicate {
 
-        public CustomPredicate() {
+        CustomPredicate() {
             super("limbname");
         }
 

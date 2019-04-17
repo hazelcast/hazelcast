@@ -54,7 +54,7 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      */
     private final Map<Data, MutableInteger> index;
 
-    public CyclicWriteBehindQueue() {
+    CyclicWriteBehindQueue() {
         this.deque = new ArrayDeque<DelayedEntry>();
         this.index = new HashMap<Data, MutableInteger>();
     }

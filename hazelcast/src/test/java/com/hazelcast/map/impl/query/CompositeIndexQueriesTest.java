@@ -274,7 +274,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         private final Integer key;
         private final Person value;
 
-        public ExtractableAdapter(Map.Entry<Integer, Person> entry) {
+        ExtractableAdapter(Map.Entry<Integer, Person> entry) {
             this.key = entry.getKey();
             this.value = entry.getValue();
         }
@@ -321,7 +321,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
 
         private Predicate delegate;
 
-        public NoIndexPredicate(Predicate delegate) {
+        NoIndexPredicate(Predicate delegate) {
             this.delegate = delegate;
         }
 

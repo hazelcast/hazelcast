@@ -141,10 +141,10 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
 
         long value;
 
-        public SampleBackupAwareOperation() {
+        SampleBackupAwareOperation() {
         }
 
-        public SampleBackupAwareOperation(long value) {
+        SampleBackupAwareOperation(long value) {
             this.value = value;
         }
 
@@ -194,10 +194,10 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
 
         long value;
 
-        public SampleBackupOperation() {
+        SampleBackupOperation() {
         }
 
-        public SampleBackupOperation(long value) {
+        SampleBackupOperation(long value) {
             this.value = value;
         }
 

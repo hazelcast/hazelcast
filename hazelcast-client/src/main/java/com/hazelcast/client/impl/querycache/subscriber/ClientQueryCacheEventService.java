@@ -292,8 +292,8 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         private final long timeoutMs;
         private final SerializationService serializationService;
 
-        public EventDispatcher(Object event, ListenerInfo listenerInfo, int orderKey,
-                               SerializationService serializationService, long timeoutMs) {
+        EventDispatcher(Object event, ListenerInfo listenerInfo, int orderKey,
+                        SerializationService serializationService, long timeoutMs) {
             this.event = event;
             this.listenerInfo = listenerInfo;
             this.orderKey = orderKey;

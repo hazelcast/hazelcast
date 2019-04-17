@@ -114,7 +114,7 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
         private final ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
 
-        public TestMapLoader() {
+        TestMapLoader() {
             map.put(1, 1);
             map.put(2, 2);
             map.put(3, 4);

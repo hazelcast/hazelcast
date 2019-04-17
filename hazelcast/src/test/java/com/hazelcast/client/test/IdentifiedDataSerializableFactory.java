@@ -47,7 +47,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
     class SampleFailingTask implements Callable, IdentifiedDataSerializable {
 
-        public SampleFailingTask() {
+        SampleFailingTask() {
         }
 
         public int getFactoryId() {
@@ -73,7 +73,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
         private String name;
 
-        public SampleRunnableTask() {
+        SampleRunnableTask() {
         }
 
         public void run() {
@@ -101,7 +101,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
         private String param;
 
-        public SampleCallableTask() {
+        SampleCallableTask() {
         }
 
         public Object call() throws Exception {

@@ -138,7 +138,7 @@ public class PartitionListenerTest extends HazelcastTestSupport {
     private static class EventCountingPartitionListener implements PartitionListener {
         private final AtomicInteger count;
 
-        public EventCountingPartitionListener(AtomicInteger count) {
+        EventCountingPartitionListener(AtomicInteger count) {
             this.count = count;
         }
 

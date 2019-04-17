@@ -28,7 +28,7 @@ class DataQueryCacheRecord extends AbstractQueryCacheRecord {
 
     private final SerializationService serializationService;
 
-    public DataQueryCacheRecord(Data valueData, SerializationService serializationService) {
+    DataQueryCacheRecord(Data valueData, SerializationService serializationService) {
         this.valueData = valueData;
         this.serializationService = serializationService;
     }

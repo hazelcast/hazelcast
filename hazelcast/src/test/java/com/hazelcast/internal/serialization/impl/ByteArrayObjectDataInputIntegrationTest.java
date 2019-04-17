@@ -60,10 +60,10 @@ public class ByteArrayObjectDataInputIntegrationTest {
         private Data data;
         private Object o;
 
-        public MyObject() {
+        MyObject() {
         }
 
-        public MyObject(Data data) {
+        MyObject(Data data) {
             this.data = data;
         }
 

@@ -127,10 +127,10 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         private String backupId;
         private int primaryResponseDelaySeconds;
 
-        public PrimaryOperation() {
+        PrimaryOperation() {
         }
 
-        public PrimaryOperation(String backupId) {
+        PrimaryOperation(String backupId) {
             this.backupId = backupId;
         }
 
@@ -188,10 +188,10 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
     static class SlowBackupOperation extends Operation {
         private String backupId;
 
-        public SlowBackupOperation() {
+        SlowBackupOperation() {
         }
 
-        public SlowBackupOperation(String backupId) {
+        SlowBackupOperation(String backupId) {
             this.backupId = backupId;
         }
 

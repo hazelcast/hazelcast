@@ -251,10 +251,10 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
 
         private final long taskId;
 
-        public ClientDurableExecutorServiceDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
-                                                            SerializationService serializationService,
-                                                            ClientMessageDecoder clientMessageDecoder,
-                                                            T defaultValue, long taskId) {
+        ClientDurableExecutorServiceDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
+                                                     SerializationService serializationService,
+                                                     ClientMessageDecoder clientMessageDecoder,
+                                                     T defaultValue, long taskId) {
             super(clientInvocationFuture, serializationService, clientMessageDecoder, defaultValue);
             this.taskId = taskId;
         }

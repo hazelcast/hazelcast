@@ -786,7 +786,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         private volatile boolean commit;
         private volatile HazelcastInstance instance;
 
-        public CollectMigrationTaskOnCommit(CountDownLatch migrationStartLatch) {
+        CollectMigrationTaskOnCommit(CountDownLatch migrationStartLatch) {
             this.migrationStartLatch = migrationStartLatch;
         }
 

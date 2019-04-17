@@ -199,7 +199,7 @@ public class BoundedRangePredicateQueriesTest extends HazelcastTestSupport {
 
         private final com.hazelcast.util.function.Predicate<Integer> predicate;
 
-        public PersonPredicate(com.hazelcast.util.function.Predicate<Integer> predicate) {
+        PersonPredicate(com.hazelcast.util.function.Predicate<Integer> predicate) {
             this.predicate = predicate;
         }
 

@@ -479,8 +479,8 @@ public class JobSupervisor {
         private final JobSupervisor jobSupervisor;
         private final TrackableJobFuture future;
 
-        public GetResultsRunnable(NodeEngine nodeEngine, GetResultOperationFactory operationFactory, String jobId,
-                                  JobSupervisor jobSupervisor, TrackableJobFuture future) {
+        GetResultsRunnable(NodeEngine nodeEngine, GetResultOperationFactory operationFactory, String jobId,
+                           JobSupervisor jobSupervisor, TrackableJobFuture future) {
             this.nodeEngine = nodeEngine;
             this.operationFactory = operationFactory;
             this.jobId = jobId;
