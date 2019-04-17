@@ -27,7 +27,6 @@ import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
-import com.hazelcast.jet.impl.pipeline.transform.FilterTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.GlobalRollingAggregateTransform;
 import com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform;
@@ -105,14 +104,15 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     <R, RET> RET attachMap(@Nonnull FunctionEx<? super T, ? extends R> mapFn) {
         checkSerializable(mapFn, "mapFn");
-        return (RET) attach(new MapTransform(this.transform, fnAdapter.adaptMapFn(mapFn)), fnAdapter);
+        return (RET) attach(new MapTransform("map", this.transform, fnAdapter.adaptMapFn(mapFn)), fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
     <RET> RET attachFilter(@Nonnull PredicateEx<T> filterFn) {
         checkSerializable(filterFn, "filterFn");
-        return (RET) attach(new FilterTransform(transform, fnAdapter.adaptFilterFn(filterFn)), fnAdapter);
+        PredicateEx<T> adaptedFn = (PredicateEx<T>) fnAdapter.adaptFilterFn(filterFn);
+        return (RET) attach(new MapTransform<T, T>("filter", transform, t -> adaptedFn.test(t) ? t : null), fnAdapter);
     }
 
     @Nonnull
@@ -121,7 +121,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
             @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
-        return (RET) attach(new FlatMapTransform(transform, fnAdapter.adaptFlatMapFn(flatMapFn)), fnAdapter);
+        return (RET) attach(new FlatMapTransform("flat-map", transform, fnAdapter.adaptFlatMapFn(flatMapFn)), fnAdapter);
     }
 
     @Nonnull

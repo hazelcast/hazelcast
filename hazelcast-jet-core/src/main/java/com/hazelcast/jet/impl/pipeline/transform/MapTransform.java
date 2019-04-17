@@ -29,10 +29,11 @@ public class MapTransform<T, R> extends AbstractTransform {
     private FunctionEx<? super T, ? extends R> mapFn;
 
     public MapTransform(
+            @Nonnull String name,
             @Nonnull Transform upstream,
             @Nonnull FunctionEx<? super T, ? extends R> mapFn
     ) {
-        super("map", upstream);
+        super(name, upstream);
         this.mapFn = mapFn;
     }
 

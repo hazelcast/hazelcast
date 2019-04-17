@@ -30,10 +30,11 @@ public class FlatMapTransform<T, R> extends AbstractTransform {
     private FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn;
 
     public FlatMapTransform(
+            @Nonnull String name,
             @Nonnull Transform upstream,
             @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        super("flat-map", upstream);
+        super(name, upstream);
         this.flatMapFn = flatMapFn;
     }
 

@@ -18,10 +18,12 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
@@ -37,6 +39,7 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -142,6 +145,178 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         assertEquals(
                 streamToString(input.stream().flatMap(flatMapFn), identity()),
                 streamToString(sinkList.stream(), Object::toString));
+    }
+
+    @Test
+    public void fusing_map() {
+        test_fusing(
+                stage -> stage
+                        .map(item -> String.format("%04d", item))
+                        .map(item -> item + "-x"),
+                item -> Stream.of(String.format("%04d-x", item))
+        );
+    }
+
+    @Test
+    public void fusing_flatMap() {
+        test_fusing(
+                stage -> stage
+                        .flatMap(i -> Traversers.traverseItems(String.format("%04d-a", i), String.format("%04d-b", i)))
+                        .flatMap(item -> Traversers.traverseItems(item + "1", item + "2")),
+                item -> Stream.of(String.format("%04d-a1", item), String.format("%04d-a2", item),
+                        String.format("%04d-b1", item), String.format("%04d-b2", item))
+        );
+    }
+
+    @Test
+    public void fusing_filter() {
+        test_fusing(
+                stage -> stage
+                        .filter(i -> i % 2 == 0)
+                        .filter(i -> i % 3 == 0)
+                        .map(Objects::toString),
+                item -> item % 2 == 0 && item % 3 == 0 ? Stream.of(item.toString()) : Stream.empty()
+        );
+    }
+
+    @Test
+    public void fusing_flatMap_with_inputMap() {
+        test_fusing(
+                stage -> stage
+                        .map(Objects::toString)
+                        .flatMap(item -> Traversers.traverseItems(item + "-1", item + "-2")),
+                item -> Stream.of(item.toString() + "-1", item.toString() + "-2")
+        );
+    }
+
+    @Test
+    public void fusing_flatMap_with_outputMap() {
+        test_fusing(
+                stage -> stage
+                        .flatMap(item -> Traversers.traverseItems(item + "-1", item + "-2"))
+                        .map(item -> item + "x"),
+                item -> Stream.of(item.toString() + "-1x", item.toString() + "-2x")
+        );
+    }
+
+    @Test
+    public void fusing_flatMapComplex() {
+        test_fusing(
+                stage -> stage
+                        .filter(item -> item % 2 == 0)
+                        .map(item -> item + "-x")
+                        .flatMap(item -> Traversers.traverseItems(item + "1", item + "2"))
+                        .map(item -> item + "y")
+                        .flatMap(item -> Traversers.traverseItems(item + "3", item + "4"))
+                        .map(item -> item + "z"),
+                item -> item % 2 == 0
+                        ? Stream.of(item + "-x1y3z", item + "-x2y3z", item + "-x1y4z", item + "-x2y4z")
+                        : Stream.empty()
+        );
+    }
+
+    @Test
+    public void fusing_mapToNull_leading() {
+        test_fusing(
+                stage -> stage
+                        .map(item -> (String) null)
+                        .flatMap(Traversers::traverseItems),
+                item -> Stream.empty()
+        );
+    }
+
+    @Test
+    public void fusing_mapToNull_inside() {
+        test_fusing(
+                stage -> stage
+                        .flatMap(Traversers::traverseItems)
+                        .map(item -> (String) null)
+                        .flatMap(Traversers::traverseItems),
+                item -> Stream.empty()
+        );
+    }
+
+    @Test
+    public void fusing_mapToNull_trailing() {
+        test_fusing(
+                stage -> stage
+                        .flatMap(Traversers::traverseItems)
+                        .map(item -> (String) null),
+                item -> Stream.empty()
+        );
+    }
+
+    private void test_fusing(Function<GeneralStage<Integer>, GeneralStage<String>> addToPipelineFn,
+                             Function<Integer, Stream<String>> plainFlatMapFn) {
+        // Given
+        List<Integer> input = sequence(itemCount);
+
+        // When
+        StreamStage<Integer> sourceStage = streamStageFromList(input);
+        GeneralStage<String> mappedStage = addToPipelineFn.apply(sourceStage);
+
+        // Then
+        mappedStage.drainTo(sink);
+        assertVertexCount(p.toDag(), 3);
+        assertContainsFused(true);
+        execute();
+        assertEquals(
+                streamToString(input.stream().flatMap(plainFlatMapFn), Objects::toString),
+                streamToString(sinkList.stream(), Object::toString));
+    }
+
+    private void assertVertexCount(DAG dag, int expectedCount) {
+        int[] count = {0};
+        dag.iterator().forEachRemaining(v -> count[0]++);
+        assertEquals("unexpected vertex count in DAG:\n" + dag.toDotString(), expectedCount, count[0]);
+    }
+
+    @Test
+    public void fusing_testWithBranch() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        StreamStage<String> mappedSource = streamStageFromList(input)
+                .map(item -> item + "-x");
+
+        // When
+        StreamStage<String> mapped1 = mappedSource.map(item -> item + "-branch1");
+        StreamStage<String> mapped2 = mappedSource.map(item -> item + "-branch2");
+        p.drainTo(sink, mapped1, mapped2);
+
+        // Then
+        assertContainsFused(false);
+        assertVertexCount(p.toDag(), 5);
+        execute();
+        assertEquals(
+                streamToString(input.stream().flatMap(t -> Stream.of(t + "-x-branch1", t + "-x-branch2")), identity()),
+                streamToString(sinkList.stream(), Object::toString));
+    }
+
+    @Test
+    public void fusing_when_localParallelismDifferent_then_notFused() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+
+        // When
+        streamStageFromList(input)
+                .map(item -> item + "-a")
+                .setLocalParallelism(1)
+                .map(item -> item + "b")
+                .setLocalParallelism(2)
+                .drainTo(sink);
+
+        // Then
+        assertContainsFused(false);
+        assertVertexCount(p.toDag(), 4);
+        execute();
+        assertEquals(
+                streamToString(input.stream().map(t -> t  + "-ab"), identity()),
+                streamToString(sinkList.stream(), Object::toString));
+    }
+
+    private void assertContainsFused(boolean expectedContains) {
+        String dotString = p.toDag().toDotString();
+        assertEquals(dotString, expectedContains, dotString.contains("fused"));
     }
 
     @Test

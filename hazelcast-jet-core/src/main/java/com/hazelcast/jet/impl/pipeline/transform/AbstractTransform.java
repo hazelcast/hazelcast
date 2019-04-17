@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.pipeline.transform;
 import com.hazelcast.jet.core.Vertex;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
@@ -39,7 +40,7 @@ public abstract class AbstractTransform implements Transform {
     }
 
     protected AbstractTransform(String name, @Nonnull Transform upstream) {
-        this(name, singletonList(upstream));
+        this(name, new ArrayList<>(singletonList(upstream)));
     }
 
     @Nonnull @Override
