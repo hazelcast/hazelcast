@@ -697,25 +697,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readLockConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "  <lock name=\"default\">"
-                + "        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>"
-                + "  </lock>"
-                + "  <lock name=\"custom\">"
-                + "       <quorum-ref>customQuorumRule</quorum-ref>"
-                + "  </lock>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        LockConfig defaultConfig = config.getLockConfig("default");
-        LockConfig customConfig = config.getLockConfig("custom");
-        assertEquals("quorumRuleWithThreeNodes", defaultConfig.getQuorumName());
-        assertEquals("customQuorumRule", customConfig.getQuorumName());
-    }
-
-    @Override
-    @Test
     public void readReliableTopic() {
         String xml = HAZELCAST_START_TAG
                 + "    <reliable-topic name=\"custom\">"

@@ -464,10 +464,6 @@ hazelcast:
       async-backup-count: 0
       quorum-ref: quorumRuleWithThreeMembers
 
-  lock:
-    default:
-      quorum-ref: quorumRuleWithThreeMembers
-
   atomic-long:
     default:
       quorum-ref: quorumRuleWithThreeMembers

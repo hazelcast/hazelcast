@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.12.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
     <group>
         <name>dev</name>
@@ -472,10 +472,6 @@
         <async-backup-count>0</async-backup-count>
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </semaphore>
-
-    <lock name="default">
-        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
-    </lock>
 
     <atomic-long name="default">
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>

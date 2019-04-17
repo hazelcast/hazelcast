@@ -22,24 +22,38 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Default {@link com.hazelcast.spi.ObjectNamespace} implementation for {@link com.hazelcast.core.DistributedObject}.
  *
  * @since 3.9
  */
-public final class DistributedObjectNamespace extends DefaultObjectNamespace
-        implements ObjectNamespace, IdentifiedDataSerializable {
+public final class DistributedObjectNamespace implements ObjectNamespace, IdentifiedDataSerializable {
+
+    private String service;
+    private String objectName;
 
     public DistributedObjectNamespace() {
     }
 
     public DistributedObjectNamespace(String serviceName, String objectName) {
-        super(serviceName, objectName);
+        this.service = serviceName;
+        this.objectName = objectName;
     }
 
     public DistributedObjectNamespace(ObjectNamespace namespace) {
-        super(namespace.getServiceName(), namespace.getObjectName());
+        this(namespace.getServiceName(), namespace.getObjectName());
+    }
+
+    @Override
+    public String getServiceName() {
+        return service;
+    }
+
+    @Override
+    public String getObjectName() {
+        return objectName;
     }
 
     @Override
@@ -62,5 +76,35 @@ public final class DistributedObjectNamespace extends DefaultObjectNamespace
     @Override
     public int getId() {
         return SpiDataSerializerHook.DISTRIBUTED_OBJECT_NS;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DistributedObjectNamespace)) {
+            return false;
+        }
+
+        DistributedObjectNamespace that = (DistributedObjectNamespace) o;
+
+        if (!Objects.equals(service, that.service)) {
+            return false;
+        }
+        return Objects.equals(objectName, that.objectName);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = service != null ? service.hashCode() : 0;
+        result = 31 * result + (objectName != null ? objectName.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DistributedObjectNamespace{" + "service='" + service + '\'' + ", objectName='" + objectName + '\'' + '}';
     }
 }

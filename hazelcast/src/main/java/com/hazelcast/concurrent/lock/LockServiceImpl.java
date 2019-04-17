@@ -19,11 +19,8 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.concurrent.lock.operations.LocalLockCleanupOperation;
 import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
-import com.hazelcast.config.LockConfig;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
@@ -37,7 +34,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
-import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -46,7 +42,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -54,30 +49,14 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-
 @SuppressWarnings("checkstyle:methodcount")
-public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
+public final class LockServiceImpl implements LockService, ManagedService, MembershipAwareService,
         FragmentedMigrationAwareService, ClientAwareService, QuorumAwareService {
-
-    private static final Object NULL_OBJECT = new Object();
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
     private final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
-            = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
-
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
-    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            LockConfig lockConfig = nodeEngine.getConfig().findLockConfig(name);
-            String quorumName = lockConfig.getQuorumName();
-            return quorumName == null ? NULL_OBJECT : quorumName;
-        }
-    };
-
+            = new ConcurrentHashMap<>();
     private final long maxLeaseTimeInMillis;
 
     public LockServiceImpl(NodeEngine nodeEngine) {
@@ -96,21 +75,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
-            public LockStoreInfo createNew(ObjectNamespace key) {
-                return new LockStoreInfo() {
-                    @Override
-                    public int getBackupCount() {
-                        return 1;
-                    }
-
-                    @Override
-                    public int getAsyncBackupCount() {
-                        return 0;
-                    }
-                };
-            }
-        });
     }
 
     @Override
@@ -219,7 +183,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 // op will be executed on partition thread locally. Invocation is to handle retries.
                 operationService.invokeOnTarget(SERVICE_NAME, op, nodeEngine.getThisAddress());
             }
-            lockStore.cleanWaitersAndSignalsFor(key, uuid);
         }
     }
 
@@ -236,7 +199,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     @Override
     public Collection<LockResource> getAllLocks() {
-        final Collection<LockResource> locks = new LinkedList<LockResource>();
+        final Collection<LockResource> locks = new LinkedList<>();
         for (LockStoreContainer container : containers) {
             for (LockStoreImpl lockStore : container.getLockStores()) {
                 locks.addAll(lockStore.getLocks());
@@ -336,34 +299,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectId) {
-        return new LockProxy(nodeEngine, this, objectId);
-    }
-
-    @Override
-    public void destroyDistributedObject(String objectId) {
-        final Data key = nodeEngine.getSerializationService().toData(objectId, StringPartitioningStrategy.INSTANCE);
-        final int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        final LockStoreImpl lockStore = containers[partitionId].getLockStore(new InternalLockNamespace(objectId));
-
-        if (lockStore != null) {
-            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-            operationService.execute(new PartitionSpecificRunnable() {
-                @Override
-                public void run() {
-                    lockStore.forceUnlock(key);
-                }
-
-                @Override
-                public int getPartitionId() {
-                    return partitionId;
-                }
-            });
-        }
-        quorumConfigCache.remove(objectId);
-    }
-
-    @Override
     public void clientDisconnected(String clientUuid) {
         releaseLocksOwnedBy(clientUuid);
     }
@@ -374,8 +309,8 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     @Override
     public String getQuorumName(String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
-        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+        // LockService implements QuorumAwareService but only as a marker
+        // to support Map and Multimap.
+        throw new UnsupportedOperationException();
     }
 }

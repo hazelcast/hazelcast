@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,7 +30,6 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,24 +37,15 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_STORE;
-import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.readNamespaceCompatibly;
-import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.writeNamespaceCompatibly;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore, Versioned {
 
     private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
-            new ConstructorFunction<Data, LockResourceImpl>() {
-                public LockResourceImpl createNew(Data key) {
-                    return new LockResourceImpl(key, LockStoreImpl.this);
-                }
-            };
+            key -> new LockResourceImpl(key, LockStoreImpl.this);
 
-    private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
+    private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<>();
 
-    // warning: the namespace field is unreliable if this LockStoreImpl was created for ILock proxy
-    // ObjectNameSpace.getObjectName() can give you a wrong name because LockStoreImpl instances
-    // are shared for ILock proxies. see InternalLockNamespace for details.
     private ObjectNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;
@@ -201,13 +190,6 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         }
     }
 
-    void cleanWaitersAndSignalsFor(Data key, String uuid) {
-        LockResourceImpl lockResource = locks.get(key);
-        if (lockResource != null) {
-            lockResource.cleanWaitersAndSignalsFor(uuid);
-        }
-    }
-
     public int getVersion(Data key) {
         LockResourceImpl lock = locks.get(key);
         if (lock != null) {
@@ -217,16 +199,11 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     public Collection<LockResource> getLocks() {
-        return Collections.<LockResource>unmodifiableCollection(locks.values());
+        return Collections.unmodifiableCollection(locks.values());
     }
 
     public void removeLocalLocks() {
-        for (Iterator<Map.Entry<Data, LockResourceImpl>> iterator = locks.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry<Data, LockResourceImpl> entry = iterator.next();
-            if (entry.getValue().isLocal()) {
-                iterator.remove();
-            }
-        }
+        locks.entrySet().removeIf(entry -> entry.getValue().isLocal());
     }
 
     @Override
@@ -240,10 +217,6 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
             }
         }
         return keySet;
-    }
-
-    public boolean hasLock() {
-        return !locks.isEmpty();
     }
 
     void scheduleEviction(Data key, int version, long leaseTime) {
@@ -283,63 +256,8 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         return backupCount + asyncBackupCount;
     }
 
-    public void addAwait(Data key, String conditionId, String caller, long threadId) {
-        LockResourceImpl lock = getLock(key);
-        lock.addAwait(conditionId, caller, threadId);
-    }
-
-    public void removeAwait(Data key, String conditionId, String caller, long threadId) {
-        LockResourceImpl lock = getLock(key);
-        lock.removeAwait(conditionId, caller, threadId);
-    }
-
-    public void signal(Data key, String conditionId, int maxSignalCount, String objectName) {
-        LockResourceImpl lock = getLock(key);
-        lock.signal(conditionId, maxSignalCount, objectName);
-    }
-
     public WaitNotifyKey getNotifiedKey(Data key) {
-        ConditionKey conditionKey = getSignalKey(key);
-        if (conditionKey == null) {
-            return new LockWaitNotifyKey(namespace, key);
-        }
-        return conditionKey;
-    }
-
-    private ConditionKey getSignalKey(Data key) {
-        LockResourceImpl lock = locks.get(key);
-        if (lock == null) {
-            return null;
-        } else {
-            return lock.getSignalKey();
-        }
-    }
-
-    public void removeSignalKey(ConditionKey conditionKey) {
-        LockResourceImpl lock = locks.get(conditionKey.getKey());
-        if (lock != null) {
-            lock.removeSignalKey(conditionKey);
-        }
-    }
-
-    public boolean hasSignalKey(ConditionKey conditionKey) {
-        LockResourceImpl lock = locks.get(conditionKey.getKey());
-        return lock != null && lock.hasSignalKey(conditionKey);
-    }
-
-    public void registerExpiredAwaitOp(AwaitOperation awaitResponse) {
-        Data key = awaitResponse.getKey();
-        LockResourceImpl lock = getLock(key);
-        lock.registerExpiredAwaitOp(awaitResponse);
-    }
-
-    public AwaitOperation pollExpiredAwaitOp(Data key) {
-        LockResourceImpl lock = locks.get(key);
-        if (lock == null) {
-            return null;
-        } else {
-            return lock.pollExpiredAwaitOp();
-        }
+        return new LockWaitNotifyKey(namespace, key);
     }
 
     @Override
@@ -364,7 +282,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        writeNamespaceCompatibly(namespace, out);
+        out.writeObject(namespace);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         int len = 0;
@@ -377,7 +295,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         if (len > 0) {
             for (LockResourceImpl lock : locks.values()) {
                 if (!lock.isLocal()) {
-                    lock.writeData(out);
+                    out.writeObject(lock);
                 }
             }
         }
@@ -385,14 +303,13 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        namespace = readNamespaceCompatibly(in);
+        namespace = in.readObject();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                LockResourceImpl lock = new LockResourceImpl();
-                lock.readData(in);
+                LockResourceImpl lock = in.readObject();
                 lock.setLockStore(this);
                 locks.put(lock.getKey(), lock);
             }

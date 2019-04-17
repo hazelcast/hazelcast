@@ -21,9 +21,6 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
-import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -33,7 +30,6 @@ import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -44,9 +40,7 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -115,25 +109,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     public NodeEngineImpl getNodeEngine(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.nodeEngine;
-    }
-
-    @Test
-    public void testLock() {
-        String partitionKey = "hazelcast";
-        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-
-        ILock lock = hz.getLock("lock@" + partitionKey);
-        lock.lock();
-        assertEquals("lock@" + partitionKey, lock.getName());
-        assertEquals(partitionKey, lock.getPartitionKey());
-
-        Node node = getNode(hz);
-        LockServiceImpl lockService = node.nodeEngine.getService(LockServiceImpl.SERVICE_NAME);
-
-        Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
-        LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace(lock.getName()));
-        Data key = node.getSerializationService().toData(lock.getName(), StringPartitioningStrategy.INSTANCE);
-        assertTrue(lockStore.isLocked(key));
     }
 
     @Test

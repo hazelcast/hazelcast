@@ -32,7 +32,6 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -134,11 +133,6 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public JobTracker getJobTracker(String name) {
         return getClient().getJobTracker(name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        return getClient().getLock(key);
     }
 
     @Override

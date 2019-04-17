@@ -1266,20 +1266,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testLock() {
-        String testLock = "TestLock";
-        Config cfg = new Config();
-
-        LockConfig expectedConfig = new LockConfig().setName(testLock).setQuorumName("quorum");
-
-        cfg.addLockConfig(expectedConfig);
-
-        LockConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getLockConfig(testLock);
-
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testScheduledExecutor() {
         Config cfg = new Config();
         ScheduledExecutorConfig scheduledExecutorConfig =

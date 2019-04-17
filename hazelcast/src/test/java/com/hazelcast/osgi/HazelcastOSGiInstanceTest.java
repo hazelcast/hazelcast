@@ -28,7 +28,6 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -269,19 +268,6 @@ public class HazelcastOSGiInstanceTest {
         assertEquals(mockMultiMap, hazelcastOSGiInstance.getMultiMap("my-multimap"));
 
         verify(mockHazelcastInstance).getMultiMap("my-multimap");
-    }
-
-    @Test
-    public void getLockCalledSuccessfullyOverOSGiInstance() {
-        ILock mockLock = mock(ILock.class);
-        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
-
-        when(mockHazelcastInstance.getLock("my-lock")).thenReturn(mockLock);
-
-        assertEquals(mockLock, hazelcastOSGiInstance.getLock("my-lock"));
-
-        verify(mockHazelcastInstance).getLock("my-lock");
     }
 
     @Test

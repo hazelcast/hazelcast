@@ -28,7 +28,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -113,7 +112,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             = new ConcurrentHashMap<String, AtomicReferenceConfig>();
     private final ConcurrentMap<String, CountDownLatchConfig> countDownLatchConfigs
             = new ConcurrentHashMap<String, CountDownLatchConfig>();
-    private final ConcurrentMap<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
     private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
     private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
     private final ConcurrentMap<String, ReplicatedMapConfig> replicatedMapConfigs =
@@ -148,7 +146,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             multiMapConfigs,
             cardinalityEstimatorConfigs,
             ringbufferConfigs,
-            lockConfigs,
             listConfigs,
             setConfigs,
             atomicLongConfigs,
@@ -302,9 +299,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof RingbufferConfig) {
             RingbufferConfig ringbufferConfig = (RingbufferConfig) newConfig;
             currentConfig = ringbufferConfigs.putIfAbsent(ringbufferConfig.getName(), ringbufferConfig);
-        } else if (newConfig instanceof LockConfig) {
-            LockConfig lockConfig = (LockConfig) newConfig;
-            currentConfig = lockConfigs.putIfAbsent(lockConfig.getName(), lockConfig);
         } else if (newConfig instanceof AtomicLongConfig) {
             AtomicLongConfig atomicLongConfig = (AtomicLongConfig) newConfig;
             currentConfig = atomicLongConfigs.putIfAbsent(atomicLongConfig.getName(), atomicLongConfig);
@@ -551,16 +545,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public LockConfig findLockConfig(String name) {
-        return lookupByPattern(configPatternMatcher, lockConfigs, name);
-    }
-
-    @Override
-    public Map<String, LockConfig> getLockConfigs() {
-        return lockConfigs;
-    }
-
-    @Override
     public ListConfig findListConfig(String name) {
         return lookupByPattern(configPatternMatcher, listConfigs, name);
     }
@@ -706,7 +690,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         configToVersion.put(MultiMapConfig.class, V3_9);
         configToVersion.put(CardinalityEstimatorConfig.class, V3_9);
         configToVersion.put(RingbufferConfig.class, V3_9);
-        configToVersion.put(LockConfig.class, V3_9);
         configToVersion.put(ListConfig.class, V3_9);
         configToVersion.put(SetConfig.class, V3_9);
         configToVersion.put(ReplicatedMapConfig.class, V3_9);

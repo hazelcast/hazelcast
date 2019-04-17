@@ -26,7 +26,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -164,14 +163,6 @@ public interface ConfigurationService {
     CountDownLatchConfig findCountDownLatchConfig(String name);
 
     /**
-     * Finds existing Lock config.
-     *
-     * @param name name of the config
-     * @return Lock config or {@code null} when requested Lock configuration does not exist
-     */
-    LockConfig findLockConfig(String name);
-
-    /**
      * Finds existing List config.
      *
      * @param name name of the config
@@ -258,13 +249,6 @@ public interface ConfigurationService {
      * @return registered map configurations
      */
     Map<String, MapConfig> getMapConfigs();
-
-    /**
-     * Returns all registered lock configurations.
-     *
-     * @return registered lock configurations
-     */
-    Map<String, LockConfig> getLockConfigs();
 
     /**
      * Returns all registered queue configurations.

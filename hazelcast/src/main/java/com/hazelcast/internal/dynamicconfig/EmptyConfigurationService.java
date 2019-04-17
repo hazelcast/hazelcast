@@ -26,7 +26,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -117,11 +116,6 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public LockConfig findLockConfig(String name) {
-        return null;
-    }
-
-    @Override
     public ListConfig findListConfig(String name) {
         return null;
     }
@@ -183,11 +177,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, MerkleTreeConfig> getMapMerkleTreeConfigs() {
-        return emptyMap();
-    }
-
-    @Override
-    public Map<String, LockConfig> getLockConfigs() {
         return emptyMap();
     }
 

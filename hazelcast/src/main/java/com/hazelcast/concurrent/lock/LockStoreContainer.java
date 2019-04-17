@@ -38,30 +38,26 @@ public final class LockStoreContainer {
 
     private final LockServiceImpl lockService;
     private final int partitionId;
-
-    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores =
-            new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
-    private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor =
-            new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
-                public LockStoreImpl createNew(ObjectNamespace namespace) {
-                    final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor =
-                            lockService.getConstructor(namespace.getServiceName());
-                    if (ctor != null) {
-                        LockStoreInfo info = ctor.createNew(namespace);
-                        if (info != null) {
-                            int backupCount = info.getBackupCount();
-                            int asyncBackupCount = info.getAsyncBackupCount();
-                            EntryTaskScheduler<Data, Integer> entryTaskScheduler = createScheduler(namespace);
-                            return new LockStoreImpl(lockService, namespace, entryTaskScheduler, backupCount, asyncBackupCount);
-                        }
-                    }
-                    throw new IllegalArgumentException("No LockStore constructor is registered!");
-                }
-            };
+    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<>();
+    private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor;
 
     public LockStoreContainer(LockServiceImpl lockService, int partitionId) {
         this.lockService = lockService;
         this.partitionId = partitionId;
+
+        this.lockStoreConstructor =  namespace -> {
+            ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor = lockService.getConstructor(namespace.getServiceName());
+            if (ctor != null) {
+                LockStoreInfo info = ctor.createNew(namespace);
+                if (info != null) {
+                    int backupCount = info.getBackupCount();
+                    int asyncBackupCount = info.getAsyncBackupCount();
+                    EntryTaskScheduler<Data, Integer> entryTaskScheduler = createScheduler(namespace);
+                    return new LockStoreImpl(lockService, namespace, entryTaskScheduler, backupCount, asyncBackupCount);
+                }
+            }
+            throw new IllegalArgumentException("No LockStore constructor is registered! ns: " + namespace);
+        };
     }
 
     void clearLockStore(ObjectNamespace namespace) {

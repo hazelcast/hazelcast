@@ -141,7 +141,6 @@ public class ConfigXmlGenerator {
         collectionXmlGenerator(gen, "set", config.getSetConfigs().values());
         topicXmlGenerator(gen, config);
         semaphoreXmlGenerator(gen, config);
-        lockXmlGenerator(gen, config);
         countDownLatchXmlGenerator(gen, config);
         ringbufferXmlGenerator(gen, config);
         atomicLongXmlGenerator(gen, config);
@@ -606,14 +605,6 @@ public class ConfigXmlGenerator {
             MergePolicyConfig mergePolicyConfig = q.getMergePolicyConfig();
             gen.node("quorum-ref", q.getQuorumName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
-                    .close();
-        }
-    }
-
-    private static void lockXmlGenerator(XmlGenerator gen, Config config) {
-        for (LockConfig c : config.getLockConfigs().values()) {
-            gen.open("lock", "name", c.getName())
-                    .node("quorum-ref", c.getQuorumName())
                     .close();
         }
     }

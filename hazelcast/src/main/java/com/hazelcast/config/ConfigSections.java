@@ -48,7 +48,6 @@ enum ConfigSections {
     RELIABLE_TOPIC("reliable-topic", true),
     JOB_TRACKER("jobtracker", true),
     SEMAPHORE("semaphore", true),
-    LOCK("lock", true),
     RINGBUFFER("ringbuffer", true),
     ATOMIC_LONG("atomic-long", true),
     ATOMIC_REFERENCE("atomic-reference", true),

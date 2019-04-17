@@ -1878,21 +1878,6 @@ hazelcast:
       quorum-ref: quorumRuleWithThreeNodes
 
   #
-  # ===== HAZELCAST LOCK CONFIGURATION =====
-  #
-  # Configuration element's name is "lock". It has the required attribute "name" with which you
-  # can specify the name of your Lock. This attribute's default value is "default".
-  # It has the following sub-elements:
-  # * "quorum-ref":
-  #     Adds the quorum for this lock which you configure using the "quorum" element. You should set the "quorum-ref"'s value
-  #     as the "quorum"'s name.
-  #
-  lock:
-    default:
-      quorum-ref: quorumRuleWithThreeNodes
-
-
-  #
   # ===== HAZELCAST RINGBUFFER CONFIGURATION =====
   #
   # Configuration element's name is "ringbuffer". It has the required attribute "name" with which you

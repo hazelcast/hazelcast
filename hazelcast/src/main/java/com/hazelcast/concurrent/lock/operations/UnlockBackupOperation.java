@@ -52,7 +52,6 @@ public class UnlockBackupOperation extends AbstractLockOperation implements Back
         }
 
         response = unlocked;
-        lockStore.pollExpiredAwaitOp(key);
     }
 
     @Override

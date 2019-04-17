@@ -69,7 +69,6 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -84,7 +83,6 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -515,12 +513,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public JobTracker getJobTracker(String name) {
         checkNotNull(name, "Retrieving a job tracker instance with a null name is not allowed!");
         return getDistributedObject(MapReduceService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        checkNotNull(key, "Retrieving a lock instance with a null key is not allowed!");
-        return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
     }
 
     @Override

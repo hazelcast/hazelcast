@@ -169,32 +169,6 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPendingInvocationAndWaitEntryCancelled_whenDisconnected_withLock() {
-        Config config = new Config();
-        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
-        final String name = randomName();
-        server.getLock(name).lock();
-
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    client.getLock(name).lock();
-                } catch (Throwable ignored) {
-                }
-            }
-        });
-
-        assertNonEmptyPendingInvocationAndWaitSet(server);
-
-        client.shutdown();
-
-        assertEmptyPendingInvocationAndWaitSet(server);
-    }
-
-    @Test
     public void testPendingInvocationAndWaitEntryCancelled_whenDisconnected_withReliableTopic() {
         Config config = new Config();
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);

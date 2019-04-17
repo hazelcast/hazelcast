@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConf
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMerkleTreeConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
@@ -67,7 +66,6 @@ import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -194,13 +192,6 @@ public class ClientDynamicClusterConfig extends Config {
                 queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getQuorumName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
                 queueConfig.getMergePolicyConfig().getBatchSize());
-        invoke(request);
-        return this;
-    }
-
-    @Override
-    public Config addLockConfig(LockConfig lockConfig) {
-        ClientMessage request = DynamicConfigAddLockConfigCodec.encodeRequest(lockConfig.getName(), lockConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -645,26 +636,6 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public LockConfig findLockConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public LockConfig getLockConfig(String name) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Map<String, LockConfig> getLockConfigs() {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
-    }
-
-    @Override
-    public Config setLockConfigs(Map<String, LockConfig> lockConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

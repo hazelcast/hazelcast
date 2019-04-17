@@ -16,8 +16,6 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.operations.GetLockCountOperation;
-import com.hazelcast.concurrent.lock.operations.GetRemainingLeaseTimeOperation;
 import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
@@ -55,24 +53,6 @@ public final class LockProxySupport {
         return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
     }
 
-    public boolean isLockedByCurrentThread(NodeEngine nodeEngine, Data key) {
-        IsLockedOperation operation = new IsLockedOperation(namespace, key, getThreadId());
-        InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
-        return f.join();
-    }
-
-    public int getLockCount(NodeEngine nodeEngine, Data key) {
-        Operation operation = new GetLockCountOperation(namespace, key);
-        InternalCompletableFuture<Number> f = invoke(nodeEngine, operation, key);
-        return f.join().intValue();
-    }
-
-    public long getRemainingLeaseTime(NodeEngine nodeEngine, Data key) {
-        Operation operation = new GetRemainingLeaseTimeOperation(namespace, key);
-        InternalCompletableFuture<Number> f = invoke(nodeEngine, operation, key);
-        return f.join().longValue();
-    }
-
     public void lock(NodeEngine nodeEngine, Data key) {
         lock(nodeEngine, key, -1);
     }
@@ -84,22 +64,6 @@ public final class LockProxySupport {
         InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
         if (!f.join()) {
             throw new IllegalStateException();
-        }
-    }
-
-    public void lockInterruptly(NodeEngine nodeEngine, Data key) throws InterruptedException {
-        lockInterruptly(nodeEngine, key, -1);
-    }
-
-    public void lockInterruptly(NodeEngine nodeEngine, Data key, long leaseTime) throws InterruptedException {
-        leaseTime = getLeaseTime(leaseTime);
-
-        LockOperation operation = new LockOperation(namespace, key, getThreadId(), leaseTime, -1);
-        InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
-        try {
-            f.get();
-        } catch (Throwable t) {
-            throw rethrowAllowInterrupted(t);
         }
     }
 

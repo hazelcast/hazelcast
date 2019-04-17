@@ -36,7 +36,6 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddEventJournalConf
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddExecutorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddFlakeIdGeneratorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddListConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddLockConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMerkleTreeConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddMultiMapConfigMessageTask;
@@ -247,48 +246,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.ringbuffer.RingbufferSizeMessageTask(clientMessage, node, connection);
-            }
-        };
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.lock
-        factories[com.hazelcast.client.impl.protocol.codec.LockUnlockCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockUnlockMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.LockIsLockedCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockIsLockedMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.LockForceUnlockCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockForceUnlockMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.LockGetRemainingLeaseTimeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockGetRemainingLeaseTimeMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.LockIsLockedByCurrentThreadCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockIsLockedByCurrentThreadMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.LockLockCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockLockMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.LockTryLockCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockTryLockMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.LockGetLockCountCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.lock.LockGetLockCountMessageTask(clientMessage, node, connection);
             }
         };
 //endregion
@@ -755,28 +712,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.transactionalmultimap.TransactionalMultiMapValueCountMessageTask(clientMessage, node, connection);
-            }
-        };
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.condition
-        factories[com.hazelcast.client.impl.protocol.codec.ConditionSignalCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionSignalMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.ConditionBeforeAwaitCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionBeforeAwaitMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.ConditionAwaitCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionAwaitMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.ConditionSignalAllCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.condition.ConditionSignalAllMessageTask(clientMessage, node, connection);
             }
         };
 //endregion
@@ -2093,11 +2028,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AddRingbufferConfigMessageTask(clientMessage, node, connection);
-            }
-        };
-        factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new AddLockConfigMessageTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -24,19 +23,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_RESOURCE;
-import static com.hazelcast.util.MapUtil.createHashMap;
-import static com.hazelcast.util.SetUtil.createHashSet;
 
 final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {
 
@@ -50,9 +40,6 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     private boolean transactional;
     private boolean blockReads;
     private boolean local;
-    private Map<String, WaitersInfo> waiters;
-    private Set<ConditionKey> conditionKeys;
-    private List<AwaitOperation> expiredAwaitOps;
     private LockStoreImpl lockStore;
 
     // version is stored locally
@@ -171,122 +158,6 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
     }
 
-    void addAwait(String conditionId, String caller, long threadId) {
-        if (waiters == null) {
-            waiters = createHashMap(2);
-        }
-
-        WaitersInfo condition = waiters.get(conditionId);
-        if (condition == null) {
-            condition = new WaitersInfo(conditionId);
-            waiters.put(conditionId, condition);
-        }
-        condition.addWaiter(caller, threadId);
-    }
-
-    void removeAwait(String conditionId, String caller, long threadId) {
-        if (waiters == null) {
-            return;
-        }
-
-        WaitersInfo condition = waiters.get(conditionId);
-        if (condition == null) {
-            return;
-        }
-
-        condition.removeWaiter(caller, threadId);
-        if (!condition.hasWaiter()) {
-            waiters.remove(conditionId);
-        }
-    }
-
-    /**
-     * Signal a waiter.
-     * <p>
-     * We need to pass objectName because the name in {#objectName} is unrealible.
-     *
-     * @param conditionId
-     * @param maxSignalCount
-     * @param objectName
-     * @see InternalLockNamespace
-     */
-    public void signal(String conditionId, int maxSignalCount, String objectName) {
-        if (waiters == null) {
-            return;
-        }
-
-        Set<WaitersInfo.ConditionWaiter> waiters;
-        WaitersInfo condition = this.waiters.get(conditionId);
-        if (condition == null) {
-            return;
-        } else {
-            waiters = condition.getWaiters();
-        }
-        if (waiters == null) {
-            return;
-        }
-        Iterator<WaitersInfo.ConditionWaiter> iterator = waiters.iterator();
-        for (int i = 0; iterator.hasNext() && i < maxSignalCount; i++) {
-            WaitersInfo.ConditionWaiter waiter = iterator.next();
-            ConditionKey signalKey = new ConditionKey(objectName,
-                    key, conditionId, waiter.getCaller(), waiter.getThreadId());
-            registerSignalKey(signalKey);
-            iterator.remove();
-        }
-        if (!condition.hasWaiter()) {
-            this.waiters.remove(conditionId);
-        }
-
-    }
-
-    private void registerSignalKey(ConditionKey conditionKey) {
-        if (conditionKeys == null) {
-            conditionKeys = new HashSet<ConditionKey>();
-        }
-        conditionKeys.add(conditionKey);
-    }
-
-    ConditionKey getSignalKey() {
-        Set<ConditionKey> keys = conditionKeys;
-        if (isNullOrEmpty(keys)) {
-            return null;
-        }
-
-        return keys.iterator().next();
-    }
-
-    void removeSignalKey(ConditionKey conditionKey) {
-        if (conditionKeys != null) {
-            conditionKeys.remove(conditionKey);
-        }
-    }
-
-    boolean hasSignalKey(ConditionKey conditionKey) {
-        if (conditionKeys == null) {
-            return false;
-        }
-        return conditionKeys.contains(conditionKey);
-    }
-
-    void registerExpiredAwaitOp(AwaitOperation awaitResponse) {
-        if (expiredAwaitOps == null) {
-            expiredAwaitOps = new LinkedList<AwaitOperation>();
-        }
-        expiredAwaitOps.add(awaitResponse);
-    }
-
-    AwaitOperation pollExpiredAwaitOp() {
-        List<AwaitOperation> ops = expiredAwaitOps;
-        if (isNullOrEmpty(ops)) {
-            return null;
-        }
-
-        Iterator<AwaitOperation> iterator = ops.iterator();
-        AwaitOperation awaitResponse = iterator.next();
-        iterator.remove();
-        return awaitResponse;
-    }
-
     void clear() {
         threadId = 0;
         lockCount = 0;
@@ -306,10 +177,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     }
 
     boolean isRemovable() {
-        return !isLocked()
-                && isNullOrEmpty(waiters)
-                && isNullOrEmpty(expiredAwaitOps)
-                && isNullOrEmpty(conditionKeys);
+        return !isLocked();
     }
 
     @Override
@@ -326,7 +194,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
      * Local locks are local to the partition and replicaIndex where they have been acquired.
      * That is the reason they are removed on any partition migration on the destination.
      *
-     * @returns true if the lock is local, false otherwise
+     * @return true if the lock is local, false otherwise
      */
     @Override
     public boolean isLocal() {
@@ -403,43 +271,6 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         out.writeLong(acquireTime);
         out.writeBoolean(transactional);
         out.writeBoolean(blockReads);
-
-        int conditionCount = getConditionCount();
-        out.writeInt(conditionCount);
-        if (conditionCount > 0) {
-            for (WaitersInfo condition : waiters.values()) {
-                condition.writeData(out);
-            }
-        }
-        int signalCount = getSignalCount();
-        out.writeInt(signalCount);
-        if (signalCount > 0) {
-            for (ConditionKey signalKey : conditionKeys) {
-                out.writeUTF(signalKey.getObjectName());
-                out.writeUTF(signalKey.getConditionId());
-                out.writeUTF(signalKey.getUuid());
-                out.writeLong(signalKey.getThreadId());
-            }
-        }
-        int expiredAwaitOpsCount = getExpiredAwaitsOpsCount();
-        out.writeInt(expiredAwaitOpsCount);
-        if (expiredAwaitOpsCount > 0) {
-            for (AwaitOperation op : expiredAwaitOps) {
-                op.writeData(out);
-            }
-        }
-    }
-
-    private int getExpiredAwaitsOpsCount() {
-        return expiredAwaitOps == null ? 0 : expiredAwaitOps.size();
-    }
-
-    private int getSignalCount() {
-        return conditionKeys == null ? 0 : conditionKeys.size();
-    }
-
-    private int getConditionCount() {
-        return waiters == null ? 0 : waiters.size();
     }
 
     @Override
@@ -453,34 +284,6 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         acquireTime = in.readLong();
         transactional = in.readBoolean();
         blockReads = in.readBoolean();
-
-        int len = in.readInt();
-        if (len > 0) {
-            waiters = createHashMap(len);
-            for (int i = 0; i < len; i++) {
-                WaitersInfo condition = new WaitersInfo();
-                condition.readData(in);
-                waiters.put(condition.getConditionId(), condition);
-            }
-        }
-
-        len = in.readInt();
-        if (len > 0) {
-            conditionKeys = createHashSet(len);
-            for (int i = 0; i < len; i++) {
-                conditionKeys.add(new ConditionKey(in.readUTF(), key, in.readUTF(), in.readUTF(), in.readLong()));
-            }
-        }
-
-        len = in.readInt();
-        if (len > 0) {
-            expiredAwaitOps = new ArrayList<AwaitOperation>(len);
-            for (int i = 0; i < len; i++) {
-                AwaitOperation op = new AwaitOperation();
-                op.readData(in);
-                expiredAwaitOps.add(op);
-            }
-        }
     }
 
     @Override
@@ -495,10 +298,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         if (threadId != that.threadId) {
             return false;
         }
-        if (owner != null ? !owner.equals(that.owner) : that.owner != null) {
-            return false;
-        }
-        return true;
+        return Objects.equals(owner, that.owner);
     }
 
     @Override
@@ -517,36 +317,5 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
                 + ", acquireTime=" + acquireTime
                 + ", expirationTime=" + expirationTime
                 + '}';
-    }
-
-    private static boolean isNullOrEmpty(Collection c) {
-        return c == null || c.isEmpty();
-    }
-
-    private static boolean isNullOrEmpty(Map m) {
-        return m == null || m.isEmpty();
-    }
-
-    void cleanWaitersAndSignalsFor(String uuid) {
-        if (conditionKeys != null) {
-            Iterator<ConditionKey> iter = conditionKeys.iterator();
-            while (iter.hasNext()) {
-                ConditionKey conditionKey = iter.next();
-                if (conditionKey.getUuid().equals(uuid)) {
-                    iter.remove();
-                }
-            }
-        }
-        if (waiters != null) {
-            for (WaitersInfo waitersInfo : waiters.values()) {
-                Iterator<WaitersInfo.ConditionWaiter> iter = waitersInfo.getWaiters().iterator();
-                while (iter.hasNext()) {
-                    WaitersInfo.ConditionWaiter waiter = iter.next();
-                    if (waiter.getCaller().equals(uuid)) {
-                        iter.remove();
-                    }
-                }
-            }
-        }
     }
 }

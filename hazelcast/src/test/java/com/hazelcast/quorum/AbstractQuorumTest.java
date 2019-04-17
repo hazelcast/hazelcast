@@ -27,7 +27,6 @@ import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -44,7 +43,6 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -165,12 +163,6 @@ public abstract class AbstractQuorumTest {
         return config;
     }
 
-    protected static LockConfig newLockConfig(QuorumType quorumType, String quorumName) {
-        LockConfig config = new LockConfig(LOCK_NAME + quorumType.name());
-        config.setQuorumName(quorumName);
-        return config;
-    }
-
     protected static MapConfig newMapConfig(QuorumType quorumType, String quorumName) {
         MapConfig config = new MapConfig(MAP_NAME + quorumType.name());
         config.setQuorumName(quorumName);
@@ -247,7 +239,6 @@ public abstract class AbstractQuorumTest {
             config.addCardinalityEstimatorConfig(newEstimatorConfig(quorumType, quorumName));
             config.addCountDownLatchConfig(newLatchConfig(quorumType, quorumName));
             config.addListConfig(newListConfig(quorumType, quorumName));
-            config.addLockConfig(newLockConfig(quorumType, quorumName));
             config.addMapConfig(newMapConfig(quorumType, quorumName));
             config.addMultiMapConfig(newMultiMapConfig(quorumType, quorumName));
             config.addQueueConfig(newQueueConfig(quorumType, quorumName));
@@ -321,10 +312,6 @@ public abstract class AbstractQuorumTest {
 
     protected IList list(int index, QuorumType quorumType) {
         return cluster.instance[index].getList(LIST_NAME + quorumType.name());
-    }
-
-    protected ILock lock(int index, QuorumType quorumType) {
-        return cluster.instance[index].getLock(LOCK_NAME + quorumType.name());
     }
 
     protected IMap map(int index, QuorumType quorumType) {

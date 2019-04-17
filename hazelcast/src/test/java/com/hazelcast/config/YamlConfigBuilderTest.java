@@ -680,24 +680,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void readLockConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  lock:\n"
-                + "    default:\n"
-                + "      quorum-ref: quorumRuleWithThreeNodes\n"
-                + "    custom:\n"
-                + "      quorum-ref: customQuorumRule\n";
-
-        Config config = buildConfig(yaml);
-        LockConfig defaultConfig = config.getLockConfig("default");
-        LockConfig customConfig = config.getLockConfig("custom");
-        assertEquals("quorumRuleWithThreeNodes", defaultConfig.getQuorumName());
-        assertEquals("customQuorumRule", customConfig.getQuorumName());
-    }
-
-    @Override
-    @Test
     public void readReliableTopic() {
         String yaml = ""
                 + "hazelcast:\n"

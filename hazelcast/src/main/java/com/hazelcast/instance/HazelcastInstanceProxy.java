@@ -30,7 +30,6 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -137,11 +136,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public <E> Ringbuffer<E> getRingbuffer(String name) {
         return getOriginal().getRingbuffer(name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        return getOriginal().getLock(key);
     }
 
     @Override

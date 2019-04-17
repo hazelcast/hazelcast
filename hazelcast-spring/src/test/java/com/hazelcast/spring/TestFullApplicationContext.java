@@ -49,7 +49,6 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
@@ -63,6 +62,7 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -72,7 +72,6 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
@@ -113,7 +112,6 @@ import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -148,7 +146,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanReplicationEndpoint;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -241,9 +238,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource(name = "semaphore")
     private ISemaphore semaphore;
-
-    @Resource(name = "lock")
-    private ILock lock;
 
     @Resource(name = "dummyMapStore")
     private MapStore dummyMapStore;
@@ -517,14 +511,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         QueueStoreConfig storeConfig4 = queueWithStore4.getQueueStoreConfig();
         assertNotNull(storeConfig4);
         assertEquals(dummyQueueStoreFactory, storeConfig4.getFactoryImplementation());
-    }
-
-    @Test
-    public void testLockConfig() {
-        LockConfig lockConfig = config.getLockConfig("lock");
-        assertNotNull(lockConfig);
-        assertEquals("lock", lockConfig.getName());
-        assertEquals("my-quorum", lockConfig.getQuorumName());
     }
 
     @Test
@@ -959,7 +945,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
-        assertNotNull(lock);
         assertNotNull(pnCounter);
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());

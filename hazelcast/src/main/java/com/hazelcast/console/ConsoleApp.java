@@ -65,7 +65,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.memory.MemoryUnit.BYTES;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -275,8 +274,6 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             handleWho();
         } else if ("jvm".equals(first)) {
             handleJvm();
-        } else if (first.contains("ock") && !first.contains(".")) {
-            handleLock(args);
         } else if (first.contains(".size")) {
             handleSize(args);
         } else if (first.contains(".clear")) {
@@ -944,34 +941,6 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             println(getMultiMap().getLocalMultiMapStats());
         } else if (iteratorStr.startsWith("q.")) {
             println(getQueue().getLocalQueueStats());
-        }
-    }
-
-    // squid:S2222 suppression avoids sonar analysis bug regarding already known lock release issue
-    @SuppressWarnings({"LockAcquiredButNotSafelyReleased", "squid:S2222"})
-    protected void handleLock(String[] args) {
-        String lockStr = args[0];
-        String key = args[1];
-        Lock lock = hazelcast.getLock(key);
-        if (equalsIgnoreCase(lockStr, "lock")) {
-            lock.lock();
-            println("true");
-        } else if (equalsIgnoreCase(lockStr, "unlock")) {
-            lock.unlock();
-            println("true");
-        } else if (equalsIgnoreCase(lockStr, "trylock")) {
-            String timeout = args.length > 2 ? args[2] : null;
-            if (timeout == null) {
-                println(lock.tryLock());
-            } else {
-                long time = Long.parseLong(timeout);
-                try {
-                    println(lock.tryLock(time, TimeUnit.SECONDS));
-                } catch (InterruptedException e) {
-                    currentThread().interrupt();
-                    e.printStackTrace();
-                }
-            }
         }
     }
 

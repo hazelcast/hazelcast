@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -64,7 +64,7 @@ public class OperationParkerImplTest extends HazelcastTestSupport {
         private final int keyCount;
         private final CountDownLatch latch;
 
-        public LockWaitAndUnlockTask(HazelcastInstance hz, int keyCount, CountDownLatch latch) {
+        LockWaitAndUnlockTask(HazelcastInstance hz, int keyCount, CountDownLatch latch) {
             this.hz = hz;
             this.keyCount = keyCount;
             this.latch = latch;
@@ -72,12 +72,13 @@ public class OperationParkerImplTest extends HazelcastTestSupport {
 
         @Override
         public void run() {
+            IMap<Object, Object> map = hz.getMap(randomMapName());
             for (int i = 0; i < keyCount; i++) {
                 try {
-                    ILock lock = hz.getLock("key" + i);
-                    lock.lock();
+                    String key = "key" + i;
+                    map.lock(key);
                     LockSupport.parkNanos(1);
-                    lock.unlock();
+                    map.unlock(key);
                 } catch (HazelcastInstanceNotActiveException ignored) {
                 }
             }

@@ -31,7 +31,6 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -123,11 +122,6 @@ class HazelcastOSGiInstanceImpl
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return delegatedInstance.getMultiMap(name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        return delegatedInstance.getLock(key);
     }
 
     @Override

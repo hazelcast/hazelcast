@@ -52,7 +52,6 @@ import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MCMutualAuthConfig;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -199,7 +198,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> mapConfigManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> cacheConfigManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> queueManagedMap;
-        private ManagedMap<String, AbstractBeanDefinition> lockManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> ringbufferManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> atomicLongManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> atomicReferenceManagedMap;
@@ -234,7 +232,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.mapConfigManagedMap = createManagedMap("mapConfigs");
             this.cacheConfigManagedMap = createManagedMap("cacheConfigs");
             this.queueManagedMap = createManagedMap("queueConfigs");
-            this.lockManagedMap = createManagedMap("lockConfigs");
             this.ringbufferManagedMap = createManagedMap("ringbufferConfigs");
             this.atomicLongManagedMap = createManagedMap("atomicLongConfigs");
             this.atomicReferenceManagedMap = createManagedMap("atomicReferenceConfigs");
@@ -299,8 +296,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleCardinalityEstimator(node);
                     } else if ("queue".equals(nodeName)) {
                         handleQueue(node);
-                    } else if ("lock".equals(nodeName)) {
-                        handleLock(node);
                     } else if ("ringbuffer".equals(nodeName)) {
                         handleRingbuffer(node);
                     } else if ("atomic-long".equals(nodeName)) {
@@ -1087,18 +1082,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             semaphoreManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
-        }
-
-        public void handleLock(Node node) {
-            BeanDefinitionBuilder lockConfigBuilder = createBeanBuilder(LockConfig.class);
-            fillAttributeValues(node, lockConfigBuilder);
-            for (Node childNode : childElements(node)) {
-                String nodeName = cleanNodeName(childNode);
-                if ("quorum-ref".equals(nodeName)) {
-                    lockConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
-                }
-            }
-            lockManagedMap.put(getAttribute(node, "name"), lockConfigBuilder.getBeanDefinition());
         }
 
         public void handleMerkleTree(Node node) {

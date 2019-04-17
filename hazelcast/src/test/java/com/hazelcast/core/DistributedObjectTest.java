@@ -97,13 +97,6 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLock() {
-        HazelcastInstance instance = createHazelcastInstance();
-        DistributedObject object = instance.getLock("test");
-        test(instance, object);
-    }
-
-    @Test
     public void testAtomicLong() {
         HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getAtomicLong("test");

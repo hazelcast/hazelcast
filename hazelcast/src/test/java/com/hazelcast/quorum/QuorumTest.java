@@ -22,7 +22,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
@@ -359,12 +358,7 @@ public class QuorumTest extends HazelcastTestSupport {
         String quorumName = randomString();
 
         QuorumConfig quorumConfig = new QuorumConfig(quorumName, true)
-                .setQuorumFunctionImplementation(new QuorumFunction() {
-                    @Override
-                    public boolean apply(Collection<Member> members) {
-                        return members.size() == 3;
-                    }
-                });
+                .setQuorumFunctionImplementation(members -> members.size() == 3);
 
         MapConfig mapConfig = new MapConfig("quorumMap")
                 .setQuorumName(quorumName);
@@ -381,11 +375,11 @@ public class QuorumTest extends HazelcastTestSupport {
         IMap<Object, Object> quorumMap = hz.getMap("quorumMap");
         quorumMap.put(generateKeyOwnedBy(hz), "bar");
 
-        ILock lock = hz.getLock("noQuorumLock");
+        IMap<Object, Object> noQuorumMap = hz.getMap("noQuorumMap");
         try {
-            lock.lock();
+            noQuorumMap.lock("key");
         } finally {
-            lock.unlock();
+            noQuorumMap.unlock("key");
         }
     }
 

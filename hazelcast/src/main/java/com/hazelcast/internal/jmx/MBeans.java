@@ -22,7 +22,6 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IAtomicLong;
@@ -30,7 +29,6 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -167,23 +165,6 @@ final class MBeans {
             @Override
             public String getServiceName() {
                 return CountDownLatchService.SERVICE_NAME;
-            }
-        },
-
-        LOCK {
-            @Override
-            public HazelcastMBean createNew(DistributedObject distributedObject, ManagementService managementService) {
-                return new LockMBean((ILock) distributedObject, managementService);
-            }
-
-            @Override
-            public String getObjectType() {
-                return "ILock";
-            }
-
-            @Override
-            public String getServiceName() {
-                return LockService.SERVICE_NAME;
             }
         },
 

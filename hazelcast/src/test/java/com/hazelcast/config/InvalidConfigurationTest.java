@@ -522,10 +522,6 @@ public class InvalidConfigurationTest {
                 + "<async-backup-count>${semaphore-async-backup-count}</async-backup-count>\n"
                 + "</semaphore>\n"
 
-                + "<lock name=\"default\">\n"
-                + "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>\n"
-                + "</lock>"
-
                 + "    <ringbuffer name=\"default\">\n"
                 + "        <capacity>10000</capacity>\n"
                 + "        <time-to-live-seconds>30</time-to-live-seconds>\n"

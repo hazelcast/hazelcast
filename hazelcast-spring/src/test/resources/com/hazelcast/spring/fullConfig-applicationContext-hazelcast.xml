@@ -24,7 +24,7 @@
         http://www.hazelcast.com/schema/sample
         hazelcast-sample-service.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -317,10 +317,6 @@
             <hz:queue name="queueWithStore4">
                 <hz:queue-store enabled="true" factory-implementation="dummyQueueStoreFactory"/>
             </hz:queue>
-
-            <hz:lock name="lock">
-                <hz:quorum-ref>my-quorum</hz:quorum-ref>
-            </hz:lock>
 
             <hz:ringbuffer name="testRingbuffer"
                            in-memory-format="OBJECT"
@@ -891,7 +887,6 @@
     <hz:atomicReference id="atomicReference" instance-ref="instance" name="testAtomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
-    <hz:lock id="lock" instance-ref="instance" name="lock"/>
     <hz:cardinalityEstimator id="cardinality" instance-ref="instance" name="cardinality"/>
     <hz:ringbuffer id="testRingbuffer" instance-ref="instance" name="testRingbuffer"/>
     <hz:reliableTopic id="testReliableTopic" instance-ref="instance" name="testReliableTopic"/>

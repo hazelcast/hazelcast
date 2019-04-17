@@ -36,7 +36,6 @@ import static java.lang.Boolean.TRUE;
 public class UnlockOperation extends AbstractLockOperation implements Notifier, BackupAwareOperation, MutatingOperation {
 
     private boolean force;
-    private boolean shouldNotify;
 
     public UnlockOperation() {
     }
@@ -97,16 +96,6 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
     }
 
     @Override
-    public void afterRun() throws Exception {
-        LockStoreImpl lockStore = getLockStore();
-        AwaitOperation awaitOperation = lockStore.pollExpiredAwaitOp(key);
-        if (awaitOperation != null) {
-            awaitOperation.runExpired();
-        }
-        shouldNotify = awaitOperation == null;
-    }
-
-    @Override
     public Operation getBackupOperation() {
         UnlockBackupOperation operation = new UnlockBackupOperation(namespace, key, threadId,
                 getCallerUuid(), force);
@@ -121,7 +110,7 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
 
     @Override
     public boolean shouldNotify() {
-        return shouldNotify;
+        return true;
     }
 
     @Override

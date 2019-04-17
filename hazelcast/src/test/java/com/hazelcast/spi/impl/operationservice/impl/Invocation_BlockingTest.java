@@ -16,17 +16,19 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -63,6 +65,8 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_BlockingTest extends HazelcastTestSupport {
 
+    private ObjectNamespace namespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, "object");
+
     // ============================ heartbeat timeout =============================================================================
     //
     // ===========================================================================================================================
@@ -86,7 +90,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         opService.invokeOnPartition(null, new SlowOperation(5 * callTimeout), partitionId);
 
         // then we execute a lock operation that won't be executed because the partition is blocked.
-        LockOperation op = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), 1, -1, -1);
+        LockOperation op = new LockOperation(namespace, nodeEngine.toData(key), 1, -1, -1);
         InternalCompletableFuture<Object> future = opService.createInvocationBuilder(null, op, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke();
@@ -98,7 +102,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
             ignore(expected);
         }
 
-        IsLockedOperation isLockedOperation = new IsLockedOperation(new InternalLockNamespace(key), nodeEngine.toData(key), 1);
+        IsLockedOperation isLockedOperation = new IsLockedOperation(namespace, nodeEngine.toData(key), 1);
         Boolean isLocked = (Boolean) opService.createInvocationBuilder(
                 null, isLockedOperation, partitionId)
                 .setCallTimeout(10 * callTimeout)
@@ -131,7 +135,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         opService.invokeOnPartition(null, new SlowOperation(5 * callTimeout), partitionId);
 
         // then we execute a lock operation that won't be executed because the partition is blocked.
-        LockOperation op = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), 1, -1, -1);
+        LockOperation op = new LockOperation(namespace, nodeEngine.toData(key), 1, -1, -1);
         InternalCompletableFuture<Object> future = opService.createInvocationBuilder(null, op, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke();
@@ -160,7 +164,6 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
-        InternalLockNamespace namespace = new InternalLockNamespace(key);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we lock the lock by another thread
@@ -207,14 +210,14 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         InternalOperationService opService = nodeEngine.getOperationService();
         int otherThreadId = 2;
         opService.invokeOnPartition(
-                new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1)
+                new LockOperation(namespace, nodeEngine.toData(key), otherThreadId, -1, -1)
                         .setPartitionId(partitionId))
                 .join();
 
         // then we execute a lock operation that won't be executed because lock is already acquired
         // we are going to do some waiting (3x call timeout)
         int threadId = 1;
-        Operation op = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), threadId, -1, 3 * callTimeout)
+        Operation op = new LockOperation(namespace, nodeEngine.toData(key), threadId, -1, 3 * callTimeout)
                 .setPartitionId(partitionId);
         final InternalCompletableFuture<Object> future = opService.invokeOnPartition(op);
 
@@ -250,7 +253,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         opService.invokeOnPartition(null, new SlowOperation(SECONDS.toMillis(5)), partitionId);
 
         // then we execute a lock operation that won't be executed because the partition is blocked.
-        LockOperation op = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), 1, -1, -1);
+        LockOperation op = new LockOperation(namespace, nodeEngine.toData(key), 1, -1, -1);
         InternalCompletableFuture<Object> future = opService.createInvocationBuilder(null, op, partitionId)
                 .invoke();
 
@@ -302,7 +305,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
         // first we are going to lock
         int otherThreadId = 1;
-        LockOperation otherOp = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1);
+        LockOperation otherOp = new LockOperation(namespace, nodeEngine.toData(key), otherThreadId, -1, -1);
         opService.createInvocationBuilder(null, otherOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke()
@@ -310,7 +313,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
         // then we are going to send the invocation and share the future by many threads
         int thisThreadId = 2;
-        LockOperation thisOp = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), thisThreadId, -1, -1);
+        LockOperation thisOp = new LockOperation(namespace, nodeEngine.toData(key), thisThreadId, -1, -1);
         final InternalCompletableFuture<Object> future = opService.createInvocationBuilder(null, thisOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke();
@@ -330,7 +333,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         sleepMillis(callTimeout * 5);
 
         // unlocking the lock
-        UnlockOperation op = new UnlockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId);
+        UnlockOperation op = new UnlockOperation(namespace, nodeEngine.toData(key), otherThreadId);
         opService.createInvocationBuilder(null, op, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke()
@@ -365,7 +368,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
         // first we are going to lock
         int otherThreadId = 1;
-        LockOperation otherOp = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1);
+        LockOperation otherOp = new LockOperation(namespace, nodeEngine.toData(key), otherThreadId, -1, -1);
         opService.createInvocationBuilder(null, otherOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke()
@@ -373,7 +376,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
 
         // then we are going to send another lock request by a different thread; so it can't complete
         int thisThreadId = 2;
-        LockOperation thisOp = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), thisThreadId, -1, -1);
+        LockOperation thisOp = new LockOperation(namespace, nodeEngine.toData(key), thisThreadId, -1, -1);
         final InternalCompletableFuture<Object> future = opService.createInvocationBuilder(null, thisOp, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke();
@@ -404,7 +407,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         sleepMillis(callTimeout * 5);
 
         // unlocking the lock
-        UnlockOperation op = new UnlockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId);
+        UnlockOperation op = new UnlockOperation(namespace, nodeEngine.toData(key), otherThreadId);
         opService.createInvocationBuilder(null, op, partitionId)
                 .setCallTimeout(callTimeout)
                 .invoke()
@@ -456,25 +459,22 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
 
         final String name = randomName();
-        ILock lock = instances[0].getLock(name);
-        lock.lock();
+        instances[0].getMap(name).lock(name);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                try {
-                    // because max timeout=6000 we get timeout exception which we should not
-                    instances[1].getLock(name).lock();
-                    latch.countDown();
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
-                }
+        new Thread(() -> {
+            try {
+                // because max timeout=6000 we get timeout exception which we should not
+                instances[1].getMap(name).lock(name);
+                latch.countDown();
+            } catch (Exception ignored) {
+                ignored.printStackTrace();
             }
-        }.start();
+        }).start();
 
         // wait for enough time which is greater than max-timeout (6000)
         sleepSeconds(10);
-        lock.unlock();
+        instances[0].getMap(name).unlock(name);
 
         assertTrue(latch.await(20, SECONDS));
     }
@@ -485,18 +485,15 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        final ILock lock = hz.getLock(randomName());
-        lock.lock();
+        String name = randomName();
+        hz.getMap(name).lock(name);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    lock.tryLock(10, SECONDS);
-                    latch.countDown();
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
-                }
+        spawn(() -> {
+            try {
+                hz.getMap(name).tryLock(name, 10, SECONDS);
+                latch.countDown();
+            } catch (Exception ignored) {
+                ignored.printStackTrace();
             }
         });
 
@@ -506,32 +503,32 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     @Test
     public void sync_whenInterruptionDuringBlockingOp2() throws InterruptedException {
         HazelcastInstance hz = createHazelcastInstance();
-        final ILock lock = hz.getLock("lock");
-        lock.lock();
-        assertTrue(lock.isLockedByCurrentThread());
+        String key = "lock";
+        IMap<Object, Object> map = hz.getMap(randomMapName());
+        map.lock(key);
 
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
 
         final OpThread thread = new OpThread("Lock-Thread", latch, interruptedFlag) {
             protected void doOp() throws InterruptedException {
-                assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
+                assertTrue(map.tryLock(key, 1, TimeUnit.MINUTES));
             }
         };
         thread.start();
 
         Thread.sleep(5000);
         thread.interrupt();
-        lock.unlock();
+        map.unlock(key);
 
         assertTrue(latch.await(1, TimeUnit.MINUTES));
 
         if (thread.isInterruptionCaught()) {
             assertFalse("Thread interrupted flag should not be set!", interruptedFlag.get());
-            assertFalse("Lock should not be in 'locked' state!", lock.isLocked());
+            assertFalse("Lock should not be in 'locked' state!", map.isLocked(key));
         } else {
             assertTrue("Thread interrupted flag should be set! " + thread, interruptedFlag.get());
-            assertTrue("Lock should be 'locked' state!", lock.isLocked());
+            assertTrue("Lock should be 'locked' state!", map.isLocked(key));
         }
     }
 

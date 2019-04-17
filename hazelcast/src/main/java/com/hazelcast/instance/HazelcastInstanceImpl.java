@@ -26,7 +26,6 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientService;
@@ -40,7 +39,6 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
@@ -230,12 +228,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     public <E> Ringbuffer<E> getRingbuffer(String name) {
         checkNotNull(name, "Retrieving a ringbuffer instance with a null name is not allowed!");
         return getDistributedObject(RingbufferService.SERVICE_NAME, name);
-    }
-
-    @Override
-    public ILock getLock(String key) {
-        checkNotNull(key, "Retrieving a lock instance with a null key is not allowed!");
-        return getDistributedObject(LockService.SERVICE_NAME, key);
     }
 
     @Override
