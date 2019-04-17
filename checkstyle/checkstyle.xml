@@ -290,8 +290,7 @@
             <property name="max" value="15"/>
         </module>
         <module name="ClassFanOutComplexity">
-            <!-- TODO figure out why this needed an increase -->
-            <property name="max" value="42"/>
+            <property name="max" value="40"/>
         </module>
         <module name="CyclomaticComplexity">
             <property name="severity" value="error"/>
