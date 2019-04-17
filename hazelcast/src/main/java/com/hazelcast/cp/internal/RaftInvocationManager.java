@@ -30,7 +30,6 @@ import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raftop.metadata.CreateRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
@@ -98,19 +97,14 @@ public class RaftInvocationManager {
         }
 
         Executor executor = nodeEngine.getExecutionService().getExecutor(ASYNC_EXECUTOR);
-        SimpleCompletableFuture<RaftGroupId> resultFuture = new SimpleCompletableFuture<RaftGroupId>(executor, logger);
+        SimpleCompletableFuture<RaftGroupId> resultFuture = new SimpleCompletableFuture<>(executor, logger);
         invokeGetMembersToCreateRaftGroup(groupName, groupSize, resultFuture);
         return resultFuture;
     }
 
     private <V> InternalCompletableFuture<V> completeExceptionallyIfCPSubsystemNotAvailable() {
-        // RU_COMPAT_3_11
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_12)) {
-            return new SimpleCompletedFuture<V>(
-                    new UnsupportedOperationException("CP Subsystem is not available before version 3.12!"));
-        }
         if (!cpSubsystemEnabled) {
-            return new SimpleCompletedFuture<V>(new HazelcastException("CP Subsystem is not enabled!"));
+            return new SimpleCompletedFuture<>(new HazelcastException("CP Subsystem is not enabled!"));
         }
         return null;
     }
@@ -123,7 +117,7 @@ public class RaftInvocationManager {
         f.andThen(new ExecutionCallback<List<CPMemberInfo>>() {
             @Override
             public void onResponse(List<CPMemberInfo> members) {
-                members = new ArrayList<CPMemberInfo>(members);
+                members = new ArrayList<>(members);
 
                 if (members.size() < groupSize) {
                     Exception result = new IllegalArgumentException("There are not enough active members to create CP group "
@@ -133,7 +127,7 @@ public class RaftInvocationManager {
                 }
 
                 Collections.shuffle(members);
-                Collections.sort(members, new CPMemberReachabilityComparator());
+                members.sort(new CPMemberReachabilityComparator());
                 members = members.subList(0, groupSize);
                 invokeCreateRaftGroup(groupName, groupSize, members, resultFuture);
             }
