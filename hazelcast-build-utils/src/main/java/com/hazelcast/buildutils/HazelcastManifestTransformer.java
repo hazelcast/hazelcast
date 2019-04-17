@@ -124,41 +124,32 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         close(inputStream);
     }
 
-    // TODO remove the explanatory comments
-    // How the calculation is done: http://checkstyle.sourceforge.net/config_metrics.html#NPathComplexity
-    // NP: 2 * 4 * 3 * 3 * 3 * 1 = 216
     private PackageDefinition findStrongerDefinition(PackageDefinition packageDefinition,
                                                      PackageDefinition oldPackageDefinition) {
         // if the override is a remove instruction skip all other tests
-        // NP: 1 + 1 + 0 = 2
         if (packageDefinition.removeImport) {
             return packageDefinition;
         }
 
         // if no old definition or new definition is required import we take the new one
-        // NP: 1 + 1 + 2 = 4
         if (oldPackageDefinition == null
                 || oldPackageDefinition.resolutionOptional && !packageDefinition.resolutionOptional) {
             return packageDefinition;
         }
 
         // if old definition was required import but new isn't we take the old one
-        // NP: 1 + 1 + 1 = 3
         if (!oldPackageDefinition.resolutionOptional && packageDefinition.resolutionOptional) {
             return oldPackageDefinition;
         }
 
-        // NP: 1 + 1 + 1 = 3
         if (oldPackageDefinition.version == null && packageDefinition.version != null) {
             return packageDefinition;
         }
 
-        // NP: 1 + 1 + 1 = 3
         if (oldPackageDefinition.version != null && packageDefinition.version == null) {
             return oldPackageDefinition;
         }
 
-        // NP: 1
         return oldPackageDefinition;
     }
 
