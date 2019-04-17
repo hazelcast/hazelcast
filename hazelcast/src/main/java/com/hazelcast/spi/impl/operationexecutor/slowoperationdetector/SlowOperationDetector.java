@@ -50,7 +50,7 @@ public final class SlowOperationDetector {
     private static final long SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH = TimeUnit.SECONDS.toMillis(10);
 
     private final ConcurrentHashMap<Integer, SlowOperationLog> slowOperationLogs
-            = new ConcurrentHashMap<Integer, SlowOperationLog>();
+            = new ConcurrentHashMap<>();
     private final StringBuilder stackTraceStringBuilder = new StringBuilder();
 
     private final ILogger logger;
