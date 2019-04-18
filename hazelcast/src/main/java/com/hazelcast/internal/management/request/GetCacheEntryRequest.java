@@ -23,9 +23,9 @@ import com.hazelcast.cache.impl.CacheEntryProcessorEntry;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.instance.HazelcastInstanceCacheManager;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -37,7 +37,6 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
 import java.io.IOException;
 
-import static com.hazelcast.cache.impl.record.AbstractCacheRecord.EXPIRY_POLICY_VERSION;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
@@ -203,9 +202,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             out.writeLong(creationTime);
             out.writeLong(lastAccessTime);
             out.writeLong(accessHit);
-            if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-                out.writeObject(expiryPolicy);
-            }
+            out.writeObject(expiryPolicy);
         }
 
         @Override
@@ -215,9 +212,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             creationTime = in.readLong();
             lastAccessTime = in.readLong();
             accessHit = in.readLong();
-            if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-                expiryPolicy = in.readObject();
-            }
+            expiryPolicy = in.readObject();
         }
     }
 }

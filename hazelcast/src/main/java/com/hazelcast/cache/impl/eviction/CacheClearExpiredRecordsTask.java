@@ -20,16 +20,11 @@ import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.operation.CacheClearExpiredOperation;
 import com.hazelcast.cache.impl.operation.CacheExpireBatchBackupOperation;
-import com.hazelcast.core.IBiFunction;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Collection;
@@ -134,32 +129,6 @@ public class CacheClearExpiredRecordsTask
     @Override
     protected Operation newBackupExpiryOp(ICacheRecordStore store, Collection<ExpiredKey> expiredKeys) {
         return new CacheExpireBatchBackupOperation(store.getName(), expiredKeys, store.size());
-    }
-
-    @Override
-    protected IBiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
-        return new IBiFunction<Integer, Integer, Boolean>() {
-            @Override
-            public Boolean apply(Integer partitionId, Integer replicaIndex) {
-                IBiFunction<Integer, Integer, Boolean> filter
-                        = CacheClearExpiredRecordsTask.super.newBackupExpiryOpFilter();
-                if (!filter.apply(partitionId, replicaIndex)) {
-                    return false;
-                }
-                // Previous versions did not remove expired entries until they are
-                // touched. Old members behave the same whereas newer members still
-                // benefit from periodic removal of expired entries.
-                //
-                // RU_COMPAT_3_10
-                IPartition partition = partitionService.getPartition(partitionId);
-                Address replicaAddress = partition.getReplicaAddress(replicaIndex);
-                Member member = nodeEngine.getClusterService().getMember(replicaAddress);
-                if (member == null) {
-                    return false;
-                }
-                return member.getVersion().asVersion().isGreaterOrEqual(Versions.V3_11);
-            }
-        };
     }
 
     @Override

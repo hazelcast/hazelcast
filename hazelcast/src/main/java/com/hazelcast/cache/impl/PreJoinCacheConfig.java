@@ -29,8 +29,6 @@ import com.hazelcast.spi.tenantcontrol.TenantControl;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_12;
-
 /**
  * This subclass of {@link CacheConfig} is used to communicate cache configurations in pre-join cache operations when cluster
  * version is at least 3.9. The key difference against {@link CacheConfig} is that the key/value class names are used in its
@@ -77,17 +75,13 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
 
     @Override
     protected void writeTenant(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(V3_12)) {
-            out.writeObject(CacheConfigAccessor.getTenantControl(this));
-        }
+        out.writeObject(CacheConfigAccessor.getTenantControl(this));
     }
 
     @Override
     protected void readTenant(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(V3_12)) {
-            TenantControl tc = in.readObject();
-            CacheConfigAccessor.setTenantControl(this, tc);
-        }
+        TenantControl tc = in.readObject();
+        CacheConfigAccessor.setTenantControl(this, tc);
     }
 
     @Override

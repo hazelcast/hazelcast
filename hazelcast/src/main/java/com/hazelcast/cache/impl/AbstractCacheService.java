@@ -70,7 +70,6 @@ import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +87,7 @@ import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
+import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
@@ -100,50 +100,37 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     /**
      * Map from full prefixed cache name to {@link CacheConfig}
      */
-    protected final ConcurrentMap<String, CacheConfigFuture> configs = new ConcurrentHashMap<String, CacheConfigFuture>();
+    protected final ConcurrentMap<String, CacheConfigFuture> configs = new ConcurrentHashMap<>();
 
     /**
      * Map from full prefixed cache name to {@link CacheContext}
      */
-    protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
+    protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<>();
 
     /**
      * Map from full prefixed cache name to {@link CacheStatisticsImpl}
      */
-    protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
+    protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<>();
 
     /**
      * Map from full prefixed cache name to set of {@link Closeable} resources
      */
-    protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
-    protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
+    protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
-            new ConcurrentHashMap<String, CacheOperationProvider>();
-    protected final ConstructorFunction<String, CacheContext> cacheContextsConstructorFunction =
-            new ConstructorFunction<String, CacheContext>() {
-                @Override
-                public CacheContext createNew(String name) {
-                    return new CacheContext();
-                }
-            };
+            new ConcurrentHashMap<>();
+
+    protected final ConstructorFunction<String, CacheContext> cacheContextsConstructorFunction = name -> new CacheContext();
     protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
-            new ConstructorFunction<String, CacheStatisticsImpl>() {
-                @Override
-                public CacheStatisticsImpl createNew(String name) {
-                    return new CacheStatisticsImpl(
-                            Clock.currentTimeMillis(),
-                            CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
-                }
-            };
+            name -> new CacheStatisticsImpl(
+            Clock.currentTimeMillis(),
+            CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
+
+    protected final ConstructorFunction<String, Set<Closeable>> cacheResourcesConstructorFunction =
+            name -> newSetFromMap(new ConcurrentHashMap<Closeable, Boolean>());
+
     // mutex factory ensures each Set<Closeable> of cache resources is only constructed and inserted in resources map once
     protected final ContextMutexFactory cacheResourcesMutexFactory = new ContextMutexFactory();
-    protected final ConstructorFunction<String, Set<Closeable>> cacheResourcesConstructorFunction =
-            new ConstructorFunction<String, Set<Closeable>>() {
-                @Override
-                public Set<Closeable> createNew(String name) {
-                    return Collections.newSetFromMap(new ConcurrentHashMap<Closeable, Boolean>());
-                }
-            };
 
     protected ILogger logger;
     protected NodeEngine nodeEngine;

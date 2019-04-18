@@ -32,45 +32,25 @@ public enum BuiltInCacheMergePolicies {
     /**
      * Cache merge policy that merges cache entries from source to destination directly.
      */
-    PASS_THROUGH(PassThroughCacheMergePolicy.class, new CacheMergePolicyInstanceFactory() {
-        @Override
-        public CacheMergePolicy create() {
-            return new PassThroughCacheMergePolicy();
-        }
-    }),
+    PASS_THROUGH(PassThroughCacheMergePolicy.class, PassThroughCacheMergePolicy::new),
 
     /**
      * Cache merge policy that merges cache entries from source to destination
      * if they don't exist in the destination cache.
      */
-    PUT_IF_ABSENT(PutIfAbsentCacheMergePolicy.class, new CacheMergePolicyInstanceFactory() {
-        @Override
-        public CacheMergePolicy create() {
-            return new PutIfAbsentCacheMergePolicy();
-        }
-    }),
+    PUT_IF_ABSENT(PutIfAbsentCacheMergePolicy.class, PutIfAbsentCacheMergePolicy::new),
 
     /**
      * Cache merge policy that merges cache entries from source to destination cache
      * if the source entry has more hits than the destination one.
      */
-    HIGHER_HITS(HigherHitsCacheMergePolicy.class, new CacheMergePolicyInstanceFactory() {
-        @Override
-        public CacheMergePolicy create() {
-            return new HigherHitsCacheMergePolicy();
-        }
-    }),
+    HIGHER_HITS(HigherHitsCacheMergePolicy.class, HigherHitsCacheMergePolicy::new),
 
     /**
      * Cache merge policy that merges cache entries from source to destination cache
      * if the source entry has been accessed more recently than the destination entry.
      */
-    LATEST_ACCESS(LatestAccessCacheMergePolicy.class, new CacheMergePolicyInstanceFactory() {
-        @Override
-        public CacheMergePolicy create() {
-            return new LatestAccessCacheMergePolicy();
-        }
-    });
+    LATEST_ACCESS(LatestAccessCacheMergePolicy.class, LatestAccessCacheMergePolicy::new);
 
     private Class<? extends CacheMergePolicy> implClass;
     private CacheMergePolicyInstanceFactory instanceFactory;
