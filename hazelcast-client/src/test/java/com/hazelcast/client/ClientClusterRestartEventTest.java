@@ -35,12 +35,16 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -113,7 +117,7 @@ public class ClientClusterRestartEventTest {
     }
 
     @Test
-    public void testMultiMemberRestart() {
+    public void testMultiMemberRestart() throws ExecutionException, InterruptedException {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(newClientConfig());
@@ -144,11 +148,23 @@ public class ClientClusterRestartEventTest {
             }
         });
 
-        instance1.shutdown();
-        instance2.shutdown();
+        instance1.getCluster().shutdown();
 
-        instance1 = hazelcastFactory.newHazelcastInstance(newConfig());
-        instance2 = hazelcastFactory.newHazelcastInstance(newConfig());
+        Future<HazelcastInstance> f1 = spawn(new Callable<HazelcastInstance>() {
+            @Override
+            public HazelcastInstance call() {
+                return hazelcastFactory.newHazelcastInstance(newConfig());
+            }
+        });
+        Future<HazelcastInstance> f2 = spawn(new Callable<HazelcastInstance>() {
+            @Override
+            public HazelcastInstance call() {
+                return hazelcastFactory.newHazelcastInstance(newConfig());
+            }
+        });
+
+        instance1 = f1.get();
+        instance2 = f2.get();
 
         Member newMember1 = instance1.getCluster().getLocalMember();
         Member newMember2 = instance2.getCluster().getLocalMember();
