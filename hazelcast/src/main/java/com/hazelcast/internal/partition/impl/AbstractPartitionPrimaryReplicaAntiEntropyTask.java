@@ -67,7 +67,7 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
         PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, 0);
         Collection<FragmentedMigrationAwareService> services = nodeEngine.getServices(FragmentedMigrationAwareService.class);
 
-        Set<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+        Set<ServiceNamespace> namespaces = new HashSet<>();
         for (FragmentedMigrationAwareService service : services) {
             Collection<ServiceNamespace> serviceNamespaces = service.getAllServiceNamespaces(event);
             if (serviceNamespaces != null) {
@@ -88,7 +88,7 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
         }
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        Map<ServiceNamespace, Long> versionMap = new HashMap<ServiceNamespace, Long>();
+        Map<ServiceNamespace, Long> versionMap = new HashMap<>();
         for (ServiceNamespace ns : namespaces) {
             long[] versions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
             long currentReplicaVersion = versions[replicaIndex - 1];

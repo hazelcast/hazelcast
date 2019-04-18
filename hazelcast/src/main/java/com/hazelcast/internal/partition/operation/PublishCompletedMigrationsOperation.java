@@ -79,7 +79,7 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int len = in.readInt();
-        completedMigrations = new ArrayList<MigrationInfo>(len);
+        completedMigrations = new ArrayList<>(len);
         for (int i = 0; i < len; i++) {
             MigrationInfo migrationInfo = in.readObject();
             completedMigrations.add(migrationInfo);

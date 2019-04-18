@@ -85,116 +85,27 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
-        constructors[PARTITION_RUNTIME_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionRuntimeState();
-            }
-        };
-        constructors[ASSIGN_PARTITIONS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AssignPartitions();
-            }
-        };
-        constructors[PARTITION_BACKUP_REPLICA_ANTI_ENTROPY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionBackupReplicaAntiEntropyOperation();
-            }
-        };
-        constructors[FETCH_PARTITION_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FetchPartitionStateOperation();
-            }
-        };
-        constructors[HAS_ONGOING_MIGRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HasOngoingMigration();
-            }
-        };
-        constructors[MIGRATION_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MigrationCommitOperation();
-            }
-        };
-        constructors[PARTITION_STATE_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionStateOperation();
-            }
-        };
-        constructors[PROMOTION_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PromotionCommitOperation();
-            }
-        };
-        constructors[REPLICA_SYNC_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionReplicaSyncRequest();
-            }
-        };
-        constructors[REPLICA_SYNC_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionReplicaSyncResponse();
-            }
-        };
-        constructors[REPLICA_SYNC_RETRY_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionReplicaSyncRetryResponse();
-            }
-        };
-        constructors[SAFE_STATE_CHECK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SafeStateCheckOperation();
-            }
-        };
-        constructors[SHUTDOWN_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ShutdownRequestOperation();
-            }
-        };
-        constructors[SHUTDOWN_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ShutdownResponseOperation();
-            }
-        };
-        constructors[REPLICA_FRAGMENT_MIGRATION_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicaFragmentMigrationState();
-            }
-        };
-        constructors[MIGRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MigrationOperation();
-            }
-        };
-        constructors[MIGRATION_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MigrationRequestOperation();
-            }
-        };
-        constructors[NON_FRAGMENTED_SERVICE_NAMESPACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return NonFragmentedServiceNamespace.INSTANCE;
-            }
-        };
-        constructors[PARTITION_REPLICA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionReplica();
-            }
-        };
-        constructors[PUBLISH_COMPLETED_MIGRATIONS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PublishCompletedMigrationsOperation();
-            }
-        };
-        constructors[PARTITION_STATE_VERSION_CHECK_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionStateVersionCheckOperation();
-            }
-        };
+        constructors[PARTITION_RUNTIME_STATE] = arg -> new PartitionRuntimeState();
+        constructors[ASSIGN_PARTITIONS] = arg -> new AssignPartitions();
+        constructors[PARTITION_BACKUP_REPLICA_ANTI_ENTROPY] = arg -> new PartitionBackupReplicaAntiEntropyOperation();
+        constructors[FETCH_PARTITION_STATE] = arg -> new FetchPartitionStateOperation();
+        constructors[HAS_ONGOING_MIGRATION] = arg -> new HasOngoingMigration();
+        constructors[MIGRATION_COMMIT] = arg -> new MigrationCommitOperation();
+        constructors[PARTITION_STATE_OP] = arg -> new PartitionStateOperation();
+        constructors[PROMOTION_COMMIT] = arg -> new PromotionCommitOperation();
+        constructors[REPLICA_SYNC_REQUEST] = arg -> new PartitionReplicaSyncRequest();
+        constructors[REPLICA_SYNC_RESPONSE] = arg -> new PartitionReplicaSyncResponse();
+        constructors[REPLICA_SYNC_RETRY_RESPONSE] = arg -> new PartitionReplicaSyncRetryResponse();
+        constructors[SAFE_STATE_CHECK] = arg -> new SafeStateCheckOperation();
+        constructors[SHUTDOWN_REQUEST] = arg -> new ShutdownRequestOperation();
+        constructors[SHUTDOWN_RESPONSE] = arg -> new ShutdownResponseOperation();
+        constructors[REPLICA_FRAGMENT_MIGRATION_STATE] = arg -> new ReplicaFragmentMigrationState();
+        constructors[MIGRATION] = arg -> new MigrationOperation();
+        constructors[MIGRATION_REQUEST] = arg -> new MigrationRequestOperation();
+        constructors[NON_FRAGMENTED_SERVICE_NAMESPACE] = arg -> NonFragmentedServiceNamespace.INSTANCE;
+        constructors[PARTITION_REPLICA] = arg -> new PartitionReplica();
+        constructors[PUBLISH_COMPLETED_MIGRATIONS] = arg -> new PublishCompletedMigrationsOperation();
+        constructors[PARTITION_STATE_VERSION_CHECK_OP] = arg -> new PartitionStateVersionCheckOperation();
         return new ArrayDataSerializableFactory(constructors);
     }
 }

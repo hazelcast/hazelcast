@@ -16,14 +16,12 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,7 +51,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
 
     public PartitionRuntimeState(InternalPartition[] partitions, Collection<MigrationInfo> completedMigrations, int version) {
         this.version = version;
-        this.completedMigrations = completedMigrations != null ? completedMigrations : Collections.<MigrationInfo>emptyList();
+        this.completedMigrations = completedMigrations != null ? completedMigrations : Collections.emptyList();
         Map<PartitionReplica, Integer> replicaToIndexes = createPartitionReplicaToIndexMap(partitions);
         replicas = toPartitionReplicaArray(replicaToIndexes);
         minimizedPartitionTable = createMinimizedPartitionTable(partitions, replicaToIndexes);
@@ -87,7 +85,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     }
 
     private Map<PartitionReplica, Integer> createPartitionReplicaToIndexMap(InternalPartition[] partitions) {
-        Map<PartitionReplica, Integer> map = new HashMap<PartitionReplica, Integer>();
+        Map<PartitionReplica, Integer> map = new HashMap<>();
         int addressIndex = 0;
         for (InternalPartition partition : partitions) {
             for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
@@ -130,7 +128,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     }
 
     public Collection<MigrationInfo> getCompletedMigrations() {
-        return completedMigrations != null ? completedMigrations : Collections.<MigrationInfo>emptyList();
+        return completedMigrations != null ? completedMigrations : Collections.emptyList();
     }
 
     public MigrationInfo getActiveMigration() {
@@ -147,17 +145,8 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
         version = in.readInt();
         int memberCount = in.readInt();
         replicas = new PartitionReplica[memberCount];
-        Version version = in.getVersion();
         for (int i = 0; i < memberCount; i++) {
-            PartitionReplica replica;
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                replica = in.readObject();
-            } else {
-                Address address = new Address();
-                address.readData(in);
-                replica = new PartitionReplica(address, PartitionReplica.UNKNOWN_UID);
-            }
+            PartitionReplica replica = in.readObject();
             int index = in.readInt();
             assert replicas[index] == null : "Duplicate replica! Member: " + replica + ", index: " + index
                     + ", addresses: " + Arrays.toString(replicas);
@@ -173,28 +162,13 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
             }
         }
 
-        if (in.readBoolean()) {
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                activeMigration = in.readObject();
-            } else {
-                activeMigration = new MigrationInfo();
-                activeMigration.readData(in);
-            }
-        }
+        activeMigration = in.readObject();
 
         int k = in.readInt();
         if (k > 0) {
-            completedMigrations = new ArrayList<MigrationInfo>(k);
+            completedMigrations = new ArrayList<>(k);
             for (int i = 0; i < k; i++) {
-                MigrationInfo migrationInfo;
-                // RU_COMPAT_3_11
-                if (version.isGreaterOrEqual(Versions.V3_12)) {
-                    migrationInfo = in.readObject();
-                } else {
-                    migrationInfo = new MigrationInfo();
-                    migrationInfo.readData(in);
-                }
+                MigrationInfo migrationInfo = in.readObject();
                 completedMigrations.add(migrationInfo);
             }
         }
@@ -204,16 +178,10 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(version);
-        Version version = out.getVersion();
         out.writeInt(replicas.length);
         for (int index = 0; index < replicas.length; index++) {
             PartitionReplica replica = replicas[index];
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                out.writeObject(replica);
-            } else {
-                replica.address().writeData(out);
-            }
+            out.writeObject(replica);
             out.writeInt(index);
         }
 
@@ -224,28 +192,13 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
             }
         }
 
-        if (activeMigration != null) {
-            out.writeBoolean(true);
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                out.writeObject(activeMigration);
-            } else {
-                activeMigration.writeData(out);
-            }
-        } else {
-            out.writeBoolean(false);
-        }
+        out.writeObject(activeMigration);
 
         if (completedMigrations != null) {
             int k = completedMigrations.size();
             out.writeInt(k);
             for (MigrationInfo migrationInfo : completedMigrations) {
-                // RU_COMPAT_3_11
-                if (version.isGreaterOrEqual(Versions.V3_12)) {
-                    out.writeObject(migrationInfo);
-                } else {
-                    migrationInfo.writeData(out);
-                }
+                out.writeObject(migrationInfo);
             }
         } else {
             out.writeInt(0);

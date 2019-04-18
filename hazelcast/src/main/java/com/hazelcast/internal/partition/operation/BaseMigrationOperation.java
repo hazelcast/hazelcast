@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -45,7 +44,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,11 +75,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
      * the cluster should be in {@link ClusterState#ACTIVE} and the node started and the partition state version from
      * the sender should match the local partition state version.
      *
-     * @throws IllegalStateException                  if the UUIDs don't match or if the cluster and node state are not
-     * @throws PartitionStateVersionMismatchException if the partition versions don't match and this node is not the master node
      */
     @Override
-    public final void beforeRun() throws Exception {
+    public final void beforeRun() {
 
         try {
             onMigrationStart();
@@ -108,8 +104,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     }
 
     private void applyCompletedMigrations() {
-        // RU_COMPAT_3_11 : completedMigrations is null when cluster is 3.11
-        if (completedMigrations == null || completedMigrations.isEmpty()) {
+        if (completedMigrations.isEmpty()) {
             return;
         }
         InternalPartitionServiceImpl partitionService = getService();
@@ -313,48 +308,27 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        Version version = out.getVersion();
-        // RU_COMPAT_3_11
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            out.writeObject(migrationInfo);
-        } else {
-            migrationInfo.writeData(out);
-        }
-
+        out.writeObject(migrationInfo);
         out.writeInt(partitionStateVersion);
 
-        // RU_COMPAT_3_11
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            int len = completedMigrations.size();
-            out.writeInt(len);
-            for (MigrationInfo migrationInfo : completedMigrations) {
-                out.writeObject(migrationInfo);
-            }
+        int len = completedMigrations.size();
+        out.writeInt(len);
+        for (MigrationInfo migrationInfo : completedMigrations) {
+            out.writeObject(migrationInfo);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        Version version = in.getVersion();
-        // RU_COMPAT_3_11
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            migrationInfo = in.readObject();
-        } else {
-            migrationInfo = new MigrationInfo();
-            migrationInfo.readData(in);
-        }
-
+        migrationInfo = in.readObject();
         partitionStateVersion = in.readInt();
 
-        // RU_COMPAT_3_11
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            int len = in.readInt();
-            completedMigrations = new ArrayList<MigrationInfo>(len);
-            for (int i = 0; i < len; i++) {
-                MigrationInfo migrationInfo = in.readObject();
-                completedMigrations.add(migrationInfo);
-            }
+        int len = in.readInt();
+        completedMigrations = new ArrayList<>(len);
+        for (int i = 0; i < len; i++) {
+            MigrationInfo migrationInfo = in.readObject();
+            completedMigrations.add(migrationInfo);
         }
     }
 

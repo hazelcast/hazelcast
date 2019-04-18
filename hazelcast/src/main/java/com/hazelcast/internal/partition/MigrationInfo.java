@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.version.Version;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -214,43 +212,11 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         out.writeByte(destinationCurrentReplicaIndex);
         out.writeByte(destinationNewReplicaIndex);
         MigrationStatus.writeTo(status, out);
-
-        Version version = out.getVersion();
-
-        boolean hasSource = source != null;
-        out.writeBoolean(hasSource);
-        if (hasSource) {
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                out.writeObject(source);
-            } else {
-                writePartitionReplicaLegacy(out, source);
-            }
-        }
-
-        boolean hasDestination = destination != null;
-        out.writeBoolean(hasDestination);
-        if (hasDestination) {
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                out.writeObject(destination);
-            } else {
-                writePartitionReplicaLegacy(out, destination);
-            }
-        }
-
-        master.writeData(out);
-
-        // RU_COMPAT_3_11
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            out.writeInt(initialPartitionVersion);
-            out.writeInt(partitionVersionIncrement);
-        }
-    }
-
-    private static void writePartitionReplicaLegacy(ObjectDataOutput out, PartitionReplica destination) throws IOException {
-        destination.address().writeData(out);
-        out.writeUTF(destination.uuid());
+        out.writeObject(source);
+        out.writeObject(destination);
+        out.writeObject(master);
+        out.writeInt(initialPartitionVersion);
+        out.writeInt(partitionVersionIncrement);
     }
 
     @Override
@@ -262,43 +228,11 @@ public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
         destinationCurrentReplicaIndex = in.readByte();
         destinationNewReplicaIndex = in.readByte();
         status = MigrationStatus.readFrom(in);
-
-        Version version = in.getVersion();
-        boolean hasSource = in.readBoolean();
-        if (hasSource) {
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                source = in.readObject();
-            } else {
-                source = readPartitionReplicaLegacy(in);
-            }
-        }
-
-        boolean hasDestination = in.readBoolean();
-        if (hasDestination) {
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                destination = in.readObject();
-            } else {
-                destination = readPartitionReplicaLegacy(in);
-            }
-        }
-
-        master = new Address();
-        master.readData(in);
-
-        // RU_COMPAT_3_11
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            initialPartitionVersion = in.readInt();
-            partitionVersionIncrement = in.readInt();
-        }
-    }
-
-    private static PartitionReplica readPartitionReplicaLegacy(ObjectDataInput in) throws IOException {
-        Address address = new Address();
-        address.readData(in);
-        String uuid = in.readUTF();
-        return new PartitionReplica(address, uuid);
+        source = in.readObject();
+        destination = in.readObject();
+        master = in.readObject();
+        initialPartitionVersion = in.readInt();
+        partitionVersionIncrement = in.readInt();
     }
 
     @Override

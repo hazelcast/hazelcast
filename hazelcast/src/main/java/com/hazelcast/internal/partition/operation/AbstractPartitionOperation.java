@@ -49,7 +49,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     }
 
     private Collection<Operation> createReplicationOperations(PartitionReplicationEvent event, boolean nonFragmentedOnly) {
-        Collection<Operation> operations = new ArrayList<Operation>();
+        Collection<Operation> operations = new ArrayList<>();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
 
@@ -117,7 +117,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             // generally a namespace belongs to a single service only
             operations = singleton(op);
         } else if (operations.size() == 1) {
-            operations = new ArrayList<Operation>(operations);
+            operations = new ArrayList<>(operations);
             operations.add(op);
         } else {
             operations.add(op);
