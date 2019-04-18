@@ -18,40 +18,34 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 /**
  * Contains multiple merging entries for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
-public class CacheMergeOperation extends CacheOperation implements BackupAwareOperation, TargetAware {
+public class CacheMergeOperation extends CacheOperation implements BackupAwareOperation {
 
     private List<CacheMergeTypes> mergingEntries;
     private SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy;
 
     private transient boolean hasBackups;
     private transient Map<Data, CacheRecord> backupRecords;
-    private transient Address target;
 
     public CacheMergeOperation() {
     }
@@ -107,22 +101,6 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     @Override
     public Operation getBackupOperation() {
         return new CachePutAllBackupOperation(name, backupRecords);
-    }
-
-    @Override
-    public void setTarget(Address address) {
-        this.target = address;
-    }
-
-    @Override
-    protected boolean requiresExplicitServiceName() {
-        // RU_COMPAT_3_10
-        Member member = getNodeEngine().getClusterService().getMember(target);
-        if (member == null) {
-            return false;
-        }
-        Version memberVersion = member.getVersion().asVersion();
-        return memberVersion.isLessThan(Versions.V3_11);
     }
 
     @Override
