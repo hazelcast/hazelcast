@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,7 +40,7 @@ import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
  * @see AwsConfig
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned {
+public class WanPublisherConfig implements IdentifiedDataSerializable {
 
     private static final int DEFAULT_QUEUE_CAPACITY = 10000;
     private static final WANQueueFullBehavior DEFAULT_QUEUE_FULL_BEHAVIOR = WANQueueFullBehavior.DISCARD_AFTER_MUTATION;

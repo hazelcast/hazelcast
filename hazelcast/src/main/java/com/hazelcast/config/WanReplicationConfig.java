@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,16 +41,11 @@ import java.util.List;
  * consumer. The WAN consumer is in charge of consuming (processing) incoming
  * WAN events. Usually when defining a custom consumer you need to define a
  * custom WAN publisher as well.
- * <p>
- * NOTE:
- * Implements Versioned since it serialized WanConsumerConfig directly by
- * invoking writeData. This means that, even though WanConsumerConfig is
- * Versioned, the version will not be injected.
  *
  * @see MapConfig#setWanReplicationRef
  * @see CacheConfig#setWanReplicationRef
  */
-public class WanReplicationConfig implements IdentifiedDataSerializable, Versioned {
+public class WanReplicationConfig implements IdentifiedDataSerializable {
 
     private String name;
     private WanConsumerConfig wanConsumerConfig;

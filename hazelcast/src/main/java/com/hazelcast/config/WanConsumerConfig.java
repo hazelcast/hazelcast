@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -39,7 +38,7 @@ import java.util.Map;
  * @see WanReplicationConfig#setWanConsumerConfig(WanConsumerConfig)
  * @see WanPublisherConfig#setClassName(String)
  */
-public class WanConsumerConfig implements IdentifiedDataSerializable, Versioned {
+public class WanConsumerConfig implements IdentifiedDataSerializable {
 
     /**
      * @see #isPersistWanReplicatedData

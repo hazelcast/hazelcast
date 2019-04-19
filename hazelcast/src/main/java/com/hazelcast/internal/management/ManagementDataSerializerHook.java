@@ -40,9 +40,8 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
     public static final int UPDATE_MANAGEMENT_CENTER_URL = 1;
     public static final int UPDATE_MAP_CONFIG = 2;
     public static final int MAP_CONFIG_DTO = 3;
-    //public static final int ADD_WAN_CONFIG = 4;
-    public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 5;
-    public static final int PERMISSION_CONFIG_DTO = 6;
+    public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 4;
+    public static final int PERMISSION_CONFIG_DTO = 5;
 
     private static final int LEN = PERMISSION_CONFIG_DTO + 1;
 
