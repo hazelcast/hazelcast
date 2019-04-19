@@ -22,9 +22,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
-import com.hazelcast.util.function.Consumer;
 
 import java.util.BitSet;
+import java.util.function.Consumer;
 
 /**
  * The OperationExecutor is responsible for scheduling work (packets/operations)

@@ -19,7 +19,8 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
-import com.hazelcast.util.function.Supplier;
+
+import java.util.function.Supplier;
 
 /**
  * Supplier that creates {@link DeregistrationOperation}s for a listener registration.

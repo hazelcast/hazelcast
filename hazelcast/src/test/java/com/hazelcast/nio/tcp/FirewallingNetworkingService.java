@@ -27,7 +27,6 @@ import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NetworkingService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.function.Consumer;
 
 import java.util.Collection;
 import java.util.Set;
@@ -35,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.util.Preconditions.checkNotNull;

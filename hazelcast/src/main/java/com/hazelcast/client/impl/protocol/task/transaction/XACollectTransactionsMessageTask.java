@@ -29,13 +29,13 @@ import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.function.Supplier;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class XACollectTransactionsMessageTask
         extends AbstractMultiTargetMessageTask<XATransactionCollectTransactionsCodec.RequestParameters> {

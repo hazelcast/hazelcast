@@ -22,7 +22,8 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Supplier;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 

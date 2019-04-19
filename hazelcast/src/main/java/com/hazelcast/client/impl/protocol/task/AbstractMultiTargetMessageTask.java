@@ -24,11 +24,11 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.util.function.Supplier;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_MAP;

@@ -19,13 +19,13 @@ package com.hazelcast.util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.function.Predicate;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertUtilityConstructor;
 import static org.junit.Assert.assertEquals;

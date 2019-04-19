@@ -31,11 +31,11 @@ import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.function.BiConsumer;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;

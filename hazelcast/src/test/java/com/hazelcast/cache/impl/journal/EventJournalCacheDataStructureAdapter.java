@@ -26,8 +26,6 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.util.function.Function;
-import com.hazelcast.util.function.Predicate;
 
 import javax.cache.Cache;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -37,6 +35,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class EventJournalCacheDataStructureAdapter<K, V>
         implements EventJournalDataStructureAdapter<K, V, EventJournalCacheEvent<K, V>> {

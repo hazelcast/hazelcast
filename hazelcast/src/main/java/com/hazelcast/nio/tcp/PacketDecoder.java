@@ -21,9 +21,9 @@ import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.InboundHandlerWithCounters;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
-import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.nio.IOUtil.compactOrClear;

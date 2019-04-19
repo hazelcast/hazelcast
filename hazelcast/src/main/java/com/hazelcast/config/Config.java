@@ -28,7 +28,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.util.StringUtil;
-import com.hazelcast.util.function.BiConsumer;
 
 import java.io.File;
 import java.net.URL;
@@ -41,6 +40,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;

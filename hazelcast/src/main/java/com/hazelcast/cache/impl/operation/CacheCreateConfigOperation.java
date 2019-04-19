@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @deprecated as of 3.10 replaced by {@link AddCacheConfigOperation}, which is used in conjunction with
  * {@link com.hazelcast.internal.util.InvocationUtil#invokeOnStableClusterSerial(NodeEngine,
- * com.hazelcast.util.function.Supplier, int)} to reliably broadcast the {@code CacheConfig} to all members of the cluster.
+ * java.util.function.Supplier, int)} to reliably broadcast the {@code CacheConfig} to all members of the cluster.
  */
 @Deprecated
 public class CacheCreateConfigOperation

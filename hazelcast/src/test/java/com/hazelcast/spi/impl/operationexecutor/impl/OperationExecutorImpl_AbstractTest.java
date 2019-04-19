@@ -36,7 +36,6 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -44,6 +43,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;

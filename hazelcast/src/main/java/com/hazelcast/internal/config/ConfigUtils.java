@@ -23,11 +23,11 @@ import com.hazelcast.config.NamedConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.util.function.BiConsumer;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
