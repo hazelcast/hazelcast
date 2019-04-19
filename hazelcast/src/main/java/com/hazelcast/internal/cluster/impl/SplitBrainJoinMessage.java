@@ -19,7 +19,6 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
@@ -30,7 +29,7 @@ import java.util.Collection;
  * A {@code JoinMessage} issued by the master node of a subcluster to the master of another subcluster
  * while searching for other clusters for split brain recovery.
  */
-public class SplitBrainJoinMessage extends JoinMessage implements Versioned {
+public class SplitBrainJoinMessage extends JoinMessage {
 
     public enum SplitBrainMergeCheckResult {
         /**

@@ -25,7 +25,6 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -36,7 +35,7 @@ import java.io.IOException;
  * Sent by the master node to commit a migration on the migration destination.
  * It updates the partition table on the migration destination and finalizes the migration.
  */
-public class MigrationCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation, Versioned {
+public class MigrationCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     private MigrationInfo migration;
 

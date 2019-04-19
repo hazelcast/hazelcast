@@ -21,7 +21,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.util.UuidUtil;
 
 import java.io.DataInput;
@@ -29,7 +28,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MigrationInfo implements IdentifiedDataSerializable, Versioned {
+public class MigrationInfo implements IdentifiedDataSerializable {
 
     public enum MigrationStatus {
 

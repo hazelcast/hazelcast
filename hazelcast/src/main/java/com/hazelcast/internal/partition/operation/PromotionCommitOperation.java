@@ -29,7 +29,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
@@ -41,9 +40,11 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.Preconditions;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 
 /**
  * Used for committing a promotion on destination. Sent by the master to update the partition table on destination and
@@ -52,7 +53,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link BeforePromotionOperation}s for every promoted partition. After all operations return it will reschedule itself
  * and finalize the promotions by sending {@link FinalizePromotionOperation} for every promotion.
  */
-public class PromotionCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation, Versioned {
+public class PromotionCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     private PartitionRuntimeState partitionState;
 
@@ -250,15 +251,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         super.readInternal(in);
         expectedMemberUuid = in.readUTF();
         partitionState = in.readObject();
-
-        int len = in.readInt();
-        if (len > 0) {
-            promotions = new ArrayList<>(len);
-            for (int i = 0; i < len; i++) {
-                MigrationInfo migrationInfo = in.readObject();
-                promotions.add(migrationInfo);
-            }
-        }
+        promotions = readCollection(in);
     }
 
     @Override
@@ -266,11 +259,6 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         super.writeInternal(out);
         out.writeUTF(expectedMemberUuid);
         out.writeObject(partitionState);
-
-        int len = promotions.size();
-        out.writeInt(len);
-        for (MigrationInfo migrationInfo : promotions) {
-            out.writeObject(migrationInfo);
-        }
+        writeCollection(promotions, out);
     }
 }

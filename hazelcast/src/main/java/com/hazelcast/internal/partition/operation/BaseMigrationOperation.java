@@ -34,7 +34,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -46,11 +45,13 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
+
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation, PartitionAwareOperation, Versioned {
+        implements MigrationCycleOperation, PartitionAwareOperation {
 
     protected MigrationInfo migrationInfo;
     protected boolean success;
@@ -310,12 +311,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         super.writeInternal(out);
         out.writeObject(migrationInfo);
         out.writeInt(partitionStateVersion);
-
-        int len = completedMigrations.size();
-        out.writeInt(len);
-        for (MigrationInfo migrationInfo : completedMigrations) {
-            out.writeObject(migrationInfo);
-        }
+        writeList(completedMigrations, out);
     }
 
     @Override
@@ -323,13 +319,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         super.readInternal(in);
         migrationInfo = in.readObject();
         partitionStateVersion = in.readInt();
-
-        int len = in.readInt();
-        completedMigrations = new ArrayList<>(len);
-        for (int i = 0; i < len; i++) {
-            MigrationInfo migrationInfo = in.readObject();
-            completedMigrations.add(migrationInfo);
-        }
+        completedMigrations = readList(in);
     }
 
     @Override

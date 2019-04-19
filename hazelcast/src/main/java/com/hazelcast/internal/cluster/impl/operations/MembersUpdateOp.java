@@ -26,18 +26,18 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
-public class MembersUpdateOp extends AbstractClusterOperation implements Versioned {
+public class MembersUpdateOp extends AbstractClusterOperation {
     /** The master cluster clock time. */
     long masterTime = Clock.currentTimeMillis();
     /** The updated member info collection. */
@@ -111,12 +111,7 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
         targetUuid = in.readUTF();
         masterTime = in.readLong();
-        int size = in.readInt();
-        memberInfos = new ArrayList<>(size);
-        while (size-- > 0) {
-            MemberInfo memberInfo = in.readObject();
-            memberInfos.add(memberInfo);
-        }
+        memberInfos = readList(in);
         partitionRuntimeState = in.readObject();
         returnResponse = in.readBoolean();
     }
@@ -130,10 +125,7 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
     protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         out.writeUTF(targetUuid);
         out.writeLong(masterTime);
-        out.writeInt(memberInfos.size());
-        for (MemberInfo memberInfo : memberInfos) {
-            out.writeObject(memberInfo);
-        }
+        writeList(memberInfos, out);
         out.writeObject(partitionRuntimeState);
         out.writeBoolean(returnResponse);
     }

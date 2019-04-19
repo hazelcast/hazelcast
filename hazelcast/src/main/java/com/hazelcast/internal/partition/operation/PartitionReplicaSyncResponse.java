@@ -30,7 +30,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -44,11 +43,12 @@ import com.hazelcast.spi.impl.operationservice.TargetAware;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 
 /**
@@ -64,7 +64,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
-        AllowedDuringPassiveState, Versioned, TargetAware {
+        AllowedDuringPassiveState, TargetAware {
 
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
@@ -262,29 +262,14 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeObject(namespace);
         out.writeLongArray(versions);
-
-        int size = operations != null ? operations.size() : 0;
-        out.writeInt(size);
-        if (size > 0) {
-            for (Operation task : operations) {
-                out.writeObject(task);
-            }
-        }
+        writeNullableCollection(operations, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         namespace = in.readObject();
         versions = in.readLongArray();
-
-        int size = in.readInt();
-        if (size > 0) {
-            operations = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                Operation op = in.readObject();
-                operations.add(op);
-            }
-        }
+        operations = readNullableCollection(in);
     }
 
     @Override
