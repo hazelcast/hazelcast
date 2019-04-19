@@ -21,10 +21,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,9 +30,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableCollection;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
-public final class PartitionRuntimeState implements IdentifiedDataSerializable, Versioned {
+public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
     private PartitionReplica[] replicas;
     private int[][] minimizedPartitionTable;
@@ -140,7 +140,6 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public void readData(ObjectDataInput in) throws IOException {
         version = in.readInt();
         int memberCount = in.readInt();
@@ -163,18 +162,9 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
         }
 
         activeMigration = in.readObject();
-
-        int k = in.readInt();
-        if (k > 0) {
-            completedMigrations = new ArrayList<>(k);
-            for (int i = 0; i < k; i++) {
-                MigrationInfo migrationInfo = in.readObject();
-                completedMigrations.add(migrationInfo);
-            }
-        }
+        completedMigrations = readNullableCollection(in);
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(version);
@@ -193,16 +183,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
         }
 
         out.writeObject(activeMigration);
-
-        if (completedMigrations != null) {
-            int k = completedMigrations.size();
-            out.writeInt(k);
-            for (MigrationInfo migrationInfo : completedMigrations) {
-                out.writeObject(migrationInfo);
-            }
-        } else {
-            out.writeInt(0);
-        }
+        writeNullableCollection(completedMigrations, out);
     }
 
     @Override

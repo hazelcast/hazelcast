@@ -23,7 +23,6 @@ import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.TargetAwareTransactionLogRecord;
 import com.hazelcast.util.Preconditions;
@@ -36,7 +35,7 @@ import java.io.IOException;
  * @see ClusterState
  * @see com.hazelcast.core.Cluster#changeClusterState(ClusterState, com.hazelcast.transaction.TransactionOptions)
  */
-public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord, Versioned {
+public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord {
 
     ClusterStateChange stateChange;
     Address initiator;

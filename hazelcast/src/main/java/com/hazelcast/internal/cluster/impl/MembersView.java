@@ -22,7 +22,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,15 +30,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 import static java.lang.Math.max;
 import static java.util.Collections.unmodifiableList;
 
 /**
  * MembersView is a container object to carry member list and version together.
- * MembersView implements Versioned because it serializes versioned objects (MemberInfo)
- * by passing its own ObjectDataOutput to internal objects' writeData method.
  */
-public final class MembersView implements IdentifiedDataSerializable, Versioned {
+public final class MembersView implements IdentifiedDataSerializable {
 
     private int version;
     private List<MemberInfo> members;
@@ -163,28 +162,15 @@ public final class MembersView implements IdentifiedDataSerializable, Versioned 
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(version);
-        out.writeInt(members.size());
-        for (MemberInfo member : members) {
-            member.writeData(out);
-        }
+        writeList(members, out);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         version = in.readInt();
-        int size = in.readInt();
-        List<MemberInfo> members = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            MemberInfo member = new MemberInfo();
-            member.readData(in);
-            members.add(member);
-        }
-
-        this.members = unmodifiableList(members);
+        this.members = unmodifiableList(readList(in));
     }
 
     @Override

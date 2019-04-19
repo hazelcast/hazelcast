@@ -427,8 +427,8 @@ public class NodeEngineImpl implements NodeEngine {
      *
      * @return the operations to be executed at the end of a finalized join
      */
-    public Operation[] getPostJoinOperations() {
-        Collection<Operation> postJoinOps = new LinkedList<Operation>();
+    public Collection<Operation> getPostJoinOperations() {
+        Collection<Operation> postJoinOps = new LinkedList<>();
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
             Operation postJoinOperation = service.getPostJoinOperation();
@@ -442,11 +442,11 @@ public class NodeEngineImpl implements NodeEngine {
                 postJoinOps.add(postJoinOperation);
             }
         }
-        return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[0]);
+        return postJoinOps;
     }
 
-    public Operation[] getPreJoinOperations() {
-        Collection<Operation> preJoinOps = new LinkedList<Operation>();
+    public Collection<Operation> getPreJoinOperations() {
+        Collection<Operation> preJoinOps = new LinkedList<>();
         Collection<PreJoinAwareService> services = getServices(PreJoinAwareService.class);
         for (PreJoinAwareService service : services) {
             Operation preJoinOperation = service.getPreJoinOperation();
@@ -460,7 +460,7 @@ public class NodeEngineImpl implements NodeEngine {
                 preJoinOps.add(preJoinOperation);
             }
         }
-        return preJoinOps.isEmpty() ? null : preJoinOps.toArray(new Operation[0]);
+        return preJoinOps;
     }
 
     public void reset() {

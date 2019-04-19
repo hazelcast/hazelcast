@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeM
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.util.Collections.singletonMap;
 
-public class MemberInfo implements IdentifiedDataSerializable, Versioned {
+public class MemberInfo implements IdentifiedDataSerializable {
 
     private Address address;
     private String uuid;

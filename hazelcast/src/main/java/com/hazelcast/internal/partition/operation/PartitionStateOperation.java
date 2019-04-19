@@ -26,7 +26,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -37,7 +36,7 @@ import java.io.IOException;
  * @see InternalPartitionServiceImpl#syncPartitionRuntimeState
  */
 public final class PartitionStateOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation, JoinOperation, Versioned {
+        implements MigrationCycleOperation, JoinOperation {
 
     private PartitionRuntimeState partitionState;
     private boolean sync;

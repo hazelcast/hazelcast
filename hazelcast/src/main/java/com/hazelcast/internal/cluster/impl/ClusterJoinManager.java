@@ -748,14 +748,13 @@ public class ClusterJoinManager {
     }
 
     private OnJoinOp preparePostJoinOp() {
-        Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
-        boolean createPostJoinOperation = (postJoinOps != null && postJoinOps.length > 0);
-        return (createPostJoinOperation ? new OnJoinOp(postJoinOps) : null);
+        Collection<Operation> postJoinOps = nodeEngine.getPostJoinOperations();
+        return (postJoinOps != null && !postJoinOps.isEmpty()) ? new OnJoinOp(postJoinOps) : null;
     }
 
     private OnJoinOp preparePreJoinOps() {
-        Operation[] preJoinOps = nodeEngine.getPreJoinOperations();
-        return (preJoinOps != null && preJoinOps.length > 0) ? new OnJoinOp(preJoinOps) : null;
+        Collection<Operation> preJoinOps = nodeEngine.getPreJoinOperations();
+        return (preJoinOps != null && !preJoinOps.isEmpty()) ? new OnJoinOp(preJoinOps) : null;
     }
 
     private Future invokeClusterOp(Operation op, Address target) {

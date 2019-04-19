@@ -26,7 +26,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
@@ -37,7 +36,7 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 
 public class LockClusterStateOp  extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
-        IdentifiedDataSerializable, Versioned {
+        IdentifiedDataSerializable {
 
     private ClusterStateChange stateChange;
     private Address initiator;

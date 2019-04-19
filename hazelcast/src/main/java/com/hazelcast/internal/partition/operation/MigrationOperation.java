@@ -27,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
@@ -52,7 +51,7 @@ import java.util.logging.Level;
  * Sent by the partition owner to the migration destination to start the migration process on the destination.
  * Contains the operations which will be executed on the destination node to migrate the data and the replica versions to be set.
  */
-public class MigrationOperation extends BaseMigrationOperation implements TargetAware, Versioned {
+public class MigrationOperation extends BaseMigrationOperation implements TargetAware {
 
     private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = (op, obj) -> {
         throw new HazelcastException("Migration operations can not send response!");

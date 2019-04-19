@@ -139,9 +139,9 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
 
         // Post join operations must be lock free; means no locks at all;
         // no partition locks, no key-based locks, no service level locks!
-        final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
+        Collection<Operation> postJoinOperations = nodeEngine.getPostJoinOperations();
 
-        if (postJoinOperations != null && postJoinOperations.length > 0) {
+        if (postJoinOperations != null && !postJoinOperations.isEmpty()) {
             final OperationService operationService = nodeEngine.getOperationService();
             final Collection<Member> members = clusterService.getMembers();
 
