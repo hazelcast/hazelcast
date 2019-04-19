@@ -157,43 +157,36 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @Override
     protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         super.writeInternalImpl(out);
-
-        boolean hasPJOp = postJoinOp != null;
-        out.writeBoolean(hasPJOp);
-        if (hasPJOp) {
-            postJoinOp.writeData(out);
-        }
         out.writeUTF(clusterId);
         out.writeLong(clusterStartTime);
         out.writeUTF(clusterState.toString());
         out.writeObject(clusterVersion);
         out.writeObject(preJoinOp);
+        out.writeObject(postJoinOp);
     }
 
     @Override
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
         super.readInternalImpl(in);
-
-        boolean hasPostJoinOp = in.readBoolean();
-        if (hasPostJoinOp) {
-            postJoinOp = new OnJoinOp();
-            try {
-                postJoinOp.readData(in);
-            } catch (Exception e) {
-                deserializationFailure = e;
-                // return immediately, do not attempt to read further
-                return;
-            }
-        }
         clusterId = in.readUTF();
         clusterStartTime = in.readLong();
         String stateName = in.readUTF();
         clusterState = ClusterState.valueOf(stateName);
         clusterVersion = in.readObject();
+        preJoinOp = readOnJoinOp(in);
+        postJoinOp = readOnJoinOp(in);
+    }
+
+    private OnJoinOp readOnJoinOp(ObjectDataInput in) {
+        if (deserializationFailure != null) {
+            // return immediately, do not attempt to read further
+            return null;
+        }
         try {
-            preJoinOp = in.readObject();
+            return in.readObject();
         } catch (Exception e) {
             deserializationFailure = e;
+            return null;
         }
     }
 

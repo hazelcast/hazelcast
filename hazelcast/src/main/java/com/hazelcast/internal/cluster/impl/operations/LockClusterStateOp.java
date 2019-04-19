@@ -18,7 +18,6 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateChange;
@@ -109,29 +108,22 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(stateChange);
-        initiator.writeData(out);
+        out.writeObject(initiator);
         out.writeUTF(txnId);
         out.writeLong(leaseTime);
         out.writeInt(partitionStateVersion);
-        // RU_COMPAT_V3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeInt(memberListVersion);
-        }
+        out.writeInt(memberListVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         stateChange = in.readObject();
-        initiator = new Address();
-        initiator.readData(in);
+        initiator = in.readObject();
         txnId = in.readUTF();
         leaseTime = in.readLong();
         partitionStateVersion = in.readInt();
-        // RU_COMPAT_V3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            memberListVersion = in.readInt();
-        }
+        memberListVersion = in.readInt();
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
@@ -103,10 +102,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         out.writeLong(leaseTime);
         out.writeInt(partitionStateVersion);
         out.writeBoolean(isTransient);
-        // RU_COMPAT_V3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeInt(memberListVersion);
-        }
+        out.writeInt(memberListVersion);
     }
 
     @Override
@@ -118,10 +114,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         leaseTime = in.readLong();
         partitionStateVersion = in.readInt();
         isTransient = in.readBoolean();
-        // RU_COMPAT_V3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            memberListVersion = in.readInt();
-        }
+        memberListVersion = in.readInt();
     }
 
     @Override

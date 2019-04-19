@@ -64,23 +64,8 @@ public class PhiAccrualClusterFailureDetector implements ClusterFailureDetector 
 
 
     private final double phiThreshold;
-    private final int maxSampleSize;
-    private final long minStdDeviationMillis;
-    private final long acceptableHeartbeatPauseMillis;
-    private final long firstHeartbeatEstimateMillis;
-
-    private final ConcurrentMap<Member, FailureDetector> failureDetectors
-            = new ConcurrentHashMap<Member, FailureDetector>();
-
-    private final ConstructorFunction<Member, FailureDetector> failureDetectorConstructor
-            = new ConstructorFunction<Member, FailureDetector>() {
-
-        @Override
-        public FailureDetector createNew(Member arg) {
-            return new PhiAccrualFailureDetector(phiThreshold, maxSampleSize, minStdDeviationMillis,
-                    acceptableHeartbeatPauseMillis, firstHeartbeatEstimateMillis);
-        }
-    };
+    private final ConcurrentMap<Member, FailureDetector> failureDetectors = new ConcurrentHashMap<>();
+    private final ConstructorFunction<Member, FailureDetector> failureDetectorConstructor;
 
     public PhiAccrualClusterFailureDetector(long maxNoHeartbeatMillis, long heartbeatIntervalMillis, HazelcastProperties props) {
         this(maxNoHeartbeatMillis, heartbeatIntervalMillis, props.getDouble(HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD),
@@ -90,15 +75,12 @@ public class PhiAccrualClusterFailureDetector implements ClusterFailureDetector 
 
     public PhiAccrualClusterFailureDetector(long maxNoHeartbeatMillis, long heartbeatIntervalMillis, double phiThreshold,
                                             int maxSampleSize, long minStdDeviationMillis) {
-        this.acceptableHeartbeatPauseMillis = maxNoHeartbeatMillis;
-        this.firstHeartbeatEstimateMillis = heartbeatIntervalMillis;
         this.phiThreshold = phiThreshold;
-        this.maxSampleSize = maxSampleSize;
-        this.minStdDeviationMillis = minStdDeviationMillis;
+        this.failureDetectorConstructor = arg -> new PhiAccrualFailureDetector(phiThreshold, maxSampleSize, minStdDeviationMillis,
+                maxNoHeartbeatMillis, heartbeatIntervalMillis);
     }
 
-
-        @Override
+    @Override
     public void heartbeat(Member member, long timestamp) {
         FailureDetector fd = getOrPutIfAbsent(failureDetectors, member, failureDetectorConstructor);
         fd.heartbeat(timestamp);

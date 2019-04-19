@@ -55,7 +55,7 @@ public final class MulticastService implements Runnable {
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
     private static final int JOIN_SERIALIZATION_ERROR_SUPPRESSION_MILLIS = 60000;
 
-    private final List<MulticastListener> listeners = new CopyOnWriteArrayList<MulticastListener>();
+    private final List<MulticastListener> listeners = new CopyOnWriteArrayList<>();
     private final Object sendLock = new Object();
     private final CountDownLatch stopLatch = new CountDownLatch(1);
 

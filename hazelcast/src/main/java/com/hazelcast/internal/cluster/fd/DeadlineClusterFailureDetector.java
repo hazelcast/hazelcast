@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 public class DeadlineClusterFailureDetector implements ClusterFailureDetector {
 
     private final long maxNoHeartbeatMillis;
-    private final ConcurrentMap<Member, Long> heartbeatTimes = new ConcurrentHashMap<Member, Long>();
+    private final ConcurrentMap<Member, Long> heartbeatTimes = new ConcurrentHashMap<>();
 
     public DeadlineClusterFailureDetector(long maxNoHeartbeatMillis) {
         this.maxNoHeartbeatMillis = maxNoHeartbeatMillis;

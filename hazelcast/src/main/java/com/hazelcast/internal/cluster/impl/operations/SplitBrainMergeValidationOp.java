@@ -178,13 +178,12 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
     @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
-        request = new SplitBrainJoinMessage();
-        request.readData(in);
+        request = in.readObject();
     }
 
     @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
-        request.writeData(out);
+        out.writeObject(request);
     }
 
     @Override

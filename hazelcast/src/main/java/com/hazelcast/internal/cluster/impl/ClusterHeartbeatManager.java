@@ -211,20 +211,14 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Initializes the {@link ClusterHeartbeatManager}. It will schedule the :
-     * <ul>
-     * <li>heartbeat operation to the {@link #getHeartbeatInterval(HazelcastProperties)} interval</li>
-     * <li>master confirmation to the {@link GroupProperty#MASTER_CONFIRMATION_INTERVAL_SECONDS} interval</li>
-     * </ul>
+     * Initializes the {@link ClusterHeartbeatManager}. It will schedule the
+     * heartbeat operation to the {@link #getHeartbeatInterval(HazelcastProperties)} interval.
      */
     void init() {
         ExecutionService executionService = nodeEngine.getExecutionService();
 
-        executionService.scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, new Runnable() {
-            public void run() {
-                heartbeat();
-            }
-        }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
+        executionService.scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, this::heartbeat,
+                heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
 
         if (icmpParallelMode) {
             startPeriodicPinger();
@@ -591,16 +585,14 @@ public class ClusterHeartbeatManager {
     }
 
     private void startPeriodicPinger() {
-        nodeEngine.getExecutionService().scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, new Runnable() {
-            public void run() {
-                Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
+        nodeEngine.getExecutionService().scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, () -> {
+            Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
 
-                for (Member member : members) {
-                    try {
-                        runPingTask(member);
-                    } catch (Throwable e) {
-                        logger.severe(e);
-                    }
+            for (Member member : members) {
+                try {
+                    runPingTask(member);
+                } catch (Throwable e) {
+                    logger.severe(e);
                 }
             }
         }, icmpIntervalMillis, icmpIntervalMillis, TimeUnit.MILLISECONDS);

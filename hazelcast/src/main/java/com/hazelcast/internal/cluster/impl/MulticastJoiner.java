@@ -44,7 +44,7 @@ public class MulticastJoiner extends AbstractJoiner {
 
     // this deque is used as a stack, the SplitBrainMulticastListener adds to its head and the periodic split brain handler job
     // also polls from its head.
-    private final BlockingDeque<SplitBrainJoinMessage> splitBrainJoinMessages = new LinkedBlockingDeque<SplitBrainJoinMessage>();
+    private final BlockingDeque<SplitBrainJoinMessage> splitBrainJoinMessages = new LinkedBlockingDeque<>();
 
     public MulticastJoiner(Node node) {
         super(node);

@@ -90,7 +90,7 @@ public class MembershipManager {
     private final Lock clusterServiceLock;
     private final ILogger logger;
 
-    private final AtomicReference<MemberMap> memberMapRef = new AtomicReference<MemberMap>(MemberMap.empty());
+    private final AtomicReference<MemberMap> memberMapRef = new AtomicReference<>(MemberMap.empty());
 
     /**
      * Members removed from active cluster members list while cluster state
@@ -99,10 +99,9 @@ public class MembershipManager {
      * Missing members are associated with either their {@code UUID} or their {@code Address}
      * depending on Hot Restart is enabled or not.
      */
-    private final AtomicReference<Map<Object, MemberImpl>> missingMembersRef
-            = new AtomicReference<Map<Object, MemberImpl>>(Collections.<Object, MemberImpl>emptyMap());
+    private final AtomicReference<Map<Object, MemberImpl>> missingMembersRef = new AtomicReference<>(Collections.emptyMap());
 
-    private final Set<Address> suspectedMembers = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    private final Set<Address> suspectedMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final int mastershipClaimTimeoutSeconds;
 
     MembershipManager(Node node, ClusterServiceImpl clusterService, Lock clusterServiceLock) {
@@ -128,11 +127,8 @@ public class MembershipManager {
 
         long memberListPublishInterval = hazelcastProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
         memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
-        executionService.scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, new Runnable() {
-            public void run() {
-                publishMemberList();
-            }
-        }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
+        executionService.scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, this::publishMemberList,
+                memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
     }
 
     private void registerThisMember() {
@@ -287,8 +283,8 @@ public class MembershipManager {
     void updateMembers(MembersView membersView) {
         MemberMap currentMemberMap = memberMapRef.get();
 
-        Collection<MemberImpl> addedMembers = new LinkedList<MemberImpl>();
-        Collection<MemberImpl> removedMembers = new LinkedList<MemberImpl>();
+        Collection<MemberImpl> addedMembers = new LinkedList<>();
+        Collection<MemberImpl> removedMembers = new LinkedList<>();
         ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
 
         MemberImpl[] members = new MemberImpl[membersView.size()];
@@ -610,7 +606,7 @@ public class MembershipManager {
     }
 
     private Set<Member> collectMembersToAsk(MemberMap localMemberMap) {
-        Set<Member> membersToAsk = new HashSet<Member>();
+        Set<Member> membersToAsk = new HashSet<>();
         for (MemberImpl member : localMemberMap.getMembers()) {
             if (member.localMember() || suspectedMembers.contains(member.getAddress())) {
                 continue;
@@ -746,7 +742,7 @@ public class MembershipManager {
     }
 
     void sendMembershipEvents(Collection<MemberImpl> currentMembers, Collection<MemberImpl> newMembers) {
-        Set<Member> eventMembers = new LinkedHashSet<Member>(currentMembers);
+        Set<Member> eventMembers = new LinkedHashSet<>(currentMembers);
         if (!newMembers.isEmpty()) {
             for (MemberImpl newMember : newMembers) {
                 // sync calls
@@ -755,7 +751,7 @@ public class MembershipManager {
 
                 // async events
                 eventMembers.add(newMember);
-                sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true);
+                sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<>(eventMembers)), true);
             }
         }
     }
@@ -767,13 +763,11 @@ public class MembershipManager {
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
-                nodeEngine.getExecutionService().execute(MEMBERSHIP_EVENT_EXECUTOR_NAME, new Runnable() {
-                    public void run() {
-                        if (added) {
-                            service.memberAdded(event);
-                        } else {
-                            service.memberRemoved(event);
-                        }
+                nodeEngine.getExecutionService().execute(MEMBERSHIP_EVENT_EXECUTOR_NAME, () -> {
+                    if (added) {
+                        service.memberAdded(event);
+                    } else {
+                        service.memberRemoved(event);
                     }
                 });
             }
@@ -800,7 +794,7 @@ public class MembershipManager {
     }
 
     private MembersView decideNewMembersView(MemberMap localMemberMap, Set<Member> members) {
-        Map<Address, Future<MembersView>> futures = new HashMap<Address, Future<MembersView>>();
+        Map<Address, Future<MembersView>> futures = new HashMap<>();
         MembersView latestMembersView = fetchLatestMembersView(localMemberMap, members, futures);
 
         if (logger.isFineEnabled()) {
@@ -808,7 +802,7 @@ public class MembershipManager {
         }
 
         // within the most recent members view, select the members that have reported their members view successfully
-        List<MemberInfo> finalMembers = new ArrayList<MemberInfo>();
+        List<MemberInfo> finalMembers = new ArrayList<>();
         for (MemberInfo memberInfo : latestMembersView.getMembers()) {
             Address address = memberInfo.getAddress();
             if (node.getThisAddress().equals(address)) {
@@ -870,7 +864,7 @@ public class MembershipManager {
         while (clusterService.isJoined()) {
 
             boolean done = true;
-            for (Entry<Address, Future<MembersView>> e : new ArrayList<Entry<Address, Future<MembersView>>>(futures.entrySet())) {
+            for (Entry<Address, Future<MembersView>> e : new ArrayList<>(futures.entrySet())) {
                 Address address = e.getKey();
                 Future<MembersView> future = e.getValue();
 
@@ -982,7 +976,7 @@ public class MembershipManager {
     }
 
     private void addToMissingMembers(MemberImpl... members) {
-        Map<Object, MemberImpl> m = new HashMap<Object, MemberImpl>(missingMembersRef.get());
+        Map<Object, MemberImpl> m = new HashMap<>(missingMembersRef.get());
         if (isHotRestartEnabled()) {
             for (MemberImpl member : members) {
                 m.put(member.getUuid(), member);
@@ -996,7 +990,7 @@ public class MembershipManager {
     }
 
     private void removeFromMissingMembers(MemberImpl... members) {
-        Map<Object, MemberImpl> m = new HashMap<Object, MemberImpl>(missingMembersRef.get());
+        Map<Object, MemberImpl> m = new HashMap<>(missingMembersRef.get());
         if (isHotRestartEnabled()) {
             for (MemberImpl member : members) {
                 m.remove(member.getUuid());
@@ -1025,7 +1019,7 @@ public class MembershipManager {
             Collection<MemberImpl> removedMembers = m.values();
             Collection<MemberImpl> members = memberMapRef.get().getMembers();
 
-            Collection<Member> allMembers = new ArrayList<Member>(members.size() + removedMembers.size());
+            Collection<Member> allMembers = new ArrayList<>(members.size() + removedMembers.size());
             allMembers.addAll(members);
             allMembers.addAll(removedMembers);
 
@@ -1038,7 +1032,7 @@ public class MembershipManager {
     void setMissingMembers(Collection<MemberImpl> members) {
         clusterServiceLock.lock();
         try {
-            Map<Object, MemberImpl> m = new HashMap<Object, MemberImpl>(members.size());
+            Map<Object, MemberImpl> m = new HashMap<>(members.size());
             if (isHotRestartEnabled()) {
                 for (MemberImpl member : members) {
                     m.put(member.getUuid(), member);
@@ -1057,7 +1051,7 @@ public class MembershipManager {
     void shrinkMissingMembers(Collection<String> memberUuidsToRemove) {
         clusterServiceLock.lock();
         try {
-            Map<Object, MemberImpl> m = new HashMap<Object, MemberImpl>(missingMembersRef.get());
+            Map<Object, MemberImpl> m = new HashMap<>(missingMembersRef.get());
             Iterator<MemberImpl> it = m.values().iterator();
             while (it.hasNext()) {
                 MemberImpl member = it.next();
@@ -1080,7 +1074,7 @@ public class MembershipManager {
         try {
             Map<Object, MemberImpl> m = missingMembersRef.get();
             Collection<MemberImpl> members = m.values();
-            missingMembersRef.set(Collections.<Object, MemberImpl>emptyMap());
+            missingMembersRef.set(Collections.emptyMap());
             for (MemberImpl member : members) {
                 onMemberRemove(member);
             }
