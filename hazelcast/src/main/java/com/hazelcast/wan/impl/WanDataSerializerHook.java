@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.WAN_REPLICATION_DS_FACTORY;
@@ -56,19 +55,16 @@ public class WanDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case WAN_REPLICATION_EVENT:
-                        return new WanReplicationEvent();
-                    case MAP_REPLICATION_UPDATE:
-                        return new MapReplicationUpdate();
-                    case MAP_REPLICATION_REMOVE:
-                        return new MapReplicationRemove();
-                    default:
-                        throw new IllegalArgumentException("Unknown type-id: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case WAN_REPLICATION_EVENT:
+                    return new WanReplicationEvent();
+                case MAP_REPLICATION_UPDATE:
+                    return new MapReplicationUpdate();
+                case MAP_REPLICATION_REMOVE:
+                    return new MapReplicationRemove();
+                default:
+                    throw new IllegalArgumentException("Unknown type-id: " + typeId);
             }
         };
     }

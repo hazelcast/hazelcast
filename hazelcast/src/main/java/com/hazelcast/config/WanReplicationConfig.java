@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -148,62 +147,24 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            // using this method is nicer since the object
-            // can implement Versioned and have a version injected
-            out.writeObject(wanConsumerConfig);
-        } else {
-            if (wanConsumerConfig != null) {
-                out.writeBoolean(true);
-                wanConsumerConfig.writeData(out);
-            } else {
-                out.writeBoolean(false);
-            }
-        }
+        out.writeObject(wanConsumerConfig);
 
         int publisherCount = wanPublisherConfigs.size();
         out.writeInt(publisherCount);
         for (WanPublisherConfig wanPublisherConfig : wanPublisherConfigs) {
-            // RU_COMPAT_3_11
-            if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-                // using this method is nicer since the object
-                // can implement Versioned and have a version injected
-                out.writeObject(wanPublisherConfig);
-            } else {
-                wanPublisherConfig.writeData(out);
-            }
+            out.writeObject(wanPublisherConfig);
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            wanConsumerConfig = in.readObject();
-        } else {
-            boolean consumerConfigExists = in.readBoolean();
-            if (consumerConfigExists) {
-                WanConsumerConfig consumerConfig = new WanConsumerConfig();
-                consumerConfig.readData(in);
-                wanConsumerConfig = consumerConfig;
-            }
-        }
+        wanConsumerConfig = in.readObject();
 
         int publisherCount = in.readInt();
         for (int i = 0; i < publisherCount; i++) {
             WanPublisherConfig publisherConfig;
-
-            // RU_COMPAT_3_11
-            if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-                publisherConfig = in.readObject();
-            } else {
-                publisherConfig = new WanPublisherConfig();
-                publisherConfig.readData(in);
-            }
+            publisherConfig = in.readObject();
             wanPublisherConfigs.add(publisherConfig);
         }
     }
