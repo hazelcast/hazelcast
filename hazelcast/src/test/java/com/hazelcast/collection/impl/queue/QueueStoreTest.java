@@ -30,8 +30,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -395,12 +393,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
         @Override
         @SuppressWarnings("unchecked")
         public QueueStore<Integer> newQueueStore(String name, Properties properties) {
-            return ConcurrencyUtil.getOrPutIfAbsent(stores, name, new ConstructorFunction<String, QueueStore>() {
-                @Override
-                public QueueStore createNew(String arg) {
-                    return new TestQueueStore();
-                }
-            });
+            return stores.computeIfAbsent(name, arg -> new TestQueueStore());
         }
     }
 

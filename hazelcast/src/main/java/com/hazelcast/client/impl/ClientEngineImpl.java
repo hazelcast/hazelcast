@@ -70,7 +70,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
@@ -90,6 +89,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -113,13 +113,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private static final int BLOCKING_THREADS_PER_CORE = 20;
     private static final int THREADS_PER_CORE = 1;
     private static final int QUERY_THREADS_PER_CORE = 1;
-    private static final ConstructorFunction<String, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC =
-            new ConstructorFunction<String, AtomicLong>() {
-                @Override
-                public AtomicLong createNew(String arg) {
-                    return new AtomicLong();
-                }
-            };
+    private static final Function<String, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC = arg -> new AtomicLong();
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
@@ -128,13 +122,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     private final Executor queryExecutor;
 
     // client UUID -> member UUID
-    private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<>();
     // client UUID -> last authentication correlation ID
-    private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
-            = new ConcurrentHashMap<String, AtomicLong>();
+    private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds = new ConcurrentHashMap<>();
 
     // client Address -> member Address, only used when advanced network config is enabled
-    private final Map<Address, Address> clientMemberAddressMap = new ConcurrentHashMap<Address, Address>();
+    private final Map<Address, Address> clientMemberAddressMap = new ConcurrentHashMap<>();
 
     private volatile ClientSelector clientSelector = ClientSelectors.any();
 
@@ -467,8 +460,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     public boolean trySetLastAuthenticationCorrelationId(String clientUuid, long newCorrelationId) {
-        AtomicLong lastCorrelationId = ConcurrencyUtil.getOrPutIfAbsent(lastAuthenticationCorrelationIds,
-                clientUuid,
+        AtomicLong lastCorrelationId = lastAuthenticationCorrelationIds.computeIfAbsent(clientUuid,
                 LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC);
         return ConcurrencyUtil.setIfEqualOrGreaterThan(lastCorrelationId, newCorrelationId);
     }
@@ -534,12 +526,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             if (localMemberUuid.equals(ownerUuid)) {
                 final long authenticationCorrelationId = endpoint.getAuthenticationCorrelationId();
                 try {
-                    nodeEngine.getExecutionService().schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            callDisconnectionOperation(clientUuid, authenticationCorrelationId);
-                        }
-                    }, endpointRemoveDelaySeconds, TimeUnit.SECONDS);
+                    nodeEngine.getExecutionService().schedule(() ->
+                            callDisconnectionOperation(clientUuid, authenticationCorrelationId),
+                            endpointRemoveDelaySeconds, TimeUnit.SECONDS);
                 } catch (RejectedExecutionException e) {
                     if (logger.isFinestEnabled()) {
                         logger.finest(e);
@@ -597,11 +586,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     @Override
     public Operation getPreJoinOperation() {
         Set<Member> members = nodeEngine.getClusterService().getMembers();
-        HashSet<String> liveMemberUUIDs = new HashSet<String>();
+        HashSet<String> liveMemberUUIDs = new HashSet<>();
         for (Member member : members) {
             liveMemberUUIDs.add(member.getUuid());
         }
-        Map<String, String> liveMappings = new HashMap<String, String>(ownershipMappings);
+        Map<String, String> liveMappings = new HashMap<>(ownershipMappings);
         liveMappings.values().retainAll(liveMemberUUIDs);
         return liveMappings.isEmpty() ? null : new OnJoinClientOperation(liveMappings);
     }
@@ -618,7 +607,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         int numberOfOtherClients = 0;
 
         OperationService operationService = node.nodeEngine.getOperationService();
-        Map<String, ClientType> clientsMap = new HashMap<String, ClientType>();
+        Map<String, ClientType> clientsMap = new HashMap<>();
 
         for (Member member : node.getClusterService().getMembers()) {
             Address target = member.getAddress();
@@ -665,7 +654,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             }
         }
 
-        final Map<ClientType, Integer> resultMap = new EnumMap<ClientType, Integer>(ClientType.class);
+        final Map<ClientType, Integer> resultMap = new EnumMap<>(ClientType.class);
 
         resultMap.put(ClientType.CPP, numberOfCppClients);
         resultMap.put(ClientType.CSHARP, numberOfDotNetClients);
@@ -681,7 +670,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     @Override
     public Map<String, String> getClientStatistics() {
         Collection<ClientEndpoint> clientEndpoints = endpointManager.getEndpoints();
-        Map<String, String> statsMap = new HashMap<String, String>(clientEndpoints.size());
+        Map<String, String> statsMap = new HashMap<>(clientEndpoints.size());
         for (ClientEndpoint e : clientEndpoints) {
             String statistics = e.getClientStatistics();
             if (null != statistics) {

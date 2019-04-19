@@ -56,7 +56,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -72,6 +71,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
@@ -92,19 +92,12 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     private static final Object NULL_OBJECT = new Object();
 
-    private final ConcurrentMap<String, QueueContainer> containerMap
-            = new ConcurrentHashMap<String, QueueContainer>();
-    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap
-            = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
-    private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction
-            = new ConstructorFunction<String, LocalQueueStatsImpl>() {
-        @Override
-        public LocalQueueStatsImpl createNew(String key) {
-            return new LocalQueueStatsImpl();
-        }
-    };
+    private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
+    private final Function<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction
+            = key -> new LocalQueueStatsImpl();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -185,7 +178,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
+        Map<String, QueueContainer> migrationData = new HashMap<>();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -342,7 +335,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     public LocalQueueStatsImpl getLocalQueueStatsImpl(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
+        return statsMap.computeIfAbsent(name, localQueueStatsConstructorFunction);
     }
 
     @Override

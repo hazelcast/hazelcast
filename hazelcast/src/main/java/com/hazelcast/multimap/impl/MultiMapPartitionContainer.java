@@ -21,7 +21,6 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
@@ -54,7 +53,7 @@ public class MultiMapPartitionContainer {
     }
 
     public MultiMapContainer getOrCreateMultiMapContainer(String name, boolean isAccess) {
-        MultiMapContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, name, containerConstructor);
+        MultiMapContainer container = containerMap.computeIfAbsent(name, containerConstructor::createNew);
         if (isAccess) {
             container.access();
         }
@@ -70,7 +69,7 @@ public class MultiMapPartitionContainer {
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+        Collection<ServiceNamespace> namespaces = new HashSet<>();
         for (MultiMapContainer container : containerMap.values()) {
             MultiMapConfig config = container.getConfig();
             if (config.getTotalBackupCount() < replicaIndex) {

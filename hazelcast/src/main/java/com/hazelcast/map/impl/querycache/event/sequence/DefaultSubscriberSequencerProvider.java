@@ -16,12 +16,9 @@
 
 package com.hazelcast.map.impl.querycache.event.sequence;
 
-import com.hazelcast.util.ConstructorFunction;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import java.util.function.Function;
 
 /**
  * This class provides on-demand {@link PartitionSequencer} implementations
@@ -31,7 +28,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class DefaultSubscriberSequencerProvider implements SubscriberSequencerProvider {
 
-    private static final ConstructorFunction<Integer, PartitionSequencer> PARTITION_SEQUENCER_CONSTRUCTOR
+    private static final Function<Integer, PartitionSequencer> PARTITION_SEQUENCER_CONSTRUCTOR
             = arg -> new DefaultPartitionSequencer();
 
     private final ConcurrentMap<Integer, PartitionSequencer> partitionSequences;
@@ -66,7 +63,7 @@ public class DefaultSubscriberSequencerProvider implements SubscriberSequencerPr
     }
 
     private PartitionSequencer getOrCreateSequence(int partitionId) {
-        return getOrPutIfAbsent(partitionSequences, partitionId, PARTITION_SEQUENCER_CONSTRUCTOR);
+        return partitionSequences.computeIfAbsent(partitionId, PARTITION_SEQUENCER_CONSTRUCTOR);
     }
 }
 

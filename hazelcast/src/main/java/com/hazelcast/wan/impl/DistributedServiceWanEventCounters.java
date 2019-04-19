@@ -16,12 +16,9 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.util.ConstructorFunction;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import java.util.function.Function;
 
 /**
  * Counters for WAN events for a single distributed object type (map or
@@ -30,15 +27,9 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  * WAN publishers, depending on its usage.
  */
 public class DistributedServiceWanEventCounters {
-    private static final ConstructorFunction<String, DistributedObjectWanEventCounters> EVENT_COUNTER_CONSTRUCTOR_FN
-            = new ConstructorFunction<String, DistributedObjectWanEventCounters>() {
-        @Override
-        public DistributedObjectWanEventCounters createNew(String ignored) {
-            return new DistributedObjectWanEventCounters();
-        }
-    };
-    private final ConcurrentHashMap<String, DistributedObjectWanEventCounters> eventCounterMap
-            = new ConcurrentHashMap<String, DistributedObjectWanEventCounters>();
+    private static final Function<String, DistributedObjectWanEventCounters> EVENT_COUNTER_CONSTRUCTOR_FN
+            = ignored -> new DistributedObjectWanEventCounters();
+    private final ConcurrentHashMap<String, DistributedObjectWanEventCounters> eventCounterMap = new ConcurrentHashMap<>();
 
     /**
      * Increment the number of sync events for the {@code distributedObjectName}.
@@ -52,29 +43,28 @@ public class DistributedServiceWanEventCounters {
      * by {@code count}.
      */
     public void incrementSync(String distributedObjectName, int count) {
-        getOrPutIfAbsent(eventCounterMap, distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN)
-                .incrementSyncCount(count);
+        eventCounterMap.computeIfAbsent(distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN).incrementSyncCount(count);
     }
 
     /**
      * Increment the number of update events for the {@code distributedObjectName}.
      */
     public void incrementUpdate(String distributedObjectName) {
-        getOrPutIfAbsent(eventCounterMap, distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN).incrementUpdateCount();
+        eventCounterMap.computeIfAbsent(distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN).incrementUpdateCount();
     }
 
     /**
      * Increment the number of remove events for the {@code distributedObjectName}.
      */
     public void incrementRemove(String distributedObjectName) {
-        getOrPutIfAbsent(eventCounterMap, distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN).incrementRemoveCount();
+        eventCounterMap.computeIfAbsent(distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN).incrementRemoveCount();
     }
 
     /**
      * Increment the number of dropped events for the {@code distributedObjectName}.
      */
     public void incrementDropped(String distributedObjectName) {
-        getOrPutIfAbsent(eventCounterMap, distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN).incrementDroppedCount();
+        eventCounterMap.computeIfAbsent(distributedObjectName, EVENT_COUNTER_CONSTRUCTOR_FN).incrementDroppedCount();
     }
 
     /**

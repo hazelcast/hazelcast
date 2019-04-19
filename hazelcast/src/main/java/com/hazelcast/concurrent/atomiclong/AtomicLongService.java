@@ -38,15 +38,14 @@ import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkBasicConfig;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class AtomicLongService
@@ -56,15 +55,11 @@ public class AtomicLongService
 
     private static final Object NULL_OBJECT = new Object();
 
-    private final ConcurrentMap<String, AtomicLongContainer> containers = new ConcurrentHashMap<String, AtomicLongContainer>();
-    private final ConstructorFunction<String, AtomicLongContainer> atomicLongConstructorFunction =
-            new ConstructorFunction<String, AtomicLongContainer>() {
-                public AtomicLongContainer createNew(String key) {
-                    return new AtomicLongContainer();
-                }
-            };
+    private final ConcurrentMap<String, AtomicLongContainer> containers = new ConcurrentHashMap<>();
+    private final Function<String, AtomicLongContainer> atomicLongConstructorFunction =
+            key -> new AtomicLongContainer();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -83,7 +78,7 @@ public class AtomicLongService
     }
 
     public AtomicLongContainer getLongContainer(String name) {
-        return getOrPutIfAbsent(containers, name, atomicLongConstructorFunction);
+        return containers.computeIfAbsent(name, atomicLongConstructorFunction);
     }
 
     public boolean containsAtomicLong(String name) {
@@ -129,7 +124,7 @@ public class AtomicLongService
             return null;
         }
 
-        Map<String, Long> data = new HashMap<String, Long>();
+        Map<String, Long> data = new HashMap<>();
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, AtomicLongContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();
@@ -168,13 +163,7 @@ public class AtomicLongService
     }
 
     private void clearPartitionReplica(int partitionId) {
-        final Iterator<String> iterator = containers.keySet().iterator();
-        while (iterator.hasNext()) {
-            String name = iterator.next();
-            if (getPartitionId(name) == partitionId) {
-                iterator.remove();
-            }
-        }
+        containers.keySet().removeIf(name -> getPartitionId(name) == partitionId);
     }
 
     @Override

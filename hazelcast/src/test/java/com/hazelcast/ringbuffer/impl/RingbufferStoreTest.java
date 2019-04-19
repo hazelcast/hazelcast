@@ -32,8 +32,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -333,12 +331,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
         @Override
         @SuppressWarnings("unchecked")
         public RingbufferStore<Integer> newRingbufferStore(String name, Properties properties) {
-            return ConcurrencyUtil.getOrPutIfAbsent(stores, name, new ConstructorFunction<String, RingbufferStore>() {
-                @Override
-                public RingbufferStore<Integer> createNew(String arg) {
-                    return new TestRingbufferStore<Integer>();
-                }
-            });
+            return stores.computeIfAbsent(name, arg -> new TestRingbufferStore<Integer>());
         }
     }
 

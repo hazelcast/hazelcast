@@ -77,6 +77,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
@@ -120,8 +121,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<>();
 
-    protected final ConstructorFunction<String, CacheContext> cacheContextsConstructorFunction = name -> new CacheContext();
-    protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
+    protected final Function<String, CacheContext> cacheContextsConstructorFunction = name -> new CacheContext();
+    protected final Function<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
             name -> new CacheStatisticsImpl(
             Clock.currentTimeMillis(),
             CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
@@ -433,7 +434,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public CacheStatisticsImpl createCacheStatIfAbsent(String cacheNameWithPrefix) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statistics, cacheNameWithPrefix, cacheStatisticsConstructorFunction);
+        return statistics.computeIfAbsent(cacheNameWithPrefix, cacheStatisticsConstructorFunction);
     }
 
     public CacheContext getCacheContext(String name) {
@@ -442,7 +443,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public CacheContext getOrCreateCacheContext(String cacheNameWithPrefix) {
-        return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, cacheNameWithPrefix, cacheContextsConstructorFunction);
+        return cacheContexts.computeIfAbsent(cacheNameWithPrefix, cacheContextsConstructorFunction);
     }
 
     @Override

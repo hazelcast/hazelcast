@@ -26,15 +26,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * A provider for {@link ReplicatedMapMergePolicy} instances.
  */
 public final class MergePolicyProvider {
 
-    private final ConcurrentMap<String, ReplicatedMapMergePolicy> mergePolicyMap
-            = new ConcurrentHashMap<String, ReplicatedMapMergePolicy>();
+    private final ConcurrentMap<String, ReplicatedMapMergePolicy> mergePolicyMap = new ConcurrentHashMap<>();
 
     private final ConstructorFunction<String, ReplicatedMapMergePolicy> policyConstructorFunction
             = new ConstructorFunction<String, ReplicatedMapMergePolicy>() {
@@ -82,7 +80,7 @@ public final class MergePolicyProvider {
         try {
             return policyProvider.getMergePolicy(className);
         } catch (InvalidConfigurationException e) {
-            return getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
+            return mergePolicyMap.computeIfAbsent(className, policyConstructorFunction::createNew);
         }
     }
 }

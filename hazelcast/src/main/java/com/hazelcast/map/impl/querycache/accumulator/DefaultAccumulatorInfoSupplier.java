@@ -16,12 +16,9 @@
 
 package com.hazelcast.map.impl.querycache.accumulator;
 
-import com.hazelcast.util.ConstructorFunction;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import java.util.function.Function;
 
 /**
  * Default implementation of {@link AccumulatorInfoSupplier}.
@@ -32,7 +29,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class DefaultAccumulatorInfoSupplier implements AccumulatorInfoSupplier {
 
-    private static final ConstructorFunction<String, ConcurrentMap<String, AccumulatorInfo>> INFO_CTOR
+    private static final Function<String, ConcurrentMap<String, AccumulatorInfo>> INFO_CTOR
             = arg -> new ConcurrentHashMap<>();
 
     private final ConcurrentMap<String, ConcurrentMap<String, AccumulatorInfo>> cacheInfoPerMap;
@@ -53,7 +50,7 @@ public class DefaultAccumulatorInfoSupplier implements AccumulatorInfoSupplier {
 
     @Override
     public void putIfAbsent(String mapName, String cacheId, AccumulatorInfo info) {
-        ConcurrentMap<String, AccumulatorInfo> cacheToInfoMap = getOrPutIfAbsent(cacheInfoPerMap, mapName, INFO_CTOR);
+        ConcurrentMap<String, AccumulatorInfo> cacheToInfoMap = cacheInfoPerMap.computeIfAbsent(mapName, INFO_CTOR);
         cacheToInfoMap.putIfAbsent(cacheId, info);
     }
 

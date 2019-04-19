@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collections;
@@ -63,7 +62,7 @@ public class PartitionAccumulatorRegistry implements Registry<Integer, Accumulat
 
     @Override
     public Accumulator getOrCreate(Integer partitionId) {
-        return ConcurrencyUtil.getOrPutIfAbsent(accumulators, partitionId, accumulatorConstructor);
+        return accumulators.computeIfAbsent(partitionId, accumulatorConstructor::createNew);
     }
 
     @Override

@@ -36,12 +36,11 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.String.format;
 
 /**
@@ -67,14 +66,8 @@ public class ClientContext {
     private final NearCacheManager nearCacheManager;
     private final MinimalPartitionService minimalPartitionService;
     private final ClientQueryCacheContext queryCacheContext;
-    private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<String, RepairingTask>();
-    private final ConstructorFunction<String, RepairingTask> repairingTaskConstructor
-            = new ConstructorFunction<String, RepairingTask>() {
-        @Override
-        public RepairingTask createNew(String serviceName) {
-            return newRepairingTask(serviceName);
-        }
-    };
+    private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<>();
+    private final Function<String, RepairingTask> repairingTaskConstructor = this::newRepairingTask;
     private final String name;
 
     public ClientContext(HazelcastClientInstanceImpl client) {
@@ -104,7 +97,7 @@ public class ClientContext {
     }
 
     public RepairingTask getRepairingTask(String serviceName) {
-        return getOrPutIfAbsent(repairingTasks, serviceName, repairingTaskConstructor);
+        return repairingTasks.computeIfAbsent(serviceName, repairingTaskConstructor);
     }
 
     private String getLocalUuid() {

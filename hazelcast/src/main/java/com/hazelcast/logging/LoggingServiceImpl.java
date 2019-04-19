@@ -19,31 +19,21 @@ package com.hazelcast.logging;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-
 public class LoggingServiceImpl implements LoggingService {
 
-    private final CopyOnWriteArrayList<LogListenerRegistration> listeners
-            = new CopyOnWriteArrayList<LogListenerRegistration>();
+    private final CopyOnWriteArrayList<LogListenerRegistration> listeners = new CopyOnWriteArrayList<>();
 
-    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<>(100);
 
-    private final ConstructorFunction<String, ILogger> loggerConstructor
-            = new ConstructorFunction<String, ILogger>() {
-
-        @Override
-        public ILogger createNew(String key) {
-            return new DefaultLogger(key);
-        }
-    };
+    private final Function<String, ILogger> loggerConstructor = DefaultLogger::new;
 
     private final LoggerFactory loggerFactory;
     private final String versionMessage;
@@ -67,12 +57,12 @@ public class LoggingServiceImpl implements LoggingService {
 
     @Override
     public ILogger getLogger(String name) {
-        return getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
+        return mapLoggers.computeIfAbsent(name, loggerConstructor);
     }
 
     @Override
     public ILogger getLogger(Class clazz) {
-        return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
+        return mapLoggers.computeIfAbsent(clazz.getName(), loggerConstructor);
     }
 
     @Override

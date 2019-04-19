@@ -44,7 +44,6 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 import com.hazelcast.util.executor.TimeoutRunnable;
@@ -55,11 +54,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static com.hazelcast.map.impl.querycache.ListenerRegistrationHelper.generateListenerName;
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.createIMapEvent;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -72,13 +71,8 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
 
     private static final int EVENT_QUEUE_TIMEOUT_MILLIS = 500;
 
-    private static final ConstructorFunction<String, QueryCacheToListenerMapper> REGISTRY_CONSTRUCTOR =
-            new ConstructorFunction<String, QueryCacheToListenerMapper>() {
-                @Override
-                public QueryCacheToListenerMapper createNew(String arg) {
-                    return new QueryCacheToListenerMapper();
-                }
-            };
+    private static final Function<String, QueryCacheToListenerMapper> REGISTRY_CONSTRUCTOR =
+            arg -> new QueryCacheToListenerMapper();
 
     private final StripedExecutor executor;
     private final ClientListenerService listenerService;
@@ -91,7 +85,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         this.listenerService = listenerService;
         this.serializationService = client.getSerializationService();
         this.executor = listenerService.getEventExecutor();
-        this.registrations = new ConcurrentHashMap<String, QueryCacheToListenerMapper>();
+        this.registrations = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -215,7 +209,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         checkHasText(cacheId, "cacheId");
         checkNotNull(listener, "listener cannot be null");
 
-        QueryCacheToListenerMapper queryCacheToListenerMapper = getOrPutIfAbsent(registrations, mapName, REGISTRY_CONSTRUCTOR);
+        QueryCacheToListenerMapper queryCacheToListenerMapper = registrations.computeIfAbsent(mapName, REGISTRY_CONSTRUCTOR);
         ListenerAdapter listenerAdaptor = createQueryCacheListenerAdaptor(listener);
         return queryCacheToListenerMapper.addListener(cacheId, listenerAdaptor, filter);
     }
@@ -226,7 +220,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         checkHasText(cacheId, "cacheId");
         checkHasText(listenerId, "listenerId");
 
-        QueryCacheToListenerMapper queryCacheToListenerMapper = getOrPutIfAbsent(registrations, mapName, REGISTRY_CONSTRUCTOR);
+        QueryCacheToListenerMapper queryCacheToListenerMapper = registrations.computeIfAbsent(mapName, REGISTRY_CONSTRUCTOR);
         return queryCacheToListenerMapper.removeListener(cacheId, listenerId);
     }
 

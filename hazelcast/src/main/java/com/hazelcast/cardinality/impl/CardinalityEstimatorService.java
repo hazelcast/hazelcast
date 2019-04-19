@@ -38,14 +38,12 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -64,8 +62,7 @@ public class CardinalityEstimatorService
     private static final Object NULL_OBJECT = new Object();
 
     private NodeEngine nodeEngine;
-    private final ConcurrentMap<String, CardinalityEstimatorContainer> containers =
-            new ConcurrentHashMap<String, CardinalityEstimatorContainer>();
+    private final ConcurrentMap<String, CardinalityEstimatorContainer> containers = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, CardinalityEstimatorContainer> cardinalityEstimatorContainerConstructorFunction =
             new ConstructorFunction<String, CardinalityEstimatorContainer>() {
                 @Override
@@ -75,7 +72,7 @@ public class CardinalityEstimatorService
                 }
             };
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -94,7 +91,7 @@ public class CardinalityEstimatorService
     }
 
     public CardinalityEstimatorContainer getCardinalityEstimatorContainer(String name) {
-        return getOrPutIfAbsent(containers, name, cardinalityEstimatorContainerConstructorFunction);
+        return containers.computeIfAbsent(name, cardinalityEstimatorContainerConstructorFunction::createNew);
     }
 
     @Override
@@ -160,15 +157,8 @@ public class CardinalityEstimatorService
     }
 
     private void clearPartitionReplica(int partitionId, int durabilityThreshold) {
-        final Iterator<Map.Entry<String, CardinalityEstimatorContainer>> iterator = containers.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, CardinalityEstimatorContainer> entry = iterator.next();
-
-            if (getPartitionId(entry.getKey()) == partitionId
-                    && (durabilityThreshold == -1 || durabilityThreshold > entry.getValue().getTotalBackupCount())) {
-                iterator.remove();
-            }
-        }
+        containers.entrySet().removeIf(entry -> getPartitionId(entry.getKey()) == partitionId
+                && (durabilityThreshold == -1 || durabilityThreshold > entry.getValue().getTotalBackupCount()));
     }
 
     private int getPartitionId(String name) {

@@ -45,7 +45,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService,
@@ -55,9 +54,9 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     private static final Object NULL_OBJECT = new Object();
 
-    private final ConcurrentMap<String, SemaphoreContainer> containers = new ConcurrentHashMap<String, SemaphoreContainer>();
+    private final ConcurrentMap<String, SemaphoreContainer> containers = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -85,7 +84,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     public SemaphoreContainer getSemaphoreContainer(String name) {
-        return getOrPutIfAbsent(containers, name, containerConstructor);
+        return containers.computeIfAbsent(name, containerConstructor::createNew);
     }
 
     public boolean containsSemaphore(String name) {
@@ -156,7 +155,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, SemaphoreContainer> migrationData = new HashMap<String, SemaphoreContainer>();
+        Map<String, SemaphoreContainer> migrationData = new HashMap<>();
         for (Map.Entry<String, SemaphoreContainer> entry : containers.entrySet()) {
             String name = entry.getKey();
             SemaphoreContainer semaphoreContainer = entry.getValue();

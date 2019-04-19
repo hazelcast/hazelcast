@@ -22,8 +22,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.Function;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 
 /**
@@ -45,15 +45,9 @@ public class MetaDataGenerator {
             return new AtomicLongArray(partitionCount);
         }
     };
-    private final ConcurrentMap<Integer, UUID> uuids = new ConcurrentHashMap<Integer, UUID>();
-    private final ConcurrentMap<String, AtomicLongArray> sequenceGenerators = new ConcurrentHashMap<String, AtomicLongArray>();
-    private final ConstructorFunction<Integer, UUID> uuidConstructor
-            = new ConstructorFunction<Integer, UUID>() {
-        @Override
-        public UUID createNew(Integer partitionId) {
-            return newUnsecureUUID();
-        }
-    };
+    private final ConcurrentMap<Integer, UUID> uuids = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AtomicLongArray> sequenceGenerators = new ConcurrentHashMap<>();
+    private final Function<Integer, UUID> uuidConstructor = partitionId -> newUnsecureUUID();
 
     public MetaDataGenerator(int partitionCount) {
         assert partitionCount > 0;
@@ -78,11 +72,11 @@ public class MetaDataGenerator {
     }
 
     private AtomicLongArray sequenceGenerator(String name) {
-        return getOrPutIfAbsent(sequenceGenerators, name, sequenceGeneratorConstructor);
+        return sequenceGenerators.computeIfAbsent(name, sequenceGeneratorConstructor::createNew);
     }
 
     public UUID getOrCreateUuid(int partitionId) {
-        return getOrPutIfAbsent(uuids, partitionId, uuidConstructor);
+        return uuids.computeIfAbsent(partitionId, uuidConstructor);
     }
 
     public UUID getUuidOrNull(int partitionId) {
@@ -108,7 +102,7 @@ public class MetaDataGenerator {
     }
 
     public void regenerateUuid(int partitionId) {
-        uuids.put(partitionId, uuidConstructor.createNew(partitionId));
+        uuids.put(partitionId, uuidConstructor.apply(partitionId));
     }
 
     public void resetSequence(String name, int partitionId) {

@@ -103,8 +103,7 @@ public final class ConcurrencyUtil {
         }
         V value = map.get(key);
         if (value == null) {
-            ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key);
-            try {
+            try (ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key)) {
                 synchronized (mutex) {
                     value = map.get(key);
                     if (value == null) {
@@ -112,21 +111,8 @@ public final class ConcurrencyUtil {
                         map.put(key, value);
                     }
                 }
-            } finally {
-                mutex.close();
             }
         }
         return value;
     }
-
-    public static <K, V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, ConstructorFunction<K, V> func) {
-        V value = map.get(key);
-        if (value == null) {
-            value = func.createNew(key);
-            V current = map.putIfAbsent(key, value);
-            value = current == null ? value : current;
-        }
-        return value;
-    }
-
 }

@@ -70,10 +70,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Math.max;
@@ -95,7 +95,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     private final AntiEntropyTask antiEntropyTask = new AntiEntropyTask();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -106,15 +106,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         }
     };
 
-    private final ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
-            new ConcurrentHashMap<String, LocalReplicatedMapStatsImpl>();
-    private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction =
-            new ConstructorFunction<String, LocalReplicatedMapStatsImpl>() {
-                @Override
-                public LocalReplicatedMapStatsImpl createNew(String arg) {
-                    return new LocalReplicatedMapStatsImpl();
-                }
-            };
+    private final ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap = new ConcurrentHashMap<>();
+    private final Function<String, LocalReplicatedMapStatsImpl> statsConstructorFunction =
+            arg -> new LocalReplicatedMapStatsImpl();
 
     private final Config config;
     private final NodeEngine nodeEngine;
@@ -174,7 +168,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public LocalReplicatedMapStatsImpl getLocalMapStatsImpl(String name) {
-        return getOrPutIfAbsent(statsMap, name, statsConstructorFunction);
+        return statsMap.computeIfAbsent(name, statsConstructorFunction);
     }
 
     public LocalReplicatedMapStatsImpl createReplicatedMapStats(String name) {
@@ -281,7 +275,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     private Collection<Address> getMemberAddresses(MemberSelector memberSelector) {
         Collection<Member> members = clusterService.getMembers(memberSelector);
-        Collection<Address> addresses = new ArrayList<Address>(members.size());
+        Collection<Address> addresses = new ArrayList<>(members.size());
         for (Member member : members) {
             addresses.add(member.getAddress());
         }
@@ -362,8 +356,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     @Override
     public Map<String, LocalReplicatedMapStats> getStats() {
         Collection<String> maps = getNodeEngine().getProxyService().getDistributedObjectNames(SERVICE_NAME);
-        Map<String, LocalReplicatedMapStats> mapStats = new
-                HashMap<String, LocalReplicatedMapStats>(maps.size());
+        Map<String, LocalReplicatedMapStats> mapStats = new HashMap<>(maps.size());
         for (String map : maps) {
             mapStats.put(map, createReplicatedMapStats(map));
         }
@@ -404,7 +397,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             if (nodeEngine.getLocalMember().isLiteMember() || clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
                 return;
             }
-            Collection<Address> addresses = new ArrayList<Address>(getMemberAddresses(DATA_MEMBER_SELECTOR));
+            Collection<Address> addresses = new ArrayList<>(getMemberAddresses(DATA_MEMBER_SELECTOR));
             addresses.remove(nodeEngine.getThisAddress());
             for (int i = 0; i < partitionContainers.length; i++) {
                 Address thisAddress = nodeEngine.getThisAddress();

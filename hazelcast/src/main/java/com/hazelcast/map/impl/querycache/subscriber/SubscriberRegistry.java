@@ -22,14 +22,13 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorFactory;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -40,7 +39,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class SubscriberRegistry implements Registry<String, Accumulator> {
 
-    private final ConstructorFunction<String, Accumulator> accumulatorConstructor =
+    private final Function<String, Accumulator> accumulatorConstructor =
             cacheId -> {
                 AccumulatorInfo info = getAccumulatorInfo(cacheId);
                 checkNotNull(info, "info cannot be null");
@@ -61,7 +60,7 @@ public class SubscriberRegistry implements Registry<String, Accumulator> {
 
     @Override
     public Accumulator getOrCreate(String cacheId) {
-        return getOrPutIfAbsent(accumulators, cacheId, accumulatorConstructor);
+        return accumulators.computeIfAbsent(cacheId, accumulatorConstructor);
     }
 
     @Override

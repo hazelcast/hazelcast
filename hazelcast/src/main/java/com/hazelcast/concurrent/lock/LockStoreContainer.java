@@ -21,7 +21,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.TaskScheduler;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -39,8 +38,7 @@ public final class LockStoreContainer {
     private final LockServiceImpl lockService;
     private final int partitionId;
 
-    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores =
-            new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
+    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<>();
     private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor =
             new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
                 public LockStoreImpl createNew(ObjectNamespace namespace) {
@@ -72,7 +70,7 @@ public final class LockStoreContainer {
     }
 
     LockStoreImpl getOrCreateLockStore(ObjectNamespace namespace) {
-        return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
+        return lockStores.computeIfAbsent(namespace, lockStoreConstructor::createNew);
     }
 
     public LockStoreImpl getLockStore(ObjectNamespace namespace) {

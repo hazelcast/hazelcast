@@ -18,14 +18,11 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,9 +32,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -51,19 +48,13 @@ public class BatchInvalidator extends Invalidator {
     /**
      * Creates an invalidation-queue per data-structure-name.
      */
-    private final ConstructorFunction<String, InvalidationQueue<Invalidation>> invalidationQueueConstructor
-            = new ConstructorFunction<String, InvalidationQueue<Invalidation>>() {
-        @Override
-        public InvalidationQueue<Invalidation> createNew(String dataStructureName) {
-            return new InvalidationQueue<Invalidation>();
-        }
-    };
+    private final Function<String, InvalidationQueue<Invalidation>> invalidationQueueConstructor
+            = dataStructureName -> new InvalidationQueue<>();
 
     /**
      * data-structure-name to invalidation-queue mappings.
      */
-    private final ConcurrentMap<String, InvalidationQueue<Invalidation>> invalidationQueues
-            = new ConcurrentHashMap<String, InvalidationQueue<Invalidation>>();
+    private final ConcurrentMap<String, InvalidationQueue<Invalidation>> invalidationQueues = new ConcurrentHashMap<>();
 
     private final int batchSize;
     private final int batchFrequencySeconds;
@@ -98,7 +89,7 @@ public class BatchInvalidator extends Invalidator {
     }
 
     private InvalidationQueue<Invalidation> invalidationQueueOf(String dataStructureName) {
-        return getOrPutIfAbsent(invalidationQueues, dataStructureName, invalidationQueueConstructor);
+        return invalidationQueues.computeIfAbsent(dataStructureName, invalidationQueueConstructor);
     }
 
     private void pollAndSendInvalidations(String dataStructureName, InvalidationQueue<Invalidation> invalidationQueue) {
@@ -121,7 +112,7 @@ public class BatchInvalidator extends Invalidator {
     private List<Invalidation> pollInvalidations(InvalidationQueue<Invalidation> invalidationQueue) {
         final int size = invalidationQueue.size();
 
-        List<Invalidation> invalidations = new ArrayList<Invalidation>(size);
+        List<Invalidation> invalidations = new ArrayList<>(size);
 
         for (int i = 0; i < size; i++) {
             Invalidation invalidation = invalidationQueue.poll();
@@ -159,14 +150,11 @@ public class BatchInvalidator extends Invalidator {
     private String registerNodeShutdownListener() {
         HazelcastInstance node = nodeEngine.getHazelcastInstance();
         LifecycleService lifecycleService = node.getLifecycleService();
-        return lifecycleService.addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == SHUTTING_DOWN) {
-                    Set<Map.Entry<String, InvalidationQueue<Invalidation>>> entries = invalidationQueues.entrySet();
-                    for (Map.Entry<String, InvalidationQueue<Invalidation>> entry : entries) {
-                        pollAndSendInvalidations(entry.getKey(), entry.getValue());
-                    }
+        return lifecycleService.addLifecycleListener(event -> {
+            if (event.getState() == SHUTTING_DOWN) {
+                Set<Map.Entry<String, InvalidationQueue<Invalidation>>> entries = invalidationQueues.entrySet();
+                for (Map.Entry<String, InvalidationQueue<Invalidation>> entry : entries) {
+                    pollAndSendInvalidations(entry.getKey(), entry.getValue());
                 }
             }
         });

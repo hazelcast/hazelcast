@@ -38,7 +38,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnection;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -51,7 +50,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class TestClientRegistry {
@@ -88,7 +86,7 @@ class TestClientRegistry {
     class MockClientConnectionManager
             extends ClientConnectionManagerImpl {
 
-        private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
+        private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<>();
 
         private final HazelcastClientInstanceImpl client;
         private final String host;
@@ -137,12 +135,8 @@ class TestClientRegistry {
         }
 
         private LockPair getLockPair(Address address) {
-            return getOrPutIfAbsent(addressBlockMap, address, new ConstructorFunction<Address, LockPair>() {
-                @Override
-                public LockPair createNew(Address arg) {
-                    return new LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock());
-                }
-            });
+            return addressBlockMap.computeIfAbsent(address,
+                    arg -> new LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock()));
         }
 
         /**

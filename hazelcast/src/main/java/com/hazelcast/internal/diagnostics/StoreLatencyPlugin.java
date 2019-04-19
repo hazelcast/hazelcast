@@ -22,15 +22,14 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -86,15 +85,9 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         }
     }
 
-    private final ConcurrentMap<String, ServiceProbes> metricsPerServiceMap
-            = new ConcurrentHashMap<String, ServiceProbes>();
-
-    private final ConstructorFunction<String, ServiceProbes> metricsPerServiceConstructorFunction
-            = ServiceProbes::new;
-
-    private final ConstructorFunction<String, InstanceProbes> instanceProbesConstructorFunction
-            = InstanceProbes::new;
-
+    private final ConcurrentMap<String, ServiceProbes> metricsPerServiceMap = new ConcurrentHashMap<>();
+    private final Function<String, ServiceProbes> metricsPerServiceConstructorFunction = ServiceProbes::new;
+    private final Function<String, InstanceProbes> instanceProbesConstructorFunction = InstanceProbes::new;
     private final long periodMillis;
     private final long resetPeriodMillis;
     private final long resetFrequency;
@@ -153,8 +146,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     }
 
     public LatencyProbe newProbe(String serviceName, String dataStructureName, String methodName) {
-        ServiceProbes serviceProbes = getOrPutIfAbsent(
-                metricsPerServiceMap, serviceName, metricsPerServiceConstructorFunction);
+        ServiceProbes serviceProbes = metricsPerServiceMap.computeIfAbsent(serviceName, metricsPerServiceConstructorFunction);
         return serviceProbes.newProbe(dataStructureName, methodName);
     }
 
@@ -165,15 +157,15 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
         // the InstanceProbes are stored in a weak reference, so that if the store/loader is gc'ed, the probes are gc'ed
         // and therefor there is no strong reference to the InstanceProbes and they get gc'ed
         private final ConcurrentReferenceHashMap<String, InstanceProbes> instanceProbesMap
-                = new ConcurrentReferenceHashMap<String, InstanceProbes>(ReferenceType.STRONG, ReferenceType.WEAK);
+                = new ConcurrentReferenceHashMap<>(ReferenceType.STRONG, ReferenceType.WEAK);
 
         private ServiceProbes(String serviceName) {
             this.serviceName = serviceName;
         }
 
         private LatencyProbe newProbe(String dataStructureName, String methodName) {
-            InstanceProbes instanceProbes = getOrPutIfAbsent(
-                    instanceProbesMap, dataStructureName, instanceProbesConstructorFunction);
+            InstanceProbes instanceProbes = instanceProbesMap.computeIfAbsent(dataStructureName,
+                    instanceProbesConstructorFunction);
             return instanceProbes.newProbe(methodName);
         }
 
@@ -199,7 +191,7 @@ public class StoreLatencyPlugin extends DiagnosticsPlugin {
     private static final class InstanceProbes {
 
         // key is the name of the probe, e.g. load
-        private final ConcurrentMap<String, LatencyProbeImpl> probes = new ConcurrentHashMap<String, LatencyProbeImpl>();
+        private final ConcurrentMap<String, LatencyProbeImpl> probes = new ConcurrentHashMap<>();
         private final String dataStructureName;
 
         InstanceProbes(String dataStructureName) {

@@ -21,14 +21,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 import static java.util.Collections.newSetFromMap;
 
@@ -49,12 +48,11 @@ public class EventServiceSegment<S> {
     private final S service;
 
     /** Map of {@link Registration}s grouped by event topic */
-    private final ConcurrentMap<String, Collection<Registration>> registrations
-            = new ConcurrentHashMap<String, Collection<Registration>>();
+    private final ConcurrentMap<String, Collection<Registration>> registrations = new ConcurrentHashMap<>();
 
     /** Registration ID to registration map */
     @Probe(name = "listenerCount")
-    private final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<String, Registration>();
+    private final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<>();
 
     @Probe(name = "publicationCount")
     private final AtomicLong totalPublishes = new AtomicLong();
@@ -122,9 +120,9 @@ public class EventServiceSegment<S> {
     public Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
         Collection<Registration> listenerList = registrations.get(topic);
         if (listenerList == null && forceCreate) {
-            ConstructorFunction<String, Collection<Registration>> func
+            Function<String, Collection<Registration>> func
                     = key -> newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
-            return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, func);
+            return registrations.computeIfAbsent(topic, func);
         }
         return listenerList;
     }

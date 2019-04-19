@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * A provider for {@link com.hazelcast.map.merge.MapMergePolicy} instances.
@@ -81,7 +80,7 @@ public final class MergePolicyProvider {
         try {
             return policyProvider.getMergePolicy(className);
         } catch (InvalidConfigurationException e) {
-            return getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
+            return mergePolicyMap.computeIfAbsent(className, policyConstructorFunction::createNew);
         }
     }
 }

@@ -43,7 +43,7 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
 
     private final IntIntConstructorFunction constructorFunction = new IntIntConstructorFunction();
 
-    private ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
+    private ConcurrentMap<Integer, Integer> map = new ConcurrentHashMap<>();
 
     @Test
     public void testConstructor() {
@@ -101,17 +101,6 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
         assertTrue(ConcurrencyUtil.setIfEqualOrGreaterThan(new AtomicLong(1), 1));
         assertTrue(ConcurrencyUtil.setIfEqualOrGreaterThan(new AtomicLong(1), 2));
         assertFalse(ConcurrencyUtil.setIfEqualOrGreaterThan(new AtomicLong(2), 1));
-    }
-
-    @Test
-    public void testGetOrPutIfAbsent() {
-        int result = ConcurrencyUtil.getOrPutIfAbsent(map, 5, constructorFunction);
-        assertEquals(1005, result);
-
-        result = ConcurrencyUtil.getOrPutIfAbsent(map, 5, constructorFunction);
-        assertEquals(1005, result);
-
-        assertEquals(1, constructorFunction.getConstructions());
     }
 
     private static final class LongValue {

@@ -19,12 +19,11 @@ package com.hazelcast.internal.cluster.fd;
 import com.hazelcast.core.Member;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -65,7 +64,7 @@ public class PhiAccrualClusterFailureDetector implements ClusterFailureDetector 
 
     private final double phiThreshold;
     private final ConcurrentMap<Member, FailureDetector> failureDetectors = new ConcurrentHashMap<>();
-    private final ConstructorFunction<Member, FailureDetector> failureDetectorConstructor;
+    private final Function<Member, FailureDetector> failureDetectorConstructor;
 
     public PhiAccrualClusterFailureDetector(long maxNoHeartbeatMillis, long heartbeatIntervalMillis, HazelcastProperties props) {
         this(maxNoHeartbeatMillis, heartbeatIntervalMillis, props.getDouble(HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD),
@@ -82,7 +81,7 @@ public class PhiAccrualClusterFailureDetector implements ClusterFailureDetector 
 
     @Override
     public void heartbeat(Member member, long timestamp) {
-        FailureDetector fd = getOrPutIfAbsent(failureDetectors, member, failureDetectorConstructor);
+        FailureDetector fd = failureDetectors.computeIfAbsent(member, failureDetectorConstructor);
         fd.heartbeat(timestamp);
     }
 

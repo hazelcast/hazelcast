@@ -28,8 +28,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -39,7 +39,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class PublisherRegistry implements Registry<String, PartitionAccumulatorRegistry> {
 
-    private final ConstructorFunction<String, PartitionAccumulatorRegistry> partitionAccumulatorRegistryConstructor =
+    private final Function<String, PartitionAccumulatorRegistry> partitionAccumulatorRegistryConstructor =
             cacheId -> {
                 AccumulatorInfo info = getAccumulatorInfo(cacheId);
                 checkNotNull(info, "info cannot be null");
@@ -62,7 +62,7 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
 
     @Override
     public PartitionAccumulatorRegistry getOrCreate(String cacheId) {
-        return getOrPutIfAbsent(partitionAccumulators, cacheId, partitionAccumulatorRegistryConstructor);
+        return partitionAccumulators.computeIfAbsent(cacheId, partitionAccumulatorRegistryConstructor);
     }
 
     @Override

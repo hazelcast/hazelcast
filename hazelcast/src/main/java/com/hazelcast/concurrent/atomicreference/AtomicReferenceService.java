@@ -40,14 +40,13 @@ import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkBasicConfig;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class AtomicReferenceService
@@ -58,15 +57,11 @@ public class AtomicReferenceService
     private static final Object NULL_OBJECT = new Object();
 
     private final ConcurrentMap<String, AtomicReferenceContainer> containers
-            = new ConcurrentHashMap<String, AtomicReferenceContainer>();
-    private final ConstructorFunction<String, AtomicReferenceContainer> atomicReferenceConstructorFunction =
-            new ConstructorFunction<String, AtomicReferenceContainer>() {
-                public AtomicReferenceContainer createNew(String key) {
-                    return new AtomicReferenceContainer();
-                }
-            };
+            = new ConcurrentHashMap<>();
+    private final Function<String, AtomicReferenceContainer> atomicReferenceConstructorFunction =
+            key -> new AtomicReferenceContainer();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -85,7 +80,7 @@ public class AtomicReferenceService
     }
 
     public AtomicReferenceContainer getReferenceContainer(String name) {
-        return getOrPutIfAbsent(containers, name, atomicReferenceConstructorFunction);
+        return containers.computeIfAbsent(name, atomicReferenceConstructorFunction);
     }
 
     public boolean containsReferenceContainer(String name) {
@@ -131,7 +126,7 @@ public class AtomicReferenceService
             return null;
         }
 
-        Map<String, Data> data = new HashMap<String, Data>();
+        Map<String, Data> data = new HashMap<>();
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, AtomicReferenceContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();
@@ -165,13 +160,7 @@ public class AtomicReferenceService
     }
 
     private void clearPartitionReplica(int partitionId) {
-        final Iterator<String> iterator = containers.keySet().iterator();
-        while (iterator.hasNext()) {
-            String name = iterator.next();
-            if (getPartitionId(name) == partitionId) {
-                iterator.remove();
-            }
-        }
+        containers.keySet().removeIf(name -> getPartitionId(name) == partitionId);
     }
 
     private int getPartitionId(String name) {

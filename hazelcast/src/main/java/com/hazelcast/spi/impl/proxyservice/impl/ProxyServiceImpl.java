@@ -36,7 +36,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.UuidUtil;
 
@@ -48,12 +47,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -72,18 +71,12 @@ public class ProxyServiceImpl
 
     final NodeEngineImpl nodeEngine;
     final ILogger logger;
-    final ConcurrentMap<String, DistributedObjectListener> listeners =
-            new ConcurrentHashMap<String, DistributedObjectListener>();
+    final ConcurrentMap<String, DistributedObjectListener> listeners = new ConcurrentHashMap<>();
 
-    private final ConstructorFunction<String, ProxyRegistry> registryConstructor =
-            new ConstructorFunction<String, ProxyRegistry>() {
-                public ProxyRegistry createNew(String serviceName) {
-                    return new ProxyRegistry(ProxyServiceImpl.this, serviceName);
-                }
-            };
+    private final Function<String, ProxyRegistry> registryConstructor =
+            serviceName -> new ProxyRegistry(ProxyServiceImpl.this, serviceName);
 
-    private final ConcurrentMap<String, ProxyRegistry> registries =
-            new ConcurrentHashMap<String, ProxyRegistry>();
+    private final ConcurrentMap<String, ProxyRegistry> registries = new ConcurrentHashMap<>();
 
     @Probe(name = "createdCount", level = MANDATORY)
     private final MwCounter createdCounter = newMwCounter();
@@ -135,7 +128,7 @@ public class ProxyServiceImpl
     }
 
     public ProxyRegistry getOrCreateRegistry(String serviceName) {
-        return getOrPutIfAbsent(registries, serviceName, registryConstructor);
+        return registries.computeIfAbsent(serviceName, registryConstructor);
     }
 
     @Override
@@ -189,7 +182,7 @@ public class ProxyServiceImpl
     public Collection<DistributedObject> getDistributedObjects(String serviceName) {
         checkServiceNameNotNull(serviceName);
 
-        Collection<DistributedObject> result = new LinkedList<DistributedObject>();
+        Collection<DistributedObject> result = new LinkedList<>();
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
             registry.getDistributedObjects(result);
@@ -212,7 +205,7 @@ public class ProxyServiceImpl
 
     @Override
     public Collection<DistributedObject> getAllDistributedObjects() {
-        Collection<DistributedObject> result = new LinkedList<DistributedObject>();
+        Collection<DistributedObject> result = new LinkedList<>();
         for (ProxyRegistry registry : registries.values()) {
             registry.getDistributedObjects(result);
         }
@@ -254,7 +247,7 @@ public class ProxyServiceImpl
 
     @Override
     public Operation getPostJoinOperation() {
-        Collection<ProxyInfo> proxies = new LinkedList<ProxyInfo>();
+        Collection<ProxyInfo> proxies = new LinkedList<>();
         for (ProxyRegistry registry : registries.values()) {
             registry.getProxyInfos(proxies);
         }

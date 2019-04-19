@@ -29,7 +29,6 @@ import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.CachedExecutorServiceDelegate;
 import com.hazelcast.util.executor.ExecutorType;
@@ -45,7 +44,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -76,14 +74,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     private final ILogger logger;
     private final CompletableFutureTask completableFutureTask;
 
-    private final ConcurrentMap<String, ManagedExecutorService> executors
-            = new ConcurrentHashMap<String, ManagedExecutorService>();
+    private final ConcurrentMap<String, ManagedExecutorService> executors = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, ManagedExecutorService> durableExecutors
-            = new ConcurrentHashMap<String, ManagedExecutorService>();
+    private final ConcurrentMap<String, ManagedExecutorService> durableExecutors = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors
-            = new ConcurrentHashMap<String, ManagedExecutorService>();
+    private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors = new ConcurrentHashMap<>();
 
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
@@ -129,14 +124,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
                 configClassLoader);
         this.cachedExecutorService = new ThreadPoolExecutor(
                 CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
-            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Node is shutting down; discarding the task: " + r);
-                }
-            }
-        }
-        );
+                new SynchronousQueue<>(), threadFactory, (r, executor) -> {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Node is shutting down; discarding the task: " + r);
+                    }
+                });
 
         ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
                 createThreadPoolName(hzName, "scheduled"));
@@ -217,8 +209,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             }
 
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
-                    KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<Runnable>(queueCapacity),
+                    KEEP_ALIVE_TIME, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueCapacity),
                     threadFactory
             );
             pool.allowCoreThreadTimeOut(true);
@@ -231,17 +222,17 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     @Override
     public ManagedExecutorService getExecutor(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(executors, name, constructor);
+        return executors.computeIfAbsent(name, constructor::createNew);
     }
 
     @Override
     public ManagedExecutorService getDurable(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name, durableConstructor);
+        return durableExecutors.computeIfAbsent(name, durableConstructor::createNew);
     }
 
     @Override
     public ExecutorService getScheduledDurable(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(scheduleDurableExecutors, name, scheduledDurableConstructor);
+        return scheduleDurableExecutors.computeIfAbsent(name, scheduledDurableConstructor::createNew);
     }
 
     @Override
@@ -378,7 +369,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     private <V> ICompletableFuture<V> registerCompletableFuture(Future<V> future) {
-        CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine);
+        CompletableFutureEntry<V> entry = new CompletableFutureEntry<>(future, nodeEngine);
         completableFutureTask.registerCompletableFutureEntry(entry);
         return entry.completableFuture;
     }

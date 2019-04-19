@@ -25,26 +25,17 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.logging.Level;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class ClientLoggingService implements LoggingService {
 
-    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
+    private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<>(100);
 
-    private final ConstructorFunction<String, ILogger> loggerConstructor
-            = new ConstructorFunction<String, ILogger>() {
-
-        @Override
-        public ILogger createNew(String key) {
-            return new DefaultLogger(key);
-        }
-    };
+    private final Function<String, ILogger> loggerConstructor = DefaultLogger::new;
 
     private final LoggerFactory loggerFactory;
     private final BuildInfo buildInfo;
@@ -76,11 +67,11 @@ public class ClientLoggingService implements LoggingService {
     }
 
     public ILogger getLogger(String name) {
-        return getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
+        return mapLoggers.computeIfAbsent(name, loggerConstructor);
     }
 
     public ILogger getLogger(Class clazz) {
-        return getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
+        return mapLoggers.computeIfAbsent(clazz.getName(), loggerConstructor);
     }
 
     private class DefaultLogger extends AbstractLogger {

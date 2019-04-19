@@ -20,7 +20,6 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,8 +71,7 @@ public class QueryCacheFactory {
     }
 
     public InternalQueryCache create(QueryCacheRequest request, String cacheId) {
-        return ConcurrencyUtil.getOrPutIfAbsent(internalQueryCaches,
-                cacheId, new InternalQueryCacheConstructor(request));
+        return internalQueryCaches.computeIfAbsent(cacheId, new InternalQueryCacheConstructor(request)::createNew);
     }
 
     public boolean remove(InternalQueryCache queryCache) {

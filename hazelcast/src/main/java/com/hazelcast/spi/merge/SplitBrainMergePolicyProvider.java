@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * A provider for {@link SplitBrainMergePolicy} instances.
@@ -40,7 +39,7 @@ public final class SplitBrainMergePolicyProvider {
     private static final Map<String, SplitBrainMergePolicy> OUT_OF_THE_BOX_MERGE_POLICIES;
 
     static {
-        OUT_OF_THE_BOX_MERGE_POLICIES = new HashMap<String, SplitBrainMergePolicy>();
+        OUT_OF_THE_BOX_MERGE_POLICIES = new HashMap<>();
         addPolicy(DiscardMergePolicy.class, new DiscardMergePolicy());
         addPolicy(ExpirationTimeMergePolicy.class, new ExpirationTimeMergePolicy());
         addPolicy(HigherHitsMergePolicy.class, new HigherHitsMergePolicy());
@@ -53,8 +52,7 @@ public final class SplitBrainMergePolicyProvider {
 
     private final NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, SplitBrainMergePolicy> mergePolicyMap
-            = new ConcurrentHashMap<String, SplitBrainMergePolicy>();
+    private final ConcurrentMap<String, SplitBrainMergePolicy> mergePolicyMap = new ConcurrentHashMap<>();
 
     private final ConstructorFunction<String, SplitBrainMergePolicy> policyConstructorFunction
             = new ConstructorFunction<String, SplitBrainMergePolicy>() {
@@ -89,7 +87,7 @@ public final class SplitBrainMergePolicyProvider {
         if (className == null) {
             throw new InvalidConfigurationException("Class name is mandatory!");
         }
-        return getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
+        return mergePolicyMap.computeIfAbsent(className, policyConstructorFunction::createNew);
     }
 
     private static <T extends SplitBrainMergePolicy> void addPolicy(Class<T> clazz, T policy) {

@@ -23,10 +23,10 @@ import com.hazelcast.util.UuidUtil;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.map.impl.querycache.subscriber.NullQueryCache.NULL_QUERY_CACHE;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
  * Provides construction of whole {@link com.hazelcast.map.QueryCache QueryCache}
@@ -36,7 +36,7 @@ public class QueryCacheEndToEndProvider<K, V> {
 
     private final ContextMutexFactory mutexFactory;
     private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryPerMap;
-    private final ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryConstructor
+    private final Function<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryConstructor
             = arg -> new ConcurrentHashMap<>();
 
     public QueryCacheEndToEndProvider(ContextMutexFactory mutexFactory) {
@@ -76,7 +76,7 @@ public class QueryCacheEndToEndProvider<K, V> {
         try {
             synchronized (mutex) {
                 ConcurrentMap<String, InternalQueryCache<K, V>> queryCacheRegistry
-                        = getOrPutIfAbsent(queryCacheRegistryPerMap, mapName, queryCacheRegistryConstructor);
+                        = queryCacheRegistryPerMap.computeIfAbsent(mapName, queryCacheRegistryConstructor);
 
                 InternalQueryCache<K, V> queryCache = queryCacheRegistry.get(cacheName);
                 // if this is a recreation we expect to have a Uuid otherwise we

@@ -18,11 +18,9 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import java.util.function.Function;
 
 /**
  * Thread safe container for {@link DistributedServiceWanEventCounters}
@@ -32,16 +30,10 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  * name.
  */
 public class WanEventCounters {
-    private static final ConstructorFunction<String, WanPublisherEventCounters> WAN_EVENT_COUNTER_CONSTRUCTOR_FN
-            = new ConstructorFunction<String, WanPublisherEventCounters>() {
-        @Override
-        public WanPublisherEventCounters createNew(String ignored) {
-            return new WanPublisherEventCounters();
-        }
-    };
+    private static final Function<String, WanPublisherEventCounters> WAN_EVENT_COUNTER_CONSTRUCTOR_FN
+            = ignored -> new WanPublisherEventCounters();
 
-    private final ConcurrentHashMap<String, WanPublisherEventCounters> eventCounterMap =
-            new ConcurrentHashMap<String, WanPublisherEventCounters>();
+    private final ConcurrentHashMap<String, WanPublisherEventCounters> eventCounterMap = new ConcurrentHashMap<>();
 
 
     /**
@@ -52,7 +44,7 @@ public class WanEventCounters {
                                                                  String serviceName) {
         final String wanPublisherId = wanReplicationName + ":" + targetGroupName;
         final WanPublisherEventCounters serviceWanEventCounters
-                = getOrPutIfAbsent(eventCounterMap, wanPublisherId, WAN_EVENT_COUNTER_CONSTRUCTOR_FN);
+                = eventCounterMap.computeIfAbsent(wanPublisherId, WAN_EVENT_COUNTER_CONSTRUCTOR_FN);
 
         return serviceWanEventCounters.getWanEventCounter(serviceName);
     }

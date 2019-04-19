@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.querycache.publisher;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.Registry;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collections;
@@ -56,7 +55,7 @@ public class QueryCacheListenerRegistry implements Registry<String, String> {
 
     @Override
     public String getOrCreate(String cacheId) {
-        return ConcurrencyUtil.getOrPutIfAbsent(listeners, cacheId, registryConstructorFunction);
+        return listeners.computeIfAbsent(cacheId, registryConstructorFunction::createNew);
     }
 
     @Override

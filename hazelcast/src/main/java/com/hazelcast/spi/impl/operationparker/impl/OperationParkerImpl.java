@@ -42,7 +42,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -50,7 +49,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     private static final long FIRST_WAIT_TIME = 1000;
 
-    private final ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap = new ConcurrentHashMap<WaitNotifyKey, WaitSet>(100);
+    private final ConcurrentMap<WaitNotifyKey, WaitSet> waitSetMap = new ConcurrentHashMap<>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationExecutor;
     private final Future expirationTaskFuture;
@@ -91,7 +90,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     // see javadoc
     @Override
     public void park(BlockingOperation op) {
-        WaitSet waitSet = getOrPutIfAbsent(waitSetMap, op.getWaitKey(), waitSetConstructor);
+        WaitSet waitSet = waitSetMap.computeIfAbsent(op.getWaitKey(), waitSetConstructor::createNew);
         waitSet.park(op);
     }
 

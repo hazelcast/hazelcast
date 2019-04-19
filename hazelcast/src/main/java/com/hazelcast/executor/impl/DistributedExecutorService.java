@@ -29,7 +29,6 @@ import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.MapUtil;
@@ -45,6 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Function;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -61,24 +61,17 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             AtomicReferenceFieldUpdater.newUpdater(CallableProcessor.class, Boolean.class, "responseFlag");
 
     // package-local access to allow test to inspect the map's values
-    final ConcurrentMap<String, ExecutorConfig> executorConfigCache = new ConcurrentHashMap<String, ExecutorConfig>();
+    final ConcurrentMap<String, ExecutorConfig> executorConfigCache = new ConcurrentHashMap<>();
 
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
-    private final ConcurrentMap<String, CallableProcessor> submittedTasks
-            = new ConcurrentHashMap<String, CallableProcessor>(100);
-    private final Set<String> shutdownExecutors
-            = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap
-            = new ConcurrentHashMap<String, LocalExecutorStatsImpl>();
-    private final ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction
-            = new ConstructorFunction<String, LocalExecutorStatsImpl>() {
-        public LocalExecutorStatsImpl createNew(String key) {
-            return new LocalExecutorStatsImpl();
-        }
-    };
+    private final ConcurrentMap<String, CallableProcessor> submittedTasks = new ConcurrentHashMap<>(100);
+    private final Set<String> shutdownExecutors = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<>();
+    private final Function<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction
+            = key -> new LocalExecutorStatsImpl();
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -181,7 +174,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     LocalExecutorStatsImpl getLocalExecutorStats(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localExecutorStatsConstructorFunction);
+        return statsMap.computeIfAbsent(name, localExecutorStatsConstructorFunction);
     }
 
     private void startExecution(String name, long elapsed) {

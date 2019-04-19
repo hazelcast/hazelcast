@@ -28,13 +28,12 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.nio.Bits.combineToLong;
@@ -45,17 +44,11 @@ final class PortableContextImpl implements PortableContext {
     private static final Pattern NESTED_FIELD_PATTERN = Pattern.compile("\\.");
 
     private final int version;
-    private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap =
-            new ConcurrentHashMap<Integer, ClassDefinitionContext>();
+    private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap = new ConcurrentHashMap<>();
 
     private final InternalSerializationService serializationService;
 
-    private final ConstructorFunction<Integer, ClassDefinitionContext> constructorFunction =
-            new ConstructorFunction<Integer, ClassDefinitionContext>() {
-                public ClassDefinitionContext createNew(Integer arg) {
-                    return new ClassDefinitionContext(arg);
-                }
-            };
+    private final Function<Integer, ClassDefinitionContext> constructorFunction = ClassDefinitionContext::new;
 
     PortableContextImpl(InternalSerializationService serializationService, int version) {
         this.serializationService = serializationService;
@@ -215,7 +208,7 @@ final class PortableContextImpl implements PortableContext {
     }
 
     private ClassDefinitionContext getClassDefContext(int factoryId) {
-        return ConcurrencyUtil.getOrPutIfAbsent(classDefContextMap, factoryId, constructorFunction);
+        return classDefContextMap.computeIfAbsent(factoryId, constructorFunction);
     }
 
     @Override
@@ -236,8 +229,8 @@ final class PortableContextImpl implements PortableContext {
     private final class ClassDefinitionContext {
 
         final int factoryId;
-        final ConcurrentMap<Long, ClassDefinition> versionedDefinitions = new ConcurrentHashMap<Long, ClassDefinition>();
-        final ConcurrentMap<Integer, Integer> currentClassVersions = new ConcurrentHashMap<Integer, Integer>();
+        final ConcurrentMap<Long, ClassDefinition> versionedDefinitions = new ConcurrentHashMap<>();
+        final ConcurrentMap<Integer, Integer> currentClassVersions = new ConcurrentHashMap<>();
 
         private ClassDefinitionContext(int factoryId) {
             this.factoryId = factoryId;

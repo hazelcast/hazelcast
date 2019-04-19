@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.querycache.publisher;
 
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.Registry;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collections;
@@ -51,7 +50,7 @@ public class MapListenerRegistry implements Registry<String, QueryCacheListenerR
 
     @Override
     public QueryCacheListenerRegistry getOrCreate(String mapName) {
-        return ConcurrencyUtil.getOrPutIfAbsent(listeners, mapName, registryConstructorFunction);
+        return listeners.computeIfAbsent(mapName, registryConstructorFunction::createNew);
     }
 
     @Override

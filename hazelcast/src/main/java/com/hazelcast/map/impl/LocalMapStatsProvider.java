@@ -35,8 +35,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -44,6 +42,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -69,8 +68,7 @@ public class LocalMapStatsProvider {
     private final MapNearCacheManager mapNearCacheManager;
     private final IPartitionService partitionService;
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
-    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
-            key -> new LocalMapStatsImpl();
+    private final Function<String, LocalMapStatsImpl> constructorFunction = key -> new LocalMapStatsImpl();
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -87,7 +85,7 @@ public class LocalMapStatsProvider {
     }
 
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
+        return statsMap.computeIfAbsent(name, constructorFunction);
     }
 
     public void destroyLocalMapStatsImpl(String name) {

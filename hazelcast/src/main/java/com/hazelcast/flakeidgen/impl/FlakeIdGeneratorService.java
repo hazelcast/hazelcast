@@ -24,14 +24,12 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import java.util.function.Function;
 
 public class FlakeIdGeneratorService implements ManagedService, RemoteService,
         StatisticsAwareService<LocalFlakeIdGeneratorStats> {
@@ -39,14 +37,9 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     public static final String SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
 
     private NodeEngine nodeEngine;
-    private final ConcurrentHashMap<String, LocalFlakeIdGeneratorStatsImpl> statsMap
-        = new ConcurrentHashMap<String, LocalFlakeIdGeneratorStatsImpl>();
-    private final ConstructorFunction<String, LocalFlakeIdGeneratorStatsImpl> localFlakeIdStatsConstructorFunction
-        = new ConstructorFunction<String, LocalFlakeIdGeneratorStatsImpl>() {
-        public LocalFlakeIdGeneratorStatsImpl createNew(String key) {
-            return new LocalFlakeIdGeneratorStatsImpl();
-        }
-    };
+    private final ConcurrentHashMap<String, LocalFlakeIdGeneratorStatsImpl> statsMap = new ConcurrentHashMap<>();
+    private final Function<String, LocalFlakeIdGeneratorStatsImpl> localFlakeIdStatsConstructorFunction
+        = key -> new LocalFlakeIdGeneratorStatsImpl();
 
     public FlakeIdGeneratorService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -79,7 +72,7 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
 
     @Override
     public Map<String, LocalFlakeIdGeneratorStats> getStats() {
-        return new HashMap<String, LocalFlakeIdGeneratorStats>(statsMap);
+        return new HashMap<>(statsMap);
     }
 
     /**
@@ -94,6 +87,6 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     }
 
     private LocalFlakeIdGeneratorStatsImpl getLocalFlakeIdStats(String name) {
-        return getOrPutIfAbsent(statsMap, name, localFlakeIdStatsConstructorFunction);
+        return statsMap.computeIfAbsent(name, localFlakeIdStatsConstructorFunction);
     }
 }

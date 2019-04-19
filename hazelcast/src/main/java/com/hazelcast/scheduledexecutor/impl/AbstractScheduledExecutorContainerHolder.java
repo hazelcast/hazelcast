@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class AbstractScheduledExecutorContainerHolder
@@ -34,8 +33,7 @@ public abstract class AbstractScheduledExecutorContainerHolder
 
     final NodeEngine nodeEngine;
 
-    final ConcurrentMap<String, ScheduledExecutorContainer> containers =
-            new ConcurrentHashMap<String, ScheduledExecutorContainer>();
+    final ConcurrentMap<String, ScheduledExecutorContainer> containers = new ConcurrentHashMap<>();
 
     public AbstractScheduledExecutorContainerHolder(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -49,7 +47,7 @@ public abstract class AbstractScheduledExecutorContainerHolder
     public ScheduledExecutorContainer getOrCreateContainer(String name) {
         checkNotNull(name, "Name can't be null");
 
-        return getOrPutIfAbsent(containers, name, getContainerConstructorFunction());
+        return containers.computeIfAbsent(name, getContainerConstructorFunction()::createNew);
     }
 
     public Collection<ScheduledExecutorContainer> getContainers() {

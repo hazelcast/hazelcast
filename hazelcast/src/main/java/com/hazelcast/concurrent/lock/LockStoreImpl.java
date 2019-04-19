@@ -24,35 +24,29 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_STORE;
 import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.readNamespaceCompatibly;
 import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.writeNamespaceCompatibly;
 import static com.hazelcast.util.SetUtil.createHashSet;
+import static java.util.Collections.unmodifiableCollection;
 
 public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore, Versioned {
 
-    private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
-            new ConstructorFunction<Data, LockResourceImpl>() {
-                public LockResourceImpl createNew(Data key) {
-                    return new LockResourceImpl(key, LockStoreImpl.this);
-                }
-            };
+    private final transient Function<Data, LockResourceImpl> lockConstructor =
+            key -> new LockResourceImpl(key, LockStoreImpl.this);
 
-    private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
+    private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<>();
 
     // warning: the namespace field is unreliable if this LockStoreImpl was created for ILock proxy
     // ObjectNameSpace.getObjectName() can give you a wrong name because LockStoreImpl instances
@@ -115,7 +109,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     public LockResourceImpl getLock(Data key) {
-        return ConcurrencyUtil.getOrPutIfAbsent(locks, key, lockConstructor);
+        return locks.computeIfAbsent(key, lockConstructor);
     }
 
     @Override
@@ -217,16 +211,11 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     }
 
     public Collection<LockResource> getLocks() {
-        return Collections.<LockResource>unmodifiableCollection(locks.values());
+        return unmodifiableCollection(locks.values());
     }
 
     public void removeLocalLocks() {
-        for (Iterator<Map.Entry<Data, LockResourceImpl>> iterator = locks.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry<Data, LockResourceImpl> entry = iterator.next();
-            if (entry.getValue().isLocal()) {
-                iterator.remove();
-            }
-        }
+        locks.entrySet().removeIf(entry -> entry.getValue().isLocal());
     }
 
     @Override

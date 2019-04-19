@@ -73,9 +73,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -99,17 +99,13 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private final NodeEngine nodeEngine;
     private final MultiMapPartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = createConcurrentHashMap(STATS_MAP_INITIAL_CAPACITY);
-    private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction
-            = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
-        public LocalMultiMapStatsImpl createNew(String key) {
-            return new LocalMultiMapStatsImpl();
-        }
-    };
+    private final Function<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction
+            = key -> new LocalMultiMapStatsImpl();
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
     private final QuorumService quorumService;
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -137,23 +133,20 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         }
         LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
-                @Override
-                public LockStoreInfo createNew(ObjectNamespace key) {
-                    String name = key.getObjectName();
-                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
-                    return new LockStoreInfo() {
-                        @Override
-                        public int getBackupCount() {
-                            return multiMapConfig.getBackupCount();
-                        }
+            lockService.registerLockStoreConstructor(SERVICE_NAME, key -> {
+                String name = key.getObjectName();
+                final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+                return new LockStoreInfo() {
+                    @Override
+                    public int getBackupCount() {
+                        return multiMapConfig.getBackupCount();
+                    }
 
-                        @Override
-                        public int getAsyncBackupCount() {
-                            return multiMapConfig.getAsyncBackupCount();
-                        }
-                    };
-                }
+                    @Override
+                    public int getAsyncBackupCount() {
+                        return multiMapConfig.getAsyncBackupCount();
+                    }
+                };
             });
         }
     }
@@ -207,7 +200,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     public Set<Data> localKeySet(String name) {
-        Set<Data> keySet = new HashSet<Data>();
+        Set<Data> keySet = new HashSet<>();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             IPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
@@ -431,7 +424,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     public LocalMultiMapStatsImpl getLocalMultiMapStatsImpl(String name) {
-        return getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
+        return statsMap.computeIfAbsent(name, localMultiMapStatsConstructorFunction);
     }
 
     @Override
@@ -452,7 +445,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public Map<String, LocalMultiMapStats> getStats() {
-        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
+        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
         for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
             for (String name : partitionContainer.containerMap.keySet()) {
                 if (!multiMapStats.containsKey(name)) {
@@ -521,7 +514,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                             = getMergePolicy(container.getConfig().getMergePolicyConfig());
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
 
-                    List<MultiMapMergeContainer> mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
+                    List<MultiMapMergeContainer> mergeContainers = new ArrayList<>(batchSize);
                     for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : container.getMultiMapValues().entrySet()) {
                         Data key = multiMapValueEntry.getKey();
                         MultiMapValue multiMapValue = multiMapValueEntry.getValue();
@@ -534,7 +527,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
                         if (mergeContainers.size() == batchSize) {
                             sendBatch(partitionId, name, mergePolicy, mergeContainers);
-                            mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
+                            mergeContainers = new ArrayList<>(batchSize);
                         }
                     }
                     if (mergeContainers.size() > 0) {
