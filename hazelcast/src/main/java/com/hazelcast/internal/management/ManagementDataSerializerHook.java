@@ -18,7 +18,6 @@ package com.hazelcast.internal.management;
 
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.dto.PermissionConfigDTO;
-import com.hazelcast.internal.management.operation.AddWanConfigLegacyOperation;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
@@ -41,9 +40,8 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
     public static final int UPDATE_MANAGEMENT_CENTER_URL = 1;
     public static final int UPDATE_MAP_CONFIG = 2;
     public static final int MAP_CONFIG_DTO = 3;
-    public static final int ADD_WAN_CONFIG = 4;
-    public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 5;
-    public static final int PERMISSION_CONFIG_DTO = 6;
+    public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 4;
+    public static final int PERMISSION_CONFIG_DTO = 5;
 
     private static final int LEN = PERMISSION_CONFIG_DTO + 1;
 
@@ -58,45 +56,12 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
                 = new ConstructorFunction[LEN];
 
-        constructors[SCRIPT_EXECUTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ScriptExecutorOperation();
-            }
-        };
-        constructors[UPDATE_MANAGEMENT_CENTER_URL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new UpdateManagementCenterUrlOperation();
-            }
-        };
-        constructors[UPDATE_MAP_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new UpdateMapConfigOperation();
-            }
-        };
-        constructors[MAP_CONFIG_DTO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapConfigDTO();
-            }
-        };
-        constructors[ADD_WAN_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddWanConfigLegacyOperation();
-            }
-        };
-        constructors[UPDATE_PERMISSION_CONFIG_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new UpdatePermissionConfigOperation();
-            }
-        };
-
-        constructors[PERMISSION_CONFIG_DTO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PermissionConfigDTO();
-            }
-        };
+        constructors[SCRIPT_EXECUTOR] = arg -> new ScriptExecutorOperation();
+        constructors[UPDATE_MANAGEMENT_CENTER_URL] = arg -> new UpdateManagementCenterUrlOperation();
+        constructors[UPDATE_MAP_CONFIG] = arg -> new UpdateMapConfigOperation();
+        constructors[MAP_CONFIG_DTO] = arg -> new MapConfigDTO();
+        constructors[UPDATE_PERMISSION_CONFIG_OPERATION] = arg -> new UpdatePermissionConfigOperation();
+        constructors[PERMISSION_CONFIG_DTO] = arg -> new PermissionConfigDTO();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,7 +40,7 @@ import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
  * @see AwsConfig
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned {
+public class WanPublisherConfig implements IdentifiedDataSerializable {
 
     private static final int DEFAULT_QUEUE_CAPACITY = 10000;
     private static final WANQueueFullBehavior DEFAULT_QUEUE_FULL_BEHAVIOR = WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
@@ -474,22 +472,17 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         out.writeUTF(className);
         out.writeObject(implementation);
 
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeByte(initialPublisherState.getId());
-            out.writeObject(wanSyncConfig);
-            out.writeUTF(publisherId);
-        }
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            out.writeObject(awsConfig);
-            out.writeObject(gcpConfig);
-            out.writeObject(azureConfig);
-            out.writeObject(kubernetesConfig);
-            out.writeObject(eurekaConfig);
-            out.writeObject(discoveryConfig);
-            out.writeUTF(endpoint);
-        }
+        out.writeByte(initialPublisherState.getId());
+        out.writeObject(wanSyncConfig);
+        out.writeUTF(publisherId);
+
+        out.writeObject(awsConfig);
+        out.writeObject(gcpConfig);
+        out.writeObject(azureConfig);
+        out.writeObject(kubernetesConfig);
+        out.writeObject(eurekaConfig);
+        out.writeObject(discoveryConfig);
+        out.writeUTF(endpoint);
     }
 
     @Override
@@ -499,27 +492,21 @@ public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned
         queueFullBehavior = WANQueueFullBehavior.getByType(in.readInt());
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            properties.put(in.readUTF(), (Comparable) in.readObject());
+            properties.put(in.readUTF(), in.readObject());
         }
         className = in.readUTF();
         implementation = in.readObject();
 
-        // RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            initialPublisherState = WanPublisherState.getByType(in.readByte());
-            wanSyncConfig = in.readObject();
-            publisherId = in.readUTF();
-        }
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            awsConfig = in.readObject();
-            gcpConfig = in.readObject();
-            azureConfig = in.readObject();
-            kubernetesConfig = in.readObject();
-            eurekaConfig = in.readObject();
-            discoveryConfig = in.readObject();
-            endpoint = in.readUTF();
-        }
+        initialPublisherState = WanPublisherState.getByType(in.readByte());
+        wanSyncConfig = in.readObject();
+        publisherId = in.readUTF();
+        awsConfig = in.readObject();
+        gcpConfig = in.readObject();
+        azureConfig = in.readObject();
+        kubernetesConfig = in.readObject();
+        eurekaConfig = in.readObject();
+        discoveryConfig = in.readObject();
+        endpoint = in.readUTF();
     }
 
     @Override
