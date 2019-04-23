@@ -24,7 +24,7 @@
         http://www.hazelcast.com/schema/sample
         hazelcast-sample-service.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -373,6 +373,7 @@
                 <hz:message-listeners>
                     <hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener"/>
                 </hz:message-listeners>
+                <hz:executor implementation="dummyExecutor" class-name="com.hazelcast.spring.DummyExecutor"/>
             </hz:reliable-topic>
 
             <hz:map name="testMap"
@@ -915,5 +916,6 @@
     <bean id="dummyDiscoveryServiceProvider" class="com.hazelcast.spring.DummyDiscoveryServiceProvider"/>
     <bean id="dummyService" class="com.hazelcast.spring.MyService"/>
     <bean id="wanConsumer" class="com.hazelcast.spring.DummyWanConsumer"/>
+    <bean id="dummyExecutor" class="com.hazelcast.spring.DummyExecutor"/>
 
 </beans>

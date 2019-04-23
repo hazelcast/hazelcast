@@ -1786,6 +1786,8 @@
                 The publish call fails immediately.
         * <message-listeners>:
             Adds listeners (listener classes) for the Reliable Topic messages using its sub-element <message-listener>.
+        * <executor>:
+            Sets the java.util.concurrent.Executor implementation to use with the topic.
     -->
     <reliable-topic name="default">
         <statistics-enabled>true</statistics-enabled>
@@ -1794,6 +1796,7 @@
         <message-listeners>
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
+        <executor class-name="com.hazelcast.examples.Executor"/>
     </reliable-topic>
     <!--
         ===== HAZELCAST MAPREDUCE JOBTRACKER CONFIGURATION =====

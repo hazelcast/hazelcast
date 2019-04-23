@@ -80,6 +80,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
@@ -463,6 +464,9 @@ public class TestClientApplicationContext {
         ClientReliableTopicConfig topicConfig = clientConfig.getReliableTopicConfig("rel-topic");
         assertEquals(100, topicConfig.getReadBatchSize());
         assertEquals(TopicOverloadPolicy.DISCARD_NEWEST, topicConfig.getTopicOverloadPolicy());
+        assertNotNull(topicConfig.getExecutor());
+        assertSame(DummyExecutor.class, topicConfig.getExecutor().getClass());
+        assertEquals("com.hazelcast.spring.DummyExecutor", topicConfig.getExecutorClassName());
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {

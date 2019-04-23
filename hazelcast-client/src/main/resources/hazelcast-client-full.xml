@@ -294,6 +294,7 @@
     <reliable-topic name="rel-topic">
         <read-batch-size>100</read-batch-size>
         <topic-overload-policy>DISCARD_NEWEST</topic-overload-policy>
+        <executor class-name="com.hazelcast.examples.Executor"/>
     </reliable-topic>
 
     <user-code-deployment enabled="true">

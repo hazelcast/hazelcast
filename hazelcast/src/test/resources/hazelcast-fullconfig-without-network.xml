@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.12.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
     <group>
         <name>dev</name>
@@ -464,6 +464,7 @@
         <message-listeners>
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
+        <executor class-name="com.hazelcast.examples.Executor"/>
     </reliable-topic>
 
     <semaphore name="default">

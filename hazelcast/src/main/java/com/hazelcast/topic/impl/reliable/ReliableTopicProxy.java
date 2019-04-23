@@ -144,10 +144,18 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
 
     private Executor initExecutor(NodeEngine nodeEngine, ReliableTopicConfig topicConfig) {
         Executor executor = topicConfig.getExecutor();
-        if (executor == null) {
-            executor = nodeEngine.getExecutionService().getExecutor(ASYNC_EXECUTOR);
+        if (executor != null) {
+            return executor;
         }
-        return executor;
+        String className = topicConfig.getExecutorClassName();
+        if (className != null) {
+            try {
+                return ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), className);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+        return nodeEngine.getExecutionService().getExecutor(ASYNC_EXECUTOR);
     }
 
     @Override

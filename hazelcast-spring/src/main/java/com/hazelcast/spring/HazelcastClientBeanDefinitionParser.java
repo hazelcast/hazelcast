@@ -361,9 +361,23 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleReliableTopic(Node node) {
             BeanDefinitionBuilder configBuilder = createBeanBuilder(ClientReliableTopicConfig.class);
-            String name = getAttribute(node, "name");
-            fillValues(node, configBuilder);
-            reliableTopicConfigMap.put(name, configBuilder.getBeanDefinition());
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("executor".equals(nodeName)) {
+                    String className = getAttribute(child, "class-name");
+                    if (className != null) {
+                        configBuilder.addPropertyValue("executorClassName", className);
+                    }
+                    String impl = getAttribute(child, "implementation");
+                    if (impl != null) {
+                        configBuilder.addPropertyReference("executor", impl);
+                    }
+                } else  {
+                    String value = getTextContent(child);
+                    configBuilder.addPropertyValue(xmlToJavaName(nodeName), value);
+                }
+            }
+            reliableTopicConfigMap.put(getAttribute(node, "name"), configBuilder.getBeanDefinition());
         }
 
         private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {

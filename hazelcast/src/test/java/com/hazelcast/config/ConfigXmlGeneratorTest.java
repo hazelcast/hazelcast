@@ -62,6 +62,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -1258,13 +1259,18 @@ public class ConfigXmlGeneratorTest {
                 .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK)
                 .setStatisticsEnabled(true)
                 .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")))
-                .setExecutor(new DummyExecutor());
+                .setExecutorClassName("foo.bar.Executor");
 
         cfg.addReliableTopicConfig(expectedConfig);
 
         ReliableTopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getReliableTopicConfig(testTopic);
 
         assertEquals(expectedConfig, actualConfig);
+
+        expectedConfig.setExecutor(new DummyExecutor());
+        actualConfig = getNewConfigViaXMLGenerator(cfg).getReliableTopicConfig(testTopic);
+        assertNull(actualConfig.getExecutor());
+        assertEquals(DummyExecutor.class.getName(), actualConfig.getExecutorClassName());
     }
 
     @Test

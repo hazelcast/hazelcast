@@ -565,8 +565,9 @@ public class ConfigXmlGenerator {
                 gen.close();
             }
 
-            if (t.getExecutor() != null) {
-                gen.open("executor", "class-name", t.getExecutor().getClass().getName()).close();
+            String executorClassName = t.getExecutor() == null ? t.getExecutorClassName() : t.getExecutor().getClass().getName();
+            if (executorClassName != null) {
+                gen.open("executor", "class-name", executorClassName).close();
             }
             gen.close();
         }

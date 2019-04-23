@@ -115,12 +115,12 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
@@ -1069,9 +1069,19 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder builder = createBeanBuilder(ReliableTopicConfig.class);
             fillAttributeValues(node, builder);
             for (Node childNode : childElements(node)) {
-                if ("message-listeners".equals(cleanNodeName(childNode))) {
+                String name = cleanNodeName(childNode);
+                if ("message-listeners".equals(name)) {
                     ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
                     builder.addPropertyValue("messageListenerConfigs", listeners);
+                } else if ("executor".equals(name)) {
+                    String className = getAttribute(childNode, "class-name");
+                    if (className != null) {
+                        builder.addPropertyValue("executorClassName", className);
+                    }
+                    String impl = getAttribute(childNode, "implementation");
+                    if (impl != null) {
+                        builder.addPropertyReference("executor", impl);
+                    }
                 }
             }
             reliableTopicManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());

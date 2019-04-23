@@ -283,6 +283,8 @@ hazelcast-client:
     rel-topic:
       read-batch-size: 100
       topic-overload-policy: DISCARD_NEWEST
+      executor:
+        class-name: com.hazelcast.examples.Executor
 
   user-code-deployment:
     enabled: true

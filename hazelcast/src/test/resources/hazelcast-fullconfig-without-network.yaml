@@ -456,6 +456,8 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
+      executor:
+        class-name: com.hazelcast.examples.Executor
 
   semaphore:
     default:

@@ -1791,6 +1791,8 @@ hazelcast:
   #         The publish call fails immediately.
   # * "message-listeners":
   #     Adds listeners (listener classes) for the Reliable Topic messages.
+  # * "executor":
+  #     Sets the java.util.concurrent.Executor implementation to use with the topic.
   #
   reliable-topic:
     default:
@@ -1799,6 +1801,8 @@ hazelcast:
       read-batch-size: 10
       message-listeners:
         - com.hazelcast.examples.MessageListener
+      executor:
+        class-name: com.hazelcast.examples.Executor
   #
   # ===== HAZELCAST MAPREDUCE JOBTRACKER CONFIGURATION =====
   #

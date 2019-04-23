@@ -317,6 +317,9 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 config.setTopicOverloadPolicy(TopicOverloadPolicy.valueOf(value));
             } else if ("read-batch-size".equalsIgnoreCase(nodeName)) {
                 config.setReadBatchSize(Integer.parseInt(value));
+            } else if ("executor".equals(nodeName)) {
+                String className = getAttribute(child, "class-name");
+                config.setExecutorClassName(className);
             }
         }
         clientConfig.addReliableTopicConfig(config);
