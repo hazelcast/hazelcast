@@ -42,7 +42,8 @@ import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
 
 /**
- * Contains helper methods for {@link InternalQueryCache} main implementation.
+ * Contains helper methods for {@link
+ * InternalQueryCache} main implementation.
  *
  * @param <K> the key type for this {@link InternalQueryCache}
  * @param <V> the value type for this {@link InternalQueryCache}
@@ -121,13 +122,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     }
 
     private EvictionListener getEvictionListener() {
-        return new EvictionListener<Data, QueryCacheRecord>() {
-            @Override
-            public void onEvict(Data dataKey, QueryCacheRecord record, boolean wasExpired) {
-                EventPublisherHelper.publishEntryEvent(context, mapName, cacheId,
-                        dataKey, null, record, EVICTED, extractors);
-            }
-        };
+        return (EvictionListener<Data, QueryCacheRecord>) (dataKey, record, wasExpired)
+                -> EventPublisherHelper.publishEntryEvent(context, mapName, cacheId,
+                dataKey, null, record, EVICTED, extractors);
     }
 
     PartitioningStrategy getPartitioningStrategy() {

@@ -130,12 +130,12 @@ public class AccumulatorScannerTask implements Runnable {
 
         void consume(Accumulator accumulator, int partitionId) {
             if (partitionAccumulators == null) {
-                partitionAccumulators = new HashMap<Integer, Queue<Accumulator>>();
+                partitionAccumulators = new HashMap<>();
             }
 
             Queue<Accumulator> accumulators = partitionAccumulators.get(partitionId);
             if (accumulators == null) {
-                accumulators = new ArrayDeque<Accumulator>();
+                accumulators = new ArrayDeque<>();
                 partitionAccumulators.put(partitionId, accumulators);
             }
             accumulators.add(accumulator);

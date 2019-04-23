@@ -40,7 +40,7 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
      */
     private static final double SIZING_FUDGE_FACTOR = 1.3;
 
-    private List<Data> keys = new ArrayList<Data>();
+    private List<Data> keys = new ArrayList<>();
     private MapEntries entries;
 
     public GetAllOperation() {

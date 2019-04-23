@@ -97,7 +97,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         // index query succeeded
         List<Data> keyList = partitionIdToKeysMap.get(partition);
         assert keyList != null : "unexpected partition " + partition + ", expected partitions " + partitionIdToKeysMap.keySet();
-        Set<Data> keys = keyList.isEmpty() ? Collections.<Data>emptySet() : newBuilder(keyList).build();
+        Set<Data> keys = keyList.isEmpty() ? Collections.emptySet() : newBuilder(keyList).build();
         return new MultipleEntryWithPredicateOperation(name, keys, entryProcessor, predicate);
     }
 
@@ -170,7 +170,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         // to filter out possible unrequested partitions encountered among the
         // fetched keys.
         for (int partition : partitions) {
-            partitionToKeys.put(partition, Collections.<Data>emptyList());
+            partitionToKeys.put(partition, Collections.emptyList());
         }
 
         for (Data key : keys) {
@@ -183,7 +183,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
 
             if (keyList.isEmpty()) {
                 // we have a first key for this partition
-                keyList = new ArrayList<Data>();
+                keyList = new ArrayList<>();
                 partitionToKeys.put(partitionId, keyList);
             }
             keyList.add(key);

@@ -230,17 +230,14 @@ public class MapContainer {
 
     // overridden in different context
     ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
-        return new ConstructorFunction<Void, RecordFactory>() {
-            @Override
-            public RecordFactory createNew(Void notUsedArg) {
-                switch (mapConfig.getInMemoryFormat()) {
-                    case BINARY:
-                        return new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
-                    case OBJECT:
-                        return new ObjectRecordFactory(mapConfig, serializationService);
-                    default:
-                        throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
-                }
+        return notUsedArg -> {
+            switch (mapConfig.getInMemoryFormat()) {
+                case BINARY:
+                    return new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
+                case OBJECT:
+                    return new ObjectRecordFactory(mapConfig, serializationService);
+                default:
+                    throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
             }
         };
     }
@@ -447,7 +444,7 @@ public class MapContainer {
     }
 
     public Map<String, Boolean> getIndexDefinitions() {
-        Map<String, Boolean> definitions = new HashMap<String, Boolean>();
+        Map<String, Boolean> definitions = new HashMap<>();
         if (isGlobalIndexEnabled()) {
             for (Index index : globalIndexes.getIndexes()) {
                 definitions.put(index.getName(), index.isOrdered());

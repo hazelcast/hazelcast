@@ -72,7 +72,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     }
 
     protected Collection<Aggregator> accumulateParallel(Aggregator aggregator, Collection<QueryableEntry> entries) {
-        Collection<Future<Aggregator>> futures = new ArrayList<Future<Aggregator>>();
+        Collection<Future<Aggregator>> futures = new ArrayList<>();
         Collection<QueryableEntry>[] chunks = split(entries, THREAD_SPLIT_COUNT);
         if (chunks == null) {
             // not enough elements for split
@@ -97,7 +97,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
         Collection<QueryableEntry>[] entriesSplit = new Collection[chunkCount];
         int entriesPerChunk = estimatedSize / chunkCount;
         for (int i = 0; i < chunkCount; i++) {
-            entriesSplit[i] = new ArrayList<QueryableEntry>(entriesPerChunk);
+            entriesSplit[i] = new ArrayList<>(entriesPerChunk);
         }
         for (QueryableEntry entry : entries) {
             entriesSplit[counter++ % THREAD_SPLIT_COUNT].add(entry);

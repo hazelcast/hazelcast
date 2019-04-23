@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -69,13 +68,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
             return;
         }
         Storage storage = recordStore.getStorage();
-        Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            Data key = iterator.next();
-            if (storage.containsKey(key)) {
-                iterator.remove();
-            }
-        }
+        keys.removeIf(storage::containsKey);
     }
 
     @Override
@@ -93,7 +86,7 @@ public class RemoveFromLoadAllOperation extends MapOperation implements Partitio
         super.readInternal(in);
         final int size = in.readInt();
         if (size > 0) {
-            keys = new ArrayList<Data>(size);
+            keys = new ArrayList<>(size);
         }
         for (int i = 0; i < size; i++) {
             Data data = in.readData();

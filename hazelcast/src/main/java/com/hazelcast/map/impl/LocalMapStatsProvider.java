@@ -68,13 +68,9 @@ public class LocalMapStatsProvider {
     private final MapServiceContext mapServiceContext;
     private final MapNearCacheManager mapNearCacheManager;
     private final IPartitionService partitionService;
-    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
-            new ConstructorFunction<String, LocalMapStatsImpl>() {
-                public LocalMapStatsImpl createNew(String key) {
-                    return new LocalMapStatsImpl();
-                }
-            };
+            key -> new LocalMapStatsImpl();
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -371,7 +367,7 @@ public class LocalMapStatsProvider {
     private static Map<String, OnDemandIndexStats> aggregateFreshIndexStats(InternalIndex[] freshIndexes,
                                                                             Map<String, OnDemandIndexStats> freshStats) {
         if (freshIndexes.length > 0 && freshStats == null) {
-            freshStats = new HashMap<String, OnDemandIndexStats>();
+            freshStats = new HashMap<>();
         }
 
         for (InternalIndex index : freshIndexes) {

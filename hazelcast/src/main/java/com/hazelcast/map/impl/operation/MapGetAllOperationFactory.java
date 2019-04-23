@@ -29,7 +29,7 @@ import java.util.List;
 public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
 
     private String name;
-    private List<Data> keys = new ArrayList<Data>();
+    private List<Data> keys = new ArrayList<>();
 
     public MapGetAllOperationFactory() {
     }

@@ -100,7 +100,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @see #loadAll(boolean)
      * @see #loadAllFromStore(List, boolean)
      */
-    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
+    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
     /**
      * The record store may be created with or without triggering the load.
      * This flag guards that the loading on create is invoked not more than
@@ -345,7 +345,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     protected List<Data> getKeysFromRecords(Collection<Record> clearableRecords) {
-        List<Data> keys = new ArrayList<Data>(clearableRecords.size());
+        List<Data> keys = new ArrayList<>(clearableRecords.size());
         for (Record clearableRecord : clearableRecords) {
             keys.add(clearableRecord.getKey());
         }
@@ -390,7 +390,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return emptyList();
         }
 
-        List<Record> notLockedRecords = new ArrayList<Record>(notLockedKeyCount);
+        List<Record> notLockedRecords = new ArrayList<>(notLockedKeyCount);
         Collection<Record> records = storage.values();
         for (Record record : records) {
             if (!lockedKeySet.contains(record.getKey())) {
@@ -1296,7 +1296,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     private void clearLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
         if (lockService != null) {
             ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);

@@ -67,7 +67,7 @@ public class MapLoadAllOperationFactory extends AbstractMapOperationFactory {
         name = in.readUTF();
         final int size = in.readInt();
         if (size > 0) {
-            keys = new ArrayList<Data>(size);
+            keys = new ArrayList<>(size);
         }
         for (int i = 0; i < size; i++) {
             Data data = in.readData();

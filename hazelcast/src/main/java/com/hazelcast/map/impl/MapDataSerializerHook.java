@@ -325,744 +325,152 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
-        constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutOperation();
-            }
-        };
-        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GetOperation();
-            }
-        };
-        constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveOperation();
-            }
-        };
-        constructors[PUT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutBackupOperation();
-            }
-        };
-        constructors[REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveBackupOperation();
-            }
-        };
-        constructors[EVICT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EvictBackupOperation();
-            }
-        };
-        constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapKeySet();
-            }
-        };
-        constructors[VALUES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapValueCollection();
-            }
-        };
-        constructors[ENTRIES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEntries();
-            }
-        };
-        constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return (IdentifiedDataSerializable) EntryViews.createSimpleEntryView();
-            }
-        };
-        constructors[QUERY_RESULT_ROW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryResultRow();
-            }
-        };
-        constructors[QUERY_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryResult();
-            }
-        };
-        constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ContainsKeyOperation();
-            }
-        };
-        constructors[KEYS_WITH_CURSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapKeysWithCursor();
-            }
-        };
-        constructors[ENTRIES_WITH_CURSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEntriesWithCursor();
-            }
-        };
-        constructors[SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetOperation();
-            }
-        };
-        constructors[LOAD_MAP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LoadMapOperation();
-            }
-        };
-        constructors[KEY_LOAD_STATUS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new KeyLoadStatusOperation();
-            }
-        };
-        constructors[LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LoadAllOperation();
-            }
-        };
-        constructors[ENTRY_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EntryBackupOperation();
-            }
-        };
-        constructors[ENTRY_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EntryOperation();
-            }
-        };
-        constructors[PUT_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutAllOperation();
-            }
-        };
-        constructors[PUT_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutAllBackupOperation();
-            }
-        };
-        constructors[REMOVE_IF_SAME] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveIfSameOperation();
-            }
-        };
-        constructors[REPLACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplaceOperation();
-            }
-        };
-        constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapSizeOperation();
-            }
-        };
-        constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearBackupOperation();
-            }
-        };
-        constructors[CLEAR_NEAR_CACHE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearNearCacheOperation();
-            }
-        };
-        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearOperation();
-            }
-        };
-        constructors[DELETE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DeleteOperation();
-            }
-        };
-        constructors[EVICT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EvictOperation();
-            }
-        };
-        constructors[EVICT_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EvictAllOperation();
-            }
-        };
-        constructors[EVICT_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EvictAllBackupOperation();
-            }
-        };
-        constructors[GET_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GetAllOperation();
-            }
-        };
-        constructors[IS_EMPTY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapIsEmptyOperation();
-            }
-        };
-        constructors[LEGACY_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LegacyMergeOperation();
-            }
-        };
-        constructors[IS_PARTITION_LOADED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IsPartitionLoadedOperation();
-            }
-        };
-        constructors[PARTITION_WIDE_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionWideEntryOperation();
-            }
-        };
-        constructors[PARTITION_WIDE_ENTRY_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionWideEntryBackupOperation();
-            }
-        };
-        constructors[PARTITION_WIDE_PREDICATE_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionWideEntryWithPredicateOperation();
-            }
-        };
-        constructors[PARTITION_WIDE_PREDICATE_ENTRY_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionWideEntryWithPredicateBackupOperation();
-            }
-        };
-        constructors[ADD_INDEX] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddIndexOperation();
-            }
-        };
-        constructors[AWAIT_MAP_FLUSH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AwaitMapFlushOperation();
-            }
-        };
-        constructors[CONTAINS_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ContainsValueOperation();
-            }
-        };
-        constructors[GET_ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GetEntryViewOperation();
-            }
-        };
-        constructors[FETCH_ENTRIES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapFetchEntriesOperation();
-            }
-        };
-        constructors[FETCH_KEYS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapFetchKeysOperation();
-            }
-        };
-        constructors[FLUSH_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapFlushBackupOperation();
-            }
-        };
-        constructors[FLUSH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapFlushOperation();
-            }
-        };
-        constructors[MULTIPLE_ENTRY_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultipleEntryBackupOperation();
-            }
-        };
-        constructors[MULTIPLE_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultipleEntryOperation();
-            }
-        };
-        constructors[MULTIPLE_ENTRY_PREDICATE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultipleEntryWithPredicateBackupOperation();
-            }
-        };
-        constructors[MULTIPLE_ENTRY_PREDICATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultipleEntryWithPredicateOperation();
-            }
-        };
-        constructors[NOTIFY_MAP_FLUSH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new NotifyMapFlushOperation();
-            }
-        };
-        constructors[PUT_IF_ABSENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutIfAbsentOperation();
-            }
-        };
-        constructors[PUT_FROM_LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutFromLoadAllOperation();
-            }
-        };
-        constructors[PUT_FROM_LOAD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutFromLoadAllBackupOperation();
-            }
-        };
-        constructors[QUERY_PARTITION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryPartitionOperation();
-            }
-        };
-        constructors[QUERY_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryOperation();
-            }
-        };
-        constructors[PUT_TRANSIENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutTransientOperation();
-            }
-        };
-        constructors[REPLACE_IF_SAME] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplaceIfSameOperation();
-            }
-        };
-        constructors[TRY_PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TryPutOperation();
-            }
-        };
-        constructors[TRY_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TryRemoveOperation();
-            }
-        };
-        constructors[TXN_LOCK_AND_GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnLockAndGetOperation();
-            }
-        };
-        constructors[TXN_DELETE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnDeleteOperation();
-            }
-        };
-        constructors[TXN_PREPARE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPrepareOperation();
-            }
-        };
-        constructors[TXN_PREPARE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPrepareBackupOperation();
-            }
-        };
-        constructors[TXN_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRollbackOperation();
-            }
-        };
-        constructors[TXN_ROLLBACK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRollbackBackupOperation();
-            }
-        };
-        constructors[TXN_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnSetOperation();
-            }
-        };
-        constructors[TXN_UNLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnUnlockOperation();
-            }
-        };
-        constructors[TXN_UNLOCK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnUnlockBackupOperation();
-            }
-        };
-        constructors[IS_PARTITION_LOADED_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IsPartitionLoadedOperationFactory();
-            }
-        };
-        constructors[ADD_INDEX_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddIndexOperationFactory();
-            }
-        };
-        constructors[CLEAR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearOperationFactory();
-            }
-        };
-        constructors[CONTAINS_VALUE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ContainsValueOperationFactory();
-            }
-        };
-        constructors[EVICT_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EvictAllOperationFactory();
-            }
-        };
-        constructors[IS_EMPTY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IsEmptyOperationFactory();
-            }
-        };
-        constructors[KEY_LOAD_STATUS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new KeyLoadStatusOperationFactory();
-            }
-        };
-        constructors[MAP_FLUSH_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapFlushOperationFactory();
-            }
-        };
-        constructors[MAP_GET_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapGetAllOperationFactory();
-            }
-        };
-        constructors[LOAD_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapLoadAllOperationFactory();
-            }
-        };
-        constructors[PARTITION_WIDE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionWideEntryOperationFactory();
-            }
-        };
-        constructors[PARTITION_WIDE_PREDICATE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionWideEntryWithPredicateOperationFactory();
-            }
-        };
-        constructors[PUT_ALL_PARTITION_AWARE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutAllPartitionAwareOperationFactory();
-            }
-        };
-        constructors[SIZE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SizeOperationFactory();
-            }
-        };
-        constructors[MULTIPLE_ENTRY_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultipleEntryOperationFactory();
-            }
-        };
-        constructors[ENTRY_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EntryEventFilter();
-            }
-        };
-        constructors[EVENT_LISTENER_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EventListenerFilter();
-            }
-        };
-        constructors[PARTITION_LOST_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapPartitionLostEventFilter();
-            }
-        };
-        constructors[NEAR_CACHE_SINGLE_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SingleNearCacheInvalidation();
-            }
-        };
-        constructors[NEAR_CACHE_BATCH_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BatchNearCacheInvalidation();
-            }
-        };
-        constructors[ADD_INTERCEPTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddInterceptorOperation();
-            }
-        };
-        constructors[MAP_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapReplicationOperation();
-            }
-        };
-        constructors[POST_JOIN_MAP_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PostJoinMapOperation();
-            }
-        };
-        constructors[INDEX_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IndexInfo();
-            }
-        };
-        constructors[MAP_INDEX_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapIndexInfo();
-            }
-        };
-        constructors[INTERCEPTOR_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PostJoinMapOperation.InterceptorInfo();
-            }
-        };
-        constructors[REMOVE_INTERCEPTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveInterceptorOperation();
-            }
-        };
-        constructors[QUERY_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryEventFilter();
-            }
-        };
-        constructors[RECORD_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RecordInfo();
-            }
-        };
-        constructors[RECORD_REPLICATION_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RecordReplicationInfo();
-            }
-        };
-        constructors[HIGHER_HITS_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HigherHitsMapMergePolicy();
-            }
-        };
-        constructors[LATEST_UPDATE_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LatestUpdateMapMergePolicy();
-            }
-        };
-        constructors[PASS_THROUGH_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PassThroughMergePolicy();
-            }
-        };
-        constructors[PUT_IF_ABSENT_MERGE_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutIfAbsentMapMergePolicy();
-            }
-        };
-        constructors[UUID_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new UuidFilter();
-            }
-        };
-        constructors[MAP_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapTransactionLogRecord();
-            }
-        };
-        constructors[VERSIONED_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new VersionedValue();
-            }
-        };
-        constructors[MAP_REPLICATION_STATE_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapReplicationStateHolder();
-            }
-        };
-        constructors[WRITE_BEHIND_STATE_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new WriteBehindStateHolder();
-            }
-        };
-        constructors[AGGREGATION_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AggregationResult();
-            }
-        };
-        constructors[QUERY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Query();
-            }
-        };
-        constructors[TARGET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Target();
-            }
-        };
-        constructors[MAP_INVALIDATION_METADATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapGetInvalidationMetaDataOperation();
-            }
-        };
-        constructors[MAP_INVALIDATION_METADATA_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapGetInvalidationMetaDataOperation.MetaDataResponse();
-            }
-        };
-        constructors[MAP_NEAR_CACHE_STATE_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapNearCacheStateHolder();
-            }
-        };
-        constructors[MAP_ASSIGN_AND_GET_UUIDS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapAssignAndGetUuidsOperationFactory();
-            }
-        };
-        constructors[MAP_ASSIGN_AND_GET_UUIDS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapAssignAndGetUuidsOperation();
-            }
-        };
-        constructors[DESTROY_QUERY_CACHE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DestroyQueryCacheOperation();
-            }
-        };
-        constructors[MADE_PUBLISHABLE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MadePublishableOperation();
-            }
-        };
-        constructors[MADE_PUBLISHABLE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MadePublishableOperationFactory();
-            }
-        };
-        constructors[PUBLISHER_CREATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PublisherCreateOperation();
-            }
-        };
-        constructors[READ_AND_RESET_ACCUMULATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReadAndResetAccumulatorOperation();
-            }
-        };
-        constructors[SET_READ_CURSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetReadCursorOperation();
-            }
-        };
-        constructors[ACCUMULATOR_CONSUMER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AccumulatorConsumerOperation();
-            }
-        };
-        constructors[LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LazyMapEntry();
-            }
-        };
-        constructors[TRIGGER_LOAD_IF_NEEDED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TriggerLoadIfNeededOperation();
-            }
-        };
-        constructors[IS_KEYLOAD_FINISHED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IsKeyLoadFinishedOperation();
-            }
-        };
-        constructors[REMOVE_FROM_LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveFromLoadAllOperation();
-            }
-        };
-        constructors[ENTRY_REMOVING_PROCESSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
-            }
-        };
-        constructors[ENTRY_OFFLOADABLE_SET_UNLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EntryOffloadableSetUnlockOperation();
-            }
-        };
-        constructors[LOCK_AWARE_LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LockAwareLazyMapEntry();
-            }
-        };
-        constructors[FETCH_WITH_QUERY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapFetchWithQueryOperation();
-            }
-        };
-        constructors[RESULT_SEGMENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ResultSegment();
-            }
-        };
-        constructors[EVICT_BATCH_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EvictBatchBackupOperation();
-            }
-        };
-        constructors[EVENT_JOURNAL_SUBSCRIBE_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEventJournalSubscribeOperation();
-            }
-        };
-        constructors[EVENT_JOURNAL_READ] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEventJournalReadOperation<Object, Object, Object>();
-            }
-        };
-        constructors[EVENT_JOURNAL_DESERIALIZING_MAP_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DeserializingEventJournalMapEvent<Object, Object>();
-            }
-        };
-        constructors[EVENT_JOURNAL_INTERNAL_MAP_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new InternalEventJournalMapEvent();
-            }
-        };
-        constructors[EVENT_JOURNAL_READ_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEventJournalReadResultSetImpl<Object, Object, Object>();
-            }
-        };
-        constructors[MERGE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergeOperationFactory();
-            }
-        };
-        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergeOperation();
-            }
-        };
-        constructors[SET_TTL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetTtlOperation();
-            }
-        };
-        constructors[SET_TTL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetTtlBackupOperation();
-            }
-        };
-        constructors[MERKLE_TREE_NODE_ENTRIES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MerkleTreeNodeEntries();
-            }
-        };
+        constructors[PUT] = arg -> new PutOperation();
+        constructors[GET] = arg -> new GetOperation();
+        constructors[REMOVE] = arg -> new RemoveOperation();
+        constructors[PUT_BACKUP] = arg -> new PutBackupOperation();
+        constructors[REMOVE_BACKUP] = arg -> new RemoveBackupOperation();
+        constructors[EVICT_BACKUP] = arg -> new EvictBackupOperation();
+        constructors[KEY_SET] = arg -> new MapKeySet();
+        constructors[VALUES] = arg -> new MapValueCollection();
+        constructors[ENTRIES] = arg -> new MapEntries();
+        constructors[ENTRY_VIEW] = arg -> (IdentifiedDataSerializable) EntryViews.createSimpleEntryView();
+        constructors[QUERY_RESULT_ROW] = arg -> new QueryResultRow();
+        constructors[QUERY_RESULT] = arg -> new QueryResult();
+        constructors[CONTAINS_KEY] = arg -> new ContainsKeyOperation();
+        constructors[KEYS_WITH_CURSOR] = arg -> new MapKeysWithCursor();
+        constructors[ENTRIES_WITH_CURSOR] = arg -> new MapEntriesWithCursor();
+        constructors[SET] = arg -> new SetOperation();
+        constructors[LOAD_MAP] = arg -> new LoadMapOperation();
+        constructors[KEY_LOAD_STATUS] = arg -> new KeyLoadStatusOperation();
+        constructors[LOAD_ALL] = arg -> new LoadAllOperation();
+        constructors[ENTRY_BACKUP] = arg -> new EntryBackupOperation();
+        constructors[ENTRY_OPERATION] = arg -> new EntryOperation();
+        constructors[PUT_ALL] = arg -> new PutAllOperation();
+        constructors[PUT_ALL_BACKUP] = arg -> new PutAllBackupOperation();
+        constructors[REMOVE_IF_SAME] = arg -> new RemoveIfSameOperation();
+        constructors[REPLACE] = arg -> new ReplaceOperation();
+        constructors[SIZE] = arg -> new MapSizeOperation();
+        constructors[CLEAR_BACKUP] = arg -> new ClearBackupOperation();
+        constructors[CLEAR_NEAR_CACHE] = arg -> new ClearNearCacheOperation();
+        constructors[CLEAR] = arg -> new ClearOperation();
+        constructors[DELETE] = arg -> new DeleteOperation();
+        constructors[EVICT] = arg -> new EvictOperation();
+        constructors[EVICT_ALL] = arg -> new EvictAllOperation();
+        constructors[EVICT_ALL_BACKUP] = arg -> new EvictAllBackupOperation();
+        constructors[GET_ALL] = arg -> new GetAllOperation();
+        constructors[IS_EMPTY] = arg -> new MapIsEmptyOperation();
+        constructors[LEGACY_MERGE] = arg -> new LegacyMergeOperation();
+        constructors[IS_PARTITION_LOADED] = arg -> new IsPartitionLoadedOperation();
+        constructors[PARTITION_WIDE_ENTRY] = arg -> new PartitionWideEntryOperation();
+        constructors[PARTITION_WIDE_ENTRY_BACKUP] = arg -> new PartitionWideEntryBackupOperation();
+        constructors[PARTITION_WIDE_PREDICATE_ENTRY] = arg -> new PartitionWideEntryWithPredicateOperation();
+        constructors[PARTITION_WIDE_PREDICATE_ENTRY_BACKUP] = arg -> new PartitionWideEntryWithPredicateBackupOperation();
+        constructors[ADD_INDEX] = arg -> new AddIndexOperation();
+        constructors[AWAIT_MAP_FLUSH] = arg -> new AwaitMapFlushOperation();
+        constructors[CONTAINS_VALUE] = arg -> new ContainsValueOperation();
+        constructors[GET_ENTRY_VIEW] = arg -> new GetEntryViewOperation();
+        constructors[FETCH_ENTRIES] = arg -> new MapFetchEntriesOperation();
+        constructors[FETCH_KEYS] = arg -> new MapFetchKeysOperation();
+        constructors[FLUSH_BACKUP] = arg -> new MapFlushBackupOperation();
+        constructors[FLUSH] = arg -> new MapFlushOperation();
+        constructors[MULTIPLE_ENTRY_BACKUP] = arg -> new MultipleEntryBackupOperation();
+        constructors[MULTIPLE_ENTRY] = arg -> new MultipleEntryOperation();
+        constructors[MULTIPLE_ENTRY_PREDICATE_BACKUP] = arg -> new MultipleEntryWithPredicateBackupOperation();
+        constructors[MULTIPLE_ENTRY_PREDICATE] = arg -> new MultipleEntryWithPredicateOperation();
+        constructors[NOTIFY_MAP_FLUSH] = arg -> new NotifyMapFlushOperation();
+        constructors[PUT_IF_ABSENT] = arg -> new PutIfAbsentOperation();
+        constructors[PUT_FROM_LOAD_ALL] = arg -> new PutFromLoadAllOperation();
+        constructors[PUT_FROM_LOAD_ALL_BACKUP] = arg -> new PutFromLoadAllBackupOperation();
+        constructors[QUERY_PARTITION] = arg -> new QueryPartitionOperation();
+        constructors[QUERY_OPERATION] = arg -> new QueryOperation();
+        constructors[PUT_TRANSIENT] = arg -> new PutTransientOperation();
+        constructors[REPLACE_IF_SAME] = arg -> new ReplaceIfSameOperation();
+        constructors[TRY_PUT] = arg -> new TryPutOperation();
+        constructors[TRY_REMOVE] = arg -> new TryRemoveOperation();
+        constructors[TXN_LOCK_AND_GET] = arg -> new TxnLockAndGetOperation();
+        constructors[TXN_DELETE] = arg -> new TxnDeleteOperation();
+        constructors[TXN_PREPARE] = arg -> new TxnPrepareOperation();
+        constructors[TXN_PREPARE_BACKUP] = arg -> new TxnPrepareBackupOperation();
+        constructors[TXN_ROLLBACK] = arg -> new TxnRollbackOperation();
+        constructors[TXN_ROLLBACK_BACKUP] = arg -> new TxnRollbackBackupOperation();
+        constructors[TXN_SET] = arg -> new TxnSetOperation();
+        constructors[TXN_UNLOCK] = arg -> new TxnUnlockOperation();
+        constructors[TXN_UNLOCK_BACKUP] = arg -> new TxnUnlockBackupOperation();
+        constructors[IS_PARTITION_LOADED_FACTORY] = arg -> new IsPartitionLoadedOperationFactory();
+        constructors[ADD_INDEX_FACTORY] = arg -> new AddIndexOperationFactory();
+        constructors[CLEAR_FACTORY] = arg -> new ClearOperationFactory();
+        constructors[CONTAINS_VALUE_FACTORY] = arg -> new ContainsValueOperationFactory();
+        constructors[EVICT_ALL_FACTORY] = arg -> new EvictAllOperationFactory();
+        constructors[IS_EMPTY_FACTORY] = arg -> new IsEmptyOperationFactory();
+        constructors[KEY_LOAD_STATUS_FACTORY] = arg -> new KeyLoadStatusOperationFactory();
+        constructors[MAP_FLUSH_FACTORY] = arg -> new MapFlushOperationFactory();
+        constructors[MAP_GET_ALL_FACTORY] = arg -> new MapGetAllOperationFactory();
+        constructors[LOAD_ALL_FACTORY] = arg -> new MapLoadAllOperationFactory();
+        constructors[PARTITION_WIDE_ENTRY_FACTORY] = arg -> new PartitionWideEntryOperationFactory();
+        constructors[PARTITION_WIDE_PREDICATE_ENTRY_FACTORY] = arg -> new PartitionWideEntryWithPredicateOperationFactory();
+        constructors[PUT_ALL_PARTITION_AWARE_FACTORY] = arg -> new PutAllPartitionAwareOperationFactory();
+        constructors[SIZE_FACTORY] = arg -> new SizeOperationFactory();
+        constructors[MULTIPLE_ENTRY_FACTORY] = arg -> new MultipleEntryOperationFactory();
+        constructors[ENTRY_EVENT_FILTER] = arg -> new EntryEventFilter();
+        constructors[EVENT_LISTENER_FILTER] = arg -> new EventListenerFilter();
+        constructors[PARTITION_LOST_EVENT_FILTER] = arg -> new MapPartitionLostEventFilter();
+        constructors[NEAR_CACHE_SINGLE_INVALIDATION] = arg -> new SingleNearCacheInvalidation();
+        constructors[NEAR_CACHE_BATCH_INVALIDATION] = arg -> new BatchNearCacheInvalidation();
+        constructors[ADD_INTERCEPTOR] = arg -> new AddInterceptorOperation();
+        constructors[MAP_REPLICATION] = arg -> new MapReplicationOperation();
+        constructors[POST_JOIN_MAP_OPERATION] = arg -> new PostJoinMapOperation();
+        constructors[INDEX_INFO] = arg -> new IndexInfo();
+        constructors[MAP_INDEX_INFO] = arg -> new MapIndexInfo();
+        constructors[INTERCEPTOR_INFO] = arg -> new PostJoinMapOperation.InterceptorInfo();
+        constructors[REMOVE_INTERCEPTOR] = arg -> new RemoveInterceptorOperation();
+        constructors[QUERY_EVENT_FILTER] = arg -> new QueryEventFilter();
+        constructors[RECORD_INFO] = arg -> new RecordInfo();
+        constructors[RECORD_REPLICATION_INFO] = arg -> new RecordReplicationInfo();
+        constructors[HIGHER_HITS_MERGE_POLICY] = arg -> new HigherHitsMapMergePolicy();
+        constructors[LATEST_UPDATE_MERGE_POLICY] = arg -> new LatestUpdateMapMergePolicy();
+        constructors[PASS_THROUGH_MERGE_POLICY] = arg -> new PassThroughMergePolicy();
+        constructors[PUT_IF_ABSENT_MERGE_POLICY] = arg -> new PutIfAbsentMapMergePolicy();
+        constructors[UUID_FILTER] = arg -> new UuidFilter();
+        constructors[MAP_TRANSACTION_LOG_RECORD] = arg -> new MapTransactionLogRecord();
+        constructors[VERSIONED_VALUE] = arg -> new VersionedValue();
+        constructors[MAP_REPLICATION_STATE_HOLDER] = arg -> new MapReplicationStateHolder();
+        constructors[WRITE_BEHIND_STATE_HOLDER] = arg -> new WriteBehindStateHolder();
+        constructors[AGGREGATION_RESULT] = arg -> new AggregationResult();
+        constructors[QUERY] = arg -> new Query();
+        constructors[TARGET] = arg -> new Target();
+        constructors[MAP_INVALIDATION_METADATA] = arg -> new MapGetInvalidationMetaDataOperation();
+        constructors[MAP_INVALIDATION_METADATA_RESPONSE] = arg -> new MapGetInvalidationMetaDataOperation.MetaDataResponse();
+        constructors[MAP_NEAR_CACHE_STATE_HOLDER] = arg -> new MapNearCacheStateHolder();
+        constructors[MAP_ASSIGN_AND_GET_UUIDS_FACTORY] = arg -> new MapAssignAndGetUuidsOperationFactory();
+        constructors[MAP_ASSIGN_AND_GET_UUIDS] = arg -> new MapAssignAndGetUuidsOperation();
+        constructors[DESTROY_QUERY_CACHE] = arg -> new DestroyQueryCacheOperation();
+        constructors[MADE_PUBLISHABLE] = arg -> new MadePublishableOperation();
+        constructors[MADE_PUBLISHABLE_FACTORY] = arg -> new MadePublishableOperationFactory();
+        constructors[PUBLISHER_CREATE] = arg -> new PublisherCreateOperation();
+        constructors[READ_AND_RESET_ACCUMULATOR] = arg -> new ReadAndResetAccumulatorOperation();
+        constructors[SET_READ_CURSOR] = arg -> new SetReadCursorOperation();
+        constructors[ACCUMULATOR_CONSUMER] = arg -> new AccumulatorConsumerOperation();
+        constructors[LAZY_MAP_ENTRY] = arg -> new LazyMapEntry();
+        constructors[TRIGGER_LOAD_IF_NEEDED] = arg -> new TriggerLoadIfNeededOperation();
+        constructors[IS_KEYLOAD_FINISHED] = arg -> new IsKeyLoadFinishedOperation();
+        constructors[REMOVE_FROM_LOAD_ALL] = arg -> new RemoveFromLoadAllOperation();
+        constructors[ENTRY_REMOVING_PROCESSOR] = arg -> EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
+        constructors[ENTRY_OFFLOADABLE_SET_UNLOCK] = arg -> new EntryOffloadableSetUnlockOperation();
+        constructors[LOCK_AWARE_LAZY_MAP_ENTRY] = arg -> new LockAwareLazyMapEntry();
+        constructors[FETCH_WITH_QUERY] = arg -> new MapFetchWithQueryOperation();
+        constructors[RESULT_SEGMENT] = arg -> new ResultSegment();
+        constructors[EVICT_BATCH_BACKUP] = arg -> new EvictBatchBackupOperation();
+        constructors[EVENT_JOURNAL_SUBSCRIBE_OPERATION] = arg -> new MapEventJournalSubscribeOperation();
+        constructors[EVENT_JOURNAL_READ] = arg -> new MapEventJournalReadOperation<>();
+        constructors[EVENT_JOURNAL_DESERIALIZING_MAP_EVENT] = arg -> new DeserializingEventJournalMapEvent<>();
+        constructors[EVENT_JOURNAL_INTERNAL_MAP_EVENT] = arg -> new InternalEventJournalMapEvent();
+        constructors[EVENT_JOURNAL_READ_RESULT_SET] = arg -> new MapEventJournalReadResultSetImpl<>();
+        constructors[MERGE_FACTORY] = arg -> new MergeOperationFactory();
+        constructors[MERGE] = arg -> new MergeOperation();
+        constructors[SET_TTL] = arg -> new SetTtlOperation();
+        constructors[SET_TTL_BACKUP] = arg -> new SetTtlBackupOperation();
+        constructors[MERKLE_TREE_NODE_ENTRIES] = arg -> new MerkleTreeNodeEntries();
 
         return new ArrayDataSerializableFactory(constructors);
     }

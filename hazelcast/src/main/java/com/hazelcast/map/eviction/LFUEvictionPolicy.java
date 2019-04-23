@@ -38,7 +38,7 @@ public class LFUEvictionPolicy extends MapEvictionPolicy implements IdentifiedDa
     public int compare(EntryView entryView1, EntryView entryView2) {
         long hits1 = entryView1.getHits();
         long hits2 = entryView2.getHits();
-        return (hits1 < hits2) ? -1 : ((hits1 == hits2) ? 0 : 1);
+        return Long.compare(hits1, hits2);
     }
 
     @Override

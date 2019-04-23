@@ -51,7 +51,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     StorageImpl(RecordFactory<R> recordFactory, InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.recordFactory = recordFactory;
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
-        this.records = new StorageSCHM<R>(serializationService);
+        this.records = new StorageSCHM<>(serializationService);
     }
 
     @Override
@@ -161,20 +161,20 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     @Override
     public MapKeysWithCursor fetchKeys(int tableIndex, int size) {
-        List<Data> keys = new ArrayList<Data>(size);
+        List<Data> keys = new ArrayList<>(size);
         int newTableIndex = records.fetchKeys(tableIndex, size, keys);
         return new MapKeysWithCursor(keys, newTableIndex);
     }
 
     @Override
     public MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService) {
-        List<Map.Entry<Data, R>> entries = new ArrayList<Map.Entry<Data, R>>(size);
+        List<Map.Entry<Data, R>> entries = new ArrayList<>(size);
         int newTableIndex = records.fetchEntries(tableIndex, size, entries);
-        List<Map.Entry<Data, Data>> entriesData = new ArrayList<Map.Entry<Data, Data>>(entries.size());
+        List<Map.Entry<Data, Data>> entriesData = new ArrayList<>(entries.size());
         for (Map.Entry<Data, R> entry : entries) {
             R record = entry.getValue();
             Data dataValue = serializationService.toData(record.getValue());
-            entriesData.add(new AbstractMap.SimpleEntry<Data, Data>(entry.getKey(), dataValue));
+            entriesData.add(new AbstractMap.SimpleEntry<>(entry.getKey(), dataValue));
         }
         return new MapEntriesWithCursor(entriesData, newTableIndex);
     }

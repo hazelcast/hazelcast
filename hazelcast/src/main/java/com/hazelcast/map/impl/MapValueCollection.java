@@ -52,7 +52,7 @@ public class MapValueCollection implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        values = new ArrayList<Data>(size);
+        values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Data data = in.readData();
             values.add(data);

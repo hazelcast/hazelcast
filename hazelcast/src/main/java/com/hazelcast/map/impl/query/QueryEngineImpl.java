@@ -279,7 +279,7 @@ public class QueryEngineImpl implements QueryEngine {
 
     private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query) {
         Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
-        List<Future<Result>> futures = new ArrayList<Future<Result>>(members.size());
+        List<Future<Result>> futures = new ArrayList<>(members.size());
         for (Member member : members) {
             Operation operation = createQueryOperation(query);
             Future<Result> future = operationService.invokeOnTarget(
@@ -298,7 +298,7 @@ public class QueryEngineImpl implements QueryEngine {
         if (shouldSkipPartitionsQuery(partitionIds)) {
             return Collections.emptyList();
         }
-        List<Future<Result>> futures = new ArrayList<Future<Result>>(partitionIds.size());
+        List<Future<Result>> futures = new ArrayList<>(partitionIds.size());
         for (int partitionId = 0; partitionId < partitionIds.length(); partitionId++) {
             if (partitionIds.get(partitionId)) {
                 futures.add(dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId));

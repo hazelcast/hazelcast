@@ -63,7 +63,7 @@ public class MapEventJournalReadOperation<K, V, T> extends EventJournalReadOpera
 
     @Override
     protected ReadResultSetImpl<InternalEventJournalMapEvent, T> createResultSet() {
-        return new MapEventJournalReadResultSetImpl<K, V, T>(
+        return new MapEventJournalReadResultSetImpl<>(
                 minSize, maxSize, getNodeEngine().getSerializationService(), predicate, projection);
     }
 

@@ -61,7 +61,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
             return;
         }
 
-        eventDataList = new ArrayList<Sequenced>(accumulator.size());
+        eventDataList = new ArrayList<>(accumulator.size());
         for (Sequenced sequenced : accumulator) {
             eventDataList.add(sequenced);
         }

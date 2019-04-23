@@ -74,10 +74,10 @@ public class PutAllOperation extends MapOperation
         hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
-            backupRecordInfos = new ArrayList<RecordInfo>(mapEntries.size());
+            backupRecordInfos = new ArrayList<>(mapEntries.size());
         }
         if (hasInvalidation) {
-            invalidationKeys = new ArrayList<Data>(mapEntries.size());
+            invalidationKeys = new ArrayList<>(mapEntries.size());
         }
 
         for (int i = 0; i < mapEntries.size(); i++) {

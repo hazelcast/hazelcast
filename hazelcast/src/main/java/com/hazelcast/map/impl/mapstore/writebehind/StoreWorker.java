@@ -160,7 +160,7 @@ public class StoreWorker implements Runnable {
 
     private static List<DelayedEntry> initListIfNull(List<DelayedEntry> list, int capacity) {
         if (list == null) {
-            list = new ArrayList<DelayedEntry>(capacity);
+            list = new ArrayList<>(capacity);
         }
         return list;
     }
@@ -213,22 +213,9 @@ public class StoreWorker implements Runnable {
     private void filterWriteBehindQueue(final long highestStoreTime, final long sequence, Collection<DelayedEntry> collection,
                                         WriteBehindQueue<DelayedEntry> queue) {
         if (sequence > 0) {
-
-            queue.filter(new IPredicate<DelayedEntry>() {
-                @Override
-                public boolean test(DelayedEntry delayedEntry) {
-                    return delayedEntry.getSequence() <= sequence;
-                }
-            }, collection);
-
+            queue.filter(delayedEntry -> delayedEntry.getSequence() <= sequence, collection);
         } else {
-
-            queue.filter(new IPredicate<DelayedEntry>() {
-                @Override
-                public boolean test(DelayedEntry delayedEntry) {
-                    return delayedEntry.getStoreTime() <= highestStoreTime;
-                }
-            }, collection);
+            queue.filter(delayedEntry -> delayedEntry.getStoreTime() <= highestStoreTime, collection);
         }
     }
 

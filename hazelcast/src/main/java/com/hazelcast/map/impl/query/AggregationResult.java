@@ -67,7 +67,7 @@ public class AggregationResult implements Result<AggregationResult> {
             return;
         }
         if (partitionIds == null) {
-            partitionIds = new ArrayList<Integer>(otherPartitionIds.size());
+            partitionIds = new ArrayList<>(otherPartitionIds.size());
         }
         partitionIds.addAll(otherPartitionIds);
         aggregator.combine(result.aggregator);
@@ -104,7 +104,7 @@ public class AggregationResult implements Result<AggregationResult> {
 
     @Override
     public void setPartitionIds(Collection<Integer> partitionIds) {
-        this.partitionIds = new ArrayList<Integer>(partitionIds);
+        this.partitionIds = new ArrayList<>(partitionIds);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class AggregationResult implements Result<AggregationResult> {
     public void readData(ObjectDataInput in) throws IOException {
         int partitionSize = in.readInt();
         if (partitionSize > 0) {
-            this.partitionIds = new ArrayList<Integer>(partitionSize);
+            this.partitionIds = new ArrayList<>(partitionSize);
             for (int i = 0; i < partitionSize; i++) {
                 this.partitionIds.add(in.readInt());
             }

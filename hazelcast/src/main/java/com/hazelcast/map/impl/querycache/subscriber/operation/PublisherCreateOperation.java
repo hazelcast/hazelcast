@@ -47,7 +47,6 @@ import com.hazelcast.util.collection.Int2ObjectHashMap;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -197,13 +196,7 @@ public class PublisherCreateOperation extends MapOperation {
      */
     private void removePartitionResults(QueryResult queryResult, int partitionId) {
         List<QueryResultRow> rows = queryResult.getRows();
-        Iterator<QueryResultRow> iterator = rows.iterator();
-        while (iterator.hasNext()) {
-            QueryResultRow resultRow = iterator.next();
-            if (getPartitionId(resultRow) == partitionId) {
-                iterator.remove();
-            }
-        }
+        rows.removeIf(resultRow -> getPartitionId(resultRow) == partitionId);
     }
 
     private int getPartitionId(QueryResultRow resultRow) {
@@ -220,7 +213,7 @@ public class PublisherCreateOperation extends MapOperation {
         }
 
         Map<Integer, Future<Object>> futuresByPartitionId
-                = new Int2ObjectHashMap<Future<Object>>(partitionIds.size());
+                = new Int2ObjectHashMap<>(partitionIds.size());
         for (Integer partitionId : partitionIds) {
             futuresByPartitionId.put(partitionId,
                     readAndResetAccumulator(mapName, cacheId, partitionId));

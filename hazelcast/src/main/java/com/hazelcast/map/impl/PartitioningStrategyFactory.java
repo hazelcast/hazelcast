@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class PartitioningStrategyFactory {
 
     // not private for tests
-    final ConcurrentHashMap<String, PartitioningStrategy> cache = new ConcurrentHashMap<String, PartitioningStrategy>();
+    final ConcurrentHashMap<String, PartitioningStrategy> cache = new ConcurrentHashMap<>();
 
     // this is set to the current NodeEngine.getConfigClassLoader
     private final ClassLoader configClassLoader;

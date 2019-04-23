@@ -68,7 +68,7 @@ public class QueryCacheFactory {
     private final ConcurrentMap<String, InternalQueryCache> internalQueryCaches;
 
     public QueryCacheFactory() {
-        this.internalQueryCaches = new ConcurrentHashMap<String, InternalQueryCache>();
+        this.internalQueryCaches = new ConcurrentHashMap<>();
     }
 
     public InternalQueryCache create(QueryCacheRequest request, String cacheId) {

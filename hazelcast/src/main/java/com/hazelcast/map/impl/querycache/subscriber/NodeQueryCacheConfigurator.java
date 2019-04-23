@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -79,7 +78,7 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
 
     private QueryCacheConfig findQueryCacheConfigFromMapConfig(MapConfig mapConfig, String cacheName) {
         List<QueryCacheConfig> queryCacheConfigs = mapConfig.getQueryCacheConfigs();
-        Map<String, QueryCacheConfig> allQueryCacheConfigs = new HashMap<String, QueryCacheConfig>(queryCacheConfigs.size());
+        Map<String, QueryCacheConfig> allQueryCacheConfigs = new HashMap<>(queryCacheConfigs.size());
         for (QueryCacheConfig queryCacheConfig : queryCacheConfigs) {
             allQueryCacheConfigs.put(queryCacheConfig.getName(), queryCacheConfig);
         }
@@ -94,12 +93,6 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
         if (queryCacheConfigs == null || queryCacheConfigs.isEmpty()) {
             return;
         }
-        Iterator<QueryCacheConfig> iterator = queryCacheConfigs.iterator();
-        while (iterator.hasNext()) {
-            QueryCacheConfig config = iterator.next();
-            if (config.getName().equals(cacheName)) {
-                iterator.remove();
-            }
-        }
+        queryCacheConfigs.removeIf(config -> config.getName().equals(cacheName));
     }
 }

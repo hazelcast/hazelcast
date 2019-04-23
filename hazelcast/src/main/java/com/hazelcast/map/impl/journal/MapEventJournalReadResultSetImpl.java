@@ -37,15 +37,10 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
             final Function<? super EventJournalMapEvent<K, V>, ? extends T> projection
     ) {
         super(minSize, maxSize, serializationService,
-                predicate == null ? null : new Predicate<InternalEventJournalMapEvent>() {
-                    @Override
-                    @SuppressWarnings("unchecked")
-                    @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
-                    public boolean test(InternalEventJournalMapEvent e) {
-                        return predicate.test((DeserializingEventJournalMapEvent<K, V>) e);
-                    }
-                },
-                projection == null ? null : new ProjectionAdapter<K, V, T>(projection));
+                predicate == null ? null
+                        : (Predicate<InternalEventJournalMapEvent>)
+                        e -> predicate.test((DeserializingEventJournalMapEvent<K, V>) e),
+                projection == null ? null : new ProjectionAdapter<>(projection));
     }
 
     @Override
@@ -53,7 +48,7 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
         // the event journal ringbuffer supports only OBJECT format for now
         final InternalEventJournalMapEvent e = (InternalEventJournalMapEvent) item;
         final DeserializingEventJournalMapEvent<K, V> deserialisingEvent
-                = new DeserializingEventJournalMapEvent<K, V>(serializationService, e);
+                = new DeserializingEventJournalMapEvent<>(serializationService, e);
         super.addItem(seq, deserialisingEvent);
     }
 

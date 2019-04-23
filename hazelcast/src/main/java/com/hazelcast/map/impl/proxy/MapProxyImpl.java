@@ -343,7 +343,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public ICompletableFuture<V> getAsync(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return new DelegatingFuture<V>(getAsyncInternal(key), serializationService);
+        return new DelegatingFuture<>(getAsyncInternal(key), serializationService);
     }
 
     @Override
@@ -365,7 +365,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return new DelegatingFuture<V>(
+        return new DelegatingFuture<>(
                 putAsyncInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS),
                 serializationService);
     }
@@ -381,7 +381,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return new DelegatingFuture<V>(
+        return new DelegatingFuture<>(
                 putAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit),
                 serializationService);
     }
@@ -397,7 +397,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return new DelegatingFuture<Void>(
+        return new DelegatingFuture<>(
                 setAsyncInternal(key, valueData, ttl, timeunit, DEFAULT_MAX_IDLE, TimeUnit.MILLISECONDS),
                 serializationService);
     }
@@ -413,7 +413,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        return new DelegatingFuture<Void>(
+        return new DelegatingFuture<>(
                 setAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit),
                 serializationService);
     }
@@ -422,7 +422,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public ICompletableFuture<V> removeAsync(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return new DelegatingFuture<V>(removeAsyncInternal(key), serializationService);
+        return new DelegatingFuture<>(removeAsyncInternal(key), serializationService);
     }
 
     @Override
@@ -432,8 +432,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         }
 
         int keysSize = keys.size();
-        List<Data> dataKeys = new LinkedList<Data>();
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        List<Data> dataKeys = new LinkedList<>();
+        List<Object> resultingKeyValuePairs = new ArrayList<>(keysSize * 2);
         getAllInternal(keys, dataKeys, resultingKeyValuePairs);
 
         Map<K, V> result = createHashMap(keysSize);
@@ -661,7 +661,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         }
         Data value = (Data) entryViewInternal.getValue();
         entryViewInternal.setKey(key);
-        entryViewInternal.setValue((V) toObject(value));
+        entryViewInternal.setValue(toObject(value));
         return entryViewInternal;
     }
 
@@ -775,7 +775,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
         if (keys.isEmpty()) {
-            return new SimpleCompletedFuture<Map<K, Object>>(Collections.<K, Object>emptyMap());
+            return new SimpleCompletedFuture<>(Collections.emptyMap());
         }
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -808,7 +808,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
-        List<Data> result = new ArrayList<Data>();
+        List<Data> result = new ArrayList<>();
 
         executeOnEntriesInternal(entryProcessor, predicate, result);
         if (result.isEmpty()) {
@@ -820,7 +820,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             Data key = result.get(i++);
             Data value = result.get(i++);
 
-            resultingMap.put((K) toObject(key), toObject(value));
+            resultingMap.put(toObject(key), toObject(value));
 
         }
         return resultingMap;
@@ -828,7 +828,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator) {
-        return aggregate(aggregator, TruePredicate.<K, V>truePredicate());
+        return aggregate(aggregator, TruePredicate.truePredicate());
     }
 
     @Override
@@ -939,7 +939,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @return the iterator for the projected entries
      */
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
-        return new MapPartitionIterator<K, V>(this, fetchSize, partitionId, prefetchValues);
+        return new MapPartitionIterator<>(this, fetchSize, partitionId, prefetchValues);
     }
 
     /**
@@ -979,7 +979,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         // HazelcastInstanceAware handled by cloning
         projection = serializationService.toObject(serializationService.toData(projection));
         handleHazelcastInstanceAwareParams(predicate);
-        return new MapQueryPartitionIterator<K, V, R>(this, fetchSize, partitionId, predicate, projection);
+        return new MapQueryPartitionIterator<>(this, fetchSize, partitionId, predicate, projection);
     }
 
     @Override
@@ -1014,7 +1014,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         final ManagedContext context = serializationService.getManagedContext();
         context.initialize(predicate);
         context.initialize(projection);
-        final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<K, V, T>(
+        final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<>(
                 name, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
         return operationService.invokeOnPartition(op);

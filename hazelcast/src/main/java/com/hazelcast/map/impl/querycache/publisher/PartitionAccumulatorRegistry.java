@@ -52,7 +52,7 @@ public class PartitionAccumulatorRegistry implements Registry<Integer, Accumulat
         this.info = info;
         this.eventFilter = createEventFilter();
         this.accumulatorConstructor = accumulatorConstructor;
-        this.accumulators = new ConcurrentHashMap<Integer, Accumulator>();
+        this.accumulators = new ConcurrentHashMap<>();
     }
 
     private EventFilter createEventFilter() {

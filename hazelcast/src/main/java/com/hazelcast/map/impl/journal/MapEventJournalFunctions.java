@@ -35,11 +35,11 @@ public final class MapEventJournalFunctions {
     private MapEventJournalFunctions() { }
 
     public static <K, V> Predicate<EventJournalMapEvent<K, V>> mapPutEvents() {
-        return new MapPutEventsPredicate<K, V>();
+        return new MapPutEventsPredicate<>();
     }
 
     public static <K, V> Function<EventJournalMapEvent<K, V>, Entry<K, V>> mapEventToEntry() {
-        return new MapEventToEntryProjection<K, V>();
+        return new MapEventToEntryProjection<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -65,7 +65,7 @@ public final class MapEventJournalFunctions {
         @Override
         public Entry<K, V> apply(EventJournalMapEvent<K, V> e) {
             DeserializingEventJournalMapEvent<K, V> casted = (DeserializingEventJournalMapEvent<K, V>) e;
-            return new DeserializingEntry<K, V>(casted.getDataKey(), casted.getDataNewValue());
+            return new DeserializingEntry<>(casted.getDataKey(), casted.getDataNewValue());
         }
     }
 

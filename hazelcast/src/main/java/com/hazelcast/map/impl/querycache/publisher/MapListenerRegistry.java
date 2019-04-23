@@ -45,7 +45,7 @@ public class MapListenerRegistry implements Registry<String, QueryCacheListenerR
     private final ConcurrentMap<String, QueryCacheListenerRegistry> listeners;
 
     public MapListenerRegistry(QueryCacheContext context) {
-        this.listeners = new ConcurrentHashMap<String, QueryCacheListenerRegistry>();
+        this.listeners = new ConcurrentHashMap<>();
         this.context = context;
     }
 

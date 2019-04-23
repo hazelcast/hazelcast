@@ -51,7 +51,7 @@ public class QueryCacheListenerRegistry implements Registry<String, String> {
     public QueryCacheListenerRegistry(QueryCacheContext context, String mapName) {
         this.context = context;
         this.mapName = mapName;
-        this.listeners = new ConcurrentHashMap<String, String>();
+        this.listeners = new ConcurrentHashMap<>();
     }
 
     @Override

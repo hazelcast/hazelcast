@@ -306,16 +306,13 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
 
         @SuppressWarnings("unchecked")
         private void executeReadOnlyEntryProcessor(final Object oldValue, String executorName) {
-            executionService.execute(executorName, new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Data result = operator(EntryOperation.this, entryProcessor)
-                                .operateOnKeyValue(dataKey, oldValue).getResult();
-                        sendResponse(result);
-                    } catch (Throwable t) {
-                        sendResponse(t);
-                    }
+            executionService.execute(executorName, () -> {
+                try {
+                    Data result = operator(EntryOperation.this, entryProcessor)
+                            .operateOnKeyValue(dataKey, oldValue).getResult();
+                    sendResponse(result);
+                } catch (Throwable t) {
+                    sendResponse(t);
                 }
             });
         }
@@ -335,25 +332,22 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
             lock(finalDataKey, finalCaller, finalThreadId, finalCallId);
 
             try {
-                executionService.execute(executorName, new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            EntryOperator entryOperator = operator(EntryOperation.this, entryProcessor)
-                                    .operateOnKeyValue(dataKey, oldValue);
-                            Data result = entryOperator.getResult();
-                            EntryEventType modificationType = entryOperator.getEventType();
-                            if (modificationType != null) {
-                                Data newValue = serializationService.toData(entryOperator.getNewValue());
-                                updateAndUnlock(serializationService.toData(oldValue),
-                                        newValue, modificationType, finalCaller, finalThreadId, result, finalBegin);
-                            } else {
-                                unlockOnly(result, finalCaller, finalThreadId, finalBegin);
-                            }
-                        } catch (Throwable t) {
-                            getLogger().severe("Unexpected error on Offloadable execution", t);
-                            unlockOnly(t, finalCaller, finalThreadId, finalBegin);
+                executionService.execute(executorName, () -> {
+                    try {
+                        EntryOperator entryOperator = operator(EntryOperation.this, entryProcessor)
+                                .operateOnKeyValue(dataKey, oldValue);
+                        Data result = entryOperator.getResult();
+                        EntryEventType modificationType = entryOperator.getEventType();
+                        if (modificationType != null) {
+                            Data newValue = serializationService.toData(entryOperator.getNewValue());
+                            updateAndUnlock(serializationService.toData(oldValue),
+                                    newValue, modificationType, finalCaller, finalThreadId, result, finalBegin);
+                        } else {
+                            unlockOnly(result, finalCaller, finalThreadId, finalBegin);
                         }
+                    } catch (Throwable t) {
+                        getLogger().severe("Unexpected error on Offloadable execution", t);
+                        unlockOnly(t, finalCaller, finalThreadId, finalBegin);
                     }
                 });
             } catch (Throwable t) {
@@ -408,12 +402,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
                 private void retry(final Operation op) {
                     setUnlockRetryCount++;
                     if (isFastRetryLimitReached()) {
-                        executionService.schedule(new Runnable() {
-                            @Override
-                            public void run() {
-                                operationService.execute(op);
-                            }
-                        }, DEFAULT_TRY_PAUSE_MILLIS, MILLISECONDS);
+                        executionService.schedule(() -> operationService.execute(op), DEFAULT_TRY_PAUSE_MILLIS, MILLISECONDS);
                     } else {
                         operationService.execute(op);
                     }

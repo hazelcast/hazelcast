@@ -46,35 +46,19 @@ public class PartitionContainer {
     private final int partitionId;
     private final MapService mapService;
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
-    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
-    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<String, Indexes>(10);
+    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<>(1000);
+    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<>(10);
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
-            = new ConstructorFunction<String, RecordStore>() {
-
-        @Override
-        public RecordStore createNew(String name) {
-            RecordStore recordStore = createRecordStore(name);
-            recordStore.startLoading();
-            return recordStore;
-        }
-    };
+            = name -> {
+                RecordStore recordStore = createRecordStore(name);
+                recordStore.startLoading();
+                return recordStore;
+            };
     private final ConstructorFunction<String, RecordStore> recordStoreConstructorSkipLoading
-            = new ConstructorFunction<String, RecordStore>() {
-
-        @Override
-        public RecordStore createNew(String name) {
-            return createRecordStore(name);
-        }
-    };
+            = this::createRecordStore;
 
     private final ConstructorFunction<String, RecordStore> recordStoreConstructorForHotRestart
-            = new ConstructorFunction<String, RecordStore>() {
-
-        @Override
-        public RecordStore createNew(String name) {
-            return createRecordStore(name);
-        }
-    };
+            = this::createRecordStore;
     /**
      * Flag to check if there is a {@link com.hazelcast.map.impl.operation.ClearExpiredOperation}
      * running on this partition at this moment or not.
@@ -135,7 +119,7 @@ public class PartitionContainer {
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+        Collection<ServiceNamespace> namespaces = new HashSet<>();
 
         for (RecordStore recordStore : maps.values()) {
             MapContainer mapContainer = recordStore.getMapContainer();
@@ -201,7 +185,7 @@ public class PartitionContainer {
 
     private void clearLockStore(String name) {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
         if (lockService != null) {
             final ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);

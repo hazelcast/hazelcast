@@ -36,7 +36,6 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -174,7 +173,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     private List<Future> doBatchLoad(List<Data> keys) {
         Queue<List<Data>> batchChunks = createBatchChunks(keys);
         int size = batchChunks.size();
-        List<Future> futures = new ArrayList<Future>(size);
+        List<Future> futures = new ArrayList<>(size);
 
         while (!batchChunks.isEmpty()) {
             List<Data> chunk = batchChunks.poll();
@@ -194,7 +193,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * @param keys the keys to be batched
      */
     private Queue<List<Data>> createBatchChunks(List<Data> keys) {
-        Queue<List<Data>> chunks = new LinkedList<List<Data>>();
+        Queue<List<Data>> chunks = new LinkedList<>();
         int loadBatchSize = getLoadBatchSize();
         int page = 0;
         List<Data> tmpKeys;
@@ -232,7 +231,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (entries == null || entries.isEmpty()) {
             return Collections.emptyList();
         }
-        List<Data> keyValueSequence = new ArrayList<Data>(entries.size() * 2);
+        List<Data> keyValueSequence = new ArrayList<>(entries.size() * 2);
         for (Map.Entry<?, ?> entry : entries.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
@@ -310,13 +309,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            Data key = iterator.next();
-            if (!mapDataStore.loadable(key)) {
-                iterator.remove();
-            }
-        }
+        keys.removeIf(key -> !mapDataStore.loadable(key));
     }
 
     /**

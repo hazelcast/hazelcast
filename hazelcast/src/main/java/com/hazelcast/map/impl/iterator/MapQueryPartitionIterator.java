@@ -60,7 +60,7 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
         final ResultSegment segment = invoke(op);
         final QueryResult queryResult = (QueryResult) segment.getResult();
 
-        final List<Data> serialized = new ArrayList<Data>(queryResult.size());
+        final List<Data> serialized = new ArrayList<>(queryResult.size());
         for (QueryResultRow row : queryResult) {
             serialized.add(row.getValue());
         }

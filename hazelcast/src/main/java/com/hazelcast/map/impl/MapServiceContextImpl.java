@@ -127,8 +127,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     protected static final long DESTROY_TIMEOUT_SECONDS = 30;
 
-    protected final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
-    protected final AtomicReference<Collection<Integer>> ownedPartitions = new AtomicReference<Collection<Integer>>();
+    protected final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
+    protected final AtomicReference<Collection<Integer>> ownedPartitions = new AtomicReference<>();
     protected final IndexProvider indexProvider = new DefaultIndexProvider();
     protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
 
@@ -190,12 +190,9 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     ConstructorFunction<String, MapContainer> createMapConstructor() {
-        return new ConstructorFunction<String, MapContainer>() {
-            @Override
-            public MapContainer createNew(String mapName) {
-                MapServiceContext mapServiceContext = getService().getMapServiceContext();
-                return new MapContainer(mapName, nodeEngine.getConfig(), mapServiceContext);
-            }
+        return mapName -> {
+            MapServiceContext mapServiceContext = getService().getMapServiceContext();
+            return new MapContainer(mapName, nodeEngine.getConfig(), mapServiceContext);
         };
     }
 
@@ -328,12 +325,7 @@ class MapServiceContextImpl implements MapServiceContext {
      * @return predicate that matches with all record stores of all maps
      */
     private static Predicate<RecordStore> allRecordStores() {
-        return new Predicate<RecordStore>() {
-            @Override
-            public boolean test(RecordStore recordStore) {
-                return true;
-            }
-        };
+        return recordStore -> true;
     }
 
     @Override
@@ -419,7 +411,7 @@ class MapServiceContextImpl implements MapServiceContext {
      * @param mapContainer the map container to destroy
      */
     private void destroyPartitionsAndMapContainer(MapContainer mapContainer) {
-        final List<LocalRetryableExecution> executions = new ArrayList<LocalRetryableExecution>();
+        final List<LocalRetryableExecution> executions = new ArrayList<>();
 
         for (PartitionContainer container : partitionContainers) {
             final MapPartitionDestroyOperation op = new MapPartitionDestroyOperation(container, mapContainer);
@@ -489,7 +481,7 @@ class MapServiceContextImpl implements MapServiceContext {
         for (; ; ) {
             final Collection<Integer> expected = ownedPartitions.get();
             final Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            final Set<Integer> newSet = Collections.unmodifiableSet(new LinkedHashSet<Integer>(partitions));
+            final Set<Integer> newSet = Collections.unmodifiableSet(new LinkedHashSet<>(partitions));
             if (ownedPartitions.compareAndSet(expected, newSet)) {
                 return;
             }
@@ -854,7 +846,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId) {
-        Collection<RecordStoreMutationObserver<Record>> observers = new LinkedList<RecordStoreMutationObserver<Record>>();
+        Collection<RecordStoreMutationObserver<Record>> observers = new LinkedList<>();
         addEventJournalUpdaterObserver(observers, mapName, partitionId);
         addMetadataInitializerObserver(observers, mapName, partitionId);
 

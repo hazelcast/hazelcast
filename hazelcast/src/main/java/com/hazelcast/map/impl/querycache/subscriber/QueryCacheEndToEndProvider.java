@@ -37,16 +37,11 @@ public class QueryCacheEndToEndProvider<K, V> {
     private final ContextMutexFactory mutexFactory;
     private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryPerMap;
     private final ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryConstructor
-            = new ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>>() {
-        @Override
-        public ConcurrentMap<String, InternalQueryCache<K, V>> createNew(String arg) {
-            return new ConcurrentHashMap<String, InternalQueryCache<K, V>>();
-        }
-    };
+            = arg -> new ConcurrentHashMap<>();
 
     public QueryCacheEndToEndProvider(ContextMutexFactory mutexFactory) {
         this.mutexFactory = mutexFactory;
-        this.queryCacheRegistryPerMap = new ConcurrentHashMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>>();
+        this.queryCacheRegistryPerMap = new ConcurrentHashMap<>();
     }
 
     public InternalQueryCache<K, V> getOrCreateQueryCache(String mapName, String cacheName,

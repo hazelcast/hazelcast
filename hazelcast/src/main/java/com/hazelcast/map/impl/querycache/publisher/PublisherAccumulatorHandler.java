@@ -58,7 +58,7 @@ public class PublisherAccumulatorHandler implements AccumulatorHandler<Sequenced
     @Override
     public void handle(Sequenced eventData, boolean lastElement) {
         if (eventCollection == null) {
-            eventCollection = new ArrayDeque<QueryCacheEventData>();
+            eventCollection = new ArrayDeque<>();
         }
 
         eventCollection.add((QueryCacheEventData) eventData);
@@ -112,11 +112,7 @@ public class PublisherAccumulatorHandler implements AccumulatorHandler<Sequenced
             }
             int partitionId = eventData.getPartitionId();
 
-            List<QueryCacheEventData> eventDataList = map.get(partitionId);
-            if (eventDataList == null) {
-                eventDataList = new ArrayList<QueryCacheEventData>();
-                map.put(partitionId, eventDataList);
-            }
+            List<QueryCacheEventData> eventDataList = map.computeIfAbsent(partitionId, k -> new ArrayList<>());
             eventDataList.add(eventData);
 
         } while (true);

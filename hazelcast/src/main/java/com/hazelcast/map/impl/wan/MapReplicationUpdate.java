@@ -48,7 +48,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
         if (entryView instanceof WanMapEntryView) {
             this.entryView = (WanMapEntryView<Data, Data>) entryView;
         } else {
-            this.entryView = new WanMapEntryView<Data, Data>(entryView);
+            this.entryView = new WanMapEntryView<>(entryView);
         }
     }
 
@@ -92,7 +92,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
         if (entryView instanceof WanMapEntryView) {
             this.entryView = (WanMapEntryView<Data, Data>) entryView;
         } else {
-            this.entryView = new WanMapEntryView<Data, Data>(entryView);
+            this.entryView = new WanMapEntryView<>(entryView);
         }
     }
 

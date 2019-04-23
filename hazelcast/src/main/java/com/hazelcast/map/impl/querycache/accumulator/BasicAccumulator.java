@@ -107,7 +107,7 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
     @Override
     public Iterator<E> iterator() {
         CyclicBuffer<E> buffer = getBuffer();
-        return new ReadOnlyIterator<E>(buffer);
+        return new ReadOnlyIterator<>(buffer);
     }
 
     @Override

@@ -80,7 +80,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
                 if (dataKeys == null) {
-                    dataKeys = new ArrayList<Data>(keys.size());
+                    dataKeys = new ArrayList<>(keys.size());
                 }
                 dataKeys.add(key);
             }
@@ -107,7 +107,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
         super.readInternal(in);
         final int size = in.readInt();
         if (size > 0) {
-            keys = new ArrayList<Data>(size);
+            keys = new ArrayList<>(size);
         }
         for (int i = 0; i < size; i++) {
             Data data = in.readData();

@@ -153,7 +153,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
 
         name = in.readUTF();
         int size = in.readInt();
-        expiredKeys = new LinkedList<ExpiredKey>();
+        expiredKeys = new LinkedList<>();
         for (int i = 0; i < size; i++) {
             expiredKeys.add(new ExpiredKey(in.readData(), in.readLong()));
         }
