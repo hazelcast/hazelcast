@@ -87,13 +87,7 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
         mergePolicy = in.readObject();
-        EntryView<Data, Data> entryView = in.readObject();
-
-        if (entryView instanceof WanMapEntryView) {
-            this.entryView = (WanMapEntryView<Data, Data>) entryView;
-        } else {
-            this.entryView = new WanMapEntryView<>(entryView);
-        }
+        entryView = in.readObject();
     }
 
     @Override
