@@ -37,12 +37,9 @@ public class JsonMetadataInitializer implements MetadataInitializer {
 
     public Object createFromData(Data data) throws IOException {
         if (data.isJson()) {
-            JsonParser parser = FACTORY.createParser(new ByteArrayInputStream(data.toByteArray(),
-                    HEAP_DATA_OVERHEAD + UTF_CHAR_COUNT_FIELD_SIZE, data.dataSize() - UTF_CHAR_COUNT_FIELD_SIZE));
-            try {
+            try (JsonParser parser = FACTORY.createParser(new ByteArrayInputStream(data.toByteArray(),
+                    HEAP_DATA_OVERHEAD + UTF_CHAR_COUNT_FIELD_SIZE, data.dataSize() - UTF_CHAR_COUNT_FIELD_SIZE))) {
                 return JsonSchemaHelper.createSchema(parser);
-            } finally {
-                parser.close();
             }
         }
         return null;
@@ -51,11 +48,8 @@ public class JsonMetadataInitializer implements MetadataInitializer {
     public Object createFromObject(Object obj) throws IOException {
         if (obj instanceof HazelcastJsonValue) {
             String str = obj.toString();
-            JsonParser parser = FACTORY.createParser(str);
-            try {
+            try (JsonParser parser = FACTORY.createParser(str)) {
                 return JsonSchemaHelper.createSchema(parser);
-            } finally {
-                parser.close();
             }
         }
         return null;

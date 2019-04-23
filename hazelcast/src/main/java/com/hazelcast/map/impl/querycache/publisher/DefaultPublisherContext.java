@@ -68,7 +68,7 @@ public class DefaultPublisherContext implements PublisherContext {
         this.mapPublisherRegistry = new MapPublisherRegistry(context);
         this.accumulatorInfoSupplier = new DefaultAccumulatorInfoSupplier();
         this.listenerRegistrator = listenerRegistrator;
-        this.removalCandidateFutures = new ConcurrentHashMap<String, ScheduledFuture>();
+        this.removalCandidateFutures = new ConcurrentHashMap<>();
 
         startBackgroundAccumulatorScanner();
         handleSubscriberAddRemove();
@@ -125,7 +125,7 @@ public class DefaultPublisherContext implements PublisherContext {
     }
 
     private Collection<PartitionAccumulatorRegistry> getRemovalCandidates(String uuid) {
-        List<PartitionAccumulatorRegistry> candidates = new ArrayList<PartitionAccumulatorRegistry>();
+        List<PartitionAccumulatorRegistry> candidates = new ArrayList<>();
         MapPublisherRegistry mapPublisherRegistry = getMapPublisherRegistry();
         Map<String, PublisherRegistry> all = mapPublisherRegistry.getAll();
         for (PublisherRegistry publisherRegistry : all.values()) {
@@ -157,12 +157,9 @@ public class DefaultPublisherContext implements PublisherContext {
 
     private void startRemovalTask(final Collection<PartitionAccumulatorRegistry> removalCandidates, String uuid) {
         QueryCacheScheduler queryCacheScheduler = context.getQueryCacheScheduler();
-        ScheduledFuture scheduledFuture = queryCacheScheduler.scheduleWithRepetition(new Runnable() {
-            @Override
-            public void run() {
-                for (PartitionAccumulatorRegistry registry : removalCandidates) {
-                    removePartitionAccumulatorRegistry(registry);
-                }
+        ScheduledFuture scheduledFuture = queryCacheScheduler.scheduleWithRepetition(() -> {
+            for (PartitionAccumulatorRegistry registry : removalCandidates) {
+                removePartitionAccumulatorRegistry(registry);
             }
         }, ORPHANED_QUERY_CACHE_REMOVAL_DELAY_SECONDS);
 

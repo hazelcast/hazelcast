@@ -35,19 +35,14 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class MapSubscriberRegistry implements Registry<String, SubscriberRegistry> {
 
     private final ConstructorFunction<String, SubscriberRegistry> registryConstructorFunction =
-            new ConstructorFunction<String, SubscriberRegistry>() {
-                @Override
-                public SubscriberRegistry createNew(String mapName) {
-                    return createSubscriberRegistry(mapName);
-                }
-            };
+            this::createSubscriberRegistry;
 
     private final QueryCacheContext context;
     private final ConcurrentMap<String, SubscriberRegistry> cachePublishersPerIMap;
 
     public MapSubscriberRegistry(QueryCacheContext context) {
         this.context = context;
-        this.cachePublishersPerIMap = new ConcurrentHashMap<String, SubscriberRegistry>();
+        this.cachePublishersPerIMap = new ConcurrentHashMap<>();
     }
 
     @Override

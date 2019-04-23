@@ -86,7 +86,7 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
         mergingEntries = new List[partitions.length];
         for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
             int size = in.readInt();
-            List<MapMergeTypes> list = new ArrayList<MapMergeTypes>(size);
+            List<MapMergeTypes> list = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 MapMergeTypes mergingEntry = in.readObject();
                 list.add(mergingEntry);

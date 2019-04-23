@@ -88,7 +88,7 @@ public class MerkleTreeNodeEntries implements IdentifiedDataSerializable {
         int entryCount = in.readInt();
         Builder<EntryView<Data, Data>> entries = InflatableSet.newBuilder(entryCount);
         for (int j = 0; j < entryCount; j++) {
-            entries.add(in.<EntryView<Data, Data>>readObject());
+            entries.add(in.readObject());
         }
         nodeEntries = entries.build();
     }

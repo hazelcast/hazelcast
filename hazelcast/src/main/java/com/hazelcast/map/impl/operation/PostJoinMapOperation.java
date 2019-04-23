@@ -50,7 +50,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable, Versioned, TargetAware {
 
-    private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();
+    private List<InterceptorInfo> interceptorInfoList = new LinkedList<>();
     private List<AccumulatorInfo> infoList;
 
     @Override
@@ -76,7 +76,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     public static class InterceptorInfo implements IdentifiedDataSerializable {
 
         private String mapName;
-        private final List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
+        private final List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<>();
 
         InterceptorInfo(String mapName) {
             this.mapName = mapName;
@@ -86,7 +86,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         }
 
         void addInterceptor(String id, MapInterceptor interceptor) {
-            interceptors.add(new AbstractMap.SimpleImmutableEntry<String, MapInterceptor>(id, interceptor));
+            interceptors.add(new AbstractMap.SimpleImmutableEntry<>(id, interceptor));
         }
 
         @Override
@@ -106,7 +106,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
             for (int i = 0; i < size; i++) {
                 String id = in.readUTF();
                 MapInterceptor interceptor = in.readObject();
-                interceptors.add(new AbstractMap.SimpleImmutableEntry<String, MapInterceptor>(id, interceptor));
+                interceptors.add(new AbstractMap.SimpleImmutableEntry<>(id, interceptor));
             }
         }
 
@@ -153,11 +153,8 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
             PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrCreate(info.getMapName());
             publisherRegistry.getOrCreate(info.getCacheId());
             // marker listener.
-            mapServiceContext.addLocalListenerAdapter(new ListenerAdapter<IMapEvent>() {
-                @Override
-                public void onEvent(IMapEvent event) {
+            mapServiceContext.addLocalListenerAdapter((ListenerAdapter<IMapEvent>) event -> {
 
-                }
             }, info.getMapName());
         }
     }
@@ -202,7 +199,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
             infoList = Collections.emptyList();
             return;
         }
-        infoList = new ArrayList<AccumulatorInfo>(accumulatorsCount);
+        infoList = new ArrayList<>(accumulatorsCount);
         for (int i = 0; i < accumulatorsCount; i++) {
             AccumulatorInfo info = in.readObject();
             infoList.add(info);

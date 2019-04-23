@@ -18,8 +18,6 @@ package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -87,12 +85,9 @@ public class NodeQueryCacheContext implements QueryCacheContext {
     private void flushPublishersOnNodeShutdown() {
         Node node = ((NodeEngineImpl) this.nodeEngine).getNode();
         LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
-        lifecycleService.addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (SHUTTING_DOWN == event.getState()) {
-                    publisherContext.flush();
-                }
+        lifecycleService.addLifecycleListener(event -> {
+            if (SHUTTING_DOWN == event.getState()) {
+                publisherContext.flush();
             }
         });
     }
@@ -145,7 +140,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
     @Override
     public Collection<Member> getMemberList() {
         Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberImpls();
-        List<Member> members = new ArrayList<Member>(memberList.size());
+        List<Member> members = new ArrayList<>(memberList.size());
         members.addAll(memberList);
         return members;
     }

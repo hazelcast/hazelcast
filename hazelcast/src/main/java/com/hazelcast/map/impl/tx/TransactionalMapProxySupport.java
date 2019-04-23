@@ -53,7 +53,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  */
 public abstract class TransactionalMapProxySupport extends TransactionalDistributedObject<MapService> {
 
-    protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
+    protected final Map<Data, VersionedValue> valueMap = new HashMap<>();
 
     protected final String name;
     protected final MapServiceContext mapServiceContext;

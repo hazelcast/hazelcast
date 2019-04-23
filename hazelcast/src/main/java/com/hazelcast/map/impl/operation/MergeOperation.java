@@ -76,10 +76,10 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
 
         if (hasBackups) {
             mapEntries = new MapEntries(mergingEntries.size());
-            backupRecordInfos = new ArrayList<RecordInfo>(mergingEntries.size());
+            backupRecordInfos = new ArrayList<>(mergingEntries.size());
         }
         if (hasInvalidation) {
-            invalidationKeys = new ArrayList<Data>(mergingEntries.size());
+            invalidationKeys = new ArrayList<>(mergingEntries.size());
         }
 
         for (MapMergeTypes mergingEntry : mergingEntries) {
@@ -177,7 +177,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        mergingEntries = new ArrayList<MapMergeTypes>(size);
+        mergingEntries = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             MapMergeTypes mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);

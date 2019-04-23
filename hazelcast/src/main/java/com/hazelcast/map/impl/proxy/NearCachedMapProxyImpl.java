@@ -129,7 +129,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         Object value = getCachedValue(ncKey, false);
         if (value != NOT_CACHED) {
             ExecutionService executionService = getNodeEngine().getExecutionService();
-            return new CompletedFuture<Data>(serializationService, value, executionService.getExecutor(ASYNC_EXECUTOR));
+            return new CompletedFuture<>(serializationService, value, executionService.getExecutor(ASYNC_EXECUTOR));
         }
 
         final Data keyData = toDataWithStrategy(key);
@@ -388,7 +388,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (serializeKeys) {
             toDataKeysWithReservations(keys, dataKeys, null, null);
         }
-        Collection<?> ncKeys = serializeKeys ? dataKeys : new LinkedList<K>(keys);
+        Collection<?> ncKeys = serializeKeys ? dataKeys : new LinkedList<>(keys);
 
         populateResultFromNearCache(ncKeys, resultingKeyValuePairs);
         if (ncKeys.isEmpty()) {

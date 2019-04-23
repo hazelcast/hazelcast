@@ -40,17 +40,14 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class PublisherRegistry implements Registry<String, PartitionAccumulatorRegistry> {
 
     private final ConstructorFunction<String, PartitionAccumulatorRegistry> partitionAccumulatorRegistryConstructor =
-            new ConstructorFunction<String, PartitionAccumulatorRegistry>() {
-                @Override
-                public PartitionAccumulatorRegistry createNew(String cacheId) {
-                    AccumulatorInfo info = getAccumulatorInfo(cacheId);
-                    checkNotNull(info, "info cannot be null");
+            cacheId -> {
+                AccumulatorInfo info = getAccumulatorInfo(cacheId);
+                checkNotNull(info, "info cannot be null");
 
-                    AccumulatorFactory accumulatorFactory = createPublisherAccumulatorFactory();
-                    ConstructorFunction<Integer, Accumulator> constructor
-                            = new PublisherAccumulatorConstructor(info, accumulatorFactory);
-                    return new PartitionAccumulatorRegistry(info, constructor);
-                }
+                AccumulatorFactory accumulatorFactory = createPublisherAccumulatorFactory();
+                ConstructorFunction<Integer, Accumulator> constructor
+                        = new PublisherAccumulatorConstructor(info, accumulatorFactory);
+                return new PartitionAccumulatorRegistry(info, constructor);
             };
 
     private final String mapName;
@@ -60,7 +57,7 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
     public PublisherRegistry(QueryCacheContext context, String mapName) {
         this.context = context;
         this.mapName = mapName;
-        this.partitionAccumulators = new ConcurrentHashMap<String, PartitionAccumulatorRegistry>();
+        this.partitionAccumulators = new ConcurrentHashMap<>();
     }
 
     @Override

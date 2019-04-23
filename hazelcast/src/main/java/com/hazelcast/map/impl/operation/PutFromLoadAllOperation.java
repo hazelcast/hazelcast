@@ -96,7 +96,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         }
 
         if (invalidationKeys == null) {
-            invalidationKeys = new ArrayList<Data>(keyValueSequence.size() / 2);
+            invalidationKeys = new ArrayList<>(keyValueSequence.size() / 2);
         }
 
         invalidationKeys.add(key);
@@ -158,7 +158,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         if (size < 1) {
             keyValueSequence = Collections.emptyList();
         } else {
-            final List<Data> tmpKeyValueSequence = new ArrayList<Data>(size);
+            final List<Data> tmpKeyValueSequence = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 final Data data = in.readData();
                 tmpKeyValueSequence.add(data);

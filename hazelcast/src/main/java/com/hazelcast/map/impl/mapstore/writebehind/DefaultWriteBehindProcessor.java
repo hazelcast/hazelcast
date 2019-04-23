@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,13 +39,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEntry> {
 
-    private static final Comparator<DelayedEntry> DELAYED_ENTRY_COMPARATOR = new Comparator<DelayedEntry>() {
-        @Override
-        public int compare(DelayedEntry o1, DelayedEntry o2) {
-            final long s1 = o1.getStoreTime();
-            final long s2 = o2.getStoreTime();
-            return (s1 < s2) ? -1 : ((s1 == s2) ? 0 : 1);
-        }
+    private static final Comparator<DelayedEntry> DELAYED_ENTRY_COMPARATOR = (o1, o2) -> {
+        final long s1 = o1.getStoreTime();
+        final long s2 = o2.getStoreTime();
+        return Long.compare(s1, s2);
     };
 
     private static final int RETRY_TIMES_OF_A_FAILED_STORE_OPERATION = 3;
@@ -57,7 +53,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
 
     DefaultWriteBehindProcessor(MapStoreContext mapStoreContext) {
         super(mapStoreContext);
-        this.storeListeners = new ArrayList<StoreListener>(2);
+        this.storeListeners = new ArrayList<>(2);
     }
 
     @Override
@@ -77,8 +73,8 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         if (delayedEntries == null || delayedEntries.isEmpty()) {
             return Collections.emptyMap();
         }
-        final Map<Integer, List<DelayedEntry>> failuresByPartition = new HashMap<Integer, List<DelayedEntry>>();
-        final List<DelayedEntry> entriesToProcess = new ArrayList<DelayedEntry>();
+        final Map<Integer, List<DelayedEntry>> failuresByPartition = new HashMap<>();
+        final List<DelayedEntry> entriesToProcess = new ArrayList<>();
         StoreOperationType operationType = null;
         StoreOperationType previousOperationType;
         // process entries by preserving order.
@@ -108,11 +104,8 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         }
         for (DelayedEntry entry : fails) {
             final int partitionId = entry.getPartitionId();
-            List<DelayedEntry> delayedEntriesPerPartition = failsPerPartition.get(partitionId);
-            if (delayedEntriesPerPartition == null) {
-                delayedEntriesPerPartition = new ArrayList<DelayedEntry>();
-                failsPerPartition.put(partitionId, delayedEntriesPerPartition);
-            }
+            List<DelayedEntry> delayedEntriesPerPartition
+                    = failsPerPartition.computeIfAbsent(partitionId, k -> new ArrayList<>());
             delayedEntriesPerPartition.add(entry);
         }
     }
@@ -125,7 +118,8 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
      * @param delayedEntries sorted entries to be processed.
      * @return failed entry list if any.
      */
-    private List<DelayedEntry> callHandler(Collection<DelayedEntry> delayedEntries, StoreOperationType operationType) {
+    private List<DelayedEntry> callHandler(Collection<DelayedEntry> delayedEntries,
+                                           StoreOperationType operationType) {
         final int size = delayedEntries.size();
         if (size == 0) {
             return Collections.emptyList();
@@ -150,7 +144,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             return callSingleStoreWithListeners(delayedEntry, operationType);
         }
         final List<DelayedEntry> failedEntryList = callBatchStoreWithListeners(batchMap, operationType);
-        final List<DelayedEntry> failedTries = new ArrayList<DelayedEntry>();
+        final List<DelayedEntry> failedTries = new ArrayList<>();
         for (DelayedEntry entry : failedEntryList) {
             final Collection<DelayedEntry> tmpFails = callSingleStoreWithListeners(entry, operationType);
             failedTries.addAll(tmpFails);
@@ -248,12 +242,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                 try {
                     result = operationType.processBatch(map, mapStore);
                 } catch (Exception ex) {
-                    Iterator<Object> keys = batchMap.keySet().iterator();
-                    while (keys.hasNext()) {
-                        if (!map.containsKey(toObject(keys.next()))) {
-                            keys.remove();
-                        }
-                    }
+                    batchMap.keySet().removeIf(o -> !map.containsKey(toObject(o)));
                     throw ex;
                 }
                 callAfterStoreListeners(batchMap.values());
@@ -262,7 +251,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
 
             @Override
             public List<DelayedEntry> failureList() {
-                failedDelayedEntries = new ArrayList<DelayedEntry>(batchMap.values().size());
+                failedDelayedEntries = new ArrayList<>(batchMap.values().size());
                 failedDelayedEntries.addAll(batchMap.values());
                 return failedDelayedEntries;
             }
@@ -301,7 +290,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             return;
         }
 
-        List<DelayedEntry> delayedEntries = new ArrayList<DelayedEntry>(size);
+        List<DelayedEntry> delayedEntries = new ArrayList<>(size);
         queue.drainTo(delayedEntries);
         flushInternal(delayedEntries);
     }
@@ -346,7 +335,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
      * @return not-stored entries per partition.
      */
     private Map<Integer, List<DelayedEntry>> doStoreUsingBatchSize(List<DelayedEntry> sortedDelayedEntries) {
-        Map<Integer, List<DelayedEntry>> failsPerPartition = new HashMap<Integer, List<DelayedEntry>>();
+        Map<Integer, List<DelayedEntry>> failsPerPartition = new HashMap<>();
         int page = 0;
         List<DelayedEntry> delayedEntryList;
         while ((delayedEntryList = getBatchChunk(sortedDelayedEntries, writeBatchSize, page++)) != null) {

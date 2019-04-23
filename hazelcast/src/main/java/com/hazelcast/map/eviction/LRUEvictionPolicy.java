@@ -38,7 +38,7 @@ public class LRUEvictionPolicy extends MapEvictionPolicy implements IdentifiedDa
     public int compare(EntryView entryView1, EntryView entryView2) {
         long lastAccessTime1 = entryView1.getLastAccessTime();
         long lastAccessTime2 = entryView2.getLastAccessTime();
-        return (lastAccessTime1 < lastAccessTime2) ? -1 : ((lastAccessTime1 == lastAccessTime2) ? 0 : 1);
+        return Long.compare(lastAccessTime1, lastAccessTime2);
     }
 
     @Override

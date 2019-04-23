@@ -72,7 +72,7 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
 
     protected void runUsingPartitionScanWithoutPaging(String name, Predicate predicate, Collection<Integer> partitions,
                                                       Result result) {
-        List<Future<Result>> futures = new ArrayList<Future<Result>>(partitions.size());
+        List<Future<Result>> futures = new ArrayList<>(partitions.size());
 
         for (Integer partitionId : partitions) {
             Future<Result> future = runPartitionScanForPartition(name, predicate, partitionId, result.createSubResult());

@@ -60,7 +60,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
     protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
-    protected final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<ExpiredKey>();
+    protected final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
@@ -139,7 +139,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         int checkedEntryCount = 0;
         initExpirationIterator();
 
-        LinkedList<Record> records = new LinkedList<Record>();
+        LinkedList<Record> records = new LinkedList<>();
         while (expirationIterator.hasNext()) {
             if (checkedEntryCount >= maxIterationCount) {
                 break;
@@ -172,7 +172,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public void sampleAndForceRemoveEntries(int entryCountToRemove) {
-        Queue<Data> keysToRemove = new LinkedList<Data>();
+        Queue<Data> keysToRemove = new LinkedList<>();
         Iterable<EntryView> sample = storage.getRandomSamples(entryCountToRemove);
         for (EntryView entryView : sample) {
             Data dataKey = storage.extractRecordFromLazy(entryView).getKey();

@@ -45,7 +45,7 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
 
     private final SubscriberSequencerProvider sequenceProvider;
     /** When a partition's sequence order is broken, it will be registered here.*/
-    private final ConcurrentMap<Integer, Long> brokenSequences = new ConcurrentHashMap<Integer, Long>();
+    private final ConcurrentMap<Integer, Long> brokenSequences = new ConcurrentHashMap<>();
 
     protected SubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);

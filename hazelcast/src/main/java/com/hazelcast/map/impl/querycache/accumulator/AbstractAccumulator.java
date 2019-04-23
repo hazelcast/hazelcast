@@ -39,7 +39,7 @@ abstract class AbstractAccumulator<E extends Sequenced> implements Accumulator<E
         this.context = context;
         this.info = info;
         this.partitionSequencer = new DefaultPartitionSequencer();
-        this.buffer = new DefaultCyclicBuffer<E>(info.getBufferSize());
+        this.buffer = new DefaultCyclicBuffer<>(info.getBufferSize());
     }
 
     public CyclicBuffer<E> getBuffer() {

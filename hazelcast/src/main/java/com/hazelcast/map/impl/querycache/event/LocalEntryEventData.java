@@ -144,7 +144,7 @@ public class LocalEntryEventData<K, V> implements EventData {
     }
 
     public LocalEntryEventData<K, V> cloneWithoutValue() {
-        return new LocalEntryEventData<K, V>(serializationService, source, eventType, key, null, null, partitionId);
+        return new LocalEntryEventData<>(serializationService, source, eventType, key, null, null, partitionId);
     }
 
     @Override

@@ -195,7 +195,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
             return;
         }
         if (partitionIds == null) {
-            partitionIds = new ArrayList<Integer>(otherPartitionIds.size());
+            partitionIds = new ArrayList<>(otherPartitionIds.size());
         }
         partitionIds.addAll(otherPartitionIds);
         rows.addAll(result.rows);
@@ -207,7 +207,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
 
     @Override
     public void setPartitionIds(Collection<Integer> partitionIds) {
-        this.partitionIds = new ArrayList<Integer>(partitionIds);
+        this.partitionIds = new ArrayList<>(partitionIds);
     }
 
     /**
@@ -252,7 +252,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
     public void readData(ObjectDataInput in) throws IOException {
         int partitionSize = in.readInt();
         if (partitionSize > 0) {
-            partitionIds = new ArrayList<Integer>(partitionSize);
+            partitionIds = new ArrayList<>(partitionSize);
             for (int i = 0; i < partitionSize; i++) {
                 partitionIds.add(in.readInt());
             }

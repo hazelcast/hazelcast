@@ -155,7 +155,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
             if (!(filter instanceof MapPartitionLostEventFilter)) {
                 if (registrations == null) {
-                    registrations = new ArrayList<EventRegistration>();
+                    registrations = new ArrayList<>();
                 }
                 registrations.add(registration);
             }
@@ -283,7 +283,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     @Override
     public void publishMapPartitionLostEvent(Address caller, String mapName, int partitionId) {
-        Collection<EventRegistration> registrations = new LinkedList<EventRegistration>();
+        Collection<EventRegistration> registrations = new LinkedList<>();
         for (EventRegistration registration : getRegistrations(mapName)) {
             if (registration.getFilter() instanceof MapPartitionLostEventFilter) {
                 registrations.add(registration);

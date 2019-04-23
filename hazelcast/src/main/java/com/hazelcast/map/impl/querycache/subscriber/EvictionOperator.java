@@ -77,12 +77,7 @@ class EvictionOperator {
     }
 
     private EvictionChecker createCacheEvictionChecker() {
-        return new EvictionChecker() {
-            @Override
-            public boolean isEvictionRequired() {
-                return cache.size() >= evictionConfig.getSize();
-            }
-        };
+        return () -> cache.size() >= evictionConfig.getSize();
     }
 
     private EvictionPolicyEvaluator<Data, QueryCacheRecord> createEvictionPolicyEvaluator() {

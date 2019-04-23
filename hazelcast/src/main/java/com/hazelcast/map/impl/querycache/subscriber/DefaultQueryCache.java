@@ -149,7 +149,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         SubscriberContextSupport subscriberContextSupport = subscriberContext.getSubscriberContextSupport();
 
-        List<Future<Object>> futures = new ArrayList<Future<Object>>(numberOfBrokenSequences);
+        List<Future<Object>> futures = new ArrayList<>(numberOfBrokenSequences);
         for (Map.Entry<Integer, Long> entry : brokenSequences.entrySet()) {
             Integer partitionId = entry.getKey();
             Long sequence = entry.getValue();
@@ -198,7 +198,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             subscriberContext.getEventService().removePublisherListener(mapName, cacheId, publisherListenerId);
 
             Collection<Member> memberList = context.getMemberList();
-            List<Future> futures = new ArrayList<Future>(memberList.size());
+            List<Future> futures = new ArrayList<>(memberList.size());
 
             for (Member member : memberList) {
                 Address address = member.getAddress();
@@ -332,7 +332,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        Set<K> resultingSet = new HashSet<K>();
+        Set<K> resultingSet = new HashSet<>();
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
@@ -351,12 +351,12 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        Set<Map.Entry<K, V>> resultingSet = new HashSet<Map.Entry<K, V>>();
+        Set<Map.Entry<K, V>> resultingSet = new HashSet<>();
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
             for (QueryableEntry entry : query) {
-                Map.Entry<K, V> copyEntry = new CachedQueryEntry<K, V>(serializationService, entry.getKeyData(),
+                Map.Entry<K, V> copyEntry = new CachedQueryEntry<>(serializationService, entry.getKeyData(),
                         entry.getValueData(), null);
                 resultingSet.add(copyEntry);
             }
@@ -374,7 +374,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return Collections.emptySet();
         }
 
-        List<Data> resultingList = new ArrayList<Data>();
+        List<Data> resultingList = new ArrayList<>();
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
@@ -384,7 +384,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         } else {
             doFullValueScan(predicate, resultingList);
         }
-        return new UnmodifiableLazyList<V>(resultingList, serializationService);
+        return new UnmodifiableLazyList<>(resultingList, serializationService);
     }
 
     @Override
