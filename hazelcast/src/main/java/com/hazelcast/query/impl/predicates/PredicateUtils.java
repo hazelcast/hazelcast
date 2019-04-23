@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.AndResultSet;
 import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -68,24 +67,6 @@ public final class PredicateUtils {
     }
 
     /**
-     * @return {@code true} if the given predicate is a {@link RangePredicate},
-     * {@code false} otherwise.
-     */
-    public static boolean isRangePredicate(Predicate predicate) {
-        // XXX: NotEqualPredicate is a subclass of EqualPredicate
-        return predicate instanceof RangePredicate && !(predicate instanceof NotEqualPredicate);
-    }
-
-    /**
-     * @return {@code true} if the given predicate is an {@link EqualPredicate},
-     * {@code false} otherwise.
-     */
-    public static boolean isEqualPredicate(Predicate predicate) {
-        // XXX: NotEqualPredicate is a subclass of EqualPredicate
-        return predicate instanceof EqualPredicate && !(predicate instanceof NotEqualPredicate);
-    }
-
-    /**
      * Produces canonical attribute representation by stripping an unnecessary
      * "this." qualifier from the passed attribute, if any.
      *
@@ -123,7 +104,7 @@ public final class PredicateUtils {
             throw new IllegalArgumentException("Too many composite index attributes: " + name);
         }
 
-        Set<String> seenComponents = new HashSet<String>(components.length);
+        Set<String> seenComponents = new HashSet<>(components.length);
         for (int i = 0; i < components.length; ++i) {
             String component = PredicateUtils.canonicalizeAttribute(components[i]);
             components[i] = component;
