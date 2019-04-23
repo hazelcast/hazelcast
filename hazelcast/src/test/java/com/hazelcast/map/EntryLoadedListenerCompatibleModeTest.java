@@ -93,7 +93,7 @@ public class EntryLoadedListenerCompatibleModeTest extends HazelcastTestSupport 
 
         private final AtomicInteger addEventCount;
 
-        public AddListener(AtomicInteger addEventCount) {
+        AddListener(AtomicInteger addEventCount) {
             this.addEventCount = addEventCount;
         }
 

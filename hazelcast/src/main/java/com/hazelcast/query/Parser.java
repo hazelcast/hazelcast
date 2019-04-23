@@ -79,7 +79,7 @@ class Parser {
     private static final String IN_UPPER = " IN ";
     private static final String IN_UPPER_P = " IN(";
 
-    public Parser() {
+    Parser() {
     }
 
     public List<String> toPrefix(String in) {

@@ -74,8 +74,8 @@ class HazelcastOSGiInstanceImpl
     private final HazelcastInstance delegatedInstance;
     private final HazelcastOSGiService ownerService;
 
-    public HazelcastOSGiInstanceImpl(HazelcastInstance delegatedInstance,
-                                     HazelcastOSGiService ownerService) {
+    HazelcastOSGiInstanceImpl(HazelcastInstance delegatedInstance,
+                              HazelcastOSGiService ownerService) {
         this.delegatedInstance = delegatedInstance;
         this.ownerService = ownerService;
     }

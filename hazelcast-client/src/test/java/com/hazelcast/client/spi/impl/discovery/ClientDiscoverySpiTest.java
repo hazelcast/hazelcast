@@ -602,8 +602,8 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         private final List<DiscoveryNode> discoveryNodes;
         private final DiscoveryNode discoveryNode;
 
-        public CollectingDiscoveryStrategy(DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes, ILogger logger,
-                                           Map<String, Comparable> properties) {
+        CollectingDiscoveryStrategy(DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes, ILogger logger,
+                                    Map<String, Comparable> properties) {
             super(logger, properties);
             this.discoveryNodes = discoveryNodes;
             this.discoveryNode = discoveryNode;
@@ -668,9 +668,9 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         private final List<DiscoveryNode> discoveryNodes;
         private final DiscoveryNode discoveryNode;
 
-        public LifecycleDiscoveryStrategy(CountDownLatch startLatch, CountDownLatch stopLatch,
-                                          DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes,
-                                          ILogger logger, Map<String, Comparable> properties) {
+        LifecycleDiscoveryStrategy(CountDownLatch startLatch, CountDownLatch stopLatch,
+                                   DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes,
+                                   ILogger logger, Map<String, Comparable> properties) {
             super(logger, properties);
             this.startLatch = startLatch;
             this.stopLatch = stopLatch;
@@ -716,7 +716,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     }
 
     private static class NoMemberDiscoveryStrategy extends AbstractDiscoveryStrategy {
-        public NoMemberDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+        NoMemberDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
             super(logger, properties);
         }
 

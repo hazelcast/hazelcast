@@ -220,7 +220,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         public int runDelayMs = 1;
         public int backupRunDelayMs = 0;
 
-        public StressThread() {
+        StressThread() {
             super("StressThread-" + THREAD_ID_GENERATOR.incrementAndGet());
         }
 
@@ -318,10 +318,10 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         int runDelayMs = 1;
         int backupRunDelayMs = 0;
 
-        public DummyOperation() {
+        DummyOperation() {
         }
 
-        public DummyOperation(long result) {
+        DummyOperation(long result) {
             this.result = result;
         }
 

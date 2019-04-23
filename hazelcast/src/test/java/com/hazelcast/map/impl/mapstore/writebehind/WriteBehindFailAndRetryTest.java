@@ -197,7 +197,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
     private static class TemporaryMapStoreException extends RuntimeException {
 
-        public TemporaryMapStoreException() {
+        TemporaryMapStoreException() {
             super("Test exception");
         }
     }

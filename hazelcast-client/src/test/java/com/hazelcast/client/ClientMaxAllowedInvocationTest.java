@@ -236,7 +236,7 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         final ILogger logger = Logger.getLogger(getClass());
         final CountDownLatch countDownLatch;
 
-        public SleepyCallback(CountDownLatch countDownLatch) {
+        SleepyCallback(CountDownLatch countDownLatch) {
             this.countDownLatch = countDownLatch;
         }
 

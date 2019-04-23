@@ -84,6 +84,7 @@ import static java.util.Collections.emptyList;
 /**
  * Default implementation of record-store.
  */
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     protected final ILogger logger;

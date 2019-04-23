@@ -85,7 +85,7 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class LongFieldProbe<S> extends FieldProbe implements LongProbeFunction<S> {
 
-        public LongFieldProbe(Field field, Probe probe, int type) {
+        LongFieldProbe(Field field, Probe probe, int type) {
             super(field, probe, type);
         }
 
@@ -117,7 +117,7 @@ abstract class FieldProbe implements ProbeFunction {
 
     static class DoubleFieldProbe<S> extends FieldProbe implements DoubleProbeFunction<S> {
 
-        public DoubleFieldProbe(Field field, Probe probe, int type) {
+        DoubleFieldProbe(Field field, Probe probe, int type) {
             super(field, probe, type);
         }
 

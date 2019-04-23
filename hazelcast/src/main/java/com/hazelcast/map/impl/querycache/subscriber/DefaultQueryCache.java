@@ -75,8 +75,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 @SuppressWarnings("checkstyle:methodcount")
 class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
-    public DefaultQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
-                             IMap delegate, QueryCacheContext context) {
+    DefaultQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
+                      IMap delegate, QueryCacheContext context) {
         super(cacheId, cacheName, queryCacheConfig, delegate, context);
     }
 

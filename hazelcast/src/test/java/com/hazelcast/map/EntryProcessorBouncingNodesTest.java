@@ -182,7 +182,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         private List<Integer> list = new ArrayList<Integer>();
         private int size;
 
-        public ListHolder() {
+        ListHolder() {
         }
 
         @Override

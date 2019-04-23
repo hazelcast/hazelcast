@@ -81,7 +81,7 @@ public class Issue7317Test extends HazelcastTestSupport {
         private final CountDownLatch cdl;
         private long seq;
 
-        public Issue7317MessageListener(List<String> messages, CountDownLatch cdl) {
+        Issue7317MessageListener(List<String> messages, CountDownLatch cdl) {
             this.messages = messages;
             this.cdl = cdl;
         }

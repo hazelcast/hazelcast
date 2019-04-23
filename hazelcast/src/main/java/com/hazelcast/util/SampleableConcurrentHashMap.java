@@ -136,6 +136,9 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
 
     /**
      * Entry to define keys and values for sampling.
+     *
+     * @param <K> type of key
+     * @param <V> type of value
      */
     public static class SamplingEntry<K, V> {
 

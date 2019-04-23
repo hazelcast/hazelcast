@@ -19,7 +19,7 @@ package com.hazelcast.query.impl.getters;
 final class ThisGetter extends Getter {
     private final Object object;
 
-    public ThisGetter(final Getter parent, Object object) {
+    ThisGetter(final Getter parent, Object object) {
         super(parent);
         this.object = object;
     }

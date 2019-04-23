@@ -258,7 +258,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
 
         private final MemoryAllocator delegate;
 
-        public MemoryAllocatorWithStats(MemoryAllocator delegate) {
+        MemoryAllocatorWithStats(MemoryAllocator delegate) {
             this.delegate = delegate;
         }
 

@@ -106,7 +106,7 @@ public class IdGeneratorStressTest extends HazelcastTestSupport {
 
         IdGenerator idGenerator;
 
-        public IdGeneratorCallable(IdGenerator idGenerator) {
+        IdGeneratorCallable(IdGenerator idGenerator) {
             this.idGenerator = idGenerator;
         }
 

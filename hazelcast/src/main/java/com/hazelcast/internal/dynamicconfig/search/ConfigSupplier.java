@@ -40,7 +40,7 @@ public interface ConfigSupplier<T extends IdentifiedDataSerializable> {
      * @return configuration if found, or <code>null</code>
      */
     @Nullable
-    T getDynamicConfig(@Nonnull final ConfigurationService configurationService, @Nonnull final String name);
+    T getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name);
 
     /**
      * Get static configuration for the given name
@@ -50,12 +50,12 @@ public interface ConfigSupplier<T extends IdentifiedDataSerializable> {
      * @return configuration if found, or <code>null</code>
      */
     @Nullable
-    T getStaticConfig(@Nonnull final Config staticConfig, @Nonnull final String name);
+    T getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name);
 
     /**
      * Get all static configs for the given config type.
      * @param staticConfig static config
      * @return name-to-config map
      */
-    Map<String, T> getStaticConfigs(@Nonnull final Config staticConfig);
+    Map<String, T> getStaticConfigs(@Nonnull Config staticConfig);
 }

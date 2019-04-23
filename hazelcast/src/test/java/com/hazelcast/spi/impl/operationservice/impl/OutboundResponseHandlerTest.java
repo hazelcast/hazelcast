@@ -245,10 +245,10 @@ public class OutboundResponseHandlerTest {
 
         private int no;
 
-        public PortableAddress() {
+        PortableAddress() {
         }
 
-        public PortableAddress(String street, int no) {
+        PortableAddress(String street, int no) {
             this.street = street;
             this.no = no;
         }

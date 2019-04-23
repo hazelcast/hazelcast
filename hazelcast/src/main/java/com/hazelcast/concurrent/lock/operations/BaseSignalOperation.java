@@ -30,10 +30,10 @@ abstract class BaseSignalOperation extends AbstractLockOperation {
     protected String conditionId;
     protected transient int awaitCount;
 
-    public BaseSignalOperation() {
+    BaseSignalOperation() {
     }
 
-    public BaseSignalOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, boolean all) {
+    BaseSignalOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, boolean all) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
         this.all = all;

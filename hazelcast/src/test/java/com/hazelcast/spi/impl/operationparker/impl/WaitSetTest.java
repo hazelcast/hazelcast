@@ -267,7 +267,7 @@ public class WaitSetTest {
         private final String serviceName;
         private final String objectName;
 
-        public WaitNotifyKeyImpl(String serviceName, String objectName) {
+        WaitNotifyKeyImpl(String serviceName, String objectName) {
             this.serviceName = serviceName;
             this.objectName = objectName;
         }

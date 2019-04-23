@@ -78,7 +78,7 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
     class LongRunningOperation extends Operation {
         private CountDownLatch completionLatch;
 
-        public LongRunningOperation(int partitionId, CountDownLatch completionLatch) {
+        LongRunningOperation(int partitionId, CountDownLatch completionLatch) {
             this.completionLatch = completionLatch;
             setPartitionId(partitionId);
         }

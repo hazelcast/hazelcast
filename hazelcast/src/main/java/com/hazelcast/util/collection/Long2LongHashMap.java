@@ -341,7 +341,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     private static class IteratorSupplier implements Supplier<Iterator<Long>> {
         private final LongIterator keyIterator;
 
-        public IteratorSupplier(LongIterator keyIterator) {
+        IteratorSupplier(LongIterator keyIterator) {
             this.keyIterator = keyIterator;
         }
 
@@ -354,7 +354,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     private static class EntryIteratorSupplier implements Supplier<Iterator<Entry<Long, Long>>> {
         private final EntryIterator entryIterator;
 
-        public EntryIteratorSupplier(EntryIterator entryIterator) {
+        EntryIteratorSupplier(EntryIterator entryIterator) {
             this.entryIterator = entryIterator;
         }
 
@@ -367,7 +367,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     private static class UnboxingBiConsumer implements LongLongConsumer {
         private final BiConsumer<? super Long, ? super Long> action;
 
-        public UnboxingBiConsumer(BiConsumer<? super Long, ? super Long> action) {
+        UnboxingBiConsumer(BiConsumer<? super Long, ? super Long> action) {
             this.action = action;
         }
 
@@ -466,8 +466,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
     @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
             justification = "deliberate, documented choice")
     private final class EntryIterator
-            extends AbstractIterator implements Iterator<Entry<Long, Long>>, Entry<Long, Long>
-    {
+            extends AbstractIterator implements Iterator<Entry<Long, Long>>, Entry<Long, Long> {
         private long key;
         private long value;
 

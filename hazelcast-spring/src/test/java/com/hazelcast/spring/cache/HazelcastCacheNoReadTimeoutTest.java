@@ -89,7 +89,7 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
 
         private final int delay;
 
-        public DelayIMapGetInterceptor(int delay) {
+        DelayIMapGetInterceptor(int delay) {
             this.delay = delay;
         }
 

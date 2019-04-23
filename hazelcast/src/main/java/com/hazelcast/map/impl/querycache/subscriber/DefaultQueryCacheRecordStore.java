@@ -51,10 +51,10 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     private final InternalSerializationService serializationService;
     private final Extractors extractors;
 
-    public DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
-                                        Indexes indexes,
-                                        QueryCacheConfig config, EvictionListener listener,
-                                        Extractors extractors) {
+    DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
+                                 Indexes indexes,
+                                 QueryCacheConfig config, EvictionListener listener,
+                                 Extractors extractors) {
         this.cache = new QueryCacheRecordHashMap(serializationService, DEFAULT_CACHE_CAPACITY);
         this.serializationService = serializationService;
         this.recordFactory = getRecordFactory(config.getInMemoryFormat());

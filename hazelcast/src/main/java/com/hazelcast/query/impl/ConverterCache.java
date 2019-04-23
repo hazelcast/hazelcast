@@ -172,7 +172,7 @@ public final class ConverterCache {
         final InternalIndex index;
         final int component;
 
-        public UnresolvedConverter(InternalIndex index, int component) {
+        UnresolvedConverter(InternalIndex index, int component) {
             this.index = index;
             this.component = component;
         }

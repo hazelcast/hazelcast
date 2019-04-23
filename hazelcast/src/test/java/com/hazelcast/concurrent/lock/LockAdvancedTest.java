@@ -545,10 +545,10 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         ObjectNamespace ns;
         long sleepMillis;
 
-        public SlowLockOperation() {
+        SlowLockOperation() {
         }
 
-        public SlowLockOperation(String name, Data key, long sleepMillis) {
+        SlowLockOperation(String name, Data key, long sleepMillis) {
             this.key = key;
             this.ns = new InternalLockNamespace(name);
             this.sleepMillis = sleepMillis;

@@ -141,10 +141,10 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
 
         transient boolean afterCalled;
 
-        public TestOperation() {
+        TestOperation() {
         }
 
-        public TestOperation(int i) {
+        TestOperation(int i) {
             this.i = i;
         }
 

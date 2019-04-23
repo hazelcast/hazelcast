@@ -315,7 +315,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         private final AtomicInteger loadEventCount;
         private final AtomicInteger addEventCount;
 
-        public LoadAndAddListener(AtomicInteger loadEventCount, AtomicInteger addEventCount) {
+        LoadAndAddListener(AtomicInteger loadEventCount, AtomicInteger addEventCount) {
             this.loadEventCount = loadEventCount;
             this.addEventCount = addEventCount;
         }
@@ -337,7 +337,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
         private final AtomicInteger loadEventCount;
         private final AtomicInteger updateEventCount;
 
-        public LoadAndUpdateListener(AtomicInteger loadEventCount, AtomicInteger updateEventCount) {
+        LoadAndUpdateListener(AtomicInteger loadEventCount, AtomicInteger updateEventCount) {
             this.loadEventCount = loadEventCount;
             this.updateEventCount = updateEventCount;
         }
@@ -357,7 +357,7 @@ public class EntryLoadedListenerTest extends HazelcastTestSupport {
 
         private final AtomicInteger addEventCount;
 
-        public AddListener(AtomicInteger addEventCount) {
+        AddListener(AtomicInteger addEventCount) {
             this.addEventCount = addEventCount;
         }
 

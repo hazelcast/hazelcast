@@ -159,7 +159,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         private long sleepSeconds;
         private HazelcastInstance hz;
 
-        public SleepingTask(long sleepSeconds, String taskStartedLatchName) {
+        SleepingTask(long sleepSeconds, String taskStartedLatchName) {
             this.sleepSeconds = sleepSeconds;
             this.taskStartedLatchName = taskStartedLatchName;
         }

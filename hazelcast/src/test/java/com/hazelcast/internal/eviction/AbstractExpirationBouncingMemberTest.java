@@ -96,7 +96,7 @@ public abstract class AbstractExpirationBouncingMemberTest extends HazelcastTest
         private final AtomicInteger totalUnexpired = new AtomicInteger();
         private final AtomicReference<String> msgUnexpired = new AtomicReference();
 
-        public RemainingCacheSize(CountDownLatch latch) {
+        RemainingCacheSize(CountDownLatch latch) {
             this.latch = latch;
         }
 

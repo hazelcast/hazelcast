@@ -89,10 +89,10 @@ public class ClientMapProjectSerializationTest extends HazelcastTestSupport {
 
         private static AtomicInteger readCalled = new AtomicInteger(0);
 
-        public OnlyDeserializedTwiceObject() {
+        OnlyDeserializedTwiceObject() {
         }
 
-        public OnlyDeserializedTwiceObject(String value) {
+        OnlyDeserializedTwiceObject(String value) {
             this.value = value;
         }
 

@@ -238,6 +238,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
     private static class DummyOperation extends Operation {
 
+        @SuppressWarnings("checkstyle:RedundantModifier")
         public DummyOperation() {
         }
 
@@ -249,6 +250,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
     private static class OperationWithServiceNameOverride extends Operation {
 
+        @SuppressWarnings("checkstyle:RedundantModifier")
         public OperationWithServiceNameOverride() {
         }
 
@@ -264,6 +266,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
     private static class OperationWithExplicitServiceNameAndOverride extends Operation {
 
+        @SuppressWarnings("checkstyle:RedundantModifier")
         public OperationWithExplicitServiceNameAndOverride() {
         }
 

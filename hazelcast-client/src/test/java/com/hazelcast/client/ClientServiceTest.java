@@ -360,7 +360,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
     static class ClientConnectedListenerLatch extends CountDownLatch implements ClientListener {
 
-        public ClientConnectedListenerLatch(int count) {
+        ClientConnectedListenerLatch(int count) {
             super(count);
         }
 
@@ -376,7 +376,7 @@ public class ClientServiceTest extends ClientTestSupport {
 
     static class ClientDisconnectedListenerLatch extends CountDownLatch implements ClientListener {
 
-        public ClientDisconnectedListenerLatch(int count) {
+        ClientDisconnectedListenerLatch(int count) {
             super(count);
         }
 

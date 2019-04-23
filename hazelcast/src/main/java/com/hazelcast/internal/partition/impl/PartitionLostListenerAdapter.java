@@ -26,7 +26,7 @@ class PartitionLostListenerAdapter implements PartitionEventListener<PartitionLo
 
     private final PartitionLostListener listener;
 
-    public PartitionLostListenerAdapter(PartitionLostListener listener) {
+    PartitionLostListenerAdapter(PartitionLostListener listener) {
         this.listener = listener;
     }
 

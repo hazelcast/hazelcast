@@ -216,7 +216,7 @@ public class TextProtocolClient implements Closeable {
         private final ByteArrayOutputStream os = new ByteArrayOutputStream();
         private volatile IOException exception;
 
-        public InputStreamConsumerThread(InputStream is) {
+        InputStreamConsumerThread(InputStream is) {
             this.is = is;
         }
 

@@ -498,10 +498,10 @@ public class PortableTest {
 
         private Portable[] portables;
 
-        public TestObject1() {
+        TestObject1() {
         }
 
-        public TestObject1(Portable[] p) {
+        TestObject1(Portable[] p) {
             portables = p;
         }
 
@@ -530,7 +530,7 @@ public class PortableTest {
 
         private String shortString;
 
-        public TestObject2() {
+        TestObject2() {
             shortString = "Hello World";
         }
 

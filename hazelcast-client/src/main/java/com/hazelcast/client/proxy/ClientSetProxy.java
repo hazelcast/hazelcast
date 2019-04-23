@@ -223,7 +223,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
 
         private final ItemListener<E> listener;
 
-        public ItemEventHandler(ItemListener<E> listener) {
+        ItemEventHandler(ItemListener<E> listener) {
             this.listener = listener;
         }
 

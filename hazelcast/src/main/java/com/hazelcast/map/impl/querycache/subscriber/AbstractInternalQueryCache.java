@@ -65,8 +65,8 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
      */
     protected volatile String publisherListenerId;
 
-    public AbstractInternalQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
-                                      IMap delegate, QueryCacheContext context) {
+    AbstractInternalQueryCache(String cacheId, String cacheName, QueryCacheConfig queryCacheConfig,
+                               IMap delegate, QueryCacheContext context) {
         this.cacheId = cacheId;
         this.cacheName = cacheName;
         this.queryCacheConfig = queryCacheConfig;

@@ -36,7 +36,7 @@ class OSGiScriptEngine implements ScriptEngine {
     private ScriptEngine engine;
     private OSGiScriptEngineFactory factory;
 
-    public OSGiScriptEngine(ScriptEngine engine, OSGiScriptEngineFactory factory) {
+    OSGiScriptEngine(ScriptEngine engine, OSGiScriptEngineFactory factory) {
         this.engine = engine;
         this.factory = factory;
     }

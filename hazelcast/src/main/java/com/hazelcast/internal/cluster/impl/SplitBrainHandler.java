@@ -27,7 +27,7 @@ final class SplitBrainHandler implements Runnable {
     private final Node node;
     private final AtomicBoolean inProgress = new AtomicBoolean(false);
 
-    public SplitBrainHandler(Node node) {
+    SplitBrainHandler(Node node) {
         this.node = node;
     }
 

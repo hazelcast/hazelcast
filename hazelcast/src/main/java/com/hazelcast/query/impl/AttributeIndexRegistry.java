@@ -172,7 +172,7 @@ public class AttributeIndexRegistry {
 
         private final int width;
 
-        public FirstComponentDecorator(InternalIndex delegate) {
+        FirstComponentDecorator(InternalIndex delegate) {
             assert delegate.getComponents() != null;
             assert delegate.isOrdered();
             this.delegate = delegate;

@@ -65,7 +65,7 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
 
     private class GetCallersUUIDOperationFactory implements OperationFactory {
 
-        public GetCallersUUIDOperationFactory() {
+        GetCallersUUIDOperationFactory() {
         }
 
         @Override
@@ -96,7 +96,7 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
 
     private class GetCallersUUIDOperation extends Operation {
 
-        public GetCallersUUIDOperation() {
+        GetCallersUUIDOperation() {
         }
 
         @Override

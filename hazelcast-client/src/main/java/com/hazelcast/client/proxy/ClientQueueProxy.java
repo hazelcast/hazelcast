@@ -110,7 +110,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         private final boolean includeValue;
         private final ItemListener<E> listener;
 
-        public ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
+        ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
             this.includeValue = includeValue;
             this.listener = listener;
         }

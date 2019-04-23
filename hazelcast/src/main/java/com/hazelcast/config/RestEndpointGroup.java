@@ -52,7 +52,7 @@ public enum RestEndpointGroup {
 
     private final boolean enabledByDefault;
 
-    private RestEndpointGroup(boolean enabledByDefault) {
+    RestEndpointGroup(boolean enabledByDefault) {
         this.enabledByDefault = enabledByDefault;
     }
 

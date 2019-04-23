@@ -434,6 +434,7 @@ public final class ClassLoaderUtil {
         /**
          * Works as a marker for irresolvable constructors.
          */
+        @SuppressWarnings("checkstyle:RedundantModifier")
         public IrresolvableConstructor() {
             throw new UnsupportedOperationException("Irresolvable constructor should never be instantiated.");
         }

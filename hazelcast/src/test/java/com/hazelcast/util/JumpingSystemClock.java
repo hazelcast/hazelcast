@@ -25,7 +25,7 @@ class JumpingSystemClock extends Clock.ClockImpl {
     private final long jumpAfter;
     private final long jumpOffset;
 
-    public JumpingSystemClock() {
+    JumpingSystemClock() {
         String clockOffset = System.getProperty(ClockProperties.HAZELCAST_CLOCK_OFFSET);
         String jumpAfterSeconds = System.getProperty(JUMP_AFTER_SECONDS_PROPERTY);
         try {

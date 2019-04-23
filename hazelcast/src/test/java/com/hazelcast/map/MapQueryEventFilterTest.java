@@ -101,7 +101,7 @@ public class MapQueryEventFilterTest extends HazelcastTestSupport {
     static final class Employee implements Serializable {
         int age;
 
-        public Employee(int age) {
+        Employee(int age) {
             this.age = age;
         }
     }

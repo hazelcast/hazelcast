@@ -130,7 +130,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         public MultiMap mm = null;
         public Object key = null;
 
-        public UnLockThread(MultiMap mm, Object key) {
+        UnLockThread(MultiMap mm, Object key) {
             this.mm = mm;
             this.key = key;
         }

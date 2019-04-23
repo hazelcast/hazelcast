@@ -350,11 +350,11 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     }
 
     private static class PartitionAwareOperationFactoryImpl extends PartitionAwareOperationFactory {
-        public PartitionAwareOperationFactoryImpl(int[] partitions) {
+        PartitionAwareOperationFactoryImpl(int[] partitions) {
             this.partitions = partitions;
         }
 
-        public PartitionAwareOperationFactoryImpl() {
+         PartitionAwareOperationFactoryImpl() {
         }
 
         @Override

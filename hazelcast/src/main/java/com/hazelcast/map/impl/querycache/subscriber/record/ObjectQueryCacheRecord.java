@@ -26,7 +26,7 @@ class ObjectQueryCacheRecord extends AbstractQueryCacheRecord {
 
     private final Object value;
 
-    public ObjectQueryCacheRecord(Data valueData, SerializationService serializationService) {
+    ObjectQueryCacheRecord(Data valueData, SerializationService serializationService) {
         this.value = serializationService.toObject(valueData);
     }
 

@@ -116,7 +116,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
             super(name, dataKey);
         }
 
-        public RemoveOperation() {
+        RemoveOperation() {
         }
 
         @Override

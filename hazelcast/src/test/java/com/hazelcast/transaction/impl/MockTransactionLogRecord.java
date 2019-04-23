@@ -133,10 +133,10 @@ public class MockTransactionLogRecord implements TransactionLogRecord {
     static class MockOperation extends Operation {
         private boolean fail;
 
-        public MockOperation() {
+        MockOperation() {
         }
 
-        public MockOperation(boolean fail) {
+        MockOperation(boolean fail) {
             setPartitionId(0);
             this.fail = fail;
         }

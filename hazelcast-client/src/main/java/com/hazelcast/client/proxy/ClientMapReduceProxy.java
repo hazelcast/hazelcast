@@ -116,7 +116,7 @@ public class ClientMapReduceProxy
     private class ClientJob<KeyIn, ValueIn>
             extends AbstractJob<KeyIn, ValueIn> {
 
-        public ClientJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
+        ClientJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
             super(name, ClientMapReduceProxy.this, keyValueSource);
         }
 

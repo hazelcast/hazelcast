@@ -485,7 +485,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         private final Object value;
 
-        public EntryAdderOffloadable(Object value) {
+        EntryAdderOffloadable(Object value) {
             this.value = value;
         }
 
@@ -545,7 +545,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         private final CountDownLatch start;
         private final CountDownLatch stop;
 
-        public EntryLatchModifying(CountDownLatch start, CountDownLatch stop) {
+        EntryLatchModifying(CountDownLatch start, CountDownLatch stop) {
             this.start = start;
             this.stop = stop;
         }
@@ -586,7 +586,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         private final CountDownLatch otherStopped;
         private final int valueToSet;
 
-        public EntryLatchVerifying(CountDownLatch otherStarted, CountDownLatch otherStopped, final int value) {
+        EntryLatchVerifying(CountDownLatch otherStarted, CountDownLatch otherStopped, final int value) {
             this.otherStarted = otherStarted;
             this.otherStopped = otherStopped;
             this.valueToSet = value;
@@ -657,7 +657,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         private final CountDownLatch stop;
         private final CountDownLatch waitToProceed;
 
-        public EntryLatchModifyingOtherReading(CountDownLatch start, CountDownLatch waitToProceed, CountDownLatch stop) {
+        EntryLatchModifyingOtherReading(CountDownLatch start, CountDownLatch waitToProceed, CountDownLatch stop) {
             this.start = start;
             this.stop = stop;
             this.waitToProceed = waitToProceed;
@@ -703,7 +703,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         private final CountDownLatch otherWaitingToProceed;
         private final CountDownLatch otherStopped;
 
-        public EntryLatchReadOnlyVerifyingWhileOtherWriting(CountDownLatch otherStarted, CountDownLatch otherWaitingToProceed,
+        EntryLatchReadOnlyVerifyingWhileOtherWriting(CountDownLatch otherStarted, CountDownLatch otherWaitingToProceed,
                                                             CountDownLatch otherStopped) {
             this.otherStarted = otherStarted;
             this.otherWaitingToProceed = otherWaitingToProceed;
@@ -877,7 +877,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         private final CountDownLatch mayStart;
         private final CountDownLatch stop;
 
-        public EntryLatchAwaitingModifying(CountDownLatch mayStart, CountDownLatch stop) {
+        EntryLatchAwaitingModifying(CountDownLatch mayStart, CountDownLatch stop) {
             this.mayStart = mayStart;
             this.stop = stop;
         }
@@ -918,7 +918,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         private final CountDownLatch otherStopped;
 
-        public EntryOtherStoppedVerifying(CountDownLatch otherStopped) {
+        EntryOtherStoppedVerifying(CountDownLatch otherStopped) {
             this.otherStopped = otherStopped;
         }
 
@@ -1081,11 +1081,11 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         private long processStart;
         private long processEnd;
 
-        public TimestampedSimpleValue() {
+        TimestampedSimpleValue() {
             super();
         }
 
-        public TimestampedSimpleValue(int i) {
+        TimestampedSimpleValue(int i) {
             super(i);
         }
     }

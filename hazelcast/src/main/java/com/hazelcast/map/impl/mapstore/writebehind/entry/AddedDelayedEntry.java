@@ -30,8 +30,7 @@ class AddedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     private long storeTime;
     private long sequence;
 
-
-    public AddedDelayedEntry(K key, V value, long storeTime, int partitionId) {
+    AddedDelayedEntry(K key, V value, long storeTime, int partitionId) {
         this.key = key;
         this.storeTime = storeTime;
         this.partitionId = partitionId;

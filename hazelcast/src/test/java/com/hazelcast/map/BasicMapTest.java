@@ -23,11 +23,11 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.internal.json.Json;
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
@@ -1359,7 +1359,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     private static class TestPagingPredicate extends PagingPredicate {
 
-        public TestPagingPredicate(int pageSize) {
+        TestPagingPredicate(int pageSize) {
             super(pageSize);
         }
 

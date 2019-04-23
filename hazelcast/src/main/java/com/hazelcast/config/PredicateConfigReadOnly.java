@@ -26,7 +26,7 @@ import com.hazelcast.query.Predicate;
  */
 class PredicateConfigReadOnly extends PredicateConfig {
 
-    public PredicateConfigReadOnly(PredicateConfig config) {
+    PredicateConfigReadOnly(PredicateConfig config) {
         super(config);
     }
 

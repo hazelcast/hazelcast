@@ -279,7 +279,7 @@ public class BasicCompletableFutureTest {
     }
 
     private static class TestCurrentThreadExecutor extends ThreadPoolExecutor implements ManagedExecutorService {
-        public TestCurrentThreadExecutor() {
+        TestCurrentThreadExecutor() {
             super(1, 1, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
         }
 

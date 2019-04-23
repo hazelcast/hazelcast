@@ -344,7 +344,7 @@ public class ObjectDataInputStreamFinalMethodsTest {
 
     private class InitableByteArrayInputStream extends ByteArrayInputStream {
 
-        public InitableByteArrayInputStream(byte[] buf) {
+        InitableByteArrayInputStream(byte[] buf) {
             super(buf);
         }
 

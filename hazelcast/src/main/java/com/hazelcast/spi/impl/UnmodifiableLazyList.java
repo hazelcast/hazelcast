@@ -128,7 +128,7 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
 
         ListIterator listIterator;
 
-        public UnmodifiableLazyListIterator(ListIterator listIterator) {
+        UnmodifiableLazyListIterator(ListIterator listIterator) {
             this.listIterator = listIterator;
         }
 

@@ -27,7 +27,7 @@ class AndMemberSelector
 
     private final MemberSelector[] selectors;
 
-    public AndMemberSelector(MemberSelector... selectors) {
+    AndMemberSelector(MemberSelector... selectors) {
         this.selectors = selectors;
     }
 
