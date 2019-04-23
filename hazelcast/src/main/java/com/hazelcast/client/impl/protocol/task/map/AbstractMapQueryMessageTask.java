@@ -36,21 +36,21 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.util.BitSetUtils;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.security.Permission;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PrimitiveIterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.IntConsumer;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.BitSetUtils.hasAtLeastOneBitSet;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result, AccumulatedResults, ReducedResult>
@@ -95,7 +95,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             }
             int partitionCount = clientEngine.getPartitionService().getPartitionCount();
 
-            BitSet finishedPartitions = invokeOnMembers(result, predicate, partitionCount);
+            PartitionIdSet finishedPartitions = invokeOnMembers(result, predicate, partitionCount);
             invokeOnMissingPartitions(result, predicate, finishedPartitions, partitionCount);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -118,27 +118,27 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         }
     }
 
-    private BitSet invokeOnMembers(Collection<AccumulatedResults> result, Predicate predicate, int partitionCount)
-            throws InterruptedException, ExecutionException {
+    private PartitionIdSet invokeOnMembers(Collection<AccumulatedResults> result, Predicate predicate, int partitionCount) {
         Collection<Member> members = clientEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         List<Future> futures = createInvocations(members, predicate);
         return collectResults(result, futures, partitionCount);
     }
 
     private void invokeOnMissingPartitions(Collection<AccumulatedResults> result, Predicate predicate,
-                                           BitSet finishedPartitions, int partitionCount)
+                                           PartitionIdSet finishedPartitions, int partitionCount)
             throws InterruptedException, ExecutionException {
-        if (hasMissingPartitions(finishedPartitions, partitionCount)) {
-            List<Integer> missingList = findMissingPartitions(finishedPartitions, partitionCount);
-            List<Future> missingFutures = new ArrayList<Future>(missingList.size());
-            createInvocationsForMissingPartitions(missingList, missingFutures, predicate);
+        if (finishedPartitions.isMissingPartitions()) {
+            PartitionIdSet missingPartitions = new PartitionIdSet(finishedPartitions);
+            missingPartitions.complement();
+            List<Future> missingFutures = new ArrayList<>(missingPartitions.size());
+            createInvocationsForMissingPartitions(missingPartitions, missingFutures, predicate);
             collectResultsFromMissingPartitions(finishedPartitions, result, missingFutures);
         }
         assertAllPartitionsQueried(finishedPartitions, partitionCount);
     }
 
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
-        List<Future> futures = new ArrayList<Future>(members.size());
+        List<Future> futures = new ArrayList<>(members.size());
         final InternalOperationService operationService = nodeEngine.getOperationService();
         final Query query = buildQuery(predicate);
 
@@ -186,20 +186,19 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     }
 
     @SuppressWarnings("unchecked")
-    private BitSet collectResults(Collection<AccumulatedResults> result, List<Future> futures, int partitionCount)
-            throws InterruptedException, ExecutionException {
-        BitSet finishedPartitions = new BitSet(partitionCount);
+    private PartitionIdSet collectResults(Collection<AccumulatedResults> result, List<Future> futures, int partitionCount) {
+        PartitionIdSet finishedPartitions = new PartitionIdSet(partitionCount);
         for (Future future : futures) {
             try {
                 QueryResult queryResult = (QueryResult) future.get();
                 if (queryResult != null) {
-                    Collection<Integer> partitionIds = queryResult.getPartitionIds();
-                    if (partitionIds != null && !hasAtLeastOneBitSet(finishedPartitions, partitionIds)) {
+                    PartitionIdSet partitionIds = queryResult.getPartitionIds();
+                    if (partitionIds != null && !partitionIds.intersects(finishedPartitions)) {
                         // Collect results only if there is no overlap with already collected partitions.
                         // If there is an overlap it means there was a partition migration while QueryOperation(s) were
                         // running. In this case we discard all results from this member and will target the missing
                         // partition separately later.
-                        BitSetUtils.setBits(finishedPartitions, partitionIds);
+                        finishedPartitions.union(partitionIds);
                         extractAndAppendResult(result, queryResult);
                     }
                 }
@@ -218,21 +217,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         return finishedPartitions;
     }
 
-    private boolean hasMissingPartitions(BitSet finishedPartitions, int partitionCount) {
-        return finishedPartitions.nextClearBit(0) < partitionCount;
-    }
-
-    private List<Integer> findMissingPartitions(BitSet finishedPartitions, int partitionCount) {
-        List<Integer> missingList = new ArrayList<Integer>();
-        for (int i = 0; i < partitionCount; i++) {
-            if (!finishedPartitions.get(i)) {
-                missingList.add(i);
-            }
-        }
-        return missingList;
-    }
-
-    private void createInvocationsForMissingPartitions(List<Integer> missingPartitionsList, List<Future> futures,
+    private void createInvocationsForMissingPartitions(PartitionIdSet missingPartitionsList, List<Future> futures,
                                                        Predicate predicate) {
 
         final InternalOperationService operationService = nodeEngine.getOperationService();
@@ -240,7 +225,8 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 
         Query query = buildQuery(predicate);
-        for (Integer partitionId : missingPartitionsList) {
+        PrimitiveIterator.OfInt missingPartitionIterator = missingPartitionsList.intIterator();
+        missingPartitionIterator.forEachRemaining((IntConsumer) partitionId -> {
             MapOperation queryPartitionOperation = createQueryPartitionOperation(query, mapServiceContext);
             queryPartitionOperation.setPartitionId(partitionId);
             try {
@@ -250,18 +236,18 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             } catch (Throwable t) {
                 throw rethrow(t);
             }
-        }
+        });
     }
 
-    private void collectResultsFromMissingPartitions(BitSet finishedPartitions, Collection<AccumulatedResults> result,
+    private void collectResultsFromMissingPartitions(PartitionIdSet finishedPartitions, Collection<AccumulatedResults> result,
                                                      List<Future> futures)
             throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult.getPartitionIds() != null && queryResult.getPartitionIds().size() > 0
-                    && !hasAtLeastOneBitSet(finishedPartitions, queryResult.getPartitionIds())) {
+                    && !finishedPartitions.intersects(queryResult.getPartitionIds())) {
                 extractAndAppendResult(result, queryResult);
-                BitSetUtils.setBits(finishedPartitions, queryResult.getPartitionIds());
+                finishedPartitions.addAll(queryResult.getPartitionIds());
             }
         }
     }
@@ -275,11 +261,11 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                 query.getMapName()).createQueryPartitionOperation(query);
     }
 
-    private void assertAllPartitionsQueried(BitSet finishedPartitions, int partitionCount) {
-        if (hasMissingPartitions(finishedPartitions, partitionCount)) {
+    private void assertAllPartitionsQueried(PartitionIdSet finishedPartitions, int partitionCount) {
+        if (finishedPartitions.isMissingPartitions()) {
             int missedPartitionsCount = 0;
             for (int i = 0; i < partitionCount; i++) {
-                if (!finishedPartitions.get(i)) {
+                if (!finishedPartitions.contains(i)) {
                     missedPartitionsCount++;
                 }
             }

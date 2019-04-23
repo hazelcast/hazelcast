@@ -92,6 +92,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MutableLong;
+import com.hazelcast.util.collection.PartitionIdSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -100,7 +101,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -708,7 +708,7 @@ abstract class MapProxySupport<K, V>
     private void waitAllTrue(Map<Integer, Object> results, OperationFactory operationFactory) throws InterruptedException {
         Iterator<Entry<Integer, Object>> iterator = results.entrySet().iterator();
         boolean isFinished = false;
-        Set<Integer> retrySet = new HashSet<>();
+        PartitionIdSet retrySet = new PartitionIdSet(partitionService.getPartitionCount());
         while (!isFinished) {
             while (iterator.hasNext()) {
                 Entry<Integer, Object> entry = iterator.next();

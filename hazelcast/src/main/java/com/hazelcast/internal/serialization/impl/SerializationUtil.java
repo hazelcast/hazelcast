@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
+import com.hazelcast.util.collection.PartitionIdSet;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
@@ -41,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -265,6 +267,25 @@ public final class SerializationUtil {
     }
 
     /**
+     * Writes a nullable {@link PartitionIdSet} to the given data output.
+     * @param partitionIds
+     * @param out
+     * @throws IOException
+     */
+    public static void writeNullablePartitionIdSet(PartitionIdSet partitionIds, ObjectDataOutput out) throws IOException {
+        if (partitionIds == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(partitionIds.getPartitionCount());
+        out.writeInt(partitionIds.size());
+        PrimitiveIterator.OfInt intIterator = partitionIds.intIterator();
+        while (intIterator.hasNext()) {
+            out.writeInt(intIterator.nextInt());
+        }
+    }
+
+    /**
      * Reads a collection from the given {@link ObjectDataInput}. It is expected that
      * the next int read from the data input is the collection's size, then that
      * many objects are read from the data input and returned as a collection.
@@ -331,5 +352,18 @@ public final class SerializationUtil {
             list.add(item);
         }
         return list;
+    }
+
+    public static PartitionIdSet readNullablePartitionIdSet(ObjectDataInput in) throws IOException {
+        int partitionCount = in.readInt();
+        if (partitionCount == -1) {
+            return null;
+        }
+        PartitionIdSet result = new PartitionIdSet(partitionCount);
+        int setSize = in.readInt();
+        for (int i = 0; i < setSize; i++) {
+            result.add(in.readInt());
+        }
+        return result;
     }
 }

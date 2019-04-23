@@ -27,6 +27,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.collection.PartitionIdSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -252,7 +253,7 @@ public class QueryResultSizeLimiterTest {
         MapServiceContext mapServiceContext = mock(MapServiceContext.class);
         when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
         when(mapServiceContext.getRecordStore(anyInt(), anyString())).thenReturn(recordStore);
-        when(mapServiceContext.getOwnedPartitions()).thenReturn(localPartitions.keySet());
+        when(mapServiceContext.getOwnedPartitions()).thenReturn(new PartitionIdSet(partitionCount, localPartitions.keySet()));
 
         limiter = new QueryResultSizeLimiter(mapServiceContext, Logger.getLogger(QueryResultSizeLimiterTest.class));
     }

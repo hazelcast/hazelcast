@@ -89,17 +89,15 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.util.collection.PartitionIdSet;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -117,6 +115,7 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static com.hazelcast.util.SetUtil.immutablePartitionIdSet;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -128,7 +127,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected static final long DESTROY_TIMEOUT_SECONDS = 30;
 
     protected final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
-    protected final AtomicReference<Collection<Integer>> ownedPartitions = new AtomicReference<>();
+    protected final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
     protected final IndexProvider indexProvider = new DefaultIndexProvider();
     protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
 
@@ -460,8 +459,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public Collection<Integer> getOwnedPartitions() {
-        Collection<Integer> partitions = ownedPartitions.get();
+    public PartitionIdSet getOwnedPartitions() {
+        PartitionIdSet partitions = ownedPartitions.get();
         if (partitions == null) {
             reloadOwnedPartitions();
             partitions = ownedPartitions.get();
@@ -479,9 +478,9 @@ class MapServiceContextImpl implements MapServiceContext {
     public void reloadOwnedPartitions() {
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         for (; ; ) {
-            final Collection<Integer> expected = ownedPartitions.get();
+            final PartitionIdSet expected = ownedPartitions.get();
             final Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            final Set<Integer> newSet = Collections.unmodifiableSet(new LinkedHashSet<>(partitions));
+            final PartitionIdSet newSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
             if (ownedPartitions.compareAndSet(expected, newSet)) {
                 return;
             }

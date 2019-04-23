@@ -21,8 +21,9 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.util.collection.PartitionIdSet;
 
-import java.util.Collection;
+import java.util.PrimitiveIterator;
 
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
@@ -121,7 +122,7 @@ public class QueryResultSizeLimiter {
         }
 
         // limit number of local partitions to check to keep runtime constant
-        Collection<Integer> localPartitions = mapServiceContext.getOwnedPartitions();
+        PartitionIdSet localPartitions = mapServiceContext.getOwnedPartitions();
         int partitionsToCheck = min(localPartitions.size(), maxLocalPartitionsLimitForPreCheck);
         if (partitionsToCheck == 0) {
             return;
@@ -140,10 +141,12 @@ public class QueryResultSizeLimiter {
         }
     }
 
-    private int getLocalPartitionSize(String mapName, Collection<Integer> localPartitions, int partitionsToCheck) {
+    private int getLocalPartitionSize(String mapName, PartitionIdSet localPartitions, int partitionsToCheck) {
         int localSize = 0;
         int partitionsChecked = 0;
-        for (int partitionId : localPartitions) {
+        PrimitiveIterator.OfInt partitionsIterator = localPartitions.intIterator();
+        while (partitionsIterator.hasNext()) {
+            int partitionId = partitionsIterator.nextInt();
             localSize += mapServiceContext.getRecordStore(partitionId, mapName).size();
             if (++partitionsChecked == partitionsToCheck) {
                 break;

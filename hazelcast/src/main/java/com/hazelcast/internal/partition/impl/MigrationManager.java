@@ -58,6 +58,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.MutableInteger;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.util.collection.PartitionIdSet;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 
 import java.util.ArrayList;
@@ -77,6 +78,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
+import java.util.function.IntConsumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
@@ -734,27 +736,28 @@ public class MigrationManager {
             }
 
             logger.fine("Cluster state doesn't allow repartitioning. RepartitioningTask will only assign lost partitions.");
-            Collection<Integer> partitions = new ArrayList<>();
-            for (InternalPartition partition : partitionStateManager.getPartitions()) {
+            InternalPartition[] partitions = partitionStateManager.getPartitions();
+            PartitionIdSet partitionIds = new PartitionIdSet(partitions.length);
+            for (InternalPartition partition : partitions) {
                 boolean empty = true;
                 for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
                     empty &= partition.getReplica(index) == null;
                 }
                 if (empty) {
-                    partitions.add(partition.getPartitionId());
+                    partitionIds.add(partition.getPartitionId());
                 }
             }
-            if (!partitions.isEmpty()) {
-                PartitionReplica[][] state = partitionStateManager.repartition(shutdownRequestedMembers, partitions);
+            if (!partitionIds.isEmpty()) {
+                PartitionReplica[][] state = partitionStateManager.repartition(shutdownRequestedMembers, partitionIds);
                 if (state != null) {
-                    logger.warning("Assigning new owners for " + partitions.size() + " LOST partitions!");
-                    for (int partitionId : partitions) {
+                    logger.warning("Assigning new owners for " + partitionIds.size() + " LOST partitions!");
+                    partitionIds.intIterator().forEachRemaining((IntConsumer) partitionId -> {
                         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
                         PartitionReplica[] replicas = state[partitionId];
 
                         assignLostPartitionOwner(partition, replicas[0]);
                         partition.setReplicas(replicas);
-                    }
+                    });
                 } else {
                     logger.warning("Unable to assign LOST partitions");
                 }

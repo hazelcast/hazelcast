@@ -28,6 +28,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.collection.PartitionIdSet;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
@@ -181,7 +182,7 @@ abstract class AbstractCacheProxy<K, V>
             ks.add(dataKey);
         }
         Map<K, V> result = createHashMap(keyCount);
-        Collection<Integer> partitions = getPartitionsForKeys(ks);
+        PartitionIdSet partitions = getPartitionsForKeys(ks);
         try {
             OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);
             OperationService operationService = getNodeEngine().getOperationService();
@@ -438,11 +439,10 @@ abstract class AbstractCacheProxy<K, V>
         }
     }
 
-    private Set<Integer> getPartitionsForKeys(Set<Data> keys) {
+    private PartitionIdSet getPartitionsForKeys(Set<Data> keys) {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitions = partitionService.getPartitionCount();
-        int capacity = Math.min(partitions, keys.size());
-        Set<Integer> partitionIds = createHashSet(capacity);
+        PartitionIdSet partitionIds = new PartitionIdSet(partitions);
 
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {

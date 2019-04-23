@@ -23,7 +23,6 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -32,6 +31,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.util.SetUtil.singletonPartitionIdSet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -110,7 +110,8 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
         @Override
         public Result call() {
             partitionScanRunner.run(name, predicate, partition, result);
-            result.setPartitionIds(Collections.singletonList(partition));
+            result.setPartitionIds(singletonPartitionIdSet(partitionScanRunner.partitionService.getPartitionCount(),
+                    partition));
             return result;
         }
     }

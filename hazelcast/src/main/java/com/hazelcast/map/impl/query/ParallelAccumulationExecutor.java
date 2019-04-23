@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.collection.PartitionIdSet;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     @Override
     @SuppressWarnings("unchecked")
     public AggregationResult execute(
-            Aggregator aggregator, Collection<QueryableEntry> entries, Collection<Integer> partitionIds) {
+            Aggregator aggregator, Collection<QueryableEntry> entries, PartitionIdSet partitionIds) {
         Collection<Aggregator> chunkAggregators = accumulateParallel(aggregator, entries);
 
         Aggregator resultAggregator = clone(aggregator);

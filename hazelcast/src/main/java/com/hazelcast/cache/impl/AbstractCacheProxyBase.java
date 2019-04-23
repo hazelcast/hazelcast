@@ -29,11 +29,11 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.collection.PartitionIdSet;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -262,10 +262,11 @@ abstract class AbstractCacheProxyBase<K, V>
 
                 IPartitionService partitionService = getNodeEngine().getPartitionService();
                 Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
-                Map<Integer, Object> results = createHashMap(partitionService.getPartitionCount());
+                int partitionCount = partitionService.getPartitionCount();
+                Map<Integer, Object> results = createHashMap(partitionCount);
 
                 for (Map.Entry<Address, List<Integer>> memberPartitions : memberPartitionsMap.entrySet()) {
-                    Set<Integer> partitions = new HashSet<Integer>(memberPartitions.getValue());
+                    Set<Integer> partitions = new PartitionIdSet(partitionCount, memberPartitions.getValue());
                     Set<Data> ownerKeys = filterOwnerKeys(partitionService, partitions);
                     operationFactory = operationProvider.createLoadAllOperationFactory(ownerKeys, replaceExistingValues);
                     Map<Integer, Object> memberResults;
