@@ -269,8 +269,6 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]RecordStore"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]AbstractEvictableRecordStore"/>
-    <suppress checks="MethodCount|ClassFanOutComplexity"
-              files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]DefaultRecordStore"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]AbstractRecordStore"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]MapProxyImpl"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]MapProxySupport"/>
@@ -297,12 +295,6 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]querycache[\\/]event[\\/]DefaultQueryCacheEventData"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]query[\\/]MapQueryEngineImpl"/>
-
-    <!--TransacionalMap-->
-    <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]replicatedmap[\\/]impl[\\/]ReplicatedMapService"/>
-
-    <!--CP subsystem-->
-    <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]MetadataRaftGroupManager"/>
 
     <!-- PhoneHome -->
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]util[\\/]PhoneHome"/>
