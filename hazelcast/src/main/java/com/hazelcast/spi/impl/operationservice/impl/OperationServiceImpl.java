@@ -409,12 +409,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
             Address owner = partitionService.getPartitionOwnerOrWait(partition);
-
-            if (!memberPartitions.containsKey(owner)) {
-                memberPartitions.put(owner, new ArrayList<Integer>());
-            }
-
-            memberPartitions.get(owner).add(partition);
+            memberPartitions.computeIfAbsent(owner, k -> new ArrayList<>()).add(partition);
         }
         return memberPartitions;
     }

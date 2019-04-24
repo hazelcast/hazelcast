@@ -30,7 +30,7 @@ import static java.util.Collections.newSetFromMap;
  */
 public class IndexImpl extends AbstractIndex {
 
-    private final Set<Integer> indexedPartitions = newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+    private final Set<Integer> indexedPartitions = newSetFromMap(new ConcurrentHashMap<>());
 
     public IndexImpl(String name, String[] components, boolean ordered, InternalSerializationService ss, Extractors extractors,
                      IndexCopyBehavior copyBehavior, PerIndexStats stats) {

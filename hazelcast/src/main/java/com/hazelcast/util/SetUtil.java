@@ -16,6 +16,10 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.util.collection.ImmutablePartitionIdSet;
+import com.hazelcast.util.collection.PartitionIdSet;
+
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -46,5 +50,21 @@ public final class SetUtil {
     public static <E> Set<E> createLinkedHashSet(int expectedMapSize) {
         final int initialCapacity = (int) (expectedMapSize / HASHSET_DEFAULT_LOAD_FACTOR) + 1;
         return new LinkedHashSet<E>(initialCapacity, HASHSET_DEFAULT_LOAD_FACTOR);
+    }
+
+    public static PartitionIdSet singletonPartitionIdSet(int partitionCount, int partitionId) {
+        PartitionIdSet set = new PartitionIdSet(partitionCount);
+        set.add(partitionId);
+        return set;
+    }
+
+    public static PartitionIdSet immutablePartitionIdSet(int partitionCount, Collection<Integer> partitionIds) {
+        return new ImmutablePartitionIdSet(partitionCount, partitionIds);
+    }
+
+    public static PartitionIdSet allPartitionIds(int partitionCount) {
+        PartitionIdSet set = new PartitionIdSet(partitionCount);
+        set.complement();
+        return set;
     }
 }
