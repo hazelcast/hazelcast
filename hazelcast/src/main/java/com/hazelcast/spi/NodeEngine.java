@@ -273,15 +273,14 @@ public interface NodeEngine {
     <T> T getService(String serviceName);
 
     /**
-     * Gets the {@link SharedService} for the given serviceName.
+     * Gets the service for the given serviceName if it exists or null otherwise.
      *
      * @param serviceName the name of the shared service to get
      * @param <T>         the type of the service
      * @return the found service, or null if the service was not found
      * @throws NullPointerException if the serviceName is {@code null}
-     * @deprecated since 3.7, please use {@link #getService(String)} instead
      */
-    <T extends SharedService> T getSharedService(String serviceName);
+    <T> T getServiceOrNull(String serviceName);
 
     /**
      * Returns the codebase version of the node. For example, when running on hazelcast-3.8.jar, this would resolve

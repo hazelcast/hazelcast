@@ -53,7 +53,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.PreJoinAwareService;
-import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -374,8 +373,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public <T extends SharedService> T getSharedService(String serviceName) {
-        return serviceManager.getSharedService(serviceName);
+    public <T> T getServiceOrNull(String serviceName) {
+        return serviceManager.getService(serviceName);
     }
 
     @Override

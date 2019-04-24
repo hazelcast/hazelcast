@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.servicemanager.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -139,25 +138,6 @@ public class ServiceManagerImplTest extends HazelcastTestSupport {
     public void getService_notExisting() {
         Object result = serviceManager.getService("notexisting");
         assertNull(result);
-    }
-
-    // ======================== getSharedService ============================
-
-    @Test
-    public void getSharedService() {
-        Object result = serviceManager.getSharedService(LockService.SERVICE_NAME);
-        assertInstanceOf(LockService.class, result);
-    }
-
-    @Test
-    public void getSharedService_notExisting() {
-        Object result = serviceManager.getSharedService("notexisting");
-        assertNull(result);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void getSharedService_notSharedService() {
-        serviceManager.getSharedService(MapService.SERVICE_NAME);
     }
 
     // ========================= getServices =====================================
