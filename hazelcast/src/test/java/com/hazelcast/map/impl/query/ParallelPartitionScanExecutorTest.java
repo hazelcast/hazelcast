@@ -20,6 +20,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
 
 import java.util.List;
 import java.util.UUID;
@@ -46,6 +48,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -58,13 +61,16 @@ public class ParallelPartitionScanExecutorTest {
         PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(UUID.randomUUID().toString(),
                 currentThread().getContextClassLoader());
         NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(UUID.randomUUID().toString(), 1, 1, 100, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(100), threadFactory);
+                new LinkedBlockingQueue<>(100), threadFactory);
         return new ParallelPartitionScanExecutor(runner, pool, 60000);
     }
 
     @Test
     public void execute_success() {
+        IPartitionService partitionService = mock(IPartitionService.class);
+        when(partitionService.getPartitionCount()).thenReturn(271);
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
+        Whitebox.setInternalState(runner, "partitionService", partitionService);
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
         QueryResult queryResult = new QueryResult(IterationType.ENTRY, null, null, Long.MAX_VALUE, false);
