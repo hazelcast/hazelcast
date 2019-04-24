@@ -371,7 +371,7 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class AllTasksRunningWithinNumOfNodes extends AssertTask {
+    public static class AllTasksRunningWithinNumOfNodes implements AssertTask {
 
         private final IScheduledExecutorService scheduler;
         private final int expectedNodesWithTasks;
