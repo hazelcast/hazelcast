@@ -26,10 +26,6 @@ import java.io.IOException;
 public class DeleteOperation extends BaseRemoveOperation {
     private boolean success;
 
-    public DeleteOperation(String name, Data dataKey) {
-        super(name, dataKey);
-    }
-
     public DeleteOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
         super(name, dataKey, disableWanReplicationEvent);
     }

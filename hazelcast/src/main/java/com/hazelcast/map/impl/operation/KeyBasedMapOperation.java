@@ -24,7 +24,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_11;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
@@ -95,10 +94,7 @@ public abstract class KeyBasedMapOperation extends MapOperation
         out.writeLong(threadId);
         out.writeData(dataValue);
         out.writeLong(ttl);
-        //RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -108,9 +104,6 @@ public abstract class KeyBasedMapOperation extends MapOperation
         threadId = in.readLong();
         dataValue = in.readData();
         ttl = in.readLong();
-        //RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
+        maxIdle = in.readLong();
     }
 }

@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
@@ -981,12 +980,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private boolean canPublishLoadEvent() {
-        // RU_COMPAT_3_10
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        ClusterService clusterService = nodeEngine.getClusterService();
-        boolean version311OrLater = clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_11);
-        boolean addEventPublishingEnabled = mapContainer.isAddEventPublishingEnabled();
-        return version311OrLater && !addEventPublishingEnabled;
+        return !mapContainer.isAddEventPublishingEnabled();
     }
 
     protected boolean isKeyAndValueLoadable(Data key, Object value) {
