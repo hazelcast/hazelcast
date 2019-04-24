@@ -33,8 +33,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 
-import static com.hazelcast.map.impl.querycache.ListenerRegistrationHelper.generateListenerName;
-
 /**
  * This operation removes all {@code QueryCache} resources on a node.
  */
@@ -110,7 +108,7 @@ public class DestroyQueryCacheOperation extends MapOperation {
 
     private void removeAllListeners() {
         EventService eventService = getNodeEngine().getEventService();
-        eventService.deregisterAllListeners(MapService.SERVICE_NAME, generateListenerName(name, cacheId));
+        eventService.deregisterAllListeners(MapService.SERVICE_NAME, cacheId);
     }
 
     private PublisherContext getPublisherContext() {
