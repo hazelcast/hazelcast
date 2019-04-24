@@ -185,7 +185,7 @@ public class PartitionContainer {
 
     private void clearLockStore(String name) {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
-        final LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         if (lockService != null) {
             final ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);

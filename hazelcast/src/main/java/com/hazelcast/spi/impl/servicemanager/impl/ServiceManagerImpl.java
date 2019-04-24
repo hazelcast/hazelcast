@@ -54,7 +54,6 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
@@ -363,20 +362,6 @@ public final class ServiceManagerImpl implements ServiceManager {
     public <T> T getService(String serviceName) {
         final ServiceInfo serviceInfo = getServiceInfo(serviceName);
         return serviceInfo != null ? (T) serviceInfo.getService() : null;
-    }
-
-    @Override
-    public <T extends SharedService> T getSharedService(String serviceName) {
-        final Object service = getService(serviceName);
-        if (service == null) {
-            return null;
-        }
-
-        if (service instanceof SharedService) {
-            return (T) service;
-        }
-
-        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
     }
 
     /**

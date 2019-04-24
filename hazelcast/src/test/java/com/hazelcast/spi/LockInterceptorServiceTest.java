@@ -124,7 +124,7 @@ public class LockInterceptorServiceTest extends HazelcastTestSupport {
 
         @Override
         public void init(NodeEngine nodeEngine, Properties properties) {
-            final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+            final LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
             if (lockService != null) {
                 lockService.registerLockStoreConstructor(SERVICE_NAME, new LockStoreInfoConstructor());
             }

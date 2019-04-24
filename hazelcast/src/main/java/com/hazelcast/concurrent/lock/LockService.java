@@ -17,12 +17,11 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SharedService;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-public interface LockService extends SharedService {
+public interface LockService {
 
     String SERVICE_NAME = "hz:impl:lockService";
 

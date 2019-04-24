@@ -96,7 +96,7 @@ public class MultiMapPartitionContainer {
 
     private void clearLockStore(String name) {
         NodeEngine nodeEngine = service.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         if (lockService != null) {
             DistributedObjectNamespace namespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
             lockService.clearLockStore(partitionId, namespace);
