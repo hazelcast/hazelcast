@@ -23,6 +23,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Comparables;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
@@ -45,13 +46,26 @@ public class NotEqualPredicate extends AbstractPredicate implements NegatablePre
         this.value = value;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public boolean apply(Map.Entry mapEntry) {
+        return !super.apply(mapEntry);
+    }
+
     protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
+        // XXX: The code below performs equality check, instead of inequality.
+        // The result of this check is negated in NotEqualPredicate.apply method.
+        // This is required to make multi-value attribute inequality queries to
+        // work properly: if something has two names A and B, that something
+        // should be excluded if we are searching for things not named A, even
+        // if its another name is B.
+
         if (attributeValue == null) {
-            return !isNull(value);
+            return isNull(value);
         }
         value = convert(attributeValue, value);
         attributeValue = (Comparable) convertEnumValue(attributeValue);
-        return !Comparables.equal(attributeValue, value);
+        return Comparables.equal(attributeValue, value);
     }
 
     @Override
