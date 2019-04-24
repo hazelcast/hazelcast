@@ -17,12 +17,11 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.util.function.Predicate;
-import com.hazelcast.util.function.Supplier;
-
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Read-only collection which delegates its operations to an underlying map and a couple of functions. Designed

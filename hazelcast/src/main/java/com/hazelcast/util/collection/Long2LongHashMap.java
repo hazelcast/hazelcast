@@ -18,10 +18,7 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.util.QuickMath;
-import com.hazelcast.util.function.BiConsumer;
 import com.hazelcast.util.function.LongLongConsumer;
-import com.hazelcast.util.function.Predicate;
-import com.hazelcast.util.function.Supplier;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
@@ -30,6 +27,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static com.hazelcast.util.collection.Hashing.evenLongHash;
 

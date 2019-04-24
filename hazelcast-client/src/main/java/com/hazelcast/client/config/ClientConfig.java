@@ -32,7 +32,6 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.function.BiConsumer;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,6 +43,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;

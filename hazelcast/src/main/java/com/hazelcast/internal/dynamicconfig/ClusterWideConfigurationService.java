@@ -56,7 +56,6 @@ import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
@@ -70,6 +69,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.Versions.V3_11;

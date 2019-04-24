@@ -24,7 +24,6 @@ import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
-import com.hazelcast.util.function.Function;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -32,6 +31,7 @@ import org.w3c.dom.NodeList;
 import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 
 import static com.hazelcast.config.DomConfigHelper.childElements;
 import static com.hazelcast.config.DomConfigHelper.cleanNodeName;

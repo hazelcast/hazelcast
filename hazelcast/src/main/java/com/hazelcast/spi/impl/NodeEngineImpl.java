@@ -74,13 +74,13 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-import com.hazelcast.util.function.Consumer;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;

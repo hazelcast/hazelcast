@@ -22,9 +22,10 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.function.Function;
-import com.hazelcast.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl<InternalEventJournalMapEvent, T> {
 

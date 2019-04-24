@@ -17,12 +17,11 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.util.function.Predicate;
-
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;

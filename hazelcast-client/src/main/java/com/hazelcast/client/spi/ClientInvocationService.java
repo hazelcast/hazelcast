@@ -20,9 +20,9 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 /**
  * Invocation service for Hazelcast clients.

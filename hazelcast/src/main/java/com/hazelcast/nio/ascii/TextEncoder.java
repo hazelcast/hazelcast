@@ -21,11 +21,11 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;

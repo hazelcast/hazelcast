@@ -27,11 +27,11 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.UserCodeDeploymentPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Supplier;
 
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Message task handling user code deployment from client to cluster

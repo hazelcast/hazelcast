@@ -30,10 +30,10 @@ import com.hazelcast.util.MutableInteger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.BusySpinIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
-import com.hazelcast.util.function.Consumer;
-import com.hazelcast.util.function.Supplier;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;

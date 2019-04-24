@@ -37,7 +37,6 @@ import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.function.Consumer;
 
 import java.util.Map.Entry;
 import java.util.Set;
@@ -47,6 +46,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;

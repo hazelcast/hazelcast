@@ -21,7 +21,8 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.PreJoinAwareService;
-import com.hazelcast.util.function.Consumer;
+
+import java.util.function.Consumer;
 
 /**
  * The InternalEventService is an {@link EventService} interface that adds additional capabilities

@@ -20,7 +20,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.EndpointManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.function.Consumer;
+
+import java.util.function.Consumer;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;

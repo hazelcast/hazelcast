@@ -37,10 +37,10 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.function.Predicate;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.removeAccumulator;

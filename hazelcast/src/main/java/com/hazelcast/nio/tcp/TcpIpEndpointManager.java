@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
@@ -40,7 +40,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
-import com.hazelcast.util.function.Consumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -53,6 +52,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;

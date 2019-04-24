@@ -34,7 +34,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Function;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.ACTIVE;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;

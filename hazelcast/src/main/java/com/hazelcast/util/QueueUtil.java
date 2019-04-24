@@ -16,9 +16,9 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.util.function.Predicate;
 
 import java.util.Queue;
+import java.util.function.Predicate;
 
 /**
  * Utility class for Queues

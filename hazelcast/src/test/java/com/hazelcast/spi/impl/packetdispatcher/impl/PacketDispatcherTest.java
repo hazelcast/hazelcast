@@ -24,12 +24,13 @@ import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import java.util.function.Consumer;
 
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;

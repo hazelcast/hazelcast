@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;

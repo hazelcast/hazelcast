@@ -50,8 +50,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.function.Function;
-import com.hazelcast.util.function.Predicate;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -69,6 +67,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.cache.CacheEventType.PARTITION_LOST;
 import static com.hazelcast.cache.impl.CacheProxyUtil.NULL_KEY_IS_NOT_ALLOWED;

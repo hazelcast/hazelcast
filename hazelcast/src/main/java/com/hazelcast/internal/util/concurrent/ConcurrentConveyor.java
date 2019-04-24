@@ -18,11 +18,11 @@ package com.hazelcast.internal.util.concurrent;
 
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
-import com.hazelcast.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Queue;
+import java.util.function.Predicate;
 
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;

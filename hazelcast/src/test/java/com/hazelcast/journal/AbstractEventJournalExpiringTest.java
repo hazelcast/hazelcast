@@ -24,14 +24,14 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.function.Function;
-import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Base class for implementing data-structure specific event journal test where the journal is expiring.

@@ -32,10 +32,10 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;

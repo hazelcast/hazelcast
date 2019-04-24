@@ -53,7 +53,8 @@ import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.function.Supplier;
+
+import java.util.function.Supplier;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;

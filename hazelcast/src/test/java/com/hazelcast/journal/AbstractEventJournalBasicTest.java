@@ -33,9 +33,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.SetUtil;
-import com.hazelcast.util.function.BiConsumer;
-import com.hazelcast.util.function.Function;
-import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -48,6 +45,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.ADDED;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.EVICTED;

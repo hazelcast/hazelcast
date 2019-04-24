@@ -17,7 +17,6 @@
 package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.function.Supplier;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 

@@ -25,7 +25,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;

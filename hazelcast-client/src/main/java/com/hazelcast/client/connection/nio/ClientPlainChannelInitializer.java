@@ -22,7 +22,8 @@ import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.util.function.Consumer;
+
+import java.util.function.Consumer;
 
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;

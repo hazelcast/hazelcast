@@ -50,9 +50,9 @@ import static com.hazelcast.nio.IOUtil.newByteBuffer;
  * in front to put that buffer in reading mode.
  *
  * @param <S> the type of the source. E.g. a ByteBuffer or a
- *            {@link com.hazelcast.util.function.Supplier}.
+ *            {@link java.util.function.Supplier}.
  * @param <D> the type of the destination. E.g. a ByteBuffer or a
- *            {@link com.hazelcast.util.function.Consumer}.
+ *            {@link java.util.function.Consumer}.
  * @see Networking
  * @see InboundHandler
  * @see ChannelInitializer
