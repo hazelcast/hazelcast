@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.wan.WanReplicationEvent;
 
@@ -33,20 +34,10 @@ public class WanDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(WAN_REPLICATION_DS_FACTORY, WAN_REPLICATION_DS_FACTORY_ID);
 
-    /**
-     * ID of {@link com.hazelcast.wan.WanReplicationEvent}
-     */
     public static final int WAN_REPLICATION_EVENT = 0;
-
-    /**
-     * ID of {@link com.hazelcast.map.impl.wan.MapReplicationUpdate}
-     */
     public static final int MAP_REPLICATION_UPDATE = 1;
-
-    /**
-     * ID of {@link com.hazelcast.map.impl.wan.MapReplicationRemove}
-     */
     public static final int MAP_REPLICATION_REMOVE = 2;
+    public static final int WAN_MAP_ENTRY_VIEW = 3;
 
     @Override
     public int getFactoryId() {
@@ -63,6 +54,8 @@ public class WanDataSerializerHook implements DataSerializerHook {
                     return new MapReplicationUpdate();
                 case MAP_REPLICATION_REMOVE:
                     return new MapReplicationRemove();
+                case WAN_MAP_ENTRY_VIEW:
+                    return new WanMapEntryView<>();
                 default:
                     throw new IllegalArgumentException("Unknown type-id: " + typeId);
             }
