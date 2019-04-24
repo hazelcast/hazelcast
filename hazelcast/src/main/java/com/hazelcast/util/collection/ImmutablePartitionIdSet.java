@@ -61,4 +61,14 @@ public final class ImmutablePartitionIdSet extends PartitionIdSet {
     public void union(PartitionIdSet other) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void removeAll(PartitionIdSet other) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void complement() {
+        throw new UnsupportedOperationException();
+    }
 }

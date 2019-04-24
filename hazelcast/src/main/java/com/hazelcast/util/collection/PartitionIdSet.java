@@ -217,7 +217,7 @@ public class PartitionIdSet extends AbstractSet<Integer> {
 
         @Override
         public void remove() {
-            bitSet.clear(index);
+            PartitionIdSet.this.remove(index);
         }
     }
 

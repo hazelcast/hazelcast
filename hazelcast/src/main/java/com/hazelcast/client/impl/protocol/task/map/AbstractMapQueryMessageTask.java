@@ -96,7 +96,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             int partitionCount = clientEngine.getPartitionService().getPartitionCount();
 
             PartitionIdSet finishedPartitions = invokeOnMembers(result, predicate, partitionCount);
-            invokeOnMissingPartitions(result, predicate, finishedPartitions, partitionCount);
+            invokeOnMissingPartitions(result, predicate, finishedPartitions);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -125,7 +125,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     }
 
     private void invokeOnMissingPartitions(Collection<AccumulatedResults> result, Predicate predicate,
-                                           PartitionIdSet finishedPartitions, int partitionCount)
+                                           PartitionIdSet finishedPartitions)
             throws InterruptedException, ExecutionException {
         if (finishedPartitions.isMissingPartitions()) {
             PartitionIdSet missingPartitions = new PartitionIdSet(finishedPartitions);
@@ -134,7 +134,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
             createInvocationsForMissingPartitions(missingPartitions, missingFutures, predicate);
             collectResultsFromMissingPartitions(finishedPartitions, result, missingFutures);
         }
-        assertAllPartitionsQueried(finishedPartitions, partitionCount);
+        assertAllPartitionsQueried(finishedPartitions);
     }
 
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
@@ -261,9 +261,10 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                 query.getMapName()).createQueryPartitionOperation(query);
     }
 
-    private void assertAllPartitionsQueried(PartitionIdSet finishedPartitions, int partitionCount) {
+    private void assertAllPartitionsQueried(PartitionIdSet finishedPartitions) {
         if (finishedPartitions.isMissingPartitions()) {
             int missedPartitionsCount = 0;
+            int partitionCount = finishedPartitions.getPartitionCount();
             for (int i = 0; i < partitionCount; i++) {
                 if (!finishedPartitions.contains(i)) {
                     missedPartitionsCount++;
