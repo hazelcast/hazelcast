@@ -362,10 +362,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private void mergeRecordExpiration(Record record, long ttlMillis, Long maxIdleMillis, long creationTime, long lastAccessTime,
                                        long lastUpdateTime) {
         record.setTtl(ttlMillis);
-        //RU_COMPAT_3_10 (Long -> long)
-        if (maxIdleMillis != null) {
-            record.setMaxIdle(maxIdleMillis);
-        }
+        record.setMaxIdle(maxIdleMillis);
         record.setCreationTime(creationTime);
         record.setLastAccessTime(lastAccessTime);
         record.setLastUpdateTime(lastUpdateTime);

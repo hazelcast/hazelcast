@@ -17,14 +17,13 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.Predicate;
 
 /**
  * Provides common backup operation functionality for {@link com.hazelcast.map.EntryProcessor}
  * that can run on multiple entries.
  */
-abstract class AbstractMultipleEntryBackupOperation extends MapOperation implements Versioned {
+abstract class AbstractMultipleEntryBackupOperation extends MapOperation {
 
     EntryBackupProcessor backupProcessor;
 
