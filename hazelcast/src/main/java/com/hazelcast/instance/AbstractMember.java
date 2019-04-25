@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.version.MemberVersion;
 
@@ -43,7 +42,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @PrivateApi
-public abstract class AbstractMember implements Member, Versioned {
+public abstract class AbstractMember implements Member {
 
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
     protected Address address;

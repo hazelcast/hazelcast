@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -30,7 +29,7 @@ import java.io.IOException;
  * Default heap based implementation of {@link com.hazelcast.cache.CacheEntryView}.
  */
 public class DefaultCacheEntryView
-        implements CacheEntryView<Data, Data>, IdentifiedDataSerializable, Versioned {
+        implements CacheEntryView<Data, Data>, IdentifiedDataSerializable {
 
     private Data key;
     private Data value;

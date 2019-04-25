@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -33,7 +32,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
  */
 public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable,
-        Versioned, NamedConfig {
+        NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.

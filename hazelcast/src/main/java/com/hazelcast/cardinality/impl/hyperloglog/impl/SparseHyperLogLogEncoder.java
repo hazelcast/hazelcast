@@ -20,7 +20,6 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -32,7 +31,7 @@ import java.util.Arrays;
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public class SparseHyperLogLogEncoder
-        implements HyperLogLogEncoder, Versioned {
+        implements HyperLogLogEncoder {
 
     private static final int P_PRIME = 25;
     private static final int P_PRIME_MASK = 0x1ffffff;

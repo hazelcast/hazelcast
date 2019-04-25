@@ -19,14 +19,13 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
  */
-public class ExecutorConfig implements IdentifiedDataSerializable, Versioned, NamedConfig {
+public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.

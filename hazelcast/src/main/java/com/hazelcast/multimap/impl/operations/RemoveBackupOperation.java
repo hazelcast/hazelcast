@@ -30,15 +30,13 @@ import java.util.Collection;
 
 public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
-    private long recordId;
     private Data value;
 
     public RemoveBackupOperation() {
     }
 
-    public RemoveBackupOperation(String name, Data dataKey, long recordId, Data value) {
+    public RemoveBackupOperation(String name, Data dataKey, Data value) {
         super(name, dataKey);
-        this.recordId = recordId;
         this.value = value;
     }
 
@@ -63,14 +61,12 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(recordId);
         out.writeData(value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        recordId = in.readLong();
         value = in.readData();
     }
 

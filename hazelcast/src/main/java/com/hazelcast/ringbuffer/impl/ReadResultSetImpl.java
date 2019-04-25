@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
@@ -52,7 +51,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_RE
  *            is {@code null} or returns the same type as the parameter
  */
 public class ReadResultSetImpl<O, E> extends AbstractList<E>
-        implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E>, Versioned {
+        implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E> {
 
     protected transient SerializationService serializationService;
     private transient int minSize;

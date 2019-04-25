@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -39,7 +38,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <T> Type of Collection such as List, Set
  */
 public abstract class CollectionConfig<T extends CollectionConfig>
-        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned, NamedConfig {
+        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default maximum size for the Configuration.

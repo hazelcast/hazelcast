@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -41,7 +40,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * content will be fully stored on a single member in the cluster and its
  * backup in another member in the cluster.
  */
-public class RingbufferConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned, NamedConfig {
+public class RingbufferConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default value of capacity of the RingBuffer.

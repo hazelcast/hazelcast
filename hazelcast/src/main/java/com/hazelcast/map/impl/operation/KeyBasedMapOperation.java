@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -28,7 +27,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_MAX_IDLE;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 public abstract class KeyBasedMapOperation extends MapOperation
-        implements PartitionAwareOperation, Versioned {
+        implements PartitionAwareOperation {
 
     protected Data dataKey;
     protected long threadId;

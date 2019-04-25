@@ -16,13 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
@@ -43,7 +41,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IMap}.
  */
-public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned, NamedConfig {
+public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The minimum number of backups
@@ -199,12 +197,12 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
-        this.entryListenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
+        this.entryListenerConfigs = new ArrayList<>(config.getEntryListenerConfigs());
         this.partitionLostListenerConfigs =
-                new ArrayList<MapPartitionLostListenerConfig>(config.getPartitionLostListenerConfigs());
-        this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
-        this.mapAttributeConfigs = new ArrayList<MapAttributeConfig>(config.getMapAttributeConfigs());
-        this.queryCacheConfigs = new ArrayList<QueryCacheConfig>(config.getQueryCacheConfigs());
+                new ArrayList<>(config.getPartitionLostListenerConfigs());
+        this.mapIndexConfigs = new ArrayList<>(config.getMapIndexConfigs());
+        this.mapAttributeConfigs = new ArrayList<>(config.getMapAttributeConfigs());
+        this.queryCacheConfigs = new ArrayList<>(config.getQueryCacheConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.quorumName = config.quorumName;
@@ -650,7 +648,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     public List<EntryListenerConfig> getEntryListenerConfigs() {
         if (entryListenerConfigs == null) {
-            entryListenerConfigs = new ArrayList<EntryListenerConfig>();
+            entryListenerConfigs = new ArrayList<>();
         }
         return entryListenerConfigs;
     }
@@ -667,7 +665,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     public List<MapPartitionLostListenerConfig> getPartitionLostListenerConfigs() {
         if (partitionLostListenerConfigs == null) {
-            partitionLostListenerConfigs = new ArrayList<MapPartitionLostListenerConfig>();
+            partitionLostListenerConfigs = new ArrayList<>();
         }
 
         return partitionLostListenerConfigs;
@@ -686,7 +684,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     public List<MapIndexConfig> getMapIndexConfigs() {
         if (mapIndexConfigs == null) {
-            mapIndexConfigs = new ArrayList<MapIndexConfig>();
+            mapIndexConfigs = new ArrayList<>();
         }
         return mapIndexConfigs;
     }
@@ -703,7 +701,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
 
     public List<MapAttributeConfig> getMapAttributeConfigs() {
         if (mapAttributeConfigs == null) {
-            mapAttributeConfigs = new ArrayList<MapAttributeConfig>();
+            mapAttributeConfigs = new ArrayList<>();
         }
         return mapAttributeConfigs;
     }
@@ -759,7 +757,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
      */
     public List<QueryCacheConfig> getQueryCacheConfigs() {
         if (queryCacheConfigs == null) {
-            queryCacheConfigs = new ArrayList<QueryCacheConfig>();
+            queryCacheConfigs = new ArrayList<>();
         }
         return queryCacheConfigs;
     }
@@ -1094,10 +1092,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         out.writeObject(partitioningStrategyConfig);
         out.writeUTF(quorumName);
         out.writeObject(hotRestartConfig);
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            out.writeShort(metadataPolicy.getId());
-        }
+        out.writeShort(metadataPolicy.getId());
     }
 
     @Override
@@ -1126,9 +1121,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         partitioningStrategyConfig = in.readObject();
         quorumName = in.readUTF();
         hotRestartConfig = in.readObject();
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            metadataPolicy = MetadataPolicy.getById(in.readShort());
-        }
+        metadataPolicy = MetadataPolicy.getById(in.readShort());
     }
 }

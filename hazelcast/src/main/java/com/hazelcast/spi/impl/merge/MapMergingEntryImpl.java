@@ -21,14 +21,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
-
-import static com.hazelcast.internal.cluster.Versions.V3_11;
 
 /**
  * Implementation of {@link MapMergeTypes}.
@@ -37,7 +34,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_11;
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
 public class MapMergingEntryImpl
-        implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable, Versioned {
+        implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
 
     private Data value;
     private Data key;
@@ -210,15 +207,11 @@ public class MapMergingEntryImpl
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(ttl);
-        // RU_COMPAT_3_10
         // WAN events received from source cluster also carry null maxIdle
-        // even when cluster version is 3.11
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            boolean hasMaxIdle = maxIdle != null;
-            out.writeBoolean(hasMaxIdle);
-            if (hasMaxIdle) {
-                out.writeLong(maxIdle);
-            }
+        boolean hasMaxIdle = maxIdle != null;
+        out.writeBoolean(hasMaxIdle);
+        if (hasMaxIdle) {
+            out.writeLong(maxIdle);
         }
     }
 
@@ -235,14 +228,10 @@ public class MapMergingEntryImpl
         lastUpdateTime = in.readLong();
         version = in.readLong();
         ttl = in.readLong();
-        //RU_COMPAT_3_10
         // WAN events received from source cluster also carry null maxIdle
-        // even when cluster version is 3.11
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            boolean hasMaxIdle = in.readBoolean();
-            if (hasMaxIdle) {
-                maxIdle = in.readLong();
-            }
+        boolean hasMaxIdle = in.readBoolean();
+        if (hasMaxIdle) {
+            maxIdle = in.readLong();
         }
     }
 
