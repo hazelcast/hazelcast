@@ -70,6 +70,8 @@ public class AggregationResult implements Result<AggregationResult> {
         }
         if (partitionIds == null) {
             partitionIds = new PartitionIdSet(otherPartitionIds);
+        } else {
+            partitionIds.addAll(otherPartitionIds);
         }
         aggregator.combine(result.aggregator);
     }
