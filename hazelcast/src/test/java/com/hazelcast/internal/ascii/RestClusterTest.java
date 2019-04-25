@@ -364,4 +364,15 @@ public class RestClusterTest {
         int healthReadyResponseCode = communicator.getHealthReadyResponseCode();
         assertEquals(HttpURLConnection.HTTP_OK, healthReadyResponseCode);
     }
+
+    @Test
+    public void testSetLicenseKey() throws Exception {
+        Config config = createConfigWithRestEnabled();
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        HTTPCommunicator.ConnectionResponse response =
+                communicator.setLicense(config.getGroupConfig().getName(), getPassword(), "whatever");
+        assertEquals(HttpURLConnection.HTTP_OK, response.responseCode);
+        assertEquals(response.response, "{\"status\":\"success\"}");
+    }
 }
