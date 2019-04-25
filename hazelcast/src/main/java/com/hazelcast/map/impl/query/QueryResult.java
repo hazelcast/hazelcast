@@ -198,6 +198,8 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
         }
         if (partitionIds == null) {
             partitionIds = new PartitionIdSet(otherPartitionIds);
+        } else {
+            partitionIds.addAll(otherPartitionIds);
         }
         rows.addAll(result.rows);
     }
