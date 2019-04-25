@@ -24,9 +24,17 @@ import com.hazelcast.config.AbstractConfigLocator;
  */
 public class XmlClientConfigLocator extends AbstractConfigLocator {
 
+    public XmlClientConfigLocator() {
+        super(false);
+    }
+
+    public XmlClientConfigLocator(boolean failIfSysPropWithNotExpectedSuffix) {
+        super(failIfSysPropWithNotExpectedSuffix);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.client.config", "xml");
+        return loadFromSystemProperty("hazelcast.client.config");
     }
 
     @Override

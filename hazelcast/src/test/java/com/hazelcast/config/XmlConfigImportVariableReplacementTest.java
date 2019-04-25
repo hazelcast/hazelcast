@@ -386,7 +386,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, null);
         GroupConfig groupConfig = config.getGroupConfig();
-        assertEquals("foobar", groupConfig.getName());
+        assertEquals("foobar-xml", groupConfig.getName());
         assertEquals("dev-pass", groupConfig.getPassword());
     }
 

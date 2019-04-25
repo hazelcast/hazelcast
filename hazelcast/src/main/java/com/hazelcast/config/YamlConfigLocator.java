@@ -27,6 +27,14 @@ package com.hazelcast.config;
  */
 public class YamlConfigLocator extends AbstractConfigLocator {
 
+    public YamlConfigLocator() {
+        this(false);
+    }
+
+    public YamlConfigLocator(boolean failIfSysPropWithNotExpectedSuffix) {
+        super(failIfSysPropWithNotExpectedSuffix);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
         return loadFromSystemProperty("hazelcast.config", "yaml", "yml");

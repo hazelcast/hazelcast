@@ -24,9 +24,17 @@ import com.hazelcast.config.AbstractConfigLocator;
  */
 public class YamlClientFailoverConfigLocator extends AbstractConfigLocator {
 
+    public YamlClientFailoverConfigLocator() {
+        super(false);
+    }
+
+    public YamlClientFailoverConfigLocator(boolean failIfSysPropWithNotExpectedSuffix) {
+        super(failIfSysPropWithNotExpectedSuffix);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.client.failover.config", "yaml");
+        return loadFromSystemProperty("hazelcast.client.failover.config", "yaml", "yml");
     }
 
     @Override

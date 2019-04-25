@@ -14,7 +14,7 @@
 
 hazelcast-client:
   group:
-    name: foobar
+    name: foobar-yaml
     password: dev-pass
   network:
     ssl:

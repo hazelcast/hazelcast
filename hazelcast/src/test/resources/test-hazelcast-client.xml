@@ -21,7 +21,7 @@
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
 
     <group>
-        <name>foobar</name>
+        <name>foobar-xml</name>
         <password>dev-pass</password>
     </group>
     <network>
