@@ -102,7 +102,7 @@ public final class FailoverClientConfigSupport {
             // 1. Try loading config if provided in system property and it is an XML file
             config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
 
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
+        } else if (yamlConfigLocator.locateFromSystemPropertyOrFailOnUnexpectedSuffix()) {
             // 2. Try loading config if provided in system property and it is an YAML file
             config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
 
@@ -129,7 +129,7 @@ public final class FailoverClientConfigSupport {
             // 1. Try loading config if provided in system property and it is an XML file
             config = new XmlClientConfigBuilder(xmlConfigLocator).build();
 
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
+        } else if (yamlConfigLocator.locateFromSystemPropertyOrFailOnUnexpectedSuffix()) {
             // 2. Try loading config if provided in system property and it is an YAML file
             config = new YamlClientConfigBuilder(yamlConfigLocator).build();
 

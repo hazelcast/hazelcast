@@ -30,6 +30,11 @@ public class YamlClientConfigLocator extends AbstractConfigLocator {
     }
 
     @Override
+    public boolean locateFromSystemPropertyOrFailOnUnexpectedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnexpectedSuffix("hazelcast.client.config", "yaml", "yml");
+    }
+
+    @Override
     protected boolean locateInWorkDir() {
         return loadFromWorkingDirectory("hazelcast-client.yaml");
     }

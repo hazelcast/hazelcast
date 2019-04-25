@@ -1,0 +1,7 @@
+<hazelcast-client-failover>
+    <try-count>4</try-count>
+    <clients>
+        <client>hazelcast-client-c1.foobar</client>
+        <client>hazelcast-client-c2.foobar</client>
+    </clients>
+</hazelcast-client-failover>

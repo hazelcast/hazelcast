@@ -30,6 +30,11 @@ public class XmlClientConfigLocator extends AbstractConfigLocator {
     }
 
     @Override
+    public boolean locateFromSystemPropertyOrFailOnUnexpectedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnexpectedSuffix("hazelcast.client.config", "xml");
+    }
+
+    @Override
     protected boolean locateInWorkDir() {
         return loadFromWorkingDirectory("hazelcast-client.xml");
     }

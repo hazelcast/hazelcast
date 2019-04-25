@@ -30,6 +30,11 @@ public class XmlClientFailoverConfigLocator extends AbstractConfigLocator {
     }
 
     @Override
+    public boolean locateFromSystemPropertyOrFailOnUnexpectedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnexpectedSuffix("hazelcast.client.failover.config", "xml");
+    }
+
+    @Override
     protected boolean locateInWorkDir() {
         return loadFromWorkingDirectory("hazelcast-client-failover.xml");
     }
