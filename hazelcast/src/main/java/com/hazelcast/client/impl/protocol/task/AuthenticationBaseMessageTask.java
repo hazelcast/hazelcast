@@ -44,7 +44,8 @@ import java.util.List;
 /**
  * Base authentication task
  */
-public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P> {
+public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P>
+        implements BlockingMessageTask {
 
     protected transient ClientPrincipal principal;
     protected transient Credentials credentials;
