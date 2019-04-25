@@ -60,6 +60,8 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     private ManagedExecutorServiceMBean asyncExecutorMBean;
     private ManagedExecutorServiceMBean scheduledExecutorMBean;
     private ManagedExecutorServiceMBean clientExecutorMBean;
+    private ManagedExecutorServiceMBean clientQueryExecutorMBean;
+    private ManagedExecutorServiceMBean clientBlockingExecutorMBean;
     private ManagedExecutorServiceMBean queryExecutorMBean;
     private ManagedExecutorServiceMBean ioExecutorMBean;
     private ManagedExecutorServiceMBean offloadableExecutorMBean;
@@ -117,6 +119,10 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
                 hazelcastInstance, executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR), service);
         this.clientExecutorMBean = new ManagedExecutorServiceMBean(
                 hazelcastInstance, executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR), service);
+        this.clientQueryExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.CLIENT_QUERY_EXECUTOR), service);
+        this.clientBlockingExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.CLIENT_BLOCKING_EXECUTOR), service);
         this.queryExecutorMBean = new ManagedExecutorServiceMBean(
                 hazelcastInstance, executionService.getExecutor(ExecutionService.QUERY_EXECUTOR), service);
         this.ioExecutorMBean = new ManagedExecutorServiceMBean(
@@ -137,6 +143,8 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         register(asyncExecutorMBean);
         register(scheduledExecutorMBean);
         register(clientExecutorMBean);
+        register(clientQueryExecutorMBean);
+        register(clientBlockingExecutorMBean);
         register(queryExecutorMBean);
         register(ioExecutorMBean);
         register(offloadableExecutorMBean);
@@ -168,6 +176,14 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     public ManagedExecutorServiceMBean getClientExecutorMBean() {
         return clientExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getClientQueryExecutorMBean() {
+        return clientQueryExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getClientBlockingExecutorMBean() {
+        return clientBlockingExecutorMBean;
     }
 
     public ManagedExecutorServiceMBean getQueryExecutorMBean() {
