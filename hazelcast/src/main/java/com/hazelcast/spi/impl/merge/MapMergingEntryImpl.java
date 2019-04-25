@@ -47,7 +47,8 @@ public class MapMergingEntryImpl
     private long lastUpdateTime = -1;
     private long version = -1;
     private long ttl = -1;
-    //RU_COMPAT_3_10 (Long -> long)
+    // can be null when merging entries received through WAN
+    // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
     private Long maxIdle;
 
     private transient SerializationService serializationService;
@@ -208,6 +209,7 @@ public class MapMergingEntryImpl
         out.writeLong(version);
         out.writeLong(ttl);
         // WAN events received from source cluster also carry null maxIdle
+        // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
         boolean hasMaxIdle = maxIdle != null;
         out.writeBoolean(hasMaxIdle);
         if (hasMaxIdle) {
@@ -229,6 +231,7 @@ public class MapMergingEntryImpl
         version = in.readLong();
         ttl = in.readLong();
         // WAN events received from source cluster also carry null maxIdle
+        // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
         boolean hasMaxIdle = in.readBoolean();
         if (hasMaxIdle) {
             maxIdle = in.readLong();
