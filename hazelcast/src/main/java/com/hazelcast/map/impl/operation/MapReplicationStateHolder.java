@@ -85,7 +85,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     public MapReplicationStateHolder() {
     }
 
-    public MapReplicationStateHolder(MapReplicationOperation operation) {
+    public void setOperation(MapReplicationOperation operation) {
         this.operation = operation;
     }
 

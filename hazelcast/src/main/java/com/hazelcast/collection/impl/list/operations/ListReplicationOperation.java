@@ -47,9 +47,7 @@ public class ListReplicationOperation extends CollectionReplicationOperation {
         migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
-            ListContainer container = new ListContainer();
-            container.readData(in);
-            migrationData.put(name, container);
+            migrationData.put(name, in.readObject());
         }
     }
 }

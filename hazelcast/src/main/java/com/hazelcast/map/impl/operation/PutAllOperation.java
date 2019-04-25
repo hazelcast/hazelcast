@@ -210,14 +210,13 @@ public class PutAllOperation extends MapOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        mapEntries.writeData(out);
+        out.writeObject(mapEntries);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapEntries = new MapEntries();
-        mapEntries.readData(in);
+        mapEntries = in.readObject();
     }
 
     @Override
