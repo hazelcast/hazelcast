@@ -385,7 +385,7 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "    - classpath:test-hazelcast.yaml";
         Config config = buildConfig(yaml, null);
         GroupConfig groupConfig = config.getGroupConfig();
-        assertEquals("foobar", groupConfig.getName());
+        assertEquals("foobar-yaml", groupConfig.getName());
         assertEquals("dev-pass", groupConfig.getPassword());
     }
 

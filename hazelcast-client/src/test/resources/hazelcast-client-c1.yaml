@@ -20,3 +20,9 @@ hazelcast-client:
   network:
     cluster-members:
       - 127.0.0.1:5701
+
+  connection-strategy:
+    async-start: true
+    reconnect-mode: OFF
+    connection-retry:
+      enabled: false

@@ -24,9 +24,17 @@ import com.hazelcast.config.AbstractConfigLocator;
  */
 public class XmlClientFailoverConfigLocator extends AbstractConfigLocator {
 
+    public XmlClientFailoverConfigLocator() {
+        super(false);
+    }
+
+    public XmlClientFailoverConfigLocator(boolean failIfSysPropWithNotExpectedSuffix) {
+        super(failIfSysPropWithNotExpectedSuffix);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.client.failover.config", "xml");
+        return loadFromSystemProperty("hazelcast.client.failover.config");
     }
 
     @Override

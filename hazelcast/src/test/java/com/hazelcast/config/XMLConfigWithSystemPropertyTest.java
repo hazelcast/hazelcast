@@ -17,6 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -104,6 +106,26 @@ public class XMLConfigWithSystemPropertyTest {
 
         XmlConfigBuilder configBuilder = new XmlConfigBuilder();
         Config config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
+        assertEquals("foobar-xml", config.getGroupConfig().getName());
+    }
+
+    @Test
+    public void loadingThroughSystemProperty_nonXmlSuffix() {
+        System.setProperty("hazelcast.config", "classpath:test-hazelcast.foobar");
+
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
+        Config config = configBuilder.build();
+        assertEquals("foobar-foobar", config.getGroupConfig().getName());
+    }
+
+    @Test
+    public void loadingThroughSystemPropertyViaLocator_nonXmlSuffix() {
+        System.setProperty("hazelcast.config", "classpath:test-hazelcast.foobar");
+
+        HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(null);
+        Config config = instance.getConfig();
+        instance.shutdown();
+
+        assertEquals("foobar-foobar", config.getGroupConfig().getName());
     }
 }

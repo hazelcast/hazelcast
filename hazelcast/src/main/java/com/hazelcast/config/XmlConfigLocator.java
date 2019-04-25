@@ -27,9 +27,13 @@ package com.hazelcast.config;
  */
 public class XmlConfigLocator extends AbstractConfigLocator {
 
+    public XmlConfigLocator() {
+        super(false);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.config", "xml");
+        return loadFromSystemProperty("hazelcast.config");
     }
 
     @Override

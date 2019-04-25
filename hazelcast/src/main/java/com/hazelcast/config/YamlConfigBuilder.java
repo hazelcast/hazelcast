@@ -107,7 +107,7 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
      */
     public YamlConfigBuilder(YamlConfigLocator locator) {
         if (locator == null) {
-            locator = new YamlConfigLocator();
+            locator = new YamlConfigLocator(true);
             locator.locateEverywhere();
         }
 

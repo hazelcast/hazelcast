@@ -101,7 +101,7 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
      */
     public YamlClientFailoverConfigBuilder(YamlClientFailoverConfigLocator locator) {
         if (locator == null) {
-            locator = new YamlClientFailoverConfigLocator();
+            locator = new YamlClientFailoverConfigLocator(true);
             locator.locateEverywhere();
         }
 

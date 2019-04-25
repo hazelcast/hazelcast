@@ -26,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 
 /**
  * Abstract base class for config locators.
@@ -35,9 +36,19 @@ import java.net.URL;
  */
 public abstract class AbstractConfigLocator {
     private static final ILogger LOGGER = Logger.getLogger(AbstractConfigLocator.class);
+
     private InputStream in;
     private File configurationFile;
     private URL configurationUrl;
+    private final boolean failIfSysPropWithNotExpectedSuffix;
+
+    protected AbstractConfigLocator() {
+        this(false);
+    }
+
+    protected AbstractConfigLocator(boolean failIfSysPropWithNotExpectedSuffix) {
+        this.failIfSysPropWithNotExpectedSuffix = failIfSysPropWithNotExpectedSuffix;
+    }
 
     public InputStream getIn() {
         return in;
@@ -177,7 +188,14 @@ public abstract class AbstractConfigLocator {
 
             if (expectedExtensions != null && expectedExtensions.length > 0
                     && !isExpectedExtensionConfigured(configSystemProperty, expectedExtensions)) {
-                return false;
+                if (failIfSysPropWithNotExpectedSuffix) {
+                    String message = String.format("The suffix of the resource \'%s\' referenced in \'%s\' is not in the list of "
+                                    + "expected suffixes: \'%s\'", configSystemProperty, propertyKey,
+                            Arrays.toString(expectedExtensions));
+                    throw new HazelcastException(message);
+                } else {
+                    return false;
+                }
             }
 
             LOGGER.info(String.format("Loading configuration '%s' from System property '%s'", configSystemProperty, propertyKey));
@@ -188,6 +206,8 @@ public abstract class AbstractConfigLocator {
                 loadSystemPropertyFileResource(configSystemProperty);
             }
             return true;
+        } catch (HazelcastException e) {
+            throw e;
         } catch (RuntimeException e) {
             throw new HazelcastException(e);
         }
@@ -243,6 +263,6 @@ public abstract class AbstractConfigLocator {
         if (in == null) {
             throw new HazelcastException(String.format("Could not load classpath resource: %s", resource));
         }
-        configurationUrl = Config.class.getResource(resource);
+        configurationUrl = Config.class.getClassLoader().getResource(resource);
     }
 }

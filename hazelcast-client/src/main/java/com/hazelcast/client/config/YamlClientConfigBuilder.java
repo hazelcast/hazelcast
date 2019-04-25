@@ -98,7 +98,7 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
      */
     public YamlClientConfigBuilder(YamlClientConfigLocator locator) {
         if (locator == null) {
-            locator = new YamlClientConfigLocator();
+            locator = new YamlClientConfigLocator(true);
             locator.locateEverywhere();
         }
 

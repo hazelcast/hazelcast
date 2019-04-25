@@ -135,7 +135,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
 
         YamlClientConfigBuilder configBuilder = new YamlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
+        assertEquals("foobar-yaml", config.getGroupConfig().getName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory",
                 config.getNetworkConfig().getSSLConfig().getFactoryClassName());
         assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());

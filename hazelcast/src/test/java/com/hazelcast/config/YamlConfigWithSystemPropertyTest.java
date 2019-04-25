@@ -17,12 +17,16 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -42,6 +46,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class YamlConfigWithSystemPropertyTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setUp() {
@@ -108,6 +115,29 @@ public class YamlConfigWithSystemPropertyTest {
 
         YamlConfigBuilder configBuilder = new YamlConfigBuilder();
         Config config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
+        assertEquals("foobar-yaml", config.getGroupConfig().getName());
+    }
+
+    @Test
+    public void loadingThroughSystemPropertyWithLocator_existingClasspathResource() {
+        System.setProperty("hazelcast.config", "classpath:test-hazelcast.yaml");
+
+        HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(null);
+        Config config = instance.getConfig();
+        instance.shutdown();
+
+        assertEquals("foobar-yaml", config.getGroupConfig().getName());
+    }
+
+    @Test
+    public void loadingThroughSystemPropertyWithLocator_nonYamlSuffix() {
+        System.setProperty("hazelcast.config", "classpath:test-hazelcast.foobar");
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage("hazelcast.config");
+        expectedException.expectMessage("classpath:test-hazelcast.foobar");
+        expectedException.expectMessage("yaml, yml");
+
+        new YamlConfigBuilder();
     }
 }

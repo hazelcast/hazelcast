@@ -21,18 +21,14 @@
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
 
     <group>
-        <name>cluster1</name>
-        <password>cluster1pass</password>
+        <name>cluster2-foobar</name>
+        <password>cluster2pass</password>
     </group>
 
     <network>
         <cluster-members>
-            <address>127.0.0.1:5701</address>
+            <address>127.0.0.1:5702</address>
         </cluster-members>
     </network>
-
-    <connection-strategy async-start="true" reconnect-mode="OFF">
-        <connection-retry enabled="false"/>
-    </connection-strategy>
 
 </hazelcast-client>
