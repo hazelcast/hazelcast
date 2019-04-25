@@ -196,6 +196,10 @@ public class HealthMonitor {
                 = metricRegistry.newLongGauge("executor.hz:async.queueSize");
         final LongGauge executorClientQueueSize
                 = metricRegistry.newLongGauge("executor.hz:client.queueSize");
+        final LongGauge executorQueryClientQueueSize
+                = metricRegistry.newLongGauge("executor.hz:client.query.queueSize");
+        final LongGauge executorBlockingClientQueueSize
+                = metricRegistry.newLongGauge("executor.hz:client.blocking.queueSize");
         final LongGauge executorClusterQueueSize
                 = metricRegistry.newLongGauge("executor.hz:cluster.queueSize");
         final LongGauge executorScheduledQueueSize
@@ -467,6 +471,10 @@ public class HealthMonitor {
                     .append(executorAsyncQueueSize.read()).append(", ");
             sb.append("executor.q.client.size=")
                     .append(executorClientQueueSize.read()).append(", ");
+            sb.append("executor.q.client.query.size=")
+                    .append(executorQueryClientQueueSize.read()).append(", ");
+            sb.append("executor.q.client.blocking.size=")
+                    .append(executorBlockingClientQueueSize.read()).append(", ");
             sb.append("executor.q.query.size=")
                     .append(executorQueryQueueSize.read()).append(", ");
             sb.append("executor.q.scheduled.size=")
