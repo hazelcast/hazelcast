@@ -108,7 +108,7 @@
         <slf4j.api.version>1.6.6</slf4j.api.version>
         <guava.version>15.0</guava.version>
         <reflections.version>0.9.10</reflections.version>
-        <hazelcast.aws.version>2.0.0</hazelcast.aws.version>
+        <hazelcast.aws.version>2.4</hazelcast.aws.version>
         <osgi.version>4.2.0</osgi.version>
         <hadoop.version>2.8.3</hadoop.version>
         <spring.version>4.3.0.RELEASE</spring.version>
