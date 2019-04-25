@@ -123,6 +123,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else if (uri.startsWith(URI_RESTART_CP_SUBSYSTEM_URL)) {
                 handleResetAndInitCPSubsystem(command);
                 sendResponse = false;
+            } else if (uri.startsWith(URI_LICENSE_INFO)) {
+                handleUpdateLicenseKey(command);
             } else {
                 command.send404();
             }
@@ -794,11 +796,19 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return textCommandService.getNode().getNodeEngine().getHazelcastInstance().getCPSubsystem();
     }
 
-    private static String exceptionResponse(Throwable throwable) {
+    /**
+     * Updating the license key is implemented in the Enterprise POST command processor. The default
+     * OS implementation responds with "404 Not Found" (the same way 'GET /hazelcast/rest/license' does).
+     */
+    protected void handleUpdateLicenseKey(HttpPostCommand command) {
+        command.send404();
+    }
+
+    protected static String exceptionResponse(Throwable throwable) {
         return response(ResponseType.FAIL, "message", throwable.getMessage());
     }
 
-    private static String response(ResponseType type, Object... attributes) {
+    protected static String response(ResponseType type, Object... attributes) {
         final StringBuilder builder = new StringBuilder("{");
         builder.append("\"status\":\"").append(type).append("\"");
         if (attributes.length > 0) {
@@ -813,7 +823,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return builder.append("}").toString();
     }
 
-    private enum ResponseType {
+    protected enum ResponseType {
         SUCCESS, FAIL, FORBIDDEN;
 
         @Override
@@ -855,7 +865,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      * Checks if the request is valid. If Hazelcast Security is not enabled, then only the given group name is compared to
      * configuration. Otherwise member JAAS authentication (member login module stack) is used to authenticate the command.
      */
-    private boolean authenticate(HttpPostCommand command, final String groupName, final String pass)
+    protected boolean authenticate(HttpPostCommand command, final String groupName, final String pass)
             throws UnsupportedEncodingException {
         String decodedName = URLDecoder.decode(groupName, "UTF-8");
         SecurityContext securityContext = textCommandService.getNode().getNodeExtension().getSecurityContext();
@@ -881,7 +891,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return true;
     }
 
-    private void sendResponse(HttpPostCommand command, String value) {
+    protected void sendResponse(HttpPostCommand command, String value) {
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(value));
         textCommandService.sendResponse(command);
     }

@@ -159,6 +159,11 @@ public class HTTPCommunicator {
         return doGet(url).response;
     }
 
+    public ConnectionResponse updateLicenseKey(String groupName, String groupPassword, String licenseKey) throws IOException {
+        String url = address + "license";
+        return doPost(url, groupName, groupPassword, licenseKey);
+    }
+
     public int getFailingClusterHealthWithTrailingGarbage() throws IOException {
         String url = "http:/" + baseRestAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
         return doGet(url).responseCode;
