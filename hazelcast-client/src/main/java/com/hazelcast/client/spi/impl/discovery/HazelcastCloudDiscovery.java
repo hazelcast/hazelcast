@@ -59,12 +59,12 @@ public class HazelcastCloudDiscovery {
     private final String endpointUrl;
     private final int connectionTimeoutInMillis;
 
-    HazelcastCloudDiscovery(String endpointUrl, int connectionTimeoutInMillis) {
+    public HazelcastCloudDiscovery(String endpointUrl, int connectionTimeoutInMillis) {
         this.endpointUrl = endpointUrl;
         this.connectionTimeoutInMillis = connectionTimeoutInMillis;
     }
 
-    Map<Address, Address> discoverNodes() {
+    public Map<Address, Address> discoverNodes() {
         try {
             return callService();
         } catch (Exception e) {

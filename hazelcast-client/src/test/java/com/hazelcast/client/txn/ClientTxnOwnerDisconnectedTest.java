@@ -28,6 +28,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -81,6 +82,11 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
                 }
                 return getSocketAddresses("127.0.0.1");
             }
+
+            @Override
+            public Address translate(Address address) {
+                return address;
+            }
         };
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
@@ -129,6 +135,11 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
                 }
                 return getSocketAddresses("127.0.0.1");
             }
+
+            @Override
+            public Address translate(Address address) {
+                return address;
+            }
         };
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
@@ -175,6 +186,11 @@ public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
                     }
                 }
                 return getSocketAddresses("127.0.0.1");
+            }
+
+            @Override
+            public Address translate(Address address) {
+                return address;
             }
         };
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
