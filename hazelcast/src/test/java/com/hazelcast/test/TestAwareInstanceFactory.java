@@ -118,8 +118,16 @@ public class TestAwareInstanceFactory {
     protected void shutdownInstances(List<HazelcastInstance> listToRemove) {
         if (listToRemove != null) {
             for (HazelcastInstance hz : listToRemove) {
-                ManagementService.shutdown(hz.getName());
-                hz.getLifecycleService().terminate();
+                try {
+                    ManagementService.shutdown(hz.getName());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    hz.getLifecycleService().terminate();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
