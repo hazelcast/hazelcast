@@ -356,6 +356,15 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         buildConfig(yaml);
     }
 
+    @Override
+    public void testWhitespaceInNonSpaceStrings() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  load-balancer:\n"
+                + "    type:   random   \n";
+
+        buildConfig(yaml);
+    }
 
     public static ClientConfig buildConfig(String yaml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());

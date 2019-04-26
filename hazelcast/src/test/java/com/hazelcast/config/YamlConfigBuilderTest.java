@@ -3529,4 +3529,17 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, lockConfig1.getLockAcquireLimit());
         assertEquals(2, lockConfig2.getLockAcquireLimit());
     }
+
+    @Override
+    public void testWhitespaceInNonSpaceStrings() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  quorum:\n"
+                + "    enabled: true\n"
+                + "    name: q\n"
+                + "    quorum-type:   WRITE   \n";
+
+        buildConfig(yaml);
+    }
+
 }

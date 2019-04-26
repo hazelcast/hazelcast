@@ -23,22 +23,41 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.TypeInfo;
+import org.w3c.dom.traversal.DocumentTraversal;
+import org.w3c.dom.traversal.NodeFilter;
+import org.w3c.dom.traversal.NodeIterator;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.URL;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.w3c.dom.TypeInfo.DERIVATION_RESTRICTION;
 
 /**
  * Test cases specific only to XML based configuration. The cases not
@@ -169,6 +188,25 @@ public class XmlOnlyConfigBuilderTest {
         buildConfig(xml);
     }
 
+    @Test
+    public void testAddWhitespaceToNonSpaceStrings() throws Exception {
+        // parse the default config file
+        InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-default.xml");
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        DocumentBuilder builder = dbf.newDocumentBuilder();
+        Document doc = builder.parse(xmlResource);
+        // validate to augment with type information
+        Validator validator = getValidator();
+        DOMResult result = new DOMResult();
+        validator.validate(new DOMSource(doc), result);
+        Document validated = (Document) result.getNode();
+        // add whitespace to non-space-string nodes
+        assertTrue("No whitespace added", addWhitespaceToNonSpaceStrings(validated));
+        String xml = serialize(validated);
+        buildConfig(xml);
+    }
+
     private static void assertXsdVersion(String buildVersion, String expectedXsdVersion) {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, buildVersion);
         assertEquals("Unexpected release version retrieved for build version " + buildVersion, expectedXsdVersion,
@@ -193,18 +231,68 @@ public class XmlOnlyConfigBuilderTest {
     }
 
     private static void testXSDConfigXML(String xmlFileName) throws Exception {
-        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-"
-                + Versions.CURRENT_CLUSTER_VERSION + ".xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
-        Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);
-        Validator validator = schema.newValidator();
+        Validator validator = getValidator();
 
         try {
             validator.validate(source);
         } catch (SAXException ex) {
             fail(xmlFileName + " is not valid because: " + ex.toString());
         }
+    }
+
+    private static Validator getValidator() throws SAXException {
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-"
+                + Versions.CURRENT_CLUSTER_VERSION + ".xsd");
+        Schema schema = factory.newSchema(schemaResource);
+        return schema.newValidator();
+    }
+
+    private static String serialize(Node node) throws TransformerException {
+        StringWriter result = new StringWriter();
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.transform(new DOMSource(node), new StreamResult(result));
+        return result.toString();
+    }
+
+    private static boolean addWhitespaceToNonSpaceStrings(Document doc) {
+        NodeIterator nodeIterator = ((DocumentTraversal) doc).createNodeIterator(
+                doc.getDocumentElement(), NodeFilter.SHOW_ELEMENT, null, true);
+        boolean added = false;
+        Node node;
+        while ((node = nodeIterator.nextNode()) != null) {
+            if (isNonSpaceString(node)) {
+                addWhitespace(node);
+                added = true;
+            }
+            NamedNodeMap attrs = node.getAttributes();
+            for (int i = 0; i < attrs.getLength(); i++) {
+                Node attr = attrs.item(i);
+                if (isNonSpaceString(attr)) {
+                    addWhitespace(attr);
+                    added = true;
+                }
+            }
+        }
+        return added;
+    }
+
+    private static void addWhitespace(Node node) {
+        node.setNodeValue(" \n " + node.getNodeValue() + " \n ");
+    }
+
+    private static boolean isNonSpaceString(Node node) {
+        TypeInfo typeInfo;
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            typeInfo = ((Element) node).getSchemaTypeInfo();
+        } else if (node.getNodeType() == Node.ATTRIBUTE_NODE) {
+            typeInfo = ((Attr) node).getSchemaTypeInfo();
+        } else {
+            typeInfo = null;
+        }
+        return typeInfo != null && typeInfo.isDerivedFrom("http://www.hazelcast.com/schema/config",
+                "non-space-string", DERIVATION_RESTRICTION);
     }
 }

@@ -355,6 +355,14 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertInstanceOf(RoundRobinLB.class, config.getLoadBalancer());
     }
 
+    @Override
+    public void testWhitespaceInNonSpaceStrings() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<load-balancer type=' \n random \n'/>"
+                + HAZELCAST_CLIENT_END_TAG;
+        buildConfig(xml);
+    }
+
     static ClientConfig buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
