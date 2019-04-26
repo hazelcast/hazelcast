@@ -16,12 +16,16 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Properties;
 import java.util.Random;
 
@@ -53,7 +57,7 @@ public class JetConfigXmlGeneratorTest {
         JetConfig jetConfig = new JetConfig();
         jetConfig.setProperty("key", "value");
         jetConfig.setProperty("toEscape", TO_ESCAPE);
-        String xml = generate(jetConfig);
+        String xml = generate(jetConfig, 5);
 
         // Then
         JetConfig generatedConfig = jetConfig(xml);
@@ -137,11 +141,24 @@ public class JetConfigXmlGeneratorTest {
     }
 
     private static JetConfig jetConfig(String xml) {
-        return XmlJetConfigBuilder.loadConfig(new ByteArrayInputStream(xml.getBytes()), null);
+        try {
+            File tempFile = File.createTempFile("jet", ".xml");
+            try (FileOutputStream os = new FileOutputStream(tempFile)) {
+                os.write(Util.readFully(new ByteArrayInputStream(xml.getBytes())));
+            }
+            return JetConfig.loadFromFile(tempFile);
+        } catch (IOException e) {
+            ExceptionUtil.sneakyThrow(e);
+        }
+        return null;
     }
 
     private static String generate(JetConfig jetConfig) {
         return JetConfigXmlGenerator.generate(jetConfig);
+    }
+
+    private static String generate(JetConfig jetConfig, int indent) {
+        return JetConfigXmlGenerator.generate(jetConfig, indent);
     }
 
     private static int randomInt() {

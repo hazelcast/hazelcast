@@ -16,40 +16,28 @@
 
 package com.hazelcast.jet.impl.config;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.AbstractXmlConfigBuilder;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DomConfigHelper;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
-import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.config.MetricsConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
-import java.util.Optional;
 import java.util.Properties;
 
-import static com.hazelcast.config.DomConfigHelper.childElements;
-import static com.hazelcast.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getClientConfigStream;
-import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getJetConfigStream;
-import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getMemberConfigStream;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -59,9 +47,11 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlJetConfigBuilder.class);
 
-    private final JetConfig jetConfig = new JetConfig();
+    private final InputStream in;
 
     /**
+     * Constructs a XmlJetConfigBuilder that tries to find a usable XML configuration file.
+     * <p>
      * Loads the jet config using the following resolution mechanism:
      * <ol>
      * <li>first it checks if a system property 'hazelcast.jet.config' is set. If it exist and it begins with
@@ -71,39 +61,50 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
      * <li>it loads the hazelcast-jet-default.xml</li>
      * </ol>
      */
-    private XmlJetConfigBuilder(Properties properties, InputStream in) {
-        setPropertiesInternal(properties);
-        try {
-            parseAndBuildConfig(in);
-        } catch (Exception e) {
-            throw sneakyThrow(e);
-        } finally {
-            IOUtil.closeResource(in);
-        }
+    public XmlJetConfigBuilder() {
+        this((XmlJetConfigLocator) null);
     }
 
-    public static JetConfig loadConfig(@Nullable InputStream stream, @Nullable Properties properties) {
+    public XmlJetConfigBuilder(InputStream inputStream) {
+        checkTrue(inputStream != null, "inputStream can't be null");
+        this.in = inputStream;
+    }
+
+    public XmlJetConfigBuilder(XmlJetConfigLocator locator) {
+        if (locator == null) {
+            locator = new XmlJetConfigLocator();
+            locator.locateEverywhere();
+        }
+        this.in = locator.getIn();
+    }
+
+    /**
+     * Sets properties to be used in variable resolution.
+     *
+     * If null properties supplied, System.properties will be used.
+     *
+     * @param properties the properties to be used to resolve ${variable}
+     *                   occurrences in the XML file
+     * @return the XmlJetConfigBuilder
+     */
+    public XmlJetConfigBuilder setProperties(@Nullable Properties properties) {
         if (properties == null) {
             properties = System.getProperties();
         }
+        setPropertiesInternal(properties);
+        return this;
+    }
+
+    @Deprecated
+    public static JetConfig loadConfig(@Nullable InputStream stream, @Nullable Properties properties) {
         if (stream == null) {
-            stream = getJetConfigStream(properties);
+            XmlJetConfigLocator locator = new XmlJetConfigLocator();
+            locator.locateEverywhere();
+            stream = locator.getIn();
         }
-        JetConfig cfg = new XmlJetConfigBuilder(properties, stream).jetConfig;
+        JetConfig cfg = new XmlJetConfigBuilder(stream).setProperties(properties).build();
         cfg.setHazelcastConfig(getMemberConfig(properties));
         return cfg;
-    }
-
-    public static ClientConfig getClientConfig() {
-        return getClientConfig(System.getProperties());
-    }
-
-    public static ClientConfig getClientConfig(Properties properties) {
-        return new XmlClientConfigBuilder(getClientConfigStream(properties)).build();
-    }
-
-    private static Config getMemberConfig(Properties properties) {
-        return new XmlConfigBuilder(getMemberConfigStream(properties)).build();
     }
 
     @Override
@@ -125,13 +126,13 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
         }
     }
 
-
     @Override
     protected ConfigType getConfigType() {
         return ConfigType.JET;
     }
 
-    @Override public String getNamespaceType() {
+    @Override
+    public String getNamespaceType() {
         return "jet-config";
     }
 
@@ -142,7 +143,23 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
         return jetBuildInfo.getVersion().substring(0, 3);
     }
 
-    private void parseAndBuildConfig(InputStream in) throws Exception {
+    public JetConfig build() {
+        return build(new JetConfig());
+    }
+
+    public JetConfig build(JetConfig config) {
+        try {
+            parseAndBuildConfig(config);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        } finally {
+            IOUtil.closeResource(in);
+        }
+        config.setHazelcastConfig(getMemberConfig(getProperties()));
+        return config;
+    }
+
+    private void parseAndBuildConfig(JetConfig config) throws Exception {
         Document doc = parse(in);
         Element root = doc.getDocumentElement();
         try {
@@ -152,126 +169,14 @@ public final class XmlJetConfigBuilder extends AbstractXmlConfigBuilder {
         }
         process(root);
         schemaValidation(root.getOwnerDocument());
-        handleConfig(root);
+        new JetDomConfigProcessor(domLevel3, config).buildConfig(root);
     }
 
-    private void handleConfig(Element docElement) {
-        for (Node node : childElements(docElement)) {
-            String name = cleanNodeName(node);
-            switch (name) {
-                case "instance":
-                    parseInstanceConfig(node);
-                    break;
-                case "properties":
-                    fillProperties(node, jetConfig.getProperties());
-                    break;
-                case "edge-defaults":
-                    parseEdgeDefaults(node);
-                    break;
-                case "metrics":
-                    parseMetrics(node);
-                    break;
-                default:
-                    throw new AssertionError("Unrecognized XML element: " + name);
-            }
-        }
+    private static Config getMemberConfig(Properties properties) {
+        XmlJetMemberConfigLocator locator = new XmlJetMemberConfigLocator();
+        locator.locateEverywhere();
+        return new XmlConfigBuilder(locator.getIn()).setProperties(properties).build();
     }
 
-    private void parseInstanceConfig(Node instanceNode) {
-        final InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
-        for (Node node : childElements(instanceNode)) {
-            String name = cleanNodeName(node);
-            switch (name) {
-                case "cooperative-thread-count":
-                    instanceConfig.setCooperativeThreadCount(intValue(node));
-                    break;
-                case "flow-control-period":
-                    instanceConfig.setFlowControlPeriodMs(intValue(node));
-                    break;
-                case "backup-count":
-                    instanceConfig.setBackupCount(intValue(node));
-                    break;
-                case "scale-up-delay-millis":
-                    instanceConfig.setScaleUpDelayMillis(longValue(node));
-                    break;
-                case "lossless-restart-enabled":
-                    instanceConfig.setLosslessRestartEnabled(booleanValue(node));
-                    break;
-                default:
-                    throw new AssertionError("Unrecognized XML element: " + name);
-            }
-        }
-    }
 
-    private void parseEdgeDefaults(Node edgeNode) {
-        EdgeConfig config = jetConfig.getDefaultEdgeConfig();
-        for (Node child : childElements(edgeNode)) {
-            String name = cleanNodeName(child);
-            switch (name) {
-                case "queue-size":
-                    config.setQueueSize(intValue(child));
-                    break;
-                case "packet-size-limit":
-                    config.setPacketSizeLimit(intValue(child));
-                    break;
-                case "receive-window-multiplier":
-                    config.setReceiveWindowMultiplier(intValue(child));
-                    break;
-                default:
-                    throw new AssertionError("Unrecognized XML element: " + name);
-            }
-        }
-    }
-
-    private void parseMetrics(Node metricsNode) {
-        MetricsConfig config = jetConfig.getMetricsConfig();
-
-        getBooleanAttribute(metricsNode, "enabled").ifPresent(config::setEnabled);
-        getBooleanAttribute(metricsNode, "jmxEnabled").ifPresent(config::setJmxEnabled);
-
-        for (Node child : childElements(metricsNode)) {
-            String name = cleanNodeName(child);
-            switch (name) {
-                case "retention-seconds":
-                    config.setRetentionSeconds(intValue(child));
-                    break;
-                case "collection-interval-seconds":
-                    config.setCollectionIntervalSeconds(intValue(child));
-                    break;
-                case "metrics-for-data-structures":
-                    config.setMetricsForDataStructuresEnabled(booleanValue(child));
-                    break;
-                default:
-                    throw new AssertionError("Unrecognized XML element: " + name);
-            }
-        }
-    }
-
-    private int intValue(Node node) {
-        return Integer.parseInt(stringValue(node));
-    }
-
-    private int longValue(Node node) {
-        return Integer.parseInt(stringValue(node));
-    }
-
-    private String stringValue(Node node) {
-        return getTextContent(node);
-    }
-
-    private boolean booleanValue(Node node) {
-        return Boolean.parseBoolean(getTextContent(node));
-    }
-
-    private Optional<Boolean> getBooleanAttribute(Node node, String name) {
-        return Optional.ofNullable(node.getAttributes().getNamedItem(name)).map(this::booleanValue);
-    }
-
-    private String getTextContent(Node node) {
-        return DomConfigHelper.getTextContent(node, domLevel3);
-    }
-
-    public void fillProperties(Node node, Properties properties) {
-        DomConfigHelper.fillProperties(node, properties, domLevel3);
-    }
 }

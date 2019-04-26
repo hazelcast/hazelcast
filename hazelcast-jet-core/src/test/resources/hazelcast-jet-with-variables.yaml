@@ -1,0 +1,16 @@
+hazelcast-jet:
+  instance:
+    cooperative-thread-count: ${thread.count}
+    flow-control-period: ${flow.control.period}
+    backup-count: ${backup.count}
+    scale-up-delay-millis: ${scale.up.delay.millis}
+    lossless-restart-enabled: ${lossless.restart.enabled}
+  properties:
+    property1: value1
+    property2: value2
+  metrics:
+    enabled: ${metrics.enabled}
+    jmx-enabled: ${metrics.jmxEnabled}
+    collection-interval-seconds: ${metrics.collection-interval}
+    retention-seconds: ${metrics.retention}
+    metrics-for-data-structures: ${metrics.enabled-for-data-structures}

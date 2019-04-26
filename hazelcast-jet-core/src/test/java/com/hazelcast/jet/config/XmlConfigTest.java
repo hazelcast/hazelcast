@@ -17,10 +17,9 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.impl.config.XmlJetConfigLocator;
+import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -45,15 +44,13 @@ import static org.junit.Assert.assertTrue;
 public class XmlConfigTest {
 
     private static final String TEST_XML_1 = "hazelcast-jet-test.xml";
-    private static final String TEST_XML_2 = "hazelcast-jet-member-test.xml";
     private static final String TEST_XML_2_GROUP_NAME = "imdg";
-    private static final String PASSWORD = "123456";
-    private static final String INSTANCE_NAME = "my-instance";
 
     @Test
     public void when_noConfigSpecified_usesDefaultConfig() {
         // When
-        JetConfig jetConfig = JetConfig.loadDefault(new Properties());
+        XmlJetConfigBuilder builder = new XmlJetConfigBuilder();
+        JetConfig jetConfig = builder.build();
 
         // Then
         assertEquals(Runtime.getRuntime().availableProcessors(),
@@ -78,68 +75,27 @@ public class XmlConfigTest {
             os.write(Util.readFully(resourceAsStream));
         }
 
-        Properties properties = new Properties();
-        properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, tempFile.getAbsolutePath());
-
         // When
-        JetConfig jetConfig = JetConfig.loadDefault(properties);
+        JetConfig jetConfig = JetConfig.loadFromFile(tempFile);
 
         // Then
         assertConfig(jetConfig);
         assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
-    }
-
-    @Test
-    public void when_filePathMemberSpecified_usesSpecifiedFile() throws IOException {
-        // Given
-        File tempFile = File.createTempFile("imdg", ".xml");
-        try (FileOutputStream os = new FileOutputStream(tempFile)) {
-            InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(TEST_XML_2);
-            os.write(Util.readFully(resourceAsStream));
-        }
-
-        Properties properties = new Properties();
-        properties.put(XmlJetConfigLocator.HAZELCAST_MEMBER_CONFIG_PROPERTY, tempFile.getAbsolutePath());
-
-        // When
-        JetConfig jetConfig = JetConfig.loadDefault(properties);
-
-        // Then
-        assertXmlMemberConfig(jetConfig.getHazelcastConfig());
     }
 
     @Test
     public void when_classpathSpecified_usesSpecifiedResource() {
-        // Given
-        Properties properties = new Properties();
-        properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + TEST_XML_1);
-
-        // When
-        JetConfig jetConfig = JetConfig.loadDefault(properties);
+        JetConfig jetConfig = JetConfig.loadFromClasspath(getClass().getClassLoader(), TEST_XML_1);
 
         // Then
         assertConfig(jetConfig);
         assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
-    }
-
-    @Test
-    public void when_classpathMemberSpecified_usesSpecifiedResource() {
-        // Given
-        Properties properties = new Properties();
-        properties.put(XmlJetConfigLocator.HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:" + TEST_XML_2);
-
-        // When
-        JetConfig jetConfig = JetConfig.loadDefault(properties);
-
-        // Then
-        assertXmlMemberConfig(jetConfig.getHazelcastConfig());
     }
 
     @Test
     public void when_configHasVariable_variablesAreReplaced() {
         // Given
         Properties properties = new Properties();
-        properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-with-variables.xml");
         properties.put("thread.count", String.valueOf(55));
         properties.put("flow.control.period", "50");
         properties.put("backup.count", "2");
@@ -152,39 +108,17 @@ public class XmlConfigTest {
         properties.put("metrics.enabled-for-data-structures", "true");
 
         // When
-        JetConfig jetConfig = JetConfig.loadDefault(properties);
+        JetConfig jetConfig = JetConfig.loadFromClasspath(getClass().getClassLoader(),
+                "hazelcast-jet-with-variables.xml", properties);
 
         // Then
         assertConfig(jetConfig);
     }
 
-    @Ignore("To confirm if substitution in Jet should be visible to IMDG")
-    @Test
-    public void when_configMemberHasVariable_variablesAreReplaced() {
-        // Given
-        Properties properties = new Properties();
-        properties.put(XmlJetConfigLocator.HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:${my.filename}");
-        properties.put("my.filename", TEST_XML_2);
-        properties.put("imdg.pass", PASSWORD);
-        properties.put("imdg.instance.name", INSTANCE_NAME);
-
-        // When
-        JetConfig jetConfig = JetConfig.loadDefault(properties);
-
-        // Then
-        assertXmlMemberConfig(jetConfig.getHazelcastConfig());
-        assertThat(jetConfig.getHazelcastConfig().getGroupConfig().getPassword(), equalTo(PASSWORD));
-        assertThat(jetConfig.getHazelcastConfig().getInstanceName(), equalTo(INSTANCE_NAME));
-    }
-
     @Test
     public void when_edgeDefaultsSpecified_usesSpecified() {
-        // Given
-        Properties properties = new Properties();
-        properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + TEST_XML_1);
-
         // When
-        JetConfig jetConfig = JetConfig.loadDefault(properties);
+        JetConfig jetConfig = JetConfig.loadFromClasspath(getClass().getClassLoader(), TEST_XML_1);
 
         // Then
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
@@ -216,8 +150,4 @@ public class XmlConfigTest {
         assertThat(config.getGroupConfig().getName(), not(equalTo(TEST_XML_2_GROUP_NAME)));
     }
 
-    private static void assertXmlMemberConfig(Config config) {
-        assertThat(config, not(nullValue()));
-        assertThat(config.getGroupConfig().getName(), equalTo(TEST_XML_2_GROUP_NAME));
-    }
 }

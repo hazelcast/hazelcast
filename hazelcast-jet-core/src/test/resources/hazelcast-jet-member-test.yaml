@@ -1,0 +1,5 @@
+hazelcast:
+  group:
+    name: imdg
+    password: ${imdg.pass}
+  instance-name: ${imdg.instance.name}

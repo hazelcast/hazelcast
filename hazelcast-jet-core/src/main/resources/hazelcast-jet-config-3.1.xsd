@@ -24,6 +24,7 @@
     <xs:element name="hazelcast-jet">
         <xs:complexType>
             <xs:all>
+                <xs:element name="config-replacers" type="config-replacers" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="instance" minOccurs="0">
                     <xs:complexType>
                         <xs:all>
@@ -76,6 +77,34 @@
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
+    <xs:complexType name="replacer">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="class-name" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="properties">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="property" type="property"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="config-replacers">
+        <xs:sequence>
+            <xs:element name="replacer" type="replacer" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="fail-if-value-missing" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls if missing replacement value should lead to stop the boot process.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:boolean"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
 
     <!-- SIMPLE TYPES -->
 

@@ -32,7 +32,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.ClusterMetadata;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
+import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.server.JetCommandLine.JetVersionProvider;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -427,7 +427,7 @@ public class JetCommandLine implements Callable<Void> {
             config.getGroupConfig().setName(groupName);
             return config;
         }
-        return XmlJetConfigBuilder.getClientConfig();
+        return ConfigProvider.locateAndGetClientConfig();
     }
 
     private void configureLogging() throws IOException {

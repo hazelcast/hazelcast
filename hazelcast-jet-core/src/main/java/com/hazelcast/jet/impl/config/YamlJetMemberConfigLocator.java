@@ -19,33 +19,36 @@ package com.hazelcast.jet.impl.config;
 import com.hazelcast.config.AbstractConfigLocator;
 
 /**
- * A support class for the {@link XmlJetConfigBuilder} to locate the
- * xml configuration.
+ * A support class for the {@link XmlJetConfigBuilder} to locate the member
+ * yaml configuration.
  */
-public final class XmlJetConfigLocator extends AbstractConfigLocator {
+public final class YamlJetMemberConfigLocator extends AbstractConfigLocator {
 
-    private static final String HAZELCAST_JET_CONFIG_PROPERTY = "hazelcast.jet.config";
-    private static final String HAZELCAST_JET_XML = "hazelcast-jet.xml";
-    private static final String HAZELCAST_JET_DEFAULT_XML = "hazelcast-jet-default.xml";
+    private static final String HAZELCAST_MEMBER_CONFIG_PROPERTY = "hazelcast.config";
+    private static final String HAZELCAST_MEMBER_YAML = "hazelcast.yaml";
+    private static final String HAZELCAST_MEMBER_DEFAULT_YAML = "hazelcast-jet-member-default.yaml";
+    private static final String HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_YAML = "hazelcast-jet-enterprise-member-default.yaml";
+
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_JET_CONFIG_PROPERTY, "xml");
+        return loadFromSystemProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "yaml", "yml");
     }
 
     @Override
     protected boolean locateInWorkDir() {
-        return loadFromWorkingDirectory(HAZELCAST_JET_XML);
+        return loadFromWorkingDirectory(HAZELCAST_MEMBER_YAML);
     }
 
     @Override
     protected boolean locateOnClasspath() {
-        return loadConfigurationFromClasspath(HAZELCAST_JET_XML);
+        return loadConfigurationFromClasspath(HAZELCAST_MEMBER_YAML)
+                || loadConfigurationFromClasspath(HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_YAML);
     }
 
     @Override
     public boolean locateDefault() {
-        loadDefaultConfigurationFromClasspath(HAZELCAST_JET_DEFAULT_XML);
+        loadDefaultConfigurationFromClasspath(HAZELCAST_MEMBER_DEFAULT_YAML);
         return true;
     }
 }

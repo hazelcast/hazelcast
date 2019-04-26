@@ -19,33 +19,33 @@ package com.hazelcast.jet.impl.config;
 import com.hazelcast.config.AbstractConfigLocator;
 
 /**
- * A support class for the {@link XmlJetConfigBuilder} to locate the
- * xml configuration.
+ * A support class for the {@link YamlJetConfigBuilder} to locate the
+ * client yaml configuration.
  */
-public final class XmlJetConfigLocator extends AbstractConfigLocator {
+public final class YamlJetClientConfigLocator extends AbstractConfigLocator {
 
-    private static final String HAZELCAST_JET_CONFIG_PROPERTY = "hazelcast.jet.config";
-    private static final String HAZELCAST_JET_XML = "hazelcast-jet.xml";
-    private static final String HAZELCAST_JET_DEFAULT_XML = "hazelcast-jet-default.xml";
+    private static final String HAZELCAST_CLIENT_CONFIG_PROPERTY = "hazelcast.client.config";
+    private static final String HAZELCAST_CLIENT_YAML = "hazelcast-client.yaml";
+    private static final String HAZELCAST_CLIENT_DEFAULT_YAML = "hazelcast-jet-client-default.yaml";
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_JET_CONFIG_PROPERTY, "xml");
+        return loadFromSystemProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY, "yaml", "yml");
     }
 
     @Override
     protected boolean locateInWorkDir() {
-        return loadFromWorkingDirectory(HAZELCAST_JET_XML);
+        return loadFromWorkingDirectory(HAZELCAST_CLIENT_YAML);
     }
 
     @Override
     protected boolean locateOnClasspath() {
-        return loadConfigurationFromClasspath(HAZELCAST_JET_XML);
+        return loadConfigurationFromClasspath(HAZELCAST_CLIENT_YAML);
     }
 
     @Override
     public boolean locateDefault() {
-        loadDefaultConfigurationFromClasspath(HAZELCAST_JET_DEFAULT_XML);
+        loadDefaultConfigurationFromClasspath(HAZELCAST_CLIENT_DEFAULT_YAML);
         return true;
     }
 }

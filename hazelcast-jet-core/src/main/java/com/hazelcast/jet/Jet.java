@@ -47,7 +47,8 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
-import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
+import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetClientConfig;
+import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
 import static com.hazelcast.jet.impl.metrics.JetMetricsService.applyMetricsConfig;
 import static com.hazelcast.jet.impl.util.JetProperties.JET_SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.jet.impl.util.JetProperties.JOB_RESULTS_TTL_SECONDS;
@@ -69,7 +70,8 @@ public final class Jet {
      */
     @Nonnull
     public static JetInstance newJetInstance() {
-        return newJetInstance(JetConfig.loadDefault());
+        JetConfig config = locateAndGetJetConfig();
+        return newJetInstance(config);
     }
 
     /**
@@ -87,13 +89,13 @@ public final class Jet {
      */
     @Nonnull
     public static JetInstance newJetClient() {
-        ClientConfig clientConfig = getClientConfig();
+        ClientConfig clientConfig = locateAndGetClientConfig();
         return newJetClient(clientConfig);
     }
 
     /**
      * Creates a Jet client with the given Hazelcast client configuration.
-     *
+     * <p>
      * {@link JetClientConfig} may be used to create a configuration with the
      * default group name for Jet.
      */

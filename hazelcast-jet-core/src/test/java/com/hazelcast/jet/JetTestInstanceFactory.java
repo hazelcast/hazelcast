@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Jet.getJetClientInstance;
 import static com.hazelcast.jet.impl.JetNodeContext.JET_EXTENSION_PRIORITY_LIST;
-import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
+import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetClientConfig;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
@@ -106,7 +106,7 @@ public class JetTestInstanceFactory {
     }
 
     public JetClientInstanceImpl newClient() {
-        return newClient(getClientConfig());
+        return newClient(locateAndGetClientConfig());
     }
 
     public JetClientInstanceImpl newClient(ClientConfig config) {

@@ -20,32 +20,32 @@ import com.hazelcast.config.AbstractConfigLocator;
 
 /**
  * A support class for the {@link XmlJetConfigBuilder} to locate the
- * xml configuration.
+ * yaml configuration.
  */
-public final class XmlJetConfigLocator extends AbstractConfigLocator {
+public final class YamlJetConfigLocator extends AbstractConfigLocator {
 
     private static final String HAZELCAST_JET_CONFIG_PROPERTY = "hazelcast.jet.config";
-    private static final String HAZELCAST_JET_XML = "hazelcast-jet.xml";
-    private static final String HAZELCAST_JET_DEFAULT_XML = "hazelcast-jet-default.xml";
+    private static final String HAZELCAST_JET_YAML = "hazelcast-jet.yaml";
+    private static final String HAZELCAST_JET_DEFAULT_YAML = "hazelcast-jet-default.yaml";
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_JET_CONFIG_PROPERTY, "xml");
+        return loadFromSystemProperty(HAZELCAST_JET_CONFIG_PROPERTY, "yaml", "yml");
     }
 
     @Override
     protected boolean locateInWorkDir() {
-        return loadFromWorkingDirectory(HAZELCAST_JET_XML);
+        return loadFromWorkingDirectory(HAZELCAST_JET_YAML);
     }
 
     @Override
     protected boolean locateOnClasspath() {
-        return loadConfigurationFromClasspath(HAZELCAST_JET_XML);
+        return loadConfigurationFromClasspath(HAZELCAST_JET_YAML);
     }
 
     @Override
     public boolean locateDefault() {
-        loadDefaultConfigurationFromClasspath(HAZELCAST_JET_DEFAULT_XML);
+        loadDefaultConfigurationFromClasspath(HAZELCAST_JET_DEFAULT_YAML);
         return true;
     }
 }
