@@ -386,6 +386,7 @@
                     <!-- see https://bugs.openjdk.java.net/browse/JDK-8212233
                              https://issues.apache.org/jira/browse/MJAVADOC-555 -->
                     <source>${jdk.version}</source>
+                    <quiet>true</quiet>
                 </configuration>
                 <executions>
                     <execution>
