@@ -180,7 +180,7 @@ config.getNetworkConfig().getJoin().getKubernetesConfig().setEnabled(true)
 
 There are 2 properties to configure the plugin:
  * `service-dns` (required): service DNS, usually in the form of `SERVICE-NAME.NAMESPACE.svc.cluster.local`
- * `service-dns-time` (optional): custom time for how long the DNS Lookup is checked
+ * `service-dns-timeout` (optional): custom time for how long the DNS Lookup is checked
 
 **Note**: In this README, only XML configurations are presented, however you can achieve exactly the same effect using Java-based configurations.
 
