@@ -115,6 +115,8 @@ public class InvalidEndpointTest {
         } catch (ExecutionException e) {
             ignore(e);
         }
+
+        client.shutdown();
     }
 
     protected Config createRestEndpointConfig() {
