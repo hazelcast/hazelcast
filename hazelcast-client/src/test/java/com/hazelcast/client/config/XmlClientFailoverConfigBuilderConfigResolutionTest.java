@@ -30,13 +30,13 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES_STRING;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlClientFailoverConfigBuilderConfigResolutionTest {
-
-    private static final String SYSPROP_NAME = "hazelcast.client.failover.config";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -46,14 +46,14 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
     @Before
     @After
     public void beforeAndAfter() {
-        System.clearProperty(SYSPROP_NAME);
+        System.clearProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
         helper.ensureTestConfigDeleted();
     }
 
     @Test
     public void testResolveSystemProperty_file_xml() throws Exception {
         helper.givenXmlClientFailoverConfigFileInWorkDir("foo.xml", 42);
-        System.setProperty(SYSPROP_NAME, "foo.xml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.xml");
 
         ClientFailoverConfig config = new XmlClientFailoverConfigBuilder().build();
 
@@ -63,7 +63,7 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_xml() throws Exception {
         helper.givenXmlClientFailoverConfigFileOnClasspath("foo.xml", 42);
-        System.setProperty(SYSPROP_NAME, "classpath:foo.xml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.xml");
 
         ClientFailoverConfig config = new XmlClientFailoverConfigBuilder().build();
         assertEquals(42, config.getTryCount());
@@ -71,7 +71,7 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:idontexist.xml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:idontexist.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -82,7 +82,7 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_NAME, "idontexist.xml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "idontexist.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("idontexist.xml");
@@ -92,44 +92,53 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonXml_throws() throws Exception {
-        File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo.bar", 42);
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo.yaml", 42);
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
+
         new XmlClientFailoverConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonXml_throws() throws Exception {
-        helper.givenXmlClientFailoverConfigFileOnClasspath("foo.bar", 42);
-        System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
+        helper.givenXmlClientFailoverConfigFileOnClasspath("foo.yaml", 42);
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.yaml");
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientFailoverConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentNonXml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:idontexist.bar");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:idontexist.yaml");
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
         expectedException.expectMessage("classpath");
-        expectedException.expectMessage("idontexist.bar");
+        expectedException.expectMessage("idontexist.yaml");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientFailoverConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonXml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.bar");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.yaml");
 
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
+        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientFailoverConfigBuilder().build();
     }

@@ -32,13 +32,13 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.ALL_ACCEPTED_SUFFIXES_STRING;
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastInstanceFactoryConfigResolutionTest {
-
-    private static final String SYSPROP_NAME = "hazelcast.config";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -48,7 +48,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Before
     public void setUp() {
-        System.clearProperty(SYSPROP_NAME);
+        System.clearProperty(SYSPROP_MEMBER_CONFIG);
     }
 
     @After
@@ -56,14 +56,14 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         if (instance != null) {
             instance.shutdown();
         }
-        System.clearProperty(SYSPROP_NAME);
+        System.clearProperty(SYSPROP_MEMBER_CONFIG);
         helper.ensureTestConfigDeleted();
     }
 
     @Test
     public void testResolveSystemProperty_file_xml_loadedAsXml() throws Exception {
         File file = helper.givenXmlConfigFileInWorkDir("foo.xml", "cluster-xml");
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
         Config config = instance.getConfig();
@@ -74,7 +74,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_xml_loadedAsXml() throws Exception {
         helper.givenXmlConfigFileOnClasspath("foo.xml", "cluster-xml");
-        System.setProperty(SYSPROP_NAME, "classpath:foo.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
         Config config = instance.getConfig();
@@ -85,7 +85,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_file_yaml_loadedAsYaml() throws Exception {
         File file = helper.givenYamlConfigFileInWorkDir("foo.yaml", "cluster-yaml");
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
         Config config = instance.getConfig();
@@ -96,7 +96,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_yaml_loadedAsYaml() throws Exception {
         helper.givenYamlConfigFileOnClasspath("foo.yaml", "cluster-yaml");
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
         Config config = instance.getConfig();
@@ -107,7 +107,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_file_yml_loadedAsYaml() throws Exception {
         File file = helper.givenYamlConfigFileInWorkDir("foo.yml", "cluster-yaml");
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
         Config config = instance.getConfig();
@@ -118,7 +118,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_yml_loadedAsYaml() throws Exception {
         helper.givenYamlConfigFileOnClasspath("foo.yml", "cluster-yaml");
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yml");
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
         Config config = instance.getConfig();
@@ -128,31 +128,35 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_bar_throws() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir("foo.bar", "cluster-bar");
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        File file = helper.givenXmlConfigFileInWorkDir("foo.bar", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
         expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
     }
 
     @Test
     public void testResolveSystemProperty_classpath_bar_throws() throws Exception {
-        helper.givenXmlConfigFileOnClasspath("foo.bar", "cluster-bar");
-        System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
+        helper.givenXmlConfigFileOnClasspath("foo.bar", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.bar");
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage("classpath:foo.bar");
+        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.xml");
@@ -162,7 +166,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:foo.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -173,7 +177,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYaml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.yaml");
@@ -183,7 +187,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentYaml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -194,7 +198,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.yml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.yml");
@@ -204,7 +208,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentYml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -215,7 +219,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentBar_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.bar");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.bar");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.bar");
@@ -225,13 +229,41 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentBar_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.bar");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.bar");
 
         HazelcastInstanceFactory.newHazelcastInstance(null);
+    }
+
+    @Test
+    public void testResolveSystemProperty_file_noSuffix_throws() throws Exception {
+        File file = helper.givenXmlConfigFileInWorkDir("foo", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
+        expectedException.expectMessage("suffix");
+        expectedException.expectMessage("foo");
+        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
+
+        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
+    }
+
+    @Test
+    public void testResolveSystemProperty_classpath_noSuffix_throws() throws Exception {
+        helper.givenXmlConfigFileOnClasspath("foo", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo");
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
+        expectedException.expectMessage("suffix");
+        expectedException.expectMessage("classpath:foo");
+        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
+
+        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
     }
 
     @Test

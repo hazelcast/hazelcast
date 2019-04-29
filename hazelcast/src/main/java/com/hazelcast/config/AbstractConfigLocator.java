@@ -26,7 +26,9 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
+
+import static com.hazelcast.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
+import static com.hazelcast.config.DeclarativeConfigUtil.throwUnacceptedSuffixInSystemProperty;
 
 /**
  * Abstract base class for config locators.
@@ -69,15 +71,15 @@ public abstract class AbstractConfigLocator {
     /**
      * Locates the configuration file in a system property or throws
      * {@link HazelcastException} if the suffix of the referenced file is
-     * not in the expected for the locator.
+     * not in the accepted list of the locator.
      *
      * @return true if the configuration file is found in the system property
      * @throws HazelcastException if there was a problem locating the
      *                            configuration file or the suffix of the
      *                            file referenced in the system property
-     *                            is not an expected suffix
+     *                            is not an accepted suffix
      */
-    public abstract boolean locateFromSystemPropertyOrFailOnUnexpectedSuffix();
+    public abstract boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix();
 
     /**
      * Locates the configuration file in the working directory.
@@ -108,7 +110,7 @@ public abstract class AbstractConfigLocator {
     public abstract boolean locateDefault();
 
     public boolean locateEverywhere() {
-        return locateFromSystemPropertyOrFailOnUnexpectedSuffix()
+        return locateFromSystemPropertyOrFailOnUnacceptedSuffix()
                 || locateInWorkDir()
                 || locateOnClasspath()
                 || locateDefault();
@@ -181,16 +183,16 @@ public abstract class AbstractConfigLocator {
         }
     }
 
-    protected boolean loadFromSystemProperty(String propertyKey, String... expectedSuffixes) {
-        return loadFromSystemProperty(propertyKey, false, expectedSuffixes);
+    protected boolean loadFromSystemProperty(String propertyKey, String... acceptedSuffixes) {
+        return loadFromSystemProperty(propertyKey, false, acceptedSuffixes);
     }
 
-    protected boolean loadFromSystemPropertyOrFailOnUnexpectedSuffix(String propertyKey, String... expectedSuffixes) {
-        return loadFromSystemProperty(propertyKey, true, expectedSuffixes);
+    protected boolean loadFromSystemPropertyOrFailOnUnacceptedSuffix(String propertyKey, String... acceptedSuffixes) {
+        return loadFromSystemProperty(propertyKey, true, acceptedSuffixes);
     }
 
-    private boolean loadFromSystemProperty(String propertyKey, boolean failOnUnexpectedSuffix,
-                                           String... expectedSuffixes) {
+    private boolean loadFromSystemProperty(String propertyKey, boolean failOnUnacceptedSuffix,
+                                           String... acceptedSuffixes) {
         try {
             String configSystemProperty = System.getProperty(propertyKey);
 
@@ -199,14 +201,11 @@ public abstract class AbstractConfigLocator {
                 return false;
             }
 
-            if (expectedSuffixes != null && expectedSuffixes.length > 0
-                    && !isExpectedSuffixConfigured(configSystemProperty, expectedSuffixes)) {
+            if (acceptedSuffixes != null && acceptedSuffixes.length > 0
+                    && !isAcceptedSuffixConfigured(configSystemProperty, acceptedSuffixes)) {
 
-                if (failOnUnexpectedSuffix) {
-                    String message = String
-                            .format("The suffix of the resource \'%s\' referenced in \'%s\' is not in the list of expected "
-                                    + "suffixes: \'%s\'", configSystemProperty, propertyKey, Arrays.toString(expectedSuffixes));
-                    throw new HazelcastException(message);
+                if (failOnUnacceptedSuffix) {
+                    throwUnacceptedSuffixInSystemProperty(propertyKey, configSystemProperty, acceptedSuffixes);
                 } else {
                     return false;
                 }
@@ -225,18 +224,6 @@ public abstract class AbstractConfigLocator {
         } catch (RuntimeException e) {
             throw new HazelcastException(e);
         }
-    }
-
-    private boolean isExpectedSuffixConfigured(String configSystemProperty, String[] expectedSuffixes) {
-        boolean expectedSuffix = false;
-        String configSystemPropertyLower = configSystemProperty.toLowerCase();
-        for (String suffix : expectedSuffixes) {
-            if (configSystemPropertyLower.endsWith("." + suffix.toLowerCase())) {
-                expectedSuffix = true;
-                break;
-            }
-        }
-        return expectedSuffix;
     }
 
     private void loadSystemPropertyFileResource(String configSystemProperty) {

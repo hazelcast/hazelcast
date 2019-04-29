@@ -30,13 +30,13 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES_STRING;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlConfigBuilderConfigResolutionTest {
-
-    private static final String SYSPROP_NAME = "hazelcast.config";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -46,14 +46,14 @@ public class XmlConfigBuilderConfigResolutionTest {
     @Before
     @After
     public void beforeAndAfter() {
-        System.clearProperty(SYSPROP_NAME);
+        System.clearProperty(SYSPROP_MEMBER_CONFIG);
         helper.ensureTestConfigDeleted();
     }
 
     @Test
     public void testResolveSystemProperty_file_xml() throws Exception {
         helper.givenXmlConfigFileInWorkDir("foo.xml", "cluster-xml-file");
-        System.setProperty(SYSPROP_NAME, "foo.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.xml");
 
         Config config = new XmlConfigBuilder().build();
         assertEquals("cluster-xml-file", config.getInstanceName());
@@ -62,7 +62,7 @@ public class XmlConfigBuilderConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_xml() throws Exception {
         helper.givenXmlConfigFileOnClasspath("foo.xml", "cluster-xml-classpath");
-        System.setProperty(SYSPROP_NAME, "classpath:foo.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
 
         Config config = new XmlConfigBuilder().build();
         assertEquals("cluster-xml-classpath", config.getInstanceName());
@@ -70,7 +70,7 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:idontexist.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:idontexist.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -81,7 +81,7 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_NAME, "idontexist.xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "idontexist.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("idontexist.xml");
@@ -91,45 +91,81 @@ public class XmlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonXml_throws() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir("foo.bar", "cluster-bar-file");
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        File file = helper.givenXmlConfigFileInWorkDir("foo.yaml", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonXml_throws() throws Exception {
-        helper.givenXmlConfigFileOnClasspath("foo.bar", "cluster-bar-classpath");
-        System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
+        helper.givenXmlConfigFileOnClasspath("foo.yaml", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.bar");
-        Config config = new XmlConfigBuilder().build();
-        assertEquals("cluster-bar-classpath", config.getInstanceName());
+        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
+
+        new XmlConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentNonXml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:idontexist.bar");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:idontexist.yaml");
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("idontexist.bar");
+        expectedException.expectMessage("idontexist.yaml");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonXml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.bar");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yaml");
+
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage("foo.yaml");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
+
+        new XmlConfigBuilder().build();
+    }
+
+    @Test
+    public void testResolveSystemProperty_file_noSuffix_throws() throws Exception {
+        File file = helper.givenXmlConfigFileInWorkDir("foo", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
+        expectedException.expectMessage("suffix");
+        expectedException.expectMessage("foo");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
+
+        new XmlConfigBuilder().build();
+    }
+
+    @Test
+    public void testResolveSystemProperty_classpath_nosuffix_throws() throws Exception {
+        helper.givenXmlConfigFileOnClasspath("foo", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo");
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
+        expectedException.expectMessage("suffix");
+        expectedException.expectMessage("foo");
+        expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlConfigBuilder().build();
     }

@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES;
+
 /**
  * Support class for the {@link XmlConfigBuilder} that locates the XML configuration:
  * <ol>
@@ -29,12 +32,12 @@ public class XmlConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.config", "xml");
+        return loadFromSystemProperty(SYSPROP_MEMBER_CONFIG, XML_ACCEPTED_SUFFIXES);
     }
 
     @Override
-    public boolean locateFromSystemPropertyOrFailOnUnexpectedSuffix() {
-        return loadFromSystemPropertyOrFailOnUnexpectedSuffix("hazelcast.config", "xml");
+    public boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_MEMBER_CONFIG, XML_ACCEPTED_SUFFIXES);
     }
 
     @Override

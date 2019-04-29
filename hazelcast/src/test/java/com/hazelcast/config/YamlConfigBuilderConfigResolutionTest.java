@@ -30,13 +30,13 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES_STRING;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class YamlConfigBuilderConfigResolutionTest {
-
-    private static final String SYSPROP_NAME = "hazelcast.config";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -46,14 +46,14 @@ public class YamlConfigBuilderConfigResolutionTest {
     @Before
     @After
     public void beforeAndAfter() {
-        System.clearProperty(SYSPROP_NAME);
+        System.clearProperty(SYSPROP_MEMBER_CONFIG);
         helper.ensureTestConfigDeleted();
     }
 
     @Test
     public void testResolveSystemProperty_file_yaml() throws Exception {
         helper.givenYamlConfigFileInWorkDir("foo.yaml", "cluster-yaml-file");
-        System.setProperty(SYSPROP_NAME, "foo.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yaml");
 
         Config config = new YamlConfigBuilder().build();
         assertEquals("cluster-yaml-file", config.getInstanceName());
@@ -62,15 +62,33 @@ public class YamlConfigBuilderConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_yaml() throws Exception {
         helper.givenYamlConfigFileOnClasspath("foo.yaml", "cluster-yaml-classpath");
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
 
         Config config = new YamlConfigBuilder().build();
         assertEquals("cluster-yaml-classpath", config.getInstanceName());
     }
 
     @Test
+    public void testResolveSystemProperty_file_yml() throws Exception {
+        helper.givenYamlConfigFileInWorkDir("foo.yml", "cluster-yml-file");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yml");
+
+        Config config = new YamlConfigBuilder().build();
+        assertEquals("cluster-yml-file", config.getInstanceName());
+    }
+
+    @Test
+    public void testResolveSystemProperty_classpath_yml() throws Exception {
+        helper.givenYamlConfigFileOnClasspath("foo.yml", "cluster-yml-classpath");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yml");
+
+        Config config = new YamlConfigBuilder().build();
+        assertEquals("cluster-yml-classpath", config.getInstanceName());
+    }
+
+    @Test
     public void testResolveSystemProperty_classpath_nonExistentYaml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:idontexist.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:idontexist.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -81,7 +99,7 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYaml_throws() {
-        System.setProperty(SYSPROP_NAME, "idontexist.yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "idontexist.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("idontexist.yaml");
@@ -91,45 +109,81 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonYaml_throws() throws Exception {
-        File file = helper.givenYamlConfigFileInWorkDir("foo.bar", "irrelevant");
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        File file = helper.givenYamlConfigFileInWorkDir("foo.xml", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage("foo.xml");
+        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonYaml_throws() throws Exception {
-        helper.givenYamlConfigFileOnClasspath("foo.bar", "irrelevant");
-        System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
+        helper.givenYamlConfigFileOnClasspath("foo.xml", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage("foo.xml");
+        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonYaml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.bar");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.xml");
 
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
+        expectedException.expectMessage("foo.xml");
+        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentNonYaml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:idontexist.bar");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:idontexist.xml");
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("classpath");
-        expectedException.expectMessage("idontexist.bar");
+        expectedException.expectMessage("idontexist.xml");
+        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
+
+        new YamlConfigBuilder().build();
+    }
+
+    @Test
+    public void testResolveSystemProperty_file_noSuffix_throws() throws Exception {
+        File file = helper.givenYamlConfigFileInWorkDir("foo", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
+        expectedException.expectMessage("suffix");
+        expectedException.expectMessage("foo");
+        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
+
+        new YamlConfigBuilder().build();
+    }
+
+    @Test
+    public void testResolveSystemProperty_classpath_noSuffix_throws() throws Exception {
+        helper.givenYamlConfigFileOnClasspath("foo", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo");
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
+        expectedException.expectMessage("suffix");
+        expectedException.expectMessage("foo");
+        expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();
     }

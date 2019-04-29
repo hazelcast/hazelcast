@@ -33,13 +33,13 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.ALL_ACCEPTED_SUFFIXES_STRING;
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastClientFailoverConfigResolutionTest {
-
-    private static final String SYSPROP_NAME = "hazelcast.client.failover.config";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -49,7 +49,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Before
     public void setUp() {
-        System.clearProperty(SYSPROP_NAME);
+        System.clearProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
     }
 
     @After
@@ -57,14 +57,14 @@ public class HazelcastClientFailoverConfigResolutionTest {
         if (instance != null) {
             instance.shutdown();
         }
-        System.clearProperty(SYSPROP_NAME);
+        System.clearProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
         helper.ensureTestConfigDeleted();
     }
 
     @Test
     public void testResolveSystemProperty_file_xml_loadedAsXml() throws Exception {
         File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo.xml", 42);
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, file.getAbsolutePath());
 
         instance = HazelcastClient.newHazelcastFailoverClient();
         ClientFailoverConfig config = getClientConfig(instance);
@@ -75,7 +75,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_xml_loadedAsXml() throws Exception {
         helper.givenXmlClientFailoverConfigFileOnClasspath("foo.xml", 42);
-        System.setProperty(SYSPROP_NAME, "classpath:foo.xml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.xml");
 
         instance = HazelcastClient.newHazelcastFailoverClient();
         ClientFailoverConfig config = getClientConfig(instance);
@@ -86,7 +86,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_file_yaml_loadedAsYaml() throws Exception {
         File file = helper.givenYamlClientFailoverConfigFileInWorkDir("foo.yaml", 42);
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, file.getAbsolutePath());
 
         instance = HazelcastClient.newHazelcastFailoverClient();
         ClientFailoverConfig config = getClientConfig(instance);
@@ -97,7 +97,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_yaml_loadedAsYaml() throws Exception {
         helper.givenYamlClientFailoverConfigFileOnClasspath("foo.yaml", 42);
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.yaml");
 
         instance = HazelcastClient.newHazelcastFailoverClient();
         ClientFailoverConfig config = getClientConfig(instance);
@@ -108,7 +108,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_file_yml_loadedAsYaml() throws Exception {
         File file = helper.givenYamlClientFailoverConfigFileInWorkDir("foo.yml", 42);
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, file.getAbsolutePath());
 
         instance = HazelcastClient.newHazelcastFailoverClient();
         ClientFailoverConfig config = getClientConfig(instance);
@@ -119,7 +119,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_yml_loadedAsYaml() throws Exception {
         helper.givenYamlClientFailoverConfigFileOnClasspath("foo.yml", 42);
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.yml");
 
         instance = HazelcastClient.newHazelcastFailoverClient();
         ClientFailoverConfig config = getClientConfig(instance);
@@ -130,11 +130,13 @@ public class HazelcastClientFailoverConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_file_bar_loadedAsXml() throws Exception {
         File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo.bar", 42);
-        System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
         expectedException.expectMessage("suffix");
         expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         instance = HazelcastClient.newHazelcastFailoverClient();
     }
@@ -142,18 +144,20 @@ public class HazelcastClientFailoverConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_bar_throws() throws Exception {
         helper.givenXmlClientFailoverConfigFileOnClasspath("foo.bar", 42);
-        System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.bar");
 
         expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
         expectedException.expectMessage("suffix");
         expectedException.expectMessage("foo.bar");
+        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         instance = HazelcastClient.newHazelcastFailoverClient();
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.xml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.xml");
@@ -163,7 +167,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:foo.xml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -174,7 +178,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYaml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.yaml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.yaml");
@@ -184,7 +188,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentYaml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -195,7 +199,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYml_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.yml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.yml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.yml");
@@ -205,7 +209,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentYml_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:foo.yml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.yml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
@@ -216,7 +220,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentBar_throws() {
-        System.setProperty(SYSPROP_NAME, "foo.bar");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.bar");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.bar");
@@ -226,11 +230,39 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentBar_throws() {
-        System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.bar");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.bar");
+
+        instance = HazelcastClient.newHazelcastFailoverClient();
+    }
+
+    @Test
+    public void testResolveSystemProperty_file_noSuffix_loadedAsXml() throws Exception {
+        File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo", 42);
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, file.getAbsolutePath());
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
+        expectedException.expectMessage("suffix");
+        expectedException.expectMessage("foo");
+        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
+
+        instance = HazelcastClient.newHazelcastFailoverClient();
+    }
+
+    @Test
+    public void testResolveSystemProperty_classpath_noSuffix_throws() throws Exception {
+        helper.givenXmlClientFailoverConfigFileOnClasspath("foo", 42);
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo");
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
+        expectedException.expectMessage("suffix");
+        expectedException.expectMessage("foo");
+        expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         instance = HazelcastClient.newHazelcastFailoverClient();
     }

@@ -18,6 +18,9 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES;
+
 /**
  * A support class for the {@link XmlClientFailoverConfigBuilder} to
  * locate the client failover XML configuration.
@@ -26,12 +29,12 @@ public class XmlClientFailoverConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.client.failover.config", "xml");
+        return loadFromSystemProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, XML_ACCEPTED_SUFFIXES);
     }
 
     @Override
-    public boolean locateFromSystemPropertyOrFailOnUnexpectedSuffix() {
-        return loadFromSystemPropertyOrFailOnUnexpectedSuffix("hazelcast.client.failover.config", "xml");
+    public boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_CLIENT_FAILOVER_CONFIG, XML_ACCEPTED_SUFFIXES);
     }
 
     @Override

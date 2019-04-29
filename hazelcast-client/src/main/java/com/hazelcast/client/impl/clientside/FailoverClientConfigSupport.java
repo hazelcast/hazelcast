@@ -33,6 +33,9 @@ import com.hazelcast.core.HazelcastException;
 
 import java.util.List;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 
 /**
  * Static methods to resolve and validate multiple client configs for blue green feature
@@ -95,6 +98,9 @@ public final class FailoverClientConfigSupport {
 
     private static ClientFailoverConfig locateAndCreateClientFailoverConfig() {
         ClientFailoverConfig config;
+
+        validateSuffixInSystemProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
+
         XmlClientFailoverConfigLocator xmlConfigLocator = new XmlClientFailoverConfigLocator();
         YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
 
@@ -102,7 +108,7 @@ public final class FailoverClientConfigSupport {
             // 1. Try loading config if provided in system property and it is an XML file
             config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
 
-        } else if (yamlConfigLocator.locateFromSystemPropertyOrFailOnUnexpectedSuffix()) {
+        } else if (yamlConfigLocator.locateFromSystemPropertyOrFailOnUnacceptedSuffix()) {
             // 2. Try loading config if provided in system property and it is an YAML file
             config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
 
@@ -122,6 +128,9 @@ public final class FailoverClientConfigSupport {
 
     private static ClientConfig locateAndCreateClientConfig() {
         ClientConfig config;
+
+        validateSuffixInSystemProperty(SYSPROP_CLIENT_CONFIG);
+
         XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
         YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
 
@@ -129,7 +138,7 @@ public final class FailoverClientConfigSupport {
             // 1. Try loading config if provided in system property and it is an XML file
             config = new XmlClientConfigBuilder(xmlConfigLocator).build();
 
-        } else if (yamlConfigLocator.locateFromSystemPropertyOrFailOnUnexpectedSuffix()) {
+        } else if (yamlConfigLocator.locateFromSystemPropertyOrFailOnUnacceptedSuffix()) {
             // 2. Try loading config if provided in system property and it is an YAML file
             config = new YamlClientConfigBuilder(yamlConfigLocator).build();
 

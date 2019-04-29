@@ -18,6 +18,9 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
+
 /**
  * A support class for the {@link YamlClientFailoverConfigBuilder} to
  * locate the client failover YAML configuration.
@@ -26,12 +29,12 @@ public class YamlClientFailoverConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.client.failover.config", "yaml", "yml");
+        return loadFromSystemProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, YAML_ACCEPTED_SUFFIXES);
     }
 
     @Override
-    public boolean locateFromSystemPropertyOrFailOnUnexpectedSuffix() {
-        return loadFromSystemPropertyOrFailOnUnexpectedSuffix("hazelcast.client.failover.config", "yaml", "yml");
+    public boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_CLIENT_FAILOVER_CONFIG, YAML_ACCEPTED_SUFFIXES);
     }
 
     @Override
