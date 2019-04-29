@@ -273,7 +273,7 @@
     <xs:complexType name="load-balancer">
         <xs:attribute name="type" use="required">
             <xs:simpleType>
-                <xs:restriction base="xs:string">
+                <xs:restriction base="non-space-string">
                     <xs:enumeration value="random"/>
                     <xs:enumeration value="round-robin"/>
                 </xs:restriction>
@@ -485,7 +485,7 @@
     </xs:complexType>
 
     <xs:simpleType name="eviction-policy">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="LRU"/>
             <xs:enumeration value="LFU"/>
@@ -494,7 +494,7 @@
     </xs:simpleType>
 
     <xs:simpleType name="max-size-policy">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="ENTRY_COUNT"/>
             <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
             <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
@@ -527,9 +527,11 @@
 
     <xs:simpleType name="non-space-string">
         <xs:restriction base="xs:string">
-            <xs:pattern value="\S.*"/>
+            <xs:whiteSpace value="collapse"/>
+            <xs:pattern value="\S+"/>
         </xs:restriction>
     </xs:simpleType>
+
     <xs:complexType name="serialization">
         <xs:all>
             <xs:element name="portable-version" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
@@ -700,7 +702,7 @@
     </xs:complexType>
 
     <xs:simpleType name="memory-unit">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="BYTES"/>
             <xs:enumeration value="KILOBYTES"/>
             <xs:enumeration value="MEGABYTES"/>
@@ -709,7 +711,7 @@
     </xs:simpleType>
 
     <xs:simpleType name="memory-allocator-type">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="STANDARD"/>
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
@@ -826,7 +828,7 @@
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
-                    <xs:restriction base="xs:string">
+                    <xs:restriction base="non-space-string">
                         <xs:enumeration value="DISCARD_OLDEST"/>
                         <xs:enumeration value="DISCARD_NEWEST"/>
                         <xs:enumeration value="BLOCK"/>

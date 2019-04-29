@@ -95,21 +95,23 @@ public class InvalidConfigurationClientTest {
     @Test
     public void WhenValid_CredentialsClassName() {
         buildConfig("credentials-class-name", "com.hazelcast.client.config.Credentials");
+        buildConfig("credentials-class-name", " com.hazelcast.client.config.Credentials");
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void WhenInvalid_CredentialsClassName() {
-        buildConfig("credentials-class-name", " com.hazelcast.client.config.Credentials");
+        buildConfig("credentials-class-name", "com hazelcast.client.config.Credentials");
     }
 
     @Test
     public void WhenValid_ListenerClassName() {
         buildConfig("listener-class-name", "com.hazelcast.client.config.Listener");
+        buildConfig("listener-class-name", " com.hazelcast.client.config.Listener");
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void WhenInvalid_ListenerClassName() {
-        buildConfig("listener-class-name", " com.hazelcast.client.config.Listener");
+        buildConfig("listener-class-name", "com hazelcast.client.config.Listener");
     }
 
     @Test

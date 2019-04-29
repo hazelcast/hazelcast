@@ -462,6 +462,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMultipleMemberEndpointConfigs_throwsException();
 
     @Test
+    public abstract void testWhitespaceInNonSpaceStrings();
+
+    @Test
     public void testCompleteAdvancedNetworkConfig() {
         Config config = buildCompleteAdvancedNetworkConfig();
 
