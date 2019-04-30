@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.OperationControl;
 
 import java.util.ArrayList;
 import java.util.HashMap;

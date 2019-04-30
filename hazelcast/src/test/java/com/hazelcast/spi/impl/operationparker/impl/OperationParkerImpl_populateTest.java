@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationparker.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.CallsPerMember;
+import com.hazelcast.spi.impl.operationservice.CallsPerMember;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
 /**
  * Can be implemented by a Service to track live operations. This functionality is needed to let the executing side
