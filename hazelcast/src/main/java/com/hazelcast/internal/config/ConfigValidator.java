@@ -28,9 +28,11 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -43,9 +45,9 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -65,6 +67,12 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
@@ -74,6 +82,7 @@ import static com.hazelcast.internal.config.MergePolicyValidator.checkCacheMerge
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicy;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkReplicatedMapMergePolicy;
+import static com.hazelcast.spi.properties.GroupProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.spi.properties.GroupProperty.HTTP_HEALTHCHECK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.REST_ENABLED;
@@ -82,16 +91,22 @@ import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
 /**
- * Validates a Hazelcast configuration in a specific context like OS vs. EE or client vs. member nodes.
+ * Validates a Hazelcast configuration in a specific
+ * context like OS vs. EE or client vs. member nodes.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ConfigValidator {
-
-    private static final ILogger LOGGER = Logger.getLogger(ConfigValidator.class);
 
     private static final EnumSet<MaxSizePolicy> SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES
             = EnumSet.of(MaxSizePolicy.ENTRY_COUNT);
 
+    private static final EnumSet<MaxSizeConfig.MaxSizePolicy> SUPPORTED_NATIVE_MAX_SIZE_POLICIES
+            = EnumSet.of(PER_NODE, PER_PARTITION, USED_NATIVE_MEMORY_PERCENTAGE,
+            FREE_NATIVE_MEMORY_PERCENTAGE, USED_NATIVE_MEMORY_SIZE, FREE_NATIVE_MEMORY_SIZE);
+
     private static final EnumSet<EvictionPolicy> SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
+
+    private static final ILogger LOGGER = Logger.getLogger(ConfigValidator.class);
 
     private ConfigValidator() {
     }
@@ -102,8 +117,15 @@ public final class ConfigValidator {
      * @param mapConfig           the {@link MapConfig}
      * @param mergePolicyProvider the {@link MergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkMapConfig(MapConfig mapConfig, MergePolicyProvider mergePolicyProvider) {
+    public static void checkMapConfig(MapConfig mapConfig, NativeMemoryConfig nativeMemoryConfig,
+                                      MergePolicyProvider mergePolicyProvider, HazelcastProperties properties) {
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
+
+        boolean enterprise = getBuildInfo().isEnterprise();
+        if (enterprise) {
+            checkNativeConfig(mapConfig, nativeMemoryConfig);
+            checkHotRestartSpecificConfig(mapConfig, properties);
+        }
         checkMapMergePolicy(mapConfig, mergePolicyProvider);
         logIgnoredConfig(mapConfig);
     }
@@ -119,8 +141,63 @@ public final class ConfigValidator {
         }
     }
 
+    /**
+     * Checks preconditions to create a map proxy.
+     *
+     * @param mapConfig          the mapConfig
+     * @param nativeMemoryConfig the nativeMemoryConfig
+     */
+    private static void checkNativeConfig(MapConfig mapConfig, NativeMemoryConfig nativeMemoryConfig) {
+        if (NATIVE != mapConfig.getInMemoryFormat()) {
+            return;
+        }
+        checkTrue(nativeMemoryConfig.isEnabled(),
+                format("Enable native memory config to use NATIVE in-memory-format for the map [%s]", mapConfig.getName()));
+        checkNativeMaxSizePolicy(mapConfig);
+    }
+
+    private static void checkNativeMaxSizePolicy(MapConfig mapConfig) {
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+        MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        if (!SUPPORTED_NATIVE_MAX_SIZE_POLICIES.contains(maxSizePolicy)) {
+            throw new IllegalArgumentException("Map maximum size policy " + maxSizePolicy
+                    + " cannot be used with NATIVE in memory format."
+                    + " Supported maximum size policies are: " + SUPPORTED_NATIVE_MAX_SIZE_POLICIES);
+        }
+    }
+
+    /**
+     * When Hot Restart is enabled, we want at least {@code
+     * hazelcast.hotrestart.free.native.memory.percentage}
+     * percent free HD memory space.
+     * <p>
+     * If configured max-size-policy is {@link
+     * MaxSizeConfig.MaxSizePolicy#FREE_NATIVE_MEMORY_PERCENTAGE},
+     * this method asserts that max-size is not below {@code
+     * hazelcast.hotrestart.free.native.memory.percentage}.
+     */
+    private static void checkHotRestartSpecificConfig(MapConfig mapConfig, HazelcastProperties properties) {
+        HotRestartConfig hotRestartConfig = mapConfig.getHotRestartConfig();
+        if (hotRestartConfig == null || !hotRestartConfig.isEnabled()) {
+            return;
+        }
+        int hotRestartMinFreeNativeMemoryPercentage = properties.getInteger(HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE);
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+        MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        int localSizeConfig = maxSizeConfig.getSize();
+        if (FREE_NATIVE_MEMORY_PERCENTAGE == maxSizePolicy && localSizeConfig < hotRestartMinFreeNativeMemoryPercentage) {
+            throw new IllegalArgumentException(format(
+                    "There is a global limit on the minimum free native memory, configurable by the system property %s,"
+                            + " whose value is currently %d percent. The map %s has Hot Restart enabled,"
+                            + " but is configured with %d percent, which is lower than the allowed minimum.",
+                    HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE.getName(), hotRestartMinFreeNativeMemoryPercentage,
+                    mapConfig.getName(), localSizeConfig)
+            );
+        }
+    }
+
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity",
-                       "checkstyle:booleanexpressioncomplexity"})
+            "checkstyle:booleanexpressioncomplexity"})
     public static void checkAdvancedNetworkConfig(Config config) {
         if (!config.getAdvancedNetworkConfig().isEnabled()) {
             return;
@@ -151,8 +228,8 @@ public final class ConfigValidator {
 
         // ensure there is 1 MEMBER type server socket
         if (serverSocketsPerProtocolType.get(MEMBER).value != 1) {
-            throw new InvalidConfigurationException("A member-server-socket-endpoint configuration is required for the cluster"
-                    + "to form.");
+            throw new InvalidConfigurationException("A member-server-socket-endpoint"
+                    + " configuration is required for the cluster to form.");
         }
 
         HazelcastProperties props = new HazelcastProperties(config);
@@ -178,7 +255,7 @@ public final class ConfigValidator {
                     if (endpointConfigs.get(qualifier) == null) {
                         throw new InvalidConfigurationException(
                                 format("WAN publisher config for group name '%s' requires an wan-endpoint "
-                                + "config with identifier '%s' but none was found",
+                                                + "config with identifier '%s' but none was found",
                                         wanPublisherConfig.getGroupName(), wanPublisherConfig.getEndpoint()));
                     }
                 }
@@ -200,7 +277,8 @@ public final class ConfigValidator {
         checkLocalUpdatePolicy(mapName, nearCacheConfig.getLocalUpdatePolicy());
         checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true);
         checkOnHeapNearCacheMaxSizePolicy(nearCacheConfig);
-        checkNearCacheNativeMemoryConfig(nearCacheConfig.getInMemoryFormat(), nativeMemoryConfig, getBuildInfo().isEnterprise());
+        checkNearCacheNativeMemoryConfig(nearCacheConfig.getInMemoryFormat(),
+                nativeMemoryConfig, getBuildInfo().isEnterprise());
 
         if (isClient && nearCacheConfig.isCacheLocalEntries()) {
             throw new IllegalArgumentException("The Near Cache option `cache-local-entries` is not supported in "
@@ -490,7 +568,7 @@ public final class ConfigValidator {
     /**
      * Throws {@link ConfigurationException} if given group property is defined within Hazelcast properties.
      *
-     * @param properties Group properties
+     * @param properties        Group properties
      * @param hazelcastProperty property to be checked
      * @throws ConfigurationException
      */
