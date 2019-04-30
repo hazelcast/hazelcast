@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.aggregate;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -24,11 +25,12 @@ import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.ComparatorEx;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiConsumerEx;
 import com.hazelcast.jet.function.BiFunctionEx;
 import com.hazelcast.jet.function.BinaryOperatorEx;
+import com.hazelcast.jet.function.ComparatorEx;
+import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.SupplierEx;
 import com.hazelcast.jet.function.ToDoubleFunctionEx;
 import com.hazelcast.jet.function.ToLongFunctionEx;
@@ -119,6 +121,12 @@ public final class AggregateOperations {
      * Returns an aggregate operation that computes the minimal item according
      * to the given {@code comparator}.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     *     // the result will be the youngest Person
+     *     AggregateOperations.minBy(ComparatorEx.comparingInt(person -> person.getAge()))
+     * }</pre>
+     *
      * This aggregate operation does not implement the {@link
      * AggregateOperation1#deductFn() deduct} primitive.
      *
@@ -136,6 +144,12 @@ public final class AggregateOperations {
      * Returns an aggregate operation that computes the maximal item according
      * to the given {@code comparator}.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     *     // the result will be the oldest Person
+     *     AggregateOperations.maxBy(ComparatorEx.comparingInt(person -> person.getAge()))
+     * }</pre>
+     *
      * This aggregate operation does not implement the {@link
      * AggregateOperation1#deductFn() deduct} primitive.
      *
@@ -166,6 +180,11 @@ public final class AggregateOperations {
      * calculated according to the given {@link ComparatorEx comparator}.
      * The returned list of elements is sorted in descending order.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     *     // the result will be a List<Person> with up to 5 oldest persons
+     *     AggregateOperations.topN(5, ComparatorEx.comparingInt(person -> person.getAge()))
+     * }</pre>
      * This aggregate operation does not implement the {@link
      * AggregateOperation1#deductFn() deduct} primitive.
      *
@@ -209,6 +228,11 @@ public final class AggregateOperations {
      * calculated according to the given {@link ComparatorEx comparator}.
      * The returned list of elements is sorted in ascending order.
      * <p>
+     * Sample usage:
+     * <pre>{@code
+     *     // the result will be a List<Person> with up to 5 youngest persons
+     *     AggregateOperations.bottomN(5, ComparatorEx.comparingInt(person -> person.getAge()))
+     * }</pre>
      * This aggregate operation does not implement the {@link
      * AggregateOperation1#deductFn() deduct} primitive.
      *
@@ -378,6 +402,19 @@ public final class AggregateOperations {
      * <p>
      * If the {@code mapFn} returns {@code null}, the item won't be aggregated
      * at all. This allows applying a filter at the same time.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     *     // calculate the set of surnames
+     *     AggregateOperations.mapping(person -> person.getSurname(), AggregateOperations.toSet())
+     * }</pre>
+     *
+     * This operation is mostly useful in conjunction with {@link #allOf},
+     * otherwise it's simpler to use {@code stage.map()} before the
+     * aggregation.
+     * <p>
+     * See also {@link #filtering filtering()} and {@link #flatMapping
+     * flatMapping()}.
      *
      * @param <T> input item type
      * @param <U> input type of the downstream aggregate operation
@@ -386,8 +423,7 @@ public final class AggregateOperations {
      * @param mapFn the function to apply to input items
      * @param downstream the downstream aggregate operation
      */
-    public static <T, U, A, R>
-    AggregateOperation1<T, A, R> mapping(
+    public static <T, U, A, R> AggregateOperation1<T, A, R> mapping(
             @Nonnull FunctionEx<? super T, ? extends U> mapFn,
             @Nonnull AggregateOperation1<? super U, A, ? extends R> downstream
     ) {
@@ -399,6 +435,98 @@ public final class AggregateOperations {
                     U mapped = mapFn.apply(t);
                     if (mapped != null) {
                         downstreamAccumulateFn.accept(a, mapped);
+                    }
+                })
+                .andCombine(downstream.combineFn())
+                .andDeduct(downstream.deductFn())
+                .<R>andExport(downstream.exportFn())
+                .andFinish(downstream.finishFn());
+    }
+
+    /**
+     * Wraps an aggregate operation so that only items passing the {@code
+     * filterFn} will be accumulated; others will be ignored.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     *     // the result will be the count of trades with quantity of 100 or more (as a Long)
+     *     AggregateOperations.filtering(trade -> trade.getQuantity >= 100, AggregateOperations.counting())
+     * }</pre>
+     *
+     * This operation is mostly useful in conjunction with {@link #allOf},
+     * otherwise it's simpler to use {@code stage.filter()} before the
+     * aggregation.
+     * <p>
+     * See also {@link #mapping mapping()} and {@link #flatMapping
+     * flatMapping()}.
+     *
+     * @param <T> input item type
+     * @param <A> downstream operation's accumulator type
+     * @param <R> downstream operation's result type
+     * @param filterFn the function to apply to input items
+     * @param downstream the downstream aggregate operation
+     */
+    public static <T, A, R> AggregateOperation1<T, A, R> filtering(
+            @Nonnull PredicateEx<? super T> filterFn,
+            @Nonnull AggregateOperation1<? super T, A, ? extends R> downstream
+    ) {
+        checkSerializable(filterFn, "filterFn");
+        BiConsumerEx<? super A, ? super T> downstreamAccumulateFn = downstream.accumulateFn();
+        return AggregateOperation
+                .withCreate(downstream.createFn())
+                .andAccumulate((A a, T t) -> {
+                    if (filterFn.test(t)) {
+                        downstreamAccumulateFn.accept(a, t);
+                    }
+                })
+                .andCombine(downstream.combineFn())
+                .andDeduct(downstream.deductFn())
+                .<R>andExport(downstream.exportFn())
+                .andFinish(downstream.finishFn());
+    }
+
+    /**
+     * Adapts an aggregate operation accepting items of type {@code U} to one
+     * accepting items of type {@code T} by applying a flat-mapping function to
+     * each item before accumulation - for one {@code T} item there will be
+     * <em>n</em> {@code U} items accumulated.
+     * <p>
+     * The returned traverser must be non-null and <em>null-terminated</em>.
+     * <p>
+     * Sample usage:
+     * <pre>{@code
+     *     // the result will be the total count of members in all groups
+     *     AggregateOperations.flatMapping(
+     *       group -> Traversers.traverseIterable(group.getMembers()),
+     *       AggregateOperations.counting()
+     *     )
+     * }</pre>
+     *
+     * This operation is mostly useful in conjunction with {@link #allOf},
+     * otherwise it's simpler to use {@code stage.flatMap()} before the
+     * aggregation.
+     * <p>
+     * See also {@link #mapping mapping()} and {@link #filtering filtering()}.
+     *
+     * @param <T> input item type
+     * @param <U> input type of the downstream aggregate operation
+     * @param <A> downstream operation's accumulator type
+     * @param <R> downstream operation's result type
+     * @param flatMapFn the function to apply to input items
+     * @param downstream the downstream aggregate operation
+     */
+    public static <T, U, A, R> AggregateOperation1<T, A, R> flatMapping(
+            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends U>> flatMapFn,
+            @Nonnull AggregateOperation1<? super U, A, ? extends R> downstream
+    ) {
+        checkSerializable(flatMapFn, "flatMapFn");
+        BiConsumerEx<? super A, ? super U> downstreamAccumulateFn = downstream.accumulateFn();
+        return AggregateOperation
+                .withCreate(downstream.createFn())
+                .andAccumulate((A a, T t) -> {
+                    Traverser<? extends U> trav = flatMapFn.apply(t);
+                    for (U u; (u = trav.next()) != null; ) {
+                        downstreamAccumulateFn.accept(a, u);
                     }
                 })
                 .andCombine(downstream.combineFn())
