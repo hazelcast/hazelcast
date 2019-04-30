@@ -293,7 +293,11 @@ public interface Processor {
          * Returns the index of the processor among all the processors created for
          * this vertex on all nodes: it's a unique cluster-wide index.
          * <p>
-         * The value is in the range {@code [0...totalParallelism-1]}.
+         * The value is in the range {@code [0...totalParallelism-1]}. For
+         * example if there are 2 members in the cluster and {@linkplain
+         * #localParallelism() local parallelism} is 4, the processors on the
+         * 1st cluster member will have indexes 0..3 and on the second member
+         * they will have indexes 4..7.
          */
         int globalProcessorIndex();
     }

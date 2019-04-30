@@ -18,9 +18,9 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiConsumerEx;
 import com.hazelcast.jet.function.ConsumerEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.util.Preconditions;
@@ -131,11 +131,11 @@ public final class SourceBuilder<S> {
      * Jet will create just a single processor that should emit all the data.
      * If you do call it, make sure your distributed source takes care of
      * splitting the data between processors. Your {@code createFn} should
-     * consult {@link Context#totalParallelism()} procContext.totalParallelism()}
-     * and {@link Context#globalProcessorIndex()} procContext.globalProcessorIndex()}.
+     * consult {@link Context#totalParallelism() procContext.totalParallelism()}
+     * and {@link Context#globalProcessorIndex() procContext.globalProcessorIndex()}.
      * Jet calls it exactly once with each {@code globalProcessorIndex} from 0
      * to {@code totalParallelism - 1} and each of the resulting state objects
-     * must emit its unique slice of the total source data.
+     * must emit its distinct slice of the total source data.
      * <p>
      * Here's an example that builds a simple, non-distributed source that
      * reads the lines from a single text file. Since you can't control on
@@ -389,7 +389,7 @@ public final class SourceBuilder<S> {
      * A builder of a batch stream source.
      * @see SourceBuilder#batch(String, FunctionEx)
      *
-     * @param <T>
+     * @param <T> type of emitted objects
      */
     public final class Batch<T> extends BaseNoTimestamps<T> {
         private Batch() {
@@ -433,7 +433,7 @@ public final class SourceBuilder<S> {
      * A builder of an unbounded stream source.
      * @see SourceBuilder#stream(String, FunctionEx)
      *
-     * @param <T>
+     * @param <T> type of emitted objects
      */
     public final class Stream<T> extends BaseNoTimestamps<T> {
         private Stream() {
@@ -473,7 +473,7 @@ public final class SourceBuilder<S> {
      * A builder of an unbounded stream source with timestamps.
      * @see SourceBuilder#timestampedStream(String, FunctionEx)
      *
-     * @param <T>
+     * @param <T> type of emitted objects
      */
     public final class TimestampedStream<T> extends Base<T> {
         private BiConsumerEx<? super S, ? super TimestampedSourceBuffer<T>> fillBufferFn;
