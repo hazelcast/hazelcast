@@ -22,7 +22,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftUtil;
-import com.hazelcast.test.AssertTask;
 import org.junit.Assert;
 
 import java.util.Arrays;
@@ -208,27 +207,23 @@ public class LocalRaftGroup {
     }
 
     public RaftNodeImpl waitUntilLeaderElected() {
-        final RaftNodeImpl[] leaderRef = new RaftNodeImpl[1];
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                RaftNodeImpl leaderNode = getLeaderNode();
-                assertNotNull(leaderNode);
+        RaftNodeImpl[] leaderRef = new RaftNodeImpl[1];
+        assertTrueEventually(() -> {
+            RaftNodeImpl leaderNode = getLeaderNode();
+            assertNotNull(leaderNode);
 
-                int leaderTerm = getTerm(leaderNode);
+            int leaderTerm = getTerm(leaderNode);
 
-                for (RaftNodeImpl raftNode : nodes) {
-                    if (integrations[getIndexOf(raftNode.getLocalMember())].isShutdown()) {
-                        continue;
-                    }
-
-                    assertEquals(leaderNode.getLocalMember(), RaftUtil.getLeaderMember(raftNode));
-                    assertEquals(leaderTerm, getTerm(raftNode));
+            for (RaftNodeImpl raftNode : nodes) {
+                if (integrations[getIndexOf(raftNode.getLocalMember())].isShutdown()) {
+                    continue;
                 }
 
-                leaderRef[0] = leaderNode;
+                assertEquals(leaderNode.getLocalMember(), RaftUtil.getLeaderMember(raftNode));
+                assertEquals(leaderTerm, getTerm(raftNode));
             }
+
+            leaderRef[0] = leaderNode;
         });
 
         return leaderRef[0];

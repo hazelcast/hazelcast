@@ -41,7 +41,7 @@ import static com.hazelcast.cp.internal.session.CPSessionInfo.toExpirationTime;
 class RaftSessionRegistry implements IdentifiedDataSerializable {
 
     private CPGroupId groupId;
-    private final Map<Long, CPSessionInfo> sessions = new ConcurrentHashMap<Long, CPSessionInfo>();
+    private final Map<Long, CPSessionInfo> sessions = new ConcurrentHashMap<>();
     private long nextSessionId;
     private long generatedThreadId;
 
@@ -100,7 +100,7 @@ class RaftSessionRegistry implements IdentifiedDataSerializable {
 
     // queried locally
     Collection<Tuple2<Long, Long>> getSessionsToExpire() {
-        List<Tuple2<Long, Long>> expired = new ArrayList<Tuple2<Long, Long>>();
+        List<Tuple2<Long, Long>> expired = new ArrayList<>();
         long now = Clock.currentTimeMillis();
         for (CPSessionInfo session : sessions.values()) {
             if (session.isExpired(now)) {

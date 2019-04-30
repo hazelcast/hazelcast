@@ -60,11 +60,7 @@ public class RaftStateTest {
     public void setup() {
         groupId = new TestRaftGroupId(name);
         localMember = newRaftMember(5000);
-        members = new HashSet<Endpoint>(asList(localMember,
-                newRaftMember(5001),
-                newRaftMember(5002),
-                newRaftMember(5003),
-                newRaftMember(5004)));
+        members = new HashSet<>(asList(localMember, newRaftMember(5001), newRaftMember(5002), newRaftMember(5003), newRaftMember(5004)));
 
         state = new RaftState(groupId, localMember, members, 100);
     }
@@ -232,7 +228,7 @@ public class RaftStateTest {
     }
 
     private void test_majority(int count) {
-        members = new HashSet<Endpoint>();
+        members = new HashSet<>();
         members.add(localMember);
 
         for (int i = 1; i < count; i++) {

@@ -47,8 +47,7 @@ public class RaftLockService extends AbstractBlockingService<LockInvocationKey, 
      */
     public static final String SERVICE_NAME = "hz:raft:lockService";
 
-    private final ConcurrentMap<String, RaftFencedLockProxy> proxies
-            = new ConcurrentHashMap<String, RaftFencedLockProxy>();
+    private final ConcurrentMap<String, RaftFencedLockProxy> proxies = new ConcurrentHashMap<>();
 
     public RaftLockService(NodeEngine nodeEngine) {
         super(nodeEngine);

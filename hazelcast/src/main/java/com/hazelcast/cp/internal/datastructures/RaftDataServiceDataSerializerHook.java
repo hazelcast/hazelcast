@@ -17,12 +17,11 @@
 package com.hazelcast.cp.internal.datastructures;
 
 import com.hazelcast.cp.internal.datastructures.spi.blocking.WaitKeyContainer;
+import com.hazelcast.cp.internal.datastructures.spi.blocking.operation.ExpireWaitKeysOp;
+import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.cp.internal.datastructures.spi.blocking.operation.ExpireWaitKeysOp;
-import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectOp;
 
 /**
  */
@@ -46,19 +45,16 @@ public class RaftDataServiceDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case WAIT_KEY_CONTAINER:
-                        return new WaitKeyContainer();
-                    case EXPIRE_WAIT_KEYS_OP:
-                        return new ExpireWaitKeysOp();
-                    case DESTROY_RAFT_OBJECT_OP:
-                        return new DestroyRaftObjectOp();
-                    default:
-                        throw new IllegalArgumentException("Undefined type: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case WAIT_KEY_CONTAINER:
+                    return new WaitKeyContainer();
+                case EXPIRE_WAIT_KEYS_OP:
+                    return new ExpireWaitKeysOp();
+                case DESTROY_RAFT_OBJECT_OP:
+                    return new DestroyRaftObjectOp();
+                default:
+                    throw new IllegalArgumentException("Undefined type: " + typeId);
             }
         };
     }

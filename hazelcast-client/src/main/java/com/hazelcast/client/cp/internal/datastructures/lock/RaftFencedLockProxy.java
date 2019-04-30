@@ -175,7 +175,7 @@ public class RaftFencedLockProxy extends ClientProxy implements FencedLock {
         protected InternalCompletableFuture<Long> doLock(long sessionId, long threadId, UUID invocationUid) {
             ClientMessage request = CPFencedLockLockCodec.encodeRequest(groupId, objectName, sessionId, threadId, invocationUid);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-            return new ClientDelegatingFuture<Long>(future, getSerializationService(), LOCK_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), LOCK_RESPONSE_DECODER);
         }
 
         @Override
@@ -184,7 +184,7 @@ public class RaftFencedLockProxy extends ClientProxy implements FencedLock {
             ClientMessage request = CPFencedLockTryLockCodec.encodeRequest(groupId, objectName, sessionId, threadId,
                     invocationUid, timeoutMillis);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-            return new ClientDelegatingFuture<Long>(future, getSerializationService(), TRY_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), TRY_RESPONSE_DECODER);
         }
 
         @Override
@@ -192,15 +192,14 @@ public class RaftFencedLockProxy extends ClientProxy implements FencedLock {
             ClientMessage request = CPFencedLockUnlockCodec.encodeRequest(groupId, objectName, sessionId, threadId,
                     invocationUid);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-            return new ClientDelegatingFuture<Boolean>(future, getSerializationService(), UNLOCK_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), UNLOCK_RESPONSE_DECODER);
         }
 
         @Override
         protected InternalCompletableFuture<RaftLockOwnershipState> doGetLockOwnershipState() {
             ClientMessage request = CPFencedLockGetLockOwnershipCodec.encodeRequest(groupId, objectName);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-            return new ClientDelegatingFuture<RaftLockOwnershipState>(future, getSerializationService(),
-                    GET_LOCK_OWNERSHIP_STATE_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), GET_LOCK_OWNERSHIP_STATE_RESPONSE_DECODER);
         }
     }
 

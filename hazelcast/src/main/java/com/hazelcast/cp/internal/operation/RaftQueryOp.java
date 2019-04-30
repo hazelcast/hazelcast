@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.operation;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.exception.NotLeaderException;
@@ -83,8 +82,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             ((RaftNodeAware) op).setRaftNode(raftNode);
         }
 
-        ICompletableFuture future = raftNode.query(op, queryPolicy);
-        future.andThen(this);
+        raftNode.query(op, queryPolicy).andThen(this);
     }
 
     @Override

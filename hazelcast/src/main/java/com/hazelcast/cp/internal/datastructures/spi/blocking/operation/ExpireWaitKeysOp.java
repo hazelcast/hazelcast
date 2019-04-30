@@ -90,7 +90,7 @@ public class ExpireWaitKeysOp extends RaftOp implements IdentifiedDataSerializab
     public void readData(ObjectDataInput in) throws IOException {
         serviceName = in.readUTF();
         int size = in.readInt();
-        keys = new ArrayList<Tuple2<String, UUID>>(size);
+        keys = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             UUID invocationUid = readUUID(in);

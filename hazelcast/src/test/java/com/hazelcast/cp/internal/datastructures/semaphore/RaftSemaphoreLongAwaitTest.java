@@ -23,7 +23,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.semaphore.proxy.RaftSessionAwareSemaphoreProxy;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -67,46 +65,34 @@ public class RaftSemaphoreLongAwaitTest extends HazelcastRaftTestSupport {
         testLongAwait(getRandomFollowerInstance(instances, groupId));
     }
 
-    private void testLongAwait(final HazelcastInstance instance) throws ExecutionException, InterruptedException {
-        final ISemaphore semaphore = instance.getCPSubsystem().getSemaphore(proxyName);
+    private void testLongAwait(HazelcastInstance instance) throws ExecutionException, InterruptedException {
+        ISemaphore semaphore = instance.getCPSubsystem().getSemaphore(proxyName);
 
-        Future<Object> f1 = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                if (!semaphore.tryAcquire(1, 5, TimeUnit.MINUTES)) {
-                    throw new IllegalStateException();
-                }
-
-                semaphore.release();
-
-                return null;
+        Future<Object> f1 = spawn(() -> {
+            if (!semaphore.tryAcquire(1, 5, TimeUnit.MINUTES)) {
+                throw new IllegalStateException();
             }
+
+            semaphore.release();
+
+            return null;
         });
 
-        Future<Object> f2 = spawn(new Callable<Object>() {
-            @Override
-            public Object call() throws InterruptedException {
-                semaphore.acquire();
-                semaphore.release();
+        Future<Object> f2 = spawn(() -> {
+            semaphore.acquire();
+            semaphore.release();
 
-                return null;
-            }
+            return null;
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftSemaphoreService service = getNodeEngineImpl(instance).getService(RaftSemaphoreService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations(groupId).size());
-            }
+        assertTrueEventually(() -> {
+            RaftSemaphoreService service = getNodeEngineImpl(instance).getService(RaftSemaphoreService.SERVICE_NAME);
+            assertEquals(2, service.getLiveOperations(groupId).size());
         });
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                RaftSemaphoreService service = getNodeEngineImpl(instance).getService(RaftSemaphoreService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations(groupId).size());
-            }
+        assertTrueAllTheTime(() -> {
+            RaftSemaphoreService service = getNodeEngineImpl(instance).getService(RaftSemaphoreService.SERVICE_NAME);
+            assertEquals(2, service.getLiveOperations(groupId).size());
         }, callTimeoutSeconds + 5);
 
         semaphore.increasePermits(1);

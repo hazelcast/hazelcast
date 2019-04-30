@@ -45,7 +45,6 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -103,24 +102,16 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = semaphore.getGroupId();
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        final RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
-        final RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+        RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
+        RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.acquire(2);
-                latch.countDown();
-            }
+        CountDownLatch latch = new CountDownLatch(1);
+        spawn(() -> {
+            semaphore.acquire(2);
+            latch.countDown();
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(registry.getLiveOperations().isEmpty());
-            }
-        });
+        assertTrueEventually(() -> assertFalse(registry.getLiveOperations().isEmpty()));
 
         semaphore.increasePermits(1);
 
@@ -136,24 +127,18 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = semaphore.getGroupId();
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        final RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
-        final RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+        RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
+        RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.tryAcquire(2, 10, MINUTES);
-                latch.countDown();
-            }
+        CountDownLatch latch = new CountDownLatch(1);
+        spawn(() -> {
+            semaphore.tryAcquire(2, 10, MINUTES);
+            latch.countDown();
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(registry.getLiveOperations().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertFalse(registry.getWaitTimeouts().isEmpty());
+            assertFalse(registry.getLiveOperations().isEmpty());
         });
 
         semaphore.increasePermits(1);
@@ -186,24 +171,18 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = semaphore.getGroupId();
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        final RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
-        final RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+        RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
+        RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.tryAcquire(2, 10, MINUTES);
-                latch.countDown();
-            }
+        CountDownLatch latch = new CountDownLatch(1);
+        spawn(() -> {
+            semaphore.tryAcquire(2, 10, MINUTES);
+            latch.countDown();
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(registry.getLiveOperations().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertFalse(registry.getWaitTimeouts().isEmpty());
+            assertFalse(registry.getLiveOperations().isEmpty());
         });
 
         semaphore.increasePermits(1);
@@ -219,22 +198,16 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = semaphore.getGroupId();
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        final RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
-        final RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+        RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
+        RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.tryAcquire(2, 10, MINUTES);
-            }
+        spawn(() -> {
+            semaphore.tryAcquire(2, 10, MINUTES);
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(registry.getLiveOperations().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertFalse(registry.getWaitTimeouts().isEmpty());
+            assertFalse(registry.getLiveOperations().isEmpty());
         });
 
         semaphore.destroy();
@@ -247,11 +220,8 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
     public void testNewRaftGroupMemberSchedulesTimeoutsWithSnapshot() throws ExecutionException, InterruptedException {
         semaphore.init(1);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.tryAcquire(2, 10, MINUTES);
-            }
+        spawn(() -> {
+            semaphore.tryAcquire(2, 10, MINUTES);
         });
 
         for (int i = 0; i < LOG_ENTRY_COUNT_TO_SNAPSHOT; i++) {
@@ -259,53 +229,44 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
             semaphore.release();
         }
 
-        final CPGroupId groupId = semaphore.getGroupId();
+        CPGroupId groupId = semaphore.getGroupId();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                HazelcastInstance leader = getLeaderInstance(instances, groupId);
-                RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
-                RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            HazelcastInstance leader = getLeaderInstance(instances, groupId);
+            RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
+            RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+            assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : instances) {
-                    RaftNodeImpl raftNode = getRaftNode(instance, groupId);
-                    assertNotNull(raftNode);
-                    LogEntry snapshotEntry = getSnapshotEntry(raftNode);
-                    assertTrue(snapshotEntry.index() > 0);
-                    List<RestoreSnapshotOp> ops = (List<RestoreSnapshotOp>) snapshotEntry.operation();
-                    for (RestoreSnapshotOp op : ops) {
-                        if (op.getServiceName().equals(RaftSemaphoreService.SERVICE_NAME)) {
-                            ResourceRegistry registry = (ResourceRegistry) op.getSnapshot();
-                            assertFalse(registry.getWaitTimeouts().isEmpty());
-                            return;
-                        }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                RaftNodeImpl raftNode = getRaftNode(instance, groupId);
+                assertNotNull(raftNode);
+                LogEntry snapshotEntry = getSnapshotEntry(raftNode);
+                assertTrue(snapshotEntry.index() > 0);
+                List<RestoreSnapshotOp> ops = (List<RestoreSnapshotOp>) snapshotEntry.operation();
+                for (RestoreSnapshotOp op : ops) {
+                    if (op.getServiceName().equals(RaftSemaphoreService.SERVICE_NAME)) {
+                        ResourceRegistry registry = (ResourceRegistry) op.getSnapshot();
+                        assertFalse(registry.getWaitTimeouts().isEmpty());
+                        return;
                     }
-                    fail();
                 }
+                fail();
             }
         });
 
         instances[1].shutdown();
 
-        final HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
+        HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
         newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftSemaphoreService service = getNodeEngineImpl(newInstance).getService(RaftSemaphoreService.SERVICE_NAME);
-                RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
-                assertNotNull(registry);
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertEquals(1, registry.availablePermits(objectName));
-            }
+        assertTrueEventually(() -> {
+            RaftSemaphoreService service = getNodeEngineImpl(newInstance).getService(RaftSemaphoreService.SERVICE_NAME);
+            RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
+            assertFalse(registry.getWaitTimeouts().isEmpty());
+            assertEquals(1, registry.availablePermits(objectName));
         });
     }
 
@@ -314,20 +275,17 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         semaphore.init(1);
         semaphore.acquire();
 
-        final RaftGroupId groupId = semaphore.getGroupId();
+        RaftGroupId groupId = semaphore.getGroupId();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance instance : instances) {
-                    RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
-                    assertFalse(sessionService.getAllSessions(groupId.name()).get().isEmpty());
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                assertFalse(sessionService.getAllSessions(groupId.name()).get().isEmpty());
             }
         });
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(semaphoreInstance);
-        final ProxySessionManagerService service = nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME);
+        ProxySessionManagerService service = nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME);
         long sessionId = service.getSession(groupId);
 
         assertNotEquals(NO_SESSION_ID, sessionId);
@@ -335,16 +293,13 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         RaftOp op = new ReleasePermitsOp(objectName, sessionId, getThreadId(), newUnsecureUUID(), 1);
         getRaftInvocationManager(semaphoreInstance).invoke(groupId, op).get();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance instance : instances) {
-                    RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
-                    assertTrue(service.getAllSessions(groupId.name()).get().isEmpty());
-                }
-
-                assertEquals(NO_SESSION_ID, service.getSession(groupId));
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                RaftSessionService service1 = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                assertTrue(service1.getAllSessions(groupId.name()).get().isEmpty());
             }
+
+            assertEquals(NO_SESSION_ID, service.getSession(groupId));
         });
     }
 
@@ -353,53 +308,36 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         semaphore.init(1);
         semaphore.acquire();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance instance : instances) {
-                    RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
-                    assertFalse(sessionService.getAllSessions(semaphore.getGroupId().name()).get().isEmpty());
-                }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                assertFalse(sessionService.getAllSessions(semaphore.getGroupId().name()).get().isEmpty());
             }
         });
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance instance : instances) {
-                    RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
-                    assertFalse(sessionService.getAllSessions(semaphore.getGroupId().name()).get().isEmpty());
-                }
+        assertTrueAllTheTime(() -> {
+            for (HazelcastInstance instance : instances) {
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                assertFalse(sessionService.getAllSessions(semaphore.getGroupId().name()).get().isEmpty());
             }
         }, 20);
     }
 
     @Test
     public void testActiveSessionWithPendingPermitIsNotClosed() {
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.acquire();
+        spawn(() -> semaphore.acquire());
+
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                assertFalse(sessionService.getAllSessions(semaphore.getGroupId().name()).get().isEmpty());
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance instance : instances) {
-                    RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
-                    assertFalse(sessionService.getAllSessions(semaphore.getGroupId().name()).get().isEmpty());
-                }
-            }
-        });
-
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (HazelcastInstance instance : instances) {
-                    RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
-                    assertFalse(sessionService.getAllSessions(semaphore.getGroupId().name()).get().isEmpty());
-                }
+        assertTrueAllTheTime(() -> {
+            for (HazelcastInstance instance : instances) {
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                assertFalse(sessionService.getAllSessions(semaphore.getGroupId().name()).get().isEmpty());
             }
         }, 20);
     }
@@ -409,19 +347,14 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         semaphore.init(1);
         semaphore.acquire();
 
-        final RaftGroupId groupId = semaphore.getGroupId();
+        RaftGroupId groupId = semaphore.getGroupId();
         long sessionId = getSessionManager().getSession(groupId);
         UUID invUid = newUnsecureUUID();
         RaftInvocationManager invocationManager = getRaftInvocationManager(semaphoreInstance);
 
         invocationManager.invoke(groupId, new ReleasePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).join();
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.acquire();
-            }
-        });
+        spawn(() -> semaphore.acquire());
 
         invocationManager.invoke(groupId, new ReleasePermitsOp(objectName, sessionId, getThreadId(), invUid, 1)).join();
     }
@@ -433,7 +366,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         semaphore.release();
         // we guarantee that there is a session id now...
 
-        final RaftGroupId groupId = semaphore.getGroupId();
+        RaftGroupId groupId = semaphore.getGroupId();
         long sessionId = getSessionManager().getSession(groupId);
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
@@ -452,7 +385,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         semaphore.release();
         // we guarantee that there is a session id now...
 
-        final RaftGroupId groupId = semaphore.getGroupId();
+        RaftGroupId groupId = semaphore.getGroupId();
         long sessionId = getSessionManager().getSession(groupId);
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
@@ -468,7 +401,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
     public void testRetriedDrainPermitsAppliedOnlyOnce() throws ExecutionException, InterruptedException {
         semaphore.increasePermits(3);
 
-        final RaftGroupId groupId = semaphore.getGroupId();
+        RaftGroupId groupId = semaphore.getGroupId();
         long sessionId = getSessionManager().getSession(groupId);
         assertNotEquals(NO_SESSION_ID, sessionId);
         UUID invUid = newUnsecureUUID();
@@ -479,12 +412,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         assertEquals(3, drained1);
         assertEquals(0, semaphore.availablePermits());
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.increasePermits(1);
-            }
-        }).get();
+        spawn(() -> semaphore.increasePermits(1)).get();
 
         int drained2 = invocationManager.<Integer>invoke(groupId, new DrainPermitsOp(objectName, sessionId, getThreadId(), invUid)).join();
 
@@ -496,28 +424,20 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
     public void testRetriedWaitKeysAreExpiredTogether() {
         semaphore.init(1);
 
-        final CountDownLatch releaseLatch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                semaphore.acquire();
-                assertOpenEventually(releaseLatch);
-                semaphore.release();
-            }
+        CountDownLatch releaseLatch = new CountDownLatch(1);
+        spawn(() -> {
+            semaphore.acquire();
+            assertOpenEventually(releaseLatch);
+            semaphore.release();
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, semaphore.availablePermits());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, semaphore.availablePermits()));
 
         // there is a session id now
 
-        final RaftGroupId groupId = semaphore.getGroupId();
-        final NodeEngineImpl nodeEngine = getNodeEngineImpl(semaphoreInstance);
-        final RaftSemaphoreService service = nodeEngine.getService(RaftSemaphoreService.SERVICE_NAME);
+        RaftGroupId groupId = semaphore.getGroupId();
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(semaphoreInstance);
+        RaftSemaphoreService service = nodeEngine.getService(RaftSemaphoreService.SERVICE_NAME);
 
         ProxySessionManagerService sessionManager = nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME);
         long sessionId = sessionManager.getSession(groupId);
@@ -525,73 +445,56 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
 
         RaftInvocationManager invocationManager = getRaftInvocationManager(semaphoreInstance);
         UUID invUid = newUnsecureUUID();
-        final Tuple2[] acquireWaitTimeoutKeyRef = new Tuple2[1];
+        Tuple2[] acquireWaitTimeoutKeyRef = new Tuple2[1];
 
         InternalCompletableFuture<Boolean> f1 = invocationManager
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, ThreadUtil.getThreadId(), invUid, 1, SECONDS.toMillis(300)));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-
-                RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
-                Map<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
-                assertEquals(1, waitTimeouts.size());
-                acquireWaitTimeoutKeyRef[0] = waitTimeouts.keySet().iterator().next();
-            }
+        assertTrueEventually(() -> {
+            RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+            Map<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts = registry.getWaitTimeouts();
+            assertEquals(1, waitTimeouts.size());
+            acquireWaitTimeoutKeyRef[0] = waitTimeouts.keySet().iterator().next();
         });
 
         InternalCompletableFuture<Boolean> f2 = invocationManager
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, ThreadUtil.getThreadId(), invUid, 1, SECONDS.toMillis(300)));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final int partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);
-                final RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
-                final boolean[] verified = new boolean[1];
-                final CountDownLatch latch = new CountDownLatch(1);
-                OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
-                operationService.execute(new PartitionSpecificRunnable() {
-                    @Override
-                    public int getPartitionId() {
-                        return partitionId;
-                    }
+        assertTrueEventually(() -> {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);
+            RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+            boolean[] verified = new boolean[1];
+            CountDownLatch latch = new CountDownLatch(1);
+            OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+            operationService.execute(new PartitionSpecificRunnable() {
+                @Override
+                public int getPartitionId() {
+                    return partitionId;
+                }
 
-                    @Override
-                    public void run() {
-                        RaftSemaphore raftSemaphore = registry.getResourceOrNull(objectName);
-                        final Map<Object, WaitKeyContainer<AcquireInvocationKey>> waitKeys = raftSemaphore.getInternalWaitKeysMap();
-                        verified[0] = (waitKeys.size() == 1 && waitKeys.values().iterator().next().retryCount() == 1);
-                        latch.countDown();
-                    }
-                });
+                @Override
+                public void run() {
+                    RaftSemaphore raftSemaphore = registry.getResourceOrNull(objectName);
+                    Map<Object, WaitKeyContainer<AcquireInvocationKey>> waitKeys = raftSemaphore.getInternalWaitKeysMap();
+                    verified[0] = (waitKeys.size() == 1 && waitKeys.values().iterator().next().retryCount() == 1);
+                    latch.countDown();
+                }
+            });
 
-                assertOpenEventually(latch);
+            assertOpenEventually(latch);
 
-                assertTrue(verified[0]);
-            }
+            assertTrue(verified[0]);
         });
 
         RaftOp op = new ExpireWaitKeysOp(RaftSemaphoreService.SERVICE_NAME,
-                Collections.<Tuple2<String, UUID>>singletonList(acquireWaitTimeoutKeyRef[0]));
+                Collections.singletonList(acquireWaitTimeoutKeyRef[0]));
         invocationManager.invoke(groupId, op).join();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty()));
 
         releaseLatch.countDown();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, semaphore.availablePermits());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, semaphore.availablePermits()));
 
         assertFalse(f1.join());
         assertFalse(f2.join());
@@ -602,31 +505,25 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         semaphore.init(1);
         semaphore.acquire();
 
-        final CountDownLatch acquiredLatch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                HazelcastInstance otherInstance = instances[0] == semaphoreInstance ? instances[1] : instances[0];
-                ISemaphore remoteSemaphore = otherInstance.getCPSubsystem().getSemaphore(proxyName);
-                try {
-                    remoteSemaphore.acquire();
-                    acquiredLatch.countDown();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        CountDownLatch acquiredLatch = new CountDownLatch(1);
+        spawn(() -> {
+            HazelcastInstance otherInstance = instances[0] == semaphoreInstance ? instances[1] : instances[0];
+            ISemaphore remoteSemaphore = otherInstance.getCPSubsystem().getSemaphore(proxyName);
+            try {
+                remoteSemaphore.acquire();
+                acquiredLatch.countDown();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftSemaphoreService service = getNodeEngineImpl(semaphoreInstance).getService(RaftSemaphoreService.SERVICE_NAME);
-                RaftSemaphoreRegistry registry = service.getRegistryOrNull(semaphore.getGroupId());
-                assertNotNull(registry);
-                RaftSemaphore semaphore = registry.getResourceOrNull(objectName);
-                assertNotNull(semaphore);
-                assertFalse(semaphore.getInternalWaitKeysMap().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            RaftSemaphoreService service = getNodeEngineImpl(semaphoreInstance).getService(RaftSemaphoreService.SERVICE_NAME);
+            RaftSemaphoreRegistry registry = service.getRegistryOrNull(semaphore.getGroupId());
+            assertNotNull(registry);
+            RaftSemaphore semaphore = registry.getResourceOrNull(objectName);
+            assertNotNull(semaphore);
+            assertFalse(semaphore.getInternalWaitKeysMap().isEmpty());
         });
 
         semaphoreInstance.shutdown();

@@ -16,15 +16,14 @@
 
 package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
-import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.AwaitOp;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.CountDownOp;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetCountOp;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetRoundOp;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.TrySetCountOp;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public class RaftCountDownLatchDataSerializerHook implements DataSerializerHook {
@@ -51,29 +50,26 @@ public class RaftCountDownLatchDataSerializerHook implements DataSerializerHook 
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case COUNT_DOWN_LATCH_REGISTRY:
-                        return new RaftCountDownLatchRegistry();
-                    case COUNT_DOWN_LATCH:
-                        return new RaftCountDownLatch();
-                    case AWAIT_INVOCATION_KEY:
-                        return new AwaitInvocationKey();
-                    case AWAIT_OP:
-                        return new AwaitOp();
-                    case COUNT_DOWN_OP:
-                        return new CountDownOp();
-                    case GET_COUNT_OP:
-                        return new GetCountOp();
-                    case GET_ROUND_OP:
-                        return new GetRoundOp();
-                    case TRY_SET_COUNT_OP:
-                        return new TrySetCountOp();
-                    default:
-                        throw new IllegalArgumentException("Undefined type: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case COUNT_DOWN_LATCH_REGISTRY:
+                    return new RaftCountDownLatchRegistry();
+                case COUNT_DOWN_LATCH:
+                    return new RaftCountDownLatch();
+                case AWAIT_INVOCATION_KEY:
+                    return new AwaitInvocationKey();
+                case AWAIT_OP:
+                    return new AwaitOp();
+                case COUNT_DOWN_OP:
+                    return new CountDownOp();
+                case GET_COUNT_OP:
+                    return new GetCountOp();
+                case GET_ROUND_OP:
+                    return new GetRoundOp();
+                case TRY_SET_COUNT_OP:
+                    return new TrySetCountOp();
+                default:
+                    throw new IllegalArgumentException("Undefined type: " + typeId);
             }
         };
     }

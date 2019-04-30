@@ -103,7 +103,7 @@ class RaftGroupMembershipManager {
 
         public void run() {
             for (RaftNode raftNode : raftService.getAllRaftNodes()) {
-                final CPGroupId groupId = raftNode.getGroupId();
+                CPGroupId groupId = raftNode.getGroupId();
                 if (groupId.equals(raftService.getMetadataGroupId())) {
                     continue;
                 }
@@ -172,13 +172,13 @@ class RaftGroupMembershipManager {
                 return Collections.emptySet();
             }
 
-            Map<CPGroupId, Future<Object>> futures = new HashMap<CPGroupId, Future<Object>>();
+            Map<CPGroupId, Future<Object>> futures = new HashMap<>();
             for (CPGroupId groupId : destroyingRaftGroupIds) {
                 Future<Object> future = invocationManager.destroy(groupId);
                 futures.put(groupId, future);
             }
 
-            Set<CPGroupId> destroyedGroupIds = new HashSet<CPGroupId>();
+            Set<CPGroupId> destroyedGroupIds = new HashSet<>();
             for (Entry<CPGroupId, Future<Object>> e : futures.entrySet()) {
                 if (isRaftGroupDestroyed(e.getKey(), e.getValue())) {
                     destroyedGroupIds.add(e.getKey());
@@ -248,7 +248,7 @@ class RaftGroupMembershipManager {
 
             List<CPGroupMembershipChange> changes = schedule.getChanges();
             CountDownLatch latch = new CountDownLatch(changes.size());
-            Map<CPGroupId, Tuple2<Long, Long>> changedGroups = new ConcurrentHashMap<CPGroupId, Tuple2<Long, Long>>();
+            Map<CPGroupId, Tuple2<Long, Long>> changedGroups = new ConcurrentHashMap<>();
 
             for (CPGroupMembershipChange change : changes) {
                 applyOnRaftGroup(latch, changedGroups, change);
@@ -269,14 +269,14 @@ class RaftGroupMembershipManager {
             return f.join();
         }
 
-        private void applyOnRaftGroup(final CountDownLatch latch, final Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
-                                      final CPGroupMembershipChange change) {
+        private void applyOnRaftGroup(CountDownLatch latch, Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
+                                      CPGroupMembershipChange change) {
             ICompletableFuture<Long> future;
             if (change.getMemberToRemove() != null) {
                 future = invocationManager.changeMembership(change.getGroupId(), change.getMembersCommitIndex(),
                         change.getMemberToRemove(), MembershipChangeMode.REMOVE);
             } else {
-                future = new SimpleCompletedFuture<Long>(change.getMembersCommitIndex());
+                future = new SimpleCompletedFuture<>(change.getMembersCommitIndex());
             }
 
             future.andThen(new ExecutionCallback<Long>() {
@@ -302,8 +302,8 @@ class RaftGroupMembershipManager {
             });
         }
 
-        private void addMember(final CountDownLatch latch, final Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
-                               final CPGroupMembershipChange change, final long currentCommitIndex) {
+        private void addMember(CountDownLatch latch, Map<CPGroupId, Tuple2<Long, Long>> changedGroups,
+                               CPGroupMembershipChange change, long currentCommitIndex) {
             ICompletableFuture<Long> future = invocationManager.changeMembership(change.getGroupId(), currentCommitIndex,
                     change.getMemberToAdd(), MembershipChangeMode.ADD);
             future.andThen(new ExecutionCallback<Long>() {

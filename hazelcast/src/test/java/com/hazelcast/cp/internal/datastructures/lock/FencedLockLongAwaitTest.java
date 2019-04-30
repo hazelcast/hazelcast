@@ -23,7 +23,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -72,20 +70,10 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
     @Test(timeout = 300000)
     public void when_longWaitOperationIsNotCommitted_then_itFailsWithOperationTimeoutException() {
         HazelcastInstance apInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
-        final FencedLock lock = apInstance.getCPSubsystem().getLock(proxyName);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                lock.lock();
-            }
-        });
+        FencedLock lock = apInstance.getCPSubsystem().getLock(proxyName);
+        spawn(lock::lock);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(lock.isLocked());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(lock.isLocked()));
 
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
         for (int i = 0; i < groupSize; i++) {
@@ -102,47 +90,35 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
         }
     }
 
-    private void testLongAwait(final HazelcastInstance instance) throws ExecutionException, InterruptedException {
-        final FencedLock lock = instance.getCPSubsystem().getLock(proxyName);
+    private void testLongAwait(HazelcastInstance instance) throws ExecutionException, InterruptedException {
+        FencedLock lock = instance.getCPSubsystem().getLock(proxyName);
         lock.lock();
 
-        Future<Object> f1 = spawn(new Callable<Object>() {
-            @Override
-            public Object call() {
-                if (!lock.tryLock(5, TimeUnit.MINUTES)) {
-                    throw new IllegalStateException();
-                }
-
-                lock.unlock();
-
-                return null;
+        Future<Object> f1 = spawn(() -> {
+            if (!lock.tryLock(5, TimeUnit.MINUTES)) {
+                throw new IllegalStateException();
             }
+
+            lock.unlock();
+
+            return null;
         });
 
-        Future<Object> f2 = spawn(new Callable<Object>() {
-            @Override
-            public Object call() {
-                lock.lock();
-                lock.unlock();
+        Future<Object> f2 = spawn(() -> {
+            lock.lock();
+            lock.unlock();
 
-                return null;
-            }
+            return null;
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
-            }
+        assertTrueEventually(() -> {
+            RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
+            assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
         });
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
-            }
+        assertTrueAllTheTime(() -> {
+            RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
+            assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
         }, callTimeoutSeconds + 5);
 
         lock.unlock();

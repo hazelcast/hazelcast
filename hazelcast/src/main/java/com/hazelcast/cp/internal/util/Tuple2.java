@@ -16,6 +16,8 @@
 
 package com.hazelcast.cp.internal.util;
 
+import java.util.Objects;
+
 /**
  * An immutable container of 2 statically typed fields
  * @param <X> type of the first element
@@ -33,7 +35,7 @@ public final class Tuple2<X, Y> {
     }
 
     public static <X, Y> Tuple2<X, Y> of(X element1, Y element2) {
-        return new Tuple2<X, Y>(element1, element2);
+        return new Tuple2<>(element1, element2);
     }
 
     @Override
@@ -47,10 +49,10 @@ public final class Tuple2<X, Y> {
 
         Tuple2<?, ?> tuple2 = (Tuple2<?, ?>) o;
 
-        if (element1 != null ? !element1.equals(tuple2.element1) : tuple2.element1 != null) {
+        if (!Objects.equals(element1, tuple2.element1)) {
             return false;
         }
-        return element2 != null ? element2.equals(tuple2.element2) : tuple2.element2 == null;
+        return Objects.equals(element2, tuple2.element2);
     }
 
     @Override

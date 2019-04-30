@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -45,7 +44,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
     private List<Long> membershipChangeCommitIndices;
     private CPMemberInfo member;
     private MembershipChangeMode membershipChangeMode;
-    private final List<CPGroupMembershipChange> changes = new ArrayList<CPGroupMembershipChange>();
+    private final List<CPGroupMembershipChange> changes = new ArrayList<>();
 
     MembershipChangeSchedule() {
     }
@@ -73,14 +72,8 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
     MembershipChangeSchedule excludeCompletedChanges(Collection<CPGroupId> completedGroupIds) {
         checkNotNull(completedGroupIds);
 
-        List<CPGroupMembershipChange> remainingChanges = new ArrayList<CPGroupMembershipChange>(changes);
-        Iterator<CPGroupMembershipChange> it = remainingChanges.iterator();
-        while (it.hasNext()) {
-            CPGroupMembershipChange change = it.next();
-            if (completedGroupIds.contains(change.groupId)) {
-                it.remove();
-            }
-        }
+        List<CPGroupMembershipChange> remainingChanges = new ArrayList<>(changes);
+        remainingChanges.removeIf(change -> completedGroupIds.contains(change.groupId));
 
         return new MembershipChangeSchedule(membershipChangeCommitIndices, member, membershipChangeMode, remainingChanges);
     }
@@ -90,7 +83,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
     }
 
     MembershipChangeSchedule addRetriedCommitIndex(long commitIndex) {
-        List<Long> membershipChangeCommitIndices = new ArrayList<Long>(this.membershipChangeCommitIndices);
+        List<Long> membershipChangeCommitIndices = new ArrayList<>(this.membershipChangeCommitIndices);
         membershipChangeCommitIndices.add(commitIndex);
         return new MembershipChangeSchedule(membershipChangeCommitIndices, member, membershipChangeMode, changes);
     }
@@ -167,7 +160,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
         public void readData(ObjectDataInput in) throws IOException {
             membersCommitIndex = in.readLong();
             int len = in.readInt();
-            members = new HashSet<CPMemberInfo>(len);
+            members = new HashSet<>(len);
             for (int i = 0; i < len; i++) {
                 CPMemberInfo member = in.readObject();
                 members.add(member);
@@ -220,7 +213,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int membershipChangeCommitIndexCount = in.readInt();
-        membershipChangeCommitIndices = new ArrayList<Long>(membershipChangeCommitIndexCount);
+        membershipChangeCommitIndices = new ArrayList<>(membershipChangeCommitIndexCount);
         for (int i = 0; i < membershipChangeCommitIndexCount; i++) {
             long commitIndex = in.readLong();
             membershipChangeCommitIndices.add(commitIndex);

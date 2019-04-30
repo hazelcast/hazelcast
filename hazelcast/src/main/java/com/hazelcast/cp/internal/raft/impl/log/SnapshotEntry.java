@@ -69,7 +69,7 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
         super.readData(in);
         groupMembersLogIndex = in.readLong();
         int count = in.readInt();
-        groupMembers = new HashSet<Endpoint>(count);
+        groupMembers = new HashSet<>(count);
         for (int i = 0; i < count; i++) {
             Endpoint endpoint = in.readObject();
             groupMembers.add(endpoint);

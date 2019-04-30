@@ -31,7 +31,6 @@ import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -229,13 +228,10 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
         atomicLong.set(3);
 
         // I may not be the leader...
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftAtomicLongProxy atomicLongProxy = (RaftAtomicLongProxy) atomicLong;
-                final long v = atomicLongProxy.localGet(QueryPolicy.ANY_LOCAL);
-                assertEquals(3, v);
-            }
+        assertTrueEventually(() -> {
+            RaftAtomicLongProxy atomicLongProxy = (RaftAtomicLongProxy) atomicLong;
+            long v = atomicLongProxy.localGet(QueryPolicy.ANY_LOCAL);
+            assertEquals(3, v);
         });
     }
 
@@ -269,16 +265,13 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
     public void testRecreate_afterGroupDestroy() throws Exception {
         atomicLong.destroy();
 
-        final CPGroupId groupId = getGroupId(atomicLong);
-        final RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
+        CPGroupId groupId = getGroupId(atomicLong);
+        RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
         invocationManager.invoke(getRaftService(instances[0]).getMetadataGroupId(), new TriggerDestroyRaftGroupOp(groupId)).get();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                CPGroup group = invocationManager.<CPGroup>invoke(getMetadataGroupId(instances[0]), new GetRaftGroupOp(groupId)).join();
-                assertEquals(CPGroupStatus.DESTROYED, group.status());
-            }
+        assertTrueEventually(() -> {
+            CPGroup group = invocationManager.<CPGroup>invoke(getMetadataGroupId(instances[0]), new GetRaftGroupOp(groupId)).join();
+            assertEquals(CPGroupStatus.DESTROYED, group.status());
         });
 
         try {

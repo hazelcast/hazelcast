@@ -60,7 +60,7 @@ public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerial
     }
 
     public Collection<W> retries() {
-        return keys != null ? keys.subList(1, keys.size()) : Collections.<W>emptyList();
+        return keys != null ? keys.subList(1, keys.size()) : Collections.emptyList();
     }
 
     public Collection<W> keyAndRetries() {
@@ -89,7 +89,7 @@ public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerial
                 + " has different invocation uids!");
 
         if (keys == null) {
-            keys = new ArrayList<W>(3);
+            keys = new ArrayList<>(3);
             keys.add(key);
         }
         keys.add(retry);
@@ -120,7 +120,7 @@ public class WaitKeyContainer<W extends WaitKey> implements IdentifiedDataSerial
         key = in.readObject();
         int retryCount = in.readInt();
         if (retryCount > 0) {
-            keys = new ArrayList<W>(retryCount + 1);
+            keys = new ArrayList<>(retryCount + 1);
             keys.add(key);
             for (int i = 0; i < retryCount; i++) {
                 W retry = in.readObject();

@@ -33,14 +33,14 @@ import java.util.Set;
  */
 public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializable {
 
-    private final Collection<CPMemberInfo> members = new ArrayList<CPMemberInfo>();
+    private final Collection<CPMemberInfo> members = new ArrayList<>();
     private long membersCommitIndex;
-    private final Collection<CPGroupInfo> groups = new ArrayList<CPGroupInfo>();
+    private final Collection<CPGroupInfo> groups = new ArrayList<>();
     private MembershipChangeSchedule membershipChangeSchedule;
     private List<CPMemberInfo> initialCPMembers;
-    private Set<CPMemberInfo> initializedCPMembers = new HashSet<CPMemberInfo>();
+    private Set<CPMemberInfo> initializedCPMembers = new HashSet<>();
     private MetadataRaftGroupInitStatus initializationStatus;
-    private Set<Long> initializationCommitIndices = new HashSet<Long>();
+    private Set<Long> initializationCommitIndices = new HashSet<>();
 
     public void setGroups(Collection<CPGroupInfo> groups) {
         this.groups.addAll(groups);
@@ -165,7 +165,7 @@ public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializab
         boolean discoveredInitialCPMembers = in.readBoolean();
         if (discoveredInitialCPMembers) {
             len = in.readInt();
-            initialCPMembers = new ArrayList<CPMemberInfo>(len);
+            initialCPMembers = new ArrayList<>(len);
             for (int i = 0; i < len; i++) {
                 CPMemberInfo member = in.readObject();
                 initialCPMembers.add(member);

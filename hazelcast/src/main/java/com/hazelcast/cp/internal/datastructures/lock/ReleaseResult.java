@@ -54,7 +54,7 @@ class ReleaseResult {
     }
 
     static ReleaseResult successful(RaftLockOwnershipState ownership) {
-        return new ReleaseResult(true, ownership, Collections.<LockInvocationKey>emptyList());
+        return new ReleaseResult(true, ownership, Collections.emptyList());
     }
 
     static ReleaseResult successful(RaftLockOwnershipState ownership, Collection<LockInvocationKey> notifications) {

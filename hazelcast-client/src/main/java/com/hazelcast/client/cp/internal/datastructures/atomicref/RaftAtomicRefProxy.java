@@ -163,14 +163,14 @@ public class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReferen
         Data newData = getContext().getSerializationService().toData(update);
         ClientMessage request = CPAtomicRefCompareAndSetCodec.encodeRequest(groupId, objectName, expectedData, newData);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Boolean>(future, getSerializationService(), COMPARE_AND_SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), COMPARE_AND_SET_DECODER);
     }
 
     @Override
     public InternalCompletableFuture<T> getAsync() {
         ClientMessage request = CPAtomicRefGetCodec.encodeRequest(groupId, objectName);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<T>(future, getSerializationService(), GET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), GET_DECODER);
     }
 
     @Override
@@ -178,7 +178,7 @@ public class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReferen
         Data data = getContext().getSerializationService().toData(newValue);
         ClientMessage request = CPAtomicRefSetCodec.encodeRequest(groupId, objectName, data, false);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Void>(future, getSerializationService(), SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), SET_DECODER);
     }
 
     @Override
@@ -186,7 +186,7 @@ public class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReferen
         Data data = getContext().getSerializationService().toData(newValue);
         ClientMessage request = CPAtomicRefSetCodec.encodeRequest(groupId, objectName, data, true);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<T>(future, getSerializationService(), SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), SET_DECODER);
     }
 
     @Override
@@ -204,7 +204,7 @@ public class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReferen
         Data data = getContext().getSerializationService().toData(expected);
         ClientMessage request = CPAtomicRefContainsCodec.encodeRequest(groupId, objectName, data);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Boolean>(future, getSerializationService(), CONTAINS_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), CONTAINS_DECODER);
     }
 
     @Override
@@ -248,7 +248,7 @@ public class RaftAtomicRefProxy<T> extends ClientProxy implements IAtomicReferen
         Data data = getContext().getSerializationService().toData(function);
         ClientMessage request = CPAtomicRefApplyCodec.encodeRequest(groupId, objectName, data, returnValueType.value(), alter);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<T3>(future, getSerializationService(), APPLY_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), APPLY_DECODER);
     }
 
 }

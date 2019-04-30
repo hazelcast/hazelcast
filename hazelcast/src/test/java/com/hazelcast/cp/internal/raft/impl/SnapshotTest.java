@@ -29,7 +29,6 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -84,28 +83,25 @@ public class SnapshotTest extends HazelcastTestSupport {
 
     @Test
     public void when_commitLogAdvances_then_snapshotIsTaken() throws ExecutionException, InterruptedException {
-        final int entryCount = 50;
+        int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         for (int i = 0; i < entryCount; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : group.getNodes()) {
-                    assertEquals(entryCount, getCommitIndex(raftNode));
-                    assertEquals(entryCount, getSnapshotEntry(raftNode).index());
-                    RaftDataService service = group.getService(raftNode);
-                    assertEquals(entryCount, service.size());
-                    for (int i = 0; i < entryCount; i++) {
-                        assertEquals(("val" + i), service.get(i + 1));
-                    }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : group.getNodes()) {
+                assertEquals(entryCount, getCommitIndex(raftNode));
+                assertEquals(entryCount, getSnapshotEntry(raftNode).index());
+                RaftDataService service = group.getService(raftNode);
+                assertEquals(entryCount, service.size());
+                for (int i = 0; i < entryCount; i++) {
+                    assertEquals(("val" + i), service.get(i + 1));
                 }
             }
         });
@@ -113,56 +109,50 @@ public class SnapshotTest extends HazelcastTestSupport {
 
     @Test
     public void when_snapshotIsTaken_then_nextEntryIsCommitted() throws ExecutionException, InterruptedException {
-        final int entryCount = 50;
+        int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         for (int i = 0; i < entryCount; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : group.getNodes()) {
-                    assertEquals(entryCount, getCommitIndex(raftNode));
-                    assertEquals(entryCount, getSnapshotEntry(raftNode).index());
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : group.getNodes()) {
+                assertEquals(entryCount, getCommitIndex(raftNode));
+                assertEquals(entryCount, getSnapshotEntry(raftNode).index());
             }
         });
 
         leader.replicate(new ApplyRaftRunnable("valFinal")).get();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : group.getNodes()) {
-                    assertEquals(entryCount + 1, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode);
-                    assertEquals(entryCount + 1, service.size());
-                    for (int i = 0; i < entryCount; i++) {
-                        assertEquals(("val" + i), service.get(i + 1));
-                    }
-                    assertEquals("valFinal", service.get(51));
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : group.getNodes()) {
+                assertEquals(entryCount + 1, getCommitIndex(raftNode));
+                RaftDataService service = group.getService(raftNode);
+                assertEquals(entryCount + 1, service.size());
+                for (int i = 0; i < entryCount; i++) {
+                    assertEquals(("val" + i), service.get(i + 1));
                 }
+                assertEquals("valFinal", service.get(51));
             }
         });
     }
 
     @Test
     public void when_followerFallsTooFarBehind_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
-        final int entryCount = 50;
+        int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        final RaftNodeImpl slowFollower = followers[1];
+        RaftNodeImpl slowFollower = followers[1];
 
         group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
 
@@ -170,29 +160,21 @@ public class SnapshotTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(entryCount, getSnapshotEntry(leader).index());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(entryCount, getSnapshotEntry(leader).index()));
 
         leader.replicate(new ApplyRaftRunnable("valFinal")).get();
 
         group.resetAllRulesFrom(leader.getLocalMember());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : group.getNodes()) {
-                    assertEquals(entryCount + 1, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode);
-                    assertEquals(entryCount + 1, service.size());
-                    for (int i = 0; i < entryCount; i++) {
-                        assertEquals(("val" + i), service.get(i + 1));
-                    }
-                    assertEquals("valFinal", service.get(51));
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : group.getNodes()) {
+                assertEquals(entryCount + 1, getCommitIndex(raftNode));
+                RaftDataService service = group.getService(raftNode);
+                assertEquals(entryCount + 1, service.size());
+                for (int i = 0; i < entryCount; i++) {
+                    assertEquals(("val" + i), service.get(i + 1));
                 }
+                assertEquals("valFinal", service.get(51));
             }
         });
     }
@@ -200,16 +182,16 @@ public class SnapshotTest extends HazelcastTestSupport {
     @Test
     public void when_leaderMissesInstallSnapshotResponse_then_itAdvancesMatchIndexWithNextInstallSnapshotResponse()
             throws ExecutionException, InterruptedException {
-        final int entryCount = 50;
+        int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount)
                                                                            .setAppendRequestBackoffTimeoutInMillis(1000);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        final RaftNodeImpl slowFollower = followers[1];
+        RaftNodeImpl slowFollower = followers[1];
 
         // the leader cannot send AppendEntriesRPC to the follower
         group.dropMessagesToMember(leader.getLocalMember(), slowFollower.getLocalMember(), AppendRequest.class);
@@ -221,75 +203,61 @@ public class SnapshotTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(entryCount, getSnapshotEntry(leader).index());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(entryCount, getSnapshotEntry(leader).index()));
 
         leader.replicate(new ApplyRaftRunnable("valFinal")).get();
 
         group.resetAllRulesFrom(leader.getLocalMember());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : group.getNodesExcept(slowFollower.getLocalMember())) {
-                    assertEquals(entryCount + 1, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode);
-                    assertEquals(entryCount + 1, service.size());
-                    for (int i = 0; i < entryCount; i++) {
-                        assertEquals(("val" + i), service.get(i + 1));
-                    }
-                    assertEquals("valFinal", service.get(51));
-                }
-
-                assertEquals(entryCount, getCommitIndex(slowFollower));
-                RaftDataService service = group.getService(slowFollower);
-                assertEquals(entryCount, service.size());
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : group.getNodesExcept(slowFollower.getLocalMember())) {
+                assertEquals(entryCount + 1, getCommitIndex(raftNode));
+                RaftDataService service = group.getService(raftNode);
+                assertEquals(entryCount + 1, service.size());
                 for (int i = 0; i < entryCount; i++) {
                     assertEquals(("val" + i), service.get(i + 1));
                 }
+                assertEquals("valFinal", service.get(51));
+            }
+
+            assertEquals(entryCount, getCommitIndex(slowFollower));
+            RaftDataService service = group.getService(slowFollower);
+            assertEquals(entryCount, service.size());
+            for (int i = 0; i < entryCount; i++) {
+                assertEquals(("val" + i), service.get(i + 1));
             }
         });
 
         group.resetAllRulesFrom(slowFollower.getLocalMember());
 
-        final long commitIndex = getCommitIndex(leader);
+        long commitIndex = getCommitIndex(leader);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNode raftNode : group.getNodesExcept(leader.getLocalMember())) {
-                    assertEquals(commitIndex, getMatchIndex(leader, raftNode.getLocalMember()));
-                }
+        assertTrueEventually(() -> {
+            for (RaftNode raftNode : group.getNodesExcept(leader.getLocalMember())) {
+                assertEquals(commitIndex, getMatchIndex(leader, raftNode.getLocalMember()));
             }
         });
     }
 
     @Test
     public void when_followerMissesTheLastEntryThatGoesIntoTheSnapshot_then_itInstallsSnapshot() throws ExecutionException, InterruptedException {
-        final int entryCount = 50;
+        int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        final RaftNodeImpl slowFollower = followers[1];
+        RaftNodeImpl slowFollower = followers[1];
 
         for (int i = 0; i < entryCount - 1; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl follower : group.getNodesExcept(leader.getLocalMember())) {
-                    assertEquals(entryCount - 1, getMatchIndex(leader, follower.getLocalMember()));
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl follower : group.getNodesExcept(leader.getLocalMember())) {
+                assertEquals(entryCount - 1, getMatchIndex(leader, follower.getLocalMember()));
             }
         });
 
@@ -297,87 +265,70 @@ public class SnapshotTest extends HazelcastTestSupport {
 
         leader.replicate(new ApplyRaftRunnable("val" + (entryCount - 1))).get();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(entryCount, getSnapshotEntry(leader).index());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(entryCount, getSnapshotEntry(leader).index()));
 
         leader.replicate(new ApplyRaftRunnable("valFinal")).get();
 
         group.resetAllRulesFrom(leader.getLocalMember());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : group.getNodes()) {
-                    assertEquals(entryCount + 1, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode);
-                    assertEquals(entryCount + 1, service.size());
-                    for (int i = 0; i < entryCount; i++) {
-                        assertEquals(("val" + i), service.get(i + 1));
-                    }
-                    assertEquals("valFinal", service.get(51));
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : group.getNodes()) {
+                assertEquals(entryCount + 1, getCommitIndex(raftNode));
+                RaftDataService service = group.getService(raftNode);
+                assertEquals(entryCount + 1, service.size());
+                for (int i = 0; i < entryCount; i++) {
+                    assertEquals(("val" + i), service.get(i + 1));
                 }
+                assertEquals("valFinal", service.get(51));
             }
         }, 30);
     }
 
     @Test
     public void when_isolatedLeaderAppendsEntries_then_itInvalidatesTheirFeaturesUponInstallSnapshot() throws ExecutionException, InterruptedException {
-        final int entryCount = 50;
+        int entryCount = 50;
         RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount);
         group = newGroupWithService(3, raftAlgorithmConfig);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
-        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
 
         for (int i = 0; i < 40; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : group.getNodes()) {
-                    assertEquals(40, getCommitIndex(raftNode));
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : group.getNodes()) {
+                assertEquals(40, getCommitIndex(raftNode));
             }
         });
 
         group.split(leader.getLocalMember());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : followers) {
-                    Endpoint leaderEndpoint = getLeaderMember(raftNode);
-                    assertNotNull(leaderEndpoint);
-                    assertNotEquals(leader.getLocalMember(), leaderEndpoint);
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : followers) {
+                Endpoint leaderEndpoint = getLeaderMember(raftNode);
+                assertNotNull(leaderEndpoint);
+                assertNotEquals(leader.getLocalMember(), leaderEndpoint);
             }
         });
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future> futures = new ArrayList<>();
         for (int i = 40; i < 45; i++) {
             Future f = leader.replicate(new ApplyRaftRunnable("isolated" + i));
             futures.add(f);
         }
 
-        final RaftNodeImpl newLeader = group.getNode(getLeaderMember(followers[0]));
+        RaftNodeImpl newLeader = group.getNode(getLeaderMember(followers[0]));
 
         for (int i = 40; i < 51; i++) {
             newLeader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : followers) {
-                    assertTrue(getSnapshotEntry(raftNode).index() > 0);
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : followers) {
+                assertTrue(getSnapshotEntry(raftNode).index() > 0);
             }
         });
 
@@ -393,43 +344,37 @@ public class SnapshotTest extends HazelcastTestSupport {
             }
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl raftNode : group.getNodes()) {
-                    assertEquals(51, getCommitIndex(raftNode));
-                    RaftDataService service = group.getService(raftNode);
-                    assertEquals(51, service.size());
-                    for (int i = 0; i < 51; i++) {
-                        assertEquals(("val" + i), service.get(i + 1));
-                    }
-
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl raftNode : group.getNodes()) {
+                assertEquals(51, getCommitIndex(raftNode));
+                RaftDataService service = group.getService(raftNode);
+                assertEquals(51, service.size());
+                for (int i = 0; i < 51; i++) {
+                    assertEquals(("val" + i), service.get(i + 1));
                 }
+
             }
         });
     }
 
     @Test
     public void when_followersLastAppendIsMembershipChange_then_itUpdatesRaftNodeStateWithInstalledSnapshot() throws ExecutionException, InterruptedException {
-        final int entryCount = 50;
+        int entryCount = 50;
         group = newGroupWithService(5, new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(entryCount));
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
-        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
 
         leader.replicate(new ApplyRaftRunnable("val")).get();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl follower : followers) {
-                    assertEquals(1L, getCommitIndex(follower));
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl follower : followers) {
+                assertEquals(1L, getCommitIndex(follower));
             }
         });
 
-        final RaftNodeImpl slowFollower = followers[0];
+        RaftNodeImpl slowFollower = followers[0];
 
         for (RaftNodeImpl follower : followers) {
             if (follower != slowFollower) {
@@ -438,15 +383,12 @@ public class SnapshotTest extends HazelcastTestSupport {
             }
         }
 
-        final RaftNodeImpl newRaftNode1 = group.createNewRaftNode();
-        final Future f1 = leader.replicateMembershipChange(newRaftNode1.getLocalMember(), MembershipChangeMode.ADD);
+        RaftNodeImpl newRaftNode1 = group.createNewRaftNode();
+        Future f1 = leader.replicateMembershipChange(newRaftNode1.getLocalMember(), MembershipChangeMode.ADD);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl follower : followers) {
-                    assertEquals(2L, getLastLogOrSnapshotEntry(follower).index());
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl follower : followers) {
+                assertEquals(2L, getLastLogOrSnapshotEntry(follower).index());
             }
         });
 
@@ -465,28 +407,15 @@ public class SnapshotTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertThat(getSnapshotEntry(leader).index(), greaterThanOrEqualTo((long) entryCount));
-            }
-        });
+        assertTrueEventually(() -> assertThat(getSnapshotEntry(leader).index(), greaterThanOrEqualTo((long) entryCount)));
 
         group.allowAllMessagesToMember(leader.getLeader(), slowFollower.getLocalMember());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertThat(getSnapshotEntry(slowFollower).index(), greaterThanOrEqualTo((long) entryCount));
-            }
-        });
+        assertTrueEventually(() -> assertThat(getSnapshotEntry(slowFollower).index(), greaterThanOrEqualTo((long) entryCount)));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(getCommittedGroupMembers(leader).index(), getCommittedGroupMembers(slowFollower).index());
-                assertEquals(ACTIVE, getStatus(slowFollower));
-            }
+        assertTrueEventually(() -> {
+            assertEquals(getCommittedGroupMembers(leader).index(), getCommittedGroupMembers(slowFollower).index());
+            assertEquals(ACTIVE, getStatus(slowFollower));
         });
     }
 
@@ -495,15 +424,15 @@ public class SnapshotTest extends HazelcastTestSupport {
         // The comments below show how the code behaves before the mentioned bug is fixed.
 
         int commitIndexAdvanceCount = 50;
-        final int uncommittedEntryCount = 10;
+        int uncommittedEntryCount = 10;
         RaftAlgorithmConfig config = new RaftAlgorithmConfig()
                 .setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCount)
                 .setUncommittedEntryCountToRejectNewAppends(uncommittedEntryCount);
         group = newGroupWithService(3, config);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
-        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
 
         group.dropMessagesToMember(leader.getLocalMember(), followers[0].getLocalMember(), AppendRequest.class);
 
@@ -537,93 +466,67 @@ public class SnapshotTest extends HazelcastTestSupport {
 
         RaftNodeImpl newRaftNode = group.createNewRaftNode();
 
-        Function<Object, Object> alterFunc = new Function<Object, Object>() {
-            @Override
-            public Object apply(Object o) {
-                if (o instanceof AppendRequest) {
-                    AppendRequest request = (AppendRequest) o;
-                    LogEntry[] entries = request.entries();
-                    if (entries.length > 0) {
-                        if (entries[entries.length - 1].operation() instanceof UpdateRaftGroupMembersCmd) {
-                            entries = Arrays.copyOf(entries, entries.length - 1);
-                            return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries);
-                        } else if (entries[0].operation() instanceof UpdateRaftGroupMembersCmd) {
-                            entries = new LogEntry[0];
-                            return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries);
-                        }
+        Function<Object, Object> alterFunc = o -> {
+            if (o instanceof AppendRequest) {
+                AppendRequest request = (AppendRequest) o;
+                LogEntry[] entries = request.entries();
+                if (entries.length > 0) {
+                    if (entries[entries.length - 1].operation() instanceof UpdateRaftGroupMembersCmd) {
+                        entries = Arrays.copyOf(entries, entries.length - 1);
+                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries);
+                    } else if (entries[0].operation() instanceof UpdateRaftGroupMembersCmd) {
+                        entries = new LogEntry[0];
+                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries);
                     }
                 }
-
-                return null;
             }
+
+            return null;
         };
 
         group.alterMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), alterFunc);
         group.alterMessagesToMember(leader.getLocalMember(), newRaftNode.getLocalMember(), alterFunc);
 
-        final long lastLogIndex1 = getLastLogOrSnapshotEntry(leader).index();
+        long lastLogIndex1 = getLastLogOrSnapshotEntry(leader).index();
 
         leader.replicateMembershipChange(newRaftNode.getLocalMember(), MembershipChangeMode.ADD);
 
         // When the membership change entry is appended, the leader's Log will be as following:
         // LOG: [ <46 - 49>, <50>, <51 - 99 (committed)>, <100 - 108 (uncommitted)>, <109 (membership change)> ], SNAPSHOT INDEX: 50, COMMIT INDEX: 99
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(getLastLogOrSnapshotEntry(leader).index() > lastLogIndex1);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(getLastLogOrSnapshotEntry(leader).index() > lastLogIndex1));
 
         group.allowMessagesToMember(leader.getLocalMember(), followers[1].getLocalMember(), AppendRequest.class);
-
-        System.out.println();
 
         // Then, only the entries before the membership change will be committed because we alter the append request. The log will be:
         // LOG: [ <46 - 49>, <50>, <51 - 108 (committed)>, <109 (membership change)> ], SNAPSHOT INDEX: 50, COMMIT INDEX: 108
         // There is only 1 empty index in the log.
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()  {
-                assertEquals(lastLogIndex1, getCommitIndex(leader));
-                assertEquals(lastLogIndex1, getCommitIndex(followers[1]));
-            }
+        assertTrueEventually(() -> {
+            assertEquals(lastLogIndex1, getCommitIndex(leader));
+            assertEquals(lastLogIndex1, getCommitIndex(followers[1]));
         });
 
 
-//        assertTrueEventually(new AssertTask() {
-//            @Override
-//            public void run()  {
-//                assertEquals(lastLogIndex1 + 1, getCommitIndex(leader));
-//                assertEquals(lastLogIndex1 + 1, getCommitIndex(followers[1]));
-//            }
+//        assertTrueEventually(() -> {
+//            assertEquals(lastLogIndex1 + 1, getCommitIndex(leader));
+//            assertEquals(lastLogIndex1 + 1, getCommitIndex(followers[1]));
 //        });
 
-        final long lastLogIndex2 = getLastLogOrSnapshotEntry(leader).index();
+        long lastLogIndex2 = getLastLogOrSnapshotEntry(leader).index();
 
         leader.replicate(new ApplyRaftRunnable("after_membership_change_append"));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(getLastLogOrSnapshotEntry(leader).index() > lastLogIndex2);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(getLastLogOrSnapshotEntry(leader).index() > lastLogIndex2));
 
         // Now the log is full. There is no empty space left.
         // LOG: [ <46 - 49>, <50>, <51 - 108 (committed)>, <109 (membership change)>, <110 (uncommitted)> ], SNAPSHOT INDEX: 50, COMMIT INDEX: 108
 
-        final long lastLogIndex3 = getLastLogOrSnapshotEntry(leader).index();
+        long lastLogIndex3 = getLastLogOrSnapshotEntry(leader).index();
 
         Future f = leader.replicate(new ApplyRaftRunnable("after_membership_change_append"));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(getLastLogOrSnapshotEntry(leader).index() > lastLogIndex3);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(getLastLogOrSnapshotEntry(leader).index() > lastLogIndex3));
 
         assertFalse(f.isDone());
     }
@@ -632,7 +535,7 @@ public class SnapshotTest extends HazelcastTestSupport {
     public void when_slowFollowerReceivesAppendRequestThatDoesNotFitIntoItsRaftLog_then_itTruncatesAppendRequestEntries()
             throws ExecutionException, InterruptedException {
         int appendRequestMaxEntryCount = 100;
-        final int commitIndexAdvanceCount = 100;
+        int commitIndexAdvanceCount = 100;
         int uncommittedEntryCount = 10;
 
         RaftAlgorithmConfig config = new RaftAlgorithmConfig()
@@ -642,22 +545,19 @@ public class SnapshotTest extends HazelcastTestSupport {
         group = newGroupWithService(5, config);
         group.start();
 
-        final RaftNodeImpl leader = group.waitUntilLeaderElected();
-        final RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
-        final RaftNodeImpl slowFollower1 = followers[0];
-        final RaftNodeImpl slowFollower2 = followers[1];
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        RaftNodeImpl slowFollower1 = followers[0];
+        RaftNodeImpl slowFollower2 = followers[1];
 
         int count = 1;
         for (int i = 0; i < commitIndexAdvanceCount; i++) {
             leader.replicate(new ApplyRaftRunnable("val" + (count++))).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (RaftNodeImpl node : group.getNodes()) {
-                    assertTrue(getSnapshotEntry(node).index() > 0);
-                }
+        assertTrueEventually(() -> {
+            for (RaftNodeImpl node : group.getNodes()) {
+                assertTrue(getSnapshotEntry(node).index() > 0);
             }
         });
 
@@ -667,12 +567,7 @@ public class SnapshotTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("val" + (count++))).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(getCommitIndex(leader), getCommitIndex(slowFollower2));
-            }
-        });
+        assertTrueEventually(() -> assertEquals(getCommitIndex(leader), getCommitIndex(slowFollower2)));
 
         // slowFollower2's log: [ <91 - 100 before snapshot>, <100 snapshot>, <101 - 199 committed> ]
 
@@ -682,12 +577,7 @@ public class SnapshotTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("val" + (count++))).get();
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(getSnapshotEntry(leader).index() > commitIndexAdvanceCount);
-            }
-        });
+        assertTrueEventually(() -> assertTrue(getSnapshotEntry(leader).index() > commitIndexAdvanceCount));
 
         // leader's log: [ <191 - 199 before snapshot>, <200 snapshot>, <201 - 249 committed> ]
 
@@ -697,12 +587,9 @@ public class SnapshotTest extends HazelcastTestSupport {
         // so, slowFollower2 appends 11 of these 50 entries in the first AppendRequest, takes a snapshot,
         // and receives another AppendRequest for the remaining entries...
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(getCommitIndex(leader), getCommitIndex(slowFollower2));
-                assertTrue(getSnapshotEntry(slowFollower2).index() > commitIndexAdvanceCount);
-            }
+        assertTrueEventually(() -> {
+            assertEquals(getCommitIndex(leader), getCommitIndex(slowFollower2));
+            assertTrue(getSnapshotEntry(slowFollower2).index() > commitIndexAdvanceCount);
         });
     }
 }

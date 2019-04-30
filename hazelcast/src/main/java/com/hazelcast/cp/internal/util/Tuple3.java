@@ -16,6 +16,8 @@
 
 package com.hazelcast.cp.internal.util;
 
+import java.util.Objects;
+
 /**
  * An immutable container of 3 statically typed fields
  *
@@ -37,7 +39,7 @@ public final class Tuple3<X, Y, Z> {
     }
 
     public static <X, Y, Z> Tuple3<X, Y, Z> of(X element1, Y element2, Z element3) {
-        return new Tuple3<X, Y, Z>(element1, element2, element3);
+        return new Tuple3<>(element1, element2, element3);
     }
 
     @Override
@@ -52,13 +54,13 @@ public final class Tuple3<X, Y, Z> {
 
         Tuple3<?, ?, ?> tuple3 = (Tuple3<?, ?, ?>) o;
 
-        if (element1 != null ? !element1.equals(tuple3.element1) : tuple3.element1 != null) {
+        if (!Objects.equals(element1, tuple3.element1)) {
             return false;
         }
-        if (element2 != null ? !element2.equals(tuple3.element2) : tuple3.element2 != null) {
+        if (!Objects.equals(element2, tuple3.element2)) {
             return false;
         }
-        return element3 != null ? element3.equals(tuple3.element3) : tuple3.element3 == null;
+        return Objects.equals(element3, tuple3.element3);
     }
 
     @Override

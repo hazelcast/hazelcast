@@ -109,8 +109,8 @@ public class RaftInvocationManager {
         return null;
     }
 
-    private void invokeGetMembersToCreateRaftGroup(final String groupName, final int groupSize,
-                                                   final SimpleCompletableFuture<RaftGroupId> resultFuture) {
+    private void invokeGetMembersToCreateRaftGroup(String groupName, int groupSize,
+                                                   SimpleCompletableFuture<RaftGroupId> resultFuture) {
         RaftOp op = new GetActiveCPMembersOp();
         ICompletableFuture<List<CPMemberInfo>> f = query(raftService.getMetadataGroupId(), op, LEADER_LOCAL);
 
@@ -139,9 +139,8 @@ public class RaftInvocationManager {
         });
     }
 
-    private void invokeCreateRaftGroup(final String groupName, final int groupSize,
-                                       final List<CPMemberInfo> members,
-                                       final SimpleCompletableFuture<RaftGroupId> resultFuture) {
+    private void invokeCreateRaftGroup(String groupName, int groupSize, List<CPMemberInfo> members,
+                                       SimpleCompletableFuture<RaftGroupId> resultFuture) {
         ICompletableFuture<RaftGroupId> f = invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members));
 
         f.andThen(new ExecutionCallback<RaftGroupId>() {

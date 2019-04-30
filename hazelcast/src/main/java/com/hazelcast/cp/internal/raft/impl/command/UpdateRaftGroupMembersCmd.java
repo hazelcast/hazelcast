@@ -82,7 +82,7 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int count = in.readInt();
-        Collection<Endpoint> members = new LinkedHashSet<Endpoint>();
+        Collection<Endpoint> members = new LinkedHashSet<>();
         for (int i = 0; i < count; i++) {
             Endpoint member = in.readObject();
             members.add(member);

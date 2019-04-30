@@ -94,9 +94,7 @@ public class RaftAtomicRefSplitBrainTest extends RaftSplitBrainTestSupport {
                     if (atomic.compareAndSet(value, value + 1)) {
                         increments.incrementAndGet();
                     }
-                } catch (IndeterminateOperationStateException e) {
-                    indeterminate.incrementAndGet();
-                } catch (OperationTimeoutException e) {
+                } catch (IndeterminateOperationStateException | OperationTimeoutException e) {
                     indeterminate.incrementAndGet();
                 }
             }

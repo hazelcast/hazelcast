@@ -72,7 +72,7 @@ public class GetInitialRaftGroupMembersIfCurrentGroupMemberOp extends RaftOp imp
         Collection<Endpoint> members = raftNode.getAppliedMembers();
         checkState(members.contains(cpMember), cpMember
                 + " is not in the current committed member list: " + members + " of " + groupId);
-        return new ArrayList<Endpoint>(raftNode.getInitialMembers());
+        return new ArrayList<>(raftNode.getInitialMembers());
     }
 
     @Override

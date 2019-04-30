@@ -30,7 +30,7 @@ public class RaftDataService implements SnapshotAwareService<Map<Long, Object>> 
 
     public static final String SERVICE_NAME = "RaftTestService";
 
-    private final Map<Long, Object> values = new ConcurrentHashMap<Long, Object>();
+    private final Map<Long, Object> values = new ConcurrentHashMap<>();
 
     public RaftDataService() {
     }
@@ -52,12 +52,12 @@ public class RaftDataService implements SnapshotAwareService<Map<Long, Object>> 
     }
 
     public Set<Object> values() {
-        return new HashSet<Object>(values.values());
+        return new HashSet<>(values.values());
     }
 
     @Override
     public Map<Long, Object> takeSnapshot(CPGroupId groupId, long commitIndex) {
-        Map<Long, Object> snapshot = new HashMap<Long, Object>();
+        Map<Long, Object> snapshot = new HashMap<>();
         for (Entry<Long, Object> e : values.entrySet()) {
             assert e.getKey() <= commitIndex : "Key: " + e.getKey() + ", commit-index: " + commitIndex;
             snapshot.put(e.getKey(), e.getValue());

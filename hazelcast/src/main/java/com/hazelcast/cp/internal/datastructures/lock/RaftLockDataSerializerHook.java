@@ -23,7 +23,6 @@ import com.hazelcast.cp.internal.datastructures.lock.operation.UnlockOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public class RaftLockDataSerializerHook implements DataSerializerHook {
@@ -49,31 +48,28 @@ public class RaftLockDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case RAFT_LOCK_REGISTRY:
-                        return new RaftLockRegistry();
-                    case RAFT_LOCK:
-                        return new RaftLock();
-                    case LOCK_ENDPOINT:
-                        return new LockEndpoint();
-                    case LOCK_INVOCATION_KEY:
-                        return new LockInvocationKey();
-                    case RAFT_LOCK_OWNERSHIP_STATE:
-                        return new RaftLockOwnershipState();
-                    case LOCK_OP:
-                        return new LockOp();
-                    case TRY_LOCK_OP:
-                        return new TryLockOp();
-                    case UNLOCK_OP:
-                        return new UnlockOp();
-                    case GET_RAFT_LOCK_OWNERSHIP_STATE_OP:
-                        return new GetLockOwnershipStateOp();
-                    default:
-                        throw new IllegalArgumentException("Undefined type: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case RAFT_LOCK_REGISTRY:
+                    return new RaftLockRegistry();
+                case RAFT_LOCK:
+                    return new RaftLock();
+                case LOCK_ENDPOINT:
+                    return new LockEndpoint();
+                case LOCK_INVOCATION_KEY:
+                    return new LockInvocationKey();
+                case RAFT_LOCK_OWNERSHIP_STATE:
+                    return new RaftLockOwnershipState();
+                case LOCK_OP:
+                    return new LockOp();
+                case TRY_LOCK_OP:
+                    return new TryLockOp();
+                case UNLOCK_OP:
+                    return new UnlockOp();
+                case GET_RAFT_LOCK_OWNERSHIP_STATE_OP:
+                    return new GetLockOwnershipStateOp();
+                default:
+                    throw new IllegalArgumentException("Undefined type: " + typeId);
             }
         };
     }

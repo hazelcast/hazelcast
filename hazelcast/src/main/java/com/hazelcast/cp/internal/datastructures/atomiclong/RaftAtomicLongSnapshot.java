@@ -68,7 +68,7 @@ public class RaftAtomicLongSnapshot implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int len = in.readInt();
-        longs = new HashMap<String, Long>(len);
+        longs = new HashMap<>(len);
         for (int i = 0; i < len; i++) {
             String name = in.readUTF();
             long value = in.readLong();
@@ -76,7 +76,7 @@ public class RaftAtomicLongSnapshot implements IdentifiedDataSerializable {
         }
 
         len = in.readInt();
-        destroyed = new HashSet<String>(len);
+        destroyed = new HashSet<>(len);
         for (int i = 0; i < len; i++) {
             String name = in.readUTF();
             destroyed.add(name);

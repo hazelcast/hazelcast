@@ -202,18 +202,15 @@ public class BoundedReentrantFencedLockTest extends HazelcastRaftTestSupport {
     public void testReentrantLock_afterLockIsReleasedByAnotherEndpoint() {
         lock.lock();
 
-        final CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(1);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                lock.lock();
-                lock.lock();
+        spawn(() -> {
+            lock.lock();
+            lock.lock();
 
-                lock.unlock();
-                lock.unlock();
-                latch.countDown();
-            }
+            lock.unlock();
+            lock.unlock();
+            latch.countDown();
         });
 
         lock.unlock();

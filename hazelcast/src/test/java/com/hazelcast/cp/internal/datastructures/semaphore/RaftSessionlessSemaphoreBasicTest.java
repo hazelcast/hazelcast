@@ -24,7 +24,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.semaphore.proxy.RaftSessionlessSemaphoreProxy;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -99,37 +98,28 @@ public class RaftSessionlessSemaphoreBasicTest extends HazelcastRaftTestSupport 
     @Test
     public void testAcquire_whenNoPermits() {
         semaphore.init(0);
-        final Future future = spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    semaphore.acquire();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        Future future = spawn(() -> {
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(future.isDone());
-                assertEquals(0, semaphore.availablePermits());
-            }
+        assertTrueAllTheTime(() -> {
+            assertFalse(future.isDone());
+            assertEquals(0, semaphore.availablePermits());
         }, 5);
     }
 
     @Test
     public void testAcquire_whenNoPermits_andSemaphoreDestroyed() throws Exception {
         semaphore.init(0);
-        Future future = spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    semaphore.acquire();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        Future future = spawn(() -> {
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
@@ -206,24 +196,16 @@ public class RaftSessionlessSemaphoreBasicTest extends HazelcastRaftTestSupport 
     public void testRelease_whenBlockedAcquireThread() {
         semaphore.init(0);
 
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    semaphore.acquire();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        new Thread(() -> {
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }.start();
+        }).start();
         semaphore.release();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, semaphore.availablePermits());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, semaphore.availablePermits()));
     }
 
     @Test
@@ -256,27 +238,21 @@ public class RaftSessionlessSemaphoreBasicTest extends HazelcastRaftTestSupport 
         int numberOfPermits = 5;
         semaphore.init(numberOfPermits);
 
-        final Thread thread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    semaphore.acquire(6);
-                    assertEquals(5, semaphore.availablePermits());
-                    semaphore.acquire(6);
-                    assertEquals(5, semaphore.availablePermits());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        Thread thread = new Thread(() -> {
+            try {
+                semaphore.acquire(6);
+                assertEquals(5, semaphore.availablePermits());
+                semaphore.acquire(6);
+                assertEquals(5, semaphore.availablePermits());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        };
+        });
         thread.start();
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(thread.isAlive());
-                assertEquals(5, semaphore.availablePermits());
-            }
+        assertTrueAllTheTime(() -> {
+            assertTrue(thread.isAlive());
+            assertEquals(5, semaphore.availablePermits());
         }, 5);
     }
 
@@ -310,14 +286,11 @@ public class RaftSessionlessSemaphoreBasicTest extends HazelcastRaftTestSupport 
         semaphore.init(permits);
         semaphore.acquire(permits);
 
-        Future future = spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    semaphore.acquire();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        Future future = spawn(() -> {
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
@@ -447,28 +420,22 @@ public class RaftSessionlessSemaphoreBasicTest extends HazelcastRaftTestSupport 
     public void testIncreasePermits_notifiesPendingAcquires() {
         semaphore.init(1);
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    semaphore.tryAcquire(2, 10, TimeUnit.MINUTES);
-                    latch.countDown();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        CountDownLatch latch = new CountDownLatch(1);
+        spawn(() -> {
+            try {
+                semaphore.tryAcquire(2, 10, TimeUnit.MINUTES);
+                latch.countDown();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                CPGroupId groupId = getGroupId(semaphore);
-                HazelcastInstance leader = getLeaderInstance(instances, groupId);
-                RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
-                RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            CPGroupId groupId = getGroupId(semaphore);
+            HazelcastInstance leader = getLeaderInstance(instances, groupId);
+            RaftSemaphoreService service = getNodeEngineImpl(leader).getService(RaftSemaphoreService.SERVICE_NAME);
+            RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
+            assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 
         semaphore.increasePermits(1);

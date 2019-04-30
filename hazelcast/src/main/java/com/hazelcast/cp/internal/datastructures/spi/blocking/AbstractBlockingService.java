@@ -75,7 +75,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     protected final ILogger logger;
     protected volatile RaftService raftService;
 
-    private final ConcurrentMap<CPGroupId, RR> registries = new ConcurrentHashMap<CPGroupId, RR>();
+    private final ConcurrentMap<CPGroupId, RR> registries = new ConcurrentHashMap<>();
     private volatile SessionAccessor sessionAccessor;
 
     protected AbstractBlockingService(NodeEngine nodeEngine) {
@@ -145,7 +145,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
             return false;
         }
 
-        List<Long> commitIndices = new ArrayList<Long>();
+        List<Long> commitIndices = new ArrayList<>();
         for (W key : keys) {
             commitIndices.add(key.commitIndex());
         }
@@ -165,7 +165,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
         RR prev = registries.put(registry.getGroupId(), registry);
         // do not shift the already existing wait timeouts...
         Map<Tuple2<String, UUID>, Tuple2<Long, Long>> existingWaitTimeouts =
-                prev != null ? prev.getWaitTimeouts() : Collections.<Tuple2<String, UUID>, Tuple2<Long, Long>>emptyMap();
+                prev != null ? prev.getWaitTimeouts() : Collections.emptyMap();
         Map<Tuple2<String, UUID>, Long> newWaitKeys = registry.overwriteWaitTimeouts(existingWaitTimeouts);
         for (Entry<Tuple2<String, UUID>, Long> e : newWaitKeys.entrySet()) {
             scheduleTimeout(groupId, e.getKey().element1, e.getKey().element2, e.getValue());
@@ -189,8 +189,8 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
             return;
         }
 
-        List<Long> expiredWaitKeys = new ArrayList<Long>();
-        Long2ObjectHashMap<Object> completedWaitKeys = new Long2ObjectHashMap<Object>();
+        List<Long> expiredWaitKeys = new ArrayList<>();
+        Long2ObjectHashMap<Object> completedWaitKeys = new Long2ObjectHashMap<>();
         registry.closeSession(sessionId, expiredWaitKeys, completedWaitKeys);
 
         if (logger.isFineEnabled() && (expiredWaitKeys.size() > 0 || completedWaitKeys.size() > 0)) {
@@ -208,7 +208,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
     @Override
     public final Collection<Long> getAttachedSessions(CPGroupId groupId) {
         RR registry = getRegistryOrNull(groupId);
-        return registry != null ? registry.getAttachedSessions() : Collections.<Long>emptyList();
+        return registry != null ? registry.getAttachedSessions() : Collections.emptyList();
     }
 
     @Override
@@ -239,12 +239,12 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
             return;
         }
 
-        List<W> expired = new ArrayList<W>();
+        List<W> expired = new ArrayList<>();
         for (Tuple2<String, UUID> key : keys) {
             registry.expireWaitKey(key.element1, key.element2, expired);
         }
 
-        List<Long> commitIndices = new ArrayList<Long>();
+        List<Long> commitIndices = new ArrayList<>();
         for (W key : expired) {
             commitIndices.add(key.commitIndex());
             registry.removeLiveOperation(key);
@@ -304,7 +304,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
             logger.fine("Resource[" + name + "] in " + groupId + " completed wait keys: " + keys + " result: " + result);
         }
 
-        List<Long> indices = new ArrayList<Long>(keys.size());
+        List<Long> indices = new ArrayList<>(keys.size());
         for (W key : keys) {
             indices.add(key.commitIndex());
         }
@@ -363,8 +363,7 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
         // queried locally
         private Map<CPGroupId, Collection<Tuple2<String, UUID>>> getWaitKeysToExpire() {
-            Map<CPGroupId, Collection<Tuple2<String, UUID>>> timeouts =
-                    new HashMap<CPGroupId, Collection<Tuple2<String, UUID>>>();
+            Map<CPGroupId, Collection<Tuple2<String, UUID>>> timeouts = new HashMap<>();
             long now = Clock.currentTimeMillis();
             for (ResourceRegistry<W, R> registry : registries.values()) {
                 Collection<Tuple2<String, UUID>> t = registry.getWaitKeysToExpire(now);

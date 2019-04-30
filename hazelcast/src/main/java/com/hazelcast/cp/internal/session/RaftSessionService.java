@@ -96,7 +96,7 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
     private final ILogger logger;
     private volatile RaftService raftService;
 
-    private final Map<CPGroupId, RaftSessionRegistry> registries = new ConcurrentHashMap<CPGroupId, RaftSessionRegistry>();
+    private final Map<CPGroupId, RaftSessionRegistry> registries = new ConcurrentHashMap<>();
 
     public RaftSessionService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -162,10 +162,8 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
     public ICompletableFuture<Collection<CPSession>> getAllSessions(String groupName) {
         checkTrue(!METADATA_CP_GROUP_NAME.equals(groupName), "Cannot query CP sessions on the METADATA CP group!");
         ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
-        final SimpleCompletableFuture<Collection<CPSession>> future
-                = new SimpleCompletableFuture<Collection<CPSession>>(executor, logger);
-
-        final ExecutionCallback<Collection<CPSession>> callback = new ExecutionCallback<Collection<CPSession>>() {
+        SimpleCompletableFuture<Collection<CPSession>> future = new SimpleCompletableFuture<>(executor, logger);
+        ExecutionCallback<Collection<CPSession>> callback = new ExecutionCallback<Collection<CPSession>>() {
             @Override
             public void onResponse(Collection<CPSession> sessions) {
                 future.setResult(sessions);
@@ -201,9 +199,8 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
     @Override
     public ICompletableFuture<Boolean> forceCloseSession(String groupName, final long sessionId) {
         ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
-        final SimpleCompletableFuture<Boolean> future = new SimpleCompletableFuture<Boolean>(executor, logger);
-
-        final ExecutionCallback<Boolean> callback = new ExecutionCallback<Boolean>() {
+        SimpleCompletableFuture<Boolean> future = new SimpleCompletableFuture<>(executor, logger);
+        ExecutionCallback<Boolean> callback = new ExecutionCallback<Boolean>() {
             @Override
             public void onResponse(Boolean response) {
                 future.setResult(response);
@@ -291,7 +288,7 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
             return;
         }
 
-        List<Long> expired = new ArrayList<Long>();
+        List<Long> expired = new ArrayList<>();
         for (Tuple2<Long, Long> s : sessionsToExpire) {
             long sessionId = s.element1;
             long version = s.element2;
@@ -315,7 +312,7 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
             return;
         }
 
-        Collection<Long> closed = new HashSet<Long>(inactiveSessions);
+        Collection<Long> closed = new HashSet<>(inactiveSessions);
         for (SessionAwareService service : nodeEngine.getServices(SessionAwareService.class)) {
             closed.removeAll(service.getAttachedSessions(groupId));
         }
@@ -379,7 +376,7 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
 
     // queried locally
     private Map<CPGroupId, Collection<Tuple2<Long, Long>>> getSessionsToExpire() {
-        Map<CPGroupId, Collection<Tuple2<Long, Long>>> expired = new HashMap<CPGroupId, Collection<Tuple2<Long, Long>>>();
+        Map<CPGroupId, Collection<Tuple2<Long, Long>>> expired = new HashMap<>();
         for (RaftSessionRegistry registry : registries.values()) {
             Collection<Tuple2<Long, Long>> e = registry.getSessionsToExpire();
             if (!e.isEmpty()) {
@@ -391,36 +388,33 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
     }
 
     private Map<CPGroupId, Collection<Long>> getInactiveSessions() {
-        final Map<CPGroupId, Collection<Long>> response = new ConcurrentHashMap<CPGroupId, Collection<Long>>();
-        final Semaphore semaphore = new Semaphore(0);
+        Map<CPGroupId, Collection<Long>> response = new ConcurrentHashMap<>();
+        Semaphore semaphore = new Semaphore(0);
 
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
-        Collection<RaftSessionRegistry> registries = new ArrayList<RaftSessionRegistry>(this.registries.values());
+        Collection<RaftSessionRegistry> registries = new ArrayList<>(this.registries.values());
 
-        for (final RaftSessionRegistry registry : registries) {
-            final CPGroupId groupId = registry.groupId();
-            operationService.execute(new PartitionSpecificRunnableAdaptor(new Runnable() {
-                @Override
-                public void run() {
-                    Set<Long> activeSessionIds = new HashSet<Long>();
-                    for (SessionAwareService service : nodeEngine.getServices(SessionAwareService.class)) {
-                        activeSessionIds.addAll(service.getAttachedSessions(groupId));
-                    }
-
-                    Set<Long> inactiveSessionIds = new HashSet<Long>();
-                    for (CPSession session : registry.getSessions()) {
-                        if (!activeSessionIds.contains(session.id())
-                                && session.creationTime() + getSessionTTLMillis() < Clock.currentTimeMillis()) {
-                            inactiveSessionIds.add(session.id());
-                        }
-                    }
-
-                    if (inactiveSessionIds.size() > 0) {
-                        response.put(groupId, inactiveSessionIds);
-                    }
-
-                    semaphore.release();
+        for (RaftSessionRegistry registry : registries) {
+            CPGroupId groupId = registry.groupId();
+            operationService.execute(new PartitionSpecificRunnableAdaptor(() -> {
+                Set<Long> activeSessionIds = new HashSet<>();
+                for (SessionAwareService service : nodeEngine.getServices(SessionAwareService.class)) {
+                    activeSessionIds.addAll(service.getAttachedSessions(groupId));
                 }
+
+                Set<Long> inactiveSessionIds = new HashSet<>();
+                for (CPSession session : registry.getSessions()) {
+                    if (!activeSessionIds.contains(session.id())
+                            && session.creationTime() + getSessionTTLMillis() < Clock.currentTimeMillis()) {
+                        inactiveSessionIds.add(session.id());
+                    }
+                }
+
+                if (inactiveSessionIds.size() > 0) {
+                    response.put(groupId, inactiveSessionIds);
+                }
+
+                semaphore.release();
             }, nodeEngine.getPartitionService().getPartitionId(groupId)));
         }
 

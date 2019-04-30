@@ -41,7 +41,6 @@ import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,12 +70,12 @@ public class LocalRaftIntegration implements RaftIntegration {
     private final SnapshotAwareService service;
     private final boolean appendNopEntryOnLeaderElection;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    private final ConcurrentMap<Endpoint, RaftNodeImpl> nodes = new ConcurrentHashMap<Endpoint, RaftNodeImpl>();
+    private final ConcurrentMap<Endpoint, RaftNodeImpl> nodes = new ConcurrentHashMap<>();
     private final LoggingServiceImpl loggingService;
 
-    private final Set<EndpointDropEntry> endpointDropRules = Collections.newSetFromMap(new ConcurrentHashMap<EndpointDropEntry, Boolean>());
-    private final Map<Endpoint, Function<Object, Object>> alterRPCRules = new ConcurrentHashMap<Endpoint, Function<Object, Object>>();
-    private final Set<Class> dropAllRules = Collections.newSetFromMap(new ConcurrentHashMap<Class, Boolean>());
+    private final Set<EndpointDropEntry> endpointDropRules = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Map<Endpoint, Function<Object, Object>> alterRPCRules = new ConcurrentHashMap<>();
+    private final Set<Class> dropAllRules = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     LocalRaftIntegration(TestRaftMember localEndpoint, CPGroupId groupId, SnapshotAwareService service,
                          boolean appendNopEntryOnLeaderElection) {
@@ -325,13 +324,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     void allowAllMessagesToEndpoint(Endpoint endpoint) {
-        Iterator<EndpointDropEntry> iter = endpointDropRules.iterator();
-        while (iter.hasNext()) {
-            EndpointDropEntry entry = iter.next();
-            if (endpoint.equals(entry.endpoint)) {
-                iter.remove();
-            }
-        }
+        endpointDropRules.removeIf(entry -> endpoint.equals(entry.endpoint));
     }
 
     void dropMessagesToAll(Class messageType) {

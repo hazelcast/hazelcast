@@ -38,8 +38,8 @@ public class RaftGroupMembers {
 
     RaftGroupMembers(long index, Collection<Endpoint> endpoints, Endpoint localEndpoint) {
         this.index = index;
-        this.members = unmodifiableSet(new LinkedHashSet<Endpoint>(endpoints));
-        Set<Endpoint> remoteMembers = new LinkedHashSet<Endpoint>(endpoints);
+        this.members = unmodifiableSet(new LinkedHashSet<>(endpoints));
+        Set<Endpoint> remoteMembers = new LinkedHashSet<>(endpoints);
         remoteMembers.remove(localEndpoint);
         this.remoteMembers = unmodifiableSet(remoteMembers);
     }

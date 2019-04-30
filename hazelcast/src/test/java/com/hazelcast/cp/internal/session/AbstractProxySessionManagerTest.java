@@ -23,7 +23,6 @@ import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
-import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,18 +64,13 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
     @Test
     public void acquireSession_createsNewSession_whenSessionNotExists() {
         AbstractProxySessionManager sessionManager = getSessionManager();
-        final long sessionId = sessionManager.acquireSession(groupId);
+        long sessionId = sessionManager.acquireSession(groupId);
         assertNotEquals(NO_SESSION_ID, sessionId);
         assertEquals(sessionId, sessionManager.getSession(groupId));
         assertEquals(1, sessionManager.getSessionAcquireCount(groupId, sessionId));
 
-        final SessionAccessor sessionAccessor = getSessionAccessor();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(sessionAccessor.isActive(groupId, sessionId));
-            }
-        });
+        SessionAccessor sessionAccessor = getSessionAccessor();
+        assertTrueEventually(() -> assertTrue(sessionAccessor.isActive(groupId, sessionId)));
     }
 
     @Test
@@ -91,14 +85,9 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
 
     @Test
     public void acquireSession_returnsTheSameSessionId_whenExecutedConcurrently() throws Exception {
-        final AbstractProxySessionManager sessionManager = getSessionManager();
+        AbstractProxySessionManager sessionManager = getSessionManager();
 
-        Callable<Long> acquireSessionCall = new Callable<Long>() {
-            @Override
-            public Long call() {
-                return sessionManager.acquireSession(groupId);
-            }
-        };
+        Callable<Long> acquireSessionCall = () -> sessionManager.acquireSession(groupId);
 
         Future<Long>[] futures = new Future[5];
         for (int i = 0; i < futures.length; i++) {
@@ -133,117 +122,74 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
 
     @Test
     public void sessionHeartbeatsAreNotSent_whenSessionNotExists() {
-        final AbstractProxySessionManager sessionManager = getSessionManager();
-        final long sessionId = 1;
+        AbstractProxySessionManager sessionManager = getSessionManager();
+        long sessionId = 1;
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                verify(sessionManager, never()).heartbeat(groupId, sessionId);
-            }
-        }, 5);
+        assertTrueAllTheTime(() -> verify(sessionManager, never()).heartbeat(groupId, sessionId), 5);
     }
 
     @Test
     public void sessionHeartbeatsAreSent_whenSessionInUse() {
-        final AbstractProxySessionManager sessionManager = getSessionManager();
-        final long sessionId = sessionManager.acquireSession(groupId);
+        AbstractProxySessionManager sessionManager = getSessionManager();
+        long sessionId = sessionManager.acquireSession(groupId);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                verify(sessionManager, atLeastOnce()).heartbeat(groupId, sessionId);
-            }
-        });
+        assertTrueEventually(() -> verify(sessionManager, atLeastOnce()).heartbeat(groupId, sessionId));
 
-        final SessionAccessor sessionAccessor = getSessionAccessor();
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(sessionAccessor.isActive(groupId, sessionId));
-            }
-        }, sessionTTLSeconds);
+        SessionAccessor sessionAccessor = getSessionAccessor();
+        assertTrueAllTheTime(() -> assertTrue(sessionAccessor.isActive(groupId, sessionId)), sessionTTLSeconds);
     }
 
     @Test
     public void sessionHeartbeatsAreNotSent_whenSessionReleased() {
-        final AbstractProxySessionManager sessionManager = getSessionManager();
-        final long sessionId = sessionManager.acquireSession(groupId);
+        AbstractProxySessionManager sessionManager = getSessionManager();
+        long sessionId = sessionManager.acquireSession(groupId);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                verify(sessionManager, atLeastOnce()).heartbeat(groupId, sessionId);
-            }
-        });
+        assertTrueEventually(() -> verify(sessionManager, atLeastOnce()).heartbeat(groupId, sessionId));
 
         sessionManager.releaseSession(groupId, sessionId);
 
-        final SessionAccessor sessionAccessor = getSessionAccessor();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(sessionAccessor.isActive(groupId, sessionId));
-            }
-        });
+        SessionAccessor sessionAccessor = getSessionAccessor();
+        assertTrueEventually(() -> assertFalse(sessionAccessor.isActive(groupId, sessionId)));
     }
 
     @Test
     public void acquireSession_returnsTheExistingSession_whenSessionInUse() {
-        final AbstractProxySessionManager sessionManager = getSessionManager();
+        AbstractProxySessionManager sessionManager = getSessionManager();
 
-        final long sessionId = sessionManager.acquireSession(groupId);
+        long sessionId = sessionManager.acquireSession(groupId);
 
         when(sessionManager.heartbeat(groupId, sessionId)).thenReturn(completedFuture());
 
-        final SessionAccessor sessionAccessor = getSessionAccessor();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(sessionAccessor.isActive(groupId, sessionId));
-            }
-        });
+        SessionAccessor sessionAccessor = getSessionAccessor();
+        assertTrueEventually(() -> assertFalse(sessionAccessor.isActive(groupId, sessionId)));
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(sessionId, sessionManager.acquireSession(groupId));
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertEquals(sessionId, sessionManager.acquireSession(groupId)), 3);
     }
 
     @Test
     public void acquireSession_returnsNewSession_whenSessionExpiredAndNotInUse() {
-        final AbstractProxySessionManager sessionManager = getSessionManager();
+        AbstractProxySessionManager sessionManager = getSessionManager();
 
-        final long sessionId = sessionManager.acquireSession(groupId);
+        long sessionId = sessionManager.acquireSession(groupId);
 
         when(sessionManager.heartbeat(groupId, sessionId)).thenReturn(completedFuture());
 
-        final SessionAccessor sessionAccessor = getSessionAccessor();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(sessionAccessor.isActive(groupId, sessionId));
-            }
-        });
+        SessionAccessor sessionAccessor = getSessionAccessor();
+        assertTrueEventually(() -> assertFalse(sessionAccessor.isActive(groupId, sessionId)));
 
         sessionManager.releaseSession(groupId, sessionId);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                long newSessionId = sessionManager.acquireSession(groupId);
-                sessionManager.releaseSession(groupId, newSessionId);
-                assertNotEquals(sessionId, newSessionId);
-            }
+        assertTrueEventually(() -> {
+            long newSessionId = sessionManager.acquireSession(groupId);
+            sessionManager.releaseSession(groupId, newSessionId);
+            assertNotEquals(sessionId, newSessionId);
         });
     }
 
     protected abstract AbstractProxySessionManager getSessionManager();
 
     private SimpleCompletableFuture<Object> completedFuture() {
-        SimpleCompletableFuture<Object> future = new SimpleCompletableFuture<Object>(new CallerRunsExecutor(), null);
+        SimpleCompletableFuture<Object> future = new SimpleCompletableFuture<>(new CallerRunsExecutor(), null);
         future.setResult(null);
         return future;
     }

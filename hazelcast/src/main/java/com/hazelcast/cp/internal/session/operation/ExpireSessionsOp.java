@@ -86,7 +86,7 @@ public class ExpireSessionsOp extends RaftOp implements IndeterminateOperationSt
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        List<Tuple2<Long, Long>> sessionIds = new ArrayList<Tuple2<Long, Long>>();
+        List<Tuple2<Long, Long>> sessionIds = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             long sessionId = in.readLong();
             long version = in.readLong();
