@@ -23,9 +23,9 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.internal.serialization.impl.NavigableJsonInputAdapter;
-import com.hazelcast.json.internal.JsonPattern;
-import com.hazelcast.json.internal.JsonSchemaHelper;
-import com.hazelcast.json.internal.JsonSchemaNode;
+import com.hazelcast.internal.json.query.JsonPattern;
+import com.hazelcast.internal.json.query.JsonSchemaHelper;
+import com.hazelcast.internal.json.query.JsonSchemaNode;
 import com.hazelcast.util.collection.WeightedEvictableList.WeightedItem;
 
 import java.io.IOException;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.json.internal;
+package com.hazelcast.internal.json.query;
 
 /**
  * A node that describes either a name-value pair in a Json object or

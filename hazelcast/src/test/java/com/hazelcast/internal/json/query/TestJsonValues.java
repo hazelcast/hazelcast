@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.json.internal;
+package com.hazelcast.internal.json.query;
 
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;

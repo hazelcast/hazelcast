@@ -15,7 +15,6 @@
  */
 
 /**
- * Contains Json interface
- *
+ * This package contains JsonSchema related functionality
  */
-package com.hazelcast.json;
+package com.hazelcast.internal.json.query;

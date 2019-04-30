@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.json.internal;
+package com.hazelcast.internal.json.query;
 
 import java.util.ArrayList;
 import java.util.List;

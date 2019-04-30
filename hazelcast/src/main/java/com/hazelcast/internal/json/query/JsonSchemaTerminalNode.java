@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.json.internal;
+package com.hazelcast.internal.json.query;
 
 /**
  * Represents the description of a Json terminal value. These are null,

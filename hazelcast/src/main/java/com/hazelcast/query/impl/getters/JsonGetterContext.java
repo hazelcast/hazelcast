@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.json.internal.JsonPattern;
+import com.hazelcast.internal.json.query.JsonPattern;
 import com.hazelcast.util.collection.WeightedEvictableList;
 import com.hazelcast.util.collection.WeightedEvictableList.WeightedItem;
 
