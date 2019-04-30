@@ -75,7 +75,7 @@ public abstract class AbstractJetInstance implements JetInstance {
                 try {
                     return newJob(dag, config);
                 } catch (JobAlreadyExistsException e) {
-                    logFine(getLogger(), "Could not submit job with duplicate name: %s", config.getName());
+                    logFine(getLogger(), "Could not submit job with duplicate name: %s, ignoring", config.getName());
                 }
             }
         }

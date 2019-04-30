@@ -35,11 +35,16 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
@@ -474,6 +479,38 @@ public class JobTest extends JetTestSupport {
         // Then
         assertEquals(job1.getId(), job2.getId());
         NoOutputSourceP.proceedLatch.countDown();
+    }
+
+    @Test
+    public void stressTest_parallelNamedJobSubmission_member() throws Exception {
+        stressTest_parallelNamedJobSubmission(instance1);
+    }
+
+    @Test
+    public void stressTest_parallelNamedJobSubmission_client() throws Exception {
+        stressTest_parallelNamedJobSubmission(createJetClient());
+    }
+
+    private void stressTest_parallelNamedJobSubmission(JetInstance instance) throws Exception {
+        final int nThreads = 3;
+        ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+        try {
+            for (int round = 0; round < 10; round++) {
+                DAG dag = new DAG().vertex(new Vertex("test" + round, new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
+                System.out.println("Starting round " + round);
+                JobConfig config = new JobConfig().setName("job" + round);
+                List<Future<Job>> futures = new ArrayList<>();
+                for (int i = 0; i < nThreads; i++) {
+                    futures.add(executor.submit(() -> instance.newJobIfAbsent(dag, config)));
+                }
+                for (int i = 1; i < nThreads; i++) {
+                    assertEquals(futures.get(0).get().getId(), futures.get(i).get().getId());
+                }
+            }
+        } finally {
+            executor.shutdownNow();
+            executor.awaitTermination(1, TimeUnit.MINUTES);
+        }
     }
 
     @Test
