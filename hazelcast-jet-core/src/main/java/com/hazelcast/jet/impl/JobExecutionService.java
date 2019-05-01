@@ -89,7 +89,7 @@ public class JobExecutionService {
                             ClassLoader parent = config.getClassLoaderFactory() != null
                                     ? config.getClassLoaderFactory().getJobClassLoader()
                                     : null;
-                            return new JetClassLoader(parent, jobRepository.getJobResources(jobId));
+                            return new JetClassLoader(parent, jobId, jobRepository.getJobResources(jobId));
                         }));
     }
 
@@ -313,7 +313,8 @@ public class JobExecutionService {
             try {
                 executionContext.completeExecution(error);
             } finally {
-                classLoaders.remove(executionContext.jobId());
+                JetClassLoader removed = classLoaders.remove(executionContext.jobId());
+                removed.shutdown();
                 executionContextJobIds.remove(executionContext.jobId());
                 logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
             }
