@@ -28,6 +28,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
+import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -46,6 +47,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
@@ -124,7 +126,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleResetAndInitCPSubsystem(command);
                 sendResponse = false;
             } else if (uri.startsWith(URI_LICENSE_INFO)) {
-                handleUpdateLicenseKey(command);
+                handleSetLicense(command);
             } else {
                 command.send404();
             }
@@ -796,14 +798,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return textCommandService.getNode().getNodeEngine().getHazelcastInstance().getCPSubsystem();
     }
 
-    /**
-     * Updating the license key is implemented in the Enterprise POST command processor. The default
-     * OS implementation responds with "404 Not Found" (the same way 'GET /hazelcast/rest/license' does).
-     */
-    protected void handleUpdateLicenseKey(HttpPostCommand command) {
-        command.send404();
-    }
-
     protected static String exceptionResponse(Throwable throwable) {
         return response(ResponseType.FAIL, "message", throwable.getMessage());
     }
@@ -900,4 +894,31 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     public void handleRejection(HttpPostCommand command) {
         handle(command);
     }
+
+    private void handleSetLicense(HttpPostCommand command) {
+        final int retryCount = 100;
+        String res;
+        byte[] data = command.getData();
+        try {
+            String[] strList = bytesToString(data).split("&");
+            if (authenticate(command, strList[0], strList.length > 1 ? strList[1] : null)) {
+                // assumes that both groupName and password are present
+                String licenseKey = strList.length > 2 ? URLDecoder.decode(strList[2], "UTF-8") : null;
+                invokeOnStableClusterSerial(textCommandService.getNode().nodeEngine,
+                        () -> new SetLicenseOperation(licenseKey), retryCount).get();
+                res = responseOnSetLicenseSuccess();
+            } else {
+                res = response(ResponseType.FORBIDDEN);
+            }
+        } catch (Throwable throwable) {
+            logger.warning("Error occurred while updating the license", throwable);
+            res = exceptionResponse(throwable);
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+    }
+
+    protected String responseOnSetLicenseSuccess() {
+        return response(ResponseType.SUCCESS);
+    }
+
 }

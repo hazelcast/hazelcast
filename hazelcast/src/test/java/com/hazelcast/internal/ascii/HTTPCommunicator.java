@@ -159,7 +159,7 @@ public class HTTPCommunicator {
         return doGet(url).response;
     }
 
-    public ConnectionResponse updateLicenseKey(String groupName, String groupPassword, String licenseKey) throws IOException {
+    public ConnectionResponse setLicense(String groupName, String groupPassword, String licenseKey) throws IOException {
         String url = address + "license";
         return doPost(url, groupName, groupPassword, licenseKey);
     }

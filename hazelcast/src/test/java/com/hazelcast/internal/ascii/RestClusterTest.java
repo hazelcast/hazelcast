@@ -365,11 +365,13 @@ public class RestClusterTest {
     }
 
     @Test
-    public void testUpdateLicenseKey() throws Exception {
+    public void testSetLicenseKey() throws Exception {
         Config config = createConfigWithRestEnabled();
         final HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        assertEquals(HttpURLConnection.HTTP_NOT_FOUND,
-                communicator.updateLicenseKey(config.getGroupConfig().getName(), getPassword(), "foo"));
+        HTTPCommunicator.ConnectionResponse response =
+                communicator.setLicense(config.getGroupConfig().getName(), getPassword(), "whatever");
+        assertEquals(HttpURLConnection.HTTP_OK, response.responseCode);
+        assertEquals(response.response, "{\"status\":\"success\"}");
     }
 }
