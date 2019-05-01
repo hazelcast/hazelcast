@@ -152,7 +152,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
                               .localParallelism(1);
         Vertex insWm = dag.newVertex("insWm", insertWatermarksP(eventTimePolicy(
-                o -> ((Entry<Integer, Integer>) o).getValue(), limitingLag(0), wDef.frameSize(), wDef.frameOffset(), -1)))
+                o -> ((Entry<Integer, Integer>) o).getValue(), limitingLag(0), wDef.frameSize(), wDef.frameOffset(), 0)))
                           .localParallelism(1);
         Vertex map = dag.newVertex("map",
                 mapP((KeyedWindowResult kwr) -> entry(asList(kwr.end(), (long) (int) kwr.key()), kwr.result())));

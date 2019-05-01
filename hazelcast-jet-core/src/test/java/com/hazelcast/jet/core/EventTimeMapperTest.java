@@ -60,7 +60,7 @@ public class EventTimeMapperTest {
     @Test
     public void smokeTest_disabledIdleTimeout() {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
-                eventTimePolicy(Long::longValue, limitingLag(LAG), 1, 0, -1)
+                eventTimePolicy(Long::longValue, limitingLag(LAG), 1, 0, 0)
         );
         eventTimeMapper.increasePartitionCount(2);
 
@@ -81,7 +81,7 @@ public class EventTimeMapperTest {
     @Test
     public void test_zeroPartitions() {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
-                eventTimePolicy(Long::longValue, limitingLag(LAG), 1, 0, -1)
+                eventTimePolicy(Long::longValue, limitingLag(LAG), 1, 0, 0)
         );
 
         // it should immediately emit the idle message, even though the idle timeout is -1

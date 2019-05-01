@@ -28,8 +28,10 @@ import javax.annotation.Nullable;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static java.util.Collections.emptyList;
 
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
@@ -41,6 +43,7 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
     @Nullable
     private EventTimePolicy<? super T> eventTimePolicy;
     private final boolean supportsNativeTimestamps;
+    private long partitionIdleTimeout = DEFAULT_IDLE_TIMEOUT;
 
     public StreamSourceTransform(
             @Nonnull String name,
@@ -105,5 +108,17 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
     @Override
     public boolean supportsNativeTimestamps() {
         return supportsNativeTimestamps;
+    }
+
+    @Override
+    public StreamSource<T> setPartitionIdleTimeout(long timeoutMillis) {
+        checkNotNegative(timeoutMillis, "timeout must be >= 0 (0 means disabled)");
+        this.partitionIdleTimeout = timeoutMillis;
+        return this;
+    }
+
+    @Override
+    public long partitionIdleTimeout() {
+        return partitionIdleTimeout;
     }
 }

@@ -277,7 +277,7 @@ public class InsertWatermarksPTest {
 
     private void doTest(List<Object> input, List<Object> expectedOutput) throws Exception {
         if (p == null) {
-            createProcessor(-1);
+            createProcessor(0);
         }
 
         for (Object inputItem : input) {

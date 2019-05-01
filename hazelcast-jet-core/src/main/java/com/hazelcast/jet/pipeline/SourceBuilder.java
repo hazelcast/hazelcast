@@ -461,7 +461,7 @@ public final class SourceBuilder<S> {
          */
         @Nonnull
         public StreamSource<T> build() {
-            Preconditions.checkNotNull(fillBufferFn, "fillBufferFn must be non-null");
+            Preconditions.checkNotNull(fillBufferFn, "fillBufferFn() wasn't called");
             return new StreamSourceTransform<>(
                     mName,
                     eventTimePolicy -> convenientSourceP(mCreateFn, fillBufferFn, mDestroyFn, mPreferredLocalParallelism),

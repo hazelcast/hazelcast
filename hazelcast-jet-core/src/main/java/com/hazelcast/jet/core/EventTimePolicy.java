@@ -86,7 +86,6 @@ public final class EventTimePolicy<T> implements Serializable {
     private final SupplierEx<? extends WatermarkPolicy> newWmPolicyFn;
     private final long watermarkThrottlingFrameSize;
     private final long watermarkThrottlingFrameOffset;
-
     private final long idleTimeoutMillis;
 
     private EventTimePolicy(
@@ -101,6 +100,7 @@ public final class EventTimePolicy<T> implements Serializable {
         checkNotNegative(watermarkThrottlingFrameOffset, "watermarkThrottlingFrameOffset must be >= 0");
         checkTrue(watermarkThrottlingFrameOffset < watermarkThrottlingFrameSize || watermarkThrottlingFrameSize == 0,
                 "offset must be smaller than frame size");
+        checkNotNegative(idleTimeoutMillis, "idleTimeoutMillis must be >= 0 (0 means disabled)");
         this.timestampFn = timestampFn;
         this.newWmPolicyFn = newWmPolicyFn;
         this.wrapFn = wrapFn;
@@ -170,7 +170,7 @@ public final class EventTimePolicy<T> implements Serializable {
      * your job will keep accumulating the data without producing any output.
      */
     public static <T> EventTimePolicy<T> noEventTime() {
-        return eventTimePolicy(i -> Long.MIN_VALUE, noWrapping(), NO_WATERMARKS, 0, 0, -1);
+        return eventTimePolicy(i -> Long.MIN_VALUE, noWrapping(), NO_WATERMARKS, 0, 0, 0);
     }
 
     @SuppressWarnings("unchecked")
@@ -245,5 +245,4 @@ public final class EventTimePolicy<T> implements Serializable {
     public long idleTimeoutMillis() {
         return idleTimeoutMillis;
     }
-
 }

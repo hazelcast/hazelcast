@@ -52,7 +52,7 @@ public class InsertWatermarksP_IntegrationTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", ListSource.supplier(asList(111L, 222L, 333L)));
         Vertex iwm = dag.newVertex("iwm", Processors.insertWatermarksP(eventTimePolicy(
-                (Long x) -> x, limitingLag(100), 100, 0, -1)))
+                (Long x) -> x, limitingLag(100), 100, 0, 0)))
                 .localParallelism(1);
         Vertex mapWmToStr = dag.newVertex("mapWmToStr", MapWatermarksToString::new)
                 .localParallelism(1);

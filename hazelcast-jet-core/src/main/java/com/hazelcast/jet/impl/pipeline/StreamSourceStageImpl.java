@@ -25,7 +25,6 @@ import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
@@ -52,7 +51,9 @@ public class StreamSourceStageImpl<T> implements StreamSourceStage<T> {
                 null,
                 wrapToJetEvent(),
                 limitingLag(allowedLag),
-                0, 0, DEFAULT_IDLE_TIMEOUT
+                0,
+                0,
+                transform.partitionIdleTimeout()
         ));
         return new StreamStageImpl<>(transform, ADAPT_TO_JET_EVENT, pipeline);
     }
@@ -64,7 +65,9 @@ public class StreamSourceStageImpl<T> implements StreamSourceStage<T> {
                 timestampFn,
                 wrapToJetEvent(),
                 limitingLag(allowedLag),
-                0, 0, DEFAULT_IDLE_TIMEOUT
+                0,
+                0,
+                transform.partitionIdleTimeout()
         ));
         return new StreamStageImpl<>(transform, ADAPT_TO_JET_EVENT, pipeline);
     }
