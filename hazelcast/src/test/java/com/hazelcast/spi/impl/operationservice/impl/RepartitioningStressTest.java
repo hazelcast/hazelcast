@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -108,12 +107,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         for (int i = 0; i < itemCount; i++) {
             map.put(i, 0);
         }
-        map.addEntryListener(new EntryUpdatedListener<Integer, Integer>() {
-            @Override
-            public void entryUpdated(EntryEvent<Integer, Integer> event) {
-                updateCounterInListener.incrementAndGet();
-            }
-        }, true);
+        map.addEntryListener((EntryUpdatedListener<Integer, Integer>) event -> updateCounterInListener.incrementAndGet(), true);
 
         restartThread.start();
 

@@ -111,17 +111,17 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenNoProblemPacket_andZeroResponseThreads() throws Exception {
+    public void whenNoProblemPacket_andZeroResponseThreads() {
         whenNoProblemPacket(0);
     }
 
     @Test
-    public void whenNoProblemPacket_andOneResponseThreads() throws Exception {
+    public void whenNoProblemPacket_andOneResponseThreads() {
         whenNoProblemPacket(1);
     }
 
     @Test
-    public void whenNoProblemPacket_andMultipleResponseThreads() throws Exception {
+    public void whenNoProblemPacket_andMultipleResponseThreads() {
         whenNoProblemPacket(2);
     }
 

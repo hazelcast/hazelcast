@@ -183,21 +183,18 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             final OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
             final Object service = getServiceName() == null ? null : getService();
 
-            PartitionTaskFactory f = new PartitionTaskFactory() {
-                @Override
-                public Operation create(int partitionId) {
-                    Operation op = factory.createPartitionOperation(partitionId)
-                            .setNodeEngine(nodeEngine)
-                            .setPartitionId(partitionId)
-                            .setReplicaIndex(getReplicaIndex())
-                            .setOperationResponseHandler(responseHandler)
-                            .setServiceName(getServiceName())
-                            .setService(service)
-                            .setCallerUuid(extractCallerUuid());
+            PartitionTaskFactory f = partitionId -> {
+                Operation op = factory.createPartitionOperation(partitionId)
+                        .setNodeEngine(nodeEngine)
+                        .setPartitionId(partitionId)
+                        .setReplicaIndex(getReplicaIndex())
+                        .setOperationResponseHandler(responseHandler)
+                        .setServiceName(getServiceName())
+                        .setService(service)
+                        .setCallerUuid(extractCallerUuid());
 
-                    OperationAccessor.setCallerAddress(op, getCallerAddress());
-                    return op;
-                }
+                OperationAccessor.setCallerAddress(op, getCallerAddress());
+                return op;
             };
 
             getOperationService().executeOnPartitions(f, toPartitionBitSet());
