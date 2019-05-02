@@ -131,7 +131,7 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     /**
      * Sets the Connection this Packet is send with.
-     * <p/>
+     * <p>
      * This is done on the reading side of the Packet to make it possible to retrieve information about
      * the sender of the Packet.
      *

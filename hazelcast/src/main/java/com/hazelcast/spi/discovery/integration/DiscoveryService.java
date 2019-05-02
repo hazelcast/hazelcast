@@ -29,11 +29,11 @@ import java.util.Map;
  * implementation is used. A <tt>DiscoveryService</tt> somehow finds available
  * {@link DiscoveryStrategy}s inside the classpath and manages their activation
  * or deactivation status.
- * <p/>
+ * <p>
  * This interface is used by system integrators, integrating Hazelcast into their own
  * frameworks or environments, are free to extend or exchange the default implementation
  * based on their needs and requirements.
- * <p/>
+ * <p>
  * Only enabled providers are expected to discover nodes but, depending on the
  * <tt>DiscoveryService</tt> implementation, multiple {@link DiscoveryStrategy}s
  * might be enabled at the same time (e.g. TCP-IP Joiner with well known addresses
@@ -70,10 +70,10 @@ public interface DiscoveryService {
      * Returns a map with discovered metadata provided by the runtime environment. Those information
      * may include, but are not limited, to location information like datacenter, rack, host or additional
      * tags to be used for custom purpose.
-     * <p/>
+     * <p>
      * Information discovered from this method are copied into the {@link com.hazelcast.core.Member}s
      * attributes. Existing attributes will be overridden.
-     * <p/>
+     * <p>
      * The default implementation provides an empty map with no further metadata configured. Returning
      * <tt>null</tt> is not permitted and will most probably result in an {@link NullPointerException}
      * inside the cluster system.

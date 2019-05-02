@@ -91,7 +91,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
     /**
-     * The ClassLoader to be used to resolve key & value types, if set
+     * The ClassLoader to be used to resolve key &amp; value types, if set
      */
     protected transient ClassLoader classLoader;
     protected transient InternalSerializationService serializationService;

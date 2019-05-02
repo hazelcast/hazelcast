@@ -68,7 +68,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     /**
      * Holds the sequences according to insertion order at which {@link IMap#flush()} was called.
-     * <p/>
+     * <p>
      * Upon end of a store operation, these sequences are used to find whether there is any flush request
      * waiting for the stored sequence, and if there is any, {@link NotifyMapFlushOperation} is send to notify
      * {@link com.hazelcast.map.impl.operation.AwaitMapFlushOperation AwaitMapFlushOperation}
@@ -92,11 +92,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * to return the last set value on a specific key, since there is a possibility that
      * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
      * on a specific key.
-     * <p/>
+     * <p>
      * This space is also used to control any waiting delete operations on a key or any transiently put entries to {@code IMap}.
      * Values of any transiently put entries should not be added to this area upon eviction, otherwise subsequent
      * {@code IMap#get} operations may return stale values.
-     * <p/>
+     * <p>
      * NOTE: In case of eviction we do not want to make a huge database load by flushing entries uncontrollably.
      * We also do not want to make duplicate map-store calls for a key. This is why we use the staging area instead of the
      * direct flushing option to map-store.

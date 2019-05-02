@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.request;
 
 /**
  * Represents async requests sent from Management Center.
- * <p/>
+ * <p>
  * Normally, ManagementCenterService handles {@code ConsoleRequest}s synchronously
  * on its {@code TaskPollThread}, a single thread polls tasks from Management Center,
  * executes them and writes back the response directly. This is fine for short running tasks

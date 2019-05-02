@@ -87,7 +87,7 @@ public interface Member extends DataSerializable, Endpoint {
     String getUuid();
 
     /**
-     * Returns configured attributes for this member.<br/>
+     * Returns configured attributes for this member.<br>
      * <b>This method might not be available on all native clients.</b>
      *
      * @return configured attributes for this member.
@@ -114,7 +114,7 @@ public interface Member extends DataSerializable, Endpoint {
 
     /**
      * Removes a key-value pair attribute for this member if given key was
-     * previously assigned as an attribute.<br/>
+     * previously assigned as an attribute.<br>
      * If key wasn't assigned to a value this method does nothing.
      *
      * @param key The key to be deleted from the member attributes

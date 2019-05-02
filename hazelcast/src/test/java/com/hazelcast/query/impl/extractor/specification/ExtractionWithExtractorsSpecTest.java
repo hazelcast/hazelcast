@@ -51,9 +51,9 @@ import static java.util.Collections.singletonList;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction with extractor and arguments.
- * <p/>
+ * <p>
  * Extraction mechanism: EXTRACTOR-BASED EXTRACTION
- * <p/>
+ * <p>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing

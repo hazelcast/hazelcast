@@ -1732,7 +1732,7 @@ public class ConfigXmlGenerator {
                     escapeXml(contents, xml);
                     xml.append("</").append(name).append('>');
                 } else {
-                    xml.append("/>");
+                    xml.append(">");
                 }
             }
         }

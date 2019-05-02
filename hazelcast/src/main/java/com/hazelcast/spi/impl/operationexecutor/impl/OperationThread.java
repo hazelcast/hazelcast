@@ -36,11 +36,11 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 /**
  * The OperationThread is responsible for processing operations, packets
  * containing operations and runnable's.
- * <p/>
+ * <p>
  * There are 2 flavors of OperationThread:
  * - threads that deal with operations for a specific partition
  * - threads that deal with non partition specific tasks
- * <p/>
+ * <p>
  * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
 public abstract class OperationThread extends HazelcastManagedThread implements MetricsProvider {

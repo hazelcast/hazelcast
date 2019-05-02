@@ -34,7 +34,7 @@ import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLI
 /**
  * Replicates the transactionlog to a remote system.
  *
- * This operation is only executed when durability > 0
+ * This operation is only executed when durability &gt; 0
  */
 public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 

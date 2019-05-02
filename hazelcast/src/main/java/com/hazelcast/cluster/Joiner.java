@@ -40,12 +40,12 @@ public interface Joiner {
     /**
      * Adds an address to the blacklist. Blacklist is useful if a node should ignore another node, e.g. when
      * the groupname of 2 machines is not the same and they should form different clusters.
-     * <p/>
+     * <p>
      * If blacklist is permanent, then this operation is write-once. It cannot be unblacklisted again.
      * If blacklist is temporary, blacklist can be removed via {@link #unblacklist(com.hazelcast.nio.Address)}.
-     * <p/>
+     * <p>
      * Method is thread-safe.
-     * <p/>
+     * <p>
      * If the address already is blacklisted, the call is ignored
      *
      * @param address   the address to blacklist.
@@ -59,9 +59,9 @@ public interface Joiner {
      * Removes an address from the blacklist if it is temporarily blacklisted.
      * This method has no effect if given address is not blacklisted. Permanent blacklists
      * cannot be undone.
-     * <p/>
+     * <p>
      * Method is thread-safe.
-     * <p/>
+     * <p>
      * If the address is not blacklisted, the call is ignored.
      *
      * @param address the address to unblacklist.

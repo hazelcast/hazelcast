@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains classes to launch standalone Hazelcast Instance<br/>
+ * <p>This package contains classes to launch standalone Hazelcast Instance<br>
  */
 
 package com.hazelcast.core.server;

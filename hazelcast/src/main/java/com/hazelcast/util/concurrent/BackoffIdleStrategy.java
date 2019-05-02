@@ -27,7 +27,7 @@ import static java.lang.String.format;
 
 /**
  * Idling strategy for threads when they have no work to do.
- * <p/>
+ * <p>
  * Spin for maxSpins, then
  * {@link Thread#yield()} for maxYields, then
  * {@link LockSupport#parkNanos(long)} on an exponential backoff to maxParkPeriodNs

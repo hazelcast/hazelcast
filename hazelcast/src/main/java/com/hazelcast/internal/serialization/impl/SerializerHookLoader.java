@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * Loads auto registered serializers using {@link com.hazelcast.nio.serialization.SerializerHook}
  * by reading in the file "META-INF/services/com.hazelcast.SerializerHook" and instantiating
- * the defined SerializerHooks.<br/>
+ * the defined SerializerHooks.<br>
  * This system is meant to be internal code and is subject to change at any time.
  */
 final class SerializerHookLoader {

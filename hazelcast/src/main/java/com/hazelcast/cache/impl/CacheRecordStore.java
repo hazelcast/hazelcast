@@ -29,7 +29,7 @@ import com.hazelcast.spi.serialization.SerializationService;
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
  * <p>
  * Hazelcast splits data homogeneously to partitions using keys. CacheRecordStore represents a named ICache on-heap
- * data store for a single partition.<br/>
+ * data store for a single partition.<br>
  * This data structure is responsible for CRUD operations, entry processing, statistics, publishing events, cache
  * loader and writer and internal data operations like backup.
  * </p>
@@ -44,7 +44,6 @@ import com.hazelcast.spi.serialization.SerializationService;
  *         </code>
  *     </pre>
  * See {@link KeyBasedCacheOperation} subclasses for actual examples.
- * </p>
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  * @see com.hazelcast.cache.impl.CacheService

@@ -23,7 +23,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * A context for node to provide its dependencies. Acts as a dependency factory.
- * <p/>
+ * <p>
  * Normally, there is a default context. But to be able to make tests simpler,
  * to run them faster and in-parallel, it's necessary to avoid network and some heavy-weight
  * objects creations. That's why most of the tests use a special purpose NodeContext.

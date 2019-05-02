@@ -22,7 +22,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
 /**
  * Memory statistics for the JVM which current HazelcastInstance belongs to.
- * <p/>
+ * <p>
  * Shows total physical/free OS memory, max/committed/used/free heap memory
  * and max/committed/used/free native memory.
  *
@@ -40,7 +40,7 @@ public interface MemoryStats {
 
     /**
      * Returns free physical memory available in OS.
-     * <p/>
+     * <p>
      * Some operating systems have cached memory regions in which they store hot cached resources like files.
      * Cached memory is used for allocations when required. So although this cached region is
      * assumed as free, operating systems generally report this region as used not free.

@@ -34,7 +34,7 @@ import java.io.IOException;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
 /**
- * Set & Unlock processing for the EntryOperation
+ * Set &amp; Unlock processing for the EntryOperation
  *
  * See the javadoc on {@link EntryOperation}
  */

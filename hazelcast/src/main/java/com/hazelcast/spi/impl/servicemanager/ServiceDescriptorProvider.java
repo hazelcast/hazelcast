@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.servicemanager;
 
 /***
  * Provides information about services.
- * <p/>
+ * <p>
  * All possible providers will be looked for in different sources (like META-INF/services).
  */
 public interface ServiceDescriptorProvider {

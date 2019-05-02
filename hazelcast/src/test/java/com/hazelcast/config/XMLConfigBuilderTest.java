@@ -74,11 +74,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * XML specific implementation of the tests that should be maintained in
  * both XML and YAML configuration builder tests.
- * <p/>
+ * <p>
  *
  * NOTE: This test class must not define test cases, it is meant only to
  * implement test cases defined in {@link AbstractConfigBuilderTest}.
- * <p/>
+ * <p>
  *
  * NOTE2: Test cases specific to XML should be added to {@link XmlOnlyConfigBuilderTest}
  *
@@ -160,8 +160,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"true\"/>\n"
-                + "            <tcp-ip enabled=\"true\"/>\n"
+                + "            <multicast enabled=\"true\">\n"
+                + "            <tcp-ip enabled=\"true\">\n"
                 + "        </join>\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
@@ -174,8 +174,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<security enabled=\"true\">"
                 + "  <security-interceptors>"
-                + "    <interceptor class-name=\"foo\"/>"
-                + "    <interceptor class-name=\"bar\"/>"
+                + "    <interceptor class-name=\"foo\">"
+                + "    <interceptor class-name=\"bar\">"
                 + "  </security-interceptors>"
                 + "  <client-block-unmapped-actions>false</client-block-unmapped-actions>"
                 + "  <member-credentials-factory class-name=\"MyCredentialsFactory\">\n"
@@ -319,8 +319,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"false\"/>\n"
-                + "            <tcp-ip enabled=\"false\"/>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "            <tcp-ip enabled=\"false\">\n"
                 + "            <gcp enabled=\"true\">\n"
                 + "                <use-public-ip>true</use-public-ip>\n"
                 + "                <zones>us-east1-b</zones>\n"
@@ -344,8 +344,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"false\"/>\n"
-                + "            <tcp-ip enabled=\"false\"/>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "            <tcp-ip enabled=\"false\">\n"
                 + "            <azure enabled=\"true\">\n"
                 + "                <client-id>123456789!</client-id>\n"
                 + "                <use-public-ip>true</use-public-ip>\n"
@@ -369,8 +369,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"false\"/>\n"
-                + "            <tcp-ip enabled=\"false\"/>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "            <tcp-ip enabled=\"false\">\n"
                 + "            <kubernetes enabled=\"true\">\n"
                 + "                <use-public-ip>true</use-public-ip>\n"
                 + "                <namespace>hazelcast</namespace>\n"
@@ -394,8 +394,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"false\"/>\n"
-                + "            <tcp-ip enabled=\"false\"/>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "            <tcp-ip enabled=\"false\">\n"
                 + "            <eureka enabled=\"true\">\n"
                 + "                <use-public-ip>true</use-public-ip>\n"
                 + "                <namespace>hazelcast</namespace>\n"
@@ -432,7 +432,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                <interface>127.0.0.1</interface>\n"
                 + "            </tcp-ip>\n"
                 + "            <discovery-strategies>\n"
-                + "                <node-filter class=\"DummyFilterClass\" />\n"
+                + "                <node-filter class=\"DummyFilterClass\" >\n"
                 + "                <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n"
                 + "                    <properties>\n"
                 + "                        <property name=\"key-string\">foo</property>\n"
@@ -1289,22 +1289,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"lfuNearCache\">"
                 + "    <near-cache>"
-                + "      <eviction eviction-policy=\"LFU\"/>"
+                + "      <eviction eviction-policy=\"LFU\">"
                 + "    </near-cache>"
                 + "  </map>"
                 + "  <map name=\"lruNearCache\">"
                 + "    <near-cache>"
-                + "      <eviction eviction-policy=\"LRU\"/>"
+                + "      <eviction eviction-policy=\"LRU\">"
                 + "    </near-cache>"
                 + "  </map>"
                 + "  <map name=\"noneNearCache\">"
                 + "    <near-cache>"
-                + "      <eviction eviction-policy=\"NONE\"/>"
+                + "      <eviction eviction-policy=\"NONE\">"
                 + "    </near-cache>"
                 + "  </map>"
                 + "  <map name=\"randomNearCache\">"
                 + "    <near-cache>"
-                + "      <eviction eviction-policy=\"RANDOM\"/>"
+                + "      <eviction eviction-policy=\"RANDOM\">"
                 + "    </near-cache>"
                 + "  </map>"
                 + HAZELCAST_END_TAG;
@@ -1324,7 +1324,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testPartitionGroupZoneAware() {
         String xml = HAZELCAST_START_TAG
-                + "<partition-group enabled=\"true\" group-type=\"ZONE_AWARE\" />"
+                + "<partition-group enabled=\"true\" group-type=\"ZONE_AWARE\" >"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -1337,7 +1337,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testPartitionGroupSPI() {
         String xml = HAZELCAST_START_TAG
-                + "<partition-group enabled=\"true\" group-type=\"SPI\" />"
+                + "<partition-group enabled=\"true\" group-type=\"SPI\" >"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -1391,7 +1391,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <eviction-policy>LFU</eviction-policy>\n"
                 + "      <invalidate-on-change>false</invalidate-on-change>\n"
                 + "      <cache-local-entries>false</cache-local-entries>\n"
-                + "      <eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"3333\"/>\n"
+                + "      <eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"3333\">\n"
                 + "    </near-cache>\n"
                 + "  </map>\n"
                 + HAZELCAST_END_TAG;
@@ -1796,7 +1796,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <tag-value>sample-tag-value</tag-value>\n"
                 + "         </aws>\n"
                 + "         <discovery-strategies>\n"
-                + "            <node-filter class=\"DummyFilterClass\" />\n"
+                + "            <node-filter class=\"DummyFilterClass\" >\n"
                 + "            <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n"
                 + "               <properties>\n"
                 + "                  <property name=\"key-string\">foo</property>\n"
@@ -1928,7 +1928,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
                 + "        <quorum-size>3</quorum-size>\n"
                 + "        <quorum-function-class-name>com.hazelcast.SomeQuorumFunction</quorum-function-class-name>"
-                + "        <recently-active-quorum />"
+                + "        <recently-active-quorum >"
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1943,7 +1943,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
                 + "        <quorum-size>3</quorum-size>\n"
                 + "        <quorum-function-class-name>com.hazelcast.SomeQuorumFunction</quorum-function-class-name>"
-                + "        <probabilistic-quorum />"
+                + "        <probabilistic-quorum >"
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1957,8 +1957,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
                 + "        <quorum-size>3</quorum-size>\n"
-                + "        <probabilistic-quorum />"
-                + "        <recently-active-quorum />"
+                + "        <probabilistic-quorum >"
+                + "        <recently-active-quorum >"
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1972,7 +1972,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
                 + "        <quorum-size>3</quorum-size>\n"
-                + "        <recently-active-quorum />"
+                + "        <recently-active-quorum >"
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1991,7 +1991,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
                 + "        <quorum-size>3</quorum-size>\n"
-                + "        <recently-active-quorum heartbeat-tolerance-millis=\"13000\" />"
+                + "        <recently-active-quorum heartbeat-tolerance-millis=\"13000\" >"
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
@@ -2010,7 +2010,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
                 + "        <quorum-size>3</quorum-size>\n"
-                + "        <probabilistic-quorum />"
+                + "        <probabilistic-quorum >"
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
@@ -2036,7 +2036,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <quorum-size>3</quorum-size>\n"
                 + "        <probabilistic-quorum acceptable-heartbeat-pause-millis=\"37400\" suspicion-threshold=\"3.14592\" "
                 + "                 max-sample-size=\"42\" min-std-deviation-millis=\"1234\""
-                + "                 heartbeat-interval-millis=\"4321\" />"
+                + "                 heartbeat-interval-millis=\"4321\" >"
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
@@ -2057,19 +2057,19 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "    <cache name=\"foobar\">\n"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
-                + "        <key-type class-name=\"java.lang.Object\"/>"
-                + "        <value-type class-name=\"java.lang.Object\"/>"
+                + "        <key-type class-name=\"java.lang.Object\">"
+                + "        <value-type class-name=\"java.lang.Object\">"
                 + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <management-enabled>false</management-enabled>"
                 + "        <read-through>true</read-through>"
                 + "        <write-through>true</write-through>"
-                + "        <cache-loader-factory class-name=\"com.example.cache.MyCacheLoaderFactory\"/>"
-                + "        <cache-writer-factory class-name=\"com.example.cache.MyCacheWriterFactory\"/>"
-                + "        <expiry-policy-factory class-name=\"com.example.cache.MyExpirePolicyFactory\"/>"
+                + "        <cache-loader-factory class-name=\"com.example.cache.MyCacheLoaderFactory\">"
+                + "        <cache-writer-factory class-name=\"com.example.cache.MyCacheWriterFactory\">"
+                + "        <expiry-policy-factory class-name=\"com.example.cache.MyExpirePolicyFactory\">"
                 + "        <in-memory-format>BINARY</in-memory-format>"
                 + "        <backup-count>1</backup-count>"
                 + "        <async-backup-count>0</async-backup-count>"
-                + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
+                + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\">"
                 + "        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>"
                 + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>"
                 + "        <hot-restart enabled=\"false\">\n"
@@ -2081,9 +2081,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <cache-entry-listeners>\n"
                 + "            <cache-entry-listener old-value-required=\"false\" synchronous=\"false\">\n"
                 + "                <cache-entry-listener-factory\n"
-                + "                        class-name=\"com.example.cache.MyEntryListenerFactory\"/>\n"
+                + "                        class-name=\"com.example.cache.MyEntryListenerFactory\">\n"
                 + "                <cache-entry-event-filter-factory\n"
-                + "                        class-name=\"com.example.cache.MyEntryEventFilterFactory\"/>\n"
+                + "                        class-name=\"com.example.cache.MyEntryEventFilterFactory\">\n"
                 + "            </cache-entry-listener>\n"
                 + "        </cache-entry-listeners>"
                 + "    </cache>"
@@ -2417,7 +2417,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <invalidate-on-change>true</invalidate-on-change>\n"
                 + "            <in-memory-format>BINARY</in-memory-format>\n"
                 + "            <cache-local-entries>false</cache-local-entries>\n"
-                + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
+                + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\">\n"
                 + "          </near-cache>"
                 + "        <wan-replication-ref name=\"my-wan-cluster-batch\">\n"
                 + "            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n"
@@ -2578,7 +2578,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute extractor=\"com.car.WeightExtractor\"/>\n"
+                + "           <attribute extractor=\"com.car.WeightExtractor\">\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2637,7 +2637,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<predicate type=\"class-name\"> "
                 + "com.hazelcast.examples.SimplePredicate"
                 + "</predicate>"
-                + "<eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"133\"/>"
+                + "<eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"133\">"
                 + "</query-cache>"
                 + "</query-caches>"
                 + "</map>"
@@ -2693,7 +2693,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testLiteMemberConfig() {
         String xml = HAZELCAST_START_TAG
-                + "    <lite-member enabled=\"true\"/>\n"
+                + "    <lite-member enabled=\"true\">\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -2705,7 +2705,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testNonLiteMemberConfig() {
         String xml = HAZELCAST_START_TAG
-                + "    <lite-member enabled=\"false\"/>\n"
+                + "    <lite-member enabled=\"false\">\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -2717,7 +2717,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testNonLiteMemberConfigWithoutEnabledField() {
         String xml = HAZELCAST_START_TAG
-                + "    <lite-member/>\n"
+                + "    <lite-member>\n"
                 + HAZELCAST_END_TAG;
 
         expected.expect(InvalidConfigurationException.class);
@@ -2728,7 +2728,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testInvalidLiteMemberConfig() {
         String xml = HAZELCAST_START_TAG
-                + "    <lite-member enabled=\"dummytext\"/>\n"
+                + "    <lite-member enabled=\"dummytext\">\n"
                 + HAZELCAST_END_TAG;
 
         expected.expect(InvalidConfigurationException.class);
@@ -2739,8 +2739,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testDuplicateLiteMemberConfig() {
         String xml = HAZELCAST_START_TAG
-                + "    <lite-member enabled=\"true\"/>\n"
-                + "    <lite-member enabled=\"true\"/>\n"
+                + "    <lite-member enabled=\"true\">\n"
+                + "    <lite-member enabled=\"true\">\n"
                 + HAZELCAST_END_TAG;
 
         expected.expect(InvalidConfigurationException.class);
@@ -2955,7 +2955,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testOnJoinPermissionOperation() {
         for (OnJoinPermissionOperationName onJoinOp : OnJoinPermissionOperationName.values()) {
             String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
-                    + "  <client-permissions on-join-operation='" + onJoinOp.name() + "'/>"
+                    + "  <client-permissions on-join-operation='" + onJoinOp.name() + "'>"
                     + SECURITY_END_TAG + HAZELCAST_END_TAG;
             Config config = buildConfig(xml);
             assertSame(onJoinOp, config.getSecurityConfig().getOnJoinPermissionOperation());
@@ -3021,7 +3021,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCacheConfig_withNativeInMemoryFormat_failsFastInOSS() {
         String xml = HAZELCAST_START_TAG
                 + "    <cache name=\"cache\">"
-                + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
+                + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\">"
                 + "        <in-memory-format>NATIVE</in-memory-format>\n"
                 + "    </cache>"
                 + HAZELCAST_END_TAG;
@@ -3203,7 +3203,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testMemcacheProtocolEnabled() {
         String xml = HAZELCAST_START_TAG
-                + "<network><memcache-protocol enabled='true'/></network>\n"
+                + "<network><memcache-protocol enabled='true'></network>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         MemcacheProtocolConfig memcacheProtocolConfig = config.getNetworkConfig().getMemcacheProtocolConfig();
@@ -3215,7 +3215,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testRestApiDefaults() {
         String xml = HAZELCAST_START_TAG
-                + "<network><rest-api enabled='false'/></network>\n"
+                + "<network><rest-api enabled='false'></network>\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
         RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
@@ -3233,9 +3233,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<network>\n"
                 + "<rest-api enabled='true'>\n"
-                + "  <endpoint-group name='HEALTH_CHECK' enabled='true'/>\n"
-                + "  <endpoint-group name='DATA' enabled='true'/>\n"
-                + "  <endpoint-group name='CLUSTER_READ' enabled='false'/>\n"
+                + "  <endpoint-group name='HEALTH_CHECK' enabled='true'>\n"
+                + "  <endpoint-group name='DATA' enabled='true'>\n"
+                + "  <endpoint-group name='CLUSTER_READ' enabled='false'>\n"
                 + "</rest-api>\n"
                 + "</network>\n"
                 + HAZELCAST_END_TAG;
@@ -3253,7 +3253,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testUnknownRestApiEndpointGroup() {
         String xml = HAZELCAST_START_TAG
                 + "<rest-api enabled='true'>\n"
-                + "  <endpoint-group name='TEST' enabled='true'/>\n"
+                + "  <endpoint-group name='TEST' enabled='true'>\n"
                 + "</rest-api>\n"
                 + HAZELCAST_END_TAG;
         buildConfig(xml);
@@ -3343,7 +3343,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<advanced-network enabled=\"true\">"
                 + "  <join>\n"
-                + "      <multicast enabled=\"false\"/>\n"
+                + "      <multicast enabled=\"false\">\n"
                 + "      <tcp-ip enabled=\"true\">\n"
                 + "        <required-member>10.10.1.10</required-member>\n"
                 + "        <member>10.10.1.11</member>\n"
@@ -3402,10 +3402,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  <rest-server-socket-endpoint-config name=\"REST\">\n"
                 + "    <port>8080</port>\n"
                 + "    <endpoint-groups>\n"
-                + "      <endpoint-group name=\"WAN\" enabled=\"true\"/>\n"
-                + "      <endpoint-group name=\"CLUSTER_READ\" enabled=\"true\"/>\n"
-                + "      <endpoint-group name=\"CLUSTER_WRITE\" enabled=\"false\"/>\n"
-                + "      <endpoint-group name=\"HEALTH_CHECK\" enabled=\"true\"/>\n"
+                + "      <endpoint-group name=\"WAN\" enabled=\"true\">\n"
+                + "      <endpoint-group name=\"CLUSTER_READ\" enabled=\"true\">\n"
+                + "      <endpoint-group name=\"CLUSTER_WRITE\" enabled=\"false\">\n"
+                + "      <endpoint-group name=\"HEALTH_CHECK\" enabled=\"true\">\n"
                 + "    </endpoint-groups>\n"
                 + "  </rest-server-socket-endpoint-config>\n"
                 + "  <memcache-server-socket-endpoint-config name=\"MEMCACHE\">\n"

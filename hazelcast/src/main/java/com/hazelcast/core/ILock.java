@@ -31,7 +31,7 @@ import java.util.concurrent.locks.Lock;
  *      mylock.unlock();
  * }
  * //Lock on Map
- *      IMap<String, Customer> map = Hazelcast.getMap("customers"); map.lock("1");
+ *      IMap&lt;String, Customer&gt; map = Hazelcast.getMap("customers"); map.lock("1");
  * try {
  *      // do something
  * } finally {

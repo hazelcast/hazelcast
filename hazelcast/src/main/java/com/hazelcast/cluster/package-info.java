@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains the cluster functionality.<br/>
+ * <p>This package contains the cluster functionality.<br>
  */
 package com.hazelcast.cluster;

@@ -57,8 +57,10 @@ import static java.util.Collections.singletonList;
  * Should be used from top-level proxy-layer only (e.g. MapProxy, etc.).
  * <p>
  * Top level-query actors:
- * - QueryEngine orchestrates the queries and  merging the result
- * - QueryRunner -> runs the query logic in the calling thread (so like evaluates the predicates and asks the index)
+ * <ul>
+ * <li>QueryEngine orchestrates the queries and  merging the result</li>
+ * <li>QueryRunner -&gt; runs the query logic in the calling thread (so like evaluates the predicates and asks the index)</li>
+ * </ul>
  */
 public class QueryEngineImpl implements QueryEngine {
 

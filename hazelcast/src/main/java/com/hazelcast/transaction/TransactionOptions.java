@@ -46,7 +46,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Creates a new default configured TransactionsOptions.
-     * <p/>
+     * <p>
      * It will be configured with a timeout of 2 minutes, durability of 1 and a TransactionType.TWO_PHASE.
      */
     public TransactionOptions() {
@@ -64,7 +64,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the {@link TransactionType}.
-     * <p/>
+     * <p>
      * A local transaction is less safe than a two phase transaction; when a member fails during the commit
      * of a local transaction, it could be that some of the changes are committed, while others are not and this
      * can leave your system in an inconsistent state.
@@ -94,7 +94,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the timeout.
-     * <p/>
+     * <p>
      * The timeout determines the maximum lifespan of a transaction. So if a transaction is configured with a
      * timeout of 2 minutes, then it will automatically rollback if it hasn't committed yet.
      *
@@ -131,7 +131,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the transaction durability.
-     * <p/>
+     * <p>
      * The durability is the number of machines that can take over if a member fails during a transaction
      * commit or rollback. This value only has meaning when {@link TransactionType#TWO_PHASE} is selected.
      *

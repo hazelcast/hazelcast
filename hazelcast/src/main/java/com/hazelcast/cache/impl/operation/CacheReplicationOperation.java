@@ -56,7 +56,6 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * <li>Create the configuration in the new node service.</li>
  * <li>Insert each record into {@link ICacheRecordStore}.</li>
  * </ul>
- * </p>
  * <p><b>Note:</b> This operation is a per partition operation.</p>
  */
 public class CacheReplicationOperation extends Operation implements IdentifiedDataSerializable {
@@ -147,6 +146,11 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     @Override
     public String getServiceName() {
         return ICacheService.SERVICE_NAME;
+    }
+
+    @Override
+    public Operation setCallerUuid(String callerUuid) {
+        return super.setCallerUuid(callerUuid);
     }
 
     @Override

@@ -225,7 +225,7 @@ public final class IntHashSet implements Set<Integer> {
 
     /**
      * Fast Path set difference for comparison with another IntHashSet.
-     * <p/>
+     * <p>
      * NB: garbage free in the identical case, allocates otherwise.
      *
      * @param collection the other set to subtract

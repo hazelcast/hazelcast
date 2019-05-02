@@ -124,7 +124,7 @@ public interface HazelcastInstance {
      * So keys are considered equals cluster-wide as long as
      * they are serialized to the same byte array such as String, long,
      * Integer.
-     * <p/>
+     * <p>
      * Locks are fail-safe. If a member holds a lock and some of the
      * members go down, the cluster will keep your locks safe and available.
      * Moreover, when a member leaves the cluster, all the locks acquired

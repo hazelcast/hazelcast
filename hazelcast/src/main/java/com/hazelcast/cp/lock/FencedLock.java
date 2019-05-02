@@ -31,7 +31,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 /**
- * A linearizable & distributed & reentrant implementation of {@link Lock}.
+ * A linearizable &amp; distributed &amp; reentrant implementation of {@link Lock}.
  * <p>
  * {@link FencedLock} is accessed via {@link CPSubsystem#getLock(String)}.
  * <p>
@@ -283,7 +283,7 @@ public interface FencedLock extends Lock, DistributedObject {
      *     lock.unlock();
      *     lock.unlock();
      *     long fence3 = lock.lockAndGetFence(); // (3)
-     *     assert fence3 > fence1;
+     *     assert fence3 &gt; fence1;
      * </pre>
      * In this scenario, the lock is acquired by a thread in the cluster. Then,
      * the same thread reentrantly acquires the lock again. The fencing token
@@ -303,7 +303,7 @@ public interface FencedLock extends Lock, DistributedObject {
 
     /**
      * Acquires the lock if it is available or already held by the current
-     * thread at the time of invocation & the acquire limit is not exceeded,
+     * thread at the time of invocation &amp; the acquire limit is not exceeded,
      * and immediately returns with the value {@code true}. If the lock is not
      * available, then this method immediately returns with the value
      * {@code false}. When the call is reentrant, it can return {@code false}
@@ -336,7 +336,7 @@ public interface FencedLock extends Lock, DistributedObject {
 
     /**
      * Acquires the lock only if it is free or already held by the current
-     * thread at the time of invocation & the acquire limit is not exceeded,
+     * thread at the time of invocation &amp; the acquire limit is not exceeded,
      * and returns the fencing token assigned to the current thread for this
      * lock acquire. If the lock is acquired reentrantly, the same fencing
      * token is returned. If the lock is already held by another caller or
@@ -391,7 +391,7 @@ public interface FencedLock extends Lock, DistributedObject {
      *     lock.unlock();
      *     lock.unlock();
      *     long fence3 = lock.tryLockAndGetFence(); // (3)
-     *     assert fence3 > fence1;
+     *     assert fence3 &gt; fence1;
      * </pre>
      * In this scenario, the lock is acquired by a thread in the cluster. Then,
      * the same thread reentrantly acquires the lock again. The fencing token
@@ -443,7 +443,7 @@ public interface FencedLock extends Lock, DistributedObject {
 
     /**
      * Acquires the lock if it is free within the given waiting time,
-     * or already held by the current thread at the time of invocation &
+     * or already held by the current thread at the time of invocation &amp;
      * the acquire limit is not exceeded, and returns the fencing token
      * assigned to the current thread for this lock acquire. If the lock is
      * acquired reentrantly, the same fencing token is returned. If the lock
@@ -506,7 +506,7 @@ public interface FencedLock extends Lock, DistributedObject {
      *     lock.unlock();
      *     lock.unlock();
      *     long fence3 = lock.tryLockAndGetFence(time, unit); // (3)
-     *     assert fence3 > fence1;
+     *     assert fence3 &gt; fence1;
      * </pre>
      * In this scenario, the lock is acquired by a thread in the cluster. Then,
      * the same thread reentrantly acquires the lock again. The fencing token

@@ -153,7 +153,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
 
     /**
      * Primitive specialised forEach implementation.
-     * <p/>
+     * <p>
      * NB: Renamed from forEach to avoid overloading on parameter types of lambda
      * expression, which doesn't interplay well with type inference in lambda expressions.
      *

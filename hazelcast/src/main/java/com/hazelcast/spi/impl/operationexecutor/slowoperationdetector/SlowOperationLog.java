@@ -30,10 +30,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Internal data structure for {@link SlowOperationDetector}.
- * <p/>
+ * <p>
  * A collection of this class is created by {@link SlowOperationDetector} and shared as <code>Collection<JsonSerializable></code>
  * with {@link com.hazelcast.monitor.impl.LocalOperationStatsImpl} to deliver a JSON representation for the Management Center.
- * <p/>
+ * <p>
  * All fields are exclusively written by {@link SlowOperationDetector.DetectorThread}. Only fields which are exposed via the
  * {@link #createDTO()} methods need synchronization. All other fields are final or used single threaded.
  */

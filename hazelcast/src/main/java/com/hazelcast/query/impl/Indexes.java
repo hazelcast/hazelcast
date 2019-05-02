@@ -112,7 +112,7 @@ public class Indexes {
      *
      * @param name    the name of the index; the passed value might not
      *                represent a canonical index name (as specified by
-     *                {@link Index#getName()), in this case the method
+     *                {@link Index#getName()}, in this case the method
      *                canonicalizes it.
      * @param ordered {@code true} if the new index should be ordered, {@code
      *                false} otherwise.

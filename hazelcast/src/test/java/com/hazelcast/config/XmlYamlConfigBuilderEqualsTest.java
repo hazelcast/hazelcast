@@ -87,7 +87,7 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");
 
         // remove imports to prevent the test from failing with importing non-existing files
-        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
+        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\">", "");
         fullExampleYaml = fullExampleYaml
                 .replace("\r", "")
                 .replace("import:\n    - your-configuration-YAML-file", "");
@@ -113,7 +113,7 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
         String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");
 
         // remove imports to prevent the test from failing with importing non-existing files
-        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
+        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\">", "");
         fullExampleYaml = fullExampleYaml
                 .replace("\r", "")
                 .replace("import:\n    - your-configuration-YAML-file", "");

@@ -21,7 +21,7 @@ import java.util.concurrent.locks.Condition;
 /**
  * Distributed implementation of {@link Condition}.
  * An ICondition instance is created using {@link ILock#newCondition(String)}
- * <p/>
+ * <p>
  * <pre>
  * HazelcastInstance instance = ...;
  * ILock lock = instance.getLock("lock");

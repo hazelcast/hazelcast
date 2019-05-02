@@ -51,6 +51,7 @@ public final class CanonicalizingHashSet<E> implements Set<E>, IdentifiedDataSer
     /**
      * Constructs a new empty instance of canonicalizing hash set with the given
      * expected capacity.
+     * @param capacity the expected capacity
      */
     public CanonicalizingHashSet(int capacity) {
         this.map = new HashMap<Object, E>(capacity);

@@ -68,7 +68,7 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
             + "    </config-replacers>\n";
 
     private static final String XML_DEFAULT_CONFIG = "    <config-replacers>\n"
-            + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'/>\n"
+            + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'>\n"
             + "    </config-replacers>\n";
 
     @Rule

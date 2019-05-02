@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains the operations on the ICountDownLatch.<br/>
+ * <p>This package contains the operations on the ICountDownLatch.<br>
  *
  * @since 2
  */

@@ -49,7 +49,7 @@ import static com.hazelcast.util.MapUtil.createInt2ObjectHashMap;
  * This filtering strategy is used when Hazelcast property {@code hazelcast.map.entry.filtering.natural.event.types} is set
  * to {@code true}. The complete decision matrix for event types published with this filtering strategy.
  * <p>
- * <table>
+ * <table summary="">
  *     <tr>
  *         <td>Old value</td>
  *         <td>New value</td>

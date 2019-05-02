@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains logging functionality for Hazelcast.<br/>
+ * <p>This package contains logging functionality for Hazelcast.<br>
  * Since Hazelcast has a zero dependency policy, Hazelcast provides a logging
  * abstraction like commons logging, so that different logging frameworks like
  * log4j, can be hooked in.

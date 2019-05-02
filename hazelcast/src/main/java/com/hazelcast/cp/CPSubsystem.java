@@ -52,7 +52,7 @@ import com.hazelcast.cp.session.CPSessionManagementService;
  * Data structures in the CP subsystem run in {@link CPGroup}s. A CP group
  * consists of an odd number of {@link CPMember}s between 3 and 7.
  * Each CP group independently runs the Raft consensus algorithm. Operations
- * are committed & executed only after they are successfully replicated to
+ * are committed &amp; executed only after they are successfully replicated to
  * the majority of the CP members in a CP group. For instance, in a CP group of
  * 5 CP members, operations are committed when they are replicated to at least
  * 3 CP members. The size of CP groups are specified via

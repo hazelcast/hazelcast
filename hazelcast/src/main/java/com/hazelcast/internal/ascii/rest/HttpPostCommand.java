@@ -56,10 +56,10 @@ public class HttpPostCommand extends HttpCommand {
      * User-Agent: HTTPTool/1.0
      * Content-TextCommandType: application/x-www-form-urlencoded
      * Content-Length: 45
-     * <next_line>
-     * <next_line>
+     * &lt;next_line&gt;
+     * &lt;next_line&gt;
      * byte[45]
-     * <next_line>
+     * &lt;next_line&gt;
      *
      * @param src
      * @return

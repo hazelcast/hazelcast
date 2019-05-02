@@ -28,7 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Distributed & durable implementation similar to, but not directly inherited {@link ScheduledExecutorService}.
+ * Distributed &amp; durable implementation similar to, but not directly inherited {@link ScheduledExecutorService}.
  * <code>IScheduledExecutorService</code> provides similar API to the <code>ScheduledExecutorService</code> with some exceptions
  * but also additional methods like scheduling tasks on a specific member, on a member who is owner of a specific key, executing a
  * tasks on multiple members etc.

@@ -165,7 +165,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}
-     * @see javax.cache.Cache#get(K)
+     * @see javax.cache.Cache#get(Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAsync(K key);
@@ -190,7 +190,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}.
-     * @see javax.cache.Cache#get(K)
+     * @see javax.cache.Cache#get(Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy);
@@ -216,7 +216,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#put(K, V)
+     * @see javax.cache.Cache#put(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Void> putAsync(K key, V value);
@@ -245,7 +245,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#put(K, V)
+     * @see javax.cache.Cache#put(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy);
@@ -280,7 +280,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}
-     * @see javax.cache.Cache#putIfAbsent(K, V)
+     * @see javax.cache.Cache#putIfAbsent(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value);
@@ -319,7 +319,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}
-     * @see javax.cache.Cache#putIfAbsent(K, V)
+     * @see javax.cache.Cache#putIfAbsent(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy);
@@ -347,7 +347,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndPut(K, V)
+     * @see javax.cache.Cache#getAndPut(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndPutAsync(K key, V value);
@@ -377,7 +377,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndPut(K, V)
+     * @see javax.cache.Cache#getAndPut(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy);
@@ -400,7 +400,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}.
-     * @see javax.cache.Cache#remove(K)
+     * @see javax.cache.Cache#remove(Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> removeAsync(K key);
@@ -436,7 +436,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}.
-     * @see javax.cache.Cache#remove(K, V)
+     * @see javax.cache.Cache#remove(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> removeAsync(K key, V oldValue);
@@ -460,7 +460,7 @@ public interface ICache<K, V>
      * @throws javax.cache.CacheException     if any exception
      *                                        happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException          if the cache is {@link #isClosed()}.
-     * @see javax.cache.Cache#getAndRemove(K)
+     * @see javax.cache.Cache#getAndRemove(Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndRemoveAsync(K key);
@@ -483,7 +483,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V)
+     * @see javax.cache.Cache#replace(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V value);
@@ -509,7 +509,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V)
+     * @see javax.cache.Cache#replace(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy);
@@ -551,7 +551,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}
-     * @see javax.cache.Cache#replace(K, V, V)
+     * @see javax.cache.Cache#replace(Object, Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue);
@@ -595,7 +595,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V, V)
+     * @see javax.cache.Cache#replace(Object, Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy);
@@ -619,7 +619,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndReplace(K, V)
+     * @see javax.cache.Cache#getAndReplace(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndReplaceAsync(K key, V value);
@@ -645,7 +645,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndReplace(K, V)
+     * @see javax.cache.Cache#getAndReplace(Object, Object)
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy);
@@ -670,7 +670,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}
-     * @see javax.cache.Cache#get(K)
+     * @see javax.cache.Cache#get(Object)
      */
     V get(K key, ExpiryPolicy expiryPolicy);
 
@@ -714,7 +714,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#put(K, V)
+     * @see javax.cache.Cache#put(Object, Object)
      */
     void put(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -735,7 +735,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndPut(K, V)
+     * @see javax.cache.Cache#getAndPut(Object, Object)
      */
     V getAndPut(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -798,7 +798,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#putIfAbsent(K, V)
+     * @see javax.cache.Cache#putIfAbsent(Object, Object)
      */
     boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -836,7 +836,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V, V)
+     * @see javax.cache.Cache#replace(Object, Object, Object)
      */
     boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy);
 
@@ -861,7 +861,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#replace(K, V)
+     * @see javax.cache.Cache#replace(Object, Object)
      */
     boolean replace(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -886,7 +886,7 @@ public interface ICache<K, V>
      *                                        runtime-type-checking, and the key or value
      *                                        types are incompatible with those that have been
      *                                        configured for the {@link javax.cache.Cache}.
-     * @see javax.cache.Cache#getAndReplace(K, V)
+     * @see javax.cache.Cache#getAndReplace(Object, Object)
      */
     V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy);
 
@@ -920,11 +920,11 @@ public interface ICache<K, V>
 
     /**
      * Adds a CachePartitionLostListener.
-     * <p/>
+     * <p>
      * The addPartitionLostListener returns a registration ID. This ID is needed to remove the
      * CachePartitionLostListener using the
      * {@link #removePartitionLostListener(String)} method.
-     * <p/>
+     * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
      * IMPORTANT: Please @see com.hazelcast.partition.PartitionLostListener for weaknesses.
      * IMPORTANT: Listeners registered from HazelcastClient may miss some of the cache partition lost events due
@@ -961,7 +961,6 @@ public interface ICache<K, V>
      * <li>read will have their appropriate CacheEntryReadListeners notified.</li>
      * <li>removed will have their appropriate CacheEntryRemoveListeners notified.</li>
      * </ul>
-     * </p>
      * {@link java.util.Iterator#next()} may return null if the entry is no
      * longer present, has expired or has been evicted.
      *

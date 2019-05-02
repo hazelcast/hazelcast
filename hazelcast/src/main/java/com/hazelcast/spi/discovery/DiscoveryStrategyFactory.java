@@ -29,7 +29,7 @@ import java.util.Map;
  * multiple version support or similar) one factory might return different provider
  * implementations based on certain criteria. It is also up to the <tt>DiscoveryStrategyFactory</tt>
  * to cache instances and return them in some kind of a Singleton-like fashion.
- * <p/>
+ * <p>
  * The defined set of configuration properties describes the existing properties inside
  * of the Hazelcast configuration. It will be used for automatic conversion,
  * type-checking and validation before handing them to the {@link DiscoveryStrategy}.

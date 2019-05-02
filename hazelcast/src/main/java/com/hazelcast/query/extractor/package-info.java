@@ -16,7 +16,7 @@
 
 /**
  * Contains classes related to custom attributes and the extraction of their values.
- * <br/>
+ * <br>
  * The values may be extracted with the usage of the {@link com.hazelcast.query.extractor.ValueExtractor} class.
  * The extracted values may be then collected by the {@link com.hazelcast.query.extractor.ValueCollector}.
  * The extraction logic may use custom arguments if specified by the user

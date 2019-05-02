@@ -18,7 +18,7 @@ package com.hazelcast.test.annotation;
 
 /**
  * Annotates tests which can run in multiple JVMs in parallel.
- * <p/>
+ * <p>
  * Has no effect in which build a test will be executed, but if it will be executed in a single or with multiple JVMs.
  */
 public final class ParallelJVMTest {

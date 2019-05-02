@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains classes related to Util.Executor <br/>
+ * <p>This package contains classes related to Util.Executor <br>
  */
 package com.hazelcast.util.executor;

@@ -48,7 +48,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getAddress;
  * <p>
  * <b>Tests using this factory should not be annotated with {@code ParallelJVMTest} category to avoid runs in multiple JVMs.</b>
  * <p>
- * Usage of {@link ParallelJVMTest} is allowed with this instance factory.<br/>
+ * Usage of {@link ParallelJVMTest} is allowed with this instance factory.<br>
  * Example:
  *
  * <pre>

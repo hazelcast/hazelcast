@@ -83,7 +83,7 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
      * Returns the value of the requested {@link PropertyDefinition} if available in the
      * declarative or programmatic configuration (XML or Config API), otherwise it will
      * return <tt>null</tt>.
-     * <p/>
+     * <p>
      * <b>This method overload won't do environment or JVM property lookup.</b> A call to
      * this overload is equivalent to {@link #getOrNull(String, PropertyDefinition)}
      * with <tt>null</tt> passed as the first parameter.
@@ -101,7 +101,7 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
      * Returns the value of the requested {@link PropertyDefinition} if available in the
      * declarative or programmatic configuration (XML or Config API), can be found in the
      * system's environment, or passed as a JVM property. Otherwise it will return <tt>null</tt>.
-     * <p/>
+     * <p>
      * This overload will resolve the requested property in the following order, whereas the
      * higher priority is from top to bottom:
      * <ul>
@@ -129,7 +129,7 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
      * Returns the value of the requested {@link PropertyDefinition} if available in the
      * declarative or programmatic configuration (XML or Config API), otherwise it will
      * return the given <tt>defaultValue</tt>.
-     * <p/>
+     * <p>
      * <b>This method overload won't do environment or JVM property lookup.</b> A call to
      * this overload is equivalent to {@link #getOrDefault(String, PropertyDefinition, Comparable)}
      * with <tt>null</tt> passed as the first parameter.
@@ -149,7 +149,7 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
      * declarative or programmatic configuration (XML or Config API), can be found in the
      * system's environment, or passed as a JVM property. otherwise it will return the given
      * <tt>defaultValue</tt>.
-     * <p/>
+     * <p>
      * This overload will resolve the requested property in the following order, whereas the
      * higher priority is from top to bottom:
      * <ul>

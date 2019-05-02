@@ -37,8 +37,9 @@ import com.hazelcast.internal.cluster.ClusterService;
  * by more than 15 seconds, if IDs are requested at higher rate, the call will block. Note, however, that
  * clients are able to generate even faster because each call goes to a different (random) member and
  * the 64 IDs/ms limit is for single member.
- *
- * <h4>Node ID overflow</h4>
+ * <p>
+ * <b>Node ID overflow</b>
+ * <p>
  * Node ID component of the ID has 16 bits. Members with member list join version higher than
  * 2^16 won't be able to generate IDs, but functionality will be preserved by forwarding to another
  * member. It is possible to generate IDs on any member or client as long as there is at least one

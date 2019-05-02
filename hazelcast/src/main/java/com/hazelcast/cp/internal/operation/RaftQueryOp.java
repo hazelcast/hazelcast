@@ -40,7 +40,7 @@ import java.io.IOException;
  * The operation that passes a query to leader or a follower of a Raft group.
  * The given query can run locally on leader or a follower, or can be committed
  * to the Raft group, depending on query policy.
- * <p/>
+ * <p>
  * Please note that the given query can be committed twice if the leader
  * commits the query but fails before sending the response, therefore the query
  * operation is expected to have no side-effect.

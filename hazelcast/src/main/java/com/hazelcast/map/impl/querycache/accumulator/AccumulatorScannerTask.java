@@ -34,7 +34,7 @@ import java.util.Set;
 
 /**
  * Task for scanning all {@link Accumulator} instances of all {@link com.hazelcast.map.QueryCache}s on this node.
- * <p/>
+ * <p>
  * If it finds any event that needs to be published in an accumulator, it creates and sends
  * {@link AccumulatorConsumerOperation} to relevant partitions.
  *

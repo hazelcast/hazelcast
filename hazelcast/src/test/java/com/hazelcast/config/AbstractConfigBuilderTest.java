@@ -38,11 +38,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * Abstract class defining the common test cases for XML and YAML
  * based configuration tests.
- * <p/>
+ * <p>
  * All common test cases should be defined in this class to guarantee
  * compilation error if either YAML or XML configuration misses to cover
  * a common case.
- * <p/>
+ * <p>
  * For specific test cases, see {@link XmlOnlyConfigBuilderTest} and
  * {@link YamlOnlyConfigBuilderTest}.
  *

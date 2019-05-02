@@ -548,7 +548,7 @@ public abstract class Operation implements DataSerializable {
      * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown
      * during an invocation. Invocation process will continue, it will retry
      * or fail according to returned <tt>ExceptionAction</tt>.
-     * <p/>
+     * <p>
      * This method is called on caller side of the invocation.
      *
      * @param throwable <tt>Exception</tt>/<tt>Error</tt> thrown during
@@ -594,11 +594,11 @@ public abstract class Operation implements DataSerializable {
     /**
      * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown during
      * operation execution.
-     * <p/>
+     * <p>
      * By default this method does nothing.
      * Operation implementations can override this behaviour according to their needs.
-     * <p/>
-     * This method is called on node & thread that's executing the operation.
+     * <p>
+     * This method is called on node &amp; thread that's executing the operation.
      *
      * @param e Exception/Error thrown during operation execution
      */
@@ -608,8 +608,8 @@ public abstract class Operation implements DataSerializable {
     /**
      * Logs <tt>Exception</tt>/<tt>Error</tt> thrown during operation execution.
      * Operation implementations can override this behaviour according to their needs.
-     * <p/>
-     * This method is called on node & thread that's executing the operation.
+     * <p>
+     * This method is called on node &amp; thread that's executing the operation.
      *
      * @param e Exception/Error thrown during operation execution
      */

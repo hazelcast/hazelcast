@@ -113,13 +113,13 @@ import java.util.concurrent.TimeUnit;
  * can be called on N-2 CP members concurrently. Once these N-2 CP members
  * complete their shutdown, the remaining 2 CP members must be shut down
  * serially.
- * <p>
+ * <br>
  * Even though the shutdown API is called concurrently on multiple members,
  * the Metadata CP group handles shutdown requests serially. Therefore,
  * it would be simpler to shut down CP members one by one, by calling
  * {@link HazelcastInstance#shutdown()} on the next CP member once the current
  * CP member completes its shutdown.
- * <p>
+ * <br>
  * The reason behind this limitation is, each shutdown request internally
  * requires a Raft commit to the Metadata CP group. A CP member proceeds to
  * shutdown after it receives a response of its commit to the Metadata CP

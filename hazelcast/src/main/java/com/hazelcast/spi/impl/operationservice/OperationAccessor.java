@@ -46,7 +46,7 @@ public final class OperationAccessor {
     }
 
     /**
-     * Marks the supplied operation as "not active". Refer to {@link Operation#deactivate()) for
+     * Marks the supplied operation as "not active". Refer to {@link Operation#deactivate()} for
      * detailed semantics.
      */
     public static boolean deactivate(Operation op) {

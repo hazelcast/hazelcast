@@ -33,28 +33,24 @@ package com.hazelcast.internal;
  *
  * The implementation of a constructor utility method would look something like this example:
  * <pre>
- * {@code
- * public static <S> MethodProbe createLongMethodProbe(Method method, Probe probe, int type) {
+ * public static &lt;S&gt; MethodProbe createLongMethodProbe(Method method, Probe probe, int type) {
  *   if (JavaVersion.isAtLeast(JAVA_1_8)) {
- *     return new LongMethodProbeJdk8<S>(method, probe, type);
+ *     return new LongMethodProbeJdk8&lt;S&gt;(method, probe, type);
  *   } else {
- *     return new MethodProbe.LongMethodProbe<S>(method, probe, type);
+ *     return new MethodProbe.LongMethodProbe&lt;S&gt;(method, probe, type);
  *   }
- * }
  * }
  * </pre>
  *
  * This should be tested in two separate tests, to ensure the proper instance is created
  * depending on Java runtime version, like this:
  * <pre>
- *     {@code
- *     @Test
+ *     &#64;Test
  *     public void testJdk8Probe() {
  *       // ensure this test only runs on JDK 8+
  *       assumeJdk8OrNewer();
  *       MethodProbe jdk8Probe = PlatformSpecific.createLongMethodProbe(...);
  *       assertTrue(jdk8Probe instanceof LongMethodProbeJdk8.class);
- *     }
  *     }
  * </pre>
  */

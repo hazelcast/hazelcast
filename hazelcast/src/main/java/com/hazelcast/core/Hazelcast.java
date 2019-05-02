@@ -44,7 +44,7 @@ public final class Hazelcast {
      * Creates a new HazelcastInstance (a new node in a cluster).
      * This method allows you to create and run multiple instances
      * of Hazelcast cluster members on the same JVM.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -61,7 +61,7 @@ public final class Hazelcast {
      * Creates a new HazelcastInstance (a new node in a cluster).
      * This method allows you to create and run multiple instances
      * of Hazelcast cluster members on the same JVM.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -93,7 +93,7 @@ public final class Hazelcast {
 
     /**
      * Returns an existing HazelcastInstance with instanceName.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *
@@ -168,7 +168,7 @@ public final class Hazelcast {
 
     /**
      * Returns all active/running HazelcastInstances on this JVM.
-     * <p/>
+     * <p>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
      *

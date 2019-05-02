@@ -54,7 +54,7 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.Collections.shuffle;
 
 /**
- * Performs invocations to create & destroy Raft groups,
+ * Performs invocations to create &amp; destroy Raft groups,
  * commits {@link RaftOp} and runs queries on Raft groups.
  */
 @SuppressWarnings("unchecked")

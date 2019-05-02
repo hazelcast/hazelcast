@@ -59,9 +59,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
     /**
      * {@inheritDoc}
      * Sets the response to the next item ID if the queue can
-     * accomodate {@code txSize + 1} items.
-     *
-     * @throws Exception
+     * accommodate {@code txSize + 1} items.
      */
     @Override
     public void run() throws Exception {

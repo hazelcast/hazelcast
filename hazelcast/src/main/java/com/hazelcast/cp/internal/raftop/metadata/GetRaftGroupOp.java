@@ -28,7 +28,7 @@ import java.io.IOException;
 
 /**
  * Returns information about the queried Raft group.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class GetRaftGroupOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware, IdentifiedDataSerializable {

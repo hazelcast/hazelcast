@@ -42,7 +42,7 @@ import static com.hazelcast.util.Preconditions.checkState;
  * try to initialize its local {@link RaftNode} instance. In order to the
  * initialize itself, it can directly ask to the Raft group to verify if it is
  * a current member of the Raft group.
- * <p/>
+ * <p>
  * This operation is NOT committed to the Metadata group.
  * It is committed to the queried Raft group.
  */

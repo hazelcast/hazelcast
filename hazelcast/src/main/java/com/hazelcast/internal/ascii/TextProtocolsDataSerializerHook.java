@@ -29,7 +29,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TEXT_PRO
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TEXT_PROTOCOLS_DS_FACTORY_ID;
 
 /**
- * DataSerializerHook for memcache & REST protocol support classes
+ * DataSerializerHook for memcache &amp; REST protocol support classes
  */
 public final class TextProtocolsDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(TEXT_PROTOCOLS_DS_FACTORY, TEXT_PROTOCOLS_DS_FACTORY_ID);

@@ -44,7 +44,7 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     /**
      * Index to fast check existence of a key.
      * Maps: key --> number of keys.
-     * <p/>
+     * <p>
      * Used to determine whether a key is loadable from store. Because there is a possibility that a key
      * is in {@link WriteBehindQueue} but it is not in {@link com.hazelcast.core.IMap} due to the eviction.
      * At that point if one tries to get that evicted key, {@link com.hazelcast.core.MapLoader} will

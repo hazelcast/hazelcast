@@ -35,9 +35,9 @@ import java.util.Map;
  * when creating a {@link java.util.Map.Entry Map.Entry}. Mainly targeted to supply a lazy entry to
  * {@link com.hazelcast.map.EntryProcessor#process(Map.Entry)} and
  * {@link com.hazelcast.map.EntryBackupProcessor#processBackup(Map.Entry)}} methods.
- * <p/>
+ * <p>
  * <STRONG>Note that this implementation is not synchronized and is not thread-safe.</STRONG>
- * <p/>
+ * <p>
  * LazyMapEntry itself is serializable as long as the object representations of both key and value are serializable.
  * After serialization objects are resolved using injected SerializationService. De-serialized LazyMapEntry
  * does contain object representation only Data representations and SerializationService is set to null. In other

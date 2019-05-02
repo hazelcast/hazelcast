@@ -90,11 +90,11 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
 
     /**
      * Tests that all entries and backups of a {@link PutAllPartitionAwareOperationFactory} are sent to the correct members.
-     * <p/>
+     * <p>
      * The test creates a cluster with a single partition per member and invokes {@link PutAllPartitionAwareOperationFactory}
      * which contains a single entry for every partition in the cluster. So just a single entry is for the member the factory
      * is executed on.
-     * <p/>
+     * <p>
      * After the operation is invoked we assert that each member owns one entry of the map and that all backups have been written.
      */
     private void testPutAllPerMemberOperation(final int entriesPerPartition) throws Exception {

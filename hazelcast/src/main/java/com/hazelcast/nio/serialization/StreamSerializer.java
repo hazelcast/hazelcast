@@ -23,10 +23,10 @@ import java.io.IOException;
 
 /**
  * A base class for custom serialization. User can register custom serializer like following:
- * <p/>
+ * <p>
  * <pre>
  *     final SerializerConfig serializerConfig = new SerializerConfig();
- *     serializerConfig.setImplementation(new StreamSerializer<Person>() {
+ *     serializerConfig.setImplementation(new StreamSerializer&lt;Person&gt;() {
  *          public int getTypeId() {
  *
  *          }
@@ -47,12 +47,12 @@ import java.io.IOException;
  *     config.getSerializationConfig().addSerializerConfig(serializerConfig);
  *
  * </pre>
- * <p/>
+ * <p>
  * There is another class with byte arrays can be used instead ıf this interface
  * see {@link com.hazelcast.nio.serialization.ByteArraySerializer}.
- * <p/>
+ * <p>
  * C++ and C# clients also have compatible methods so that with custom serialization client can also be used
- * <p/>
+ * <p>
  * Note that read and write methods should be compatible
  *
  * @param <T> type of the serialized object

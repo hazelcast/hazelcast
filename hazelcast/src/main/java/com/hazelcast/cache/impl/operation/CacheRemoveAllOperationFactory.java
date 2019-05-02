@@ -35,7 +35,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  * <ul>
  * <li>Remove all internal data
  * <li>Remove the entries of the provided keys.</li>
- * </ul></p>
+ * </ul>
  *
  * @see OperationFactory
  */

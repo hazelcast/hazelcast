@@ -46,7 +46,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     public void testImportElementOnlyAppearsInTopLevel() {
         String xml = HAZELCAST_START_TAG
                 + "   <network>"
-                + "        <import resource=\"\"/>\n"
+                + "        <import resource=\"\">\n"
                 + "   </network>"
                 + HAZELCAST_END_TAG;
         expectInvalid();
@@ -95,15 +95,15 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         String networkConfig = HAZELCAST_START_TAG
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"false\"/>\n"
-                + "            <tcp-ip enabled=\"true\"/>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "            <tcp-ip enabled=\"true\">\n"
                 + "        </join>\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"${config.location}\"/>\n"
+                + "    <import resource=\"${config.location}\">\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, "config.location", file.getAbsolutePath());
         JoinConfig join = config.getNetworkConfig().getJoin();
@@ -119,15 +119,15 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         String networkConfig = HAZELCAST_START_TAG
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"false\"/>\n"
-                + "            <tcp-ip enabled=\"${tcp.ip.enabled}\"/>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "            <tcp-ip enabled=\"${tcp.ip.enabled}\">\n"
                 + "        </join>\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"${config.location}\"/>\n"
+                + "    <import resource=\"${config.location}\">\n"
                 + HAZELCAST_END_TAG;
 
         Properties properties = new Properties();
@@ -147,10 +147,10 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         FileOutputStream os1 = new FileOutputStream(config1);
         FileOutputStream os2 = new FileOutputStream(config2);
         String config1Xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\">\n"
                 + HAZELCAST_END_TAG;
         String config2Xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\">\n"
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
@@ -162,7 +162,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
         String template = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///%s\"/>\n"
+                + "    <import resource=\"file:///%s\">\n"
                 + HAZELCAST_END_TAG;
         File config1 = createConfigFile("hz1", "xml");
         File config2 = createConfigFile("hz2", "xml");
@@ -183,7 +183,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         File config1 = createConfigFile("hz1", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
         String config1Xml = HAZELCAST_START_TAG
-                + "    <import resource='file:///" + config1.getAbsolutePath() + "'/>\n"
+                + "    <import resource='file:///" + config1.getAbsolutePath() + "'>\n"
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os1, "");
         expectInvalid();
@@ -194,7 +194,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test
     public void testImportEmptyResourceThrowsException() {
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"\"/>\n"
+                + "    <import resource=\"\">\n"
                 + HAZELCAST_END_TAG;
         expectInvalid();
         buildConfig(xml, null);
@@ -205,7 +205,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     public void testImportNotExistingResourceThrowsException() {
         expectInvalid();
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"notexisting.xml\"/>\n"
+                + "    <import resource=\"notexisting.xml\">\n"
                 + HAZELCAST_END_TAG;
         buildConfig(xml, null);
     }
@@ -230,7 +230,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
 
         String xml = ""
                 + "<non-hazelcast>\n"
-                + "  <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "  <import resource=\"file:///" + file.getAbsolutePath() + "\">\n"
                 + "</non-hazelcast>";
 
         Config config = buildConfig(xml, null);
@@ -245,15 +245,15 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         String networkConfig = HAZELCAST_START_TAG
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"false\"/>\n"
-                + "            <tcp-ip enabled=\"true\"/>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "            <tcp-ip enabled=\"true\">\n"
                 + "        </join>\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\">\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml, null);
@@ -281,7 +281,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         writeStringToStreamAndClose(os, mapConfig);
 
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\">\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml, null);
@@ -313,7 +313,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         writeStringToStreamAndClose(os, mapConfig);
 
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\">\n"
                 + "    <map name=\"mymap\">\n"
                 + "       <time-to-live-seconds>10</time-to-live-seconds>"
                 + "</map>\n"
@@ -355,7 +355,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         writeStringToStreamAndClose(os, mapConfig);
 
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + file.getAbsolutePath() + "\">\n"
                 + "    <map name=\"mapInMain\">\n"
                 + "       <backup-count>2</backup-count>"
                 + "       <time-to-live-seconds>5</time-to-live-seconds>"
@@ -382,7 +382,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     @Test
     public void testImportGroupConfigFromClassPath() {
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"classpath:test-hazelcast.xml\"/>\n"
+                + "    <import resource=\"classpath:test-hazelcast.xml\">\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, null);
         GroupConfig groupConfig = config.getGroupConfig();
@@ -413,7 +413,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "                <property name='secretKeyAlgorithm'>DES</property>\n"
                 + "            </properties>\n"
                 + "        </replacer>\n"
-                + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
+                + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'>\n"
                 + "    </config-replacers>\n"
                 + "    <group>\n"
                 + "        <name>${java.version} $ID{dev}</name>\n"
@@ -430,7 +430,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
     public void testMissingReplacement() throws Exception {
         String xml = HAZELCAST_START_TAG
                 + "    <config-replacers>\n"
-                + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'/>\n"
+                + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'>\n"
                 + "    </config-replacers>\n"
                 + "    <group>\n"
                 + "        <name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</name>\n"
@@ -459,7 +459,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "        <replacer class-name='" + TestReplacer.class.getName() + "'>\n"
                 + "            <properties>\n"
                 + "                <property name='p1'>a property</property>\n"
-                + "                <property name='p2'/>\n"
+                + "                <property name='p2'>\n"
                 + "                <property name='p3'>another property</property>\n"
                 + "                <property name='p4'>&lt;test/&gt;</property>\n"
                 + "            </properties>\n"
@@ -470,7 +470,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
                 + "    </group>\n"
                 + HAZELCAST_END_TAG;
         GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
-        assertEquals("a property  another property <test/> $T{p5}", groupConfig.getName());
+        assertEquals("a property  another property <test> $T{p5}", groupConfig.getName());
     }
 
     @Override
@@ -514,7 +514,7 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_START_TAG
-                + "    <import resource=\"file:///" + "${file}" + "\"/>\n"
+                + "    <import resource=\"file:///" + "${file}" + "\">\n"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml, "file", file.getAbsolutePath());
         assertEquals(config.getProperty("prop1"), "value1");

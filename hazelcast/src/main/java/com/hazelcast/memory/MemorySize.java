@@ -106,9 +106,9 @@ public final class MemorySize {
      * <li>'m' or 'M' for 'mega',</li>
      * <li>'g' or 'G' for 'giga'.</li>
      * </ul>
-     * <p/>
+     * <p>
      * Default unit is bytes.
-     * <p/>
+     * <p>
      * Examples:
      * 12345, 12345m, 12345K, 123456G
      */
@@ -124,9 +124,9 @@ public final class MemorySize {
      * <li>'m' or 'M' for 'mega',</li>
      * <li>'g' or 'G' for 'giga'.</li>
      * </ul>
-     * <p/>
+     * <p>
      * Uses default unit if value does not contain unit information.
-     * <p/>
+     * <p>
      * Examples:
      * 12345, 12345m, 12345K, 123456G
      */

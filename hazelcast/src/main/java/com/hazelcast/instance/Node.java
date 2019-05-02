@@ -649,7 +649,7 @@ public class Node {
      * Resets the internal cluster-state of the Node to be able to make it ready to join a new cluster.
      * After this method is called,
      * a new join process can be triggered by calling {@link #join()}.
-     * <p/>
+     * <p>
      * This method is called during merge process after a split-brain is detected.
      */
     public void reset() {

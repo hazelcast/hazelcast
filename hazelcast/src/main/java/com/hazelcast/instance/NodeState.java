@@ -56,7 +56,7 @@ public enum NodeState {
      * {@link Cluster#changeClusterState(ClusterState)}
      * </li>
      * </ul>
-     * <p/>
+     * <p>
      * In {@code PASSIVE} state, all operations will be rejected except operations marked as
      * {@link ReadonlyOperation}, join operations of some members that are explained in
      * {@link ClusterState}, replication / migration operations and heartbeat operations.

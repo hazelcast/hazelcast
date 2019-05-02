@@ -22,7 +22,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 
 /**
- * Version comparator that disregards patch version, comparing versions on their major & minor versions only.
+ * Version comparator that disregards patch version, comparing versions on their major &amp; minor versions only.
  */
 @SerializableByConvention
 @SuppressWarnings("checkstyle:magicnumber")

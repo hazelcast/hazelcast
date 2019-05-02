@@ -43,7 +43,7 @@ import java.util.Collection;
  * the operation fails with {@link CannotCreateRaftGroupException}.
  * This exception will be handled by {@link RaftInvocationManager} and another
  * attempt will be made with a new member list.
- * <p/>
+ * <p>
  * This operation is committed to the Metadata group.
  */
 public class CreateRaftGroupOp extends MetadataRaftGroupOp implements IndeterminateOperationStateAware,

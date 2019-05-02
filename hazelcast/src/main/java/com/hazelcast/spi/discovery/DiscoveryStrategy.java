@@ -25,15 +25,15 @@ import java.util.Map;
  * nodes based on whatever environment is used to run the Hazelcast cloud. The
  * internal implementation is completely vendor specific and might use external Java
  * libraries to query APIs or send requests to a external REST service.
- * <p/>
+ * <p>
  * <tt>DiscoveryStrategies</tt> are also free to define any kind of properties that might
  * be necessary to discover eligible nodes based on configured attributes, tags or any
  * other kind of metadata.
- * <p/>
+ * <p>
  * Using the simple lifecycle management strategies like multicast discovery is able to
  * register and destroy sockets based on Hazelcast’s lifecycle. Deactivated services will
  * also never be started.
- * <p/>
+ * <p>
  * <b>Attention:</b> Instead of implementing this interface directly, implementors should consider
  * using the abstract class {@link AbstractDiscoveryStrategy} instead for easier upgradeability
  * while this interface evolves.
@@ -79,11 +79,11 @@ public interface DiscoveryStrategy {
      * Returns a map with discovered metadata provided by the runtime environment. Those information
      * may include, but are not limited, to location information like datacenter, rack, host or additional
      * tags to be used for custom purpose.
-     * <p/>
+     * <p>
      * Information discovered from this method are shaded into the {@link com.hazelcast.core.Member}s
      * attributes. Existing attributes will not be overridden, that way local attribute configuration
      * overrides provided metadata.
-     * <p/>
+     * <p>
      * The default implementation provides an empty map with no further metadata configured. Returning
      * <tt>null</tt> is not permitted and will most probably result in an {@link NullPointerException}
      * inside the cluster system.

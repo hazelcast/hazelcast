@@ -89,7 +89,7 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Evaluates the invocation of an {@link Operation}.
- * <p/>
+ * <p>
  * Using the {@link InvocationFuture}, one can wait for the completion of an invocation.
  * @param <T> Target type of the Invocation
  */

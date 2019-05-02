@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains operations for the com.hazelcast.cluster.impl package.<br/>
+ * <p>This package contains operations for the com.hazelcast.cluster.impl package.<br>
  */
 package com.hazelcast.internal.cluster.impl.operations;
