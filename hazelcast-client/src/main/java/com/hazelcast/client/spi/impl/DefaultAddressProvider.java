@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.nio.Address;
 
 import java.util.List;
 
@@ -50,5 +51,10 @@ public class DefaultAddressProvider implements AddressProvider {
         }
 
         return addresses;
+    }
+
+    @Override
+    public Address translate(Address address) {
+        return address;
     }
 }

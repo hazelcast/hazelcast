@@ -17,14 +17,27 @@
 package com.hazelcast.client.connection;
 
 
+import com.hazelcast.nio.Address;
+
 /**
- * Provides initial addresses for client to find and connect to a node
+ * Provides initial addresses for client to find and connect to a node &
+ * Translates given address if necessary when connecting a service
  */
 public interface AddressProvider {
 
     /**
      * @return The possible member addresses to connect to.
+     * @throws Exception when a remote service can not provide addressee
      */
-    Addresses loadAddresses();
+    Addresses loadAddresses() throws Exception;
 
+    /**
+     * Translates the given address to another address specific to
+     * network or service
+     *
+     * @param address to be translated
+     * @return new address if given address is known, otherwise return null
+     * @throws Exception when a remote service can not provide addressee
+     */
+    Address translate(Address address) throws Exception;
 }

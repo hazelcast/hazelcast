@@ -35,6 +35,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -270,6 +271,11 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                     }
                 }
                 return AddressHelper.getSocketAddresses("127.0.0.1");
+            }
+
+            @Override
+            public Address translate(Address address) {
+                return address;
             }
         };
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);

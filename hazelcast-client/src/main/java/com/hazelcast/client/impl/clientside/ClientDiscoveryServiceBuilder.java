@@ -24,29 +24,23 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.nio.DefaultCredentialsFactory;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
-import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
-import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
-import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
-import com.hazelcast.client.spi.impl.discovery.HazelcastCloudAddressProvider;
-import com.hazelcast.client.spi.impl.discovery.HazelcastCloudAddressTranslator;
 import com.hazelcast.client.spi.impl.discovery.HazelcastCloudDiscovery;
+import com.hazelcast.client.spi.impl.discovery.RemoteAddressProvider;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -56,12 +50,15 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.client.spi.properties.ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN;
 import static com.hazelcast.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 class ClientDiscoveryServiceBuilder {
 
@@ -90,63 +87,22 @@ class ClientDiscoveryServiceBuilder {
             SocketInterceptor interceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
             ICredentialsFactory credentialsFactory = initCredentialsFactory(config);
             DiscoveryService discoveryService = initDiscoveryService(config);
-            AddressProvider provider = createAddressProvider(config, discoveryService, externalAddressProvider);
-            AddressTranslator translator = createAddressTranslator(config, discoveryService);
+            AddressProvider provider;
+            if (externalAddressProvider != null) {
+                provider = externalAddressProvider;
+            } else {
+                provider = createAddressProvider(config, discoveryService);
+            }
+
             final SSLConfig sslConfig = networkConfig.getSSLConfig();
             final SocketOptions socketOptions = networkConfig.getSocketOptions();
-            contexts.add(new CandidateClusterContext(provider, translator, discoveryService,
-                    credentialsFactory, interceptor, new ChannelInitializerProvider() {
-                @Override
-                public ChannelInitializer provide(EndpointQualifier qualifier) {
-                    return clientExtension.createChannelInitializer(sslConfig, socketOptions);
-                }
-            }));
+            contexts.add(new CandidateClusterContext(provider, discoveryService, credentialsFactory, interceptor,
+                    qualifier -> clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
         return new ClientDiscoveryService(configsTryCount, contexts);
     }
 
-    private AddressProvider createAddressProvider(ClientConfig clientConfig,
-                                                  DiscoveryService discoveryService, AddressProvider externalAddressProvider) {
-        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-
-
-        if (externalAddressProvider != null) {
-            return externalAddressProvider;
-        }
-
-        if (discoveryService != null) {
-            return new DiscoveryAddressProvider(discoveryService);
-        }
-
-        HazelcastCloudAddressProvider cloudAddressProvider = initCloudAddressProvider(clientConfig);
-        if (cloudAddressProvider != null) {
-            return cloudAddressProvider;
-        }
-
-        return new DefaultAddressProvider(networkConfig);
-    }
-
-    private HazelcastCloudAddressProvider initCloudAddressProvider(ClientConfig clientConfig) {
-        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-        ClientCloudConfig cloudConfig = networkConfig.getCloudConfig();
-
-        if (cloudConfig.isEnabled()) {
-            String discoveryToken = cloudConfig.getDiscoveryToken();
-            String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
-            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
-            return new HazelcastCloudAddressProvider(urlEndpoint, getConnectionTimeoutMillis(networkConfig), loggingService);
-        }
-
-        String cloudToken = properties.getString(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN);
-        if (cloudToken != null) {
-            String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
-            String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, cloudToken);
-            return new HazelcastCloudAddressProvider(urlEndpoint, getConnectionTimeoutMillis(networkConfig), loggingService);
-        }
-        return null;
-    }
-
-    private AddressTranslator createAddressTranslator(ClientConfig clientConfig, DiscoveryService discoveryService) {
+    private AddressProvider createAddressProvider(ClientConfig clientConfig, DiscoveryService discoveryService) {
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         ClientCloudConfig cloudConfig = networkConfig.getCloudConfig();
 
@@ -170,7 +126,7 @@ class ClientDiscoveryServiceBuilder {
                 kubernetesDiscoveryEnabled, eurekaDiscoveryEnabled, discoverySpiEnabled, hazelcastCloudEnabled);
 
         if (discoveryService != null) {
-            return new DiscoveryAddressTranslator(discoveryService, usePublicAddress(clientConfig));
+            return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         } else if (hazelcastCloudEnabled) {
             String discoveryToken;
             if (cloudConfig.isEnabled()) {
@@ -180,10 +136,22 @@ class ClientDiscoveryServiceBuilder {
             }
             String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
-            return new HazelcastCloudAddressTranslator(urlEndpoint, getConnectionTimeoutMillis(networkConfig), loggingService);
+            int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
+            HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
+            return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
         }
 
-        return new DefaultAddressTranslator();
+        return new DefaultAddressProvider(networkConfig);
+    }
+
+    private Map<Address, Address> discoverAddresses(DiscoveryService discoveryService) {
+        Iterable<DiscoveryNode> discoveredNodes = checkNotNull(discoveryService.discoverNodes(),
+                "Discovered nodes cannot be null!");
+        Map<Address, Address> privateToPublic = new HashMap<>();
+        for (DiscoveryNode discoveryNode : discoveredNodes) {
+            privateToPublic.put(discoveryNode.getPrivateAddress(), discoveryNode.getPublicAddress());
+        }
+        return privateToPublic;
     }
 
     private boolean discoverySpiEnabled(ClientNetworkConfig networkConfig) {
