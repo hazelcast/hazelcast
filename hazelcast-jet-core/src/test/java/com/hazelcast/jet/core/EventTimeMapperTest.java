@@ -42,7 +42,7 @@ public class EventTimeMapperTest {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
                 eventTimePolicy(Long::longValue, limitingLag(LAG), 1, 0, 5)
         );
-        eventTimeMapper.increasePartitionCount(0L, 2);
+        eventTimeMapper.addPartitions(0L, 2);
 
         // all partitions are active initially
         assertTraverser(eventTimeMapper.flatMapEvent(ns(1), null, 0, NO_NATIVE_TIME));
@@ -52,7 +52,7 @@ public class EventTimeMapperTest {
         assertTraverser(eventTimeMapper.flatMapEvent(ns(5), null, 0, NO_NATIVE_TIME));
         // now we observe event on partition0, watermark should be immediately forwarded because the other queue is idle
         assertTraverser(eventTimeMapper.flatMapEvent(ns(5), 100L, 0, NO_NATIVE_TIME), wm(100 - LAG), 100L);
-        // now we'll have a event on the other partition. No WM is emitted because it's older than already emitted one
+        // observe another event on the same partition. No WM is emitted because the event is older
         assertTraverser(eventTimeMapper.flatMapEvent(ns(5), 90L, 0, NO_NATIVE_TIME), 90L);
         assertTraverser(eventTimeMapper.flatMapEvent(ns(5), 101L, 0, NO_NATIVE_TIME), wm(101 - LAG), 101L);
     }
@@ -62,7 +62,7 @@ public class EventTimeMapperTest {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
                 eventTimePolicy(Long::longValue, limitingLag(LAG), 1, 0, 0)
         );
-        eventTimeMapper.increasePartitionCount(2);
+        eventTimeMapper.addPartitions(2);
 
         // all partitions are active initially
         assertTraverser(eventTimeMapper.flatMapIdle());
@@ -89,7 +89,7 @@ public class EventTimeMapperTest {
         assertTraverser(eventTimeMapper.flatMapIdle());
 
         // after adding a partition and observing an event, WM should be emitted
-        eventTimeMapper.increasePartitionCount(1);
+        eventTimeMapper.addPartitions(1);
         assertTraverser(eventTimeMapper.flatMapIdle()); // can't send WM here, we don't know what its value would be
         assertTraverser(eventTimeMapper.flatMapEvent(10L, 0, NO_NATIVE_TIME), wm(10 - LAG), 10L);
     }
@@ -99,7 +99,7 @@ public class EventTimeMapperTest {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
                 eventTimePolicy(Long::longValue, limitingLag(LAG), 1, 0, 10)
         );
-        eventTimeMapper.increasePartitionCount(1);
+        eventTimeMapper.addPartitions(1);
         assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME), wm(10 - LAG), 10L);
 
         // When - become idle
@@ -116,7 +116,7 @@ public class EventTimeMapperTest {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
                 eventTimePolicy(Long::longValue, limitingLag(LAG), 1, 0, 10)
         );
-        eventTimeMapper.increasePartitionCount(ns(0), 2);
+        eventTimeMapper.addPartitions(ns(0), 2);
 
         // When
         assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME), 10L);
@@ -132,7 +132,7 @@ public class EventTimeMapperTest {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
                 eventTimePolicy(null, limitingLag(LAG), 1, 0, 10)
         );
-        eventTimeMapper.increasePartitionCount(ns(0), 1);
+        eventTimeMapper.addPartitions(ns(0), 1);
 
         exception.expectMessage("Neither timestampFn nor nativeEventTime specified");
         eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME);
@@ -143,7 +143,7 @@ public class EventTimeMapperTest {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
                 eventTimePolicy(null, limitingLag(LAG), 1, 0, 5)
         );
-        eventTimeMapper.increasePartitionCount(0L, 1);
+        eventTimeMapper.addPartitions(0L, 1);
 
         assertTraverser(eventTimeMapper.flatMapEvent(ns(1), 10L, 0, 11L), wm(11L - LAG), 10L);
         assertTraverser(eventTimeMapper.flatMapEvent(ns(1), 11L, 0, 12L), wm(12L - LAG), 11L);
@@ -154,7 +154,7 @@ public class EventTimeMapperTest {
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(
                 eventTimePolicy(Long::longValue, limitingLag(LAG), 0, 0, 5)
         );
-        eventTimeMapper.increasePartitionCount(0L, 1);
+        eventTimeMapper.addPartitions(0L, 1);
 
         assertTraverser(eventTimeMapper.flatMapEvent(ns(1), -10L, 0, 11L), -10L);
         assertTraverser(eventTimeMapper.flatMapEvent(ns(1), 10L, 0, 12L), 10L);
@@ -164,7 +164,7 @@ public class EventTimeMapperTest {
     public void when_restoredState_then_wmDoesNotGoBack() {
         EventTimePolicy<Long> eventTimePolicy = eventTimePolicy(Long::longValue, limitingLag(0), 1, 0, 5);
         EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
-        eventTimeMapper.increasePartitionCount(0L, 1);
+        eventTimeMapper.addPartitions(0L, 1);
 
         // When
         eventTimeMapper.restoreWatermark(0, 10);
@@ -173,6 +173,49 @@ public class EventTimeMapperTest {
         assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 9L, 0, NO_NATIVE_TIME), 9L);
         assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME), 10L);
         assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 11L, 0, NO_NATIVE_TIME), wm(11), 11L);
+    }
+
+    @Test
+    public void when_twoActiveQueues_theLaggingOneRemoved_then_wmForwarded() {
+        EventTimePolicy<Long> eventTimePolicy = eventTimePolicy(Long::longValue, limitingLag(0), 1, 0, 5);
+        EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+        eventTimeMapper.addPartitions(0L, 2);
+
+        // When
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME), 10L);
+
+        // Then
+        assertTraverser(eventTimeMapper.removePartition(ns(0), 1), wm(10));
+    }
+
+    @Test
+    public void when_twoActiveQueues_theAheadOneRemoved_then_noWmForwarded() {
+        EventTimePolicy<Long> eventTimePolicy = eventTimePolicy(Long::longValue, limitingLag(0), 1, 0, 5);
+        EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+        eventTimeMapper.addPartitions(0L, 2);
+
+        // When
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME), 10L);
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 11L, 1, NO_NATIVE_TIME), wm(10), 11L);
+
+        // Then
+        assertTraverser(eventTimeMapper.removePartition(ns(0), 1));
+    }
+
+    @Test
+    public void when_threePartitions_laggingOneRemoved_secondLaggingOneIdle_then_noWmForwarded() {
+        EventTimePolicy<Long> eventTimePolicy = eventTimePolicy(Long::longValue, limitingLag(0), 1, 0, 5);
+        EventTimeMapper<Long> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+        eventTimeMapper.addPartitions(0L, 3);
+
+        // When
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(0), 10L, 0, NO_NATIVE_TIME), 10L);
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(1), 11L, 1, NO_NATIVE_TIME), 11L);
+        assertTraverser(eventTimeMapper.flatMapEvent(ns(1), 12L, 2, NO_NATIVE_TIME), wm(10), 12L);
+
+        // Then
+        // in this call partition0 will turn idle and partition1 is be removed -> wm(12) is forwarded
+        assertTraverser(eventTimeMapper.removePartition(ns(5), 1), wm(12));
     }
 
     private <T> void assertTraverser(Traverser<T> actual, T ... expected) {

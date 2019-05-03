@@ -135,7 +135,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             for (TopicPartition tp : newAssignments) {
                 currentAssignment.put(tp, currentAssignment.size());
             }
-            eventTimeMapper.increasePartitionCount(currentAssignment.size());
+            eventTimeMapper.addPartitions(newAssignments.size());
             consumer.assign(currentAssignment.keySet());
             if (seekToBeginning) {
                 // for newly detected partitions, we should always seek to the beginning

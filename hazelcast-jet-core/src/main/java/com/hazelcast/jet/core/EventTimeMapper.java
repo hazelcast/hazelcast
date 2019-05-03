@@ -23,12 +23,14 @@ import com.hazelcast.jet.pipeline.Sources;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -44,7 +46,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <em>partition1</em> first and emit its recent event, it will advance the
  * watermark. When we poll <em>partition2</em> later on, its event will be
  * behind the watermark and can be dropped as late. This utility tracks the
- * event timestamps for each partition individually and allows the
+ * event timestamps for each source partition individually and allows the
  * processor to emit the watermark that is correct with respect to all the
  * partitions.
  *
@@ -72,7 +74,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * watermarks more frequently than the given {@link
  * EventTimePolicy#watermarkThrottlingFrameSize()} is wasteful since they
  * are broadcast to all processors. The mapper ensures that watermarks are
- * emitted as seldom as possible.
+ * emitted according to the throttling frame size.
  *
  * <h3>Usage</h3>
  *
@@ -87,7 +89,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *         if (records.isEmpty()) {
  *             traverser = eventTimeMapper.flatMapIdle();
  *         } else {
- *             traverser = traverserIterable(records)
+ *             traverser = traverseIterable(records)
  *                 .flatMap(event -> eventTimeMapper.flatMapEvent(
  *                      event, event.getPartition()));
  *         }
@@ -105,8 +107,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *
  * Other methods:
  * <ul><li>
- *     Call {@link #increasePartitionCount} to set your partition count
- *     initially or whenever the count increases.
+ *     Call {@link #addPartitions} and {@link #removePartition} to change your
+ *     partition count initially or whenever the count changes.
  * <li>
  *     If you support state snapshots, save the value returned by {@link
  *     #getWatermark} for all partitions to the snapshot. When restoring the
@@ -117,10 +119,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *     should also be wrapped using {@link BroadcastKey#broadcastKey
  *     broadcastKey()}, because the external partitions don't match Hazelcast
  *     partitions. This way, all processor instances will see all keys and they
- *     can restore partition they handle and ignore others.
+ *     can restore the partitions they handle and ignore others.
  * </ul>
  *
- * @param <T> event type
+ * @param <T> the event type
  */
 public class EventTimeMapper<T> {
 
@@ -151,8 +153,8 @@ public class EventTimeMapper<T> {
     private boolean allAreIdle;
 
     /**
-     * The partition count is initially set to 0, call
-     * {@link #increasePartitionCount} to set it.
+     * The partition count is initially set to 0, call {@link #addPartitions}
+     * to add partitions.
      *
      * @param eventTimePolicy event time policy as passed in {@link
      *                        Sources#streamFromProcessorWithWatermarks}
@@ -261,26 +263,22 @@ public class EventTimeMapper<T> {
     }
 
     /**
-     * Changes the partition count. The new partition count must be higher or
-     * equal to the current count.
+     * Adds {@code addedCount} partitions. Added partitions will be initially
+     * considered <em>active</em> and having watermark value equal to the last
+     * emitted watermark. Their indices will follow current highest index.
      * <p>
-     * You can call this method at any moment. Added partitions will be
-     * considered <em>active</em> initially.
+     * You can call this method whenever new partitions are detected.
      *
-     * @param newPartitionCount partition count, must be higher than the
-     *                          current count
+     * @param addedCount number of added partitions, must be >= 0
      */
-    public void increasePartitionCount(int newPartitionCount) {
-        increasePartitionCount(System.nanoTime(), newPartitionCount);
+    public void addPartitions(int addedCount) {
+        addPartitions(System.nanoTime(), addedCount);
     }
 
     // package-visible for tests
-    void increasePartitionCount(long now, int newPartitionCount) {
+    void addPartitions(long now, int addedCount) {
         int oldPartitionCount = wmPolicies.length;
-        if (newPartitionCount < oldPartitionCount) {
-            throw new IllegalArgumentException("partition count must increase. Old count=" + oldPartitionCount
-                    + ", new count=" + newPartitionCount);
-        }
+        int newPartitionCount = oldPartitionCount + checkNotNegative(addedCount, "addedCount must be >= 0");
 
         wmPolicies = Arrays.copyOf(wmPolicies, newPartitionCount);
         watermarks = Arrays.copyOf(watermarks, newPartitionCount);
@@ -291,6 +289,50 @@ public class EventTimeMapper<T> {
             watermarks[i] = Long.MIN_VALUE;
             markIdleAt[i] = now + idleTimeoutNanos;
         }
+    }
+
+    /**
+     * Removes a partition that will no longer have events. If we were waiting
+     * for a watermark from it, the returned traverser might contain a
+     * watermark to emit.
+     * <p>
+     * Note that the indexes of partitions with index larger than the given
+     * {@code partitionIndex} will be decremented by 1.
+     *
+     * @param partitionIndex the index of the removed partition
+     */
+    public Traverser<Object> removePartition(int partitionIndex) {
+        return removePartition(System.nanoTime(), partitionIndex);
+    }
+
+    // package-visible for tests
+    Traverser<Object> removePartition(long now, int partitionIndex) {
+        wmPolicies = arrayRemove(wmPolicies, partitionIndex);
+        watermarks = arrayRemove(watermarks, partitionIndex);
+        markIdleAt = arrayRemove(markIdleAt, partitionIndex);
+        handleNoEventInternal(now);
+        return traverser;
+    }
+
+    private static long[] arrayRemove(long[] array, int partitionIndex) {
+        long[] res = new long[array.length - 1];
+        System.arraycopy(array, 0, res, 0, partitionIndex);
+        System.arraycopy(array, partitionIndex + 1, res, partitionIndex, res.length - partitionIndex);
+        return res;
+    }
+
+    private static <T> T[] arrayRemove(T[] array, int partitionIndex) {
+        T[] res = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length - 1);
+        System.arraycopy(array, 0, res, 0, partitionIndex);
+        System.arraycopy(array, partitionIndex + 1, res, partitionIndex, res.length - partitionIndex);
+        return res;
+    }
+
+    /**
+     * Returns the current partition count.
+     */
+    public int partitionCount() {
+        return wmPolicies.length;
     }
 
     /**

@@ -152,7 +152,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         // from one partition before the rest and the partition advancing ahead of
         // others. This might be changed in the future and/or made optional.
         assert partitionIds.length > 0 : "no partitions assigned";
-        eventTimeMapper.increasePartitionCount(1);
+        eventTimeMapper.addPartitions(1);
     }
 
     @Override

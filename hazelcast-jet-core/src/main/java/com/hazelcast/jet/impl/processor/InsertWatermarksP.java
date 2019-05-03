@@ -44,7 +44,7 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
 
     public InsertWatermarksP(EventTimePolicy<? super T> eventTimePolicy) {
         eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
-        eventTimeMapper.increasePartitionCount(1);
+        eventTimeMapper.addPartitions(1);
     }
 
     @Override

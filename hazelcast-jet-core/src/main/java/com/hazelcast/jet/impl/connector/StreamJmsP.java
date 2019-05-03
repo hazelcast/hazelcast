@@ -77,7 +77,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
         this.projectionFn = projectionFn;
 
         eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
-        eventTimeMapper.increasePartitionCount(1);
+        eventTimeMapper.addPartitions(1);
     }
 
     /**

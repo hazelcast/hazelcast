@@ -74,7 +74,7 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
         this.buffer = buffer;
         if (eventTimePolicy != null) {
             eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
-            eventTimeMapper.increasePartitionCount(1);
+            eventTimeMapper.addPartitions(1);
         } else {
             eventTimeMapper = null;
         }
