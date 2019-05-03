@@ -607,7 +607,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         MembershipManager membershipManager = clusterService.getMembershipManager();
 
         MemberInfo newMemberInfo = new MemberInfo(new Address("127.0.0.1", 6000), newUnsecureUuidString(),
-                Collections.<String, Object>emptyMap(), node.getVersion());
+                Collections.emptyMap(), node.getVersion());
         MembersView membersView =
                 MembersView.cloneAdding(membershipManager.getMembersView(), singleton(newMemberInfo));
 

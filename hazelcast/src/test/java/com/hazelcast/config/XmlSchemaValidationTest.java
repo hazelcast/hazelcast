@@ -148,7 +148,7 @@ public class XmlSchemaValidationTest {
         expectDuplicateElementError("member-attributes");
         String memberAttConfig = ""
                 + "    <member-attributes>\n"
-                + "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n"
+                + "        <attribute name=\"attribute\">1234.5678</attribute>\n"
                 + "    </member-attributes>\n";
         buildConfig(HAZELCAST_START_TAG + memberAttConfig + memberAttConfig + HAZELCAST_END_TAG);
     }

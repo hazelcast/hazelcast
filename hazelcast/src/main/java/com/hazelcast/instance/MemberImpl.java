@@ -78,7 +78,7 @@ public final class MemberImpl
     }
 
     private MemberImpl(Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
-                       String uuid, Map<String, Object> attributes, boolean liteMember, int memberListJoinVersion,
+                       String uuid, Map<String, String> attributes, boolean liteMember, int memberListJoinVersion,
                        HazelcastInstanceImpl instance) {
         super(addresses, version, uuid, attributes, liteMember);
         this.memberListJoinVersion = memberListJoinVersion;
@@ -106,83 +106,8 @@ public final class MemberImpl
     }
 
     @Override
-    public String getStringAttribute(String key) {
-        return (String) getAttribute(key);
-    }
-
-    @Override
-    public void setStringAttribute(String key, String value) {
-        setAttribute(key, value);
-    }
-
-    @Override
-    public Boolean getBooleanAttribute(String key) {
-        return (Boolean) getAttribute(key);
-    }
-
-    @Override
-    public void setBooleanAttribute(String key, boolean value) {
-        setAttribute(key, value);
-    }
-
-    @Override
-    public Byte getByteAttribute(String key) {
-        return (Byte) getAttribute(key);
-    }
-
-    @Override
-    public void setByteAttribute(String key, byte value) {
-        setAttribute(key, value);
-    }
-
-    @Override
-    public Short getShortAttribute(String key) {
-        return (Short) getAttribute(key);
-    }
-
-    @Override
-    public void setShortAttribute(String key, short value) {
-        setAttribute(key, value);
-    }
-
-    @Override
-    public Integer getIntAttribute(String key) {
-        return (Integer) getAttribute(key);
-    }
-
-    @Override
-    public void setIntAttribute(String key, int value) {
-        setAttribute(key, value);
-    }
-
-    @Override
-    public Long getLongAttribute(String key) {
-        return (Long) getAttribute(key);
-    }
-
-    @Override
-    public void setLongAttribute(String key, long value) {
-        setAttribute(key, value);
-    }
-
-    @Override
-    public Float getFloatAttribute(String key) {
-        return (Float) getAttribute(key);
-    }
-
-    @Override
-    public void setFloatAttribute(String key, float value) {
-        setAttribute(key, value);
-    }
-
-    @Override
-    public Double getDoubleAttribute(String key) {
-        return (Double) getAttribute(key);
-    }
-
-    @Override
-    public void setDoubleAttribute(String key, double value) {
-        setAttribute(key, value);
+    public String getAttribute(String key) {
+        return attributes.get(key);
     }
 
     @Override
@@ -215,7 +140,8 @@ public final class MemberImpl
         }
     }
 
-    private void setAttribute(String key, Object value) {
+    @Override
+    public void setAttribute(String key, String value) {
         ensureLocalMember();
         isNotNull(key, "key");
         isNotNull(value, "value");
@@ -259,9 +185,9 @@ public final class MemberImpl
 
         private final MemberAttributeOperationType operationType;
         private final String key;
-        private final Object value;
+        private final String value;
 
-        MemberAttributeOperationSupplier(MemberAttributeOperationType operationType, String key, Object value) {
+        MemberAttributeOperationSupplier(MemberAttributeOperationType operationType, String key, String value) {
             this.operationType = operationType;
             this.key = key;
             this.value = value;
@@ -279,7 +205,7 @@ public final class MemberImpl
     public static class Builder {
         private final Map<EndpointQualifier, Address> addressMap;
 
-        private Map<String, Object> attributes;
+        private Map<String, String> attributes;
         private boolean localMember;
         private String uuid;
         private boolean liteMember;
@@ -313,7 +239,7 @@ public final class MemberImpl
             return this;
         }
 
-        public Builder attributes(Map<String, Object> attributes) {
+        public Builder attributes(Map<String, String> attributes) {
             this.attributes = attributes;
             return this;
         }

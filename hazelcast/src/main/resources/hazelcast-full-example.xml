@@ -2389,8 +2389,8 @@
         name, type and value.
     -->
     <member-attributes>
-        <attribute name="CPU_CORE_COUNT" type="int">4</attribute>
-        <attribute name="CPU_CORE_FREQ" type="int">1033</attribute>
+        <attribute name="CPU_CORE_COUNT">4</attribute>
+        <attribute name="CPU_CORE_FREQ">1033</attribute>
     </member-attributes>
     <!--
         ===== HAZELCAST QUORUM CONFIGURATION =====

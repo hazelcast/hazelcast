@@ -24,7 +24,7 @@
         http://www.hazelcast.com/schema/sample
         hazelcast-sample-service.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -757,13 +757,6 @@
 
             <hz:member-attributes>
                 <hz:attribute name="cluster.group.name">spring-group</hz:attribute>
-                <hz:attribute name="cluster.port.int" type="int">5700</hz:attribute>
-                <hz:attribute name="cluster.port.long" type="long">5700</hz:attribute>
-                <hz:attribute name="cluster.port.short" type="short">5700</hz:attribute>
-                <hz:attribute name="attribute.byte" type="byte">111</hz:attribute>
-                <hz:attribute name="attribute.boolean" type="boolean">true</hz:attribute>
-                <hz:attribute name="attribute.double" type="double">0.0d</hz:attribute>
-                <hz:attribute name="attribute.float" type="float">1234.5678</hz:attribute>
             </hz:member-attributes>
 
             <hz:services>

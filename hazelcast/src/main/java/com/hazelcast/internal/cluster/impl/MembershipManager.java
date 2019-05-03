@@ -370,7 +370,7 @@ public class MembershipManager {
         return member;
     }
 
-    private MemberImpl createMember(MemberInfo memberInfo, Map<String, Object> attributes) {
+    private MemberImpl createMember(MemberInfo memberInfo, Map<String, String> attributes) {
         Address address = memberInfo.getAddress();
         Address thisAddress = node.getThisAddress();
         String ipV6ScopeId = thisAddress.getScopeId();

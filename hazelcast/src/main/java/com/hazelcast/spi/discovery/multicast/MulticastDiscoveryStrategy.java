@@ -33,7 +33,6 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -133,11 +132,6 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
     @Override
     public PartitionGroupStrategy getPartitionGroupStrategy() {
         return null;
-    }
-
-    @Override
-    public Map<String, Object> discoverLocalMetadata() {
-        return new HashMap<String, Object>();
     }
 
     /**

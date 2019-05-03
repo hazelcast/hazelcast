@@ -2653,26 +2653,7 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     void handleMemberAttributesNode(Node n, String attributeName, String value) {
-        String attributeType = getTextContent(n.getAttributes().getNamedItem("type"));
-        if ("string".equals(attributeType)) {
-            config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
-        } else if ("boolean".equals(attributeType)) {
-            config.getMemberAttributeConfig().setBooleanAttribute(attributeName, parseBoolean(value));
-        } else if ("byte".equals(attributeType)) {
-            config.getMemberAttributeConfig().setByteAttribute(attributeName, Byte.parseByte(value));
-        } else if ("double".equals(attributeType)) {
-            config.getMemberAttributeConfig().setDoubleAttribute(attributeName, Double.parseDouble(value));
-        } else if ("float".equals(attributeType)) {
-            config.getMemberAttributeConfig().setFloatAttribute(attributeName, Float.parseFloat(value));
-        } else if ("int".equals(attributeType)) {
-            config.getMemberAttributeConfig().setIntAttribute(attributeName, parseInt(value));
-        } else if ("long".equals(attributeType)) {
-            config.getMemberAttributeConfig().setLongAttribute(attributeName, parseLong(value));
-        } else if ("short".equals(attributeType)) {
-            config.getMemberAttributeConfig().setShortAttribute(attributeName, Short.parseShort(value));
-        } else {
-            config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
-        }
+        config.getMemberAttributeConfig().setAttribute(attributeName, value);
     }
 
     private void handleCredentialsFactory(Node node) {

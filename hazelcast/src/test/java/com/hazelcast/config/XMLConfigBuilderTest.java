@@ -3006,7 +3006,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         } finally {
             IOUtil.closeResource(xmlResource);
         }
-        Set<PermissionType> permTypes = new HashSet<PermissionType>(Arrays.asList(PermissionType.values()));
+        Set<PermissionType> permTypes = new HashSet<>(Arrays.asList(PermissionType.values()));
         for (PermissionConfig pc : config.getSecurityConfig().getClientPermissionConfigs()) {
             permTypes.remove(pc.getType());
         }
@@ -3187,14 +3187,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testHandleMemberAttributes() {
         String xml = HAZELCAST_START_TAG
                 + "<member-attributes>\n"
-                + "     <attribute name=\"IDENTIFIER\" type=\"string\">ID</attribute>\n"
+                + "     <attribute name=\"IDENTIFIER\">ID</attribute>\n"
                 + "</member-attributes>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
         assertNotNull(memberAttributeConfig);
-        assertEquals("ID", memberAttributeConfig.getStringAttribute("IDENTIFIER"));
+        assertEquals("ID", memberAttributeConfig.getAttribute("IDENTIFIER"));
     }
 
     @Override

@@ -45,7 +45,7 @@ public class PredefinedDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public Map<String, Object> discoverLocalMetadata() {
+    public Map<String, String> discoverLocalMetadata() {
         return strategy.discoverLocalMetadata();
     }
 

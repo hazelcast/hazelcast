@@ -44,7 +44,7 @@ public class DummyDiscoveryStrategy implements DiscoveryStrategy {
     }
 
     @Override
-    public Map<String, Object> discoverLocalMetadata() {
+    public Map<String, String> discoverLocalMetadata() {
         return Collections.emptyMap();
     }
 }

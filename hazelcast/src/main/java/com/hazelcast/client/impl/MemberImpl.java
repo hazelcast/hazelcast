@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.version.MemberVersion;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Map;
 
@@ -55,11 +54,11 @@ public final class MemberImpl extends AbstractMember implements Member {
         super(singletonMap(MEMBER, address), version, uuid, null, false);
     }
 
-    public MemberImpl(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
+    public MemberImpl(Address address, String uuid, Map<String, String> attributes, boolean liteMember) {
         super(singletonMap(MEMBER, address), MemberVersion.UNKNOWN, uuid, attributes, liteMember);
     }
 
-    public MemberImpl(Address address, MemberVersion version, String uuid, Map<String, Object> attributes, boolean liteMember) {
+    public MemberImpl(Address address, MemberVersion version, String uuid, Map<String, String> attributes, boolean liteMember) {
         super(singletonMap(MEMBER, address), version, uuid, attributes, liteMember);
     }
 
@@ -78,90 +77,7 @@ public final class MemberImpl extends AbstractMember implements Member {
     }
 
     @Override
-    public String getStringAttribute(String key) {
-        return (String) getAttribute(key);
-    }
-
-    @Override
-    public void setStringAttribute(String key, String value) {
-        throw notSupportedOnClient();
-    }
-
-    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "null means 'missing'")
-    @Override
-    public Boolean getBooleanAttribute(String key) {
-        Object attribute = getAttribute(key);
-        return attribute != null ? Boolean.valueOf(attribute.toString()) : null;
-    }
-
-    @Override
-    public void setBooleanAttribute(String key, boolean value) {
-        throw notSupportedOnClient();
-    }
-
-    @Override
-    public Byte getByteAttribute(String key) {
-        Object attribute = getAttribute(key);
-        return attribute != null ? Byte.valueOf(attribute.toString()) : null;
-    }
-
-    @Override
-    public void setByteAttribute(String key, byte value) {
-        throw notSupportedOnClient();
-    }
-
-    @Override
-    public Short getShortAttribute(String key) {
-        Object attribute = getAttribute(key);
-        return attribute != null ? Short.valueOf(attribute.toString()) : null;
-    }
-
-    @Override
-    public void setShortAttribute(String key, short value) {
-        throw notSupportedOnClient();
-    }
-
-    @Override
-    public Integer getIntAttribute(String key) {
-        Object attribute = getAttribute(key);
-        return attribute != null ? Integer.valueOf(attribute.toString()) : null;
-    }
-
-    @Override
-    public void setIntAttribute(String key, int value) {
-        throw notSupportedOnClient();
-    }
-
-    @Override
-    public Long getLongAttribute(String key) {
-        Object attribute = getAttribute(key);
-        return attribute != null ? Long.valueOf(attribute.toString()) : null;
-    }
-
-    @Override
-    public void setLongAttribute(String key, long value) {
-        throw notSupportedOnClient();
-    }
-
-    @Override
-    public Float getFloatAttribute(String key) {
-        Object attribute = getAttribute(key);
-        return attribute != null ? Float.valueOf(attribute.toString()) : null;
-    }
-
-    @Override
-    public void setFloatAttribute(String key, float value) {
-        throw notSupportedOnClient();
-    }
-
-    @Override
-    public Double getDoubleAttribute(String key) {
-        Object attribute = getAttribute(key);
-        return attribute != null ? Double.valueOf(attribute.toString()) : null;
-    }
-
-    @Override
-    public void setDoubleAttribute(String key, double value) {
+    public void setAttribute(String key, String value) {
         throw notSupportedOnClient();
     }
 

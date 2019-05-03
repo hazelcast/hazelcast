@@ -91,5 +91,5 @@ public interface DiscoveryStrategy {
      * @return a map of discovered metadata as provided by the runtime environment
      * @since 3.7
      */
-    Map<String, Object> discoverLocalMetadata();
+    Map<String, String> discoverLocalMetadata();
 }

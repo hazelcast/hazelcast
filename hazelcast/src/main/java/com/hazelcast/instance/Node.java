@@ -221,7 +221,7 @@ public class Node {
             boolean liteMember = config.isLiteMember();
             address = addressPicker.getPublicAddress(MEMBER);
             nodeExtension = nodeContext.createNodeExtension(this);
-            final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
+            final Map<String, String> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
             MemberImpl localMember = new MemberImpl.Builder(addressPicker.getPublicAddressMap())
                     .version(version)
                     .localMember(true)
@@ -586,26 +586,10 @@ public class Node {
 
     private void mergeEnvironmentProvidedMemberMetadata() {
         MemberImpl localMember = getLocalMember();
-        Map<String, Object> metadata = discoveryService.discoverLocalMetadata();
-        for (Map.Entry<String, Object> entry : metadata.entrySet()) {
+        Map<String, String> metadata = discoveryService.discoverLocalMetadata();
+        for (Map.Entry<String, String> entry : metadata.entrySet()) {
             Object value = entry.getValue();
-            if (value instanceof Byte) {
-                localMember.setByteAttribute(entry.getKey(), (Byte) value);
-            } else if (value instanceof Short) {
-                localMember.setShortAttribute(entry.getKey(), (Short) value);
-            } else if (value instanceof Integer) {
-                localMember.setIntAttribute(entry.getKey(), (Integer) value);
-            } else if (value instanceof Long) {
-                localMember.setLongAttribute(entry.getKey(), (Long) value);
-            } else if (value instanceof Float) {
-                localMember.setFloatAttribute(entry.getKey(), (Float) value);
-            } else if (value instanceof Double) {
-                localMember.setDoubleAttribute(entry.getKey(), (Double) value);
-            } else if (value instanceof Boolean) {
-                localMember.setBooleanAttribute(entry.getKey(), (Boolean) value);
-            } else {
-                localMember.setStringAttribute(entry.getKey(), value.toString());
-            }
+            localMember.setAttribute(entry.getKey(), value.toString());
         }
     }
 
@@ -913,8 +897,8 @@ public class Node {
         return buildInfo;
     }
 
-    private Map<String, Object> findMemberAttributes(MemberAttributeConfig attributeConfig) {
-        Map<String, Object> attributes = new HashMap<String, Object>(attributeConfig.getAttributes());
+    private Map<String, String> findMemberAttributes(MemberAttributeConfig attributeConfig) {
+        Map<String, String> attributes = new HashMap<>(attributeConfig.getAttributes());
         Properties properties = System.getProperties();
         for (String key : properties.stringPropertyNames()) {
             if (key.startsWith("hazelcast.member.attribute.")) {

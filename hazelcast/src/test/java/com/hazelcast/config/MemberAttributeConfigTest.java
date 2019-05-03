@@ -34,6 +34,6 @@ public class MemberAttributeConfigTest {
      */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMemberAttributeConfigSetAttributes() {
-        new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<String, Object>());
+        new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<>());
     }
 }

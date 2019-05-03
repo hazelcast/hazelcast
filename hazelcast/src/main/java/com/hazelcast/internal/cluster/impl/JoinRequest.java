@@ -40,7 +40,7 @@ public class JoinRequest extends JoinMessage {
 
     private Credentials credentials;
     private int tryCount;
-    private Map<String, Object> attributes;
+    private Map<String, String> attributes;
     private Set<String> excludedMemberUuids = Collections.emptySet();
     // see Member.getAddressMap
     private Map<EndpointQualifier, Address> addresses;
@@ -50,7 +50,7 @@ public class JoinRequest extends JoinMessage {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, String uuid,
-                       boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, Object> attributes,
+                       boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
                        Set<String> excludedMemberUuids, Map<EndpointQualifier, Address> addresses) {
         super(packetVersion, buildNumber, version, address, uuid, liteMember, config);
         this.credentials = credentials;
@@ -73,7 +73,7 @@ public class JoinRequest extends JoinMessage {
         this.tryCount = tryCount;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
@@ -97,7 +97,7 @@ public class JoinRequest extends JoinMessage {
         attributes = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = in.readObject();
+            String value = in.readUTF();
             attributes.put(key, value);
         }
         size = in.readInt();
@@ -116,9 +116,9 @@ public class JoinRequest extends JoinMessage {
         out.writeObject(credentials);
         out.writeInt(tryCount);
         out.writeInt(attributes.size());
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
-            out.writeObject(entry.getValue());
+            out.writeUTF(entry.getValue());
         }
         out.writeInt(excludedMemberUuids.size());
         for (String uuid : excludedMemberUuids) {

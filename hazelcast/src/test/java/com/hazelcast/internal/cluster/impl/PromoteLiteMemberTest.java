@@ -350,25 +350,25 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         // Get local member and SET attribute BEFORE promotion
         Member localMember = hz.getCluster().getLocalMember();
-        localMember.setStringAttribute(attribute1, attributeValue);
-        assertEquals(attributeValue, localMember.getStringAttribute(attribute1));
+        localMember.setAttribute(attribute1, attributeValue);
+        assertEquals(attributeValue, localMember.getAttribute(attribute1));
 
         // Promote local Lite member
         hz.getCluster().promoteLocalLiteMember();
 
         // Get local member and SET attribute AFTER promotion
         localMember = hz.getCluster().getLocalMember();
-        localMember.setStringAttribute(attribute2, attributeValue);
+        localMember.setAttribute(attribute2, attributeValue);
 
         // Check attributes from localMember
-        assertEquals(attributeValue, localMember.getStringAttribute(attribute1));
-        assertEquals(attributeValue, localMember.getStringAttribute(attribute2));
+        assertEquals(attributeValue, localMember.getAttribute(attribute1));
+        assertEquals(attributeValue, localMember.getAttribute(attribute2));
 
         // Check attributes from member list
         for (Member member : hz.getCluster().getMembers()) {
             if (member.localMember()) {
-                assertEquals(attributeValue, member.getStringAttribute(attribute1));
-                assertEquals(attributeValue, member.getStringAttribute(attribute2));
+                assertEquals(attributeValue, member.getAttribute(attribute1));
+                assertEquals(attributeValue, member.getAttribute(attribute2));
                 break;
             }
         }

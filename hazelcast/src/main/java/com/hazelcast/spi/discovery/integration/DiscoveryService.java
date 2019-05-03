@@ -71,9 +71,8 @@ public interface DiscoveryService {
      * may include, but are not limited, to location information like datacenter, rack, host or additional
      * tags to be used for custom purpose.
      * <p/>
-     * Information discovered from this method are shaded into the {@link com.hazelcast.core.Member}s
-     * attributes. Existing attributes will not be overridden, that way local attribute configuration
-     * overrides provided metadata.
+     * Information discovered from this method are copied into the {@link com.hazelcast.core.Member}s
+     * attributes. Existing attributes will be overridden.
      * <p/>
      * The default implementation provides an empty map with no further metadata configured. Returning
      * <tt>null</tt> is not permitted and will most probably result in an {@link NullPointerException}
@@ -82,5 +81,5 @@ public interface DiscoveryService {
      * @return a map of discovered metadata as provided by the runtime environment
      * @since 3.7
      */
-    Map<String, Object> discoverLocalMetadata();
+    Map<String, String> discoverLocalMetadata();
 }

@@ -429,7 +429,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Map<String, Object> discoverLocalMetadata() {
+        public Map<String, String> discoverLocalMetadata() {
             return Collections.emptyMap();
         }
     }
@@ -497,7 +497,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Map<String, Object> discoverLocalMetadata() {
+        public Map<String, String> discoverLocalMetadata() {
             return Collections.emptyMap();
         }
     }

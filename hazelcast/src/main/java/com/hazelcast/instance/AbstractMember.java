@@ -20,7 +20,6 @@ import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -45,7 +44,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 @PrivateApi
 public abstract class AbstractMember implements Member, Versioned {
 
-    protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
+    protected final Map<String, String> attributes = new ConcurrentHashMap<>();
     protected Address address;
     protected Map<EndpointQualifier, Address> addressMap;
     protected String uuid;
@@ -56,7 +55,7 @@ public abstract class AbstractMember implements Member, Versioned {
     }
 
     protected AbstractMember(Map<EndpointQualifier, Address> addresses, MemberVersion version,
-                             String uuid, Map<String, Object> attributes, boolean liteMember) {
+                             String uuid, Map<String, String> attributes, boolean liteMember) {
         this.address = addresses.get(MEMBER);
         this.addressMap = addresses;
         assert address != null : "Address is required!";
@@ -146,11 +145,11 @@ public abstract class AbstractMember implements Member, Versioned {
     }
 
     @Override
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return Collections.unmodifiableMap(attributes);
     }
 
-    public void updateAttribute(MemberAttributeOperationType operationType, String key, Object value) {
+    public void updateAttribute(MemberAttributeOperationType operationType, String key, String value) {
         switch (operationType) {
             case PUT:
                 attributes.put(key, value);
@@ -163,7 +162,8 @@ public abstract class AbstractMember implements Member, Versioned {
         }
     }
 
-    protected Object getAttribute(String key) {
+    @Override
+    public String getAttribute(String key) {
         return attributes.get(key);
     }
 
@@ -182,7 +182,7 @@ public abstract class AbstractMember implements Member, Versioned {
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = IOUtil.readAttributeValue(in);
+            String value = in.readUTF();
             attributes.put(key, value);
         }
         addressMap = readAddressMap(in);
@@ -194,11 +194,11 @@ public abstract class AbstractMember implements Member, Versioned {
         out.writeUTF(uuid);
         out.writeBoolean(liteMember);
         out.writeObject(version);
-        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
+        Map<String, String> attributes = new HashMap<>(this.attributes);
         out.writeInt(attributes.size());
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
-            IOUtil.writeAttributeValue(entry.getValue(), out);
+            out.writeUTF(entry.getValue());
         }
         writeAddressMap(out);
     }

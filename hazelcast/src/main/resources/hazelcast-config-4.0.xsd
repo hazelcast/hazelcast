@@ -3436,24 +3436,10 @@
     <xs:simpleType name="attributeName">
         <xs:restriction base="non-space-string"/>
     </xs:simpleType>
-    <xs:simpleType name="attributeTypeEnum">
-        <xs:restriction base="non-space-string">
-            <xs:enumeration value="boolean"/>
-            <xs:enumeration value="byte"/>
-            <xs:enumeration value="double"/>
-            <xs:enumeration value="float"/>
-            <xs:enumeration value="int"/>
-            <xs:enumeration value="long"/>
-            <xs:enumeration value="short"/>
-            <xs:enumeration value="string"/>
-        </xs:restriction>
-    </xs:simpleType>
     <xs:complexType name="attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">
                 <xs:attribute name="name" use="required" type="attributeName"/>
-                <!--xs:attribute name="name" use="required" type="xs:ID"/-->
-                <xs:attribute name="type" use="optional" default="string" type="attributeTypeEnum"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
