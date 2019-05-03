@@ -54,8 +54,8 @@ public class XmlSchemaValidationTest {
         String networkConfig = ""
                 + "    <network>\n"
                 + "        <join>\n"
-                + "            <multicast enabled=\"false\">\n"
-                + "            <tcp-ip enabled=\"true\">\n"
+                + "            <multicast enabled=\"false\"/>\n"
+                + "            <tcp-ip enabled=\"true\"/>\n"
                 + "        </join>\n"
                 + "    </network>\n";
         buildConfig(HAZELCAST_START_TAG + networkConfig + networkConfig + HAZELCAST_END_TAG);
@@ -116,7 +116,7 @@ public class XmlSchemaValidationTest {
                 + "        <serializers>\n"
                 + "            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>\n"
                 + "            <serializer type-class=\"com.hazelcast.examples.DummyType\"\n"
-                + "                class-name=\"com.hazelcast.examples.SerializerFactory\">\n"
+                + "                class-name=\"com.hazelcast.examples.SerializerFactory\"/>\n"
                 + "        </serializers>\n"
                 + "        <check-class-def-errors>true</check-class-def-errors>\n"
                 + "    </serialization>\n";
@@ -139,7 +139,7 @@ public class XmlSchemaValidationTest {
     @Test
     public void testXmlDeniesDuplicateSecurityConfig() {
         expectDuplicateElementError("security");
-        String securityConfig = "   <security>\n";
+        String securityConfig = "   <security/>\n";
         buildConfig(HAZELCAST_START_TAG + securityConfig + securityConfig + HAZELCAST_END_TAG);
     }
 

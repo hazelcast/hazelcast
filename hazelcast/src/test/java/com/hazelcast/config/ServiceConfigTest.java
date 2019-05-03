@@ -75,7 +75,7 @@ public class ServiceConfigTest extends HazelcastTestSupport {
                 + "        <service enabled=\"true\">\n"
                 + "            <name>my-service</name>\n"
                 + "            <class-name>com.hazelcast.examples.MyService</class-name>\n"
-                + "            <configuration >\n"
+                + "            <configuration />\n"
                 + "        </service>\n"
                 + "    </services>\n"
                 + HAZELCAST_END_TAG;

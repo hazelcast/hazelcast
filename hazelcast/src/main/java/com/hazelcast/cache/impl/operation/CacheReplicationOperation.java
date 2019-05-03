@@ -149,11 +149,6 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     }
 
     @Override
-    public Operation setCallerUuid(String callerUuid) {
-        return super.setCallerUuid(callerUuid);
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         int confSize = configs.size();

@@ -451,11 +451,11 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
                 + "          p1: a property\n"
                 + "          p2: \"\"\n"
                 + "          p3: another property\n"
-                + "          p4: <test>\n"
+                + "          p4: <test/>\n"
                 + "  group:\n"
                 + "    name: $T{p1} $T{p2} $T{p3} $T{p4} $T{p5}\n";
         GroupConfig groupConfig = buildConfig(yaml, System.getProperties()).getGroupConfig();
-        assertEquals("a property  another property <test> $T{p5}", groupConfig.getName());
+        assertEquals("a property  another property <test/> $T{p5}", groupConfig.getName());
     }
 
     /**

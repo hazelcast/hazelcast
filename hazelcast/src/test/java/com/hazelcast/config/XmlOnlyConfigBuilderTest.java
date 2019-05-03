@@ -79,13 +79,13 @@ public class XmlOnlyConfigBuilderTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testMissingNamespace() {
-        String xml = "<hazelcast>";
+        String xml = "<hazelcast/>";
         buildConfig(xml);
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidNamespace() {
-        String xml = "<hazelcast xmlns=\"http://foo.bar\">";
+        String xml = "<hazelcast xmlns=\"http://foo.bar\"/>";
         buildConfig(xml);
     }
 
@@ -97,7 +97,7 @@ public class XmlOnlyConfigBuilderTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastTagAppearsTwice() {
-        String xml = HAZELCAST_START_TAG + "<hazelcast>" + HAZELCAST_END_TAG;
+        String xml = HAZELCAST_START_TAG + "<hazelcast/>" + HAZELCAST_END_TAG;
         buildConfig(xml);
     }
 
@@ -170,7 +170,7 @@ public class XmlOnlyConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"
                 + "       <attributes>\n"
-                + "           <attribute>\n"
+                + "           <attribute/>\n"
                 + "       </attributes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -181,7 +181,7 @@ public class XmlOnlyConfigBuilderTest {
     public void testCacheConfig_withInvalidEvictionConfig_failsFast() {
         String xml = HAZELCAST_START_TAG
                 + "    <cache name=\"cache\">"
-                + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"INVALID\">"
+                + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"INVALID\"/>"
                 + "    </cache>"
                 + HAZELCAST_END_TAG;
 
