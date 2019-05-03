@@ -66,10 +66,7 @@ public class MultiMapRecord implements IdentifiedDataSerializable {
         }
 
         MultiMapRecord record = (MultiMapRecord) o;
-        if (!object.equals(record.object)) {
-            return false;
-        }
-        return true;
+        return object.equals(record.object);
     }
 
     @Override

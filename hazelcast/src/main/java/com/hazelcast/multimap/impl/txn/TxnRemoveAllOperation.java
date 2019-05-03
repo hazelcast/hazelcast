@@ -124,7 +124,7 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        recordIds = new ArrayList<Long>();
+        recordIds = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             recordIds.add(in.readLong());
         }

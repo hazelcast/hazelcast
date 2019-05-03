@@ -44,9 +44,9 @@ public class MultiMapValue {
 
     private Collection<MultiMapRecord> getCopyOfCollection() {
         if (collection instanceof Set) {
-            return new HashSet<MultiMapRecord>(collection);
+            return new HashSet<>(collection);
         } else if (collection instanceof List) {
-            return new LinkedList<MultiMapRecord>(collection);
+            return new LinkedList<>(collection);
         }
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }

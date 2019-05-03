@@ -96,7 +96,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
                 if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())) {
                     coll = createHashSet(collSize);
                 } else {
-                    coll = new LinkedList<MultiMapRecord>();
+                    coll = new LinkedList<>();
                 }
                 for (int k = 0; k < collSize; k++) {
                     MultiMapRecord record = new MultiMapRecord();

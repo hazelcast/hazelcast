@@ -32,7 +32,7 @@ import java.util.List;
 public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
     // TODO: probably better to switch to an ArrayList to reduce litter
-    private final List<Operation> opList = new LinkedList<Operation>();
+    private final List<Operation> opList = new LinkedList<>();
     private int partitionId;
     private String name;
     private Data key;

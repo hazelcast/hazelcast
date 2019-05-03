@@ -22,7 +22,6 @@ import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
 
@@ -30,7 +29,7 @@ import java.io.IOException;
 
 import static com.hazelcast.multimap.impl.txn.TxnPrepareOperation.LOCK_EXTENSION_TIME_IN_MILLIS;
 
-public class TxnPrepareBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation, Versioned {
+public class TxnPrepareBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     private String caller;
 
