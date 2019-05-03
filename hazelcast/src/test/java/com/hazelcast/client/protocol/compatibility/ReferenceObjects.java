@@ -627,7 +627,7 @@ public class ReferenceObjects {
     }
 
     public static Member aMember = new MemberImpl(anAddress, MemberVersion.UNKNOWN, aString,
-            Collections.singletonMap(aString, (Object) aString), false);
+            Collections.singletonMap(aString, aString), false);
     public static Collection<Map.Entry<Address, List<Integer>>> aPartitionTable;
 
     static {

@@ -765,28 +765,6 @@ hazelcast:
   member-attributes:
     attribute.string:
       value: hazelcast
-    attribute.int:
-      type: int
-      value: 123
-    attribute.long:
-      type: long
-      value: 456
-    attribute.short:
-      type: short
-      value: 789
-    attribute.byte:
-      type: byte
-      value: 111
-    attribute.boolean:
-      type: boolean
-      value: true
-    attribute.double:
-      type: double
-      value: 0.0d
-    attribute.float:
-      type: float
-      value: 1234.5678
-
 
   crdt-replication:
     replication-period-millis: 1000

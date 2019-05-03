@@ -110,10 +110,9 @@ public class ClusterDataSerializationTest {
         Address clientAddress = new Address("127.0.0.1", 7654);
         Address restAddress = new Address("127.0.0.1", 8080);
         // member attributes, test an integer, a String and an IdentifiedDataSerializable as values
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put("a", 2);
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("a", "2");
         attributes.put("b", "b");
-        attributes.put("c", new Address("127.0.0.1", 5999));
         Map<EndpointQualifier, Address> addressMap = new HashMap<EndpointQualifier, Address>();
         addressMap.put(MEMBER, memberAddress);
         addressMap.put(CLIENT, clientAddress);
@@ -129,7 +128,6 @@ public class ClusterDataSerializationTest {
         assertEquals(deserialized.getUuid(), memberInfo.getUuid());
         assertEquals(deserialized.getAttributes().get("a"), memberInfo.getAttributes().get("a"));
         assertEquals(deserialized.getAttributes().get("b"), memberInfo.getAttributes().get("b"));
-        assertEquals(deserialized.getAttributes().get("c"), memberInfo.getAttributes().get("c"));
         assertEquals(3, deserialized.getAddressMap().size());
         assertEquals(memberAddress, deserialized.getAddressMap().get(MEMBER));
         assertEquals(clientAddress, deserialized.getAddressMap().get(CLIENT));

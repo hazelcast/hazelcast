@@ -1131,14 +1131,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testMemberAttributesConfig() {
         MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
         assertNotNull(memberAttributeConfig);
-        assertEquals("spring-group", memberAttributeConfig.getStringAttribute("cluster.group.name"));
-        assertEquals(new Integer(5700), memberAttributeConfig.getIntAttribute("cluster.port.int"));
-        assertEquals(new Long(5700), memberAttributeConfig.getLongAttribute("cluster.port.long"));
-        assertEquals(new Short("5700"), memberAttributeConfig.getShortAttribute("cluster.port.short"));
-        assertEquals(new Byte("111"), memberAttributeConfig.getByteAttribute("attribute.byte"));
-        assertTrue(memberAttributeConfig.getBooleanAttribute("attribute.boolean"));
-        assertEquals(0.0d, memberAttributeConfig.getDoubleAttribute("attribute.double"), 0.0001d);
-        assertEquals(1234.5678, memberAttributeConfig.getFloatAttribute("attribute.float"), 0.0001);
+        assertEquals("spring-group", memberAttributeConfig.getAttribute("cluster.group.name"));
     }
 
     @Test

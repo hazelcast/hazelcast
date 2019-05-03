@@ -68,12 +68,12 @@ public class SimplePredefinedDiscoveryServiceTest {
 
     @Test
     public void discoverLocalMetadata() {
-        final Map<String, Object> metadata = new HashMap<String, Object>();
-        metadata.put("a", 1);
-        metadata.put("b", 2);
+        final Map<String, String> metadata = new HashMap<>();
+        metadata.put("a", "1");
+        metadata.put("b", "2");
         final PredefinedDiscoveryService service = new PredefinedDiscoveryService(new ExtendableDiscoveryStrategy() {
             @Override
-            public Map<String, Object> discoverLocalMetadata() {
+            public Map<String, String> discoverLocalMetadata() {
                 return metadata;
             }
         });

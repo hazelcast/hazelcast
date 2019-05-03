@@ -48,15 +48,15 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
-        memberAttributeConfig.setIntAttribute("Test", 123);
+        memberAttributeConfig.setAttribute("Test", "123");
 
         HazelcastInstance h1 = factory.newHazelcastInstance(config);
         Member m1 = h1.getCluster().getLocalMember();
-        assertEquals(123, (int) m1.getIntAttribute("Test"));
+        assertEquals("123", m1.getAttribute("Test"));
 
         HazelcastInstance h2 = factory.newHazelcastInstance(config);
         Member m2 = h2.getCluster().getLocalMember();
-        assertEquals(123, (int) m2.getIntAttribute("Test"));
+        assertEquals("123", m2.getAttribute("Test"));
 
         assertClusterSize(2, h1, h2);
 
@@ -70,8 +70,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         assertNotNull(member);
         assertEquals(m1, member);
-        assertNotNull(member.getIntAttribute("Test"));
-        assertEquals(123, (int) member.getIntAttribute("Test"));
+        assertNotNull(member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         for (Member m : h1.getCluster().getMembers()) {
             if (m == h1.getCluster().getLocalMember()) {
@@ -82,8 +82,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         assertNotNull(member);
         assertEquals(m2, member);
-        assertNotNull(member.getIntAttribute("Test"));
-        assertEquals(123, (int) member.getIntAttribute("Test"));
+        assertNotNull(member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         h1.shutdown();
         h2.shutdown();
@@ -95,7 +95,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = factory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setIntAttribute("Test", 123);
+        m1.setAttribute("Test", "123");
 
         HazelcastInstance h2 = factory.newHazelcastInstance();
         assertClusterSize(2, h2);
@@ -110,8 +110,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         assertNotNull(member);
         assertEquals(m1, member);
-        assertNotNull(member.getIntAttribute("Test"));
-        assertEquals(123, (int) member.getIntAttribute("Test"));
+        assertNotNull(member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         h1.shutdown();
         h2.shutdown();
@@ -123,7 +123,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = factory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setIntAttribute("Test", 123);
+        m1.setAttribute("Test", "123");
 
         HazelcastInstance h2 = factory.newHazelcastInstance();
         assertClusterSize(2, h2);
@@ -138,21 +138,21 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         assertNotNull(member);
         assertEquals(m1, member);
-        assertNotNull(member.getIntAttribute("Test"));
-        assertEquals(123, (int) member.getIntAttribute("Test"));
+        assertNotNull(member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         final CountDownLatch latch = new CountDownLatch(2);
         final MembershipListener listener = new LatchMembershipListener(latch);
         h2.getCluster().addMembershipListener(listener);
         h1.getCluster().addMembershipListener(listener);
 
-        m1.setIntAttribute("Test2", 321);
+        m1.setAttribute("Test2", "321");
 
         // Force sleep to distribute value
         assertOpenEventually(latch);
 
-        assertNotNull(member.getIntAttribute("Test2"));
-        assertEquals(321, (int) member.getIntAttribute("Test2"));
+        assertNotNull(member.getAttribute("Test2"));
+        assertEquals("321", member.getAttribute("Test2"));
 
         h1.shutdown();
         h2.shutdown();
@@ -164,7 +164,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = factory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setIntAttribute("Test", 123);
+        m1.setAttribute("Test", "123");
 
         HazelcastInstance h2 = factory.newHazelcastInstance();
         assertClusterSize(2, h2);
@@ -179,21 +179,21 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         assertNotNull(member);
         assertEquals(m1, member);
-        assertNotNull(member.getIntAttribute("Test"));
-        assertEquals(123, (int) member.getIntAttribute("Test"));
+        assertNotNull(member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         final CountDownLatch latch = new CountDownLatch(2);
         final MembershipListener listener = new LatchMembershipListener(latch);
         h2.getCluster().addMembershipListener(listener);
         h1.getCluster().addMembershipListener(listener);
 
-        m1.setIntAttribute("Test", 321);
+        m1.setAttribute("Test", "321");
 
         // Force sleep to distribute value
         assertOpenEventually(latch);
 
-        assertNotNull(member.getIntAttribute("Test"));
-        assertEquals(321, (int) member.getIntAttribute("Test"));
+        assertNotNull(member.getAttribute("Test"));
+        assertEquals("321", member.getAttribute("Test"));
 
         h1.shutdown();
         h2.shutdown();
@@ -205,7 +205,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = factory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setIntAttribute("Test", 123);
+        m1.setAttribute("Test", "123");
 
         HazelcastInstance h2 = factory.newHazelcastInstance();
         assertClusterSize(2, h2);
@@ -220,8 +220,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         assertNotNull(member);
         assertEquals(m1, member);
-        assertNotNull(member.getIntAttribute("Test"));
-        assertEquals(123, (int) member.getIntAttribute("Test"));
+        assertNotNull(member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         final CountDownLatch latch = new CountDownLatch(2);
         final MembershipListener listener = new LatchMembershipListener(latch);
@@ -233,7 +233,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         // Force sleep to distribute value
         assertOpenEventually(latch);
 
-        assertNull(member.getIntAttribute("Test"));
+        assertNull(member.getAttribute("Test"));
 
         h1.shutdown();
         h2.shutdown();
@@ -246,17 +246,17 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         System.setProperty("hazelcast.member.attribute.Test-4", "123456");
 
         Config config = new Config();
-        config.getMemberAttributeConfig().setIntAttribute("Test-1", 123);
-        config.getMemberAttributeConfig().setIntAttribute("Test-2", 123);
+        config.getMemberAttributeConfig().setAttribute("Test-1", "123");
+        config.getMemberAttributeConfig().setAttribute("Test-2", "123");
 
         HazelcastInstance h1 = createHazelcastInstance(config);
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setIntAttribute("Test-4", 1234567);
+        m1.setAttribute("Test-4", "1234567");
 
-        assertEquals(123, (int) m1.getIntAttribute("Test-1"));
-        assertEquals("1234", m1.getStringAttribute("Test-2"));
-        assertEquals("12345", m1.getStringAttribute("Test-3"));
-        assertEquals(1234567, (int) m1.getIntAttribute("Test-4"));
+        assertEquals("123", m1.getAttribute("Test-1"));
+        assertEquals("1234", m1.getAttribute("Test-2"));
+        assertEquals("12345", m1.getAttribute("Test-3"));
+        assertEquals("1234567", m1.getAttribute("Test-4"));
 
         h1.shutdown();
     }

@@ -200,7 +200,7 @@ public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSuppor
     @Test
     public void givenProviderFilterUsesMemberAttribute_whenSomeMemberHasMatchingAttribute_thenClassLoadingRequestSucceed() {
         Config i1Config = new Config();
-        i1Config.getMemberAttributeConfig().setStringAttribute("foo", "bar");
+        i1Config.getMemberAttributeConfig().setAttribute("foo", "bar");
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setClassCacheMode(getClassCacheMode());

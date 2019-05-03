@@ -31,42 +31,7 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
     }
 
     @Override
-    public void setStringAttribute(String key, String value) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public void setBooleanAttribute(String key, boolean value) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public void setByteAttribute(String key, byte value) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public void setShortAttribute(String key, short value) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public void setIntAttribute(String key, int value) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public void setLongAttribute(String key, long value) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public void setFloatAttribute(String key, float value) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
-    public void setDoubleAttribute(String key, double value) {
+    public void setAttribute(String key, String value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
@@ -76,12 +41,12 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
     }
 
     @Override
-    public void setAttributes(Map<String, Object> attributes) {
+    public void setAttributes(Map<String, String> attributes) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return Collections.unmodifiableMap(super.getAttributes());
     }
 }

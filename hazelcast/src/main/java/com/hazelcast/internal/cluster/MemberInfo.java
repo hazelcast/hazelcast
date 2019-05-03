@@ -43,7 +43,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
     private String uuid;
     private boolean liteMember;
     private MemberVersion version;
-    private Map<String, Object> attributes;
+    private Map<String, String> attributes;
     private int memberListJoinVersion = NA_MEMBER_LIST_JOIN_VERSION;
     // since 3.12
     private Map<EndpointQualifier, Address> addressMap;
@@ -51,16 +51,16 @@ public class MemberInfo implements IdentifiedDataSerializable {
     public MemberInfo() {
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, MemberVersion version) {
+    public MemberInfo(Address address, String uuid, Map<String, String> attributes, MemberVersion version) {
         this(address, uuid, attributes, false, version, NA_MEMBER_LIST_JOIN_VERSION, Collections.emptyMap());
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, MemberVersion version,
+    public MemberInfo(Address address, String uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
                       Map<EndpointQualifier, Address> addressMap) {
         this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, addressMap);
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, MemberVersion version,
+    public MemberInfo(Address address, String uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
                       int memberListJoinVersion, Map<EndpointQualifier, Address> addressMap) {
         this.address = address;
         this.uuid = uuid;
@@ -88,7 +88,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         return uuid;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
@@ -125,7 +125,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         }
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = in.readObject();
+            String value = in.readUTF();
             attributes.put(key, value);
         }
         version = in.readObject();
@@ -140,9 +140,9 @@ public class MemberInfo implements IdentifiedDataSerializable {
         out.writeBoolean(liteMember);
         out.writeInt(attributes == null ? 0 : attributes.size());
         if (attributes != null) {
-            for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            for (Map.Entry<String, String> entry : attributes.entrySet()) {
                 out.writeUTF(entry.getKey());
-                out.writeObject(entry.getValue());
+                out.writeUTF(entry.getValue());
             }
         }
         out.writeObject(version);

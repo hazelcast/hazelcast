@@ -3229,7 +3229,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
         MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
         assertNotNull(memberAttributeConfig);
-        assertEquals("ID", memberAttributeConfig.getStringAttribute("IDENTIFIER"));
+        assertEquals("ID", memberAttributeConfig.getAttribute("IDENTIFIER"));
     }
 
     @Override

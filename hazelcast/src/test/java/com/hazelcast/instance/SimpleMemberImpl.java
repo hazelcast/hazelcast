@@ -90,80 +90,17 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return null;
     }
 
     @Override
-    public String getStringAttribute(String key) {
+    public String getAttribute(String key) {
         return null;
     }
 
     @Override
-    public void setStringAttribute(String key, String value) {
-    }
-
-    @Override
-    public Boolean getBooleanAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setBooleanAttribute(String key, boolean value) {
-    }
-
-    @Override
-    public Byte getByteAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setByteAttribute(String key, byte value) {
-    }
-
-    @Override
-    public Short getShortAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setShortAttribute(String key, short value) {
-    }
-
-    @Override
-    public Integer getIntAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setIntAttribute(String key, int value) {
-    }
-
-    @Override
-    public Long getLongAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setLongAttribute(String key, long value) {
-    }
-
-    @Override
-    public Float getFloatAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setFloatAttribute(String key, float value) {
-    }
-
-    @Override
-    public Double getDoubleAttribute(String key) {
-        return null;
-    }
-
-    @Override
-    public void setDoubleAttribute(String key, double value) {
+    public void setAttribute(String key, String value) {
     }
 
     @Override

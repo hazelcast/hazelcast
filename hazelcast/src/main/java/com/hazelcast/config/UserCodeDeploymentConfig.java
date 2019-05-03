@@ -127,7 +127,7 @@ public class UserCodeDeploymentConfig {
      * Default: {@code null}
      *
      * @return this instance of UserCodeDeploymentConfig for easy method-chaining
-     * @see com.hazelcast.core.Member#setStringAttribute(String, String)
+     * @see com.hazelcast.core.Member#setAttribute(String, String)
      */
     public UserCodeDeploymentConfig setProviderFilter(String providerFilter) {
         this.providerFilter = providerFilter;

@@ -39,9 +39,9 @@ public class ZoneAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
         Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         for (Member member : allMembers) {
 
-            final String zoneInfo = member.getStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE);
-            final String rackInfo = member.getStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK);
-            final String hostInfo = member.getStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST);
+            final String zoneInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE);
+            final String rackInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_RACK);
+            final String hostInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_HOST);
 
             if (zoneInfo == null && rackInfo == null && hostInfo == null) {
                 throw new IllegalArgumentException("Not enough metadata information is provided. "

@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public class MemberAttributeConfig {
 
-    private final Map<String, Object> attributes = new HashMap<String, Object>();
+    private final Map<String, String> attributes = new HashMap<>();
 
     public MemberAttributeConfig() {
     }
@@ -34,79 +34,23 @@ public class MemberAttributeConfig {
         attributes.putAll(source.attributes);
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, Object> attributes) {
+    public void setAttributes(Map<String, String> attributes) {
         this.attributes.clear();
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }
     }
 
-    public String getStringAttribute(String key) {
-        return (String) getAttribute(key);
+    public String getAttribute(String key) {
+        return attributes.get(key);
     }
 
-    public void setStringAttribute(String key, String value) {
-        setAttribute(key, value);
-    }
-
-    public Boolean getBooleanAttribute(String key) {
-        return (Boolean) getAttribute(key);
-    }
-
-    public void setBooleanAttribute(String key, boolean value) {
-        setAttribute(key, value);
-    }
-
-    public Byte getByteAttribute(String key) {
-        return (Byte) getAttribute(key);
-    }
-
-    public void setByteAttribute(String key, byte value) {
-        setAttribute(key, value);
-    }
-
-    public Short getShortAttribute(String key) {
-        return (Short) getAttribute(key);
-    }
-
-    public void setShortAttribute(String key, short value) {
-        setAttribute(key, value);
-    }
-
-    public Integer getIntAttribute(String key) {
-        return (Integer) getAttribute(key);
-    }
-
-    public void setIntAttribute(String key, int value) {
-        setAttribute(key, value);
-    }
-
-    public Long getLongAttribute(String key) {
-        return (Long) getAttribute(key);
-    }
-
-    public void setLongAttribute(String key, long value) {
-        setAttribute(key, value);
-    }
-
-    public Float getFloatAttribute(String key) {
-        return (Float) getAttribute(key);
-    }
-
-    public void setFloatAttribute(String key, float value) {
-        setAttribute(key, value);
-    }
-
-    public Double getDoubleAttribute(String key) {
-        return (Double) getAttribute(key);
-    }
-
-    public void setDoubleAttribute(String key, double value) {
-        setAttribute(key, value);
+    public void setAttribute(String key, String value) {
+        this.attributes.put(key, value);
     }
 
     public void removeAttribute(String key) {
@@ -121,13 +65,5 @@ public class MemberAttributeConfig {
      */
     public MemberAttributeConfig asReadOnly() {
         return new MemberAttributeConfigReadOnly(this);
-    }
-
-    private Object getAttribute(String key) {
-        return attributes.get(key);
-    }
-
-    private void setAttribute(String key, Object value) {
-        attributes.put(key, value);
     }
 }

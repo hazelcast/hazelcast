@@ -82,8 +82,8 @@ public class DefaultDiscoveryService
     }
 
     @Override
-    public Map<String, Object> discoverLocalMetadata() {
-        Map<String, Object> metadata = new HashMap<String, Object>();
+    public Map<String, String> discoverLocalMetadata() {
+        Map<String, String> metadata = new HashMap<>();
         for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
             metadata.putAll(discoveryStrategy.discoverLocalMetadata());
         }

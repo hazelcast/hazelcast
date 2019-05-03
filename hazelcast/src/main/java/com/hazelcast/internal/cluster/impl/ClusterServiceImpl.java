@@ -490,7 +490,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return true;
     }
 
-    public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, Object value) {
+    public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, String value) {
         lock.lock();
         try {
             MemberImpl member = membershipManager.getMember(uuid);
