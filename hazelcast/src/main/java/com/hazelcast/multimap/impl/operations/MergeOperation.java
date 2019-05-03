@@ -103,7 +103,7 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        mergeContainers = new ArrayList<MultiMapMergeContainer>(size);
+        mergeContainers = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             MultiMapMergeContainer container = in.readObject();
             mergeContainers.add(container);

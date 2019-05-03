@@ -29,9 +29,6 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
-
-import static com.hazelcast.internal.cluster.Versions.V3_12;
 
 public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
@@ -56,22 +53,7 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
-
-        // RU_COMPAT_3_11
-        if (getNodeEngine().getClusterService().getClusterVersion().isGreaterOrEqual(V3_12)) {
-            response = coll.remove(record);
-        } else {
-            Iterator<MultiMapRecord> iterator = coll.iterator();
-            while (iterator.hasNext()) {
-                MultiMapRecord r = iterator.next();
-                if (r.equals(record)) {
-                    iterator.remove();
-                    recordId = r.getRecordId();
-                    response = true;
-                    break;
-                }
-            }
-        }
+        response = coll.remove(record);
 
         if (coll.isEmpty()) {
             container.delete(dataKey);

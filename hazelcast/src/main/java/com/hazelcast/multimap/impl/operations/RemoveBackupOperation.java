@@ -23,16 +23,12 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 
-import static com.hazelcast.internal.cluster.Versions.V3_12;
-
-public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation, Versioned {
+public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     private long recordId;
     private Data value;
@@ -56,20 +52,8 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
         }
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
 
-        // RU_COMPAT_3_11
-        if (value != null) {
-            MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
-            response = coll.remove(record);
-        } else {
-            Iterator<MultiMapRecord> iterator = coll.iterator();
-            while (iterator.hasNext()) {
-                if (iterator.next().getRecordId() == recordId) {
-                    iterator.remove();
-                    response = true;
-                    break;
-                }
-            }
-        }
+        MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
+        response = coll.remove(record);
 
         if (coll.isEmpty()) {
             container.delete(dataKey);
@@ -80,20 +64,14 @@ public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation imp
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(recordId);
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(V3_12)) {
-            out.writeData(value);
-        }
+        out.writeData(value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         recordId = in.readLong();
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(V3_12)) {
-            value = in.readData();
-        }
+        value = in.readData();
     }
 
     @Override

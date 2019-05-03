@@ -100,16 +100,12 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private final MultiMapPartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = createConcurrentHashMap(STATS_MAP_INITIAL_CAPACITY);
     private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction
-            = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
-        public LocalMultiMapStatsImpl createNew(String key) {
-            return new LocalMultiMapStatsImpl();
-        }
-    };
+            = key -> new LocalMultiMapStatsImpl();
     private final MultiMapEventsDispatcher dispatcher;
     private final MultiMapEventsPublisher publisher;
     private final QuorumService quorumService;
 
-    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
@@ -137,23 +133,20 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         }
         LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
-                @Override
-                public LockStoreInfo createNew(ObjectNamespace key) {
-                    String name = key.getObjectName();
-                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
-                    return new LockStoreInfo() {
-                        @Override
-                        public int getBackupCount() {
-                            return multiMapConfig.getBackupCount();
-                        }
+            lockService.registerLockStoreConstructor(SERVICE_NAME, key -> {
+                String name = key.getObjectName();
+                final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+                return new LockStoreInfo() {
+                    @Override
+                    public int getBackupCount() {
+                        return multiMapConfig.getBackupCount();
+                    }
 
-                        @Override
-                        public int getAsyncBackupCount() {
-                            return multiMapConfig.getAsyncBackupCount();
-                        }
-                    };
-                }
+                    @Override
+                    public int getAsyncBackupCount() {
+                        return multiMapConfig.getAsyncBackupCount();
+                    }
+                };
             });
         }
     }
