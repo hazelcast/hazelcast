@@ -1,5 +1,16 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.11.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.11.4 ====
+
+1. Fixes
+
+* Some operations such as heartbeat checks and partition
+migrations share common threads with the client login module.
+In case of the long running client login module implementations,
+some symptoms such as split brain syndrome can be seen. This has
+been fixed by introducing a blocking executor which is used only
+for the client authentications. [#14941]
+
 ==== 3.11.3 ====
 
 1. Fixes 
