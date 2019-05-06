@@ -105,12 +105,12 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
 
         final boolean success;
 
-        public MigrationProgressNotification(MigrationProgressEvent event, MigrationParticipant participant,
+        MigrationProgressNotification(MigrationProgressEvent event, MigrationParticipant participant,
                                              MigrationInfo migrationInfo) {
             this(event, participant, migrationInfo, true);
         }
 
-        public MigrationProgressNotification(MigrationProgressEvent event, MigrationParticipant participant,
+        MigrationProgressNotification(MigrationProgressEvent event, MigrationParticipant participant,
                                              MigrationInfo migrationInfo, boolean success) {
             this.event = event;
             this.participant = participant;

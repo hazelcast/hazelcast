@@ -54,21 +54,21 @@ public class NodeEngineTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void getSharedService_whenNullName() {
-        nodeEngine.getSharedService(null);
+    public void getServiceOrNull_whenNullName() {
+        nodeEngine.getServiceOrNull(null);
     }
 
     @Test
     @SuppressWarnings("deprecation")
-    public void getSharedService_whenNonExistingService() {
-        SharedService sharedService = nodeEngine.getSharedService("notexist");
+    public void getServiceOrNull_whenNonExistingService() {
+        Object sharedService = nodeEngine.getServiceOrNull("notexist");
         assertNull(sharedService);
     }
 
     @Test
     @SuppressWarnings("deprecation")
-    public void getSharedService_whenExistingService() {
-        SharedService sharedService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+    public void getServiceOrNull_whenExistingService() {
+        Object sharedService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         assertNotNull(sharedService);
         assertTrue(sharedService instanceof LockService);
     }

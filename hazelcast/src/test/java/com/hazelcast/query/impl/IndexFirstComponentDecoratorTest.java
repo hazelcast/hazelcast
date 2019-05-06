@@ -142,7 +142,7 @@ public class IndexFirstComponentDecoratorTest {
         private final int key;
         private final long value;
 
-        public Entry(int key, long value) {
+        Entry(int key, long value) {
             this.key = key;
             this.value = value;
         }

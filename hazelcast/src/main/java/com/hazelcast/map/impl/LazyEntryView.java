@@ -49,10 +49,10 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
     private SerializationService serializationService;
     private MapMergePolicy mergePolicy;
 
-    public LazyEntryView() {
+    LazyEntryView() {
     }
 
-    public LazyEntryView(K key, V value, SerializationService serializationService, MapMergePolicy mergePolicy) {
+    LazyEntryView(K key, V value, SerializationService serializationService, MapMergePolicy mergePolicy) {
         this.value = value;
         this.key = key;
         this.serializationService = serializationService;

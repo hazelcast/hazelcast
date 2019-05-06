@@ -107,9 +107,6 @@
     </module>
 
     <module name="TreeWalker">
-        <!-- Activate comment suppression filters -->
-        <module name="FileContentsHolder"/>
-
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
 
@@ -252,6 +249,7 @@
         <module name="InnerAssignment"/>
         <module name="ReturnCount">
             <property name="max" value="8"/>
+            <property name="maxForVoid" value="8"/>
         </module>
         <module name="NestedIfDepth">
             <property name="max" value="2"/>
@@ -299,7 +297,12 @@
             <property name="max" value="12"/>
         </module>
         <module name="NPathComplexity">
-            <property name="max" value="50"/>
+            <!-- TODO Agree on the value
+                 Checkstyle 7.7 improved the NPath algorithm further that leads to higher NPath counts.
+                 7.6 passes with max 50, 7.7 needs it to be set to at least 216
+                 the default threshold is 200
+            -->
+            <property name="max" value="250"/>
         </module>
 
         <!-- Miscellaneous other checks.                   -->

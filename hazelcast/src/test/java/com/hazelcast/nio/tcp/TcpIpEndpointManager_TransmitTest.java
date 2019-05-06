@@ -21,7 +21,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,6 +30,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.junit.Assert.assertFalse;

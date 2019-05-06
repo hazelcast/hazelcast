@@ -294,7 +294,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         private final int recursionDepth;
         private final int sleepSeconds;
 
-        public SlowRecursiveOperation(int partitionId, int recursionDepth, int sleepSeconds) {
+        SlowRecursiveOperation(int partitionId, int recursionDepth, int sleepSeconds) {
             this.recursionDepth = recursionDepth;
             this.sleepSeconds = sleepSeconds;
 

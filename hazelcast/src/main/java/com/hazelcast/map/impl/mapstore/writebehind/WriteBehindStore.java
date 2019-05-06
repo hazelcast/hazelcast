@@ -75,7 +75,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      *
      * @see WriteBehindStore#notifyFlush
      */
-    private final Queue<Sequence> flushSequences = new ConcurrentLinkedQueue<Sequence>();
+    private final Queue<Sequence> flushSequences = new ConcurrentLinkedQueue<>();
 
     /**
      * @see {@link com.hazelcast.config.MapStoreConfig#setWriteCoalescing(boolean)}
@@ -101,7 +101,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * We also do not want to make duplicate map-store calls for a key. This is why we use the staging area instead of the
      * direct flushing option to map-store.
      */
-    private final ConcurrentMap<Data, DelayedEntry> stagingArea = new ConcurrentHashMap<Data, DelayedEntry>();
+    private final ConcurrentMap<Data, DelayedEntry> stagingArea = new ConcurrentHashMap<>();
     private final OperationService operationService;
     private final InMemoryFormat inMemoryFormat;
     private final NodeEngine nodeEngine;

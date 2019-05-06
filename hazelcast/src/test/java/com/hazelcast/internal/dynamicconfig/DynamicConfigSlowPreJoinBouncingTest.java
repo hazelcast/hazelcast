@@ -43,7 +43,7 @@ public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingT
 
         static final String SERVICE_NAME = "delaying-pre-join-op-prep-service";
 
-        public DelaysPreparingPreJoinOpService() {
+        DelaysPreparingPreJoinOpService() {
         }
 
         @Override

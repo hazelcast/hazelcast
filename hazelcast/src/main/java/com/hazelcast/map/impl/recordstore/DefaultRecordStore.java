@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
@@ -84,6 +83,7 @@ import static java.util.Collections.emptyList;
 /**
  * Default implementation of record-store.
  */
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     protected final ILogger logger;
@@ -99,7 +99,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @see #loadAll(boolean)
      * @see #loadAllFromStore(List, boolean)
      */
-    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
+    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
     /**
      * The record store may be created with or without triggering the load.
      * This flag guards that the loading on create is invoked not more than
@@ -344,7 +344,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     protected List<Data> getKeysFromRecords(Collection<Record> clearableRecords) {
-        List<Data> keys = new ArrayList<Data>(clearableRecords.size());
+        List<Data> keys = new ArrayList<>(clearableRecords.size());
         for (Record clearableRecord : clearableRecords) {
             keys.add(clearableRecord.getKey());
         }
@@ -389,7 +389,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return emptyList();
         }
 
-        List<Record> notLockedRecords = new ArrayList<Record>(notLockedKeyCount);
+        List<Record> notLockedRecords = new ArrayList<>(notLockedKeyCount);
         Collection<Record> records = storage.values();
         for (Record record : records) {
             if (!lockedKeySet.contains(record.getKey())) {
@@ -830,21 +830,32 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return newValue != null;
     }
 
-    // TODO why does not replace method load data from map store if currently not available in memory.
     @Override
     public Object replace(Data key, Object update) {
         checkIfLoaded();
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
-        if (record == null || record.getValue() == null) {
+        Object oldValue;
+        if (record == null) {
+            oldValue = mapDataStore.load(key);
+        } else {
+            oldValue = record.getValue();
+        }
+        if (oldValue == null) {
             return null;
         }
-        Object oldValue = record.getValue();
         update = mapServiceContext.interceptPut(name, oldValue, update);
         update = mapDataStore.add(key, update, now);
+        if (record == null) {
+            record = createRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            storage.put(key, record);
+            stats.setLastUpdateTime(now);
+            mutationObserver.onPutRecord(key, record);
+        } else {
+            updateRecord(key, record, update, now, true);
+        }
         onStore(record);
-        updateRecord(key, record, update, now, true);
         setExpirationTimes(record.getTtl(), record.getMaxIdle(), record, mapContainer.getMapConfig(), false);
         saveIndex(record, oldValue);
         return oldValue;
@@ -856,17 +867,29 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
+        Object current;
         if (record == null) {
+            current = mapDataStore.load(key);
+        } else {
+            current = record.getValue();
+        }
+        if (current == null) {
             return false;
         }
-        Object current = record.getValue();
         if (!valueComparator.isEqual(expect, current, serializationService)) {
             return false;
         }
         update = mapServiceContext.interceptPut(name, current, update);
         update = mapDataStore.add(key, update, now);
+        if (record == null) {
+            record = createRecord(key, update, DEFAULT_TTL, DEFAULT_MAX_IDLE, now);
+            storage.put(key, record);
+            stats.setLastUpdateTime(now);
+            mutationObserver.onPutRecord(key, record);
+        } else {
+            updateRecord(key, record, update, now, true);
+        }
         onStore(record);
-        updateRecord(key, record, update, now, true);
         setExpirationTimes(record.getTtl(), record.getMaxIdle(), record, mapContainer.getMapConfig(), false);
         saveIndex(record, current);
         return true;
@@ -957,12 +980,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private boolean canPublishLoadEvent() {
-        // RU_COMPAT_3_10
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        ClusterService clusterService = nodeEngine.getClusterService();
-        boolean version311OrLater = clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_11);
-        boolean addEventPublishingEnabled = mapContainer.isAddEventPublishingEnabled();
-        return version311OrLater && !addEventPublishingEnabled;
+        return !mapContainer.isAddEventPublishingEnabled();
     }
 
     protected boolean isKeyAndValueLoadable(Data key, Object value) {
@@ -1272,7 +1290,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     private void clearLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         if (lockService != null) {
             ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);

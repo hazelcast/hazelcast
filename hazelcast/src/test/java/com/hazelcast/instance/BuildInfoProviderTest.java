@@ -113,4 +113,12 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         assertFalse(buildInfo.isEnterprise());
     }
+
+    @Test
+    public void testCommitId() {
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        String revision = buildInfo.getRevision();
+        String commitId = buildInfo.getCommitId();
+        assertTrue(commitId.startsWith(revision));
+    }
 }

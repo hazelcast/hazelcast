@@ -135,7 +135,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         for (int partition = 0; partition < partitionCount; partition++) {
             partitionContainers[partition] = new MultiMapPartitionContainer(this, partition);
         }
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
                 @Override

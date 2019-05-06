@@ -28,11 +28,11 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractList;
+import java.util.function.Predicate;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_RESULT_SET;

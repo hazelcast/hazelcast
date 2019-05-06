@@ -33,13 +33,13 @@ import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
@@ -75,19 +75,27 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
         this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
-        this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this, client.getConcurrencyDetection());
+        this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this);
 
         HazelcastProperties properties = client.getProperties();
-        this.callIdSequence = CallIdFactory.newCallIdSequence(
-                properties.getInteger(MAX_CONCURRENT_INVOCATIONS),
-                properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS),
-                client.getConcurrencyDetection());
+        int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
+        long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
+        // clients needs to have a call id generator capable of determining how many
+        // pending calls there are. So backpressure needs to be on
+        this.callIdSequence = CallIdFactory
+                .newCallIdSequence(true, maxAllowedConcurrentInvocations, backofftimeoutMs);
 
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
+    @Override
+    public long concurrentInvocations() {
+        return callIdSequence.concurrentInvocations();
+    }
+
     private long initInvocationRetryPauseMillis() {
         return client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+
     }
 
     private long initInvocationTimeoutMillis() {

@@ -40,7 +40,7 @@ public final class WriteBehindQueues {
     }
 
     private static <T> WriteBehindQueue<T> createSynchronizedWriteBehindQueue(WriteBehindQueue<T> queue) {
-        return new SynchronizedWriteBehindQueue<T>(queue);
+        return new SynchronizedWriteBehindQueue<>(queue);
     }
 
     private static WriteBehindQueue<DelayedEntry> createCoalescedWriteBehindQueue() {
@@ -53,6 +53,6 @@ public final class WriteBehindQueues {
 
     private static <T> WriteBehindQueue<T> createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter,
                                                                   WriteBehindQueue<T> queue) {
-        return new BoundedWriteBehindQueue<T>(maxCapacity, counter, queue);
+        return new BoundedWriteBehindQueue<>(maxCapacity, counter, queue);
     }
 }

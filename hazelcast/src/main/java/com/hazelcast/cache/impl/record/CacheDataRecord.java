@@ -64,18 +64,14 @@ public class CacheDataRecord extends AbstractCacheRecord<Data, Data> {
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeData(value);
-        if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-            out.writeData(expiryPolicy);
-        }
+        out.writeData(expiryPolicy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         value = in.readData();
-        if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-            expiryPolicy = in.readData();
-        }
+        expiryPolicy = in.readData();
     }
 
     @Override

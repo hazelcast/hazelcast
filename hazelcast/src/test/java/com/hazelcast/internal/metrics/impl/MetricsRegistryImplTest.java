@@ -50,12 +50,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
     public void modCount() {
         long modCount = metricsRegistry.modCount();
         metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
-                new LongProbeFunction() {
-                    @Override
-                    public long get(Object obj) throws Exception {
-                        return 1;
-                    }
-                });
+                (LongProbeFunction) obj -> 1);
         assertEquals(modCount + 1, metricsRegistry.modCount());
 
         metricsRegistry.deregister(this);
@@ -97,12 +92,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
 
         for (String name : expected) {
             metricsRegistry.register(this, name, ProbeLevel.MANDATORY,
-                    new LongProbeFunction() {
-                        @Override
-                        public long get(Object obj) throws Exception {
-                            return 0;
-                        }
-                    });
+                    (LongProbeFunction) obj -> 0);
         }
 
         Set<String> names = metricsRegistry.getNames();

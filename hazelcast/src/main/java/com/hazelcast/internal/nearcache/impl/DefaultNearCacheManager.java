@@ -199,7 +199,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
         private final long started = System.currentTimeMillis();
         private final NearCachePreloaderConfig preloaderConfig;
 
-        public StorageTask(NearCachePreloaderConfig preloaderConfig) {
+        StorageTask(NearCachePreloaderConfig preloaderConfig) {
             this.preloaderConfig = preloaderConfig;
         }
 

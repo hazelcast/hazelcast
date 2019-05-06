@@ -139,13 +139,13 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     private void invokeMigrationOperation(ReplicaFragmentMigrationState migrationState, boolean firstFragment) {
         boolean lastFragment = !fragmentedMigrationEnabled || !namespacesContext.hasNext();
         Operation operation = new MigrationOperation(migrationInfo,
-                firstFragment ? completedMigrations : Collections.<MigrationInfo>emptyList(),
+                firstFragment ? completedMigrations : Collections.emptyList(),
                 partitionStateVersion, migrationState, firstFragment, lastFragment);
 
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             Set<ServiceNamespace> namespaces = migrationState != null
-                    ? migrationState.getNamespaceVersionMap().keySet() : Collections.<ServiceNamespace>emptySet();
+                    ? migrationState.getNamespaceVersionMap().keySet() : Collections.emptySet();
             logger.finest("Invoking MigrationOperation for namespaces " + namespaces + " and " + migrationInfo
                     + ", lastFragment: " + lastFragment);
         }
@@ -209,7 +209,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
         Collection<ServiceNamespace> namespaces =
-                Collections.<ServiceNamespace>singleton(NonFragmentedServiceNamespace.INSTANCE);
+                Collections.singleton(NonFragmentedServiceNamespace.INSTANCE);
         return createReplicaFragmentMigrationState(namespaces, operations);
     }
 
@@ -232,7 +232,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
         InternalPartitionService partitionService = getService();
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
-        Map<ServiceNamespace, long[]> versions = new HashMap<ServiceNamespace, long[]>(namespaces.size());
+        Map<ServiceNamespace, long[]> versions = new HashMap<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
             long[] v = versionManager.getPartitionReplicaVersions(getPartitionId(), namespace);
             versions.put(namespace, v);
@@ -346,8 +346,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     private static class ServiceNamespacesContext {
-        final Collection<ServiceNamespace> allNamespaces = new HashSet<ServiceNamespace>();
-        final Map<ServiceNamespace, Collection<String>> namespaceToServices = new HashMap<ServiceNamespace, Collection<String>>();
+        final Collection<ServiceNamespace> allNamespaces = new HashSet<>();
+        final Map<ServiceNamespace, Collection<String>> namespaceToServices = new HashMap<>();
 
         final Iterator<ServiceNamespace> namespaceIterator;
 
@@ -375,7 +375,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                     // generally a namespace belongs to a single service only
                     namespaceToServices.put(ns, singleton(serviceName));
                 } else if (serviceNames.size() == 1) {
-                    serviceNames = new HashSet<String>(serviceNames);
+                    serviceNames = new HashSet<>(serviceNames);
                     serviceNames.add(serviceName);
                     namespaceToServices.put(ns, serviceNames);
                 } else {

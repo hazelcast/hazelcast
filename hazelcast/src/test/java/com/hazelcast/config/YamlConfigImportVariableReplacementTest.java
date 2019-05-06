@@ -22,7 +22,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.RootCauseMatcher;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,7 +33,6 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Properties;
 
-import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -43,11 +41,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class YamlConfigImportVariableReplacementTest extends AbstractConfigImportVariableReplacementTest {
-
-    @Before
-    public void assumeRunningOnJdk8() {
-        assumeThatJDK8OrHigher();
-    }
 
     @Override
     @Test

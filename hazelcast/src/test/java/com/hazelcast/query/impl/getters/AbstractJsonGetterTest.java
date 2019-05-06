@@ -145,7 +145,7 @@ public class AbstractJsonGetterTest {
         private boolean isFailed;
         private Throwable exception;
 
-        public GetterRunner(AtomicBoolean running) {
+        GetterRunner(AtomicBoolean running) {
             this.running = running;
         }
 

@@ -55,7 +55,7 @@ public final class TestJavaSerializationUtils {
 
         private final int id;
 
-        public SerializableObject(int id) {
+        SerializableObject(int id) {
             this.id = id;
         }
 

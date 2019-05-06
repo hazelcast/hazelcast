@@ -150,7 +150,7 @@ public class RangeVisitor extends AbstractVisitor {
 
         private int reduction;
 
-        public Ranges(int predicateCount) {
+        Ranges(int predicateCount) {
             super(predicateCount);
             this.rangesByPredicateIndex = new Range[predicateCount];
         }
@@ -235,7 +235,7 @@ public class RangeVisitor extends AbstractVisitor {
         private boolean intersected;
         private boolean generated;
 
-        public Range(RangePredicate predicate, TypeConverter converter) {
+        Range(RangePredicate predicate, TypeConverter converter) {
             this.attribute = predicate.getAttribute();
             this.converter = converter;
 

@@ -81,7 +81,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.lockStore = createLockStore();
         Collection<RecordStoreMutationObserver<Record>> mutationObservers = mapServiceContext
                 .createRecordStoreMutationObservers(getName(), partitionId);
-        this.mutationObserver = new CompositeRecordStoreMutationObserver<Record>(mutationObservers);
+        this.mutationObserver = new CompositeRecordStoreMutationObserver<>(mutationObservers);
     }
 
     protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
@@ -188,7 +188,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected LockStore createLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         if (lockService == null) {
             return null;
         }

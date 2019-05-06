@@ -39,7 +39,7 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
         this.serializationService = serializationService;
         this.iterationType = iterationType;
         this.binary = binary;
-        this.rows = unique ? new HashSet<QueryResultRow>() : new ArrayList<QueryResultRow>();
+        this.rows = unique ? new HashSet<>() : new ArrayList<>();
     }
 
     public QueryResultCollection(SerializationService serializationService,

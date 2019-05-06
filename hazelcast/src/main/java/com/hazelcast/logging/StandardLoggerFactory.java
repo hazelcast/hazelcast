@@ -31,7 +31,7 @@ public class StandardLoggerFactory extends LoggerFactorySupport implements Logge
     static class StandardLogger extends AbstractLogger {
         private final Logger logger;
 
-        public StandardLogger(Logger logger) {
+        StandardLogger(Logger logger) {
             this.logger = logger;
         }
 

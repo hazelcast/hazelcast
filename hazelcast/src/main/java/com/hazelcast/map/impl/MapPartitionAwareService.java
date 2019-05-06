@@ -38,7 +38,7 @@ class MapPartitionAwareService implements PartitionAwareService {
     private final NodeEngine nodeEngine;
     private final ProxyService proxyService;
 
-    public MapPartitionAwareService(MapServiceContext mapServiceContext) {
+    MapPartitionAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.proxyService = this.nodeEngine.getProxyService();

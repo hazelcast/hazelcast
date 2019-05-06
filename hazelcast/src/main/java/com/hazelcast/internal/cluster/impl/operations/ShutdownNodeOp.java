@@ -36,15 +36,12 @@ public class ShutdownNodeOp extends AbstractClusterOperation implements AllowedD
         final ClusterState clusterState = clusterService.getClusterState();
 
         if (clusterState == ClusterState.PASSIVE) {
-            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             if (nodeEngine.isRunning()) {
                 logger.info("Shutting down node in cluster passive state. Requested by: " + getCallerAddress());
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        final Node node = nodeEngine.getNode();
-                        node.hazelcastInstance.getLifecycleService().shutdown();
-                    }
+                new Thread(() -> {
+                    Node node = nodeEngine.getNode();
+                    node.hazelcastInstance.getLifecycleService().shutdown();
                 }, createThreadName(nodeEngine.getHazelcastInstance().getName(), ".clusterShutdown")).start();
             } else {
                 logger.info("Node is already shutting down. NodeState: " + nodeEngine.getNode().getState());

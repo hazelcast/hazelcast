@@ -45,10 +45,10 @@ abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
         public Object result;
 
         @SuppressWarnings("unused")
-        public OuterOperation() {
+        OuterOperation() {
         }
 
-        public OuterOperation(Operation innerOperation, int partitionId) {
+        OuterOperation(Operation innerOperation, int partitionId) {
             this.innerOperation = innerOperation;
             setPartitionId(partitionId);
         }
@@ -89,10 +89,10 @@ abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
         public Object value;
 
         @SuppressWarnings("unused")
-        public InnerOperation() {
+        InnerOperation() {
         }
 
-        public InnerOperation(Object value, int partitionId) {
+        InnerOperation(Object value, int partitionId) {
             this.value = value;
 
             setPartitionId(partitionId);

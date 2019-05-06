@@ -53,12 +53,7 @@ import static java.lang.String.format;
  */
 public class MetricsRegistryImpl implements MetricsRegistry {
 
-    private static final Comparator<ProbeInstance> COMPARATOR = new Comparator<ProbeInstance>() {
-        @Override
-        public int compare(ProbeInstance o1, ProbeInstance o2) {
-            return o1.name.compareTo(o2.name);
-        }
-    };
+    private static final Comparator<ProbeInstance> COMPARATOR = (o1, o2) -> o1.name.compareTo(o2.name);
 
     final ILogger logger;
     private final ProbeLevel minimumLevel;

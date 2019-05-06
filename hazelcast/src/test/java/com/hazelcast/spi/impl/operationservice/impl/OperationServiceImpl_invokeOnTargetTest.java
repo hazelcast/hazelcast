@@ -33,8 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.UnknownHostException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -77,7 +75,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
     }
 
     @Test
-    public void whenNonExistingTarget() throws UnknownHostException {
+    public void whenNonExistingTarget() {
         Address remoteAddress = getAddress(remote);
         remote.shutdown();
 

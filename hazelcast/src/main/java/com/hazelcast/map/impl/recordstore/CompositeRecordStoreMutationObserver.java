@@ -25,7 +25,7 @@ import java.util.LinkedList;
 class CompositeRecordStoreMutationObserver<R extends Record> implements RecordStoreMutationObserver<R> {
 
     private final Collection<RecordStoreMutationObserver<R>> mutationObservers = new
-            LinkedList<RecordStoreMutationObserver<R>>();
+            LinkedList<>();
 
     CompositeRecordStoreMutationObserver(Collection<RecordStoreMutationObserver<R>> mutationObservers) {
         this.mutationObservers.addAll(mutationObservers);

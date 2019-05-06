@@ -2580,7 +2580,7 @@
     </xs:complexType>
 
     <xs:simpleType name="propertyNameEnum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="hazelcast.merge.first.run.delay.seconds"/>
             <xs:enumeration value="hazelcast.merge.next.run.delay.seconds"/>
             <xs:enumeration value="hazelcast.redo.wait.millis"/>
@@ -2654,7 +2654,7 @@
         <xs:restriction base="non-space-string"/>
     </xs:simpleType>
     <xs:simpleType name="attributeTypeEnum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="boolean"/>
             <xs:enumeration value="byte"/>
             <xs:enumeration value="double"/>
@@ -2814,7 +2814,8 @@
 
     <xs:simpleType name="non-space-string">
         <xs:restriction base="xs:string">
-            <xs:pattern value="\S.*"/>
+            <xs:whiteSpace value="collapse"/>
+            <xs:pattern value="\S+"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -3139,7 +3140,7 @@
             <xs:simpleType>
                 <xs:union>
                     <xs:simpleType>
-                        <xs:restriction base="xs:string">
+                        <xs:restriction base="non-space-string">
                             <xs:enumeration value="REQUIRED"/>
                             <xs:enumeration value="OPTIONAL"/>
                             <xs:enumeration value="REQUISITE"/>
@@ -3210,7 +3211,7 @@
                 <xs:simpleType>
                     <xs:union>
                         <xs:simpleType>
-                            <xs:restriction base="xs:string">
+                            <xs:restriction base="non-space-string">
                                 <xs:enumeration value="all"/>
                                 <xs:enumeration value="create"/>
                                 <xs:enumeration value="destroy"/>
@@ -3444,7 +3445,7 @@
     <xs:complexType name="load-balancer">
         <xs:attribute name="type" use="required">
             <xs:simpleType>
-                <xs:restriction base="xs:string">
+                <xs:restriction base="non-space-string">
                     <xs:enumeration value="random"/>
                     <xs:enumeration value="round-robin"/>
                 </xs:restriction>
@@ -3764,7 +3765,7 @@
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
-                    <xs:restriction base="xs:string">
+                    <xs:restriction base="non-space-string">
                         <xs:enumeration value="DISCARD_OLDEST"/>
                         <xs:enumeration value="DISCARD_NEWEST"/>
                         <xs:enumeration value="BLOCK"/>
@@ -3850,7 +3851,7 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:simpleType name="eviction-policy-enum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="LRU"/>
             <xs:enumeration value="LFU"/>
@@ -3862,7 +3863,7 @@
     </xs:simpleType>
 
     <xs:simpleType name="in-memory-format-enum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
             <xs:enumeration value="NATIVE"/>
@@ -3874,14 +3875,14 @@
     </xs:simpleType>
 
     <xs:simpleType name="local-update-policy-enum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="INVALIDATE"/>
             <xs:enumeration value="CACHE_ON_UPDATE"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="topic-overload-policy-enum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="DISCARD_OLDEST"/>
             <xs:enumeration value="DISCARD_NEWEST"/>
             <xs:enumeration value="BLOCK"/>
@@ -3928,14 +3929,14 @@
     </xs:simpleType>
 
     <xs:simpleType name="topology-changed-strategy">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="CANCEL_RUNNING_OPERATION"/>
             <xs:enumeration value="DISCARD_AND_RESTART"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="max-size-policy">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="ENTRY_COUNT"/>
             <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
             <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
@@ -4039,7 +4040,7 @@
         <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
     </xs:complexType>
     <xs:simpleType name="memory-unit">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="BYTES"/>
             <xs:enumeration value="KILOBYTES"/>
             <xs:enumeration value="MEGABYTES"/>
@@ -4047,7 +4048,7 @@
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="memory-allocator-type">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="STANDARD"/>
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
@@ -4124,7 +4125,7 @@
     </xs:element>
 
     <xs:simpleType name="quorum-type">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="READ"/>
             <xs:enumeration value="WRITE"/>
             <xs:enumeration value="READ_WRITE"/>
@@ -4149,15 +4150,8 @@
         </xs:sequence>
     </xs:complexType>
 
-    <xs:simpleType name="wan-ack-type-format-enum">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="ACK_ON_RECEIPT"/>
-            <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
-        </xs:restriction>
-    </xs:simpleType>
-
     <xs:simpleType name="wan-queue-full-behavior-format-enum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="DISCARD_AFTER_MUTATION"/>
             <xs:enumeration value="THROW_EXCEPTION"/>
             <xs:enumeration value="THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE"/>
@@ -4165,7 +4159,7 @@
     </xs:simpleType>
 
     <xs:simpleType name="initial-publisher-state-format-enum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="REPLICATING"/>
             <xs:enumeration value="PAUSED"/>
             <xs:enumeration value="STOPPED"/>
@@ -4173,14 +4167,10 @@
     </xs:simpleType>
 
     <xs:simpleType name="consistency-check-strategy-format-enum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="MERKLE_TREES"/>
         </xs:restriction>
-    </xs:simpleType>
-
-    <xs:simpleType name="wan-ack-type">
-        <xs:union memberTypes="wan-ack-type-format-enum non-space-string"/>
     </xs:simpleType>
 
     <xs:simpleType name="wan-queue-full-behavior">

@@ -17,7 +17,6 @@
 package com.hazelcast.config.replacer;
 
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.Base64;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -34,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
@@ -122,7 +122,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
                     throw rethrow(e);
                 }
             }
-            return new String(Base64.encode(baos.toByteArray()), UTF8_CHARSET).toCharArray();
+            return new String(Base64.getEncoder().encode(baos.toByteArray()), UTF8_CHARSET).toCharArray();
         } catch (Exception e) {
             throw rethrow(e);
         }

@@ -163,7 +163,7 @@ public final class MapKeyLoaderUtil {
     private static class DataToEntry implements IFunction<Data, Entry<Integer, Data>> {
         private final IPartitionService partitionService;
 
-        public DataToEntry(IPartitionService partitionService) {
+        DataToEntry(IPartitionService partitionService) {
             this.partitionService = partitionService;
         }
 
@@ -172,7 +172,7 @@ public final class MapKeyLoaderUtil {
             // Null-pointer here, in case of null key loaded by MapLoader
             checkNotNull(input, "Key loaded by a MapLoader cannot be null.");
             Integer partition = partitionService.getPartitionId(input);
-            return new MapEntrySimple<Integer, Data>(partition, input);
+            return new MapEntrySimple<>(partition, input);
         }
     }
 

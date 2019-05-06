@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.13-SNAPSHOT</version>
+    <version>4.0-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -41,7 +41,7 @@
         <client.protocol.version>1.8.0-7</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <jdk.version>6</jdk.version>
+        <jdk.version>8</jdk.version>
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -64,11 +64,11 @@
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.0.0</maven.shade.plugin.version>
         <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
-        <maven.animal.sniffer.plugin.version>1.15</maven.animal.sniffer.plugin.version>
+        <maven.animal.sniffer.plugin.version>1.17</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>2.21.0</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
+        <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
         <maven.spotbugs.plugin.version>3.1.6</maven.spotbugs.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.2</maven.jacoco.plugin.version>
@@ -100,6 +100,8 @@
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
+
+        <checkstyle.version>8.19</checkstyle.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
@@ -869,6 +871,13 @@
                             <enableRulesSummary>true</enableRulesSummary>
                             <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
                         </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.puppycrawl.tools</groupId>
+                                <artifactId>checkstyle</artifactId>
+                                <version>${checkstyle.version}</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -1079,54 +1088,6 @@
         </profile>
 
         <profile>
-            <id>jdk-8</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-            <properties>
-                <jdk.version>8</jdk.version>
-            </properties>
-        </profile>
-
-        <profile>
-            <!--
-            Profile for execution of test suite only on JDKs prior to 1.8.
-            Not suitable for building Hazelcast.
-            Sample usage:
-            1. Build JDK 6 artifacts using JDK8
-               (notice the "-" after -P option that deactivates profile jdk-8):
-               $ mvn -P-jdk-8 -DskipTests -T1C clean install
-
-            2. Switch to JDK 6 or 7 and execute the test suite:
-               $ mvn -Pjdk-pre-8 -T1C test
-            -->
-            <id>jdk-pre-8</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>${maven.enforcer.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>enforce-tools</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireJavaVersion>
-                                            <version>[1.6.0,1.8.0)</version>
-                                        </requireJavaVersion>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
@@ -1199,19 +1160,15 @@
 
     <repositories>
         <repository>
-            <id>backup-repository</id>
-            <name>Maven Central (Backup)</name>
-            <url>http://repo2.maven.org/maven2/</url>
-        </repository>
-        <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-        <repository>
-            <id>release-repository</id>
-            <name>release repository</name>
-            <url>https://oss.sonatype.org/content/repositories/releases</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
 

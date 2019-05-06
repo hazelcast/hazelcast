@@ -150,7 +150,7 @@ public class AggregatorsTest extends HazelcastTestSupport {
     private static class TestAggregator extends AbstractAggregator<Map.Entry<Integer, Car>, Long, List<Long>> {
         private List<Long> accumulated = new ArrayList<Long>();
 
-        public TestAggregator(String attribute) {
+        TestAggregator(String attribute) {
             super(attribute);
         }
 

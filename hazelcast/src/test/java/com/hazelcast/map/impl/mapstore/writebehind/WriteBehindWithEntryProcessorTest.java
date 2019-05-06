@@ -196,7 +196,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
         int serializedCount = 0;
         int deserializedCount = 0;
 
-        public TestObject() {
+        TestObject() {
         }
 
         @Override

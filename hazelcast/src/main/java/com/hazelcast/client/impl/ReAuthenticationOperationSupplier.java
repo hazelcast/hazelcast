@@ -18,7 +18,8 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Supplier;
+
+import java.util.function.Supplier;
 
 public class ReAuthenticationOperationSupplier implements Supplier<Operation> {
 

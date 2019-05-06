@@ -50,12 +50,12 @@ import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
 import com.hazelcast.map.impl.query.CallerRunsAccumulationExecutor;
 import com.hazelcast.map.impl.query.CallerRunsPartitionScanExecutor;
-import com.hazelcast.map.impl.query.QueryEngine;
-import com.hazelcast.map.impl.query.QueryEngineImpl;
 import com.hazelcast.map.impl.query.ParallelAccumulationExecutor;
 import com.hazelcast.map.impl.query.ParallelPartitionScanExecutor;
 import com.hazelcast.map.impl.query.PartitionScanExecutor;
 import com.hazelcast.map.impl.query.PartitionScanRunner;
+import com.hazelcast.map.impl.query.QueryEngine;
+import com.hazelcast.map.impl.query.QueryEngineImpl;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultProcessor;
 import com.hazelcast.map.impl.query.QueryRunner;
@@ -89,23 +89,21 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.util.collection.PartitionIdSet;
 import com.hazelcast.util.executor.ManagedExecutorService;
-import com.hazelcast.util.function.Predicate;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
@@ -117,6 +115,7 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static com.hazelcast.util.SetUtil.immutablePartitionIdSet;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -127,8 +126,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     protected static final long DESTROY_TIMEOUT_SECONDS = 30;
 
-    protected final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
-    protected final AtomicReference<Collection<Integer>> ownedPartitions = new AtomicReference<Collection<Integer>>();
+    protected final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
+    protected final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
     protected final IndexProvider indexProvider = new DefaultIndexProvider();
     protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
 
@@ -190,12 +189,9 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     ConstructorFunction<String, MapContainer> createMapConstructor() {
-        return new ConstructorFunction<String, MapContainer>() {
-            @Override
-            public MapContainer createNew(String mapName) {
-                MapServiceContext mapServiceContext = getService().getMapServiceContext();
-                return new MapContainer(mapName, nodeEngine.getConfig(), mapServiceContext);
-            }
+        return mapName -> {
+            MapServiceContext mapServiceContext = getService().getMapServiceContext();
+            return new MapContainer(mapName, nodeEngine.getConfig(), mapServiceContext);
         };
     }
 
@@ -328,12 +324,7 @@ class MapServiceContextImpl implements MapServiceContext {
      * @return predicate that matches with all record stores of all maps
      */
     private static Predicate<RecordStore> allRecordStores() {
-        return new Predicate<RecordStore>() {
-            @Override
-            public boolean test(RecordStore recordStore) {
-                return true;
-            }
-        };
+        return recordStore -> true;
     }
 
     @Override
@@ -419,7 +410,7 @@ class MapServiceContextImpl implements MapServiceContext {
      * @param mapContainer the map container to destroy
      */
     private void destroyPartitionsAndMapContainer(MapContainer mapContainer) {
-        final List<LocalRetryableExecution> executions = new ArrayList<LocalRetryableExecution>();
+        final List<LocalRetryableExecution> executions = new ArrayList<>();
 
         for (PartitionContainer container : partitionContainers) {
             final MapPartitionDestroyOperation op = new MapPartitionDestroyOperation(container, mapContainer);
@@ -468,8 +459,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public Collection<Integer> getOwnedPartitions() {
-        Collection<Integer> partitions = ownedPartitions.get();
+    public PartitionIdSet getOwnedPartitions() {
+        PartitionIdSet partitions = ownedPartitions.get();
         if (partitions == null) {
             reloadOwnedPartitions();
             partitions = ownedPartitions.get();
@@ -487,9 +478,9 @@ class MapServiceContextImpl implements MapServiceContext {
     public void reloadOwnedPartitions() {
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         for (; ; ) {
-            final Collection<Integer> expected = ownedPartitions.get();
+            final PartitionIdSet expected = ownedPartitions.get();
             final Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            final Set<Integer> newSet = Collections.unmodifiableSet(new LinkedHashSet<Integer>(partitions));
+            final PartitionIdSet newSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
             if (ownedPartitions.compareAndSet(expected, newSet)) {
                 return;
             }
@@ -854,7 +845,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Collection<RecordStoreMutationObserver<Record>> createRecordStoreMutationObservers(String mapName, int partitionId) {
-        Collection<RecordStoreMutationObserver<Record>> observers = new LinkedList<RecordStoreMutationObserver<Record>>();
+        Collection<RecordStoreMutationObserver<Record>> observers = new LinkedList<>();
         addEventJournalUpdaterObserver(observers, mapName, partitionId);
         addMetadataInitializerObserver(observers, mapName, partitionId);
 

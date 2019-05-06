@@ -109,7 +109,7 @@ public class MapExpirationBouncingMemberTest extends AbstractExpirationBouncingM
 
         private final IMap map;
 
-        public Get(IMap map) {
+        Get(IMap map) {
             this.map = map;
         }
 
@@ -125,7 +125,7 @@ public class MapExpirationBouncingMemberTest extends AbstractExpirationBouncingM
 
         private final IMap map;
 
-        public Set(IMap map) {
+        Set(IMap map) {
             this.map = map;
         }
 

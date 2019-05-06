@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V3_11;
 import static com.hazelcast.map.impl.record.Record.NOT_AVAILABLE;
 
 /**
@@ -147,11 +146,7 @@ public class RecordInfo
             out.writeLong(lastStoredTime);
             out.writeLong(expirationTime);
         }
-
-        //RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -166,11 +161,7 @@ public class RecordInfo
         boolean statsEnabled = in.readBoolean();
         lastStoredTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
         expirationTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
-
-        //RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
+        maxIdle = in.readLong();
 
     }
 

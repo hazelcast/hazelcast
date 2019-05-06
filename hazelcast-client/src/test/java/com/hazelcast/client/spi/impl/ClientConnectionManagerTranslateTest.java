@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Addresses;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.connection.nio.DefaultCredentialsFactory;
@@ -61,7 +60,6 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         TestAddressProvider provider = new TestAddressProvider();
-        TestAddressTranslator translator = new TestAddressTranslator();
 
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         clientConnectionManager = new ClientConnectionManagerImpl(clientInstanceImpl);
@@ -75,11 +73,11 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
                 return clientInstanceImpl.getClientExtension().createChannelInitializer();
             }
         };
-        clientConnectionManager.beforeClusterSwitch(new CandidateClusterContext(provider, translator, null,
+        clientConnectionManager.beforeClusterSwitch(new CandidateClusterContext(provider, null,
                 factory, null, channelInitializerProvider));
         clientConnectionManager.getOrConnect(new Address("127.0.0.1", 5701), true);
 
-        translator.shouldTranslate = true;
+        provider.shouldTranslate = true;
 
         privateAddress = new Address("127.0.0.1", 5701);
         publicAddress = new Address("192.168.0.1", 5701);
@@ -91,8 +89,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
         Hazelcast.shutdownAll();
     }
 
-
-    private class TestAddressTranslator implements AddressTranslator {
+    private class TestAddressProvider implements AddressProvider {
 
         volatile boolean shouldTranslate = false;
 
@@ -108,13 +105,6 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
             return null;
         }
 
-        @Override
-        public void refresh() {
-
-        }
-    }
-
-    private class TestAddressProvider implements AddressProvider {
         @Override
         public Addresses loadAddresses() {
             try {
@@ -142,6 +132,4 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
         Connection connection = clientConnectionManager.getOrConnect(privateAddress);
         assertNotNull(connection);
     }
-
-
 }

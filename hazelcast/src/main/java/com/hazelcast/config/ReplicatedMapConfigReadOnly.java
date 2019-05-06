@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
 
-    public ReplicatedMapConfigReadOnly(ReplicatedMapConfig replicatedMapConfig) {
+    ReplicatedMapConfigReadOnly(ReplicatedMapConfig replicatedMapConfig) {
         super(replicatedMapConfig);
     }
 

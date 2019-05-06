@@ -409,7 +409,7 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     }
 
     @Override
-    public byte toByteArray()[] {
+    public byte[] toByteArray() {
         return toByteArray(0);
     }
 

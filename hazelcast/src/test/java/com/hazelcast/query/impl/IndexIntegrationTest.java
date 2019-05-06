@@ -338,7 +338,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         String currency;
 
-        public DummyLoader(long amount, String currency) {
+        DummyLoader(long amount, String currency) {
             this.amount = amount;
             this.currency = currency;
         }

@@ -89,22 +89,14 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
 
     @Test
     public void whenMemberRestarts_withSameAddress() throws Exception {
-        whenMemberRestarts(new Runnable() {
-            @Override
-            public void run() {
-                remote = instanceFactory.newHazelcastInstance(remoteMember.getAddress());
-            }
-        });
+        whenMemberRestarts(() -> remote = instanceFactory.newHazelcastInstance(remoteMember.getAddress()));
     }
 
     @Test
     public void whenMemberRestarts_withSameIdentity() throws Exception {
-        whenMemberRestarts(new Runnable() {
-            @Override
-            public void run() {
-                StaticMemberNodeContext nodeContext = new StaticMemberNodeContext(instanceFactory, remoteMember);
-                remote = newHazelcastInstance(new Config(), remoteMember.toString(), nodeContext);
-            }
+        whenMemberRestarts(() -> {
+            StaticMemberNodeContext nodeContext = new StaticMemberNodeContext(instanceFactory, remoteMember);
+            remote = newHazelcastInstance(new Config(), remoteMember.toString(), nodeContext);
         });
     }
 
@@ -115,12 +107,9 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         final CountDownLatch blockMonitorLatch = new CountDownLatch(1);
         final CountDownLatch resumeMonitorLatch = new CountDownLatch(1);
 
-        localInvocationMonitor.execute(new Runnable() {
-            @Override
-            public void run() {
-                blockMonitorLatch.countDown();
-                assertOpenEventually(resumeMonitorLatch);
-            }
+        localInvocationMonitor.execute(() -> {
+            blockMonitorLatch.countDown();
+            assertOpenEventually(resumeMonitorLatch);
         });
 
         assertOpenEventually(blockMonitorLatch);

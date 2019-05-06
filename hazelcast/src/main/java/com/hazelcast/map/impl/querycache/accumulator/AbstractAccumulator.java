@@ -35,11 +35,11 @@ abstract class AbstractAccumulator<E extends Sequenced> implements Accumulator<E
     protected final CyclicBuffer<E> buffer;
     protected final PartitionSequencer partitionSequencer;
 
-    public AbstractAccumulator(QueryCacheContext context, AccumulatorInfo info) {
+    AbstractAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         this.context = context;
         this.info = info;
         this.partitionSequencer = new DefaultPartitionSequencer();
-        this.buffer = new DefaultCyclicBuffer<E>(info.getBufferSize());
+        this.buffer = new DefaultCyclicBuffer<>(info.getBufferSize());
     }
 
     public CyclicBuffer<E> getBuffer() {

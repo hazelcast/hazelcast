@@ -295,7 +295,7 @@ public class BounceMemberRule implements TestRule {
     private class BouncingClusterStatement extends Statement {
         private final Statement statement;
 
-        public BouncingClusterStatement(Statement statement) {
+        BouncingClusterStatement(Statement statement) {
             this.statement = statement;
         }
 

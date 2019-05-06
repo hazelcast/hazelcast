@@ -30,7 +30,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -150,7 +149,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_successfully_callbacksNeverRun() throws Exception {
+    public void completeDelegate_successfully_callbacksNeverRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
@@ -160,7 +159,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_withException_callbacksNeverRun() throws Exception {
+    public void completeDelegate_withException_callbacksNeverRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
@@ -171,7 +170,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_successfully_callbackAfterGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
+    public void completeDelegate_successfully_callbackAfterGet_invokeIsDoneOnOuter_callbacksRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
@@ -197,7 +196,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_successfully_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
+    public void completeDelegate_successfully_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
@@ -223,7 +222,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_withException_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
+    public void completeDelegate_withException_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
@@ -237,7 +236,7 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeDelegate_withException_callbackBeforeGet_invokeGetOnOuter_callbacksNeverReached() throws Exception {
+    public void completeDelegate_withException_callbackBeforeGet_invokeGetOnOuter_callbacksNeverReached() {
         ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
@@ -257,14 +256,11 @@ public class BasicCompletableFutureTest {
     }
 
     private <V> FutureTask<V> future(final V result) {
-        return new FutureTask<V>(new Callable<V>() {
-            @Override
-            public V call() throws Exception {
-                if (delegateThrowException) {
-                    throw new RuntimeException("Exception in execution");
-                }
-                return result;
+        return new FutureTask<V>(() -> {
+            if (delegateThrowException) {
+                throw new RuntimeException("Exception in execution");
             }
+            return result;
         });
     }
 
@@ -283,8 +279,8 @@ public class BasicCompletableFutureTest {
     }
 
     private static class TestCurrentThreadExecutor extends ThreadPoolExecutor implements ManagedExecutorService {
-        public TestCurrentThreadExecutor() {
-            super(1, 1, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>());
+        TestCurrentThreadExecutor() {
+            super(1, 1, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
         }
 
         public String getName() {

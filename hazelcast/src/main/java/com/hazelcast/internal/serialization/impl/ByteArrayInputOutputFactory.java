@@ -28,7 +28,7 @@ final class ByteArrayInputOutputFactory implements InputOutputFactory {
 
     private final ByteOrder byteOrder;
 
-    public ByteArrayInputOutputFactory(ByteOrder byteOrder) {
+    ByteArrayInputOutputFactory(ByteOrder byteOrder) {
         this.byteOrder = byteOrder;
     }
 

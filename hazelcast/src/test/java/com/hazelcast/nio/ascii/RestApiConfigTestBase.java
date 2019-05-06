@@ -163,7 +163,7 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
         final String requestUri;
         final String expectedSubstring;
 
-        public TestUrl(RestEndpointGroup restEndpointGroup, String httpMethod, String requestUri, String expectedSubstring) {
+        TestUrl(RestEndpointGroup restEndpointGroup, String httpMethod, String requestUri, String expectedSubstring) {
             this.restEndpointGroup = restEndpointGroup;
             this.method = httpMethod;
             this.requestUri = requestUri;

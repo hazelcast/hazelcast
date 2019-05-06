@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
+import com.hazelcast.util.collection.PartitionIdSet;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
@@ -41,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -145,52 +147,6 @@ public final class SerializationUtil {
     }
 
     /**
-     * Write items from a list into a ObjectDataOutput. The list can be null.
-     * It has to be deserialized via {@link #readNullableList(ObjectDataInput)}
-     *
-     * @param list list to write into the output
-     * @param out the output to use
-     * @param <T> type of the list
-     * @throws IOException
-     */
-    public static <T> void writeNullableList(List<T> list, ObjectDataOutput out) throws IOException {
-        if (list == null) {
-            out.writeBoolean(false);
-        } else {
-            out.writeBoolean(true);
-            out.writeInt(list.size());
-            for (T item : list) {
-                out.writeObject(item);
-            }
-        }
-    }
-
-    /**
-     * Read a list written by {@link #writeNullableList(List, ObjectDataOutput)}
-     *
-     * It does not guarantee to use the same implementation of a list as was written
-     * into the stream.
-     *
-     * @param in data input to read from
-     * @param <T> type of items
-     * @return list with all items or null
-     * @throws IOException
-     */
-    public static <T> List<T> readNullableList(ObjectDataInput in) throws IOException {
-        boolean notNull = in.readBoolean();
-        List<T> list = null;
-        if (notNull) {
-            int size = in.readInt();
-            list = new ArrayList<T>(size);
-            for (int i = 0; i < size; i++) {
-                T item = in.readObject();
-                list.add(item);
-            }
-        }
-        return list;
-    }
-
-    /**
      * Writes a map to given {@code ObjectDataOutput}.
      *
      * @param map           the map to serialize, can be {@code null}
@@ -249,17 +205,83 @@ public final class SerializationUtil {
     /**
      * Writes a collection to an {@link ObjectDataOutput}. The collection's size is written
      * to the data output, then each object in the collection is serialized.
+     * The collection is allowed to be null.
+     *
+     * @param items collection of items to be serialized
+     * @param out   data output to write to
+     * @param <T>   type of items
+     * @throws IOException when an error occurs while writing to the output
+     */
+    public static <T> void writeNullableCollection(Collection<T> items, ObjectDataOutput out) throws IOException {
+        // write true when the collection is NOT null
+        out.writeBoolean(items != null);
+        if (items == null) {
+            return;
+        }
+        writeCollection(items, out);
+    }
+
+    /**
+     * Writes a list to an {@link ObjectDataOutput}. The list's size is written
+     * to the data output, then each object in the list is serialized.
+     * The list is allowed to be null.
+     *
+     * @param items list of items to be serialized
+     * @param out   data output to write to
+     * @param <T>   type of items
+     * @throws IOException when an error occurs while writing to the output
+     */
+    public static <T> void writeNullableList(List<T> items, ObjectDataOutput out) throws IOException {
+        writeNullableCollection(items, out);
+    }
+
+    /**
+     * Writes a collection to an {@link ObjectDataOutput}. The collection's size is written
+     * to the data output, then each object in the collection is serialized.
      *
      * @param items collection of items to be serialized
      * @param out   data output to write to
      * @param <T>   type of items
      * @throws NullPointerException if {@code items} or {@code out} is {@code null}
-     * @throws IOException
+     * @throws IOException when an error occurs while writing to the output
      */
     public static <T> void writeCollection(Collection<T> items, ObjectDataOutput out) throws IOException {
         out.writeInt(items.size());
         for (T item : items) {
             out.writeObject(item);
+        }
+    }
+
+    /**
+     * Writes a list to an {@link ObjectDataOutput}. The list's size is written
+     * to the data output, then each object in the list is serialized.
+     *
+     * @param items list of items to be serialized
+     * @param out   data output to write to
+     * @param <T>   type of items
+     * @throws NullPointerException if {@code items} or {@code out} is {@code null}
+     * @throws IOException when an error occurs while writing to the output
+     */
+    public static <T> void writeList(List<T> items, ObjectDataOutput out) throws IOException {
+        writeCollection(items, out);
+    }
+
+    /**
+     * Writes a nullable {@link PartitionIdSet} to the given data output.
+     * @param partitionIds
+     * @param out
+     * @throws IOException
+     */
+    public static void writeNullablePartitionIdSet(PartitionIdSet partitionIds, ObjectDataOutput out) throws IOException {
+        if (partitionIds == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(partitionIds.getPartitionCount());
+        out.writeInt(partitionIds.size());
+        PrimitiveIterator.OfInt intIterator = partitionIds.intIterator();
+        while (intIterator.hasNext()) {
+            out.writeInt(intIterator.nextInt());
         }
     }
 
@@ -270,19 +292,78 @@ public final class SerializationUtil {
      *
      * @param in    data input to read from
      * @param <T>   type of items
+     * @return      collection of items read from data input or null
+     * @throws IOException when an error occurs while reading from the input
+     */
+    public static <T> Collection<T> readNullableCollection(ObjectDataInput in) throws IOException {
+        return readNullableList(in);
+    }
+
+    /**
+     * Reads a list from the given {@link ObjectDataInput}. It is expected that
+     * the next int read from the data input is the list's size, then that
+     * many objects are read from the data input and returned as a list.
+     *
+     * @param in    data input to read from
+     * @param <T>   type of items
+     * @return      list of items read from data input or null
+     * @throws IOException when an error occurs while reading from the input
+     */
+    public static <T> List<T> readNullableList(ObjectDataInput in) throws IOException {
+        boolean isNull = !in.readBoolean();
+        if (isNull) {
+            return null;
+        }
+        return readList(in);
+    }
+
+    /**
+     * Reads a collection from the given {@link ObjectDataInput}. It is expected that
+     * the next int read from the data input is the collection's size, then that
+     * many objects are read from the data input and returned as a collection.
+     *
+     * @param in    data input to read from
+     * @param <T>   type of items
      * @return      collection of items read from data input
-     * @throws IOException
+     * @throws IOException  when an error occurs while reading from the input
      */
     public static <T> Collection<T> readCollection(ObjectDataInput in) throws IOException {
+        return readList(in);
+    }
+
+    /**
+     * Reads a list from the given {@link ObjectDataInput}. It is expected that
+     * the next int read from the data input is the list's size, then that
+     * many objects are read from the data input and returned as a list.
+     *
+     * @param in    data input to read from
+     * @param <T>   type of items
+     * @return      list of items read from data input
+     * @throws IOException  when an error occurs while reading from the input
+     */
+    public static <T> List<T> readList(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         if (size == 0) {
             return Collections.emptyList();
         }
-        Collection<T> collection = new ArrayList<T>(size);
+        List<T> list = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             T item = in.readObject();
-            collection.add(item);
+            list.add(item);
         }
-        return collection;
+        return list;
+    }
+
+    public static PartitionIdSet readNullablePartitionIdSet(ObjectDataInput in) throws IOException {
+        int partitionCount = in.readInt();
+        if (partitionCount == -1) {
+            return null;
+        }
+        PartitionIdSet result = new PartitionIdSet(partitionCount);
+        int setSize = in.readInt();
+        for (int i = 0; i < setSize; i++) {
+            result.add(in.readInt());
+        }
+        return result;
     }
 }

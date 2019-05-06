@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -35,14 +34,14 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
 
     @Test
     public void testGettersAndDefaults() {
-        CallIdSequence sequence = new FailFastCallIdSequence(100, ConcurrencyDetection.createDisabled());
+        CallIdSequence sequence = new FailFastCallIdSequence(100);
         assertEquals(0, sequence.getLastCallId());
         assertEquals(100, sequence.getMaxConcurrentInvocations());
     }
 
     @Test
     public void whenNext_thenSequenceIncrements() {
-        CallIdSequence sequence = new FailFastCallIdSequence(100, ConcurrencyDetection.createDisabled());
+        CallIdSequence sequence = new FailFastCallIdSequence(100);
         long oldSequence = sequence.getLastCallId();
         long result = sequence.next();
         assertEquals(oldSequence + 1, result);
@@ -51,7 +50,7 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastOverloadException.class)
     public void next_whenNoCapacity_thenThrowException() throws InterruptedException {
-        CallIdSequence sequence = new FailFastCallIdSequence(1, ConcurrencyDetection.createDisabled());
+        CallIdSequence sequence = new FailFastCallIdSequence(1);
 
         // take the only slot available
         sequence.next();
@@ -62,7 +61,7 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
 
     @Test
     public void when_overCapacityButPriorityItem_then_noException() {
-        CallIdSequence sequence = new FailFastCallIdSequence(1, ConcurrencyDetection.createDisabled());
+        CallIdSequence sequence = new FailFastCallIdSequence(1);
 
         // take the only slot available
         assertEquals(1, sequence.next());
@@ -72,7 +71,7 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
 
     @Test
     public void whenComplete_thenTailIncrements() {
-        FailFastCallIdSequence sequence = new FailFastCallIdSequence(100, ConcurrencyDetection.createDisabled());
+        FailFastCallIdSequence sequence = new FailFastCallIdSequence(100);
         sequence.next();
 
         long oldSequence = sequence.getLastCallId();
@@ -86,7 +85,7 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void complete_whenNoMatchingNext() {
-        CallIdSequence sequence = new FailFastCallIdSequence(100, ConcurrencyDetection.createDisabled());
+        CallIdSequence sequence = new FailFastCallIdSequence(100);
 
         sequence.next();
         sequence.complete();

@@ -34,10 +34,10 @@ final class WaitersInfo implements IdentifiedDataSerializable {
     private String conditionId;
     private Set<ConditionWaiter> waiters = SetUtil.createHashSet(INITIAL_WAITER_SIZE);
 
-    public WaitersInfo() {
+    WaitersInfo() {
     }
 
-    public WaitersInfo(String conditionId) {
+    WaitersInfo(String conditionId) {
         this.conditionId = conditionId;
     }
 

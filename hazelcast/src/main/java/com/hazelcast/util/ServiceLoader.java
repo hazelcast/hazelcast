@@ -199,7 +199,7 @@ public final class ServiceLoader {
         private final String className;
         private final ClassLoader classLoader;
 
-        public ServiceDefinition(String className, ClassLoader classLoader) {
+        ServiceDefinition(String className, ClassLoader classLoader) {
             this.className = isNotNull(className, "className");
             this.classLoader = isNotNull(classLoader, "classLoader");
         }

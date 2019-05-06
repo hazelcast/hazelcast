@@ -74,7 +74,7 @@ public class ClusterStateManager {
     private final Node node;
     private final ILogger logger;
     private final Lock clusterServiceLock;
-    private final AtomicReference<LockGuard> stateLockRef = new AtomicReference<LockGuard>(LockGuard.NOT_LOCKED);
+    private final AtomicReference<LockGuard> stateLockRef = new AtomicReference<>(LockGuard.NOT_LOCKED);
 
     private volatile ClusterState state = ClusterState.ACTIVE;
 
@@ -437,7 +437,7 @@ public class ClusterStateManager {
                                               String txnId, Collection<MemberImpl> members,
                                               int memberListVersion, int partitionStateVersion) {
 
-        Collection<Future> futures = new ArrayList<Future>(members.size());
+        Collection<Future> futures = new ArrayList<>(members.size());
 
         final Address thisAddress = node.getThisAddress();
         for (Member member : members) {

@@ -64,7 +64,7 @@ public class OperationParkerImplTest extends HazelcastTestSupport {
         private final int keyCount;
         private final CountDownLatch latch;
 
-        public LockWaitAndUnlockTask(HazelcastInstance hz, int keyCount, CountDownLatch latch) {
+        LockWaitAndUnlockTask(HazelcastInstance hz, int keyCount, CountDownLatch latch) {
             this.hz = hz;
             this.keyCount = keyCount;
             this.latch = latch;

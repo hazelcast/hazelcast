@@ -30,7 +30,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.internal.cluster.Versions.V3_12;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -57,7 +56,7 @@ public class JoinRequest extends JoinMessage {
         this.credentials = credentials;
         this.attributes = attributes;
         if (excludedMemberUuids != null) {
-            this.excludedMemberUuids = unmodifiableSet(new HashSet<String>(excludedMemberUuids));
+            this.excludedMemberUuids = unmodifiableSet(new HashSet<>(excludedMemberUuids));
         }
         this.addresses = addresses;
     }
@@ -108,11 +107,7 @@ public class JoinRequest extends JoinMessage {
         }
 
         this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
-
-        // starting with 3.12 member version, address map is part of the serialized form of JoinRequest
-        if (memberVersion.asVersion().isGreaterOrEqual(V3_12)) {
-            this.addresses = readMap(in);
-        }
+        this.addresses = readMap(in);
     }
 
     @Override

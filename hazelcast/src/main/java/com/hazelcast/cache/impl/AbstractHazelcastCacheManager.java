@@ -22,7 +22,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 
 import javax.cache.CacheException;
@@ -290,12 +289,9 @@ public abstract class AbstractHazelcastCacheManager implements HazelcastCacheMan
     }
 
     private String registerLifecycleListener() {
-        return hazelcastInstance.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
-                    onShuttingDown();
-                }
+        return hazelcastInstance.getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
+                onShuttingDown();
             }
         });
     }

@@ -377,7 +377,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         return config;
     }
 
-    private class AssertSizeAndDataTask extends AssertTask {
+    private class AssertSizeAndDataTask implements AssertTask {
         private final boolean allowDirty;
 
         AssertSizeAndDataTask(boolean allowDirty) {

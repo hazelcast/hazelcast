@@ -115,12 +115,12 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
@@ -228,7 +228,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private boolean hasNetwork;
         private boolean hasAdvancedNetworkEnabled;
 
-        public SpringXmlConfigBuilder(ParserContext parserContext) {
+        SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(Config.class);
             this.mapConfigManagedMap = createManagedMap("mapConfigs");

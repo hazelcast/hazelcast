@@ -36,7 +36,7 @@ public class PortableFactory implements com.hazelcast.nio.serialization.Portable
 
         private String name;
 
-        public SampleRunnableTask() {
+        SampleRunnableTask() {
         }
 
         public void run() {

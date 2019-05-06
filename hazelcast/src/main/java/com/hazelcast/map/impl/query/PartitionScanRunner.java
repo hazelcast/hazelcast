@@ -134,7 +134,7 @@ public class PartitionScanRunner {
      */
     public QueryableEntriesSegment run(String mapName, Predicate predicate, int partitionId, int tableIndex, int fetchSize) {
         int lastIndex = tableIndex;
-        final List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
+        final List<QueryableEntry> resultList = new LinkedList<>();
         final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         final RecordStore recordStore = partitionContainer.getRecordStore(mapName);
         final Extractors extractors = mapServiceContext.getExtractors(mapName);

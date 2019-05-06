@@ -37,7 +37,6 @@ import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.function.Consumer;
 
 import java.util.Map.Entry;
 import java.util.Set;
@@ -45,12 +44,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
@@ -141,12 +140,7 @@ public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
 
     private static ScheduledExecutorService newScheduler(final String hzName) {
         // the scheduler is configured with a single thread; so prevent concurrency problems.
-        return new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new InvocationMonitorThread(r, hzName);
-            }
-        });
+        return new ScheduledThreadPoolExecutor(1, r -> new InvocationMonitorThread(r, hzName));
     }
 
     private long invocationTimeoutMillis(HazelcastProperties properties) {

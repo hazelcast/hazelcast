@@ -28,12 +28,12 @@ import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Function;
-import com.hazelcast.util.function.Predicate;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Reads from the map event journal in batches. You may specify the start

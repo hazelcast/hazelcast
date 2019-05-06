@@ -37,7 +37,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.function.Supplier;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +48,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;

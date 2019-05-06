@@ -456,11 +456,11 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         public int a;
 
-        public SamplePortable(int a) {
+        SamplePortable(int a) {
             this.a = a;
         }
 
-        public SamplePortable() {
+        SamplePortable() {
         }
 
         public int getFactoryId() {

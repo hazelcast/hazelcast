@@ -32,17 +32,12 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class DefaultSubscriberSequencerProvider implements SubscriberSequencerProvider {
 
     private static final ConstructorFunction<Integer, PartitionSequencer> PARTITION_SEQUENCER_CONSTRUCTOR
-            = new ConstructorFunction<Integer, PartitionSequencer>() {
-        @Override
-        public PartitionSequencer createNew(Integer arg) {
-            return new DefaultPartitionSequencer();
-        }
-    };
+            = arg -> new DefaultPartitionSequencer();
 
     private final ConcurrentMap<Integer, PartitionSequencer> partitionSequences;
 
     public DefaultSubscriberSequencerProvider() {
-        this.partitionSequences = new ConcurrentHashMap<Integer, PartitionSequencer>();
+        this.partitionSequences = new ConcurrentHashMap<>();
     }
 
     @Override

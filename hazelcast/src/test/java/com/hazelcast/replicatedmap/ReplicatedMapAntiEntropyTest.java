@@ -113,7 +113,7 @@ public class ReplicatedMapAntiEntropyTest extends ReplicatedMapAbstractTest {
 
     class PutOperationWithNoReplication extends PutOperation {
 
-        public PutOperationWithNoReplication() {
+        PutOperationWithNoReplication() {
         }
 
         @Override

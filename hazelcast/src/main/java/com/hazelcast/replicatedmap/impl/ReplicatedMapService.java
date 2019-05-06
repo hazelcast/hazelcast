@@ -76,6 +76,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
  * manages the backing {@link PartitionContainer}s that actually hold the data
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
         MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService<LocalReplicatedMapStats>, QuorumAwareService {
 

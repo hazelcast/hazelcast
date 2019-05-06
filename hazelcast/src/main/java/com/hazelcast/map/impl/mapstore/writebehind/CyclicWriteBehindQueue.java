@@ -54,9 +54,9 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      */
     private final Map<Data, MutableInteger> index;
 
-    public CyclicWriteBehindQueue() {
-        this.deque = new ArrayDeque<DelayedEntry>();
-        this.index = new HashMap<Data, MutableInteger>();
+    CyclicWriteBehindQueue() {
+        this.deque = new ArrayDeque<>();
+        this.index = new HashMap<>();
     }
 
     /**
@@ -151,14 +151,12 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      */
     @Override
     public List<DelayedEntry> asList() {
-        return Collections.unmodifiableList(new ArrayList<DelayedEntry>(deque));
+        return Collections.unmodifiableList(new ArrayList<>(deque));
     }
 
     @Override
     public void filter(IPredicate<DelayedEntry> predicate, Collection<DelayedEntry> collection) {
-        Iterator<DelayedEntry> iterator = deque.iterator();
-        while (iterator.hasNext()) {
-            DelayedEntry e = iterator.next();
+        for (DelayedEntry e : deque) {
             if (predicate.test(e)) {
                 collection.add(e);
             } else {

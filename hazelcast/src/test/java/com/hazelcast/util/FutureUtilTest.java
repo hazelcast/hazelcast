@@ -302,7 +302,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
 
     private static class UncancellableFuture<V> extends AbstractCompletableFuture<V> {
 
-        public UncancellableFuture() {
+        UncancellableFuture() {
             super((Executor) null, null);
         }
 

@@ -119,233 +119,50 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
-        constructors[AUTH_FAILURE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AuthenticationFailureOp();
-            }
-        };
-        constructors[ADDRESS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Address();
-            }
-        };
-        constructors[MEMBER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MemberImpl();
-            }
-        };
-        constructors[HEARTBEAT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HeartbeatOp();
-            }
-        };
-        constructors[CONFIG_CHECK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ConfigCheck();
-            }
-        };
-        constructors[BIND_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BindMessage();
-            }
-        };
-        constructors[MEMBER_INFO_UPDATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MembersUpdateOp();
-            }
-        };
-        constructors[FINALIZE_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FinalizeJoinOp();
-            }
-        };
-        constructors[AUTHORIZATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AuthorizationOp();
-            }
-        };
-        constructors[BEFORE_JOIN_CHECK_FAILURE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BeforeJoinCheckFailureOp();
-            }
-        };
-        constructors[CHANGE_CLUSTER_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CommitClusterStateOp();
-            }
-        };
-        constructors[CONFIG_MISMATCH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ConfigMismatchOp();
-            }
-        };
-        constructors[GROUP_MISMATCH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GroupMismatchOp();
-            }
-        };
-        constructors[SPLIT_BRAIN_MERGE_VALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SplitBrainMergeValidationOp();
-            }
-        };
-        constructors[JOIN_REQUEST_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new JoinRequestOp();
-            }
-        };
-        constructors[LOCK_CLUSTER_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LockClusterStateOp();
-            }
-        };
-        constructors[MASTER_CLAIM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new JoinMastershipClaimOp();
-            }
-        };
-        constructors[WHOIS_MASTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new WhoisMasterOp();
-            }
-        };
-        constructors[MEMBER_ATTR_CHANGED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MemberAttributeChangedOp();
-            }
-        };
-        constructors[MERGE_CLUSTERS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergeClustersOp();
-            }
-        };
-        constructors[POST_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new OnJoinOp();
-            }
-        };
-        constructors[ROLLBACK_CLUSTER_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RollbackClusterStateOp();
-            }
-        };
-        constructors[MASTER_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MasterResponseOp();
-            }
-        };
-        constructors[SHUTDOWN_NODE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ShutdownNodeOp();
-            }
-        };
-        constructors[TRIGGER_MEMBER_LIST_PUBLISH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TriggerMemberListPublishOp();
-            }
-        };
-        constructors[CLUSTER_STATE_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClusterStateTransactionLogRecord();
-            }
-        };
-        constructors[MEMBER_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MemberInfo();
-            }
-        };
-        constructors[JOIN_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new JoinMessage();
-            }
-        };
-        constructors[JOIN_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new JoinRequest();
-            }
-        };
-        constructors[MIGRATION_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MigrationInfo();
-            }
-        };
-        constructors[MEMBER_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MemberVersion();
-            }
-        };
-        constructors[CLUSTER_STATE_CHANGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClusterStateChange();
-            }
-        };
-        constructors[SPLIT_BRAIN_JOIN_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SplitBrainJoinMessage();
-            }
-        };
-        constructors[VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Version();
-            }
-        };
-
-        constructors[FETCH_MEMBER_LIST_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FetchMembersViewOp();
-            }
-        };
-        constructors[EXPLICIT_SUSPICION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ExplicitSuspicionOp();
-            }
-        };
-        constructors[MEMBERS_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MembersView();
-            }
-        };
-        constructors[TRIGGER_EXPLICIT_SUSPICION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TriggerExplicitSuspicionOp();
-            }
-        };
-        constructors[MEMBERS_VIEW_METADATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MembersViewMetadata();
-            }
-        };
-        constructors[HEARTBEAT_COMPLAINT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HeartbeatComplaintOp();
-            }
-        };
-        constructors[PROMOTE_LITE_MEMBER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PromoteLiteMemberOp();
-            }
-        };
-        constructors[VECTOR_CLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new VectorClock();
-            }
-        };
-        constructors[EXTENDED_BIND_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ExtendedBindMessage();
-            }
-        };
-        constructors[ENDPOINT_QUALIFIER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EndpointQualifier();
-            }
-        };
+        constructors[AUTH_FAILURE] = arg -> new AuthenticationFailureOp();
+        constructors[ADDRESS] = arg -> new Address();
+        constructors[MEMBER] = arg -> new MemberImpl();
+        constructors[HEARTBEAT] = arg -> new HeartbeatOp();
+        constructors[CONFIG_CHECK] = arg -> new ConfigCheck();
+        constructors[BIND_MESSAGE] = arg -> new BindMessage();
+        constructors[MEMBER_INFO_UPDATE] = arg -> new MembersUpdateOp();
+        constructors[FINALIZE_JOIN] = arg -> new FinalizeJoinOp();
+        constructors[AUTHORIZATION] = arg -> new AuthorizationOp();
+        constructors[BEFORE_JOIN_CHECK_FAILURE] = arg -> new BeforeJoinCheckFailureOp();
+        constructors[CHANGE_CLUSTER_STATE] = arg -> new CommitClusterStateOp();
+        constructors[CONFIG_MISMATCH] = arg -> new ConfigMismatchOp();
+        constructors[GROUP_MISMATCH] = arg -> new GroupMismatchOp();
+        constructors[SPLIT_BRAIN_MERGE_VALIDATION] = arg -> new SplitBrainMergeValidationOp();
+        constructors[JOIN_REQUEST_OP] = arg -> new JoinRequestOp();
+        constructors[LOCK_CLUSTER_STATE] = arg -> new LockClusterStateOp();
+        constructors[MASTER_CLAIM] = arg -> new JoinMastershipClaimOp();
+        constructors[WHOIS_MASTER] = arg -> new WhoisMasterOp();
+        constructors[MEMBER_ATTR_CHANGED] = arg -> new MemberAttributeChangedOp();
+        constructors[MERGE_CLUSTERS] = arg -> new MergeClustersOp();
+        constructors[POST_JOIN] = arg -> new OnJoinOp();
+        constructors[ROLLBACK_CLUSTER_STATE] = arg -> new RollbackClusterStateOp();
+        constructors[MASTER_RESPONSE] = arg -> new MasterResponseOp();
+        constructors[SHUTDOWN_NODE] = arg -> new ShutdownNodeOp();
+        constructors[TRIGGER_MEMBER_LIST_PUBLISH] = arg -> new TriggerMemberListPublishOp();
+        constructors[CLUSTER_STATE_TRANSACTION_LOG_RECORD] = arg -> new ClusterStateTransactionLogRecord();
+        constructors[MEMBER_INFO] = arg -> new MemberInfo();
+        constructors[JOIN_MESSAGE] = arg -> new JoinMessage();
+        constructors[JOIN_REQUEST] = arg -> new JoinRequest();
+        constructors[MIGRATION_INFO] = arg -> new MigrationInfo();
+        constructors[MEMBER_VERSION] = arg -> new MemberVersion();
+        constructors[CLUSTER_STATE_CHANGE] = arg -> new ClusterStateChange();
+        constructors[SPLIT_BRAIN_JOIN_MESSAGE] = arg -> new SplitBrainJoinMessage();
+        constructors[VERSION] = arg -> new Version();
+        constructors[FETCH_MEMBER_LIST_STATE] = arg -> new FetchMembersViewOp();
+        constructors[EXPLICIT_SUSPICION] = arg -> new ExplicitSuspicionOp();
+        constructors[MEMBERS_VIEW] = arg -> new MembersView();
+        constructors[TRIGGER_EXPLICIT_SUSPICION] = arg -> new TriggerExplicitSuspicionOp();
+        constructors[MEMBERS_VIEW_METADATA] = arg -> new MembersViewMetadata();
+        constructors[HEARTBEAT_COMPLAINT] = arg -> new HeartbeatComplaintOp();
+        constructors[PROMOTE_LITE_MEMBER] = arg -> new PromoteLiteMemberOp();
+        constructors[VECTOR_CLOCK] = arg -> new VectorClock();
+        constructors[EXTENDED_BIND_MESSAGE] = arg -> new ExtendedBindMessage();
+        constructors[ENDPOINT_QUALIFIER] = arg -> new EndpointQualifier();
         return new ArrayDataSerializableFactory(constructors);
     }
 }

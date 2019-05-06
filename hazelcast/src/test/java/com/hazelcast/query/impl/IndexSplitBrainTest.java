@@ -113,7 +113,7 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
 
         private String id;
 
-        public ValueObject() {
+        ValueObject() {
         }
 
         ValueObject(String id) {

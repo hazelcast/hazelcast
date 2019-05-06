@@ -374,7 +374,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
     static class ExceptionThrowingRingbufferStore<T> implements RingbufferStore<T> {
         private final boolean getLargestSequenceThrowsException;
 
-        public ExceptionThrowingRingbufferStore() {
+        ExceptionThrowingRingbufferStore() {
             this(false);
         }
 
@@ -416,7 +416,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
         final CountDownLatch latchStoreAll;
         final CountDownLatch latchLoad;
 
-        public TestRingbufferStore() {
+        TestRingbufferStore() {
             this(0, 0, 0);
         }
 
@@ -475,7 +475,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
         final Map<Long, T> store = new LinkedHashMap<Long, T>();
 
 
-        public WriteOnlyRingbufferStore() {
+        WriteOnlyRingbufferStore() {
         }
 
         Map<Long, T> getStore() {

@@ -256,7 +256,7 @@ public abstract class VisitorTestSupport {
 
         private final int referentIndex;
 
-        public ReferencePredicate(int referentIndex) {
+        ReferencePredicate(int referentIndex) {
             this.referentIndex = referentIndex;
         }
 

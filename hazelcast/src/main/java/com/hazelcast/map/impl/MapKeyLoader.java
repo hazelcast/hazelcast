@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -239,12 +238,9 @@ public class MapKeyLoader {
         if (keyLoadFinished.isDone()) {
             keyLoadFinished = new LoadFinishedFuture();
 
-            Future<Boolean> sent = execService.submit(MAP_LOAD_ALL_KEYS_EXECUTOR, new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    sendKeysInBatches(mapStoreContext, replaceExistingValues);
-                    return false;
-                }
+            Future<Boolean> sent = execService.submit(MAP_LOAD_ALL_KEYS_EXECUTOR, () -> {
+                sendKeysInBatches(mapStoreContext, replaceExistingValues);
+                return false;
             });
 
             execService.asCompletableFuture(sent).andThen(keyLoadFinished);
@@ -265,16 +261,13 @@ public class MapKeyLoader {
             keyLoadFinished = new LoadFinishedFuture();
 
             // side effect -> just trigger load on SENDER_BACKUP ID SENDER died
-            execService.execute(MAP_LOAD_ALL_KEYS_EXECUTOR, new Runnable() {
-                @Override
-                public void run() {
-                    // checks if loading has finished and triggers loading in case SENDER died and SENDER_BACKUP took over.
-                    Operation op = new TriggerLoadIfNeededOperation(mapName);
-                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
-                            // required since loading may be triggered after migration
-                            // and in this case the callback is the only way to get to know if the key load finished or not.
-                            .andThen(loadingFinishedCallback());
-                }
+            execService.execute(MAP_LOAD_ALL_KEYS_EXECUTOR, () -> {
+                // checks if loading has finished and triggers loading in case SENDER died and SENDER_BACKUP took over.
+                Operation op = new TriggerLoadIfNeededOperation(mapName);
+                opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
+                        // required since loading may be triggered after migration
+                        // and in this case the callback is the only way to get to know if the key load finished or not.
+                        .andThen(loadingFinishedCallback());
             });
         }
         return keyLoadFinished;
@@ -368,12 +361,9 @@ public class MapKeyLoader {
      */
     public void triggerLoadingWithDelay() {
         if (delayedTrigger == null) {
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    Operation op = new TriggerLoadIfNeededOperation(mapName);
-                    opService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
-                }
+            Runnable runnable = () -> {
+                Operation op = new TriggerLoadIfNeededOperation(mapName);
+                opService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
             };
             delayedTrigger = new CoalescingDelayedTrigger(execService, LOADING_TRIGGER_DELAY, LOADING_TRIGGER_DELAY, runnable);
         }
@@ -442,7 +432,7 @@ public class MapKeyLoader {
             Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
             Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch);
 
-            List<Future> futures = new ArrayList<Future>();
+            List<Future> futures = new ArrayList<>();
             while (batches.hasNext()) {
                 Map<Integer, List<Data>> batch = batches.next();
                 futures.addAll(sendBatch(batch, replaceExistingValues));
@@ -480,7 +470,7 @@ public class MapKeyLoader {
      */
     private List<Future> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues) {
         Set<Entry<Integer, List<Data>>> entries = batch.entrySet();
-        List<Future> futures = new ArrayList<Future>(entries.size());
+        List<Future> futures = new ArrayList<>(entries.size());
         for (Entry<Integer, List<Data>> e : entries) {
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
@@ -514,7 +504,7 @@ public class MapKeyLoader {
         // The SENDER will be then in the LOADING status, thus the loadAll call will be ignored.
         // it happens only if all LoadAllOperation finish before the sendKeyLoadCompleted is started (test case, little data)
         // Fixes https://github.com/hazelcast/hazelcast/issues/5453
-        List<Future> futures = new ArrayList<Future>();
+        List<Future> futures = new ArrayList<>();
         Operation senderStatus = new KeyLoadStatusOperation(mapName, exception);
         Future senderFuture = opService.createInvocationBuilder(SERVICE_NAME, senderStatus, mapNamePartition)
                 .setReplicaIndex(0).invoke();

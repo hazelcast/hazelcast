@@ -16,11 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,16 +41,11 @@ import java.util.List;
  * consumer. The WAN consumer is in charge of consuming (processing) incoming
  * WAN events. Usually when defining a custom consumer you need to define a
  * custom WAN publisher as well.
- * <p>
- * NOTE:
- * Implements Versioned since it serialized WanConsumerConfig directly by
- * invoking writeData. This means that, even though WanConsumerConfig is
- * Versioned, the version will not be injected.
  *
  * @see MapConfig#setWanReplicationRef
  * @see CacheConfig#setWanReplicationRef
  */
-public class WanReplicationConfig implements IdentifiedDataSerializable, Versioned {
+public class WanReplicationConfig implements IdentifiedDataSerializable {
 
     private String name;
     private WanConsumerConfig wanConsumerConfig;
@@ -148,62 +141,24 @@ public class WanReplicationConfig implements IdentifiedDataSerializable, Version
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-
-        // RU_COMPAT_3_11
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            // using this method is nicer since the object
-            // can implement Versioned and have a version injected
-            out.writeObject(wanConsumerConfig);
-        } else {
-            if (wanConsumerConfig != null) {
-                out.writeBoolean(true);
-                wanConsumerConfig.writeData(out);
-            } else {
-                out.writeBoolean(false);
-            }
-        }
+        out.writeObject(wanConsumerConfig);
 
         int publisherCount = wanPublisherConfigs.size();
         out.writeInt(publisherCount);
         for (WanPublisherConfig wanPublisherConfig : wanPublisherConfigs) {
-            // RU_COMPAT_3_11
-            if (out.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-                // using this method is nicer since the object
-                // can implement Versioned and have a version injected
-                out.writeObject(wanPublisherConfig);
-            } else {
-                wanPublisherConfig.writeData(out);
-            }
+            out.writeObject(wanPublisherConfig);
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-
-        // RU_COMPAT_3_11
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-            wanConsumerConfig = in.readObject();
-        } else {
-            boolean consumerConfigExists = in.readBoolean();
-            if (consumerConfigExists) {
-                WanConsumerConfig consumerConfig = new WanConsumerConfig();
-                consumerConfig.readData(in);
-                wanConsumerConfig = consumerConfig;
-            }
-        }
+        wanConsumerConfig = in.readObject();
 
         int publisherCount = in.readInt();
         for (int i = 0; i < publisherCount; i++) {
             WanPublisherConfig publisherConfig;
-
-            // RU_COMPAT_3_11
-            if (in.getVersion().isGreaterOrEqual(Versions.V3_12)) {
-                publisherConfig = in.readObject();
-            } else {
-                publisherConfig = new WanPublisherConfig();
-                publisherConfig.readData(in);
-            }
+            publisherConfig = in.readObject();
             wanPublisherConfigs.add(publisherConfig);
         }
     }

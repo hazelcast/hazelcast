@@ -396,7 +396,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
 
         private boolean requiresGeneration;
 
-        public Output(int capacity) {
+        Output(int capacity) {
             super(capacity);
         }
 

@@ -26,7 +26,7 @@ final class HazelcastClientManagedContext implements ManagedContext {
     private final ManagedContext externalContext;
     private final boolean hasExternalContext;
 
-    public HazelcastClientManagedContext(HazelcastClientInstanceImpl instance, ManagedContext externalContext) {
+    HazelcastClientManagedContext(HazelcastClientInstanceImpl instance, ManagedContext externalContext) {
         this.instance = instance;
         this.externalContext = externalContext;
         this.hasExternalContext = externalContext != null;

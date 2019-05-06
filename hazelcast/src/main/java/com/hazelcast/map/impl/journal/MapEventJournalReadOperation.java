@@ -24,10 +24,10 @@ import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.util.function.Function;
-import com.hazelcast.util.function.Predicate;
 
 import java.io.IOException;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Reads from the map event journal in batches. You may specify the start sequence,
@@ -63,7 +63,7 @@ public class MapEventJournalReadOperation<K, V, T> extends EventJournalReadOpera
 
     @Override
     protected ReadResultSetImpl<InternalEventJournalMapEvent, T> createResultSet() {
-        return new MapEventJournalReadResultSetImpl<K, V, T>(
+        return new MapEventJournalReadResultSetImpl<>(
                 minSize, maxSize, getNodeEngine().getSerializationService(), predicate, projection);
     }
 

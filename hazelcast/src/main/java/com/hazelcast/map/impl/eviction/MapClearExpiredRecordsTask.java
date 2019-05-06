@@ -100,13 +100,10 @@ public class MapClearExpiredRecordsTask
 
     private final boolean primaryDrivesEviction;
 
-    private final Comparator<PartitionContainer> partitionContainerComparator = new Comparator<PartitionContainer>() {
-        @Override
-        public int compare(PartitionContainer o1, PartitionContainer o2) {
-            final long s1 = o1.getLastCleanupTimeCopy();
-            final long s2 = o2.getLastCleanupTimeCopy();
-            return (s1 < s2) ? -1 : ((s1 == s2) ? 0 : 1);
-        }
+    private final Comparator<PartitionContainer> partitionContainerComparator = (o1, o2) -> {
+        final long s1 = o1.getLastCleanupTimeCopy();
+        final long s2 = o2.getLastCleanupTimeCopy();
+        return Long.compare(s1, s2);
     };
 
     public MapClearExpiredRecordsTask(PartitionContainer[] containers, NodeEngine nodeEngine) {
@@ -176,7 +173,7 @@ public class MapClearExpiredRecordsTask
         ConcurrentMap<String, RecordStore> maps = container.getMaps();
         for (RecordStore recordStore : maps.values()) {
             int totalBackupCount = recordStore.getMapContainer().getTotalBackupCount();
-            toBackupSender.invokeBackupExpiryOperation(Collections.<ExpiredKey>emptyList(),
+            toBackupSender.invokeBackupExpiryOperation(Collections.emptyList(),
                     totalBackupCount, recordStore.getPartitionId(), recordStore);
         }
     }

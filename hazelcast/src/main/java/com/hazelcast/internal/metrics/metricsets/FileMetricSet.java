@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 
 import java.io.File;
@@ -41,32 +40,8 @@ public final class FileMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         File file = new File(System.getProperty("user.home"));
-
-        metricsRegistry.register(file, "file.partition[user.home].freeSpace", MANDATORY,
-                new LongProbeFunction<File>() {
-                    @Override
-                    public long get(File file) {
-                        return file.getFreeSpace();
-                    }
-                }
-        );
-
-        metricsRegistry.register(file, "file.partition[user.home].totalSpace", MANDATORY,
-                new LongProbeFunction<File>() {
-                    @Override
-                    public long get(File file) {
-                        return file.getTotalSpace();
-                    }
-                }
-        );
-
-        metricsRegistry.register(file, "file.partition[user.home].usableSpace", MANDATORY,
-                new LongProbeFunction<File>() {
-                    @Override
-                    public long get(File file) {
-                        return file.getUsableSpace();
-                    }
-                }
-        );
+        metricsRegistry.register(file, "file.partition[user.home].freeSpace", MANDATORY, File::getFreeSpace);
+        metricsRegistry.register(file, "file.partition[user.home].totalSpace", MANDATORY, File::getTotalSpace);
+        metricsRegistry.register(file, "file.partition[user.home].usableSpace", MANDATORY, File::getUsableSpace);
     }
 }

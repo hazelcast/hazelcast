@@ -96,7 +96,7 @@ public class ClientMapTryLockConcurrentTests {
 
     static class MapTryLockThread extends TestHelper {
 
-        public MapTryLockThread(IMap map, String upKey, String downKey) {
+        MapTryLockThread(IMap map, String upKey, String downKey) {
             super(map, upKey, downKey);
         }
 
@@ -119,7 +119,7 @@ public class ClientMapTryLockConcurrentTests {
 
     static class MapTryLockTimeOutThread extends TestHelper {
 
-        public MapTryLockTimeOutThread(IMap map, String upKey, String downKey) {
+        MapTryLockTimeOutThread(IMap map, String upKey, String downKey) {
             super(map, upKey, downKey);
         }
 
@@ -149,7 +149,7 @@ public class ClientMapTryLockConcurrentTests {
         protected final String upKey;
         protected final String downKey;
 
-        public TestHelper(IMap map, String upKey, String downKey) {
+        TestHelper(IMap map, String upKey, String downKey) {
             this.map = map;
             this.upKey = upKey;
             this.downKey = downKey;

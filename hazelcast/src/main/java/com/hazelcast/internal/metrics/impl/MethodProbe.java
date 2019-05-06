@@ -96,7 +96,7 @@ abstract class MethodProbe implements ProbeFunction {
 
     static class LongMethodProbe<S> extends MethodProbe implements LongProbeFunction<S> {
 
-        public LongMethodProbe(Method method, Probe probe, int type) {
+        LongMethodProbe(Method method, Probe probe, int type) {
             super(method, probe, type);
         }
 
@@ -128,7 +128,7 @@ abstract class MethodProbe implements ProbeFunction {
 
     static class DoubleMethodProbe<S> extends MethodProbe implements DoubleProbeFunction<S> {
 
-        public DoubleMethodProbe(Method method, Probe probe, int type) {
+        DoubleMethodProbe(Method method, Probe probe, int type) {
             super(method, probe, type);
         }
 

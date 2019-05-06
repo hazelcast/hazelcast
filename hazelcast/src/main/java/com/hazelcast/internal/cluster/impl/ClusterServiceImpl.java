@@ -164,7 +164,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public void sendLocalMembershipEvent() {
-        membershipManager.sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(getLocalMember()));
+        membershipManager.sendMembershipEvents(Collections.emptySet(), Collections.singleton(getLocalMember()));
     }
 
     public void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, Address suspectedAddress) {
@@ -326,7 +326,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
 
-        MemberImpl memberWithNewUuid = new MemberImpl.Builder(addressMap)
+        localMember = new MemberImpl.Builder(addressMap)
                 .version(localMember.getVersion())
                 .localMember(true)
                 .uuid(newUuid)
@@ -335,8 +335,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 .memberListJoinVersion(localMember.getMemberListJoinVersion())
                 .instance(node.hazelcastInstance)
                 .build();
-
-        localMember = memberWithNewUuid;
 
         node.loggingService.setThisMember(localMember);
     }
@@ -564,11 +562,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             for (final MembershipAwareService service : membershipAwareServices) {
                 // service events should not block each other
-                nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR, new Runnable() {
-                    public void run() {
-                        service.memberAttributeChanged(event);
-                    }
-                });
+                nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR, () -> service.memberAttributeChanged(event));
             }
         }
         EventService eventService = nodeEngine.getEventService();
@@ -611,7 +605,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return membershipManager.getMemberMap().getAddresses();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Set<Member> getMembers() {
         return membershipManager.getMemberSet();

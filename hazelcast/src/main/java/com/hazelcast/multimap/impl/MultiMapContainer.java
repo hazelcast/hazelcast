@@ -60,7 +60,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
         this.lockNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
         this.objectNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
@@ -184,7 +184,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void destroy() {
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getServiceOrNull(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }

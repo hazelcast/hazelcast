@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
 
-    private static final Set<String> backupRunning = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private static final Set<String> backupRunning = newSetFromMap(new ConcurrentHashMap<>());
 
     // we use 20 seconds so we don't get spurious build failures
     private static final int COMPLETION_TIMEOUT_SECONDS = 20;
@@ -127,10 +127,10 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         private String backupId;
         private int primaryResponseDelaySeconds;
 
-        public PrimaryOperation() {
+        PrimaryOperation() {
         }
 
-        public PrimaryOperation(String backupId) {
+        PrimaryOperation(String backupId) {
             this.backupId = backupId;
         }
 
@@ -188,10 +188,10 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
     static class SlowBackupOperation extends Operation {
         private String backupId;
 
-        public SlowBackupOperation() {
+        SlowBackupOperation() {
         }
 
-        public SlowBackupOperation(String backupId) {
+        SlowBackupOperation(String backupId) {
             this.backupId = backupId;
         }
 

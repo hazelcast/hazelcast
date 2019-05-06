@@ -38,7 +38,6 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.util.function.Function;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.Collections;
@@ -51,6 +50,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.nullValue;

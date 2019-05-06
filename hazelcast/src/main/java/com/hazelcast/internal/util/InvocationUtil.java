@@ -33,11 +33,11 @@ import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.ManagedExecutorService;
-import com.hazelcast.util.function.Supplier;
 
 import java.util.Iterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static com.hazelcast.util.IterableUtil.map;
 

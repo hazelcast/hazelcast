@@ -40,7 +40,7 @@ abstract class AbstractSemaphoreOp extends RaftOp implements IdentifiedDataSeria
     protected long threadId;
     protected UUID invocationUid;
 
-    public AbstractSemaphoreOp() {
+    AbstractSemaphoreOp() {
     }
 
     AbstractSemaphoreOp(String name, long sessionId, long threadId, UUID invocationUid) {

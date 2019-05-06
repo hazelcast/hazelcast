@@ -16,14 +16,12 @@
 
 package com.hazelcast.client.spi.impl.discovery;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.spi.properties.ClientProperty;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,24 +30,13 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class ConflictingConfigTest {
 
-    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
-    @Before
-    public void init() {
-        hazelcastFactory.newHazelcastInstance();
-    }
-
-    @After
-    public void tearDown() {
-        hazelcastFactory.shutdownAll();
-    }
 
     @Test(expected = IllegalStateException.class)
     public void testHazelcastCloud_and_DiscoverySPIEnabled() {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().getCloudConfig().setEnabled(true);
         config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
-        hazelcastFactory.newHazelcastClient(config);
+        HazelcastClient.newHazelcastClient(config);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -57,7 +44,7 @@ public class ConflictingConfigTest {
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), "TOKEN");
-        hazelcastFactory.newHazelcastClient(config);
+        HazelcastClient.newHazelcastClient(config);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -65,7 +52,7 @@ public class ConflictingConfigTest {
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), "TOKEN");
         config.getNetworkConfig().getCloudConfig().setEnabled(true);
-        hazelcastFactory.newHazelcastClient(config);
+        HazelcastClient.newHazelcastClient(config);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -73,7 +60,7 @@ public class ConflictingConfigTest {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().addAddress("127.0.0.1");
         config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
-        hazelcastFactory.newHazelcastClient(config);
+        HazelcastClient.newHazelcastClient(config);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -81,7 +68,7 @@ public class ConflictingConfigTest {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().addAddress("127.0.0.1");
         config.getNetworkConfig().getCloudConfig().setEnabled(true);
-        hazelcastFactory.newHazelcastClient(config);
+        HazelcastClient.newHazelcastClient(config);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -89,7 +76,7 @@ public class ConflictingConfigTest {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().addAddress("127.0.0.1");
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), "TOKEN");
-        hazelcastFactory.newHazelcastClient(config);
+        HazelcastClient.newHazelcastClient(config);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -97,6 +84,6 @@ public class ConflictingConfigTest {
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().getAwsConfig().setEnabled(true).setProperty("access-key", "12345").setSecretKey("56789");
         config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
-        hazelcastFactory.newHazelcastClient(config);
+        HazelcastClient.newHazelcastClient(config);
     }
 }

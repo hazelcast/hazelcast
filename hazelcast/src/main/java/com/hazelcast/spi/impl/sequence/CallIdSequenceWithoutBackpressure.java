@@ -49,4 +49,9 @@ public final class CallIdSequenceWithoutBackpressure implements CallIdSequence {
     public void complete() {
         //no-op
     }
+
+    @Override
+    public long concurrentInvocations() {
+        return -1;
+    }
 }

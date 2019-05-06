@@ -23,7 +23,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.function.Supplier;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 
 /**
  * Executes an operation on a set of targets. Similar to {@link com.hazelcast.spi.impl.operationservice.impl.InvokeOnPartitions}

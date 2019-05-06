@@ -269,7 +269,6 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]RecordStore"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]AbstractEvictableRecordStore"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]DefaultRecordStore"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]recordstore[\\/]AbstractRecordStore"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]MapProxyImpl"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]MapProxySupport"/>

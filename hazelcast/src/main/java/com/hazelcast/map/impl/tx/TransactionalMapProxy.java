@@ -52,7 +52,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class TransactionalMapProxy extends TransactionalMapProxySupport implements TransactionalMap {
 
-    private final Map<Data, TxnValueWrapper> txMap = new HashMap<Data, TxnValueWrapper>();
+    private final Map<Data, TxnValueWrapper> txMap = new HashMap<>();
 
     public TransactionalMapProxy(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(name, mapService, nodeEngine, transaction);
@@ -409,8 +409,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 predicate, IterationType.ENTRY, true, true);
 
         // TODO: can't we just use the original set?
-        List<Object> valueSet = new ArrayList<Object>();
-        Set<Data> keyWontBeIncluded = new HashSet<Data>();
+        List<Object> valueSet = new ArrayList<>();
+        Set<Data> keyWontBeIncluded = new HashSet<>();
 
         Extractors extractors = mapServiceContext.getExtractors(name);
         CachedQueryEntry cachedQueryEntry = new CachedQueryEntry();
@@ -449,7 +449,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     private void removeFromResultSet(Set<Map.Entry> queryResultSet, List<Object> valueSet,
                                      Set<Data> keyWontBeIncluded) {
         for (Map.Entry entry : queryResultSet) {
-            if (keyWontBeIncluded.contains((Data) entry.getKey())) {
+            if (keyWontBeIncluded.contains(entry.getKey())) {
                 continue;
             }
             valueSet.add(toObjectIfNeeded(entry.getValue()));

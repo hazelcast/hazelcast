@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
@@ -29,17 +28,15 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 public class CandidateClusterContext {
 
     private final AddressProvider addressProvider;
-    private final AddressTranslator addressTranslator;
     private final DiscoveryService discoveryService;
     private final ICredentialsFactory credentialsFactory;
     private final SocketInterceptor socketInterceptor;
     private final ChannelInitializerProvider channelInitializerProvider;
 
-    public CandidateClusterContext(AddressProvider addressProvider, AddressTranslator addressTranslator,
-                                   DiscoveryService discoveryService, ICredentialsFactory credentialsFactory,
-                                   SocketInterceptor socketInterceptor, ChannelInitializerProvider channelInitializerProvider) {
+    public CandidateClusterContext(AddressProvider addressProvider, DiscoveryService discoveryService,
+                                   ICredentialsFactory credentialsFactory, SocketInterceptor socketInterceptor,
+                                   ChannelInitializerProvider channelInitializerProvider) {
         this.addressProvider = addressProvider;
-        this.addressTranslator = addressTranslator;
         this.discoveryService = discoveryService;
         this.credentialsFactory = credentialsFactory;
         this.socketInterceptor = socketInterceptor;
@@ -64,10 +61,6 @@ public class CandidateClusterContext {
 
     public AddressProvider getAddressProvider() {
         return addressProvider;
-    }
-
-    public AddressTranslator getAddressTranslator() {
-        return addressTranslator;
     }
 
     public SocketInterceptor getSocketInterceptor() {

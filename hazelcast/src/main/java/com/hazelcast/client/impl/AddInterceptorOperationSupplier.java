@@ -19,7 +19,8 @@ package com.hazelcast.client.impl;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Supplier;
+
+import java.util.function.Supplier;
 
 public class AddInterceptorOperationSupplier implements Supplier<Operation> {
 

@@ -16,9 +16,8 @@
 
 package com.hazelcast.journal;
 
-import com.hazelcast.util.function.Predicate;
-
 import java.io.Serializable;
+import java.util.function.Predicate;
 
 /**
  * True predicate always returning {@code true}.

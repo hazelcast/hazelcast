@@ -37,10 +37,10 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.function.Predicate;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.removeAccumulator;
@@ -219,12 +219,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
      * @return predicate that matches with partitions of all maps
      */
     private static Predicate<RecordStore> allRecordStores() {
-        return new Predicate<RecordStore>() {
-            @Override
-            public boolean test(RecordStore recordStore) {
-                return true;
-            }
-        };
+        return recordStore -> true;
     }
 
     /**
@@ -233,12 +228,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
      * lesser backups than given backupCount.
      */
     private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
-        return new Predicate<RecordStore>() {
-            @Override
-            public boolean test(RecordStore recordStore) {
-                return recordStore.getMapContainer().getTotalBackupCount() < backupCount;
-            }
-        };
+        return recordStore -> recordStore.getMapContainer().getTotalBackupCount() < backupCount;
     }
 
     private MetaDataGenerator getMetaDataGenerator() {

@@ -31,7 +31,7 @@ class TransactionContextHolder {
     private final TransactionContext transactionContext;
     private boolean transactionActive;
 
-    public TransactionContextHolder(TransactionContext transactionContext) {
+    TransactionContextHolder(TransactionContext transactionContext) {
         this.transactionContext = transactionContext;
     }
 

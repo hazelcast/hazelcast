@@ -345,7 +345,10 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(partitionService.syncPartitionRuntimeState());
+                partitionService.checkClusterPartitionRuntimeStates();
+                for (HazelcastInstance instance : instances) {
+                    assertEquals(partitionService.getPartitionStateVersion(), getPartitionService(instance).getPartitionStateVersion());
+                }
             }
         });
 

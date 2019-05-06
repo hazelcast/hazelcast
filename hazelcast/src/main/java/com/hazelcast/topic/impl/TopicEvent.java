@@ -32,7 +32,7 @@ class TopicEvent implements IdentifiedDataSerializable {
     Address publisherAddress;
     Data data;
 
-    public TopicEvent() {
+    TopicEvent() {
     }
 
     TopicEvent(String name, Data data, Address publisherAddress) {

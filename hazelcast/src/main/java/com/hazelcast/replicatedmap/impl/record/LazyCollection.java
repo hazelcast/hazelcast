@@ -31,7 +31,7 @@ class LazyCollection<K, V> implements Collection<V> {
     private final IteratorFactory<K, V, V> iteratorFactory;
     private final Collection<ReplicatedRecord<K, V>> values;
 
-    public LazyCollection(IteratorFactory<K, V, V> iteratorFactory, InternalReplicatedMapStorage<K, V> storage) {
+    LazyCollection(IteratorFactory<K, V, V> iteratorFactory, InternalReplicatedMapStorage<K, V> storage) {
         this.iteratorFactory = iteratorFactory;
         this.values = storage.values();
         this.storage = storage;

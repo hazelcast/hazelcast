@@ -70,7 +70,7 @@ public class ClientReplicatedMapPutSerializationTest extends HazelcastTestSuppor
 
     static class SerializationCountingData implements DataSerializable {
 
-        public SerializationCountingData() {
+        SerializationCountingData() {
         }
 
         @Override

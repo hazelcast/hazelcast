@@ -204,4 +204,40 @@ public class LocalMapStatsImplTest {
         assertTrue(printed.contains("indexedQueryCount=5"));
         assertTrue(printed.contains("indexStats"));
     }
+
+    @Test
+    public void lowLatenciesRoundedToOneMillisecond() {
+        LocalMapStatsImpl stats = new LocalMapStatsImpl();
+        stats.incrementGetLatencyNanos(1);
+        stats.incrementPutLatencyNanos(1000);
+        stats.incrementSetLatencyNanos(10000);
+        stats.incrementRemoveLatencyNanos(MILLISECONDS.toNanos(1) + 100);
+
+        assertEquals(1, stats.getTotalGetLatency());
+        assertEquals(1, stats.getMaxGetLatency());
+        assertEquals(1, stats.getTotalPutLatency());
+        assertEquals(1, stats.getMaxPutLatency());
+        assertEquals(1, stats.getTotalSetLatency());
+        assertEquals(1, stats.getMaxSetLatency());
+        assertEquals(1, stats.getTotalRemoveLatency());
+        assertEquals(1, stats.getMaxRemoveLatency());
+    }
+
+    @Test
+    public void zeroLatenciesRemainZeroAfterConversion() {
+        LocalMapStatsImpl stats = new LocalMapStatsImpl();
+        stats.incrementGetLatencyNanos(0);
+        stats.incrementPutLatencyNanos(0);
+        stats.incrementSetLatencyNanos(0);
+        stats.incrementRemoveLatencyNanos(0);
+
+        assertEquals(0, stats.getTotalGetLatency());
+        assertEquals(0, stats.getMaxGetLatency());
+        assertEquals(0, stats.getTotalPutLatency());
+        assertEquals(0, stats.getMaxPutLatency());
+        assertEquals(0, stats.getTotalSetLatency());
+        assertEquals(0, stats.getMaxSetLatency());
+        assertEquals(0, stats.getTotalRemoveLatency());
+        assertEquals(0, stats.getMaxRemoveLatency());
+    }
 }

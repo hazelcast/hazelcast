@@ -111,7 +111,7 @@ public class AttributeCanonicalizationTest {
 
     private static class TestPredicate extends AbstractPredicate {
 
-        public TestPredicate(String attribute) {
+        TestPredicate(String attribute) {
             super(attribute);
         }
 

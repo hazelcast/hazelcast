@@ -16,8 +16,7 @@
 
 package com.hazelcast.journal;
 
-import com.hazelcast.util.function.Function;
-
+import java.util.function.Function;
 import java.io.Serializable;
 
 public class IdentityFunction<T> implements Function<T, T>, Serializable {

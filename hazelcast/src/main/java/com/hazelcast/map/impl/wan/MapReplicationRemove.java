@@ -29,12 +29,10 @@ import java.io.IOException;
 public class MapReplicationRemove implements ReplicationEventObject, IdentifiedDataSerializable {
     private String mapName;
     private Data key;
-    private long removeTime;
 
-    public MapReplicationRemove(String mapName, Data key, long removeTime) {
+    public MapReplicationRemove(String mapName, Data key) {
         this.mapName = mapName;
         this.key = key;
-        this.removeTime = removeTime;
     }
 
     public MapReplicationRemove() {
@@ -57,25 +55,15 @@ public class MapReplicationRemove implements ReplicationEventObject, IdentifiedD
         this.key = key;
     }
 
-    public long getRemoveTime() {
-        return removeTime;
-    }
-
-    public void setRemoveTime(long removeTime) {
-        this.removeTime = removeTime;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        out.writeLong(removeTime);
         out.writeData(key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        removeTime = in.readLong();
         key = in.readData();
     }
 

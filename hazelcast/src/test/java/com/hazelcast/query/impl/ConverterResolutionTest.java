@@ -186,7 +186,7 @@ public class ConverterResolutionTest {
         private final int key;
         private final Value value;
 
-        public Entry(int key, Long value) {
+        Entry(int key, Long value) {
             this.serializationService = ConverterResolutionTest.this.serializationService;
             this.extractors = ConverterResolutionTest.this.extractors;
             this.key = key;

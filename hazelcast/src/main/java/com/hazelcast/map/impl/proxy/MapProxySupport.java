@@ -92,6 +92,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MutableLong;
+import com.hazelcast.util.collection.PartitionIdSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -100,7 +101,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -378,7 +378,7 @@ abstract class MapProxySupport<K, V>
                     .invoke();
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos), CALLER_RUNS);
+                future.andThen(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
             }
 
             return future;
@@ -458,7 +458,7 @@ abstract class MapProxySupport<K, V>
             InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos), CALLER_RUNS);
+                future.andThen(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
             }
             return future;
         } catch (Throwable t) {
@@ -479,7 +479,7 @@ abstract class MapProxySupport<K, V>
                 long startTimeNanos = System.nanoTime();
                 result = operationService
                         .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                result.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos), CALLER_RUNS);
+                result.andThen(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
             } else {
                 result = operationService
                         .invokeOnPartition(SERVICE_NAME, operation, partitionId);
@@ -652,7 +652,7 @@ abstract class MapProxySupport<K, V>
             InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos), CALLER_RUNS);
+                future.andThen(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
             }
 
             return future;
@@ -708,7 +708,7 @@ abstract class MapProxySupport<K, V>
     private void waitAllTrue(Map<Integer, Object> results, OperationFactory operationFactory) throws InterruptedException {
         Iterator<Entry<Integer, Object>> iterator = results.entrySet().iterator();
         boolean isFinished = false;
-        Set<Integer> retrySet = new HashSet<Integer>();
+        PartitionIdSet retrySet = new PartitionIdSet(partitionService.getPartitionCount());
         while (!isFinished) {
             while (iterator.hasNext()) {
                 Entry<Integer, Object> entry = iterator.next();
@@ -842,14 +842,10 @@ abstract class MapProxySupport<K, V>
             return Collections.emptyMap();
         }
 
-        Map<Integer, List<Data>> idToKeys = new HashMap<Integer, List<Data>>();
+        Map<Integer, List<Data>> idToKeys = new HashMap<>();
         for (Data key : keys) {
             int partitionId = partitionService.getPartitionId(key);
-            List<Data> keyList = idToKeys.get(partitionId);
-            if (keyList == null) {
-                keyList = new ArrayList<Data>();
-                idToKeys.put(partitionId, keyList);
-            }
+            List<Data> keyList = idToKeys.computeIfAbsent(partitionId, k -> new ArrayList<>());
             keyList.add(key);
         }
         return idToKeys;
@@ -1005,7 +1001,7 @@ abstract class MapProxySupport<K, V>
             BinaryOperationFactory operationFactory = new BinaryOperationFactory(mapFlushOperation, getNodeEngine());
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
 
-            List<Future> futures = new ArrayList<Future>();
+            List<Future> futures = new ArrayList<>();
             for (Entry<Integer, Object> entry : results.entrySet()) {
                 Integer partitionId = entry.getKey();
                 Long count = ((Long) entry.getValue());
@@ -1159,7 +1155,7 @@ abstract class MapProxySupport<K, V>
         OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, dataKeys,
                 entryProcessor);
 
-        final SimpleCompletableFuture<Map<K, Object>> resultFuture = new SimpleCompletableFuture<Map<K, Object>>(getNodeEngine());
+        final SimpleCompletableFuture<Map<K, Object>> resultFuture = new SimpleCompletableFuture<>(getNodeEngine());
         ExecutionCallback<Map<Integer, Object>> partialCallback = new ExecutionCallback<Map<Integer, Object>>() {
             @Override
             public void onResponse(Map<Integer, Object> response) {

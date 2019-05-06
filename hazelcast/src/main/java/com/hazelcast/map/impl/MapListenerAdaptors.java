@@ -48,46 +48,30 @@ public final class MapListenerAdaptors {
      * constructors according to {@link com.hazelcast.core.EntryEventType}s.
      */
     private static final Map<EntryEventType, ConstructorFunction<MapListener, ListenerAdapter>> CONSTRUCTORS
-            = new EnumMap<EntryEventType, ConstructorFunction<MapListener, ListenerAdapter>>(EntryEventType.class);
+            = new EnumMap<>(EntryEventType.class);
 
     /**
      * Converts an {@link com.hazelcast.map.listener.EntryAddedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_ADDED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof EntryAddedListener)) {
-                        return null;
-                    }
-                    final EntryAddedListener listener = (EntryAddedListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryAdded((EntryEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof EntryAddedListener)) {
+                    return null;
                 }
+                final EntryAddedListener listener = (EntryAddedListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.entryAdded((EntryEvent) event);
             };
 
     /**
      * Converts an {@link com.hazelcast.map.listener.EntryRemovedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_REMOVED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof EntryRemovedListener)) {
-                        return null;
-                    }
-                    final EntryRemovedListener listener = (EntryRemovedListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryRemoved((EntryEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof EntryRemovedListener)) {
+                    return null;
                 }
+                final EntryRemovedListener listener = (EntryRemovedListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.entryRemoved((EntryEvent) event);
             };
 
 
@@ -95,20 +79,12 @@ public final class MapListenerAdaptors {
      * Converts an {@link com.hazelcast.map.listener.EntryEvictedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof EntryEvictedListener)) {
-                        return null;
-                    }
-                    final EntryEvictedListener listener = (EntryEvictedListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryEvicted((EntryEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof EntryEvictedListener)) {
+                    return null;
                 }
+                final EntryEvictedListener listener = (EntryEvictedListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.entryEvicted((EntryEvent) event);
             };
 
 
@@ -116,20 +92,12 @@ public final class MapListenerAdaptors {
      * Converts an {@link com.hazelcast.map.listener.EntryUpdatedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_UPDATED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof EntryUpdatedListener)) {
-                        return null;
-                    }
-                    final EntryUpdatedListener listener = (EntryUpdatedListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryUpdated((EntryEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof EntryUpdatedListener)) {
+                    return null;
                 }
+                final EntryUpdatedListener listener = (EntryUpdatedListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.entryUpdated((EntryEvent) event);
             };
 
 
@@ -137,20 +105,12 @@ public final class MapListenerAdaptors {
      * Converts an {@link com.hazelcast.map.listener.MapEvictedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> MAP_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof MapEvictedListener)) {
-                        return null;
-                    }
-                    final MapEvictedListener listener = (MapEvictedListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.mapEvicted((MapEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof MapEvictedListener)) {
+                    return null;
                 }
+                final MapEvictedListener listener = (MapEvictedListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.mapEvicted((MapEvent) event);
             };
 
 
@@ -158,40 +118,24 @@ public final class MapListenerAdaptors {
      * Converts an {@link com.hazelcast.map.listener.MapClearedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> MAP_CLEARED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof MapClearedListener)) {
-                        return null;
-                    }
-                    final MapClearedListener listener = (MapClearedListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.mapCleared((MapEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof MapClearedListener)) {
+                    return null;
                 }
+                final MapClearedListener listener = (MapClearedListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.mapCleared((MapEvent) event);
             };
 
     /**
      * Converts an {@link com.hazelcast.map.listener.EntryMergedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_MERGED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof EntryMergedListener)) {
-                        return null;
-                    }
-                    final EntryMergedListener listener = (EntryMergedListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryMerged((EntryEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof EntryMergedListener)) {
+                    return null;
                 }
+                final EntryMergedListener listener = (EntryMergedListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.entryMerged((EntryEvent) event);
             };
 
 
@@ -199,60 +143,36 @@ public final class MapListenerAdaptors {
      * Converts an {@link InvalidationListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> INVALIDATION_LISTENER =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof InvalidationListener)) {
-                        return null;
-                    }
-                    final InvalidationListener listener = (InvalidationListener) mapListener;
-                    return new ListenerAdapter<Invalidation>() {
-                        @Override
-                        public void onEvent(Invalidation event) {
-                            listener.onInvalidate(event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof InvalidationListener)) {
+                    return null;
                 }
+                final InvalidationListener listener = (InvalidationListener) mapListener;
+                return (ListenerAdapter<Invalidation>) listener::onInvalidate;
             };
 
     /**
      * Converts an {@link EntryExpiredListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_EXPIRED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof EntryExpiredListener)) {
-                        return null;
-                    }
-                    final EntryExpiredListener listener = (EntryExpiredListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryExpired((EntryEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof EntryExpiredListener)) {
+                    return null;
                 }
+                final EntryExpiredListener listener = (EntryExpiredListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.entryExpired((EntryEvent) event);
             };
 
     /**
      * Converts an {@link EntryLoadedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_LOADED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<MapListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(MapListener mapListener) {
-                    if (!(mapListener instanceof EntryLoadedListener)) {
-                        return null;
-                    }
-                    final EntryLoadedListener listener = (EntryLoadedListener) mapListener;
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryLoaded((EntryEvent) event);
-                        }
-                    };
+            mapListener -> {
+                if (!(mapListener instanceof EntryLoadedListener)) {
+                    return null;
                 }
+                final EntryLoadedListener listener = (EntryLoadedListener) mapListener;
+                return (ListenerAdapter<IMapEvent>) event -> listener.entryLoaded((EntryEvent) event);
             };
 
 

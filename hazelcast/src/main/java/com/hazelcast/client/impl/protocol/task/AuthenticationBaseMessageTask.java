@@ -32,7 +32,6 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.function.Supplier;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -40,6 +39,7 @@ import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.AUTHENTICATED;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.CREDENTIALS_FAILED;

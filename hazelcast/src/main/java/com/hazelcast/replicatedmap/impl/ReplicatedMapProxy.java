@@ -447,6 +447,11 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
     public String toString() {
         return getClass().getSimpleName() + " -> " + name;
     }

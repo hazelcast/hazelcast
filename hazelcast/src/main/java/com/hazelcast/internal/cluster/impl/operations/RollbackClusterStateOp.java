@@ -77,15 +77,14 @@ public class RollbackClusterStateOp extends Operation implements AllowedDuringPa
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        initiator.writeData(out);
+        out.writeObject(initiator);
         out.writeUTF(txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        initiator = new Address();
-        initiator.readData(in);
+        initiator = in.readObject();
         txnId = in.readUTF();
     }
 

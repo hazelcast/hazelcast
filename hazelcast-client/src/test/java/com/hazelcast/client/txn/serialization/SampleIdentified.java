@@ -29,10 +29,10 @@ class SampleIdentified implements IdentifiedDataSerializable {
 
     private int amount;
 
-    public SampleIdentified() {
+    SampleIdentified() {
     }
 
-    public SampleIdentified(int amount) {
+    SampleIdentified(int amount) {
         this.amount = amount;
     }
 

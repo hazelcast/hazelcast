@@ -86,7 +86,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
     }
 
     @Test
-    public void invokeOnPartition_outerRemote_innerSameInstance_callsDifferentPartition_mappedToSameThread() throws Exception {
+    public void invokeOnPartition_outerRemote_innerSameInstance_callsDifferentPartition_mappedToSameThread() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];

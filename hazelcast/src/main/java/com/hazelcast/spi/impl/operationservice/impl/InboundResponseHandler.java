@@ -26,9 +26,9 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteOrder;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;

@@ -25,15 +25,12 @@ import com.hazelcast.util.ConstructorFunction;
 public final class MapServiceConstructor {
 
     private static final ConstructorFunction<NodeEngine, MapService> DEFAULT_MAP_SERVICE_CONSTRUCTOR
-            = new ConstructorFunction<NodeEngine, MapService>() {
-        @Override
-        public MapService createNew(NodeEngine nodeEngine) {
-            MapServiceContext defaultMapServiceContext = new MapServiceContextImpl(nodeEngine);
-            MapServiceFactory factory
-                    = new DefaultMapServiceFactory(nodeEngine, defaultMapServiceContext);
-            return factory.createMapService();
-        }
-    };
+            = nodeEngine -> {
+                MapServiceContext defaultMapServiceContext = new MapServiceContextImpl(nodeEngine);
+                MapServiceFactory factory
+                        = new DefaultMapServiceFactory(nodeEngine, defaultMapServiceContext);
+                return factory.createMapService();
+            };
 
     private MapServiceConstructor() {
     }

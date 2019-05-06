@@ -2829,7 +2829,7 @@
         <xs:attribute name="class-name" type="non-space-string" use="required"/>
         <xs:attribute name="usage" use="optional" default="REQUIRED">
             <xs:simpleType>
-                <xs:restriction base="xs:string">
+                <xs:restriction base="non-space-string">
                     <xs:enumeration value="REQUIRED"/>
                     <xs:enumeration value="OPTIONAL"/>
                     <xs:enumeration value="REQUISITE"/>
@@ -2927,7 +2927,7 @@
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
-                    <xs:restriction base="xs:string">
+                    <xs:restriction base="non-space-string">
                         <xs:enumeration value="all"/>
                         <xs:enumeration value="create"/>
                         <xs:enumeration value="destroy"/>
@@ -3129,9 +3129,11 @@
 
     <xs:simpleType name="non-space-string">
         <xs:restriction base="xs:string">
-            <xs:pattern value="\S.*"/>
+            <xs:whiteSpace value="collapse"/>
+            <xs:pattern value="\S+"/>
         </xs:restriction>
     </xs:simpleType>
+
     <xs:complexType name="serialization">
         <xs:all>
             <xs:element name="portable-version" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
@@ -3378,7 +3380,7 @@
     </xs:complexType>
 
     <xs:simpleType name="memory-unit">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="BYTES"/>
             <xs:enumeration value="KILOBYTES"/>
             <xs:enumeration value="MEGABYTES"/>
@@ -3387,7 +3389,7 @@
     </xs:simpleType>
 
     <xs:simpleType name="topic-overload-policy">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="DISCARD_OLDEST"/>
             <xs:enumeration value="DISCARD_NEWEST"/>
             <xs:enumeration value="BLOCK"/>
@@ -3395,7 +3397,7 @@
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="memory-allocator-type">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="STANDARD"/>
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
@@ -3435,7 +3437,7 @@
         <xs:restriction base="non-space-string"/>
     </xs:simpleType>
     <xs:simpleType name="attributeTypeEnum">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="boolean"/>
             <xs:enumeration value="byte"/>
             <xs:enumeration value="double"/>
@@ -3462,14 +3464,14 @@
     </xs:complexType>
 
     <xs:simpleType name="topology-changed-strategy">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="CANCEL_RUNNING_OPERATION"/>
             <xs:enumeration value="DISCARD_AND_RESTART"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="eviction-policy">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="LRU"/>
             <xs:enumeration value="LFU"/>
@@ -3478,7 +3480,7 @@
     </xs:simpleType>
 
     <xs:simpleType name="max-size-policy">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="ENTRY_COUNT"/>
             <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
             <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
@@ -3652,7 +3654,7 @@
     </xs:element>
 
     <xs:simpleType name="quorum-type">
-        <xs:restriction base="xs:string">
+        <xs:restriction base="non-space-string">
             <xs:enumeration value="READ"/>
             <xs:enumeration value="WRITE"/>
             <xs:enumeration value="READ_WRITE"/>
@@ -4022,13 +4024,6 @@
             <xs:element name="filter-impl" type="xs:string" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
-
-    <xs:simpleType name="wan-ack-type">
-        <xs:restriction base="non-space-string">
-            <xs:enumeration value="ACK_ON_RECEIPT"/>
-            <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
-        </xs:restriction>
-    </xs:simpleType>
 
     <xs:simpleType name="wan-queue-full-behavior">
         <xs:restriction base="non-space-string">

@@ -17,9 +17,9 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.function.Consumer;
 
 import java.util.Collection;
+import java.util.function.Consumer;
 
 /**
  * Responsible for managing {@link com.hazelcast.nio.Connection} objects.

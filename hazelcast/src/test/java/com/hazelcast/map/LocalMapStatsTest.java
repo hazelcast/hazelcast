@@ -195,8 +195,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertEquals(0, localMapStats.getPutOperationCount());
         assertEquals(100, localMapStats.getSetOperationCount());
         assertEquals(0, localMapStats.getHits());
-        assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
-        assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+        assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+        assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
     }
 
     @Test
@@ -210,8 +210,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertEquals(0, localMapStats.getPutOperationCount());
         assertEquals(200, localMapStats.getSetOperationCount());
         assertEquals(100, localMapStats.getHits());
-        assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
-        assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+        assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+        assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
     }
 
     @Test
@@ -225,8 +225,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertEquals(0, localMapStats.getPutOperationCount());
         assertEquals(200, localMapStats.getSetOperationCount());
         assertEquals(100, localMapStats.getHits());
-        assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
-        assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+        assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+        assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
     }
 
     @Test
@@ -240,8 +240,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertEquals(0, localMapStats.getPutOperationCount());
         assertEquals(200, localMapStats.getSetOperationCount());
         assertEquals(100, localMapStats.getHits());
-        assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
-        assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+        assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+        assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
     }
 
     @Test
@@ -259,8 +259,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                 assertEquals(0, localMapStats.getPutOperationCount());
                 assertEquals(260, localMapStats.getSetOperationCount());
                 assertEquals(130, localMapStats.getHits());
-                assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
-                assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+                assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+                assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
             }
         });
     }
@@ -280,8 +280,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                 assertEquals(0, localMapStats.getPutOperationCount());
                 assertEquals(114, localMapStats.getSetOperationCount());
                 assertEquals(57, localMapStats.getHits());
-                assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
-                assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+                assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+                assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
             }
         });
     }
@@ -301,12 +301,11 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                 assertEquals(0, localMapStats.getPutOperationCount());
                 assertEquals(200, localMapStats.getSetOperationCount());
                 assertEquals(100, localMapStats.getHits());
-                assertGreaterOrEquals("totalSetLatency should be >= 0", localMapStats.getTotalSetLatency(), 0);
-                assertGreaterOrEquals("maxSetLatency should be >= 0", localMapStats.getMaxSetLatency(), 0);
+                assertGreaterOrEquals("totalSetLatency should be > 0", localMapStats.getTotalSetLatency(), 1);
+                assertGreaterOrEquals("maxSetLatency should be > 0", localMapStats.getMaxSetLatency(), 1);
             }
         });
     }
-
 
     @Test
     public void testRemove() throws Exception {

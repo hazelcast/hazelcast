@@ -45,7 +45,7 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
      * going to follow.
      */
     @Test
-    public void whenOperationReturnsNoResponse() throws Exception {
+    public void whenOperationReturnsNoResponse() {
         HazelcastInstance local = createHazelcastInstance();
         OperationService operationService = getOperationService(local);
         InternalCompletableFuture f = operationService.invokeOnPartition(null, new OperationsReturnsNoResponse(), 0);

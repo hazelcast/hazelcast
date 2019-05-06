@@ -57,15 +57,10 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
     @Test(expected = ExpectedRuntimeException.class)
     public void whenStartThrowsException_thenExceptionPropagated() {
-        InternalCompletableFuture f = localOperationService.invokeOnPartition(new OffloadingOperation(new OffloadFactory() {
+        InternalCompletableFuture f = localOperationService.invokeOnPartition(new OffloadingOperation(op -> new Offload(op) {
             @Override
-            public Offload create(Operation op) {
-                return new Offload(op) {
-                    @Override
-                    public void start() {
-                        throw new ExpectedRuntimeException();
-                    }
-                };
+            public void start() {
+                throw new ExpectedRuntimeException();
             }
         }));
 
@@ -76,15 +71,10 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
     @Test
     public void whenCompletesInStart() throws Exception {
         final String response = "someresponse";
-        OffloadingOperation source = new OffloadingOperation(new OffloadFactory() {
+        OffloadingOperation source = new OffloadingOperation(op -> new Offload(op) {
             @Override
-            public Offload create(Operation op) {
-                return new Offload(op) {
-                    @Override
-                    public void start() {
-                        offloadedOperation().sendResponse("someresponse");
-                    }
-                };
+            public void start() {
+                offloadedOperation().sendResponse("someresponse");
             }
         });
 
@@ -100,21 +90,13 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
     public void whenCompletesEventually() throws Exception {
         final String response = "someresponse";
 
-        InternalCompletableFuture<String> f = localOperationService.invokeOnPartition(new OffloadingOperation(new OffloadFactory() {
+        InternalCompletableFuture<String> f = localOperationService.invokeOnPartition(new OffloadingOperation(op -> new Offload(op) {
             @Override
-            public Offload create(Operation op) {
-                return new Offload(op) {
-                    @Override
-                    public void start() {
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                sleepSeconds(5);
-                                offloadedOperation().sendResponse(response);
-                            }
-                        }.start();
-                    }
-                };
+            public void start() {
+                new Thread(() -> {
+                    sleepSeconds(5);
+                    offloadedOperation().sendResponse(response);
+                }).start();
             }
         }));
 
@@ -124,17 +106,12 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
     @Test
     public void whenOffloaded_thenAsyncOperationRegisteredOnStart_andUnregisteredOnCompletion() {
-        OffloadingOperation source = new OffloadingOperation(new OffloadFactory() {
+        OffloadingOperation source = new OffloadingOperation(op -> new Offload(op) {
             @Override
-            public Offload create(Operation op) {
-                return new Offload(op) {
-                    @Override
-                    public void start() {
-                        // we make sure that the operation is registered
-                        assertTrue(localOperationService.asyncOperations.contains(offloadedOperation()));
-                        offloadedOperation().sendResponse("someresponse");
-                    }
-                };
+            public void start() {
+                // we make sure that the operation is registered
+                assertTrue(localOperationService.asyncOperations.contains(offloadedOperation()));
+                offloadedOperation().sendResponse("someresponse");
             }
         });
 

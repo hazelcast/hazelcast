@@ -38,7 +38,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     private Map<Data, DelayedEntry> map;
 
     CoalescedWriteBehindQueue() {
-        map = new LinkedHashMap<Data, DelayedEntry>();
+        map = new LinkedHashMap<>();
     }
 
     @Override
@@ -132,7 +132,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     @Override
     public List<DelayedEntry> asList() {
         Collection<DelayedEntry> values = map.values();
-        return Collections.unmodifiableList(new ArrayList<DelayedEntry>(values));
+        return Collections.unmodifiableList(new ArrayList<>(values));
     }
 
     @Override

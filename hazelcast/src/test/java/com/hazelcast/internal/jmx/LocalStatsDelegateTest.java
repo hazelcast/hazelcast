@@ -120,7 +120,7 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
         private IMap map;
         private AtomicBoolean done;
 
-        public MapPutThread(IMap map, AtomicBoolean done) {
+        MapPutThread(IMap map, AtomicBoolean done) {
             this.map = map;
             this.done = done;
         }
@@ -144,13 +144,13 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
 
         private int sleepMs;
 
-        public MapStatsThread(LocalStatsDelegate localMapStatsDelegate, AtomicBoolean done, int sleepMs) {
+        MapStatsThread(LocalStatsDelegate localMapStatsDelegate, AtomicBoolean done, int sleepMs) {
             this.localStatsDelegate = localMapStatsDelegate;
             this.done = done;
             this.sleepMs = sleepMs;
         }
 
-        public MapStatsThread(LocalStatsDelegate localMapStatsDelegate, AtomicBoolean done, boolean stress, int sleepMs) {
+        MapStatsThread(LocalStatsDelegate localMapStatsDelegate, AtomicBoolean done, boolean stress, int sleepMs) {
             this.localStatsDelegate = localMapStatsDelegate;
             this.done = done;
             this.stress = stress;

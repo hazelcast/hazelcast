@@ -100,8 +100,8 @@ public class EventJournalMapDataStructureAdapter<K, V>
     @SuppressWarnings("unchecked")
     public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence, int minSize, int maxSize, int partitionId,
-            com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
-            com.hazelcast.util.function.Function<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
+            java.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
+            java.util.function.Function<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
         return ((EventJournalReader<EventJournalMapEvent<K, V>>) map)
                 .readFromEventJournal(startSequence, minSize, maxSize, partitionId, predicate, projection);
     }

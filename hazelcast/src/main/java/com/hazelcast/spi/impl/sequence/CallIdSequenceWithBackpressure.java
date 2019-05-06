@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
@@ -45,10 +44,8 @@ public final class CallIdSequenceWithBackpressure extends AbstractCallIdSequence
 
     private final long backoffTimeoutNanos;
 
-    public CallIdSequenceWithBackpressure(int maxConcurrentInvocations,
-                                          long backoffTimeoutMs,
-                                          ConcurrencyDetection concurrencyDetection) {
-        super(maxConcurrentInvocations, concurrencyDetection);
+    public CallIdSequenceWithBackpressure(int maxConcurrentInvocations, long backoffTimeoutMs) {
+        super(maxConcurrentInvocations);
 
         checkPositive(backoffTimeoutMs, "backoffTimeoutMs should be a positive number. backoffTimeoutMs=" + backoffTimeoutMs);
 

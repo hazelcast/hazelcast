@@ -62,24 +62,15 @@ public class BindMessage implements IdentifiedDataSerializable {
 
     @Override
     public void readData(final ObjectDataInput in) throws IOException {
-        localAddress = new Address();
-        localAddress.readData(in);
-        boolean hasTarget = in.readBoolean();
-        if (hasTarget) {
-            targetAddress = new Address();
-            targetAddress.readData(in);
-        }
+        localAddress = in.readObject();
+        targetAddress = in.readObject();
         reply = in.readBoolean();
     }
 
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
-        localAddress.writeData(out);
-        boolean hasTarget = targetAddress != null;
-        out.writeBoolean(hasTarget);
-        if (hasTarget) {
-            targetAddress.writeData(out);
-        }
+        out.writeObject(localAddress);
+        out.writeObject(targetAddress);
         out.writeBoolean(reply);
     }
 

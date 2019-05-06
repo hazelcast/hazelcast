@@ -142,7 +142,7 @@ public final class PartitionServiceProxy implements PartitionService {
 
         private PartitionLostListener listener;
 
-        public ClientPartitionLostEventHandler(PartitionLostListener listener) {
+        ClientPartitionLostEventHandler(PartitionLostListener listener) {
             this.listener = listener;
         }
 

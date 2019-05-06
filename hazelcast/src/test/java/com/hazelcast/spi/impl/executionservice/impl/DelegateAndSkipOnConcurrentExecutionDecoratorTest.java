@@ -87,13 +87,9 @@ public class DelegateAndSkipOnConcurrentExecutionDecoratorTest
     }
 
     @Test
-    public void toString_contains_runnables_info() throws Exception {
+    public void toString_contains_runnables_info() {
         ResumableCountingRunnable runnable = new ResumableCountingRunnable();
-        Executor executor = new Executor() {
-            @Override
-            public void execute(Runnable command) {
-
-            }
+        Executor executor = command -> {
         };
 
         String stringified = new DelegateAndSkipOnConcurrentExecutionDecorator(runnable, executor).toString();

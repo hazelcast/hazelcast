@@ -77,7 +77,7 @@ public class MapMergePolicySerializationTest extends HazelcastTestSupport {
         static int serializedCount = 0;
         static int deserializedCount = 0;
 
-        public MyObject() {
+        MyObject() {
         }
 
         @Override

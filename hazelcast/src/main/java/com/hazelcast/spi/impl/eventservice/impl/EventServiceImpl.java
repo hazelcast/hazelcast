@@ -43,7 +43,6 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
-import com.hazelcast.util.function.Supplier;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -55,6 +54,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -181,7 +181,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
                 createThreadName(nodeEngine.getHazelcastInstance().getName(), "event"),
                 eventThreadCount,
                 eventQueueCapacity);
-        this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
+        this.segments = new ConcurrentHashMap<>();
     }
 
 

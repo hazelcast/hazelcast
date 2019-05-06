@@ -23,10 +23,10 @@ import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftUtil;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.function.Function;
 import org.junit.Assert;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.majority;

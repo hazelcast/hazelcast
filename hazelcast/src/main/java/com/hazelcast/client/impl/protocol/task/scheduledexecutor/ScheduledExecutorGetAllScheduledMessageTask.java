@@ -37,13 +37,13 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.function.Supplier;
 
 import java.security.Permission;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 

@@ -97,7 +97,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
             }
 
             delayedEntries.put(mapName, entries);
-            flushSequences.put(mapName, new ArrayDeque<WriteBehindStore.Sequence>(mapDataStore.getFlushSequences()));
+            flushSequences.put(mapName, new ArrayDeque<>(mapDataStore.getFlushSequences()));
         }
     }
 
@@ -162,7 +162,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             String mapName = in.readUTF();
             int listSize = in.readInt();
-            List<DelayedEntry> delayedEntriesList = new ArrayList<DelayedEntry>(listSize);
+            List<DelayedEntry> delayedEntriesList = new ArrayList<>(listSize);
             for (int j = 0; j < listSize; j++) {
                 Data key = in.readData();
                 Data value = in.readData();
@@ -183,7 +183,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
         for (int i = 0; i < expectedSize; i++) {
             String mapName = in.readUTF();
             int setSize = in.readInt();
-            Queue<WriteBehindStore.Sequence> queue = new ArrayDeque<WriteBehindStore.Sequence>(setSize);
+            Queue<WriteBehindStore.Sequence> queue = new ArrayDeque<>(setSize);
             for (int j = 0; j < setSize; j++) {
                 queue.add(new WriteBehindStore.Sequence(in.readLong(), in.readBoolean()));
             }

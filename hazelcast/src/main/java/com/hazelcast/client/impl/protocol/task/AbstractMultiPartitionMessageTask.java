@@ -23,8 +23,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.collection.PartitionIdSet;
 
-import java.util.Collection;
 import java.util.Map;
 
 public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractMessageTask<P>
@@ -41,7 +41,7 @@ public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractMessa
         operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions()).andThen(this);
     }
 
-    public abstract Collection<Integer> getPartitions();
+    public abstract PartitionIdSet getPartitions();
 
     protected abstract OperationFactory createOperationFactory();
 

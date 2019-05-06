@@ -1061,7 +1061,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             private final String value;
 
-            public UpdatingEntryProcessor(String value) {
+            UpdatingEntryProcessor(String value) {
                 this.value = value;
             }
 
@@ -2010,7 +2010,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     static class MyData implements Serializable {
         private long lastValue;
 
-        public MyData(long lastValue) {
+        MyData(long lastValue) {
             this.lastValue = lastValue;
         }
 
@@ -2025,7 +2025,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     static class MyProcessor extends AbstractEntryProcessor<Long, MyData> {
 
-        public MyProcessor() {
+        MyProcessor() {
         }
 
         @Override

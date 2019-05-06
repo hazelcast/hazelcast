@@ -96,7 +96,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
         data = createHashMap(namespaces.size());
         loaded = createHashMap(namespaces.size());
-        mapIndexInfos = new ArrayList<MapIndexInfo>(namespaces.size());
+        mapIndexInfos = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
             String mapName = mapNamespace.getObjectName();
@@ -114,7 +114,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             loaded.put(mapName, recordStore.isLoaded());
             storesByMapName.put(mapName, recordStore);
 
-            Set<IndexInfo> indexInfos = new HashSet<IndexInfo>();
+            Set<IndexInfo> indexInfos = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
                 // global-index
                 for (Index index : mapContainer.getIndexes().getIndexes()) {
@@ -276,7 +276,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             String name = in.readUTF();
             int recordStoreSize = in.readInt();
             Collection<RecordReplicationInfo> recordReplicationInfos
-                    = new ArrayList<RecordReplicationInfo>(recordStoreSize);
+                    = new ArrayList<>(recordStoreSize);
             for (int j = 0; j < recordStoreSize; j++) {
                 RecordReplicationInfo recordReplicationInfo = in.readObject();
                 recordReplicationInfos.add(recordReplicationInfo);
@@ -291,7 +291,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
 
         int mapIndexInfosSize = in.readInt();
-        mapIndexInfos = new ArrayList<MapIndexInfo>(mapIndexInfosSize);
+        mapIndexInfos = new ArrayList<>(mapIndexInfosSize);
         for (int i = 0; i < mapIndexInfosSize; i++) {
             MapIndexInfo mapIndexInfo = in.readObject();
             mapIndexInfos.add(mapIndexInfo);

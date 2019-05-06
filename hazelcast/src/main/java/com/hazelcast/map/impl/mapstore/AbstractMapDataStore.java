@@ -99,7 +99,7 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<Object> objectKeys = new ArrayList<Object>(keys.size());
+        final List<Object> objectKeys = new ArrayList<>(keys.size());
         for (Object key : keys) {
             objectKeys.add(toObject(key));
         }

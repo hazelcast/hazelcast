@@ -16,16 +16,14 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
-public class RemoveOperation extends BaseRemoveOperation implements Versioned {
+public class RemoveOperation extends BaseRemoveOperation {
 
     protected boolean successful;
 
@@ -62,20 +60,12 @@ public class RemoveOperation extends BaseRemoveOperation implements Versioned {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeBoolean(disableWanReplicationEvent);
-        }
+        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
-        // RU_COMPAT_3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            disableWanReplicationEvent = in.readBoolean();
-        }
+        disableWanReplicationEvent = in.readBoolean();
     }
 }

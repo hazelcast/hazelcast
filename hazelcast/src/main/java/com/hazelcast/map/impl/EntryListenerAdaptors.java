@@ -47,107 +47,47 @@ public final class EntryListenerAdaptors {
      * constructors according to {@link com.hazelcast.core.EntryEventType}s.
      */
     private static final Map<EntryEventType, ConstructorFunction<EntryListener, ListenerAdapter>> CONSTRUCTORS
-            = new EnumMap<EntryEventType, ConstructorFunction<EntryListener, ListenerAdapter>>(EntryEventType.class);
+            = new EnumMap<>(EntryEventType.class);
 
     /**
      * Converts an {@link EntryListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<EntryListener, ListenerAdapter> ENTRY_ADDED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<EntryListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryAdded((EntryEvent) event);
-                        }
-                    };
-                }
-            };
+            listener -> (ListenerAdapter<IMapEvent>) event -> listener.entryAdded((EntryEvent) event);
 
     /**
      * Converts an {@link EntryListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<EntryListener, ListenerAdapter> ENTRY_REMOVED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<EntryListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryRemoved((EntryEvent) event);
-                        }
-                    };
-                }
-            };
+            listener -> (ListenerAdapter<IMapEvent>) event -> listener.entryRemoved((EntryEvent) event);
 
 
     /**
      * Converts an {@link EntryListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<EntryListener, ListenerAdapter> ENTRY_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<EntryListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryEvicted((EntryEvent) event);
-                        }
-                    };
-                }
-            };
+            listener -> (ListenerAdapter<IMapEvent>) event -> listener.entryEvicted((EntryEvent) event);
 
 
     /**
      * Converts an {@link EntryListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<EntryListener, ListenerAdapter> ENTRY_UPDATED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<EntryListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.entryUpdated((EntryEvent) event);
-                        }
-                    };
-                }
-            };
+            listener -> (ListenerAdapter<IMapEvent>) event -> listener.entryUpdated((EntryEvent) event);
 
 
     /**
      * Converts an {@link EntryListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<EntryListener, ListenerAdapter> MAP_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<EntryListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.mapEvicted((MapEvent) event);
-                        }
-                    };
-                }
-            };
+            listener -> (ListenerAdapter<IMapEvent>) event -> listener.mapEvicted((MapEvent) event);
 
 
     /**
      * Converts an {@link EntryListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
      */
     private static final ConstructorFunction<EntryListener, ListenerAdapter> MAP_CLEARED_LISTENER_ADAPTER_CONSTRUCTOR =
-            new ConstructorFunction<EntryListener, ListenerAdapter>() {
-                @Override
-                public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter<IMapEvent>() {
-                        @Override
-                        public void onEvent(IMapEvent event) {
-                            listener.mapCleared((MapEvent) event);
-                        }
-                    };
-                }
-            };
+            listener -> (ListenerAdapter<IMapEvent>) event -> listener.mapCleared((MapEvent) event);
 
     /**
      * Register all {@link com.hazelcast.map.impl.ListenerAdapter} constructors

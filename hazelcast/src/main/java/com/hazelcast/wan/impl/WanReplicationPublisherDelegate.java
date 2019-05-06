@@ -30,7 +30,7 @@ final class WanReplicationPublisherDelegate
     final String name;
     final WanReplicationEndpoint[] endpoints;
 
-    public WanReplicationPublisherDelegate(String name, WanReplicationEndpoint[] endpoints) {
+    WanReplicationPublisherDelegate(String name, WanReplicationEndpoint[] endpoints) {
         this.name = name;
         this.endpoints = endpoints;
     }

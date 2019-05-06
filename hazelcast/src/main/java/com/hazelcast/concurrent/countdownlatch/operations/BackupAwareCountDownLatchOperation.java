@@ -27,7 +27,7 @@ abstract class BackupAwareCountDownLatchOperation extends AbstractCountDownLatch
     protected BackupAwareCountDownLatchOperation() {
     }
 
-    public BackupAwareCountDownLatchOperation(String name) {
+    protected BackupAwareCountDownLatchOperation(String name) {
         super(name);
     }
 

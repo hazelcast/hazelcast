@@ -56,7 +56,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.querycache.ListenerRegistrationHelper.generateListenerName;
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.createIMapEvent;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
@@ -169,9 +168,8 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
 
     @Override
     public String addPublisherListener(String mapName, String cacheId, ListenerAdapter adapter) {
-        final String listenerName = generateListenerName(mapName, cacheId);
         EventHandler handler = new QueryCacheHandler(adapter);
-        return listenerService.registerListener(createPublisherListenerCodec(listenerName), handler);
+        return listenerService.registerListener(createPublisherListenerCodec(cacheId), handler);
     }
 
     @Override
@@ -292,8 +290,8 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         private final long timeoutMs;
         private final SerializationService serializationService;
 
-        public EventDispatcher(Object event, ListenerInfo listenerInfo, int orderKey,
-                               SerializationService serializationService, long timeoutMs) {
+        EventDispatcher(Object event, ListenerInfo listenerInfo, int orderKey,
+                        SerializationService serializationService, long timeoutMs) {
             this.event = event;
             this.listenerInfo = listenerInfo;
             this.orderKey = orderKey;

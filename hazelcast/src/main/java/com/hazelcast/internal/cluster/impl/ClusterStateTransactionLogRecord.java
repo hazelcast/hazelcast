@@ -17,14 +17,12 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.TargetAwareTransactionLogRecord;
 import com.hazelcast.util.Preconditions;
@@ -37,7 +35,7 @@ import java.io.IOException;
  * @see ClusterState
  * @see com.hazelcast.core.Cluster#changeClusterState(ClusterState, com.hazelcast.transaction.TransactionOptions)
  */
-public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord, Versioned {
+public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord {
 
     ClusterStateChange stateChange;
     Address initiator;
@@ -103,10 +101,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         out.writeLong(leaseTime);
         out.writeInt(partitionStateVersion);
         out.writeBoolean(isTransient);
-        // RU_COMPAT_V3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeInt(memberListVersion);
-        }
+        out.writeInt(memberListVersion);
     }
 
     @Override
@@ -118,10 +113,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         leaseTime = in.readLong();
         partitionStateVersion = in.readInt();
         isTransient = in.readBoolean();
-        // RU_COMPAT_V3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            memberListVersion = in.readInt();
-        }
+        memberListVersion = in.readInt();
     }
 
     @Override

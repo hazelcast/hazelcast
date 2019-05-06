@@ -66,7 +66,7 @@ public interface EventJournalReader<E> {
             int minSize,
             int maxSize,
             int partitionId,
-            com.hazelcast.util.function.Predicate<? super E> predicate,
-            com.hazelcast.util.function.Function<? super E, ? extends T> projection
+            java.util.function.Predicate<? super E> predicate,
+            java.util.function.Function<? super E, ? extends T> projection
     );
 }

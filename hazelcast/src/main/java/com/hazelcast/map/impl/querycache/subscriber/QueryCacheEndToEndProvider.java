@@ -29,24 +29,20 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
- * Provides construction of whole {@link com.hazelcast.map.QueryCache QueryCache}
- * sub-system. As a result of that construction, we can have a ready to use {@link com.hazelcast.map.QueryCache QueryCache}.
+ * Provides construction of whole {@link com.hazelcast.map.QueryCache
+ * QueryCache} sub-system. As a result of that construction, we can
+ * have a ready to use {@link com.hazelcast.map.QueryCache QueryCache}.
  */
 public class QueryCacheEndToEndProvider<K, V> {
 
-    private final ContextMutexFactory mutexFactory;
+    private final ContextMutexFactory lifecycleMutexFactory;
     private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryPerMap;
     private final ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryConstructor
-            = new ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>>() {
-        @Override
-        public ConcurrentMap<String, InternalQueryCache<K, V>> createNew(String arg) {
-            return new ConcurrentHashMap<String, InternalQueryCache<K, V>>();
-        }
-    };
+            = arg -> new ConcurrentHashMap<>();
 
-    public QueryCacheEndToEndProvider(ContextMutexFactory mutexFactory) {
-        this.mutexFactory = mutexFactory;
-        this.queryCacheRegistryPerMap = new ConcurrentHashMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>>();
+    public QueryCacheEndToEndProvider(ContextMutexFactory lifecycleMutexFactory) {
+        this.lifecycleMutexFactory = lifecycleMutexFactory;
+        this.queryCacheRegistryPerMap = new ConcurrentHashMap<>();
     }
 
     public InternalQueryCache<K, V> getOrCreateQueryCache(String mapName, String cacheName,
@@ -77,7 +73,7 @@ public class QueryCacheEndToEndProvider<K, V> {
     public InternalQueryCache<K, V> tryCreateQueryCache(String mapName, String cacheName,
                                                         ConstructorFunction<String, InternalQueryCache<K, V>> constructor) {
 
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
                 ConcurrentMap<String, InternalQueryCache<K, V>> queryCacheRegistry
@@ -104,7 +100,7 @@ public class QueryCacheEndToEndProvider<K, V> {
     }
 
     public void removeSingleQueryCache(String mapName, String cacheName) {
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
                 Map<String, InternalQueryCache<K, V>> queryCacheRegistry = queryCacheRegistryPerMap.get(mapName);
@@ -118,7 +114,7 @@ public class QueryCacheEndToEndProvider<K, V> {
     }
 
     public void destroyAllQueryCaches(String mapName) {
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
+        ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
                 Map<String, InternalQueryCache<K, V>> queryCacheRegistry = queryCacheRegistryPerMap.remove(mapName);

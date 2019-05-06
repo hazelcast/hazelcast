@@ -98,12 +98,7 @@ public class PartitionStateManager {
     }
 
     private Collection<MemberGroup> createMemberGroups(final Set<Member> excludedMembers) {
-        MemberSelector exclude = new MemberSelector() {
-            @Override
-            public boolean select(Member member) {
-                return !excludedMembers.contains(member);
-            }
-        };
+        MemberSelector exclude = member -> !excludedMembers.contains(member);
         final MemberSelector selector = MemberSelectors.and(DATA_MEMBER_SELECTOR, exclude);
         final Collection<Member> members = node.getClusterService().getMembers(selector);
         return memberGroupFactory.createMemberGroups(members);

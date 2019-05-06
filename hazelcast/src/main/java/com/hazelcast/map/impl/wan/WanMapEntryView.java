@@ -17,36 +17,36 @@
 package com.hazelcast.map.impl.wan;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
 
 /**
- * WAN heap based implementation of {@link EntryView} for keeping
- * compatibility when sending to older (3.8+) clusters.
+ * WAN heap based implementation of {@link EntryView}.
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-@BinaryInterface
 public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable {
 
-    private final K key;
-    private final V value;
-    private final long cost;
-    private final long creationTime;
-    private final long expirationTime;
-    private final long hits;
-    private final long lastAccessTime;
-    private final long lastStoredTime;
-    private final long lastUpdateTime;
-    private final long version;
-    private final long ttl;
+    private K key;
+    private V value;
+    private long cost;
+    private long creationTime;
+    private long expirationTime;
+    private long hits;
+    private long lastAccessTime;
+    private long lastStoredTime;
+    private long lastUpdateTime;
+    private long version;
+    private long ttl;
+
+    public WanMapEntryView() {
+    }
 
     public WanMapEntryView(EntryView<K, V> entryView) {
         this.key = entryView.getKey();
@@ -124,7 +124,6 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // the serialized format must match the serialized format for a 3.8 SimpleEntryView
         IOUtil.writeObject(out, key);
         IOUtil.writeObject(out, value);
         out.writeLong(cost);
@@ -135,27 +134,32 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
-        out.writeLong(0);
         out.writeLong(ttl);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        throw new UnsupportedOperationException(getClass().getName() + " should not be deserialized!");
+        key = IOUtil.readObject(in);
+        value = IOUtil.readObject(in);
+        cost = in.readLong();
+        creationTime = in.readLong();
+        expirationTime = in.readLong();
+        hits = in.readLong();
+        lastAccessTime = in.readLong();
+        lastStoredTime = in.readLong();
+        lastUpdateTime = in.readLong();
+        version = in.readLong();
+        ttl = in.readLong();
     }
 
     @Override
     public int getFactoryId() {
-        // needs to have same factoryId and ID as SimpleEntryView
-        // for backwards compatibility when sending to a 3.8+ cluster
-        return MapDataSerializerHook.F_ID;
+        return WanDataSerializerHook.F_ID;
     }
 
     @Override
     public int getId() {
-        // needs to have same factoryId and ID as SimpleEntryView
-        // for backwards compatibility when sending to a 3.8+ cluster
-        return MapDataSerializerHook.ENTRY_VIEW;
+        return WanDataSerializerHook.WAN_MAP_ENTRY_VIEW;
     }
 
     @Override

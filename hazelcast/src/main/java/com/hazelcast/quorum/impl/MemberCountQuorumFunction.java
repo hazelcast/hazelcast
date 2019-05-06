@@ -25,7 +25,7 @@ class MemberCountQuorumFunction implements QuorumFunction {
 
     private final int quorumSize;
 
-    public MemberCountQuorumFunction(int quorumSize) {
+    MemberCountQuorumFunction(int quorumSize) {
         this.quorumSize = quorumSize;
     }
 

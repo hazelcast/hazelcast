@@ -21,7 +21,7 @@ import com.hazelcast.client.ClientNotAllowedInClusterException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.connection.AddressTranslator;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.ClientTypes;
@@ -80,7 +80,6 @@ import static com.hazelcast.client.spi.properties.ClientProperty.ALLOW_INVOCATIO
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
-import static com.hazelcast.client.spi.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -183,9 +182,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         .errorHandler(new ClientConnectionChannelErrorHandler())
                         .inputThreadCount(inputThreads)
                         .outputThreadCount(outputThreads)
-                        .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
-                        .writeThroughEnabled(properties.getBoolean(IO_WRITE_THROUGH_ENABLED))
-                        .concurrencyDetection(client.getConcurrencyDetection()));
+                        .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS)));
     }
 
 
@@ -634,10 +631,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (connection != null) {
                 return connection;
             }
-            AddressTranslator addressTranslator = currentClusterContext.getAddressTranslator();
-            Address address = addressTranslator.translate(target);
+            AddressProvider addressProvider = currentClusterContext.getAddressProvider();
+            Address address = null;
+            try {
+                address = addressProvider.translate(target);
+            } catch (Exception e) {
+                logger.warning("Failed to translate address " + target + " via address provider " + e.getMessage());
+            }
             if (address == null) {
-                throw new NullPointerException("Address Translator " + addressTranslator.getClass()
+                throw new NullPointerException("Address Provider " + addressProvider.getClass()
                         + " could not translate address " + target);
             }
             return createSocketConnection(address);

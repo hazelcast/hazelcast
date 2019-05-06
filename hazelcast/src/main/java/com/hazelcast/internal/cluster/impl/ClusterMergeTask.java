@@ -117,7 +117,7 @@ class ClusterMergeTask implements Runnable {
     private Collection<Runnable> collectMergeTasks(boolean coreServices) {
         // gather merge tasks from services
         Collection<SplitBrainHandlerService> services = node.nodeEngine.getServices(SplitBrainHandlerService.class);
-        Collection<Runnable> tasks = new LinkedList<Runnable>();
+        Collection<Runnable> tasks = new LinkedList<>();
         for (SplitBrainHandlerService service : services) {
             if (coreServices != isCoreService(service)) {
                 continue;
@@ -154,7 +154,7 @@ class ClusterMergeTask implements Runnable {
     }
 
     private void executeMergeTasks(Collection<Runnable> tasks) {
-        Collection<Future> futures = new LinkedList<Future>();
+        Collection<Future> futures = new LinkedList<>();
 
         for (Runnable task : tasks) {
             Future f = node.nodeEngine.getExecutionService().submit(MERGE_TASKS_EXECUTOR, task);

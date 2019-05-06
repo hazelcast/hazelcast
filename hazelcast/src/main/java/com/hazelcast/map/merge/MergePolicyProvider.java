@@ -33,7 +33,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public final class MergePolicyProvider {
 
-    private final ConcurrentMap<String, MapMergePolicy> mergePolicyMap = new ConcurrentHashMap<String, MapMergePolicy>();
+    private final ConcurrentMap<String, MapMergePolicy> mergePolicyMap = new ConcurrentHashMap<>();
 
     private final ConstructorFunction<String, MapMergePolicy> policyConstructorFunction
             = new ConstructorFunction<String, MapMergePolicy>() {

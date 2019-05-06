@@ -109,6 +109,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
                 }
                 return possibleAddresses;
             }
+
+            @Override
+            public Address translate(Address address) {
+                return address;
+            }
         };
     }
 

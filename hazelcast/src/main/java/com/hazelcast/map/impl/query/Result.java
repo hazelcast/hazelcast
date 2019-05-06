@@ -19,8 +19,8 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.util.collection.PartitionIdSet;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -34,14 +34,14 @@ public interface Result<T extends Result> extends IdentifiedDataSerializable {
      * Returns partition IDs associated with this result or {@code null} if this
      * result is an empty/failure result.
      */
-    Collection<Integer> getPartitionIds();
+    PartitionIdSet getPartitionIds();
 
     /**
      * Sets the partition IDs of this result.
      *
      * @param partitionIds the partition IDs to set.
      */
-    void setPartitionIds(Collection<Integer> partitionIds);
+    void setPartitionIds(PartitionIdSet partitionIds);
 
     /**
      * Combines the given result with this result modifying this result.
@@ -101,6 +101,6 @@ public interface Result<T extends Result> extends IdentifiedDataSerializable {
      * @param partitionIds the partition IDs to associate this result with.
      * @see #combine(Result)
      */
-    void completeConstruction(Collection<Integer> partitionIds);
+    void completeConstruction(PartitionIdSet partitionIds);
 
 }

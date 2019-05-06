@@ -80,12 +80,12 @@ public class InterceptorRegistry {
             return;
         }
 
-        Map<String, MapInterceptor> tmpMap = new HashMap<String, MapInterceptor>(id2InterceptorMap);
+        Map<String, MapInterceptor> tmpMap = new HashMap<>(id2InterceptorMap);
         tmpMap.put(id, interceptor);
 
         id2InterceptorMap = unmodifiableMap(tmpMap);
 
-        List<MapInterceptor> tmpInterceptors = new ArrayList<MapInterceptor>(interceptors);
+        List<MapInterceptor> tmpInterceptors = new ArrayList<>(interceptors);
         tmpInterceptors.add(interceptor);
 
         interceptors = unmodifiableList(tmpInterceptors);
@@ -106,12 +106,12 @@ public class InterceptorRegistry {
             return;
         }
 
-        Map<String, MapInterceptor> tmpMap = new HashMap<String, MapInterceptor>(id2InterceptorMap);
+        Map<String, MapInterceptor> tmpMap = new HashMap<>(id2InterceptorMap);
         MapInterceptor removedInterceptor = tmpMap.remove(id);
 
         id2InterceptorMap = unmodifiableMap(tmpMap);
 
-        List<MapInterceptor> tmpInterceptors = new ArrayList<MapInterceptor>(interceptors);
+        List<MapInterceptor> tmpInterceptors = new ArrayList<>(interceptors);
         tmpInterceptors.remove(removedInterceptor);
 
         interceptors = unmodifiableList(tmpInterceptors);

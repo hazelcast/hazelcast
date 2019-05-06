@@ -42,9 +42,6 @@ import java.io.IOException;
  */
 public final class PartitionReplica implements IdentifiedDataSerializable {
 
-    // RU_COMPAT_3_11
-    public static final String UNKNOWN_UID = "<unknown-uuid>";
-
     private Address address;
 
     private String uuid;

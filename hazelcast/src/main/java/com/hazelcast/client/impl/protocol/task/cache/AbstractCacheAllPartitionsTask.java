@@ -34,7 +34,7 @@ import java.security.Permission;
 abstract class AbstractCacheAllPartitionsTask<P>
         extends AbstractAllPartitionsMessageTask<P> {
 
-    public AbstractCacheAllPartitionsTask(ClientMessage clientMessage, Node node, Connection connection) {
+    AbstractCacheAllPartitionsTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 

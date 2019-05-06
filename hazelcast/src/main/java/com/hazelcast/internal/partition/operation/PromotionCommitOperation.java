@@ -18,7 +18,6 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -30,7 +29,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.CallStatus;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
@@ -40,12 +38,13 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 
 /**
  * Used for committing a promotion on destination. Sent by the master to update the partition table on destination and
@@ -54,7 +53,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link BeforePromotionOperation}s for every promoted partition. After all operations return it will reschedule itself
  * and finalize the promotions by sending {@link FinalizePromotionOperation} for every promotion.
  */
-public class PromotionCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation, Versioned {
+public class PromotionCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     private PartitionRuntimeState partitionState;
 
@@ -251,55 +250,15 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         expectedMemberUuid = in.readUTF();
-
-        Version version = in.getVersion();
-        // RU_COMPAT_3_11
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            partitionState = in.readObject();
-        } else {
-            partitionState = new PartitionRuntimeState();
-            partitionState.readData(in);
-        }
-
-        int len = in.readInt();
-        if (len > 0) {
-            promotions = new ArrayList<MigrationInfo>(len);
-            for (int i = 0; i < len; i++) {
-                MigrationInfo migrationInfo;
-                // RU_COMPAT_3_11
-                if (version.isGreaterOrEqual(Versions.V3_12)) {
-                    migrationInfo = in.readObject();
-                } else {
-                    migrationInfo = new MigrationInfo();
-                    migrationInfo.readData(in);
-                }
-                promotions.add(migrationInfo);
-            }
-        }
+        partitionState = in.readObject();
+        promotions = readCollection(in);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(expectedMemberUuid);
-
-        Version version = out.getVersion();
-        // RU_COMPAT_3_11
-        if (version.isGreaterOrEqual(Versions.V3_12)) {
-            out.writeObject(partitionState);
-        } else {
-            partitionState.writeData(out);
-        }
-
-        int len = promotions.size();
-        out.writeInt(len);
-        for (MigrationInfo migrationInfo : promotions) {
-            // RU_COMPAT_3_11
-            if (version.isGreaterOrEqual(Versions.V3_12)) {
-                out.writeObject(migrationInfo);
-            } else {
-                migrationInfo.writeData(out);
-            }
-        }
+        out.writeObject(partitionState);
+        writeCollection(promotions, out);
     }
 }

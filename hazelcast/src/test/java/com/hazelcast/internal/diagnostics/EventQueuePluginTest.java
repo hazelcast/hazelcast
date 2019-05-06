@@ -340,7 +340,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
     private final class TestCacheListener
             implements CacheEntryCreatedListener<Integer, Integer>, CacheEntryRemovedListener<Integer, Integer>, Serializable {
 
-        public TestCacheListener() {
+        TestCacheListener() {
         }
 
         @Override

@@ -1522,6 +1522,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *
      * <p><b>Interactions with the map store</b>
      * <p>
+     * If value with {@code key} is not found in memory,
+     * {@link MapLoader#load(Object)} is invoked to load the value from
+     * the map store backing the map.
+     * <p>
      * If write-through persistence mode is configured, before the value
      * is stored in memory, {@link MapStore#store(Object, Object)} is
      * called to write the value into the map store. Exceptions thrown
@@ -1552,6 +1556,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * previously put into the map.
      *
      * <p><b>Interactions with the map store</b>
+     * <p>
+     * If value with {@code key} is not found in memory,
+     * {@link MapLoader#load(Object)} is invoked to load the value from
+     * the map store backing the map.
      * <p>
      * If write-through persistence mode is configured, before the value
      * is stored in memory, {@link MapStore#store(Object, Object)} is

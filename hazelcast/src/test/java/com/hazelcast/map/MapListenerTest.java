@@ -134,7 +134,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         final AtomicInteger entriesObserved;
         final AtomicInteger exitsObserved;
 
-        public AllListener() {
+        AllListener() {
             entries = new AtomicInteger();
             exits = new AtomicInteger();
             entriesObserved = new AtomicInteger();
@@ -168,12 +168,12 @@ public class MapListenerTest extends HazelcastTestSupport {
         private int age;
         private String name;
 
-        public Person(int age, String name) {
+        Person(int age, String name) {
             this.age = age;
             this.name = name;
         }
 
-        public Person(Person p) {
+        Person(Person p) {
             this.name = p.name;
             this.age = p.age;
         }

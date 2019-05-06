@@ -28,7 +28,7 @@ class MigrationListenerAdapter implements PartitionEventListener<MigrationEvent>
 
     private final MigrationListener migrationListener;
 
-    public MigrationListenerAdapter(MigrationListener migrationListener) {
+    MigrationListenerAdapter(MigrationListener migrationListener) {
         this.migrationListener = migrationListener;
     }
 

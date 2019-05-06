@@ -56,7 +56,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         private final int age;
         private final String name;
 
-        public Person(String name, int age) {
+        Person(String name, int age) {
             this.age = age;
             this.name = name;
         }

@@ -65,11 +65,11 @@ class HazelcastOSGiServiceImpl
     // it can be read from any thread without `synchronized` blocks and without `volatile` they may seen invalid value.
     private volatile HazelcastOSGiInstance hazelcastInstance;
 
-    public HazelcastOSGiServiceImpl(Bundle ownerBundle) {
+    HazelcastOSGiServiceImpl(Bundle ownerBundle) {
         this(ownerBundle, DEFAULT_ID);
     }
 
-    public HazelcastOSGiServiceImpl(Bundle ownerBundle, String id) {
+    HazelcastOSGiServiceImpl(Bundle ownerBundle, String id) {
         this.ownerBundle = ownerBundle;
         this.ownerBundleContext = ownerBundle.getBundleContext();
         this.id = id;

@@ -73,7 +73,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
         Collection<Member> members = context.getMemberList();
 
-        List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
+        List<Future<QueryResult>> futures = new ArrayList<>(members.size());
         for (Member member : members) {
             Address address = member.getAddress();
             Future future = invokerWrapper.invokeOnTarget(new PublisherCreateOperation(info), address);
@@ -86,7 +86,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
 
         Collection<Member> memberList = context.getMemberList();
-        List<Future> futures = new ArrayList<Future>(memberList.size());
+        List<Future> futures = new ArrayList<>(memberList.size());
         for (Member member : memberList) {
             Operation operation = new MadePublishableOperation(mapName, cacheId);
             Future future = invokerWrapper.invokeOnTarget(operation, member.getAddress());

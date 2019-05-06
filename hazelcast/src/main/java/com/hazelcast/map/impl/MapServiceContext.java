@@ -28,8 +28,8 @@ import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.PartitionScanRunner;
+import com.hazelcast.map.impl.query.QueryEngine;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
@@ -46,11 +46,12 @@ import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 /**
  * Context which is needed by a map service.
@@ -122,7 +123,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     RecordStore getExistingRecordStore(int partitionId, String mapName);
 
-    Collection<Integer> getOwnedPartitions();
+    PartitionIdSet getOwnedPartitions();
 
     /**
      * Reloads the cached collection of partitions owned by this node.

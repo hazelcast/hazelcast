@@ -1382,7 +1382,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         private final MapOperationProvider operationProvider;
 
-        public WaitTimeoutSetterMapOperationProvider(MapOperationProvider operationProvider) {
+        WaitTimeoutSetterMapOperationProvider(MapOperationProvider operationProvider) {
             this.operationProvider = operationProvider;
         }
 

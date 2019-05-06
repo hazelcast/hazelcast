@@ -256,7 +256,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
     private static class TestPutOperationWithAsyncBackup extends TestPutOperation {
 
-        public TestPutOperationWithAsyncBackup() {
+        TestPutOperationWithAsyncBackup() {
         }
 
         TestPutOperationWithAsyncBackup(int i) {

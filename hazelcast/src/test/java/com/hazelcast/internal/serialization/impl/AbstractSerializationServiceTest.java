@@ -419,7 +419,7 @@ public class AbstractSerializationServiceTest {
         int typeId = 100000;
         private boolean fail;
 
-        public StringBufferSerializer(boolean fail) {
+        StringBufferSerializer(boolean fail) {
             this.fail = fail;
         }
 
@@ -453,7 +453,7 @@ public class AbstractSerializationServiceTest {
 
     private class TheOtherGlobalSerializer extends StringBufferSerializer {
 
-        public TheOtherGlobalSerializer(boolean fail) {
+        TheOtherGlobalSerializer(boolean fail) {
             super(fail);
         }
     }

@@ -498,10 +498,10 @@ public class ClientPagingPredicateTest extends HazelcastTestSupport {
         protected boolean active;
         protected double salary;
 
-        public BaseEmployee() {
+        BaseEmployee() {
         }
 
-        public BaseEmployee(int id) {
+        BaseEmployee(int id) {
             this.id = id;
             setAtributesRandomly();
         }
@@ -560,10 +560,10 @@ public class ClientPagingPredicateTest extends HazelcastTestSupport {
 
     private static class Employee extends BaseEmployee implements Comparable<Employee> {
 
-        public Employee() {
+        Employee() {
         }
 
-        public Employee(int id) {
+        Employee(int id) {
             super(id);
         }
 

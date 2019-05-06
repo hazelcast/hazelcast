@@ -108,10 +108,10 @@ public class NoIndexLossAfterSplitBrainHealTest extends SplitBrainTestSupport {
         private Long id;
         private String value;
 
-        public TestObject() {
+        TestObject() {
         }
 
-        public TestObject(Long id, String value) {
+        TestObject(Long id, String value) {
             this.id = id;
             this.value = value;
         }

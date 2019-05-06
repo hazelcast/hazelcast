@@ -17,7 +17,8 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
-import com.hazelcast.util.function.Supplier;
+
+import java.util.function.Supplier;
 
 public class AddCacheConfigOperationSupplier implements Supplier<AddCacheConfigOperation> {
 

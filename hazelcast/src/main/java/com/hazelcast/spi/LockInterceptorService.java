@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.function;
+package com.hazelcast.spi;
 
 /**
- * Represents a function that accepts an int-valued argument and produces a
- * result.  This is the {@code int}-consuming primitive specialization for
- * {@link Function}.
+ * Interface to be implemented by services that need to intercept lock operation
+ * for distributed objects it manages.
  *
- * @param <R> the type of the result of the function
+ * @param <T> type of key
  */
-public interface IntFunction<R> {
+public interface LockInterceptorService<T> {
 
-    /**
-     * Applies this function to the given argument.
-     *
-     * @param value the function argument
-     * @return the function result
-     */
-    R apply(int value);
+    void onBeforeLock(String distributedObjectName, T key);
+
 }

@@ -28,12 +28,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.function.Consumer;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
@@ -96,8 +97,7 @@ public class ClientResponseHandlerSupplierTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         AbstractClientInvocationService invocationService = (AbstractClientInvocationService) clientInstanceImpl.getInvocationService();
 
-        ClientResponseHandlerSupplier responseHandlerSupplier =
-                new ClientResponseHandlerSupplier(invocationService, clientInstanceImpl.getConcurrencyDetection());
+        ClientResponseHandlerSupplier responseHandlerSupplier = new ClientResponseHandlerSupplier(invocationService);
         return responseHandlerSupplier.get();
     }
 }

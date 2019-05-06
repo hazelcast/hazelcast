@@ -19,18 +19,17 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
-import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.MutableInteger;
-import com.hazelcast.util.function.Consumer;
-import com.hazelcast.util.function.Supplier;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
@@ -59,6 +58,13 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
+    // expert setting; we don't want to expose this to the public
+    // there can be some concurrent request from HZ itself that we need to exclude
+    // with a single user thread doing e.g. map.get, 4 is the minimum number of concurrent invocations
+    // before we consider the system to be actually concurrent and to process on response threads.
+    private static final HazelcastProperty MIN_CONCURRENT_INVOCATIONS
+            = new HazelcastProperty("hazelcast.client.responsequeue.dynamic.min.concurrent.invocations", "4");
+
     private static final ThreadLocal<MutableInteger> INT_HOLDER = new ThreadLocal<MutableInteger>() {
         @Override
         protected MutableInteger initialValue() {
@@ -73,16 +79,15 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private final ILogger logger;
     private final Consumer<ClientMessage> responseHandler;
     private final boolean responseThreadsDynamic;
-    private final ConcurrencyDetection concurrencyDetection;
+    private final int minConcurrentInvocations;
 
-    public ClientResponseHandlerSupplier(AbstractClientInvocationService invocationService,
-                                         ConcurrencyDetection concurrencyDetection) {
+    public ClientResponseHandlerSupplier(AbstractClientInvocationService invocationService) {
         this.invocationService = invocationService;
-        this.concurrencyDetection = concurrencyDetection;
         this.client = invocationService.client;
         this.logger = invocationService.invocationLogger;
 
         HazelcastProperties properties = client.getProperties();
+        this.minConcurrentInvocations = properties.getInteger(MIN_CONCURRENT_INVOCATIONS);
         int responseThreadCount = properties.getInteger(RESPONSE_THREAD_COUNT);
         if (responseThreadCount < 0) {
             throw new IllegalArgumentException(RESPONSE_THREAD_COUNT.getName() + " can't be smaller than 0");
@@ -223,16 +228,16 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     }
 
     // dynamically switches between direct processing on io thread and processing on
-    // response thread based on if concurrency is detected
+    // response thread based on the number of invocations.
     class DynamicResponseHandler  implements Consumer<ClientMessage> {
         @Override
         public void accept(ClientMessage message) {
-            if (concurrencyDetection.isDetected()) {
+            if (invocationService.concurrentInvocations() <= minConcurrentInvocations) {
+                process(message);
+            } else {
                 ResponseThread responseThread = nextResponseThread();
                 responseThread.queue(message);
                 responseThread.ensureStarted();
-            } else {
-                process(message);
             }
         }
     }

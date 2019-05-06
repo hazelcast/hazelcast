@@ -96,12 +96,9 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     }
 
     protected IBiFunction<Integer, Integer, Boolean> newBackupExpiryOpFilter() {
-        return new IBiFunction<Integer, Integer, Boolean>() {
-            @Override
-            public Boolean apply(Integer partitionId, Integer replicaIndex) {
-                IPartition partition = partitionService.getPartition(partitionId);
-                return partition.getReplicaAddress(replicaIndex) != null;
-            }
+        return (partitionId, replicaIndex) -> {
+            IPartition partition = partitionService.getPartition(partitionId);
+            return partition.getReplicaAddress(replicaIndex) != null;
         };
     }
 

@@ -41,7 +41,7 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     private final NodeEngine nodeEngine;
     private final MapServiceContext mapServiceContext;
 
-    public DefaultMapServiceFactory(NodeEngine nodeEngine, MapServiceContext mapServiceContext) {
+    DefaultMapServiceFactory(NodeEngine nodeEngine, MapServiceContext mapServiceContext) {
         this.nodeEngine = checkNotNull(nodeEngine, "nodeEngine should not be null");
         this.mapServiceContext = checkNotNull(mapServiceContext, "mapServiceContext should not be null");
     }

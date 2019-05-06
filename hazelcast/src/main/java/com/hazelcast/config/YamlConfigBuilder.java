@@ -32,7 +32,6 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.config.yaml.W3cDomUtil.asW3cNode;
-import static com.hazelcast.internal.yaml.YamlUtil.ensureRunningOnJava8OrHigher;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
@@ -122,8 +121,6 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
     }
 
     Config build(Config config) {
-        ensureRunningOnJava8OrHigher();
-
         config.setConfigurationFile(configurationFile);
         config.setConfigurationUrl(configurationUrl);
         try {

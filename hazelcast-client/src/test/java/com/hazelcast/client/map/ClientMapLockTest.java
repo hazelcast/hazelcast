@@ -655,7 +655,7 @@ public class ClientMapLockTest {
 
         public final String payload;
 
-        public LockEntryProcessor(String payload) {
+        LockEntryProcessor(String payload) {
             this.payload = payload;
         }
 

@@ -35,7 +35,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Properties;
+import java.util.function.Consumer;
 
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static org.junit.Assert.assertEquals;
@@ -111,17 +111,17 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenNoProblemPacket_andZeroResponseThreads() throws Exception {
+    public void whenNoProblemPacket_andZeroResponseThreads() {
         whenNoProblemPacket(0);
     }
 
     @Test
-    public void whenNoProblemPacket_andOneResponseThreads() throws Exception {
+    public void whenNoProblemPacket_andOneResponseThreads() {
         whenNoProblemPacket(1);
     }
 
     @Test
-    public void whenNoProblemPacket_andMultipleResponseThreads() throws Exception {
+    public void whenNoProblemPacket_andMultipleResponseThreads() {
         whenNoProblemPacket(2);
     }
 

@@ -94,7 +94,7 @@ public class ClientSemaphoreThreadedTest {
     }
 
     static class TrySemaphoreThread extends SemaphoreTestThread {
-        public TrySemaphoreThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal) {
+        TrySemaphoreThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal) {
             super(semaphore, upTotal, downTotal);
         }
 
@@ -107,7 +107,7 @@ public class ClientSemaphoreThreadedTest {
     }
 
     static class TrySemaphoreTimeOutThread extends SemaphoreTestThread {
-        public TrySemaphoreTimeOutThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal) {
+        TrySemaphoreTimeOutThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal) {
             super(semaphore, upTotal, downTotal);
         }
 
@@ -131,7 +131,7 @@ public class ClientSemaphoreThreadedTest {
 
         private final Random random = new Random();
 
-        public SemaphoreTestThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal) {
+        SemaphoreTestThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal) {
             this.semaphore = semaphore;
             this.upTotal = upTotal;
             this.downTotal = downTotal;

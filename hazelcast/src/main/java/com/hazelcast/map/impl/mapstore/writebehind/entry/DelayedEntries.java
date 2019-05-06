@@ -27,15 +27,15 @@ public final class DelayedEntries {
     }
 
     public static <K, V> DelayedEntry<K, V> createDefault(K key, V value, long storeTime, int partitionId) {
-        return new AddedDelayedEntry<K, V>(key, value, storeTime, partitionId);
+        return new AddedDelayedEntry<>(key, value, storeTime, partitionId);
     }
 
     public static <K, V> DelayedEntry<K, V> createWithoutValue(K key) {
-        return new NullValueDelayedEntry<K, V>(key);
+        return new NullValueDelayedEntry<>(key);
     }
 
     public static <K, V> DelayedEntry<K, V> createWithoutValue(K key, long storeTime, int partitionId) {
-        return new DeletedDelayedEntry<K, V>(key, storeTime, partitionId);
+        return new DeletedDelayedEntry<>(key, storeTime, partitionId);
     }
 
     public static <K, V> DelayedEntry<K, V> emptyDelayedEntry() {

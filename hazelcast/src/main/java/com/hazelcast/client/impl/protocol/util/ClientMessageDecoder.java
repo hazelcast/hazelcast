@@ -21,9 +21,9 @@ import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.nio.InboundHandlerWithCounters;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
-import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_AND_END_FLAGS;
 import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FLAG;

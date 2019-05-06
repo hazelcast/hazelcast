@@ -209,7 +209,7 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     static class MyProcessor extends AbstractEntryProcessor<String, Integer> {
 
-        public MyProcessor() {
+        MyProcessor() {
         }
 
         @Override

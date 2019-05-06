@@ -93,7 +93,7 @@ public final class ClientConfigXmlGenerator {
         gen.open("hazelcast-client", "xmlns", "http://www.hazelcast.com/schema/client-config",
                 "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance",
                 "xsi:schemaLocation", "http://www.hazelcast.com/schema/client-config "
-                        + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd");
+                        + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd");
 
         //GroupConfig
         group(gen, clientConfig.getGroupConfig());

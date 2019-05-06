@@ -30,7 +30,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.util.function.Consumer;
 import com.hazelcast.nio.EndpointManager;
 
 import java.io.EOFException;
@@ -39,6 +38,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import static com.hazelcast.util.StringUtil.timeToStringFriendly;
 

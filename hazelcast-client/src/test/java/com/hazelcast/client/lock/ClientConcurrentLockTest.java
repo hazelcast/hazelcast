@@ -87,7 +87,7 @@ public class ClientConcurrentLockTest {
     }
 
     static class TryLockThread extends LockTestThread {
-        public TryLockThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal) {
+        TryLockThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal) {
             super(lock, upTotal, downTotal);
         }
 
@@ -100,7 +100,7 @@ public class ClientConcurrentLockTest {
     }
 
     static class TryLockWithTimeOutThread extends LockTestThread {
-        public TryLockWithTimeOutThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal) {
+        TryLockWithTimeOutThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal) {
             super(lock, upTotal, downTotal);
         }
 
@@ -122,7 +122,7 @@ public class ClientConcurrentLockTest {
         protected final AtomicInteger upTotal;
         protected final AtomicInteger downTotal;
 
-        public LockTestThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal) {
+        LockTestThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal) {
             this.lock = lock;
             this.upTotal = upTotal;
             this.downTotal = downTotal;

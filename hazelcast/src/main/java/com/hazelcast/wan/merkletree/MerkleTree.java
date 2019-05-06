@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan.merkletree;
 
-import com.hazelcast.util.function.Consumer;
+import java.util.function.Consumer;
 
 /**
  * Interface defining methods for Merkle tree implementations

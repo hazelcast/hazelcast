@@ -3329,6 +3329,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testWhitespaceInNonSpaceStrings() {
+        String xml = HAZELCAST_START_TAG
+                + "<quorum enabled='true' name='q'><quorum-type> \n WRITE \n </quorum-type></quorum>"
+                + HAZELCAST_END_TAG;
+        buildConfig(xml);
+    }
+
+    @Override
     protected Config buildCompleteAdvancedNetworkConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<advanced-network enabled=\"true\">"

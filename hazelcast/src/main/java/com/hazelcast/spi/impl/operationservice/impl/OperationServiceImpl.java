@@ -153,8 +153,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 node.getLogger(OutboundResponseHandler.class));
 
         this.invocationRegistry = new InvocationRegistry(
-                node.getLogger(OperationServiceImpl.class),
-                backpressureRegulator.newCallIdSequence(nodeEngine.getConcurrencyDetection()));
+                node.getLogger(OperationServiceImpl.class), backpressureRegulator.newCallIdSequence());
 
         this.invocationMonitor = new InvocationMonitor(
                 nodeEngine, thisAddress, node.getProperties(), invocationRegistry,
@@ -410,12 +409,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
             Address owner = partitionService.getPartitionOwnerOrWait(partition);
-
-            if (!memberPartitions.containsKey(owner)) {
-                memberPartitions.put(owner, new ArrayList<Integer>());
-            }
-
-            memberPartitions.get(owner).add(partition);
+            memberPartitions.computeIfAbsent(owner, k -> new ArrayList<>()).add(partition);
         }
         return memberPartitions;
     }

@@ -39,7 +39,6 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.function.Consumer;
 
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -51,6 +50,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import static com.hazelcast.nio.Packet.Type.BIND;
 import static com.hazelcast.nio.Packet.Type.EXTENDED_BIND;

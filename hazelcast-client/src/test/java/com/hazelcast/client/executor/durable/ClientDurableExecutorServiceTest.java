@@ -307,7 +307,7 @@ public class ClientDurableExecutorServiceTest {
 
         int counter;
 
-        public SerializedCounterCallable() {
+        SerializedCounterCallable() {
         }
 
         @Override

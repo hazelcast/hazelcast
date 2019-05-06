@@ -18,7 +18,6 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateChange;
@@ -27,7 +26,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
@@ -38,7 +36,7 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 
 public class LockClusterStateOp  extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
-        IdentifiedDataSerializable, Versioned {
+        IdentifiedDataSerializable {
 
     private ClusterStateChange stateChange;
     private Address initiator;
@@ -109,29 +107,22 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(stateChange);
-        initiator.writeData(out);
+        out.writeObject(initiator);
         out.writeUTF(txnId);
         out.writeLong(leaseTime);
         out.writeInt(partitionStateVersion);
-        // RU_COMPAT_V3_10
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            out.writeInt(memberListVersion);
-        }
+        out.writeInt(memberListVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         stateChange = in.readObject();
-        initiator = new Address();
-        initiator.readData(in);
+        initiator = in.readObject();
         txnId = in.readUTF();
         leaseTime = in.readLong();
         partitionStateVersion = in.readInt();
-        // RU_COMPAT_V3_10
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
-            memberListVersion = in.readInt();
-        }
+        memberListVersion = in.readInt();
     }
 
     @Override

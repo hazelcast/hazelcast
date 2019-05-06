@@ -490,7 +490,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         private final ListenerAdapter listenerAdapter;
 
-        public ClientMultiMapEventHandler(ListenerAdapter listenerAdapter) {
+        ClientMultiMapEventHandler(ListenerAdapter listenerAdapter) {
             this.listenerAdapter = listenerAdapter;
         }
 

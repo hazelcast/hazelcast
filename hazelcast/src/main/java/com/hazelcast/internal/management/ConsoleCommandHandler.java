@@ -72,7 +72,7 @@ public class ConsoleCommandHandler {
      * Wrapper for {@link com.hazelcast.console.ConsoleApp}
      */
     private class ConsoleHandlerApp extends ConsoleApp {
-        public ConsoleHandlerApp(HazelcastInstance hazelcast) {
+        ConsoleHandlerApp(HazelcastInstance hazelcast) {
             super(hazelcast);
         }
 

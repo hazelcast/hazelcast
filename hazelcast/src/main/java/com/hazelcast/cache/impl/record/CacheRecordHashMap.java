@@ -124,7 +124,7 @@ public class CacheRecordHashMap
             extends SamplingEntry<Data, CacheRecord>
             implements EvictionCandidate, CacheEntryView {
 
-        public CacheEvictableSamplingEntry(Data key, CacheRecord value) {
+        CacheEvictableSamplingEntry(Data key, CacheRecord value) {
             super(key, value);
         }
 

@@ -30,12 +30,7 @@ interface RecordStoreLoader {
      * when the map store is not configured for a map or the
      * map store is disabled.
      */
-    RecordStoreLoader EMPTY_LOADER = new RecordStoreLoader() {
-        @Override
-        public Future loadValues(List<Data> keys, boolean replaceExistingValues) {
-            return null;
-        }
-    };
+    RecordStoreLoader EMPTY_LOADER = (keys, replaceExistingValues) -> null;
 
     /**
      * Triggers loading values for the given {@code keys} from the
