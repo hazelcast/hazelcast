@@ -26,9 +26,12 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
 
 import static com.hazelcast.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
 import static com.hazelcast.config.DeclarativeConfigUtil.throwUnacceptedSuffixInSystemProperty;
+import static com.hazelcast.util.Preconditions.checkFalse;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract base class for config locators.
@@ -183,16 +186,19 @@ public abstract class AbstractConfigLocator {
         }
     }
 
-    protected boolean loadFromSystemProperty(String propertyKey, String... acceptedSuffixes) {
+    protected boolean loadFromSystemProperty(String propertyKey, Collection<String> acceptedSuffixes) {
         return loadFromSystemProperty(propertyKey, false, acceptedSuffixes);
     }
 
-    protected boolean loadFromSystemPropertyOrFailOnUnacceptedSuffix(String propertyKey, String... acceptedSuffixes) {
+    protected boolean loadFromSystemPropertyOrFailOnUnacceptedSuffix(String propertyKey, Collection<String> acceptedSuffixes) {
         return loadFromSystemProperty(propertyKey, true, acceptedSuffixes);
     }
 
     private boolean loadFromSystemProperty(String propertyKey, boolean failOnUnacceptedSuffix,
-                                           String... acceptedSuffixes) {
+                                           Collection<String> acceptedSuffixes) {
+        requireNonNull(acceptedSuffixes, "Parameter acceptedSuffixes must not be null");
+        checkFalse(acceptedSuffixes.isEmpty(), "Parameter acceptedSuffixes must not be empty");
+
         try {
             String configSystemProperty = System.getProperty(propertyKey);
 
@@ -201,9 +207,7 @@ public abstract class AbstractConfigLocator {
                 return false;
             }
 
-            if (acceptedSuffixes != null && acceptedSuffixes.length > 0
-                    && !isAcceptedSuffixConfigured(configSystemProperty, acceptedSuffixes)) {
-
+            if (!isAcceptedSuffixConfigured(configSystemProperty, acceptedSuffixes)) {
                 if (failOnUnacceptedSuffix) {
                     throwUnacceptedSuffixInSystemProperty(propertyKey, configSystemProperty, acceptedSuffixes);
                 } else {

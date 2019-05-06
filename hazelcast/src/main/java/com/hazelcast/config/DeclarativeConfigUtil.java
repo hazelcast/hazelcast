@@ -19,6 +19,11 @@ package com.hazelcast.config;
 import com.hazelcast.core.HazelcastException;
 
 import java.util.Arrays;
+import java.util.Collection;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Utility class for handling declarative configuration files.
@@ -46,38 +51,38 @@ public final class DeclarativeConfigUtil {
     /**
      * Array of accepted suffixes for XML configuration files.
      */
-    public static final String[] XML_ACCEPTED_SUFFIXES = new String[]{"xml"};
+    public static final Collection<String> XML_ACCEPTED_SUFFIXES = unmodifiableList(singletonList("xml"));
 
     /**
      * List of accepted suffixes for XML configuration files.
      *
      * @see #XML_ACCEPTED_SUFFIXES
      */
-    public static final String XML_ACCEPTED_SUFFIXES_STRING = Arrays.toString(XML_ACCEPTED_SUFFIXES);
+    public static final String XML_ACCEPTED_SUFFIXES_STRING = Arrays.toString(XML_ACCEPTED_SUFFIXES.toArray());
 
     /**
      * Array of accepted suffixes for YAML configuration files.
      */
-    public static final String[] YAML_ACCEPTED_SUFFIXES = new String[]{"yaml", "yml"};
+    public static final Collection<String> YAML_ACCEPTED_SUFFIXES = unmodifiableList(asList("yaml", "yml"));
 
     /**
      * List of accepted suffixes for YAML configuration files.
      *
      * @see #YAML_ACCEPTED_SUFFIXES
      */
-    public static final String YAML_ACCEPTED_SUFFIXES_STRING = Arrays.toString(YAML_ACCEPTED_SUFFIXES);
+    public static final String YAML_ACCEPTED_SUFFIXES_STRING = Arrays.toString(YAML_ACCEPTED_SUFFIXES.toArray());
 
     /**
      * Array of the suffixes accepted in Hazelcast configuration files.
      */
-    public static final String[] ALL_ACCEPTED_SUFFIXES = new String[]{"xml", "yaml", "yml"};
+    public static final Collection<String> ALL_ACCEPTED_SUFFIXES = unmodifiableList(asList("xml", "yaml", "yml"));
 
     /**
      * The list of the suffixes accepted in Hazelcast configuration files.
      *
      * @see #ALL_ACCEPTED_SUFFIXES
      */
-    public static final String ALL_ACCEPTED_SUFFIXES_STRING = Arrays.toString(ALL_ACCEPTED_SUFFIXES);
+    public static final String ALL_ACCEPTED_SUFFIXES_STRING = Arrays.toString(ALL_ACCEPTED_SUFFIXES.toArray());
 
     private DeclarativeConfigUtil() {
     }
@@ -118,10 +123,10 @@ public final class DeclarativeConfigUtil {
      *                            the file referenced by {@code propertyKey}
      */
     static void throwUnacceptedSuffixInSystemProperty(String propertyKey, String configResource,
-                                                      String... acceptedSuffixes) {
+                                                      Collection<String> acceptedSuffixes) {
 
         String message = String.format("The suffix of the resource \'%s\' referenced in \'%s\' is not in the list of accepted "
-                + "suffixes: \'%s\'", configResource, propertyKey, Arrays.toString(acceptedSuffixes));
+                + "suffixes: \'%s\'", configResource, propertyKey, Arrays.toString(acceptedSuffixes.toArray()));
         throw new HazelcastException(message);
     }
 
@@ -134,15 +139,14 @@ public final class DeclarativeConfigUtil {
      * @return {@code true} if the suffix of the configuration file is in
      * the accepted list, {@code false} otherwise
      */
-    static boolean isAcceptedSuffixConfigured(String configFile, String[] acceptedSuffixes) {
-        boolean acceptedSuffix = false;
-        String configSystemPropertyLower = configFile.toLowerCase();
-        for (String suffix : acceptedSuffixes) {
-            if (configSystemPropertyLower.endsWith("." + suffix.toLowerCase())) {
-                acceptedSuffix = true;
-                break;
-            }
+    static boolean isAcceptedSuffixConfigured(String configFile, Collection<String> acceptedSuffixes) {
+        String configFileLower = configFile.toLowerCase();
+        int lastDotIndex = configFileLower.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+            return false;
         }
-        return acceptedSuffix;
+
+        String configFileSuffix = configFileLower.substring(lastDotIndex + 1);
+        return acceptedSuffixes.contains(configFileSuffix);
     }
 }
