@@ -53,7 +53,7 @@
                                     <groupId>com.hazelcast.jet</groupId>
                                     <artifactId>hazelcast-jet</artifactId>
                                     <outputDirectory>${config.directory}</outputDirectory>
-                                    <includes>**/*.xml</includes>
+                                    <includes>**/*.xml,**/*.yaml</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

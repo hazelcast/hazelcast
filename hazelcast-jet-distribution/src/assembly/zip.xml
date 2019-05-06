@@ -52,13 +52,11 @@
             <destName>hazelcast-client.xml</destName>
             <outputDirectory>config</outputDirectory>
         </file>
+
+        <!-- Example XML config files -->
         <file>
             <source>${config.directory}/hazelcast-jet-full-example.xml</source>
-            <outputDirectory>config/examples</outputDirectory>
-        </file>
-        <!-- Example config files -->
-        <file>
-            <source>${config.directory}/hazelcast-jet-full-example.xml</source>
+            <destName>hazelcast-jet-full-example.xml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
         <file>
@@ -69,6 +67,23 @@
         <file>
             <source>${config.directory}/hazelcast-client-full.xml</source>
             <destName>hazelcast-client-full-example.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- Example YAML config files -->
+        <file>
+            <source>${config.directory}/hazelcast-jet-full-example.yaml</source>
+            <destName>hazelcast-jet-full-example.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${config.directory}/hazelcast-full-example.yaml</source>
+            <destName>hazelcast-full-example.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${config.directory}/hazelcast-client-full.yaml</source>
+            <destName>hazelcast-client-full-example.yaml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
     </files>
