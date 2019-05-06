@@ -83,6 +83,16 @@ public class RaftUtil {
         return readRaftState(leader, task);
     }
 
+    public static long getLeaderQueryRound(RaftNodeImpl leader) {
+        Callable<Long> task = () -> {
+            LeaderState leaderState = leader.state().leaderState();
+            assertNotNull(leader.getLocalMember() + " has no leader state!", leaderState);
+            return leaderState.queryRound();
+        };
+
+        return readRaftState(leader, task);
+    }
+
     public static RaftNodeStatus getStatus(RaftNodeImpl node) {
         Callable<RaftNodeStatus> task = node::getStatus;
 

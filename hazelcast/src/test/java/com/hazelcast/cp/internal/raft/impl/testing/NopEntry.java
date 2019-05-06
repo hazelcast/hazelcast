@@ -25,4 +25,9 @@ public class NopEntry implements RaftRunnable {
     public Object run(Object service, long commitIndex) {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "NopEntry{}";
+    }
 }

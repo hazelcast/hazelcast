@@ -21,12 +21,12 @@ import com.hazelcast.core.Endpoint;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
-import com.hazelcast.cp.internal.raft.impl.RaftUtil;
 import org.junit.Assert;
 
 import java.util.Arrays;
 import java.util.function.Function;
 
+import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.majority;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.minority;
@@ -219,9 +219,9 @@ public class LocalRaftGroup {
                     continue;
                 }
 
-                assertEquals(leaderNode.getLocalMember(), RaftUtil.getLeaderMember(raftNode));
-                assertEquals(leaderTerm, getTerm(raftNode));
-            }
+                    assertEquals(leaderNode.getLocalMember(), getLeaderMember(raftNode));
+                    assertEquals(leaderTerm, getTerm(raftNode));
+                }
 
             leaderRef[0] = leaderNode;
         });
@@ -236,7 +236,7 @@ public class LocalRaftGroup {
                 continue;
             }
             RaftNodeImpl node = nodes[i];
-            Endpoint endpoint = RaftUtil.getLeaderMember(node);
+            Endpoint endpoint = getLeaderMember(node);
             if (leader == null) {
                 leader = endpoint;
             } else if (!leader.equals(endpoint)) {

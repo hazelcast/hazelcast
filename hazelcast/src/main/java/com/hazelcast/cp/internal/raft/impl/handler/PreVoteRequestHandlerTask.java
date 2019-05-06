@@ -50,7 +50,7 @@ public class PreVoteRequestHandlerTask extends RaftNodeStatusAwareTask implement
     @Override
     protected void innerRun() {
         RaftState state = raftNode.state();
-        Endpoint localEndpoint = raftNode.getLocalMember();
+        Endpoint localEndpoint = localMember();
 
         // Reply false if term < currentTerm (§5.1)
         if (state.term() > req.nextTerm()) {

@@ -135,6 +135,11 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
+    public boolean isLinearizableReadOptimizationEnabled() {
+        return true;
+    }
+
+    @Override
     public ILogger getLogger(String name) {
         return loggingService.getLogger(name);
     }

@@ -195,6 +195,14 @@ public interface RaftIntegration {
     Object getAppendedEntryOnLeaderElection();
 
     /**
+     * Returns true if the linearizable read optimization is enabled.
+     * <p>
+     * See Section 6.4 of the Raft Dissertation for more information about
+     * the linearizable read optimization.
+     */
+    boolean isLinearizableReadOptimizationEnabled();
+
+    /**
      * Called when RaftNode status changes.
      * @param status new status
      */

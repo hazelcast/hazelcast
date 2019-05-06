@@ -60,12 +60,11 @@ public class PreVoteTask extends RaftNodeStatusAwareTask implements Runnable {
             return;
         }
 
-
         state.initPreCandidateState();
         int nextTerm = state.term() + 1;
         RaftLog log = state.log();
-        PreVoteRequest request = new PreVoteRequest(raftNode.getLocalMember(), nextTerm,
-                log.lastLogOrSnapshotTerm(), log.lastLogOrSnapshotIndex());
+        PreVoteRequest request = new PreVoteRequest(localMember(), nextTerm, log.lastLogOrSnapshotTerm(),
+                log.lastLogOrSnapshotIndex());
 
         logger.info("Pre-vote started for next term: " + request.nextTerm() + ", last log index: " + request.lastLogIndex()
                 + ", last log term: " + request.lastLogTerm());
