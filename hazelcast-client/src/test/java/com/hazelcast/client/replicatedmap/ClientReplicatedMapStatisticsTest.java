@@ -58,4 +58,9 @@ public class ClientReplicatedMapStatisticsTest extends ReplicatedMapStatsTest {
     protected LocalReplicatedMapStats getReplicatedMapStats() {
         return member.getReplicatedMap(replicatedMapName).getReplicatedMapStats();
     }
+
+    @Override
+    protected HazelcastInstance getInstance() {
+        return member;
+    }
 }

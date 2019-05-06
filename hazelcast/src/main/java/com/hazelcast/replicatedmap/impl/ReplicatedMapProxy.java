@@ -22,6 +22,7 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
+import com.hazelcast.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.quorum.QuorumType;
@@ -80,6 +81,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private static final int RETRY_INTERVAL_COUNT = 3;
     private static final int KEY_SET_MIN_SIZE = 16;
     private static final int KEY_SET_STORE_MULTIPLE = 4;
+
+    private static final LocalReplicatedMapStats EMPTY_LOCAL_MAP_STATS = new EmptyLocalReplicatedMapStats();
 
     private final String name;
     private final NodeEngine nodeEngine;
@@ -453,8 +456,15 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         return getClass().getSimpleName() + " -> " + name;
     }
 
+    @Override
     public LocalReplicatedMapStats getReplicatedMapStats() {
-        return service.createReplicatedMapStats(name);
+        LocalReplicatedMapStats stats;
+        if (config.isStatisticsEnabled()) {
+            stats = service.getLocalReplicatedMapStats(name);
+        } else {
+            stats = EMPTY_LOCAL_MAP_STATS;
+        }
+        return stats;
     }
 
     private void ensureQuorumPresent(QuorumType requiredQuorumPermissionType) {

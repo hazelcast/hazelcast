@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap;
 
+import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
@@ -35,6 +36,7 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -58,6 +60,10 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
     protected LocalReplicatedMapStats getReplicatedMapStats() {
         return instance.getReplicatedMap(replicatedMapName).getReplicatedMapStats();
+    }
+
+    protected HazelcastInstance getInstance() {
+        return instance;
     }
 
     @Test
@@ -356,5 +362,38 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
         LocalReplicatedMapStats stats = getReplicatedMapStats();
         assertEquals(OPERATION_COUNT * DEFAULT_PARTITION_COUNT, stats.getOtherOperationCount());
+    }
+
+    @Test
+    public void testEmptyStatsIfDisabled() {
+        String name = randomMapName();
+        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
+        replicatedMapConfig.setName(name);
+        replicatedMapConfig.setStatisticsEnabled(false);
+        getInstance().getConfig().addReplicatedMapConfig(replicatedMapConfig);
+
+        ReplicatedMap<Integer, Integer> replicatedMap = getInstance().getReplicatedMap(name);
+        replicatedMap.put(1, 1);
+        replicatedMap.get(1);
+
+        LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
+        assertEquals(0, stats.getGetOperationCount());
+        assertEquals(0, stats.getPutOperationCount());
+    }
+
+    @Test
+    public void testNoObjectGenerationIfStatsDisabled() {
+        String name = randomMapName();
+        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
+        replicatedMapConfig.setName(name);
+        replicatedMapConfig.setStatisticsEnabled(false);
+        getInstance().getConfig().addReplicatedMapConfig(replicatedMapConfig);
+
+        ReplicatedMap<Integer, Integer> replicatedMap = getInstance().getReplicatedMap(name);
+        LocalReplicatedMapStats stats = replicatedMap.getReplicatedMapStats();
+        LocalReplicatedMapStats stats2 = replicatedMap.getReplicatedMapStats();
+        LocalReplicatedMapStats stats3 = replicatedMap.getReplicatedMapStats();
+        assertSame(stats, stats2);
+        assertSame(stats2, stats3);
     }
 }

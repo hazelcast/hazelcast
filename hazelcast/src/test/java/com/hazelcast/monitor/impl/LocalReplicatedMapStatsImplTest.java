@@ -142,6 +142,21 @@ public class LocalReplicatedMapStatsImplTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
+    public void testQueryCount() {
+        localReplicatedMapStats.getQueryCount();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIndexedQueryCount() {
+        localReplicatedMapStats.getIndexedQueryCount();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetIndexStats() {
+        localReplicatedMapStats.getIndexStats();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
     public void testSetOperationCount() {
         localReplicatedMapStats.getSetOperationCount();
     }
