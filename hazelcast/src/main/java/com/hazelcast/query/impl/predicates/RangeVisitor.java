@@ -28,7 +28,6 @@ import java.util.HashMap;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.isRangePredicate;
 
 /**
  * Performs range predicates optimization.
@@ -88,7 +87,7 @@ public class RangeVisitor extends AbstractVisitor {
 
         if (predicate instanceof FalsePredicate) {
             return Ranges.UNSATISFIABLE;
-        } else if (!isRangePredicate(predicate)) {
+        } else if (!(predicate instanceof RangePredicate)) {
             return ranges;
         }
 

@@ -28,8 +28,6 @@ import java.util.Map;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.isEqualPredicate;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.isRangePredicate;
 
 /**
  * Optimizes single-attribute predicates into composite index predicates.
@@ -64,7 +62,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
         Map<String, RangePredicate> comparisons = null;
         Output output = null;
         for (Predicate predicate : andPredicate.predicates) {
-            if (isEqualPredicate(predicate)) {
+            if (predicate instanceof EqualPredicate) {
                 EqualPredicate equalPredicate = (EqualPredicate) predicate;
                 prefixes = obtainHashMap(prefixes, originalSize);
 
@@ -85,7 +83,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
                 continue;
             }
 
-            if (isRangePredicate(predicate)) {
+            if (predicate instanceof RangePredicate) {
                 RangePredicate rangePredicate = (RangePredicate) predicate;
                 comparisons = obtainHashMap(comparisons, originalSize);
 
@@ -385,7 +383,7 @@ public class CompositeIndexVisitor extends AbstractVisitor {
     }
 
     private static <K, V> Map<K, V> obtainHashMap(Map<K, V> map, int capacity) {
-        return map == null ? new HashMap<K, V>(capacity) : map;
+        return map == null ? new HashMap<>(capacity) : map;
     }
 
     private static Output obtainOutput(Output output, int capacity) {

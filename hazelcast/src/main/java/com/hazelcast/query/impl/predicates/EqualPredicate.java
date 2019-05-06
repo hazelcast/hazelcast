@@ -26,6 +26,7 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
@@ -38,7 +39,7 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
 
     private static final long serialVersionUID = 1L;
 
-    protected Comparable value;
+    Comparable value;
 
     public EqualPredicate() {
     }
@@ -96,7 +97,7 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
             return false;
         }
 
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

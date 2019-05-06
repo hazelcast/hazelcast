@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.IndexAwarePredicate;
@@ -30,8 +29,6 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -64,7 +61,6 @@ import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
-import static com.hazelcast.query.impl.IndexCopyBehavior.COPY_ON_READ;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.hamcrest.Matchers.allOf;
@@ -72,9 +68,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -309,19 +302,6 @@ public class PredicatesTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
         Predicates.in(ATTRIBUTE, null);
-    }
-
-    @Test
-    public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex =
-                new IndexImpl("foo", null, false, ss, Extractors.newBuilder(ss).build(), COPY_ON_READ, PerIndexStats.EMPTY);
-        QueryContext mockQueryContext = mock(QueryContext.class);
-        when(mockQueryContext.getIndex(anyString())).thenReturn(dummyIndex);
-
-        NotEqualPredicate p = new NotEqualPredicate("foo", "bar");
-
-        boolean indexed = p.isIndexed(mockQueryContext);
-        assertFalse(indexed);
     }
 
     private class DummyEntry extends QueryEntry {

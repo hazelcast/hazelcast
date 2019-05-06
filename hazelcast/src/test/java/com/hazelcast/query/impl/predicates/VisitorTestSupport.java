@@ -26,9 +26,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.query.impl.predicates.PredicateUtils.isEqualPredicate;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.isRangePredicate;
 import static com.hazelcast.util.collection.ArrayUtils.createCopy;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
@@ -53,7 +51,7 @@ public abstract class VisitorTestSupport {
     protected abstract Indexes getIndexes();
 
     protected static void assertEqualPredicate(EqualPredicate expected, Predicate actual) {
-        assertTrue(isEqualPredicate(actual));
+        assertTrue(actual instanceof EqualPredicate);
         EqualPredicate actualEqualPredicate = (EqualPredicate) actual;
         assertEquals(expected.attributeName, actualEqualPredicate.attributeName);
         assertEquals(expected.value, actualEqualPredicate.value);
@@ -109,7 +107,7 @@ public abstract class VisitorTestSupport {
             assertAnd((AndPredicate) expected, original, actual);
         } else if (expected instanceof ReferencePredicate) {
             assertSame(((ReferencePredicate) expected).resolve(original), actual);
-        } else if (isRangePredicate(expected)) {
+        } else if (expected instanceof RangePredicate) {
             assertRangePredicate((RangePredicate) expected, actual);
         } else if (expected instanceof CompositeRangePredicate) {
             assertCompositeRangePredicate((CompositeRangePredicate) expected, actual);
@@ -147,7 +145,7 @@ public abstract class VisitorTestSupport {
 
     private static void assertRangePredicate(RangePredicate expected, Predicate actual) {
         assertEquals(expected.getClass(), actual.getClass());
-        assertTrue(isRangePredicate(actual));
+        assertTrue(actual instanceof RangePredicate);
         RangePredicate actualRangePredicate = (RangePredicate) actual;
         assertEquals(expected.getAttribute(), actualRangePredicate.getAttribute());
         assertTrue("expected " + expected.getFrom() + " got " + actualRangePredicate.getFrom(),
@@ -163,7 +161,7 @@ public abstract class VisitorTestSupport {
         AndPredicate optimizedAnd = (AndPredicate) actual;
         assertEquals(expected.predicates.length, optimizedAnd.predicates.length);
 
-        Map<Predicate, Integer> unmatched = new IdentityHashMap<Predicate, Integer>();
+        Map<Predicate, Integer> unmatched = new IdentityHashMap<>();
         for (Predicate predicate : optimizedAnd.predicates) {
             Integer count = unmatched.get(predicate);
             if (count == null) {
@@ -185,11 +183,11 @@ public abstract class VisitorTestSupport {
                 } else {
                     unmatched.put(expectedPredicate, count);
                 }
-            } else if (isRangePredicate(expectedPredicate)) {
+            } else if (expectedPredicate instanceof RangePredicate) {
                 for (Iterator<Predicate> i = unmatched.keySet().iterator(); i.hasNext(); ) {
                     Predicate unmatchedPredicate = i.next();
-                    if (isRangePredicate(unmatchedPredicate) && rangePredicatesAreEqual((RangePredicate) expectedPredicate,
-                            (RangePredicate) unmatchedPredicate)) {
+                    if (unmatchedPredicate instanceof RangePredicate && rangePredicatesAreEqual(
+                            (RangePredicate) expectedPredicate, (RangePredicate) unmatchedPredicate)) {
                         i.remove();
                         continue outer;
                     }
