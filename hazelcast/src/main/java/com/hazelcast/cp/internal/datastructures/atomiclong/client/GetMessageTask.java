@@ -30,6 +30,8 @@ import com.hazelcast.security.permission.AtomicLongPermission;
 
 import java.security.Permission;
 
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+
 /**
  * Client message task for {@link GetAndAddOp}
  */
@@ -44,7 +46,7 @@ public class GetMessageTask extends AbstractMessageTask<CPAtomicLongGetCodec.Req
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
-               .<Long>invoke(parameters.groupId, new GetAndAddOp(parameters.name, 0))
+               .<Long>query(parameters.groupId, new GetAndAddOp(parameters.name, 0), LINEARIZABLE)
                .andThen(this);
     }
 

@@ -31,6 +31,8 @@ import com.hazelcast.security.permission.AtomicLongPermission;
 
 import java.security.Permission;
 
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+
 /**
  * Client message task for {@link ApplyOp}
  */
@@ -46,7 +48,7 @@ public class ApplyMessageTask extends AbstractMessageTask<CPAtomicLongApplyCodec
         IFunction<Long, Object> function = serializationService.toObject(parameters.function);
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
-               .invoke(parameters.groupId, new ApplyOp<>(parameters.name, function))
+               .query(parameters.groupId, new ApplyOp<>(parameters.name, function), LINEARIZABLE)
                .andThen(this);
     }
 

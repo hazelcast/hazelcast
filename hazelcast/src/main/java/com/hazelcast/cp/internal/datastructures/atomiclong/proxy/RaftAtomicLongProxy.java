@@ -23,6 +23,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
+import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AddAndGetOp;
@@ -41,6 +42,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
+
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 
 /**
  * Server-side Raft-based proxy implementation of {@link IAtomicLong}
@@ -108,7 +111,8 @@ public class RaftAtomicLongProxy implements IAtomicLong {
 
     @Override
     public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
-        return invocationManager.invoke(groupId, new AddAndGetOp(objectName, delta));
+        RaftOp op = new AddAndGetOp(objectName, delta);
+        return delta == 0 ? invocationManager.query(groupId, op, LINEARIZABLE) : invocationManager.invoke(groupId, op);
     }
 
     @Override
@@ -128,7 +132,8 @@ public class RaftAtomicLongProxy implements IAtomicLong {
 
     @Override
     public InternalCompletableFuture<Long> getAndAddAsync(long delta) {
-        return invocationManager.invoke(groupId, new GetAndAddOp(objectName, delta));
+        RaftOp op = new GetAndAddOp(objectName, delta);
+        return delta == 0 ? invocationManager.query(groupId, op, LINEARIZABLE) : invocationManager.invoke(groupId, op);
     }
 
     @Override
@@ -196,7 +201,7 @@ public class RaftAtomicLongProxy implements IAtomicLong {
 
     @Override
     public <R> InternalCompletableFuture<R> applyAsync(IFunction<Long, R> function) {
-        return invocationManager.invoke(groupId, new ApplyOp<>(objectName, function));
+        return invocationManager.query(groupId, new ApplyOp<>(objectName, function), LINEARIZABLE);
     }
 
     public long localGet(QueryPolicy queryPolicy) {

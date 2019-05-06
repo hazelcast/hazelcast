@@ -61,6 +61,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.util.Collections.unmodifiableCollection;
@@ -180,7 +181,7 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
             public void onResponse(CPGroup group) {
                 if (group != null) {
                     raftService.getInvocationManager()
-                            .<Collection<CPSession>>invoke(group.id(), new GetSessionsOp())
+                            .<Collection<CPSession>>query(group.id(), new GetSessionsOp(), LINEARIZABLE)
                             .andThen(callback);
                 } else {
                     future.setResult(new ExecutionException(new IllegalArgumentException()));

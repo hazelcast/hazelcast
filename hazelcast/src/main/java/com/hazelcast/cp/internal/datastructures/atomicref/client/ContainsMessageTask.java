@@ -30,6 +30,8 @@ import com.hazelcast.security.permission.AtomicReferencePermission;
 
 import java.security.Permission;
 
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+
 /**
  * Client message task for {@link ContainsOp}
  */
@@ -44,7 +46,7 @@ public class ContainsMessageTask extends AbstractMessageTask<CPAtomicRefContains
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
-               .<Boolean>invoke(parameters.groupId, new ContainsOp(parameters.name, parameters.value))
+               .<Boolean>query(parameters.groupId, new ContainsOp(parameters.name, parameters.value), LINEARIZABLE)
                .andThen(this);
     }
 

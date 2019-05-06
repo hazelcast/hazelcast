@@ -30,6 +30,8 @@ import com.hazelcast.security.permission.CountDownLatchPermission;
 
 import java.security.Permission;
 
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+
 /**
  * Client message task for {@link GetRoundOp}
  */
@@ -44,7 +46,7 @@ public class GetRoundMessageTask extends AbstractMessageTask<CPCountDownLatchGet
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
-               .<Integer>invoke(parameters.groupId, new GetRoundOp(parameters.name))
+                .<Integer>query(parameters.groupId, new GetRoundOp(parameters.name), LINEARIZABLE)
                 .andThen(this);
     }
 
