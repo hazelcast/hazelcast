@@ -17,7 +17,6 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -30,7 +29,6 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
@@ -98,13 +96,10 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         Int2ObjectHashMap<Address> partitions = getPartitions();
         partitionTable.set(new PartitionTable(ownerConnection, -1, partitions));
 
-        if (((ClientConnection) ownerConnection).getConnectedServerVersion() >= BuildInfo.calculateVersion("3.9")) {
-            //Servers after 3.9 supports listeners
-            ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
-            ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
-            invocation.setEventHandler(new PartitionEventHandler(ownerConnection));
-            invocation.invokeUrgent().get();
-        }
+        ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodeRequest();
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
+        invocation.setEventHandler(new PartitionEventHandler(ownerConnection));
+        invocation.invokeUrgent().get();
     }
 
     void refreshPartitions() {

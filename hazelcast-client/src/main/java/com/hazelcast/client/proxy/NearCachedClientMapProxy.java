@@ -17,7 +17,6 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
@@ -62,7 +61,6 @@ import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -634,24 +632,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                if (supportsRepairableNearCache()) {
-                    // this is for servers >= 3.8
-                    return MapAddNearCacheInvalidationListenerCodec.encodeRequest(name, INVALIDATION.getType(), localOnly);
-                }
-
-                // this is for servers < 3.8
-                return MapAddNearCacheEntryListenerCodec.encodeRequest(name, INVALIDATION.getType(), localOnly);
+                return MapAddNearCacheInvalidationListenerCodec.encodeRequest(name, INVALIDATION.getType(), localOnly);
             }
 
             @Override
             public String decodeAddResponse(ClientMessage clientMessage) {
-                if (supportsRepairableNearCache()) {
-                    // this is for servers >= 3.8
-                    return MapAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
-                }
-
-                // this is for servers < 3.8
-                return MapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
+                return MapAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
@@ -676,10 +662,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         deregisterListener(invalidationListenerId);
     }
 
-    private boolean supportsRepairableNearCache() {
-        return getConnectedServerVersion() >= minConsistentNearCacheSupportingServerVersion;
-    }
-
     /**
      * Eventual consistency for Near Cache can be used with server versions >= 3.8
      * For repairing functionality please see {@link RepairingHandler}
@@ -694,28 +676,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             implements EventHandler<ClientMessage> {
 
         private volatile RepairingHandler repairingHandler;
-        private volatile boolean supportsRepairableNearCache;
 
         @Override
         public void beforeListenerRegister() {
-            supportsRepairableNearCache = supportsRepairableNearCache();
-
-            if (supportsRepairableNearCache) {
-                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
-                repairingHandler = repairingTask.registerAndGetHandler(name, nearCache);
-            } else {
-                nearCache.clear();
-                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
-                repairingTask.deregisterHandler(name);
-                logger.warning(format("Near Cache for '%s' map is started in legacy mode", name));
-            }
+            RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+            repairingHandler = repairingTask.registerAndGetHandler(name, nearCache);
         }
 
         @Override
         public void onListenerRegister() {
-            if (!supportsRepairableNearCache) {
-                nearCache.clear();
-            }
         }
 
         @Override

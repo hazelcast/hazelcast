@@ -20,15 +20,11 @@ import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
-import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.LegacyCacheConfig;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
 
 import java.security.Permission;
 
@@ -83,7 +79,7 @@ public class CacheGetConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Data responseData = serializeCacheConfig(response);
+        Data responseData = nodeEngine.toData(response);
 
         return CacheGetConfigCodec.encodeResponse(responseData);
     }
@@ -91,20 +87,5 @@ public class CacheGetConfigMessageTask
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
-    }
-
-    private Data serializeCacheConfig(Object response) {
-        Data responseData = null;
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == endpoint.getClientVersion()) {
-            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
-            if (compatibilityEnabled) {
-                responseData = nodeEngine.toData(response == null ? null : new LegacyCacheConfig((CacheConfig) response));
-            }
-        }
-
-        if (null == responseData) {
-            responseData = nodeEngine.toData(response);
-        }
-        return responseData;
     }
 }

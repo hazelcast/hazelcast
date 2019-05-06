@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -31,7 +30,6 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -39,7 +37,6 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -62,8 +59,6 @@ public class Statistics {
             SECONDS);
 
     private static final String NEAR_CACHE_CATEGORY_PREFIX = "nc.";
-    private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.9";
-    private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
     private static final char STAT_SEPARATOR = ',';
     private static final char KEY_VALUE_SEPARATOR = '=';
     private static final char ESCAPE_CHAR = '\\';
@@ -78,8 +73,6 @@ public class Statistics {
     private final boolean enterprise;
 
     private PeriodicStatistics periodicStats;
-
-    private volatile Address cachedOwnerAddress;
 
     public Statistics(final HazelcastClientInstanceImpl clientInstance) {
         this.properties = clientInstance.getProperties();
@@ -116,46 +109,13 @@ public class Statistics {
     }
 
     /**
-     * @return the owner connection to the server for the client only if the server supports the client statistics feature
-     */
-    private ClientConnection getOwnerConnection() {
-        ClientConnection connection = client.getConnectionManager().getOwnerConnection();
-        if (connection == null) {
-            return null;
-        }
-
-        Address currentOwnerAddress = client.getConnectionManager().getOwnerConnectionAddress();
-        int serverVersion = connection.getConnectedServerVersion();
-        if (serverVersion < FEATURE_SUPPORTED_SINCE_VERSION) {
-            // do not print too many logs if connected to an old version server
-            if (!isSameWithCachedOwnerAddress(currentOwnerAddress)) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(
-                            format("Client statistics cannot be sent to server " + currentOwnerAddress + " since, connected "
-                                            + "owner server version is less than the minimum supported server version %s",
-                                    FEATURE_SUPPORTED_SINCE_VERSION_STRING));
-                }
-            }
-            // cache the last connected server address for decreasing the log prints
-            cachedOwnerAddress = currentOwnerAddress;
-            return null;
-        }
-
-        return connection;
-    }
-
-    private boolean isSameWithCachedOwnerAddress(Address currentOwnerAddress) {
-        return currentOwnerAddress != null && currentOwnerAddress.equals(cachedOwnerAddress);
-    }
-
-    /**
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
         client.getClientExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
-                ClientConnection ownerConnection = getOwnerConnection();
+                ClientConnection ownerConnection = client.getConnectionManager().getOwnerConnection();
                 if (ownerConnection == null) {
                     logger.finest("Cannot send client statistics to the server. No owner connection.");
                     return;
