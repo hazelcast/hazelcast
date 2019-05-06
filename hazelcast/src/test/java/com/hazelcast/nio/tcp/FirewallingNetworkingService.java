@@ -197,7 +197,7 @@ public class FirewallingNetworkingService
     public class FirewallingEndpointManager
             implements EndpointManager<Connection> {
 
-        private volatile PacketFilter packetFilter;
+        private volatile PacketFilter   packetFilter;
         private volatile PacketDelayProps delayProps = new PacketDelayProps(500, 5000);
 
         final EndpointManager delegate;
