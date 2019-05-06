@@ -122,7 +122,7 @@ public final class GetterFactory {
             Collection collection = unwrapIfOptional(reader.read(result));
             Class elementType = deduceElementType(collection);
             if (elementType != null) {
-                break;
+                return elementType;
             }
         }
         return null;
