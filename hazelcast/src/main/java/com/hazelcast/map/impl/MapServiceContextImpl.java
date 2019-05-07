@@ -202,7 +202,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     // this method is overridden in another context
     MapOperationProviders createOperationProviders() {
-        return new MapOperationProviders(this);
+        return new MapOperationProviders();
     }
 
     // this method is overridden in another context
@@ -737,13 +737,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public MapOperationProvider getMapOperationProvider(String name) {
-        return operationProviders.getOperationProvider(name);
-    }
-
-    @Override
-    public MapOperationProvider getMapOperationProvider(MapConfig mapConfig) {
-        return operationProviders.getOperationProvider(mapConfig);
+    public MapOperationProvider getMapOperationProvider(String mapName) {
+        return operationProviders.getOperationProvider(mapName);
     }
 
     @Override

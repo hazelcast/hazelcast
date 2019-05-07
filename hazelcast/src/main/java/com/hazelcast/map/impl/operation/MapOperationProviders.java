@@ -16,51 +16,15 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapServiceContext;
-
 /**
- * A central place to ask for {@link MapOperationProvider} instances.
- * {@link MapOperationProvider} instances created by this class will be wrapped by {@link WANAwareOperationProvider}
- * if WAN replication is enabled for the related map.
+ * A central place to ask for {@link MapOperationProvider}
+ * instance by map name.
  */
 public class MapOperationProviders {
 
-    protected final MapServiceContext mapServiceContext;
-    protected final MapOperationProvider wanAwareProvider;
-    protected final MapOperationProvider defaultProvider = new DefaultMapOperationProvider();
+    private static final MapOperationProvider INSTANCE = new DefaultMapOperationProvider();
 
-    public MapOperationProviders(MapServiceContext mapServiceContext) {
-        this.mapServiceContext = mapServiceContext;
-        this.wanAwareProvider = new WANAwareOperationProvider(mapServiceContext, defaultProvider);
-    }
-
-    /**
-     * Creates {@link MapOperationProvider} instance and wraps it into a {@link WANAwareOperationProvider}
-     *
-     * @param name Name of the requested {@link com.hazelcast.core.IMap}
-     * @return {@link DefaultMapOperationProvider} or {@link WANAwareOperationProvider} depending on the WAN replication
-     * config of the requested map instance.
-     */
-    public MapOperationProvider getOperationProvider(String name) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        return mapContainer.isWanReplicationEnabled() ? wanAwareProvider : defaultProvider;
-    }
-
-    /**
-     * Returns a {@link MapOperationProvider} instance, depending on whether the provided {@code MapConfig} has a
-     * WAN replication policy configured or not.
-     *
-     * @param mapConfig the map configuration to query whether WAN replication is configured
-     * @return {@link DefaultMapOperationProvider} or {@link WANAwareOperationProvider} depending on the WAN replication
-     * config of the map configuration provided as parameter.
-     */
-    public MapOperationProvider getOperationProvider(MapConfig mapConfig) {
-        if (mapConfig.getWanReplicationRef() == null) {
-            return defaultProvider;
-        } else {
-            return wanAwareProvider;
-        }
+    public MapOperationProvider getOperationProvider(String mapName) {
+        return INSTANCE;
     }
 }

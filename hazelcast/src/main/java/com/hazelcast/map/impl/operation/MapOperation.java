@@ -27,13 +27,13 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.wan.impl.CallerProvenance;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.util.List;
 
@@ -56,6 +56,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
      * otherwise in active-active scenarios infinite loop of event forwarding can be seen.
      */
     protected boolean disableWanReplicationEvent;
+    private transient boolean canPublishWanEvent;
 
     public MapOperation() {
     }
@@ -96,6 +97,18 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         } else {
             mapContainer = recordStore.getMapContainer();
         }
+
+        canPublishWanEvent = canPublishWanEvent();
+    }
+
+    private boolean canPublishWanEvent() {
+        boolean canPublishWanEvent = mapContainer.isWanReplicationEnabled()
+                && canThisOpGenerateWANEvent();
+
+        if (canPublishWanEvent) {
+            mapContainer.getWanReplicationPublisher().checkWanReplicationQueues();
+        }
+        return canPublishWanEvent;
     }
 
     @Override
@@ -127,8 +140,8 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
             invalidator.invalidateKey(key, name, getCallerUuid());
         }
     }
-
     // TODO: improve here it's possible that client cannot manage to attach listener
+
     public final void invalidateNearCache(Data key) {
         if (!mapContainer.hasInvalidationListener() || key == null) {
             return;
@@ -207,7 +220,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     private void publishWanUpdateInternal(Data dataKey, Object value, boolean hasLoadProvenance) {
-        if (!canPublishWANEvent()) {
+        if (!canPublishWanEvent) {
             return;
         }
 
@@ -227,14 +240,10 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     protected final void publishWanRemove(Data dataKey) {
-        if (!canPublishWANEvent()) {
+        if (!canPublishWanEvent) {
             return;
         }
 
         mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
-    }
-
-    private boolean canPublishWANEvent() {
-        return mapContainer.isWanReplicationEnabled() && canThisOpGenerateWANEvent();
     }
 }

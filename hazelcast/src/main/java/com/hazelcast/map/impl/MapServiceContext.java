@@ -156,9 +156,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapClearExpiredRecordsTask getClearExpiredRecordsTask();
 
-    MapOperationProvider getMapOperationProvider(String name);
-
-    MapOperationProvider getMapOperationProvider(MapConfig mapConfig);
+    MapOperationProvider getMapOperationProvider(String mapName);
 
     IndexProvider getIndexProvider(MapConfig mapConfig);
 
