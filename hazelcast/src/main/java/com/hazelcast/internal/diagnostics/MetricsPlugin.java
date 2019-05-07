@@ -23,7 +23,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -44,7 +43,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
      * If set to 0, the plugin is disabled.
      */
     public static final HazelcastProperty PERIOD_SECONDS
-            = new HazelcastProperty(PREFIX + ".metrics.period.seconds", 60, SECONDS);
+            = new HazelcastProperty("hazelcast.diagnostics.metrics.period.seconds", 60, SECONDS);
 
     private final MetricsRegistry metricsRegistry;
     private final long periodMillis;
