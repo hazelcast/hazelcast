@@ -22,7 +22,6 @@ import com.hazelcast.map.LockAware;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.impl.LegacyAsyncMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.JobTracker;
@@ -189,7 +188,7 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * {@inheritDoc}
@@ -462,7 +461,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * Calls {@link MapStore#storeAll(Map)} and/or
      * {@link MapStore#deleteAll(Collection)} with elements marked dirty.
-     *
+     * <p>
      * Please note that this method has effect only if write-behind
      * persistence mode is configured. If the persistence mode is
      * write-through calling this method has no practical effect, but an
@@ -756,9 +755,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      *
-     * @param key      the key of the map entry
-     * @param value    the new value of the map entry
-     * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param key     the key of the map entry
+     * @param value   the new value of the map entry
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
      * @param ttlUnit time unit for the TTL
      * @return ICompletableFuture from which the old value of the key can be retrieved
      * @throws NullPointerException if the specified key or value is null
@@ -987,10 +986,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      *
-     * @param key      the key of the map entry
-     * @param value    the new value of the map entry
-     * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
-     * @param ttlUnit  time unit for the TTL
+     * @param key     the key of the map entry
+     * @param value   the new value of the map entry
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttlUnit time unit for the TTL
      * @return ICompletableFuture on which client code can block waiting for the operation to complete
      * or provide an {@link ExecutionCallback} to be invoked upon set operation completion
      * @throws NullPointerException if the specified key, value, ttlUnit
@@ -1228,10 +1227,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      *
-     * @param key      key of the entry
-     * @param value    value of the entry
-     * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
-     * @param ttlUnit  time unit for the TTL
+     * @param key     key of the entry
+     * @param value   value of the entry
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttlUnit time unit for the TTL
      * @return old value of the entry
      * @throws NullPointerException if the specified key or value is null
      */
@@ -1316,10 +1315,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to next closest second value.
      *
-     * @param key      key of the entry
-     * @param value    value of the entry
-     * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
-     * @param ttlUnit  time unit for the TTL
+     * @param key     key of the entry
+     * @param value   value of the entry
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttlUnit time unit for the TTL
      * @throws NullPointerException if the specified key or value is null
      */
     void putTransient(K key, V value, long ttl, TimeUnit ttlUnit);
@@ -1435,9 +1434,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      *
-     * @param key      key of the entry
-     * @param value    value of the entry
-     * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param key     key of the entry
+     * @param value   value of the entry
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
      * @param ttlUnit time unit for the TTL
      * @return old value of the entry
      * @throws NullPointerException if the specified key or value is null
@@ -1501,6 +1500,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @throws NullPointerException if the specified key, value, ttlUnit or maxIdleUnit are null
      */
     V putIfAbsent(K key, V value, long ttl, TimeUnit ttlUnit, long maxIdle, TimeUnit maxIdleUnit);
+
     /**
      * {@inheritDoc}
      * <p>
@@ -1641,10 +1641,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      *
-     * @param key      key of the entry
-     * @param value    value of the entry
-     * @param ttl      maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
-     * @param ttlUnit  time unit for the TTL
+     * @param key     key of the entry
+     * @param value   value of the entry
+     * @param ttl     maximum time for this entry to stay in the map (0 means infinite, negative means map config default)
+     * @param ttlUnit time unit for the TTL
      * @throws NullPointerException if the specified key or value is null
      */
     void set(K key, V value, long ttl, TimeUnit ttlUnit);
@@ -2997,7 +2997,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * The entry will expire and get evicted after the TTL. If the TTL is 0,
      * then the entry lives forever. If the TTL is negative, then the TTL
      * from the map configuration will be used (default: forever).
-     *
+     * <p>
      * If there is no entry with key {@code key} or is already expired, this call makes no changes to entries stored in
      * this map.
      *
