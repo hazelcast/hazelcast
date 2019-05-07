@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -84,6 +85,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_yaml_loadedAsYaml() throws Exception {
+        assumeThatJDK8OrHigher();
         File file = helper.givenYamlConfigFileInWorkDir("foo.yaml", "cluster-yaml");
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
@@ -95,6 +97,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_yaml_loadedAsYaml() throws Exception {
+        assumeThatJDK8OrHigher();
         helper.givenYamlConfigFileOnClasspath("foo.yaml", "cluster-yaml");
         System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
 
@@ -106,6 +109,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_yml_loadedAsYaml() throws Exception {
+        assumeThatJDK8OrHigher();
         File file = helper.givenYamlConfigFileInWorkDir("foo.yml", "cluster-yaml");
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
@@ -117,6 +121,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_yml_loadedAsYaml() throws Exception {
+        assumeThatJDK8OrHigher();
         helper.givenYamlConfigFileOnClasspath("foo.yml", "cluster-yaml");
         System.setProperty(SYSPROP_NAME, "classpath:foo.yml");
 
@@ -254,6 +259,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveWorkDir_yaml() throws Exception {
+        assumeThatJDK8OrHigher();
         helper.givenYamlConfigFileInWorkDir("cluster-yaml");
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
@@ -264,6 +270,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @Test
     public void testResolveClasspath_yaml() throws Exception {
+        assumeThatJDK8OrHigher();
         helper.givenYamlConfigFileOnClasspath("cluster-yaml");
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(null);
