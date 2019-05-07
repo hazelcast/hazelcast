@@ -212,7 +212,7 @@ abstract class MapProxySupport<K, V>
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(MapService.getObjectNamespace(name),
                 LockServiceImpl.getMaxLeaseTimeInMillis(properties));
-        this.operationProvider = mapServiceContext.getMapOperationProvider(mapConfig);
+        this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();

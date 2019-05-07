@@ -163,6 +163,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     @Override
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
+
         this.begin = Clock.currentTimeMillis();
         this.readOnly = entryProcessor instanceof ReadOnly;
 
@@ -214,9 +215,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     private boolean isOffloadingRequested(EntryProcessor entryProcessor) {
         if (entryProcessor instanceof Offloadable) {
             String executorName = ((Offloadable) entryProcessor).getExecutorName();
-            if (!executorName.equals(NO_OFFLOADING)) {
-                return true;
-            }
+            return !executorName.equals(NO_OFFLOADING);
         }
         return false;
     }
