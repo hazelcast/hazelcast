@@ -45,7 +45,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 public abstract class OperationThread extends HazelcastManagedThread implements MetricsProvider {
 
     final int threadId;
-    final OperationQueue queue;
+    public final OperationQueue queue;
     // This field wil only be accessed by the thread itself when doing 'self' calls. So no need
     // for any form of synchronization.
     OperationRunner currentRunner;

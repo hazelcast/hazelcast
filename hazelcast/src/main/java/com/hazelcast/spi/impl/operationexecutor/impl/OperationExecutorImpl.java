@@ -84,7 +84,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     private final ILogger logger;
 
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
-    private final PartitionOperationThread[] partitionThreads;
+    public final PartitionOperationThread[] partitionThreads;
     private final OperationRunner[] partitionOperationRunners;
 
     private final OperationQueue genericQueue

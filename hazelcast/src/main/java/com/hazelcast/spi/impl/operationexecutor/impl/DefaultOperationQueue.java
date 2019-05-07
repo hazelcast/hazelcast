@@ -16,10 +16,15 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.spi.serialization.SerializationService;
+
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -56,6 +61,11 @@ public final class DefaultOperationQueue implements OperationQueue {
     @Override
     public int size() {
         return normalQueue.size() + priorityQueue.size();
+    }
+
+    @Override
+    public void sample(ConcurrentMap<Class, AtomicLong> samples, SerializationService ss) {
+        ((MPSCQueue)normalQueue).sample(samples,ss);
     }
 
     @Override

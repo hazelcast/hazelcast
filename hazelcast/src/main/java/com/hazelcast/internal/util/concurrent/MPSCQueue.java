@@ -16,14 +16,19 @@
 
 package com.hazelcast.internal.util.concurrent;
 
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -35,7 +40,7 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  * Multi producer single consumer queue. This queue has a configurable {@link IdleStrategy} so if there is nothing to take,
  * the thread can idle and eventually can do the more expensive blocking. The blocking is especially a concern for the putting
  * thread, because it needs to notify the blocked thread.
- *
+ * <p>
  * This MPSCQueue is based on 2 stacks; so the items are put in a reverse order by the putting thread, and by the taking thread
  * they are reversed in order again so that the original ordering is restored. Using this approach, if there are multiple items
  * on the stack, the owning thread can take them all using a single cas. Once this is done, the owning thread can process them
@@ -52,8 +57,46 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     private final IdleStrategy idleStrategy;
 
     private Thread consumerThread;
-    private Object[] takeStack = new Object[INITIAL_ARRAY_SIZE];
+    private volatile Object[] takeStack = new Object[INITIAL_ARRAY_SIZE];
     private int takeStackIndex = -1;
+
+    public void sample(ConcurrentMap<Class, AtomicLong> samples, SerializationService ss) {
+        List<Object> items = new LinkedList<Object>();
+        for (int k = 0; k < takeStack.length; k++) {
+            Object item = takeStack[k];
+            if (item != null) {
+                items.add(item);
+            }
+        }
+
+        Node node = putStack.get();
+        while (node != null) {
+            if (node.item != null) {
+                items.add(node.item);
+            }
+            node = node.next;
+        }
+
+        System.out.println("Sampling:"+items.size());
+
+//        for (Object item: items) {
+//            Class clazz;
+//            if (item instanceof Packet) {
+//                clazz = ss.toObject(item);
+//            } else {
+//                clazz = item.getClass();
+//            }
+//
+//            AtomicLong counter = samples.get(clazz);
+//            if (counter == null) {
+//                counter = new AtomicLong();
+//                AtomicLong found = samples.putIfAbsent(clazz, counter);
+//                counter = found == null?counter:found;
+//            }
+//
+//            counter.incrementAndGet();
+//        }
+    }
 
     /**
      * Creates a new {@link MPSCQueue} with the provided {@link IdleStrategy} and consumer thread.
@@ -78,7 +121,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     /**
      * Sets the consumer thread.
-     *
+     * <p>
      * The consumer thread is needed for blocking, so that an offering known which thread
      * to wakeup. There can only be a single consumerThread and this method should be called
      * before the queue is safely published. It will not provide a happens before relation on
@@ -93,7 +136,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     /**
      * {@inheritDoc}.
-     *
+     * <p>
      * This call is threadsafe; but it will only remove the items that are on the put-stack.
      */
     @Override
@@ -277,7 +320,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     /**
      * {@inheritDoc}.
-     *
+     * <p>
      * Best effort implementation.
      */
     @Override

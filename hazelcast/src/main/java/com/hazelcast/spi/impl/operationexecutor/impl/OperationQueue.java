@@ -16,6 +16,11 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import com.hazelcast.spi.serialization.SerializationService;
+
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * The OperationQueue is the queue used to schedule operations/tasks on an OperationThread.
  * <p/>
@@ -85,4 +90,6 @@ public interface OperationQueue {
      * @return the total number of pending operations.
      */
     int size();
+
+    void sample(ConcurrentMap<Class, AtomicLong> samples, SerializationService ss);
 }

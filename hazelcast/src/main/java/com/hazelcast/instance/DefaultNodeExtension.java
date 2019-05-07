@@ -43,6 +43,7 @@ import com.hazelcast.internal.diagnostics.MemberHeartbeatPlugin;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.OperationHeartbeatPlugin;
+import com.hazelcast.internal.diagnostics.OperationQueueSamplePlugin;
 import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
 import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
 import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
@@ -413,6 +414,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
         // periodic loggers
         diagnostics.register(new OverloadedConnectionsPlugin(nodeEngine));
+        diagnostics.register(new OperationQueueSamplePlugin(nodeEngine));
         diagnostics.register(new EventQueuePlugin(nodeEngine,
                 ((EventServiceImpl) nodeEngine.getEventService()).getEventExecutor()));
         diagnostics.register(new PendingInvocationsPlugin(nodeEngine));
