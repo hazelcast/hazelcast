@@ -239,6 +239,10 @@ public class Diagnostics {
         if (scheduler != null) {
             scheduler.shutdownNow();
         }
+
+        for(DiagnosticsPlugin plugin: pluginsMap.values()){
+            plugin.onStop();
+        }
     }
 
     private class WritePluginTask implements Runnable {

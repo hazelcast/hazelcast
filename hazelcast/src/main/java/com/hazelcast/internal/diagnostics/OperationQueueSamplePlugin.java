@@ -55,6 +55,11 @@ public class OperationQueueSamplePlugin extends DiagnosticsPlugin {
         logger.info("Plugin:active: period-millis:" + samplePeriodMillis);
     }
 
+    @Override
+    public void onStop() {
+        executor.shutdown();
+    }
+
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     @Override

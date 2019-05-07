@@ -59,5 +59,7 @@ public abstract class DiagnosticsPlugin {
 
     public abstract void onStart();
 
+    public void onStop(){}
+
     public abstract void run(DiagnosticsLogWriter writer);
 }
