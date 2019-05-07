@@ -17,28 +17,19 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheProxyUtil;
-import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
-import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.LegacyCacheConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Future;
@@ -46,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.util.StringUtil.timeToString;
 
 /**
  * Helper class for some client cache related stuff.
@@ -75,30 +65,11 @@ final class ClientCacheHelper {
             ClientMessage responseMessage = future.get();
             SerializationService serializationService = client.getSerializationService();
 
-            return deserializeCacheConfig(client, responseMessage, serializationService, clientInvocation);
+            Data responseData = CacheGetConfigCodec.decodeResponse(responseMessage).response;
+            return serializationService.toObject(responseData);
         } catch (Exception e) {
             throw rethrow(e);
         }
-    }
-
-    private static <K, V> CacheConfig<K, V> deserializeCacheConfig(HazelcastClientInstanceImpl client,
-                                                                   ClientMessage responseMessage,
-                                                                   SerializationService serializationService,
-                                                                   ClientInvocation clientInvocation) {
-        Data responseData = CacheGetConfigCodec.decodeResponse(responseMessage).response;
-        ClientConnection sendConnection = clientInvocation.getSendConnection();
-        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
-            boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
-            if (compatibilityEnabled) {
-                LegacyCacheConfig<K, V> legacyConfig = serializationService.toObject(responseData, LegacyCacheConfig.class);
-                if (null == legacyConfig) {
-                    return null;
-                }
-                return legacyConfig.getConfigAndReset();
-            }
-        }
-
-        return serializationService.toObject(responseData);
     }
 
     /**
@@ -117,119 +88,17 @@ final class ClientCacheHelper {
             String nameWithPrefix = newCacheConfig.getNameWithPrefix();
             int partitionId = client.getClientPartitionService().getPartitionId(nameWithPrefix);
 
-            Object resolvedConfig = resolveCacheConfigWithRetry(client, newCacheConfig, partitionId);
-
-            Data configData = client.getSerializationService().toData(resolvedConfig);
+            Data configData = client.getSerializationService().toData(newCacheConfig);
             ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, true);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
             final ClientMessage response = future.get();
             final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
-            return resolveCacheConfig(client, clientInvocation, data);
+            return client.getSerializationService().toObject(data);
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
-
-    private static <K, V> CacheConfig<K, V> resolveCacheConfig(HazelcastClientInstanceImpl client,
-                                                               ClientInvocation clientInvocation, Data configData) {
-        ClientConnection sendConnection = clientInvocation.getSendConnection();
-        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
-            boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
-            if (compatibilityEnabled) {
-                LegacyCacheConfig legacyConfig = client.getSerializationService().toObject(configData, LegacyCacheConfig.class);
-                if (null == legacyConfig) {
-                    return null;
-                }
-                return legacyConfig.getConfigAndReset();
-            }
-        }
-        return client.getSerializationService().toObject(configData);
-    }
-
-    private static <K, V> Object resolveCacheConfig(HazelcastClientInstanceImpl client, CacheConfig<K, V> newCacheConfig,
-                                                    int partitionId)
-            throws IOException {
-
-        Address address = getSendAddress(client, partitionId);
-        ClientConnection sendConnection = (ClientConnection) client.getConnectionManager().getOrConnect(address);
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
-            boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
-            if (compatibilityEnabled) {
-                return new LegacyCacheConfig<K, V>(newCacheConfig);
-            }
-        }
-        return newCacheConfig;
-    }
-
-    private static Address getSendAddress(HazelcastClientInstanceImpl client, int partitionId) throws IOException {
-        Address address;
-        if (client.getClientConfig().getNetworkConfig().isSmartRouting()) {
-            address = client.getClientPartitionService().getPartitionOwner(partitionId);
-            if (address == null) {
-                throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
-            }
-        } else {
-            address = client.getConnectionManager().getOwnerConnectionAddress();
-            if (address == null) {
-                throw new IOException("NonSmartClientInvocationService: Owner connection is not available.");
-            }
-        }
-        return address;
-    }
-
-    private static <K, V> Object resolveCacheConfigWithRetry(HazelcastClientInstanceImpl client,
-                                                             CacheConfig<K, V> newCacheConfig, int partitionId) {
-        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
-        long invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
-        long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        long startMillis = System.currentTimeMillis();
-        Exception lastException;
-        do {
-            try {
-                return resolveCacheConfig(client, newCacheConfig, partitionId);
-            } catch (Exception e) {
-                lastException = e;
-            }
-
-            timeOutOrSleepBeforeNextTry(startMillis, invocationRetryPauseMillis, invocationTimeoutMillis, lastException);
-
-        } while (client.getLifecycleService().isRunning());
-        throw new HazelcastClientNotActiveException("Client is shut down");
-    }
-
-    private static void sleepBeforeNextTry(long invocationRetryPauseMillis) {
-        try {
-            Thread.sleep(invocationRetryPauseMillis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
-
-    private static void timeOutOrSleepBeforeNextTry(long startMillis, long invocationRetryPauseMillis,
-                                                    long invocationTimeoutMillis, Exception lastException) {
-        long nowInMillis = System.currentTimeMillis();
-        long elapsedMillis = nowInMillis - startMillis;
-        boolean timedOut = elapsedMillis > invocationTimeoutMillis;
-
-        if (timedOut) {
-            throwOperationTimeoutException(startMillis, nowInMillis, elapsedMillis, invocationTimeoutMillis, lastException);
-        } else {
-            sleepBeforeNextTry(invocationRetryPauseMillis);
-        }
-    }
-
-    private static void throwOperationTimeoutException(long startMillis, long nowInMillis,
-                                                       long elapsedMillis, long invocationTimeoutMillis,
-                                                       Exception lastException) {
-        throw new OperationTimeoutException("Creating cache config is timed out."
-                + " Current time: " + timeToString(nowInMillis) + ", "
-                + " Start time : " + timeToString(startMillis) + ", "
-                + " Client invocation timeout : " + invocationTimeoutMillis + " ms, "
-                + " Elapsed time : " + elapsedMillis + " ms. ", lastException);
-    }
-
 
     /**
      * Enables/disables statistics or management support of cache on the all servers in the cluster.

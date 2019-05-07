@@ -130,14 +130,6 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.discovery.public.ip.enabled", false);
 
     /**
-     * When this property is true, if the client can not know the server version it will assume that the server is version 3.6.x.
-     * This property is especially needed if you are using ICache (or JCache).
-     */
-    public static final HazelcastProperty COMPATIBILITY_3_6_SERVER_ENABLED
-            = new HazelcastProperty("hazelcast.compatibility.3.6.server", false);
-
-
-    /**
      * Controls the number of socket input threads. Defaults to -1, so the system will determine.
      *
      * If SSL is disabled, system will default to 1.

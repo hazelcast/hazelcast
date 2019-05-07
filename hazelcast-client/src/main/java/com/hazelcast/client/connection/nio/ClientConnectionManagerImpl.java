@@ -776,7 +776,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             connectionsInProgress.remove(inetSocketAddressCache.get(target));
             logger.info("Authenticated with server " + memberAddress + ", server version:" + connection
-                    .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());
+                    .getConnectedServerVersion() + " Local address: " + connection.getLocalSocketAddress());
 
             // Check if connection is closed by remote before authentication complete, if that is the case
             // we need to remove it back from active connections.

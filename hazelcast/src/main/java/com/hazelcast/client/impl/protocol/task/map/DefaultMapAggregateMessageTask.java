@@ -16,9 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.aggregation.impl.CanonicalizingHashSet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.nio.Connection;
@@ -28,12 +26,9 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.util.IterationType;
 
 import java.util.Collection;
-import java.util.HashSet;
 
 public abstract class DefaultMapAggregateMessageTask<P>
         extends AbstractMapQueryMessageTask<P, AggregationResult, AggregationResult, Object> {
-
-    private static final int MIXED_TYPES_VERSION = BuildInfo.calculateVersion("3.12");
 
     public DefaultMapAggregateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -85,14 +80,7 @@ public abstract class DefaultMapAggregateMessageTask<P>
             return null;
         }
 
-        Object result = combinedResult.getAggregator().aggregate();
-        if (result instanceof CanonicalizingHashSet && endpoint.getClientVersion() < MIXED_TYPES_VERSION) {
-            // XXX: Older Java clients are expecting a HashSet instance
-            // serialized using standard java.io.Serializable facilities.
-            return new HashSet((CanonicalizingHashSet) result);
-        }
-
-        return result;
+        return combinedResult.getAggregator().aggregate();
     }
 
 }

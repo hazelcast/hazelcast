@@ -580,22 +580,12 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                if (supportsRepairableNearCache()) {
-                    // this is for servers >= 3.8
-                    return CacheAddNearCacheInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
-                }
-                // this is for servers < 3.8
-                return CacheAddInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
+                return CacheAddNearCacheInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
             }
 
             @Override
             public String decodeAddResponse(ClientMessage clientMessage) {
-                if (supportsRepairableNearCache()) {
-                    // this is for servers >= 3.8
-                    return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
-                }
-                // this is for servers < 3.8
-                return CacheAddInvalidationListenerCodec.decodeResponse(clientMessage).response;
+                return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
@@ -608,10 +598,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
             }
         };
-    }
-
-    private boolean supportsRepairableNearCache() {
-        return getConnectedServerVersion() >= minConsistentNearCacheSupportingServerVersion;
     }
 
     private void removeInvalidationListener() {
@@ -811,7 +797,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         private String clientUuid;
         private volatile RepairingHandler repairingHandler;
-        private volatile boolean supportsRepairableNearCache;
 
         private NearCacheInvalidationEventHandler() {
             this.clientUuid = getContext().getClusterService().getLocalClient().getUuid();
@@ -819,23 +804,12 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         @Override
         public void beforeListenerRegister() {
-            supportsRepairableNearCache = supportsRepairableNearCache();
-
-            if (supportsRepairableNearCache) {
-                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
-                repairingHandler = repairingTask.registerAndGetHandler(nameWithPrefix, nearCache);
-            } else {
-                RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
-                repairingTask.deregisterHandler(nameWithPrefix);
-                logger.warning(format("Near Cache for '%s' cache is started in legacy mode", name));
-            }
+            RepairingTask repairingTask = getContext().getRepairingTask(getServiceName());
+            repairingHandler = repairingTask.registerAndGetHandler(nameWithPrefix, nearCache);
         }
 
         @Override
         public void onListenerRegister() {
-            if (!supportsRepairableNearCache) {
-                nearCache.clear();
-            }
         }
 
         @Override

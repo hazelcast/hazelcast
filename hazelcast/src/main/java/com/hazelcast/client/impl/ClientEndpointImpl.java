@@ -19,7 +19,6 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -60,8 +59,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private boolean ownerConnection;
     private Credentials credentials;
     private volatile boolean authenticated;
-    private int clientVersion;
-    private String clientVersionString;
+    private String clientVersion;
     private long authenticationCorrelationId;
     private volatile String stats;
     private String clientName;
@@ -78,8 +76,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         } else {
             socketAddress = null;
         }
-        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
-        this.clientVersionString = "Unknown";
+        this.clientVersion = "Unknown";
         this.creationTime = System.currentTimeMillis();
     }
 
@@ -137,14 +134,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public int getClientVersion() {
-        return clientVersion;
-    }
-
-    @Override
     public void setClientVersion(String version) {
-        clientVersionString = version;
-        clientVersion = BuildInfo.calculateVersion(version);
+        clientVersion = version;
     }
 
     @Override
@@ -293,7 +284,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", principal='" + principal
                 + ", ownerConnection=" + ownerConnection
                 + ", authenticated=" + authenticated
-                + ", clientVersion=" + clientVersionString
+                + ", clientVersion=" + clientVersion
                 + ", creationTime=" + creationTime
                 + ", latest statistics=" + stats
                 + '}';

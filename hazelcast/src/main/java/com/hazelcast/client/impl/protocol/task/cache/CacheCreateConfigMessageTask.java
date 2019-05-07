@@ -24,14 +24,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.LegacyCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 
 import java.security.Permission;
 
@@ -53,7 +50,7 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected void processMessage() {
-        CacheConfig cacheConfig = extractCacheConfigFromMessage();
+        CacheConfig cacheConfig = nodeEngine.toObject(parameters.cacheConfig);
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
         if (cacheConfig != null) {
@@ -71,22 +68,6 @@ public class CacheCreateConfigMessageTask
         }
     }
 
-    private CacheConfig extractCacheConfigFromMessage() {
-        int clientVersion = endpoint.getClientVersion();
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == clientVersion) {
-            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
-            if (compatibilityEnabled) {
-                LegacyCacheConfig legacyCacheConfig = nodeEngine.toObject(parameters.cacheConfig, LegacyCacheConfig.class);
-                if (null == legacyCacheConfig) {
-                    return null;
-                }
-                return legacyCacheConfig.getConfigAndReset();
-            }
-        }
-
-        return (CacheConfig) nodeEngine.toObject(parameters.cacheConfig);
-    }
-
     @Override
     protected CacheCreateConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return CacheCreateConfigCodec.decodeRequest(clientMessage);
@@ -94,7 +75,7 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Data responseData = serializeCacheConfig(response);
+        Data responseData = nodeEngine.toData(response);
         return CacheCreateConfigCodec.encodeResponse(responseData);
     }
 
@@ -131,20 +112,5 @@ public class CacheCreateConfigMessageTask
     @Override
     public void onFailure(Throwable t) {
         handleProcessingFailure(t);
-    }
-
-    private Data serializeCacheConfig(Object response) {
-        Data responseData = null;
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == endpoint.getClientVersion()) {
-            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
-            if (compatibilityEnabled) {
-                responseData = nodeEngine.toData(response == null ? null : new LegacyCacheConfig((CacheConfig) response));
-            }
-        }
-
-        if (null == responseData) {
-            responseData = nodeEngine.toData(response);
-        }
-        return responseData;
     }
 }
