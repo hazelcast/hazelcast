@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
 import com.hazelcast.util.collection.PartitionIdSet;
-import org.apache.logging.log4j.core.util.NullOutputStream;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
@@ -397,5 +396,12 @@ public final class SerializationUtil {
             result.add(in.readInt());
         }
         return result;
+    }
+
+    private static class NullOutputStream extends OutputStream {
+        @Override
+        public void write(int b) {
+            // do nothing
+        }
     }
 }
