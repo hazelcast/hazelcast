@@ -99,11 +99,6 @@ public interface ClientEndpoint extends Client {
     boolean isAuthenticated();
 
     /**
-     * @return the client version as calculated by {@link com.hazelcast.instance.BuildInfo}
-     */
-    int getClientVersion();
-
-    /**
      * @param version the version string as obtained from the environment
      */
     void setClientVersion(String version);

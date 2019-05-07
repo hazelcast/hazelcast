@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
@@ -65,8 +64,7 @@ public class ClientConnection implements Connection {
 
     private volatile Throwable closeCause;
     private volatile String closeReason;
-    private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
-    private String connectedServerVersionString;
+    private String connectedServerVersion;
 
     public ClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -282,20 +280,15 @@ public class ClientConnection implements Connection {
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())
                 + ", closedTime=" + timeToStringFriendly(closedTime.get())
-                + ", connected server version=" + connectedServerVersionString
+                + ", connected server version=" + connectedServerVersion
                 + '}';
     }
 
     public void setConnectedServerVersion(String connectedServerVersion) {
-        this.connectedServerVersionString = connectedServerVersion;
-        this.connectedServerVersion = BuildInfo.calculateVersion(connectedServerVersion);
+        this.connectedServerVersion = connectedServerVersion;
     }
 
-    public int getConnectedServerVersion() {
+    public String getConnectedServerVersion() {
         return connectedServerVersion;
-    }
-
-    public String getConnectedServerVersionString() {
-        return connectedServerVersionString;
     }
 }

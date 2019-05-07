@@ -137,11 +137,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public int getClientVersion() {
-        return clientVersion;
-    }
-
-    @Override
     public void setClientVersion(String version) {
         clientVersionString = version;
         clientVersion = BuildInfo.calculateVersion(version);
