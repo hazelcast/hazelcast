@@ -13,18 +13,39 @@
 # limitations under the License.
 
 hazelcast-jet:
+
   instance:
+    # period between flow control packets in milliseconds
     flow-control-period: 100
+    # number of backup copies to configure for Hazelcast IMaps used internally in a Jet job
     backup-count: 1
+    # the delay after which auto-scaled jobs will restart if a new member is added to the
+    # cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled
     scale-up-delay-millis: 10000
+    # Sets whether lossless job restart is enabled for the node. With
+    # lossless restart you can restart the whole cluster without losing the
+    # jobs and their state. The feature is implemented on top of the Hot
+    # Restart feature of Hazelcast IMDG which persists the data to disk.
     lossless-restart-enabled: false
+
   edge-defaults:
+    # capacity of the concurrent SPSC queue between each two processors
     queue-size: 1024
+    # network packet size limit in bytes, only applies to distributed edges
     packet-size-limit: 16384
+    # receive window size multiplier, only applies to distributed edges
     receive-window-multiplier: 3
+
   metrics:
+    # whether metrics collection is enabled
     enabled: true
+    # whether jmx mbean metrics collection is enabled
     jmx-enabled: true
-    collection-interval-seconds: 5
+    # the number of seconds the metrics will be retained on the instance
     retention-seconds: 5
+    # the metrics collection interval in seconds
+    collection-interval-seconds: 5
+    # whether metrics should be collected for data structures. Metrics
+    # collection can have some overhead if there is a large number of data
+    # structures
     metrics-for-data-structures: false
