@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -85,6 +86,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_yaml_loadedAsYaml() throws Exception {
+        assumeThatJDK8OrHigher();
         File file = helper.givenYamlClientFailoverConfigFileInWorkDir("foo.yaml", 42);
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
@@ -96,6 +98,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_yaml_loadedAsYaml() throws Exception {
+        assumeThatJDK8OrHigher();
         helper.givenYamlClientFailoverConfigFileOnClasspath("foo.yaml", 42);
         System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
 
@@ -107,6 +110,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_yml_loadedAsYaml() throws Exception {
+        assumeThatJDK8OrHigher();
         File file = helper.givenYamlClientFailoverConfigFileInWorkDir("foo.yml", 42);
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
@@ -118,6 +122,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_yml_loadedAsYaml() throws Exception {
+        assumeThatJDK8OrHigher();
         helper.givenYamlClientFailoverConfigFileOnClasspath("foo.yml", 42);
         System.setProperty(SYSPROP_NAME, "classpath:foo.yml");
 
@@ -255,6 +260,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveWorkDir_yaml() throws Exception {
+        assumeThatJDK8OrHigher();
         helper.givenYamlClientFailoverConfigFileInWorkDir(42);
 
         instance = HazelcastClient.newHazelcastFailoverClient();
@@ -265,6 +271,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @Test
     public void testResolveClasspath_yaml() throws Exception {
+        assumeThatJDK8OrHigher();
         helper.givenYamlClientFailoverConfigFileOnClasspath(42);
 
         instance = HazelcastClient.newHazelcastFailoverClient();

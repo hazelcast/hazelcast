@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeThatJDK8OrHigher;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -44,8 +45,13 @@ public class YamlClientFailoverConfigBuilderConfigResolutionTest {
     private DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
 
     @Before
+    public void setUp() {
+        assumeThatJDK8OrHigher();
+        System.clearProperty(SYSPROP_NAME);
+    }
+
     @After
-    public void beforeAndAfter() {
+    public void tearDown() {
         System.clearProperty(SYSPROP_NAME);
         helper.ensureTestConfigDeleted();
     }
