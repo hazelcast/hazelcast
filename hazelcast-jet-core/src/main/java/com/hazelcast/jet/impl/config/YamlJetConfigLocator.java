@@ -28,6 +28,14 @@ public final class YamlJetConfigLocator extends AbstractConfigLocator {
     private static final String HAZELCAST_JET_YAML = "hazelcast-jet.yaml";
     private static final String HAZELCAST_JET_DEFAULT_YAML = "hazelcast-jet-default.yaml";
 
+    public YamlJetConfigLocator() {
+        this(false);
+    }
+
+    public YamlJetConfigLocator(boolean failIfSysPropWithNotExpectedSuffix) {
+        super(failIfSysPropWithNotExpectedSuffix);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
         return loadFromSystemProperty(HAZELCAST_JET_CONFIG_PROPERTY, "yaml", "yml");

@@ -17,10 +17,14 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.impl.config.YamlJetConfigBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -40,9 +44,23 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
     private static final String JET_TEST_WITH_VARIABLES_YAML = "hazelcast-jet-with-variables.yaml";
     private static final String JET_MEMBER_TEST_YAML = "hazelcast-jet-member-test.yaml";
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Override
     @Test(expected = HazelcastException.class)
     public void when_filePathSpecifiedNonExistingFile_thenThrowsException() throws Exception {
+        // Given
+        File file = File.createTempFile("foo", ".yaml");
+        file.delete();
+        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, file.getAbsolutePath());
+
+        // When
+        new YamlJetConfigBuilder().build();
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void when_filePathSpecifiedNonExistingNonYamlFile_thenThrowsException() throws Exception {
         // Given
         File file = File.createTempFile("foo", ".yaml");
         file.delete();
@@ -85,6 +103,18 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
         new YamlJetConfigBuilder().build();
     }
 
+
+    @Test(expected = HazelcastException.class)
+    public void when_filePathMemberSpecifiedNonExistingNonYamlFile_thenThrowsException() throws Exception {
+        // Given
+        File file = File.createTempFile("foo", ".bar");
+        file.delete();
+        System.setProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, file.getAbsolutePath());
+
+        // When
+        new YamlJetConfigBuilder().build();
+    }
+
     @Override
     @Test
     public void when_filePathMemberSpecified_usesSpecifiedFile() throws IOException {
@@ -109,6 +139,15 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
     public void when_classpathSpecifiedNonExistingFile_thenThrowsException() {
         // Given
         System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:non-existing.yaml");
+
+        //When
+        new YamlJetConfigBuilder().build();
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void when_classpathSpecifiedNonExistingNonYamlFile_thenThrowsException() {
+        // Given
+        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:non-existing.bar");
 
         //When
         new YamlJetConfigBuilder().build();
@@ -139,6 +178,15 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
 
     }
 
+    @Test(expected = HazelcastException.class)
+    public void when_classpathMemberSpecifiedNonExistingNonYamlFile_thenThrowsException() {
+        // Given
+        System.setProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:non-existing.bar");
+
+        //When
+        new YamlJetConfigBuilder().build();
+    }
+
     @Override
     @Test
     public void when_classpathMemberSpecified_usesSpecifiedResource() {
@@ -162,7 +210,7 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
         properties.put("flow.control.period", "50");
         properties.put("backup.count", "2");
         properties.put("scale.up.delay.millis", "1234");
-        properties.put("lossless.restart.enabled", "true");
+        properties.put("lossless.restart.enabled", "false");
         properties.put("metrics.enabled", "false");
         properties.put("metrics.jmxEnabled", "false");
         properties.put("metrics.retention", "124");
@@ -210,4 +258,28 @@ public class YamlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfig
         assertEquals("packetSizeLimit", 997, edgeConfig.getPacketSizeLimit());
         assertEquals("receiveWindowMultiplier", 996, edgeConfig.getReceiveWindowMultiplier());
     }
+
+    @Test
+    public void loadingThroughSystemPropertyWithLocator_nonYamlSuffix() {
+        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:test-jet.foobar");
+
+        expectedException.expect(HazelcastException.class);
+        expectedException.expectMessage("hazelcast.jet.config");
+        expectedException.expectMessage("classpath:test-jet.foobar");
+        expectedException.expectMessage("yaml, yml");
+
+        new YamlJetConfigBuilder();
+    }
+
+    @Test
+    public void loadingThroughSystemPropertyWithLocator_existingClasspathResource() {
+        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + JET_TEST_YAML);
+
+        JetInstance instance = Jet.newJetInstance();
+        JetConfig config = instance.getConfig();
+        instance.shutdown();
+
+        assertConfig(config);
+    }
+
 }

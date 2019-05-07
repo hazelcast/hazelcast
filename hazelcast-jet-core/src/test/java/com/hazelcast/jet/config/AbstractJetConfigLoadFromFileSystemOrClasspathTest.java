@@ -17,8 +17,6 @@
 package com.hazelcast.jet.config;
 
 import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
@@ -29,17 +27,10 @@ import java.io.IOException;
  * @see XmlJetConfigLoadFromFileSystemOrClasspathTest
  * @see YamlJetConfigLoadFromFileSystemOrClasspathTest
  */
-@RunWith(Enclosed.class)
 public abstract class AbstractJetConfigLoadFromFileSystemOrClasspathTest {
 
     @Test
     public abstract void when_fileSystemFileSpecified_usesSpecifiedFile() throws IOException;
-
-    @Test
-    public abstract void when_fileSystemPathSpecified_usesSpecifiedFile() throws IOException;
-
-    @Test
-    public abstract void when_classpathSpecified_usesSpecifiedResource();
 
     @Test
     public abstract void when_classpathSpecifiedWithClassloader_usesSpecifiedResource();

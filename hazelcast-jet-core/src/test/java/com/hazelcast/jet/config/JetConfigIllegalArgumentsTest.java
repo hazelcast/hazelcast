@@ -18,12 +18,14 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.jet.function.SupplierEx;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,6 +41,7 @@ import static com.hazelcast.jet.config.JetConfig.loadYamlFromString;
 import static java.lang.Thread.currentThread;
 
 @RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class JetConfigIllegalArgumentsTest {
     @Rule
     public final ExpectedException exception = ExpectedException.none();

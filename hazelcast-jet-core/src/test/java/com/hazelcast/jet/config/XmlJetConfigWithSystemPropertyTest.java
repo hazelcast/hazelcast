@@ -17,6 +17,8 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -84,6 +86,17 @@ public class XmlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfigW
         new XmlJetConfigBuilder().build();
     }
 
+    @Test(expected = HazelcastException.class)
+    public void when_filePathMemberSpecifiedNonExistingNonXmlFile_thenThrowsException() throws Exception {
+        // Given
+        File file = createTempFile("foo", ".bar");
+        file.delete();
+        System.setProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, file.getAbsolutePath());
+
+        // When
+        new XmlJetConfigBuilder().build();
+    }
+
 
     @Override
     @Test
@@ -140,6 +153,15 @@ public class XmlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfigW
         new XmlJetConfigBuilder().build();
     }
 
+    @Test(expected = HazelcastException.class)
+    public void when_classpathMemberSpecifiedNonExistingNonXmlFile_thenThrowsException() {
+        // Given
+        System.setProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:non-existing.bar");
+
+        // When
+        new XmlJetConfigBuilder().build();
+    }
+
 
     @Override
     @Test
@@ -165,7 +187,7 @@ public class XmlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfigW
         properties.put("flow.control.period", "50");
         properties.put("backup.count", "2");
         properties.put("scale.up.delay.millis", "1234");
-        properties.put("lossless.restart.enabled", "true");
+        properties.put("lossless.restart.enabled", "false");
         properties.put("metrics.enabled", "false");
         properties.put("metrics.jmxEnabled", "false");
         properties.put("metrics.retention", "124");
@@ -214,6 +236,41 @@ public class XmlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfigW
         assertEquals("queueSize", 999, edgeConfig.getQueueSize());
         assertEquals("packetSizeLimit", 997, edgeConfig.getPacketSizeLimit());
         assertEquals("receiveWindowMultiplier", 996, edgeConfig.getReceiveWindowMultiplier());
+    }
+
+    @Test
+    public void when_filePathSpecifiedNonXml_then_loadedAsXml() throws Exception {
+        File tempFile = File.createTempFile("jet", ".xml");
+        try (FileOutputStream os = new FileOutputStream(tempFile)) {
+            InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("hazelcast-jet-foo.bar");
+            os.write(Util.readFully(resourceAsStream));
+        }
+        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, tempFile.getAbsolutePath());
+
+        XmlJetConfigBuilder configBuilder = new XmlJetConfigBuilder();
+        JetConfig config = configBuilder.build();
+        assertEquals("bar", config.getProperties().getProperty("foo"));
+    }
+
+    @Test
+    public void when_classPathSpecifiedNonXml_then_loadedAsXml() {
+        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-foo.bar");
+
+        XmlJetConfigBuilder configBuilder = new XmlJetConfigBuilder();
+        JetConfig config = configBuilder.build();
+        assertEquals("bar", config.getProperties().getProperty("foo"));
+    }
+
+    @Test
+    public void loadingThroughSystemPropertyViaLocator_nonXmlSuffix() {
+        System.setProperty(HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-foo.bar");
+
+        JetInstance instance = Jet.newJetInstance();
+        JetConfig config = instance.getConfig();
+        instance.shutdown();
+
+        assertEquals("bar", config.getProperties().getProperty("foo"));
+
     }
 
 

@@ -41,13 +41,14 @@ public final class ConfigProvider {
         XmlJetConfigLocator xmlConfigLocator = new XmlJetConfigLocator();
         YamlJetConfigLocator yamlConfigLocator = new YamlJetConfigLocator();
         JetConfig config;
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config if provided in system property
-            config = new XmlJetConfigBuilder(xmlConfigLocator).setProperties(properties).build();
 
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config if provided in system property
+        if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading YAML config if provided in system property
             config = new YamlJetConfigBuilder(yamlConfigLocator).setProperties(properties).build();
+
+        } else if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading XML config if provided in system property
+            config = new XmlJetConfigBuilder(xmlConfigLocator).setProperties(properties).build();
 
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 3. Try loading XML config from the working directory or from the classpath
@@ -77,13 +78,13 @@ public final class ConfigProvider {
         XmlJetClientConfigLocator xmlConfigLocator = new XmlJetClientConfigLocator();
         YamlJetClientConfigLocator yamlConfigLocator = new YamlJetClientConfigLocator();
 
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading config if provided in system property and it is an XML file
-            config = new XmlClientConfigBuilder(xmlConfigLocator.getIn()).build();
-
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading config if provided in system property and it is an YAML file
+        if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading config if provided in system property and it is an YAML file
             config = new YamlClientConfigBuilder(yamlConfigLocator.getIn()).build();
+
+        } else if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading config if provided in system property and it is an XML file
+            config = new XmlClientConfigBuilder(xmlConfigLocator.getIn()).build();
 
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 3. Try loading XML config from the working directory or from the classpath

@@ -24,7 +24,7 @@ import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class XmlJetConfigImportVariableReplacementTest extends AbstractJetConfigImportVariableReplacementTest {
 
     private static final String TEST_XML_JET_WITH_VARIABLES = "hazelcast-jet-with-variables.xml";

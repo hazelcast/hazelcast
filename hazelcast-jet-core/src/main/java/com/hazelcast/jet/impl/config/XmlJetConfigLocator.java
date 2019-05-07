@@ -28,9 +28,13 @@ public final class XmlJetConfigLocator extends AbstractConfigLocator {
     private static final String HAZELCAST_JET_XML = "hazelcast-jet.xml";
     private static final String HAZELCAST_JET_DEFAULT_XML = "hazelcast-jet-default.xml";
 
+    public XmlJetConfigLocator() {
+        super(false);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_JET_CONFIG_PROPERTY, "xml");
+        return loadFromSystemProperty(HAZELCAST_JET_CONFIG_PROPERTY);
     }
 
     @Override

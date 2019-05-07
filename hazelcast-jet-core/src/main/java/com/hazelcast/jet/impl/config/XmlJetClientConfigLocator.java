@@ -28,9 +28,17 @@ public final class XmlJetClientConfigLocator extends AbstractConfigLocator {
     private static final String HAZELCAST_CLIENT_XML = "hazelcast-client.xml";
     private static final String HAZELCAST_CLIENT_DEFAULT_XML = "hazelcast-jet-client-default.xml";
 
+    public XmlJetClientConfigLocator() {
+        this(false);
+    }
+
+    public XmlJetClientConfigLocator(boolean failIfSysPropWithNotExpectedSuffix) {
+        super(failIfSysPropWithNotExpectedSuffix);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY, "xml");
+        return loadFromSystemProperty(HAZELCAST_CLIENT_CONFIG_PROPERTY);
     }
 
     @Override

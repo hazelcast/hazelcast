@@ -83,7 +83,7 @@ public abstract class AbstractJetConfigWithSystemPropertyTest {
         assertEquals("backupCount", 2, jetConfig.getInstanceConfig().getBackupCount());
         assertEquals("flowControlMs", 50, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
         assertEquals("scaleUpDelayMillis", 1234, jetConfig.getInstanceConfig().getScaleUpDelayMillis());
-        assertTrue("losslessRestartEnabled", jetConfig.getInstanceConfig().isLosslessRestartEnabled());
+        assertFalse("losslessRestartEnabled", jetConfig.getInstanceConfig().isLosslessRestartEnabled());
 
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));

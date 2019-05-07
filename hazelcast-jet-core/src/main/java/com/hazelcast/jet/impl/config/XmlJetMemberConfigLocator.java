@@ -29,9 +29,13 @@ public final class XmlJetMemberConfigLocator extends AbstractConfigLocator {
     private static final String HAZELCAST_MEMBER_DEFAULT_XML = "hazelcast-jet-member-default.xml";
     private static final String HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_XML = "hazelcast-jet-enterprise-member-default.xml";
 
+    public XmlJetMemberConfigLocator() {
+        super(false);
+    }
+
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY, "xml");
+        return loadFromSystemProperty(HAZELCAST_MEMBER_CONFIG_PROPERTY);
     }
 
     @Override

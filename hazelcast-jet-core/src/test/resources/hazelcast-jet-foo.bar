@@ -18,28 +18,7 @@
 <hazelcast-jet xsi:schemaLocation="http://www.hazelcast.com/schema/jet-config hazelcast-jet-config-3.1.xsd"
                xmlns="http://www.hazelcast.com/schema/jet-config"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <instance>
-        <cooperative-thread-count>55</cooperative-thread-count>
-        <flow-control-period>50</flow-control-period>
-        <backup-count>2</backup-count>
-        <scale-up-delay-millis>1234</scale-up-delay-millis>
-        <lossless-restart-enabled>false</lossless-restart-enabled>
-    </instance>
-
     <properties>
-       <property name="property1">value1</property>
-       <property name="property2">value2</property>
+       <property name="foo">bar</property>
     </properties>
-
-    <edge-defaults>
-       <queue-size>999</queue-size>
-       <packet-size-limit>997</packet-size-limit>
-       <receive-window-multiplier>996</receive-window-multiplier>
-    </edge-defaults>
-
-    <metrics enabled="false" jmxEnabled="false">
-        <collection-interval-seconds>123</collection-interval-seconds>
-        <retention-seconds>124</retention-seconds>
-        <metrics-for-data-structures>true</metrics-for-data-structures>
-    </metrics>
 </hazelcast-jet>

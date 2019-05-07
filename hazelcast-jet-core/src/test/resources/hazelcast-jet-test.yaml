@@ -4,7 +4,7 @@ hazelcast-jet:
     flow-control-period: 50
     backup-count: 2
     scale-up-delay-millis: 1234
-    lossless-restart-enabled: true
+    lossless-restart-enabled: false
   properties:
     property1: value1
     property2: value2

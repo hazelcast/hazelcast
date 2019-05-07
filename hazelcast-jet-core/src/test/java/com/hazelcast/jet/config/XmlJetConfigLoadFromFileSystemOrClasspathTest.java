@@ -17,7 +17,8 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.impl.util.Util;
-import org.junit.Test;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,6 +28,7 @@ import java.io.InputStream;
 import static com.hazelcast.jet.config.AbstractJetConfigWithSystemPropertyTest.assertConfig;
 import static com.hazelcast.jet.config.AbstractJetConfigWithSystemPropertyTest.assertDefaultMemberConfig;
 
+@RunWith(HazelcastParallelClassRunner.class)
 public class XmlJetConfigLoadFromFileSystemOrClasspathTest extends AbstractJetConfigLoadFromFileSystemOrClasspathTest {
 
     private static final String TEST_XML_JET = "hazelcast-jet-test.xml";
@@ -49,35 +51,6 @@ public class XmlJetConfigLoadFromFileSystemOrClasspathTest extends AbstractJetCo
     }
 
     @Override
-    @Test
-    public void when_fileSystemPathSpecified_usesSpecifiedFile() throws IOException {
-        // Given
-        File tempFile = File.createTempFile("jet", ".xml");
-        try (FileOutputStream os = new FileOutputStream(tempFile)) {
-            InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(TEST_XML_JET);
-            os.write(Util.readFully(resourceAsStream));
-        }
-
-        // When
-        JetConfig jetConfig = JetConfig.loadFromFile(tempFile);
-
-        // Then
-        assertConfig(jetConfig);
-        assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
-    }
-
-    @Override
-    @Test
-    public void when_classpathSpecified_usesSpecifiedResource() {
-        // When
-        JetConfig jetConfig = JetConfig.loadFromClasspath(getClass().getClassLoader(), TEST_XML_JET);
-
-        // Then
-        assertConfig(jetConfig);
-        assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
-    }
-
-    @Override
     public void when_classpathSpecifiedWithClassloader_usesSpecifiedResource() {
         // When
         JetConfig jetConfig = JetConfig.loadFromClasspath(getClass().getClassLoader(), TEST_XML_JET);
@@ -86,4 +59,5 @@ public class XmlJetConfigLoadFromFileSystemOrClasspathTest extends AbstractJetCo
         assertConfig(jetConfig);
         assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
     }
+
 }
