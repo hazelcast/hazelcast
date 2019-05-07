@@ -1401,7 +1401,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testMapEntryProcessor() {
         IMap<Integer, Integer> map = getInstance().getMap("testMapEntryProcessor");
         map.put(1, 1);
-        EntryProcessor entryProcessor = new SampleEntryProcessor();
+        SampleEntryProcessor<Integer> entryProcessor = new SampleEntryProcessor<>();
         map.executeOnKey(1, entryProcessor);
         assertEquals(map.get(1), (Object) 2);
     }
@@ -1542,14 +1542,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.executeOnKeys(keys, new EntryProcessor() {
+                map.executeOnKeys(keys, new EntryProcessor<String, String, Object>() {
                     @Override
                     public Object process(Map.Entry entry) {
                         return null;
                     }
 
                     @Override
-                    public EntryBackupProcessor getBackupProcessor() {
+                    public EntryProcessor<String, String, Object> getBackupProcessor() {
                         return null;
                     }
                 });
@@ -1852,14 +1852,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.executeOnKeys(null, new EntryProcessor() {
+                map.executeOnKeys(null, new EntryProcessor<String, String, Object>() {
                     @Override
                     public Object process(Map.Entry entry) {
                         return null;
                     }
 
                     @Override
-                    public EntryBackupProcessor getBackupProcessor() {
+                    public EntryProcessor<String, String, Object> getBackupProcessor() {
                         return null;
                     }
                 });
@@ -1879,25 +1879,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrue(description + " did not throw a NullPointerException.", threwNpe);
     }
 
-    private static class SampleEntryProcessor implements EntryProcessor<Integer, Integer>, EntryBackupProcessor<Integer, Integer>,
-            Serializable {
+    private static class SampleEntryProcessor<K> implements EntryProcessor<K, Integer, Boolean>, Serializable {
 
         private static final long serialVersionUID = -5735493325953375570L;
 
         @Override
-        public Object process(Map.Entry<Integer, Integer> entry) {
+        public Boolean process(Map.Entry<K, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
             return true;
-        }
-
-        @Override
-        public EntryBackupProcessor<Integer, Integer> getBackupProcessor() {
-            return SampleEntryProcessor.this;
-        }
-
-        @Override
-        public void processBackup(Map.Entry<Integer, Integer> entry) {
-            entry.setValue(entry.getValue() + 1);
         }
     }
 

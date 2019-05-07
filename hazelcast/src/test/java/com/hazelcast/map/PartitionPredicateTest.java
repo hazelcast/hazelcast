@@ -156,12 +156,12 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
     public void executeOnEntries() {
         PartitionPredicate<String, Integer> lessThan10pp = new PartitionPredicate<String, Integer>(partitionKey,
                 Predicates.lessThan("this", 10));
-        Map<String, Object> result = aggMap.executeOnEntries(new EntryNoop(), lessThan10pp);
+        Map<String, Integer> result = aggMap.executeOnEntries(new EntryNoop<>(), lessThan10pp);
 
         assertEquals(10, result.size());
-        for (Map.Entry<String, Object> entry : result.entrySet()) {
+        for (Map.Entry<String, Integer> entry : result.entrySet()) {
             assertEquals(partitionId, local.getPartitionService().getPartition(entry.getKey()).getPartitionId());
-            assertEquals(-1, entry.getValue());
+            assertEquals(-1, (int) entry.getValue());
         }
     }
 
@@ -211,9 +211,9 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
         assertEquals(TruePredicate.INSTANCE, deserialized.getTarget());
     }
 
-    private static class EntryNoop extends AbstractEntryProcessor<String, Integer> {
+    private static class EntryNoop<K, V> implements EntryProcessor<K, V, Integer> {
         @Override
-        public Object process(Map.Entry<String, Integer> entry) {
+        public Integer process(Map.Entry<K, V> entry) {
             return -1;
         }
     }

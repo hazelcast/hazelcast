@@ -26,7 +26,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -397,7 +397,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
                 .toString());
     }
 
-    static class ModifyingEntryProcessor extends AbstractEntryProcessor<HazelcastJsonValue, Object> {
+    static class ModifyingEntryProcessor implements EntryProcessor<HazelcastJsonValue, Object, Object> {
         @Override
         public Object process(Map.Entry<HazelcastJsonValue, Object> entry) {
             HazelcastJsonValue key = entry.getKey();

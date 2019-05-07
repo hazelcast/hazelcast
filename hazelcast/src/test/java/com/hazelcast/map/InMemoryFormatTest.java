@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -68,12 +67,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         map.put("key", serializationValue);
 
         // EntryProcessor should not trigger de-serialization
-        map.executeOnKey("key", new AbstractEntryProcessor<String, SerializationValue>() {
-            @Override
-            public Object process(final Map.Entry<String, SerializationValue> entry) {
-                return null;
-            }
-        });
+        map.executeOnKey("key", entry -> null);
         assertEquals(1, SerializationValue.deSerializeCount.get());
     }
 

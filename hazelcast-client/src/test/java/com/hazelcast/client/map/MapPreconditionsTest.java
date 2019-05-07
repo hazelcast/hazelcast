@@ -23,7 +23,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapListenerAdapter;
@@ -75,52 +74,52 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsKey() throws Exception {
+    public void testContainsKey() {
         map.containsKey(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsValue() throws Exception {
+    public void testContainsValue() {
         map.containsValue(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testGet() throws Exception {
+    public void testGet() {
         map.get(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutWithNullKey() throws Exception {
+    public void testPutWithNullKey() {
         map.put(null, "1");
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutWithNullValue() throws Exception {
+    public void testPutWithNullValue() {
         map.put("1", null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testRemove() throws Exception {
+    public void testRemove() {
         map.remove(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testRemoveWithNullKey() throws Exception {
+    public void testRemoveWithNullKey() {
         map.remove(null, "1");
     }
 
     @Test(expected = NullPointerException.class)
-    public void testRemoveWithNullValue() throws Exception {
+    public void testRemoveWithNullValue() {
         map.remove("1", null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testDelete() throws Exception {
+    public void testDelete() {
         map.delete(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testGetAll() throws Exception {
+    public void testGetAll() {
         Set set = new HashSet();
         set.add(null);
 
@@ -128,201 +127,201 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testGetAsync() throws Exception {
+    public void testGetAsync() {
         map.getAsync(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutAsyncWithNullValue() throws Exception {
+    public void testPutAsyncWithNullValue() {
         map.putAsync("1", null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutAsyncWithNullKey() throws Exception {
+    public void testPutAsyncWithNullKey() {
         map.putAsync(null, "1");
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutAsyncTTLWithNullValue() throws Exception {
+    public void testPutAsyncTTLWithNullValue() {
         map.putAsync("1", null, 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutAsyncTTLWithNullKey() throws Exception {
+    public void testPutAsyncTTLWithNullKey() {
         map.putAsync(null, "1", 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testRemoveAsync() throws Exception {
+    public void testRemoveAsync() {
         map.removeAsync(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testTryRemove() throws Exception {
+    public void testTryRemove() {
         map.tryRemove(null, 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testTryPutWithNullKey() throws Exception {
+    public void testTryPutWithNullKey() {
         map.tryPut(null, "1", 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testTryPutWithNullValue() throws Exception {
+    public void testTryPutWithNullValue() {
         map.tryPut("1", null, 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutTTLWithNullKey() throws Exception {
+    public void testPutTTLWithNullKey() {
         map.put(null, "1", 1, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutTTLWithNullValue() throws Exception {
+    public void testPutTTLWithNullValue() {
         map.put("1", null, 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutTransientWithNullKey() throws Exception {
+    public void testPutTransientWithNullKey() {
         map.putTransient(null, "1", 1, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutTransientWithNullValue() throws Exception {
+    public void testPutTransientWithNullValue() {
         map.putTransient("1", null, 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutIfAbsentWithNullKey() throws Exception {
+    public void testPutIfAbsentWithNullKey() {
         map.putIfAbsent(null, "1");
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutIfAbsentWithNullValue() throws Exception {
+    public void testPutIfAbsentWithNullValue() {
         map.putIfAbsent("1", null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutIfAbsentTTLWithNullKey() throws Exception {
+    public void testPutIfAbsentTTLWithNullKey() {
         map.putIfAbsent(null, "1", 1, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPutIfAbsentTTLWithNullValue() throws Exception {
+    public void testPutIfAbsentTTLWithNullValue() {
         map.putIfAbsent("1", null, 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testReplaceWithNullKey() throws Exception {
+    public void testReplaceWithNullKey() {
         map.replace(null, "1", "2");
     }
 
     @Test(expected = NullPointerException.class)
-    public void testReplaceWithNullValue() throws Exception {
+    public void testReplaceWithNullValue() {
         map.replace("1", null, "2");
     }
 
     @Test(expected = NullPointerException.class)
-    public void testReplaceWithNullNewValue() throws Exception {
+    public void testReplaceWithNullNewValue() {
         map.replace("1", "1", null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testReplaceNoNewValueWithNullKey() throws Exception {
+    public void testReplaceNoNewValueWithNullKey() {
         map.replace(null, "1");
     }
 
     @Test(expected = NullPointerException.class)
-    public void testReplaceNoNewValueWithNullValue() throws Exception {
+    public void testReplaceNoNewValueWithNullValue() {
         map.replace("1", null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testSetWithNullKey() throws Exception {
+    public void testSetWithNullKey() {
         map.set(null, "1");
     }
 
     @Test(expected = NullPointerException.class)
-    public void testSetWithNullValue() throws Exception {
+    public void testSetWithNullValue() {
         map.set("1", null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testSetTTLWithNullKey() throws Exception {
+    public void testSetTTLWithNullKey() {
         map.set(null, "1", 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testSetTTLWithNullValue() throws Exception {
+    public void testSetTTLWithNullValue() {
         map.set("1", null, 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testLock() throws Exception {
+    public void testLock() {
         map.lock(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testLockLease() throws Exception {
+    public void testLockLease() {
         map.lock(null, 100, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testIsLocked() throws Exception {
+    public void testIsLocked() {
         map.isLocked(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testTryLock() throws Exception {
+    public void testTryLock() {
         map.tryLock(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testTryLockTimeout() throws Exception {
+    public void testTryLockTimeout() throws InterruptedException {
         map.tryLock(null, 10, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testTryLockTimeoutAndLease() throws Exception {
+    public void testTryLockTimeoutAndLease() throws InterruptedException {
         map.tryLock(null, 10, TimeUnit.MILLISECONDS, 100, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testUnlockWithNullKey() throws Exception {
+    public void testUnlockWithNullKey() {
         map.unlock(null);
     }
 
     @Test(expected = IllegalMonitorStateException.class)
-    public void testUnlockWithNoLock() throws Exception {
+    public void testUnlockWithNoLock() {
         map.unlock(123);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testForceUnlock() throws Exception {
+    public void testForceUnlock() {
         map.forceUnlock(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithMapListener() throws Exception {
+    public void testAddLocalEntryListenerWithMapListener() {
         MapListener mapListener = null;
         map.addLocalEntryListener(mapListener);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithEntryListener() throws Exception {
+    public void testAddLocalEntryListenerWithEntryListener() {
         EntryListener entryListener = null;
         map.addLocalEntryListener(entryListener);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithMapListenerAndPredicateAndKey_NullListener() throws Exception {
+    public void testAddLocalEntryListenerWithMapListenerAndPredicateAndKey_NullListener() {
         MapListener mapListener = null;
         Predicate predicate = new TruePredicate();
         map.addLocalEntryListener(mapListener, predicate, null, false);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithMapListenerAndPredicateAndKey_NullPredicate() throws Exception {
+    public void testAddLocalEntryListenerWithMapListenerAndPredicateAndKey_NullPredicate() {
         MapListener mapListener = new MapListenerAdapter() {
             public void onEntryEvent(EntryEvent event) {
                 System.out.println("-");
@@ -333,28 +332,28 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithEntryListenerAndPredicateAndKey_NullListener() throws Exception {
+    public void testAddLocalEntryListenerWithEntryListenerAndPredicateAndKey_NullListener() {
         EntryListener entryListener = null;
         Predicate predicate = new TruePredicate();
         map.addLocalEntryListener(entryListener, predicate, null, false);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithEntryListenerAndPredicateAndKey_NullPredicate() throws Exception {
+    public void testAddLocalEntryListenerWithEntryListenerAndPredicateAndKey_NullPredicate() {
         EntryListener entryListener = new TestEntryListener();
         Predicate predicate = null;
         map.addLocalEntryListener(entryListener, predicate, null, true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithMapListenerAndPredicate_NullListener() throws Exception {
+    public void testAddLocalEntryListenerWithMapListenerAndPredicate_NullListener() {
         MapListener mapListener = null;
         Predicate predicate = new TruePredicate();
         map.addLocalEntryListener(mapListener, predicate, false);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithMapListenerAndPredicate_NullPredicate() throws Exception {
+    public void testAddLocalEntryListenerWithMapListenerAndPredicate_NullPredicate() {
         MapListener mapListener = new MapListenerAdapter() {
             public void onEntryEvent(EntryEvent event) {
                 System.out.println("-");
@@ -365,45 +364,45 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithEntryListenerAndPredicate_NullListener() throws Exception {
+    public void testAddLocalEntryListenerWithEntryListenerAndPredicate_NullListener() {
         EntryListener entryListener = null;
         Predicate predicate = new TruePredicate();
         map.addLocalEntryListener(entryListener, predicate, false);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListenerWithEntryListenerAndPredicate_NullPredicate() throws Exception {
+    public void testAddLocalEntryListenerWithEntryListenerAndPredicate_NullPredicate() {
         EntryListener entryListener = new TestEntryListener();
         Predicate predicate = null;
         map.addLocalEntryListener(entryListener, predicate, true);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithMapListener() throws Exception {
+    public void testAddEntryListenerWithMapListener() {
         MapListener mapListener = null;
         map.addEntryListener(mapListener, false);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithEntryListener() throws Exception {
+    public void testAddEntryListenerWithEntryListener() {
         EntryListener entryListener = null;
         map.addEntryListener(entryListener, false);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddPartitionLostListener() throws Exception {
+    public void testAddPartitionLostListener() {
         map.addPartitionLostListener(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithMapListenerAndKey_NullListener() throws Exception {
+    public void testAddEntryListenerWithMapListenerAndKey_NullListener() {
         MapListener mapListener = null;
         Integer i = 3;
         map.addEntryListener(mapListener, i, false);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithMapListenerAndKey_NullKey() throws Exception {
+    public void testAddEntryListenerWithMapListenerAndKey_NullKey() {
         MapListener mapListener = new MapListenerAdapter() {
             public void onEntryEvent(EntryEvent event) {
                 System.out.println("-");
@@ -413,27 +412,27 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithEntryListenerAndKey_NullListener() throws Exception {
+    public void testAddEntryListenerWithEntryListenerAndKey_NullListener() {
         EntryListener entryListener = null;
         Integer i = 3;
         map.addEntryListener(entryListener, i, false);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithEntryListenerAndKey_NullKey() throws Exception {
+    public void testAddEntryListenerWithEntryListenerAndKey_NullKey() {
         EntryListener entryListener = new TestEntryListener();
         map.addEntryListener(entryListener, null, false);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithMapListenerAndPredicateAndKey_NullListener() throws Exception {
+    public void testAddEntryListenerWithMapListenerAndPredicateAndKey_NullListener() {
         MapListener mapListener = null;
         Predicate predicate = new TruePredicate();
         map.addEntryListener(mapListener, predicate, null, true);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithMapListenerAndPredicateAndKey_NullPredicate() throws Exception {
+    public void testAddEntryListenerWithMapListenerAndPredicateAndKey_NullPredicate() {
         MapListener mapListener = new MapListenerAdapter() {
             public void onEntryEvent(EntryEvent event) {
                 System.out.println("-");
@@ -444,28 +443,28 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithEntryListenerAndPredicateAndKey_NullListener() throws Exception {
+    public void testAddEntryListenerWithEntryListenerAndPredicateAndKey_NullListener() {
         EntryListener entryListener = null;
         Predicate predicate = new TruePredicate();
         map.addEntryListener(entryListener, predicate, null, false);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithEntryListenerAndPredicateAndKey_NullPredicate() throws Exception {
+    public void testAddEntryListenerWithEntryListenerAndPredicateAndKey_NullPredicate() {
         EntryListener entryListener = new TestEntryListener();
         Predicate predicate = null;
         map.addEntryListener(entryListener, predicate, null, true);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithMapListenerAndPredicate_NullListener() throws Exception {
+    public void testAddEntryListenerWithMapListenerAndPredicate_NullListener() {
         MapListener mapListener = null;
         Predicate predicate = new TruePredicate();
         map.addEntryListener(mapListener, predicate, false);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithMapListenerAndPredicate_NullPredicate() throws Exception {
+    public void testAddEntryListenerWithMapListenerAndPredicate_NullPredicate() {
         MapListener mapListener = new MapListenerAdapter() {
             public void onEntryEvent(EntryEvent event) {
                 System.out.println("-");
@@ -476,31 +475,31 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithEntryListenerAndPredicate_NullListener() throws Exception {
+    public void testAddEntryListenerWithEntryListenerAndPredicate_NullListener() {
         EntryListener entryListener = null;
         Predicate predicate = new TruePredicate();
         map.addEntryListener(entryListener, predicate, false);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testAddEntryListenerWithEntryListenerAndPredicate_NullPredicate() throws Exception {
+    public void testAddEntryListenerWithEntryListenerAndPredicate_NullPredicate() {
         EntryListener entryListener = new TestEntryListener();
         Predicate predicate = null;
         map.addEntryListener(entryListener, predicate, true);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testGetEntryView() throws Exception {
+    public void testGetEntryView() {
         map.getEntryView(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testEvict() throws Exception {
+    public void testEvict() {
         map.evict(null);
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
-    public void testKeySet() throws Exception {
+    public void testKeySet() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -509,7 +508,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
-    public void testValues() throws Exception {
+    public void testValues() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -518,7 +517,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
-    public void testEntrySet() throws Exception {
+    public void testEntrySet() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -527,12 +526,12 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testKeySetWithNullPredicate() throws Exception {
+    public void testKeySetWithNullPredicate() {
         map.keySet(null);
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
-    public void testKeySetWithPredicate() throws Exception {
+    public void testKeySetWithPredicate() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -541,12 +540,12 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testEntrySetWithNullPredicate() throws Exception {
+    public void testEntrySetWithNullPredicate() {
         map.entrySet(null);
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
-    public void testEntrySetWithPredicate() throws Exception {
+    public void testEntrySetWithPredicate() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -555,12 +554,12 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testValuesWithNullPredicate() throws Exception {
+    public void testValuesWithNullPredicate() {
         map.values(null);
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
-    public void testValuesWitPredicate() throws Exception {
+    public void testValuesWitPredicate() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -569,7 +568,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testLocalKeySet() throws Exception {
+    public void testLocalKeySet() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -578,7 +577,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testLocalKeySetWithPredicate() throws Exception {
+    public void testLocalKeySetWithPredicate() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -587,7 +586,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testLocalKeySetWithNullPredicate() throws Exception {
+    public void testLocalKeySetWithNullPredicate() {
         for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
@@ -596,12 +595,12 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testExecuteOnKey() throws Exception {
+    public void testExecuteOnKey() {
         map.executeOnKey(null, new NoOpEntryProcessor());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testExecuteOnKeys() throws Exception {
+    public void testExecuteOnKeys() {
         Set set = new HashSet();
         set.add(null);
         map.executeOnKeys(set, new NoOpEntryProcessor());
@@ -620,7 +619,7 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor getBackupProcessor() {
             return null;
         }
     }

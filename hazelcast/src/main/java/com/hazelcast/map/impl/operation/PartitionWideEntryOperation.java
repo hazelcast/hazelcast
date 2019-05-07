@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
@@ -223,7 +222,7 @@ public class PartitionWideEntryOperation extends MapOperation
 
     @Override
     public Operation getBackupOperation() {
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
         if (backupProcessor == null) {
             return null;
         }

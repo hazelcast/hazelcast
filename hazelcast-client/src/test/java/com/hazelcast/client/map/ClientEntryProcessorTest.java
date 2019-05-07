@@ -18,8 +18,6 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.TruePredicate;
@@ -70,9 +68,9 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         assertEquals(value1, value2);
     }
 
-    public static class OwnerBackupValueCollector extends AbstractEntryProcessor<String, String> {
+    public static class OwnerBackupValueCollector implements EntryProcessor<String, String, Object> {
 
-        private static final ConcurrentLinkedQueue<String> values = new ConcurrentLinkedQueue<String>();
+        private static final ConcurrentLinkedQueue<String> values = new ConcurrentLinkedQueue<>();
 
         @Override
         public Object process(Map.Entry<String, String> entry) {
@@ -148,7 +146,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         clientMap.executeOnKey(member1Key, new ValueUpdaterReadOnly("newValue"));
     }
 
-    public static final class EP extends AbstractEntryProcessor {
+    public static final class EP implements EntryProcessor {
 
         @Override
         public Object process(Map.Entry entry) {
@@ -180,7 +178,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         }
     }
 
-    public static class ValueUpdater extends AbstractEntryProcessor {
+    public static class ValueUpdater<K, R> implements EntryProcessor<K, String, R> {
 
         private final String newValue;
 
@@ -189,13 +187,13 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         }
 
         @Override
-        public Object process(Map.Entry entry) {
+        public R process(Map.Entry<K, String> entry) {
             entry.setValue(newValue);
             return null;
         }
     }
 
-    public static class ValueUpdaterReadOnly implements EntryProcessor, ReadOnly {
+    public static class ValueUpdaterReadOnly<K, R> implements EntryProcessor<K, String, R>, ReadOnly {
 
         private final String newValue;
 
@@ -204,13 +202,13 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         }
 
         @Override
-        public Object process(Map.Entry entry) {
+        public R process(Map.Entry<K, String> entry) {
             entry.setValue(newValue);
             return null;
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryProcessor<K, String, R> getBackupProcessor() {
             return null;
         }
     }

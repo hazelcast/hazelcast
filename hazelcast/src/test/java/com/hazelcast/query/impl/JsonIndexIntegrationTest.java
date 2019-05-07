@@ -26,7 +26,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -174,26 +173,16 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
 
     }
 
-    private static class JsonEntryProcessor implements EntryProcessor<Integer, HazelcastJsonValue> {
+    private static class JsonEntryProcessor implements EntryProcessor<Integer, HazelcastJsonValue, String> {
 
         @Override
-        public Object process(Map.Entry<Integer, HazelcastJsonValue> entry) {
+        public String process(Map.Entry<Integer, HazelcastJsonValue> entry) {
             JsonObject jsonObject = Json.parse(entry.getValue().toString()).asObject();
             jsonObject.set("age", 0);
             jsonObject.set("active", false);
 
             entry.setValue(new HazelcastJsonValue(jsonObject.toString()));
             return "anyResult";
-        }
-
-        @Override
-        public EntryBackupProcessor<Integer, HazelcastJsonValue> getBackupProcessor() {
-            return new EntryBackupProcessor<Integer, HazelcastJsonValue>() {
-                @Override
-                public void processBackup(Map.Entry<Integer, HazelcastJsonValue> entry) {
-                    process(entry);
-                }
-            };
         }
     }
 

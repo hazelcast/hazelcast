@@ -41,7 +41,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     public PartitionWideEntryBackupOperation() {
     }
 
-    public PartitionWideEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
+    public PartitionWideEntryBackupOperation(String name, EntryProcessor backupProcessor) {
         super(name, backupProcessor);
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -45,7 +44,7 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
 
     @Override
     public Operation getBackupOperation() {
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
         if (backupProcessor == null) {
             return null;
         }

@@ -707,7 +707,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+    public <R> R executeOnKey(K key, EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -716,7 +716,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+    public <R> Map<K, R> executeOnKeys(Set<K> keys, EntryProcessor<? super K, ? super V, R> entryProcessor) {
         try {
             return submitToKeys(keys, entryProcessor).get();
         } catch (Exception e) {
@@ -727,7 +727,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     /**
      * Async version of {@link #executeOnKeys}.
      */
-    public ICompletableFuture<Map<K, Object>> submitToKeys(Set<K> keys, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<Map<K, R>> submitToKeys(Set<K> keys,
+                                                          EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
         if (keys.isEmpty()) {
             return new SimpleCompletedFuture<>(Collections.emptyMap());
@@ -739,7 +740,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public <R> void submitToKey(K key,
+                                EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                ExecutionCallback<? super R> callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor, callback);
 
@@ -747,7 +750,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
+    public <R> ICompletableFuture<R> submitToKey(K key, EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -756,12 +759,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
+    public <R> Map<K, R> executeOnEntries(EntryProcessor<? super K, ? super V, R> entryProcessor) {
         return executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
     }
 
     @Override
-    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
+    public <R> Map<K, R> executeOnEntries(EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                          Predicate<K, V> predicate) {
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
         List<Data> result = new ArrayList<>();
 
@@ -770,7 +774,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             return emptyMap();
         }
 
-        Map<K, Object> resultingMap = createHashMap(result.size() / 2);
+        Map<K, R> resultingMap = createHashMap(result.size() / 2);
         for (int i = 0; i < result.size(); ) {
             Data key = result.get(i++);
             Data value = result.get(i++);

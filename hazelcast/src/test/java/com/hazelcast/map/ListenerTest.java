@@ -588,13 +588,11 @@ public class ListenerTest extends HazelcastTestSupport {
         IMap<Object, Object> map = instance.getMap(name);
         EntryAddedLatch latch = new EntryAddedLatch(1);
         map.addEntryListener(latch, false);
-        map.executeOnKey(key, new AbstractEntryProcessor<Object, Object>() {
-            @Override
-            public Object process(Map.Entry<Object, Object> entry) {
-                entry.setValue(new SerializeCheckerObject());
-                return null;
-            }
-        });
+        map.executeOnKey(key,
+                entry -> {
+                    entry.setValue(new SerializeCheckerObject());
+                    return null;
+                });
         assertOpenEventually(latch, 10);
         SerializeCheckerObject.assertNotSerialized();
     }

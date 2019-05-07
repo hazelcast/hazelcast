@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.Address;
@@ -45,6 +44,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -120,10 +120,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <p>
  * ### Backup partitions
  * <p>
- * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
+ * Offloading will not be applied to backup partitions. It is possible to initialize the entry backup processor
  * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
- * The input allows providing context to the EntryBackupProcessor - for example the "delta"
- * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
+ * The input allows providing context to the entry backup processor - for example the "delta"
+ * so that the entry backup processor does not have to calculate the "delta" but it may just apply it.
  * <p>
  * ### Locking
  * <p>
@@ -268,11 +268,14 @@ public class EntryOperation extends KeyBasedMapOperation
     }
 
     @Override
+    @SuppressFBWarnings(
+            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
+            justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
         if (offload) {
             return null;
         }
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 

@@ -19,12 +19,10 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -101,12 +99,9 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         IMap<Integer, SampleObject> map = createInstanceAndGetMap();
         int count = 10;
         final CountDownLatch latch = new CountDownLatch(count);
-        map.addEntryListener(new EntryAddedListener<Integer, SampleObject>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, SampleObject> event) {
-                assertEquals(event.getKey() + 1, event.getValue().version);
-                latch.countDown();
-            }
+        map.addEntryListener((EntryAddedListener<Integer, SampleObject>) event -> {
+            assertEquals(event.getKey() + 1, event.getValue().version);
+            latch.countDown();
         }, true);
         for (int i = 0; i < count; i++) {
             map.put(i, new SampleObject(i));
@@ -119,14 +114,11 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         IMap<Integer, SampleObject> map = createInstanceAndGetMap();
         int count = 10;
         final CountDownLatch latch = new CountDownLatch(count);
-        map.addEntryListener(new EntryAddedListener<Integer, SampleObject>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, SampleObject> event) {
-                assertEquals(event.getKey() + 1, event.getValue().version);
-                latch.countDown();
-            }
+        map.addEntryListener((EntryAddedListener<Integer, SampleObject>) event -> {
+            assertEquals(event.getKey() + 1, event.getValue().version);
+            latch.countDown();
         }, true);
-        Map<Integer, SampleObject> localMap = new HashMap<Integer, SampleObject>();
+        Map<Integer, SampleObject> localMap = new HashMap<>();
         for (int i = 0; i < count; i++) {
             localMap.put(i, new SampleObject(i));
         }
@@ -139,20 +131,17 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         IMap<Integer, SampleObject> map = createInstanceAndGetMap();
         int count = 10;
         final CountDownLatch latch = new CountDownLatch(count);
-        map.addEntryListener(new EntryUpdatedListener<Integer, SampleObject>() {
-            @Override
-            public void entryUpdated(EntryEvent<Integer, SampleObject> event) {
-                // value is incremented three times :
-                // +1 -> post processing map store
-                // +1 -> entry processor
-                // +1 -> post processing map store
-                assertEquals(event.getKey() + 3, event.getValue().version);
-                latch.countDown();
-            }
+        map.addEntryListener((EntryUpdatedListener<Integer, SampleObject>) event -> {
+            // value is incremented three times :
+            // +1 -> post processing map store
+            // +1 -> entry processor
+            // +1 -> post processing map store
+            assertEquals(event.getKey() + 3, event.getValue().version);
+            latch.countDown();
         }, true);
         for (int i = 0; i < count; i++) {
             map.put(i, new SampleObject(i));
-            map.executeOnKey(i, new EntryProcessor<Integer, SampleObject>() {
+            map.executeOnKey(i, new EntryProcessor<Integer, SampleObject, Object>() {
                 @Override
                 public Object process(Map.Entry<Integer, SampleObject> entry) {
                     SampleObject value = entry.getValue();
@@ -162,7 +151,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
                 }
 
                 @Override
-                public EntryBackupProcessor<Integer, SampleObject> getBackupProcessor() {
+                public EntryProcessor<Integer, SampleObject, Object> getBackupProcessor() {
                     return null;
                 }
             });

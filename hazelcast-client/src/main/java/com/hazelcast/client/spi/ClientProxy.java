@@ -70,7 +70,7 @@ public abstract class ClientProxy implements DistributedObject {
         return serializationService;
     }
 
-    protected Data toData(Object o) {
+    protected <T> Data toData(T o) {
         return getSerializationService().toData(o);
     }
 
