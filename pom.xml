@@ -491,6 +491,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+                            <argLine>@{argLine}</argLine>
                             <excludedGroups combine.self="override">
                                 com.hazelcast.jet.test.IgnoredForCoverage
                             </excludedGroups>
