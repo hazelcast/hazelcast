@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
+import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -166,13 +167,8 @@ public final class ExceptionUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T sneakyThrow(Throwable t) {
-        ExceptionUtil.<RuntimeException>sneakyThrowInternal(t);
-        return (T) t;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void sneakyThrowInternal(Throwable t) throws T {
+    @Nonnull
+    public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
         throw (T) t;
     }
 

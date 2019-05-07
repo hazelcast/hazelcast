@@ -149,7 +149,7 @@ public final class ScheduledFutureProxy<V>
         try {
             return this.get0().get();
         } catch (ScheduledTaskResult.ExecutionExceptionDecorator ex) {
-            return sneakyThrow(ex.getCause());
+            throw sneakyThrow(ex.getCause());
         }
     }
 
@@ -160,7 +160,7 @@ public final class ScheduledFutureProxy<V>
         try {
             return this.get0().get(timeout, unit);
         } catch (ScheduledTaskResult.ExecutionExceptionDecorator ex) {
-            return sneakyThrow(ex.getCause());
+            throw sneakyThrow(ex.getCause());
         }
     }
 

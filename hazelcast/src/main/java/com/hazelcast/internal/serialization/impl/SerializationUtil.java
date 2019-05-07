@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -30,13 +31,18 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
 import com.hazelcast.util.collection.PartitionIdSet;
+import org.apache.logging.log4j.core.util.NullOutputStream;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidClassException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,6 +58,32 @@ public final class SerializationUtil {
     static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new EmptyPartitioningStrategy();
 
     private SerializationUtil() {
+    }
+
+    /**
+     * Checks that the {@code object} implements {@link Serializable} and is
+     * correctly serializable by actually trying to serialize it. This will
+     * reveal some non-serializable field early.
+     *
+     * @param object     object to check
+     * @param objectName object description for the exception
+     * @throws IllegalArgumentException if {@code object} is not serializable
+     */
+    public static void checkSerializable(Object object, String objectName) {
+        if (object == null) {
+            return;
+        }
+        if (!(object instanceof Serializable)) {
+            throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
+        }
+        try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+            os.writeObject(object);
+        } catch (NotSerializableException | InvalidClassException e) {
+            throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
+        } catch (IOException e) {
+            // never really thrown, as the underlying stream never throws it
+            throw new HazelcastException(e);
+        }
     }
 
     static boolean isNullData(Data data) {
