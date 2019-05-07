@@ -63,7 +63,8 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         ILogger logger = Logger.getLogger(getClass());
-        invocationRegistry = new InvocationRegistry(logger, new CallIdSequenceWithoutBackpressure());
+        HazelcastProperties properties = new HazelcastProperties(new Properties());
+        invocationRegistry = new InvocationRegistry(logger, new CallIdSequenceWithoutBackpressure(), properties);
         serializationService = new DefaultSerializationServiceBuilder().build();
         nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
