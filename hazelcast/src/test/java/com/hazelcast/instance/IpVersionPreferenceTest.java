@@ -40,6 +40,7 @@ import java.util.List;
 import static com.hazelcast.instance.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
 import static com.hazelcast.instance.DefaultAddressPickerTest.findIPv6NonLoopbackInterface;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.spi.properties.GroupProperty.PREFER_IPv4_STACK;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
@@ -100,10 +101,10 @@ public class IpVersionPreferenceTest {
         DefaultAddressPicker addressPicker = new DefaultAddressPicker(new Config(), Logger.getLogger(AddressPicker.class));
         try {
             addressPicker.pickAddress();
-            Address bindAddress = addressPicker.getBindAddress();
+            Address bindAddress = addressPicker.getBindAddress(MEMBER);
             assertEquals("Bind address: " + bindAddress, expectedIPv6, bindAddress.isIPv6());
         } finally {
-            IOUtil.closeResource(addressPicker.getServerSocketChannel());
+            IOUtil.closeResource(addressPicker.getServerSocketChannel(MEMBER));
         }
     }
 

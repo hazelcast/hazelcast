@@ -61,7 +61,6 @@ import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -105,7 +104,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Node node;
 
-    final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
+    final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<>();
 
     final ILogger logger;
     final String name;
@@ -157,7 +156,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         }
     }
 
-    protected Node createNode(Config config, NodeContext nodeContext) {
+    private Node createNode(Config config, NodeContext nodeContext) {
         return new Node(this, config, nodeContext);
     }
 
@@ -430,9 +429,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public CPSubsystem getCPSubsystem() {
-        if (node.getClusterService().getClusterVersion().isLessThan(Versions.V3_12)) {
-            throw new UnsupportedOperationException("CP Subsystem is not available before version 3.12!");
-        }
         return cpSubsystem;
     }
 

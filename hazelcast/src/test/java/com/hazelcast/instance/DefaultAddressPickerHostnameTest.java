@@ -45,6 +45,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 import static com.hazelcast.instance.DefaultAddressPicker.PREFER_IPV4_STACK;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.Collections.enumeration;
@@ -86,18 +87,18 @@ public class DefaultAddressPickerHostnameTest {
 
     @After
     public void after() {
-        IOUtil.closeResource(addressPicker.getServerSocketChannel());
+        addressPicker.getServerSocketChannels().values().forEach(IOUtil::closeResource);
     }
 
     @Test
     public void whenHostnameIsLocal_thenSelectHostname() throws Exception {
-        List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
+        List<NetworkInterface> networkInterfaces = new ArrayList<>();
         networkInterfaces.add(createNetworkInterface("en0", "192.168.1.100"));
         networkInterfaces.add(createNetworkInterface("en1", theAddress));
         when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         addressPicker.pickAddress();
-        assertEquals(theHostname, addressPicker.getBindAddress().getHost());
+        assertEquals(theHostname, addressPicker.getBindAddress(MEMBER).getHost());
     }
 
     @Test
@@ -106,12 +107,12 @@ public class DefaultAddressPickerHostnameTest {
         when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(singleton(en0)));
 
         addressPicker.pickAddress();
-        assertNotEquals(theHostname, addressPicker.getBindAddress().getHost());
+        assertNotEquals(theHostname, addressPicker.getBindAddress(MEMBER).getHost());
     }
 
     @Test
     public void whenHostnameIsLocal_andInterfacesMatchingHostname_thenSelectHostname() throws Exception {
-        List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
+        List<NetworkInterface> networkInterfaces = new ArrayList<>();
         networkInterfaces.add(createNetworkInterface("en0", "192.168.1.100"));
         networkInterfaces.add(createNetworkInterface("en1", theAddress));
         when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
@@ -119,12 +120,12 @@ public class DefaultAddressPickerHostnameTest {
         enableInterfacesConfig("10.34.34.*");
 
         addressPicker.pickAddress();
-        assertEquals(theHostname, addressPicker.getBindAddress().getHost());
+        assertEquals(theHostname, addressPicker.getBindAddress(MEMBER).getHost());
     }
 
     @Test
     public void whenHostnameIsLocal_andInterfacesNotMatchingAny_thenFail() throws Exception {
-        List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
+        List<NetworkInterface> networkInterfaces = new ArrayList<>();
         networkInterfaces.add(createNetworkInterface("en0", "192.168.1.100"));
         networkInterfaces.add(createNetworkInterface("en1", theAddress));
         when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
@@ -161,7 +162,7 @@ public class DefaultAddressPickerHostnameTest {
         enableInterfacesConfig("192.168.*.*");
 
         addressPicker.pickAddress();
-        assertEquals(address, addressPicker.getBindAddress().getHost());
+        assertEquals(address, addressPicker.getBindAddress(MEMBER).getHost());
     }
 
     private void enableInterfacesConfig(String pattern) {
