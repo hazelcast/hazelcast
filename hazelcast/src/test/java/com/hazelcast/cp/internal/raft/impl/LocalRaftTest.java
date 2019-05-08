@@ -448,7 +448,9 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             for (RaftNodeImpl raftNode : followers) {
-                assertNotEquals(leaderNode.getLocalMember(), getLeaderMember(raftNode));
+                Endpoint newLeader = getLeaderMember(raftNode);
+                assertNotNull(newLeader);
+                assertNotEquals(leaderNode.getLocalMember(), newLeader);
             }
         });
 
@@ -491,7 +493,9 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             for (int ix : split) {
-                assertNotEquals(leaderEndpoint, getLeaderMember(group.getNode(ix)));
+                Endpoint newLeader = getLeaderMember(group.getNode(ix));
+                assertNotNull(newLeader);
+                assertNotEquals(leaderEndpoint, newLeader);
             }
         });
 

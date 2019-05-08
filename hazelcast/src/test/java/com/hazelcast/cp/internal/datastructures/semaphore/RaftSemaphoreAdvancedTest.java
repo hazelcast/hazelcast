@@ -49,7 +49,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.RandomPicker;
-import com.hazelcast.util.ThreadUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -448,7 +447,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         Tuple2[] acquireWaitTimeoutKeyRef = new Tuple2[1];
 
         InternalCompletableFuture<Boolean> f1 = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, ThreadUtil.getThreadId(), invUid, 1, SECONDS.toMillis(300)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, getThreadId(), invUid, 1, SECONDS.toMillis(300)));
 
         assertTrueEventually(() -> {
             RaftSemaphoreRegistry registry = service.getRegistryOrNull(groupId);
@@ -458,7 +457,7 @@ public class RaftSemaphoreAdvancedTest extends HazelcastRaftTestSupport {
         });
 
         InternalCompletableFuture<Boolean> f2 = invocationManager
-                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, ThreadUtil.getThreadId(), invUid, 1, SECONDS.toMillis(300)));
+                .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, getThreadId(), invUid, 1, SECONDS.toMillis(300)));
 
         assertTrueEventually(() -> {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(groupId);

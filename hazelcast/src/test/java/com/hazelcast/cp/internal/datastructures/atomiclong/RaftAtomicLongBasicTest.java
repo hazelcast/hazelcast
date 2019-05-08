@@ -44,6 +44,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -270,7 +271,7 @@ public class RaftAtomicLongBasicTest extends HazelcastRaftTestSupport {
         invocationManager.invoke(getRaftService(instances[0]).getMetadataGroupId(), new TriggerDestroyRaftGroupOp(groupId)).get();
 
         assertTrueEventually(() -> {
-            CPGroup group = invocationManager.<CPGroup>invoke(getMetadataGroupId(instances[0]), new GetRaftGroupOp(groupId)).join();
+            CPGroup group = invocationManager.<CPGroup>query(getMetadataGroupId(instances[0]), new GetRaftGroupOp(groupId), LINEARIZABLE).join();
             assertEquals(CPGroupStatus.DESTROYED, group.status());
         });
 

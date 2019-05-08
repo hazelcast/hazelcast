@@ -51,6 +51,7 @@ import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,7 +62,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.spi.properties.GroupProperty.RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED;
 
 /**
  * The integration point of the Raft algorithm implementation and
@@ -70,6 +70,14 @@ import static com.hazelcast.spi.properties.GroupProperty.RAFT_LINEARIZABLE_READ_
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 final class NodeEngineRaftIntegration implements RaftIntegration {
+
+    /**
+     * !!! ONLY FOR INTERNAL USAGE AND TESTING !!!
+     * Enables / disables the linearizable read optimization described in the Raft Dissertation Section 6.4.
+     */
+    public static final HazelcastProperty RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED
+            = new HazelcastProperty("raft.linearizable.read.optimization.enabled", true);
+
 
     private final NodeEngineImpl nodeEngine;
     private final CPGroupId groupId;

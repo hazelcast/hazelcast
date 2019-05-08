@@ -54,7 +54,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.cp.internal.MetadataRaftGroupManager.INITIAL_METADATA_GROUP_ID;
 import static com.hazelcast.cp.internal.MetadataRaftGroupManager.MetadataRaftGroupInitStatus.IN_PROGRESS;
 import static com.hazelcast.cp.internal.MetadataRaftGroupManager.MetadataRaftGroupInitStatus.SUCCESSFUL;
-import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.waitUntilLeaderElected;
@@ -302,8 +302,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(() -> {
             Future<CPGroupInfo> f = invocationService.query(getMetadataGroupId(instances[0]), new GetRaftGroupOp(groupId),
-                    LEADER_LOCAL);
-
+                    LINEARIZABLE);
             CPGroupInfo group1 = f.get();
             assertEquals(CPGroupStatus.DESTROYED, group1.status());
         });
@@ -359,7 +358,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         getRaftService(instances[0]).forceDestroyCPGroup(groupId.name()).get();
 
         group = getRaftInvocationManager(instances[0]).<CPGroupInfo>query(getMetadataGroupId(instances[0]),
-                new GetRaftGroupOp(groupId), LEADER_LOCAL).get();
+                new GetRaftGroupOp(groupId), LINEARIZABLE).get();
         assertEquals(CPGroupStatus.DESTROYED, group.status());
 
         assertTrueEventually(() -> {
@@ -400,7 +399,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         getRaftService(runningInstance).forceDestroyCPGroup(groupId.name()).get();
 
         group = getRaftInvocationManager(runningInstance).<CPGroupInfo>query(getMetadataGroupId(runningInstance),
-                new GetRaftGroupOp(groupId), LEADER_LOCAL).get();
+                new GetRaftGroupOp(groupId), LINEARIZABLE).get();
         assertEquals(CPGroupStatus.DESTROYED, group.status());
 
         assertTrueEventually(() -> assertNull(getRaftNode(runningInstance, groupId)));
@@ -539,19 +538,19 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         CPGroupId metadataGroupId = getMetadataGroupId(aliveInstance);
         ICompletableFuture<List<CPMemberInfo>> f1 = invocationService.query(metadataGroupId, new GetActiveCPMembersOp(),
-                LEADER_LOCAL);
+                LINEARIZABLE);
 
         List<CPMemberInfo> activeEndpoints = f1.get();
         assertThat(activeEndpoints, not(hasItem(endpoint)));
 
         ICompletableFuture<CPGroupInfo> f2 = invocationService.query(metadataGroupId, new GetRaftGroupOp(metadataGroupId),
-                LEADER_LOCAL);
+                LINEARIZABLE);
 
         ICompletableFuture<CPGroupInfo> f3 = invocationService.query(metadataGroupId, new GetRaftGroupOp(groupId1),
-                LEADER_LOCAL);
+                LINEARIZABLE);
 
         ICompletableFuture<CPGroupInfo> f4 = invocationService.query(metadataGroupId, new GetRaftGroupOp(groupId2),
-                LEADER_LOCAL);
+                LINEARIZABLE);
 
         CPGroupInfo metadataGroup = f2.get();
         assertFalse(metadataGroup.containsMember(endpoint));
@@ -695,9 +694,9 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
             throws ExecutionException, InterruptedException {
         RaftInvocationManager invocationService = getRaftInvocationManager(instance);
         ICompletableFuture<CPGroupInfo> f1 = invocationService.query(getMetadataGroupId(instance), new GetRaftGroupOp(groupId1),
-                LEADER_LOCAL);
+                LINEARIZABLE);
         ICompletableFuture<CPGroupInfo> f2 = invocationService.query(getMetadataGroupId(instance), new GetRaftGroupOp(groupId2),
-                LEADER_LOCAL);
+                LINEARIZABLE);
         CPGroupInfo group1 = f1.get();
         CPGroupInfo group2 = f2.get();
 
