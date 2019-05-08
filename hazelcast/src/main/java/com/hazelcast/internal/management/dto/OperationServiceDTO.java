@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -38,7 +38,7 @@ public class OperationServiceDTO implements JsonSerializable {
     public OperationServiceDTO() {
     }
 
-    public OperationServiceDTO(InternalOperationService os) {
+    public OperationServiceDTO(OperationServiceImpl os) {
         responseQueueSize = os.getResponseQueueSize();
         operationExecutorQueueSize = os.getOperationExecutorQueueSize();
         runningOperationsCount = os.getRunningOperationsCount();

@@ -35,7 +35,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 
 import java.security.Permission;
@@ -77,7 +77,7 @@ public class MapRemoveAllMessageTask extends AbstractMapAllPartitionsMessageTask
         }
 
         OperationFactory operationFactory = createOperationFactory();
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         if (invokedOnPartition) {
             // We are running on a partition thread now and we are not allowed
             // to call invokeOnPartitions(Async) on operation service because of

@@ -39,7 +39,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.collection.Int2ObjectHashMap;

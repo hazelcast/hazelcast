@@ -20,7 +20,7 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -51,7 +51,7 @@ public class SlowOperationPlugin extends DiagnosticsPlugin {
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(
             PREFIX + ".slowoperations.period.seconds", 60, SECONDS);
 
-    private final InternalOperationService operationService;
+    private final OperationServiceImpl operationService;
     private final long periodMillis;
 
     public SlowOperationPlugin(NodeEngineImpl nodeEngine) {

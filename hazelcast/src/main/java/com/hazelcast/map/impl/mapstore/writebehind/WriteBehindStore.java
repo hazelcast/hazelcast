@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.Collection;
 import java.util.Collections;

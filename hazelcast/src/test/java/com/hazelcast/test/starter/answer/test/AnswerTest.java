@@ -58,7 +58,7 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -152,7 +152,7 @@ public class AnswerTest extends HazelcastTestSupport {
         SerializationService serializationService = nodeEngine.getSerializationService();
         assertNotNull("SerializationService should not be null", serializationService);
 
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         assertNotNull("InternalOperationService should not be null", operationService);
 
         CollectionService collectionService = nodeEngine.getService(SetService.SERVICE_NAME);

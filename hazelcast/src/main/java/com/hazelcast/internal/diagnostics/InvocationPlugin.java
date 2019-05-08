@@ -17,7 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -71,7 +70,7 @@ public class InvocationPlugin extends DiagnosticsPlugin {
 
     public InvocationPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
         HazelcastProperties props = nodeEngine.getProperties();
         this.samplePeriodMillis = props.getMillis(SAMPLE_PERIOD_SECONDS);

@@ -32,7 +32,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -116,7 +116,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
     }
 
     private Object executeOperation(HazelcastInstance node, Operation op) throws InterruptedException, ExecutionException {
-        InternalOperationService operationService = getOperationService(node);
+        OperationServiceImpl operationService = getOperationService(node);
         Address address = getAddress(node);
         InternalCompletableFuture future = operationService.invokeOnTarget(MapService.SERVICE_NAME, op, address);
         return future.get();

@@ -26,7 +26,7 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.PartitionMigratingException;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -79,7 +79,7 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
         final InternalPartitionImpl partition = (InternalPartitionImpl) partitionService.getPartition(partitionId);
         partition.setMigrating();
 
-        final InternalOperationService operationService = getOperationService(instance);
+        final OperationServiceImpl operationService = getOperationService(instance);
         final InvocationBuilder invocationBuilder = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new DummyOperation(), partitionId);
         return invocationBuilder.invoke();

@@ -28,7 +28,7 @@ import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -114,7 +114,7 @@ public class CacheDestroyTest extends CacheTestSupport {
 
         NodeEngineImpl nodeEngine1 = getNode(getHazelcastInstance()).getNodeEngine();
         final ICacheService cacheService1 = nodeEngine1.getService(ICacheService.SERVICE_NAME);
-        InternalOperationService operationService1 = nodeEngine1.getOperationService();
+        OperationServiceImpl operationService1 = nodeEngine1.getOperationService();
 
         NodeEngineImpl nodeEngine2 = getNode(hazelcastInstances[1]).getNodeEngine();
         final ICacheService cacheService2 = nodeEngine2.getService(ICacheService.SERVICE_NAME);

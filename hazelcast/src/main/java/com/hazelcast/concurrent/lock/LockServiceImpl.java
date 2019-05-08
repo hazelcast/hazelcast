@@ -33,14 +33,14 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -191,7 +191,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     }
 
     private void releaseLocksOwnedBy(final String uuid) {
-        final InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         for (final LockStoreContainer container : containers) {
             operationService.execute(new PartitionSpecificRunnable() {
                 @Override
@@ -347,7 +347,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         final LockStoreImpl lockStore = containers[partitionId].getLockStore(new InternalLockNamespace(objectId));
 
         if (lockStore != null) {
-            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+            OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
             operationService.execute(new PartitionSpecificRunnable() {
                 @Override
                 public void run() {

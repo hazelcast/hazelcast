@@ -28,7 +28,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -157,7 +157,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
 
     private void verifyPrimaryState(Node node, String fullCacheName, int partitionId, boolean expectedState) throws Exception {
         NodeEngineImpl nodeEngine = node.getNodeEngine();
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         Future<Boolean> isPrimaryOnNode = operationService.invokeOnTarget(
                 ICacheService.SERVICE_NAME,
                 createCacheOwnerStateGetterOperation(fullCacheName, partitionId),

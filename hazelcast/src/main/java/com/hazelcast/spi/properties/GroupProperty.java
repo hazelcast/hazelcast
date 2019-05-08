@@ -29,6 +29,7 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -639,7 +640,7 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.slow.operation.detector.enabled", true);
 
     /**
-     * Defines a threshold above which a running operation in {@link com.hazelcast.spi.OperationService} is considered to be slow.
+     * Defines a threshold above which a running operation in {@link OperationService} is considered to be slow.
      * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stacktrace.
      */
     public static final HazelcastProperty SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS

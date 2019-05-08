@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -51,7 +50,7 @@ public class Invocation_InitInvocationTargetTest extends HazelcastTestSupport {
         dropOperationsBetween(instances[0], instances[1], PartitionDataSerializerHook.F_ID,
                 singletonList(PartitionDataSerializerHook.PARTITION_STATE_OP));
 
-        InternalOperationService operationService = getNodeEngineImpl(instances[1]).getOperationService();
+        OperationServiceImpl operationService = getNodeEngineImpl(instances[1]).getOperationService();
         Future<Object> future = operationService.invokeOnPartition(null, new DummyOperation(), 0);
 
         resetPacketFiltersFrom(instances[0]);

@@ -14,12 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
+import java.util.BitSet;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,6 +42,43 @@ import java.util.Map;
  * using one of the invoke methods.
  */
 public interface OperationService {
+    String SERVICE_NAME = "hz:impl:operationService";
+
+    /**
+     * Returns the size of the response queue.
+     *
+     * @return the size of the response queue.
+     */
+    int getResponseQueueSize();
+
+    int getOperationExecutorQueueSize();
+
+    int getPriorityOperationExecutorQueueSize();
+
+    int getRunningOperationsCount();
+
+    int getRemoteOperationsCount();
+
+    /**
+     * Returns the number of executed operations.
+     *
+     * @return the number of executed operations.
+     */
+    long getExecutedOperationCount();
+
+    /**
+     * Returns the number of partition threads.
+     *
+     * @return the number of partition threads.
+     */
+    int getPartitionThreadCount();
+
+    /**
+     * Returns the number of generic threads.
+     *
+     * @return number of generic threads.
+     */
+    int getGenericThreadCount();
 
     /**
      * Runs an operation in the calling thread.
@@ -48,7 +94,33 @@ public interface OperationService {
      */
     void execute(Operation op);
 
+    /**
+     * Executes a PartitionSpecificRunnable.
+     * <p/>
+     * This method is typically used by the {@link com.hazelcast.client.impl.ClientEngine}
+     * when it has received a Packet containing a request that needs to be processed.
+     *
+     * @param task the task to execute
+     */
+    void execute(PartitionSpecificRunnable task);
+
+    /**
+     * Executes for each of the partitions, a task created by the
+     * taskFactory.
+     *
+     * For more info see the
+     * {@link OperationExecutor#executeOnPartitions(PartitionTaskFactory, BitSet)}
+     *
+     * @param taskFactory the PartitionTaskFactory used to create
+     *                    operations.
+     * @param partitions  the partitions to execute an operation on.
+     * @throws NullPointerException if taskFactory or partitions is null.
+     */
+    void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions);
+
     <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
+
+    <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback);
 
     /**
      * Executes an operation on a partition.
@@ -162,4 +234,56 @@ public interface OperationService {
      * @return true if send is successful, false otherwise.
      */
     boolean send(Operation op, Address target);
+
+    /**
+     * Should be called when an asynchronous operations not running on a operation thread is running.
+     *
+     * Primary purpose is to provide heartbeats
+     *
+     * @param op
+     */
+    void onStartAsyncOperation(Operation op);
+
+    /**
+     * Should be called when the asynchronous operation has completed.
+     *
+     * @param op
+     * @see #onStartAsyncOperation(Operation)
+     */
+    void onCompletionAsyncOperation(Operation op);
+
+    /**
+     * Checks if this call is timed out. A timed out call is not going to be
+     * executed.
+     *
+     * @param op the operation to check.
+     * @return true if it is timed out, false otherwise.
+     */
+    boolean isCallTimedOut(Operation op);
+
+    /**
+     * Returns true if the given operation is allowed to run on the calling
+     * thread, false otherwise. If this method returns true, then the operation
+     * can be executed using {@link #run(Operation)} method, otherwise
+     * {@link #execute(Operation)} should be used.
+     *
+     * @param op the operation to check.
+     * @return true if the operation is allowed to run on the calling thread,
+     * false otherwise.
+     */
+    boolean isRunAllowed(Operation op);
+
+    /**
+     * Returns information about long running operations.
+     *
+     * @return list of {@link SlowOperationDTO} instances.
+     */
+    List<SlowOperationDTO> getSlowOperationDTOs();
+
+    /**
+     * Cleans up heartbeats and fails invocations for the given endpoint.
+     *
+     * @param endpoint the endpoint that has left
+     */
+    void onEndpointLeft(Address endpoint);
 }

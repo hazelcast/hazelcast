@@ -30,7 +30,7 @@ import com.hazelcast.internal.partition.service.fragment.TestFragmentIncrementOp
 import com.hazelcast.internal.partition.service.fragment.TestFragmentedMigrationAwareService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.properties.GroupProperty;

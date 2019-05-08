@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Set;
@@ -67,7 +67,7 @@ import java.util.Set;
  */
 public abstract class Offload extends CallStatus {
 
-    protected InternalOperationService operationService;
+    protected OperationServiceImpl operationService;
     protected NodeEngine nodeEngine;
     protected ExecutionService executionService;
     protected SerializationService serializationService;

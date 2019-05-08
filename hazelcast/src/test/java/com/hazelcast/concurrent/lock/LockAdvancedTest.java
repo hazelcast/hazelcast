@@ -29,7 +29,7 @@ import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -512,7 +512,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
 
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz2);
-        InternalOperationService operationService = getOperationService(hz2);
+        OperationServiceImpl operationService = getOperationService(hz2);
         warmUpPartitions(hz2);
 
         String name = randomNameOwnedBy(hz);

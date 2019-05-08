@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -111,7 +111,7 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
                 serializationService);
 
         // invoke the operation on a random remote target
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = nodeEngine.getOperationService();
         operationService.invokeOnPartitions(MapService.SERVICE_NAME, factory, allPartitions);
 
         // assert that all entries have been written
