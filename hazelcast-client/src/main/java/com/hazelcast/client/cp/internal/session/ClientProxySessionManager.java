@@ -94,14 +94,14 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     protected ICompletableFuture<Object> heartbeat(RaftGroupId groupId, long sessionId) {
         ClientMessage request = CPSessionHeartbeatSessionCodec.encodeRequest(groupId, sessionId);
         ClientInvocationFuture future = new ClientInvocation(client, request, "sessionManager").invoke();
-        return new ClientDelegatingFuture<Object>(future, client.getSerializationService(), HEARTBEAT_RESPONSE_DECODER);
+        return new ClientDelegatingFuture<>(future, client.getSerializationService(), HEARTBEAT_RESPONSE_DECODER);
     }
 
     @Override
     protected ICompletableFuture<Object> closeSession(RaftGroupId groupId, Long sessionId) {
         ClientMessage request = CPSessionCloseSessionCodec.encodeRequest(groupId, sessionId);
         ClientInvocationFuture future = new ClientInvocation(client, request, "sessionManager").invoke();
-        return new ClientDelegatingFuture<Object>(future, client.getSerializationService(), CLOSE_SESSION_RESPONSE_DECODER);
+        return new ClientDelegatingFuture<>(future, client.getSerializationService(), CLOSE_SESSION_RESPONSE_DECODER);
     }
 
     @Override

@@ -16,10 +16,6 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
@@ -32,6 +28,9 @@ import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public final class RaftDataSerializerHook implements DataSerializerHook {
@@ -61,37 +60,34 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case PRE_VOTE_REQUEST:
-                        return new PreVoteRequest();
-                    case PRE_VOTE_RESPONSE:
-                        return new PreVoteResponse();
-                    case VOTE_REQUEST:
-                        return new VoteRequest();
-                    case VOTE_RESPONSE:
-                        return new VoteResponse();
-                    case APPEND_REQUEST:
-                        return new AppendRequest();
-                    case APPEND_SUCCESS_RESPONSE:
-                        return new AppendSuccessResponse();
-                    case APPEND_FAILURE_RESPONSE:
-                        return new AppendFailureResponse();
-                    case LOG_ENTRY:
-                        return new LogEntry();
-                    case SNAPSHOT_ENTRY:
-                        return new SnapshotEntry();
-                    case INSTALL_SNAPSHOT:
-                        return new InstallSnapshot();
-                    case DESTROY_RAFT_GROUP_COMMAND:
-                        return new DestroyRaftGroupCmd();
-                    case UPDATE_RAFT_GROUP_MEMBERS_COMMAND:
-                        return new UpdateRaftGroupMembersCmd();
-                    default:
-                        throw new IllegalArgumentException("Undefined type: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case PRE_VOTE_REQUEST:
+                    return new PreVoteRequest();
+                case PRE_VOTE_RESPONSE:
+                    return new PreVoteResponse();
+                case VOTE_REQUEST:
+                    return new VoteRequest();
+                case VOTE_RESPONSE:
+                    return new VoteResponse();
+                case APPEND_REQUEST:
+                    return new AppendRequest();
+                case APPEND_SUCCESS_RESPONSE:
+                    return new AppendSuccessResponse();
+                case APPEND_FAILURE_RESPONSE:
+                    return new AppendFailureResponse();
+                case LOG_ENTRY:
+                    return new LogEntry();
+                case SNAPSHOT_ENTRY:
+                    return new SnapshotEntry();
+                case INSTALL_SNAPSHOT:
+                    return new InstallSnapshot();
+                case DESTROY_RAFT_GROUP_COMMAND:
+                    return new DestroyRaftGroupCmd();
+                case UPDATE_RAFT_GROUP_MEMBERS_COMMAND:
+                    return new UpdateRaftGroupMembersCmd();
+                default:
+                    throw new IllegalArgumentException("Undefined type: " + typeId);
             }
         };
     }

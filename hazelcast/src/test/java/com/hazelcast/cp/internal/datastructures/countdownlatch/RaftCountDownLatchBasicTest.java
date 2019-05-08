@@ -143,18 +143,13 @@ public class RaftCountDownLatchBasicTest extends HazelcastRaftTestSupport {
     @Test
     public void testAwait() {
         assertTrue(latch.trySetCount(1));
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                latch.countDown();
-            }
-        });
+        spawn(() -> latch.countDown());
         assertOpenEventually(latch);
     }
 
     @Test
     public void testAwait_withManyThreads() {
-        final CountDownLatch completedLatch = new CountDownLatch(10);
+        CountDownLatch completedLatch = new CountDownLatch(10);
 
         latch.trySetCount(1);
         for (int i = 0; i < 10; i++) {

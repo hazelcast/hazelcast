@@ -43,7 +43,7 @@ public class RaftCountDownLatch extends BlockingResource<AwaitInvocationKey> imp
 
     private int round;
     private int countDownFrom;
-    private final Set<UUID> countDownUids = new HashSet<UUID>();
+    private final Set<UUID> countDownUids = new HashSet<>();
 
     RaftCountDownLatch() {
     }

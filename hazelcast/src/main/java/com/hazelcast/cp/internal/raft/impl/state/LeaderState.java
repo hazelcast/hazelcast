@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class LeaderState {
 
-    private final Map<Endpoint, FollowerState> followerStates = new HashMap<Endpoint, FollowerState>();
+    private final Map<Endpoint, FollowerState> followerStates = new HashMap<>();
 
     LeaderState(Collection<Endpoint> remoteMembers, long lastLogIndex) {
         for (Endpoint follower : remoteMembers) {

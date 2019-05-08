@@ -27,7 +27,6 @@ import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -93,28 +92,22 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
 
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
-        final RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
-        final RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
+        RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
+        RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
-        final CountDownLatch threadLatch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    latch.await(10, MINUTES);
-                    threadLatch.countDown();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        CountDownLatch threadLatch = new CountDownLatch(1);
+        spawn(() -> {
+            try {
+                latch.await(10, MINUTES);
+                threadLatch.countDown();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-                assertFalse(registry.getLiveOperations().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            assertFalse(registry.getWaitTimeouts().isEmpty());
+            assertFalse(registry.getLiveOperations().isEmpty());
         });
 
         latch.countDown();
@@ -132,7 +125,7 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
         RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
-        final RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
+        RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
         boolean success = latch.await(1, TimeUnit.SECONDS);
 
@@ -148,25 +141,17 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
         RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
-        final RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
+        RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    latch.await(10, MINUTES);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        spawn(() -> {
+            try {
+                latch.await(10, MINUTES);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-            }
-        });
+        assertTrueEventually(() -> assertFalse(registry.getWaitTimeouts().isEmpty()));
 
         latch.destroy();
 
@@ -178,14 +163,11 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
     public void testNewRaftGroupMemberSchedulesTimeoutsWithSnapshot() throws ExecutionException, InterruptedException {
         latch.trySetCount(1);
 
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    latch.await(10, MINUTES);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        spawn(() -> {
+            try {
+                latch.await(10, MINUTES);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
@@ -193,53 +175,44 @@ public class RaftCountDownLatchAdvancedTest extends HazelcastRaftTestSupport {
             latch.trySetCount(1);
         }
 
-        final CPGroupId groupId = getGroupId(latch);
+        CPGroupId groupId = getGroupId(latch);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                HazelcastInstance leader = getLeaderInstance(instances, groupId);
-                RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
-                ResourceRegistry registry = service.getRegistryOrNull(groupId);
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-            }
+        assertTrueEventually(() -> {
+            HazelcastInstance leader = getLeaderInstance(instances, groupId);
+            RaftCountDownLatchService service = getNodeEngineImpl(leader).getService(RaftCountDownLatchService.SERVICE_NAME);
+            ResourceRegistry registry = service.getRegistryOrNull(groupId);
+            assertFalse(registry.getWaitTimeouts().isEmpty());
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : instances) {
-                    RaftNodeImpl raftNode = getRaftNode(instance, groupId);
-                    assertNotNull(raftNode);
-                    LogEntry snapshotEntry = getSnapshotEntry(raftNode);
-                    assertTrue(snapshotEntry.index() > 0);
-                    List<RestoreSnapshotOp> ops = (List<RestoreSnapshotOp>) snapshotEntry.operation();
-                    for (RestoreSnapshotOp op : ops) {
-                        if (op.getServiceName().equals(RaftCountDownLatchService.SERVICE_NAME)) {
-                            ResourceRegistry registry = (ResourceRegistry) op.getSnapshot();
-                            assertFalse(registry.getWaitTimeouts().isEmpty());
-                            return;
-                        }
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                RaftNodeImpl raftNode = getRaftNode(instance, groupId);
+                assertNotNull(raftNode);
+                LogEntry snapshotEntry = getSnapshotEntry(raftNode);
+                assertTrue(snapshotEntry.index() > 0);
+                List<RestoreSnapshotOp> ops = (List<RestoreSnapshotOp>) snapshotEntry.operation();
+                for (RestoreSnapshotOp op : ops) {
+                    if (op.getServiceName().equals(RaftCountDownLatchService.SERVICE_NAME)) {
+                        ResourceRegistry registry = (ResourceRegistry) op.getSnapshot();
+                        assertFalse(registry.getWaitTimeouts().isEmpty());
+                        return;
                     }
-                    fail();
                 }
+                fail();
             }
         });
 
         instances[1].shutdown();
 
-        final HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
+        HazelcastInstance newInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
         newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftCountDownLatchService service = getNodeEngineImpl(newInstance).getService(RaftCountDownLatchService.SERVICE_NAME);
-                RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
-                assertNotNull(registry);
-                assertFalse(registry.getWaitTimeouts().isEmpty());
-                Assert.assertEquals(1, registry.getRemainingCount(objectName));
-            }
+        assertTrueEventually(() -> {
+            RaftCountDownLatchService service = getNodeEngineImpl(newInstance).getService(RaftCountDownLatchService.SERVICE_NAME);
+            RaftCountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
+            assertNotNull(registry);
+            assertFalse(registry.getWaitTimeouts().isEmpty());
+            Assert.assertEquals(1, registry.getRemainingCount(objectName));
         });
     }
 

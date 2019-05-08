@@ -71,7 +71,6 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
@@ -98,6 +97,7 @@ import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkState;
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -116,15 +116,15 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private static final long REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS = 1;
     private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
 
-    private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<CPGroupId, RaftNode>();
+    private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<>();
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    private final Set<CPGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<CPGroupId, Boolean>());
-    private final Set<CPGroupId> steppedDownGroupIds = newSetFromMap(new ConcurrentHashMap<CPGroupId, Boolean>());
+    private final Set<CPGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<CPGroupId> steppedDownGroupIds = newSetFromMap(new ConcurrentHashMap<>());
     private final CPSubsystemConfig config;
     private final RaftInvocationManager invocationManager;
     private final MetadataRaftGroupManager metadataGroupManager;
-    private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<CPMemberInfo, Long>();
+    private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<>();
 
     public RaftService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -188,9 +188,9 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     public ICompletableFuture<Void> restart() {
         checkState(config.getCPMemberCount() > 0, "CP subsystem is not enabled!");
 
-        final SimpleCompletableFuture<Void> future = newCompletableFuture();
+        SimpleCompletableFuture<Void> future = newCompletableFuture();
         ClusterService clusterService = nodeEngine.getClusterService();
-        final Collection<Member> members = clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
+        Collection<Member> members = clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
 
         if (!clusterService.isMaster()) {
             return complete(future, new IllegalStateException("Only master can restart CP subsystem!"));
@@ -283,7 +283,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public ICompletableFuture<Void> promoteToCPMember() {
-        final SimpleCompletableFuture<Void> future = newCompletableFuture();
+        SimpleCompletableFuture<Void> future = newCompletableFuture();
 
         if (!metadataGroupManager.isDiscoveryCompleted()) {
             return complete(future, new IllegalStateException("CP subsystem discovery is not completed yet!"));
@@ -299,7 +299,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         // but Raft state cannot be recovered back.
         // That's why we generate a new UUID while promoting a member to CP.
         // This new UUID generation can be removed when Hot Restart allows to recover Raft state.
-        final CPMemberInfo member = new CPMemberInfo(UuidUtil.newUnsecureUUID(), localMember.getAddress());
+        CPMemberInfo member = new CPMemberInfo(newUnsecureUUID(), localMember.getAddress());
         logger.info("Adding new CP member: " + member);
 
         invocationManager.invoke(getMetadataGroupId(), new AddCPMemberOp(member))
@@ -320,15 +320,15 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     private <T> SimpleCompletableFuture<T> newCompletableFuture() {
         ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
-        return new SimpleCompletableFuture<T>(executor, logger);
+        return new SimpleCompletableFuture<>(executor, logger);
     }
 
     @Override
-    public ICompletableFuture<Void> removeCPMember(final String cpMemberUuid) {
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        final SimpleCompletableFuture<Void> future = newCompletableFuture();
+    public ICompletableFuture<Void> removeCPMember(String cpMemberUuid) {
+        ClusterService clusterService = nodeEngine.getClusterService();
+        SimpleCompletableFuture<Void> future = newCompletableFuture();
 
-        final ExecutionCallback<Void> removeMemberCallback = new ExecutionCallback<Void>() {
+        ExecutionCallback<Void> removeMemberCallback = new ExecutionCallback<Void>() {
             @Override
             public void onResponse(Void response) {
                 future.setResult(response);
@@ -585,7 +585,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     public Collection<RaftNode> getAllRaftNodes() {
-        return new ArrayList<RaftNode>(nodes.values());
+        return new ArrayList<>(nodes.values());
     }
 
     public RaftNode getRaftNode(CPGroupId groupId) {
@@ -706,8 +706,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     public InternalCompletableFuture<RaftGroupId> createRaftGroupForProxyAsync(String name) {
-        final String groupName = getGroupNameForProxy(name);
-        final SimpleCompletableFuture<RaftGroupId> future = newCompletableFuture();
+        String groupName = getGroupNameForProxy(name);
+        SimpleCompletableFuture<RaftGroupId> future = newCompletableFuture();
 
         InternalCompletableFuture<CPGroupInfo> groupIdFuture = getGroupInfoForProxy(groupName);
         groupIdFuture.andThen(new ExecutionCallback<CPGroupInfo>() {

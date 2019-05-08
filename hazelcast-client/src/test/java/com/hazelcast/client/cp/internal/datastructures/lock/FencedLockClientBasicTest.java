@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.lock.FencedLockBasicTest;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -69,13 +68,10 @@ public class FencedLockClientBasicTest extends FencedLockBasicTest {
 
         instances[0].getCPSubsystem().getCPSubsystemManagementService().restart().get();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                HazelcastClientProxy clientProxy = (HazelcastClientProxy) lockInstance;
-                ClientProxySessionManager proxySessionManager = clientProxy.client.getProxySessionManager();
-                assertEquals(NO_SESSION_ID, proxySessionManager.getSession((RaftGroupId) lock.getGroupId()));
-            }
+        assertTrueEventually(() -> {
+            HazelcastClientProxy clientProxy = (HazelcastClientProxy) lockInstance;
+            ClientProxySessionManager proxySessionManager = clientProxy.client.getProxySessionManager();
+            assertEquals(NO_SESSION_ID, proxySessionManager.getSession((RaftGroupId) lock.getGroupId()));
         });
     }
 

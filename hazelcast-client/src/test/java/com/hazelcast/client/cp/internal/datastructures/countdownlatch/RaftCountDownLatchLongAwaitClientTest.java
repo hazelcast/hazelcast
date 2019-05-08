@@ -26,7 +26,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -36,7 +35,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -74,31 +72,20 @@ public class RaftCountDownLatchLongAwaitClientTest extends HazelcastRaftTestSupp
 
     @Test
     public void when_awaitDurationIsLongerThanOperationTimeout_then_invocationFromClientWaits() throws ExecutionException, InterruptedException {
-        final ICountDownLatch latch = client.getCPSubsystem().getCountDownLatch(proxyName);
-        final HazelcastInstance instance = getLeaderInstance(instances, groupId);
+        ICountDownLatch latch = client.getCPSubsystem().getCountDownLatch(proxyName);
+        HazelcastInstance instance = getLeaderInstance(instances, groupId);
         latch.trySetCount(1);
 
-        Future<Boolean> f = spawn(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return latch.await(5, TimeUnit.MINUTES);
-            }
+        Future<Boolean> f = spawn(() -> latch.await(5, TimeUnit.MINUTES));
+
+        assertTrueEventually(() -> {
+            RaftCountDownLatchService service = getNodeEngineImpl(instance).getService(RaftCountDownLatchService.SERVICE_NAME);
+            assertFalse(service.getLiveOperations(groupId).isEmpty());
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                RaftCountDownLatchService service = getNodeEngineImpl(instance).getService(RaftCountDownLatchService.SERVICE_NAME);
-                assertFalse(service.getLiveOperations(groupId).isEmpty());
-            }
-        });
-
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                RaftCountDownLatchService service = getNodeEngineImpl(instance).getService(RaftCountDownLatchService.SERVICE_NAME);
-                assertFalse(service.getLiveOperations(groupId).isEmpty());
-            }
+        assertTrueAllTheTime(() -> {
+            RaftCountDownLatchService service = getNodeEngineImpl(instance).getService(RaftCountDownLatchService.SERVICE_NAME);
+            assertFalse(service.getLiveOperations(groupId).isEmpty());
         }, callTimeoutSeconds + 5);
 
         latch.countDown();

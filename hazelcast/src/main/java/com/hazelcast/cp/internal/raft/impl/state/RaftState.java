@@ -123,7 +123,7 @@ public class RaftState {
     public RaftState(CPGroupId groupId, Endpoint localEndpoint, Collection<Endpoint> endpoints, int logCapacity) {
         this.groupId = groupId;
         this.localEndpoint = localEndpoint;
-        this.initialMembers = unmodifiableSet(new LinkedHashSet<Endpoint>(endpoints));
+        this.initialMembers = unmodifiableSet(new LinkedHashSet<>(endpoints));
         RaftGroupMembers groupMembers = new RaftGroupMembers(0, endpoints, localEndpoint);
         this.committedGroupMembers = groupMembers;
         this.lastGroupMembers = groupMembers;

@@ -56,8 +56,8 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
     public CPGroupInfo(RaftGroupId id, Collection<CPMemberInfo> members) {
         this.id = id;
         this.status = ACTIVE;
-        this.initialMembers = Collections.unmodifiableSet(new LinkedHashSet<CPMemberInfo>(members));
-        this.members = Collections.unmodifiableSet(new LinkedHashSet<CPMemberInfo>(members));
+        this.initialMembers = Collections.unmodifiableSet(new LinkedHashSet<>(members));
+        this.members = Collections.unmodifiableSet(new LinkedHashSet<>(members));
         this.membersArray = members.toArray(new CPMemberInfo[0]);
     }
 
@@ -137,7 +137,7 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
             return false;
         }
 
-        Set<CPMemberInfo> m = new LinkedHashSet<CPMemberInfo>(members);
+        Set<CPMemberInfo> m = new LinkedHashSet<>(members);
         if (leaving != null) {
             boolean removed = m.remove(leaving);
             assert removed : leaving + " is not member of " + toString();
@@ -179,7 +179,7 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         id = in.readObject();
         int initialMemberCount = in.readInt();
-        Set<CPMemberInfo> initialMembers = new LinkedHashSet<CPMemberInfo>();
+        Set<CPMemberInfo> initialMembers = new LinkedHashSet<>();
         for (int i = 0; i < initialMemberCount; i++) {
             CPMemberInfo member = in.readObject();
             initialMembers.add(member);
@@ -187,7 +187,7 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
         this.initialMembers = Collections.unmodifiableSet(initialMembers);
         membersCommitIndex = in.readLong();
         int memberCount = in.readInt();
-        members = new LinkedHashSet<CPMemberInfo>(memberCount);
+        members = new LinkedHashSet<>(memberCount);
         for (int i = 0; i < memberCount; i++) {
             CPMemberInfo member = in.readObject();
             members.add(member);

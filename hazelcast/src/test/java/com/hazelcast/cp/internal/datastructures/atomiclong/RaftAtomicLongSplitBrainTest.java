@@ -89,9 +89,7 @@ public class RaftAtomicLongSplitBrainTest extends RaftSplitBrainTestSupport {
                 try {
                     atomic.incrementAndGet();
                     increments.incrementAndGet();
-                } catch (IndeterminateOperationStateException e) {
-                    indeterminate.incrementAndGet();
-                } catch (OperationTimeoutException e) {
+                } catch (IndeterminateOperationStateException | OperationTimeoutException e) {
                     indeterminate.incrementAndGet();
                 }
             }

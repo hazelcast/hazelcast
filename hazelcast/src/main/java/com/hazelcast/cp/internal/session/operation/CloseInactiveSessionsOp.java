@@ -87,7 +87,7 @@ public class CloseInactiveSessionsOp extends RaftOp implements IndeterminateOper
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int count = in.readInt();
-        sessions = new ArrayList<Long>();
+        sessions = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             long sessionId = in.readLong();
             sessions.add(sessionId);

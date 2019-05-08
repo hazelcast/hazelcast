@@ -41,8 +41,7 @@ public class RaftFencedLockProxy extends AbstractRaftFencedLockProxy {
     private final RaftInvocationManager invocationManager;
 
     public RaftFencedLockProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
-        super((ProxySessionManagerService) nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME), groupId, proxyName,
-                objectName);
+        super(nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME), groupId, proxyName, objectName);
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
     }

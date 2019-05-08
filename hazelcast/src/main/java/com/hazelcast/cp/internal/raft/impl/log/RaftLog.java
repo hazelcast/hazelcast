@@ -55,7 +55,7 @@ public class RaftLog {
     private SnapshotEntry snapshot = new SnapshotEntry();
 
     public RaftLog(int capacity) {
-        logs = new ArrayRingbuffer<LogEntry>(capacity);
+        logs = new ArrayRingbuffer<>(capacity);
     }
 
     /**
@@ -137,7 +137,7 @@ public class RaftLog {
         long startSequence = toSequence(entryIndex);
         assert startSequence >= logs.headSequence() : "Entry index: " + entryIndex + ", Head Seq: " + logs.headSequence();
 
-        List<LogEntry> truncated = new ArrayList<LogEntry>();
+        List<LogEntry> truncated = new ArrayList<>();
         for (long ix = startSequence; ix <= logs.tailSequence(); ix++) {
             truncated.add(logs.read(ix));
         }

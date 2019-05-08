@@ -44,7 +44,7 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
     private CPGroupId groupId;
     private String name;
     // Should be an insertion ordered map to ensure fairness
-    private final Map<Object, WaitKeyContainer<W>> waitKeys = new LinkedHashMap<Object, WaitKeyContainer<W>>();
+    private final Map<Object, WaitKeyContainer<W>> waitKeys = new LinkedHashMap<>();
 
     protected BlockingResource() {
     }
@@ -85,7 +85,7 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
         if (container != null) {
             container.addRetry(waitKey);
         } else {
-            waitKeys.put(waitKeyId, new WaitKeyContainer<W>(waitKey));
+            waitKeys.put(waitKeyId, new WaitKeyContainer<>(waitKey));
         }
     }
 
@@ -98,7 +98,7 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
     }
 
     protected final Collection<W> getAllWaitKeys() {
-        List<W> all = new ArrayList<W>(waitKeys.size());
+        List<W> all = new ArrayList<>(waitKeys.size());
         for (WaitKeyContainer<W> container : waitKeys.values()) {
             all.addAll(container.keyAndRetries());
         }

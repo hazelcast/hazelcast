@@ -52,7 +52,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
 
     private boolean initialized;
     private int available;
-    private final Long2ObjectHashMap<SessionSemaphoreState> sessionStates = new Long2ObjectHashMap<SessionSemaphoreState>();
+    private final Long2ObjectHashMap<SessionSemaphoreState> sessionStates = new Long2ObjectHashMap<>();
 
     RaftSemaphore() {
     }
@@ -101,7 +101,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
         SemaphoreEndpoint endpoint = key.endpoint();
         SessionSemaphoreState state = sessionStates.get(key.sessionId());
         if (state != null && state.containsInvocation(endpoint.threadId(), key.invocationUid())) {
-            return new AcquireResult(key.permits(), Collections.<AcquireInvocationKey>emptyList());
+            return new AcquireResult(key.permits(), Collections.emptyList());
         }
 
         Collection<AcquireInvocationKey> cancelled = cancelWaitKeys(endpoint, key.invocationUid());
@@ -162,8 +162,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
             }
 
             if (state.containsInvocation(endpoint.threadId(), invocationUid)) {
-                return ReleaseResult.successful(Collections.<AcquireInvocationKey>emptyList(),
-                        Collections.<AcquireInvocationKey>emptyList());
+                return ReleaseResult.successful(Collections.emptyList(), Collections.emptyList());
             }
 
             if (state.acquiredPermits < permits) {
@@ -206,11 +205,11 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
             removeWaitKey(endpoint);
         }
 
-        return cancelled != null ? cancelled : Collections.<AcquireInvocationKey>emptyList();
+        return cancelled != null ? cancelled : Collections.emptyList();
     }
 
     private Collection<AcquireInvocationKey> assignPermitsToWaitKeys() {
-        List<AcquireInvocationKey> assigned = new ArrayList<AcquireInvocationKey>();
+        List<AcquireInvocationKey> assigned = new ArrayList<>();
         Iterator<WaitKeyContainer<AcquireInvocationKey>> iterator = waitKeyContainersIterator();
         while (iterator.hasNext() && available > 0) {
             WaitKeyContainer<AcquireInvocationKey> container = iterator.next();
@@ -238,7 +237,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
         if (state != null) {
             Integer permits = state.getInvocationResponse(endpoint.threadId(), invocationUid);
             if (permits != null) {
-                return new AcquireResult(permits, Collections.<AcquireInvocationKey>emptyList());
+                return new AcquireResult(permits, Collections.emptyList());
             }
         }
 
@@ -264,7 +263,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
      */
     ReleaseResult change(SemaphoreEndpoint endpoint, UUID invocationUid, int permits) {
         if (permits == 0) {
-            return ReleaseResult.failed(Collections.<AcquireInvocationKey>emptyList());
+            return ReleaseResult.failed(Collections.emptyList());
         }
 
         Collection<AcquireInvocationKey> cancelled = cancelWaitKeys(endpoint, invocationUid);
@@ -289,9 +288,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
         available += permits;
         initialized = true;
 
-        Collection<AcquireInvocationKey> acquired =
-                permits > 0 ? assignPermitsToWaitKeys() : Collections.<AcquireInvocationKey>emptyList();
-
+        Collection<AcquireInvocationKey> acquired = permits > 0 ? assignPermitsToWaitKeys() : Collections.emptyList();
         return ReleaseResult.successful(acquired, cancelled);
     }
 
@@ -318,7 +315,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
 
     @Override
     protected Collection<Long> getActivelyAttachedSessions() {
-        Set<Long> activeSessionIds = new HashSet<Long>();
+        Set<Long> activeSessionIds = new HashSet<>();
         for (Entry<Long, SessionSemaphoreState> e : sessionStates.entrySet()) {
             if (e.getValue().acquiredPermits > 0) {
                 activeSessionIds.add(e.getKey());
@@ -441,7 +438,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
         }
 
         private static ReleaseResult failed(Collection<AcquireInvocationKey> cancelled) {
-            return new ReleaseResult(false, Collections.<AcquireInvocationKey>emptyList(), cancelled);
+            return new ReleaseResult(false, Collections.emptyList(), cancelled);
         }
     }
 
@@ -450,8 +447,7 @@ public class RaftSemaphore extends BlockingResource<AcquireInvocationKey> implem
         /**
          * map of threadId -> <invocationUid, permits> to track last operation of each endpoint
          */
-        private final Long2ObjectHashMap<Tuple2<UUID, Integer>> invocationRefUids
-                = new Long2ObjectHashMap<Tuple2<UUID, Integer>>();
+        private final Long2ObjectHashMap<Tuple2<UUID, Integer>> invocationRefUids = new Long2ObjectHashMap<>();
 
         private int acquiredPermits;
 

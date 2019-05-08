@@ -96,7 +96,7 @@ public class RaftNodeImpl implements RaftNode {
     private final RaftState state;
     private final RaftIntegration raftIntegration;
     private final Endpoint localMember;
-    private final Long2ObjectHashMap<SimpleCompletableFuture> futures = new Long2ObjectHashMap<SimpleCompletableFuture>();
+    private final Long2ObjectHashMap<SimpleCompletableFuture> futures = new Long2ObjectHashMap<>();
 
     private final long heartbeatPeriodInMillis;
     private final int leaderElectionTimeout;
@@ -178,14 +178,11 @@ public class RaftNodeImpl implements RaftNode {
 
     @Override
     public void forceSetTerminatedStatus() {
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                if (!isTerminatedOrSteppedDown()) {
-                    setStatus(TERMINATED);
-                    if (localMember.equals(state.leader())) {
-                        invalidateFuturesFrom(state.commitIndex() + 1);
-                    }
+        execute(() -> {
+            if (!isTerminatedOrSteppedDown()) {
+                setStatus(TERMINATED);
+                if (localMember.equals(state.leader())) {
+                    invalidateFuturesFrom(state.commitIndex() + 1);
                 }
             }
         });
@@ -196,12 +193,7 @@ public class RaftNodeImpl implements RaftNode {
      */
     public void start() {
         if (!raftIntegration.isReady()) {
-            raftIntegration.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    start();
-                }
-            }, RAFT_NODE_INIT_DELAY_MILLIS, MILLISECONDS);
+            raftIntegration.schedule(this::start, RAFT_NODE_INIT_DELAY_MILLIS, MILLISECONDS);
             return;
         }
 

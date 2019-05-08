@@ -16,17 +16,16 @@
 
 package com.hazelcast.cp.internal.session;
 
+import com.hazelcast.cp.internal.session.operation.CloseInactiveSessionsOp;
+import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
+import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
+import com.hazelcast.cp.internal.session.operation.ExpireSessionsOp;
 import com.hazelcast.cp.internal.session.operation.GenerateThreadIdOp;
+import com.hazelcast.cp.internal.session.operation.GetSessionsOp;
+import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.cp.internal.session.operation.CloseInactiveSessionsOp;
-import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
-import com.hazelcast.cp.internal.session.operation.ExpireSessionsOp;
-import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
-import com.hazelcast.cp.internal.session.operation.GetSessionsOp;
-import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public class RaftSessionServiceDataSerializerHook implements DataSerializerHook {
@@ -53,33 +52,30 @@ public class RaftSessionServiceDataSerializerHook implements DataSerializerHook 
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case RAFT_SESSION:
-                        return new CPSessionInfo();
-                    case RAFT_SESSION_REGISTRY:
-                        return new RaftSessionRegistry();
-                    case SESSION_RESPONSE:
-                        return new SessionResponse();
-                    case CREATE_SESSION_OP:
-                        return new CreateSessionOp();
-                    case HEARTBEAT_SESSION_OP:
-                        return new HeartbeatSessionOp();
-                    case CLOSE_SESSION_OP:
-                        return new CloseSessionOp();
-                    case EXPIRE_SESSIONS_OP:
-                        return new ExpireSessionsOp();
-                    case CLOSE_INACTIVE_SESSIONS_OP:
-                        return new CloseInactiveSessionsOp();
-                    case GET_SESSIONS_OP:
-                        return new GetSessionsOp();
-                    case GENERATE_THREAD_ID_OP:
-                        return new GenerateThreadIdOp();
-                    default:
-                        throw new IllegalArgumentException("Undefined type: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case RAFT_SESSION:
+                    return new CPSessionInfo();
+                case RAFT_SESSION_REGISTRY:
+                    return new RaftSessionRegistry();
+                case SESSION_RESPONSE:
+                    return new SessionResponse();
+                case CREATE_SESSION_OP:
+                    return new CreateSessionOp();
+                case HEARTBEAT_SESSION_OP:
+                    return new HeartbeatSessionOp();
+                case CLOSE_SESSION_OP:
+                    return new CloseSessionOp();
+                case EXPIRE_SESSIONS_OP:
+                    return new ExpireSessionsOp();
+                case CLOSE_INACTIVE_SESSIONS_OP:
+                    return new CloseInactiveSessionsOp();
+                case GET_SESSIONS_OP:
+                    return new GetSessionsOp();
+                case GENERATE_THREAD_ID_OP:
+                    return new GenerateThreadIdOp();
+                default:
+                    throw new IllegalArgumentException("Undefined type: " + typeId);
             }
         };
     }

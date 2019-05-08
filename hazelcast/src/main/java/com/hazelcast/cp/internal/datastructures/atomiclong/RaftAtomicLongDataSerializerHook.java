@@ -26,7 +26,6 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.operation.LocalGetOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public final class RaftAtomicLongDataSerializerHook implements DataSerializerHook {
@@ -52,29 +51,26 @@ public final class RaftAtomicLongDataSerializerHook implements DataSerializerHoo
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case ADD_AND_GET_OP:
-                        return new AddAndGetOp();
-                    case COMPARE_AND_SET_OP:
-                        return new CompareAndSetOp();
-                    case GET_AND_ADD_OP:
-                        return new GetAndAddOp();
-                    case GET_AND_SET_OP:
-                        return new GetAndSetOp();
-                    case ALTER_OP:
-                        return new AlterOp();
-                    case APPLY_OP:
-                        return new ApplyOp();
-                    case LOCAL_GET_OP:
-                        return new LocalGetOp();
-                    case SNAPSHOT:
-                        return new RaftAtomicLongSnapshot();
-                    default:
-                        throw new IllegalArgumentException("Undefined type: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case ADD_AND_GET_OP:
+                    return new AddAndGetOp();
+                case COMPARE_AND_SET_OP:
+                    return new CompareAndSetOp();
+                case GET_AND_ADD_OP:
+                    return new GetAndAddOp();
+                case GET_AND_SET_OP:
+                    return new GetAndSetOp();
+                case ALTER_OP:
+                    return new AlterOp();
+                case APPLY_OP:
+                    return new ApplyOp();
+                case LOCAL_GET_OP:
+                    return new LocalGetOp();
+                case SNAPSHOT:
+                    return new RaftAtomicLongSnapshot();
+                default:
+                    throw new IllegalArgumentException("Undefined type: " + typeId);
             }
         };
     }

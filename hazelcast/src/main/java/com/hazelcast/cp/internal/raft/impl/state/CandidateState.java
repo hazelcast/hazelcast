@@ -27,7 +27,7 @@ import java.util.Set;
 public class CandidateState {
 
     private final int majority;
-    private final Set<Endpoint> voters = new HashSet<Endpoint>();
+    private final Set<Endpoint> voters = new HashSet<>();
 
     CandidateState(int majority) {
         this.majority = majority;

@@ -51,10 +51,9 @@ public abstract class AbstractProxySessionManager {
      */
     public static final long NO_SESSION_ID = -1;
 
-    private final ConcurrentMap<RaftGroupId, Object> mutexes = new ConcurrentHashMap<RaftGroupId, Object>();
-    private final ConcurrentMap<RaftGroupId, SessionState> sessions = new ConcurrentHashMap<RaftGroupId, SessionState>();
-    private final ConcurrentMap<Tuple2<RaftGroupId, Long>, Long> threadIds
-            = new ConcurrentHashMap<Tuple2<RaftGroupId, Long>, Long>();
+    private final ConcurrentMap<RaftGroupId, Object> mutexes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<RaftGroupId, SessionState> sessions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Tuple2<RaftGroupId, Long>, Long> threadIds = new ConcurrentHashMap<>();
     private final AtomicBoolean scheduleHeartbeat = new AtomicBoolean(false);
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean running = true;
@@ -175,7 +174,7 @@ public abstract class AbstractProxySessionManager {
     public Map<RaftGroupId, ICompletableFuture<Object>> shutdown() {
         lock.writeLock().lock();
         try {
-            Map<RaftGroupId, ICompletableFuture<Object>> futures = new HashMap<RaftGroupId, ICompletableFuture<Object>>();
+            Map<RaftGroupId, ICompletableFuture<Object>> futures = new HashMap<>();
             for (Entry<RaftGroupId, SessionState> e : sessions.entrySet()) {
                 RaftGroupId groupId = e.getKey();
                 long sessionId = e.getValue().id;
@@ -302,7 +301,7 @@ public abstract class AbstractProxySessionManager {
 
     private class HeartbeatTask implements Runnable {
         // HeartbeatTask executions will not overlap.
-        private final Collection<ICompletableFuture<Object>> prevHeartbeats = new ArrayList<ICompletableFuture<Object>>();
+        private final Collection<ICompletableFuture<Object>> prevHeartbeats = new ArrayList<>();
 
         @Override
         public void run() {
@@ -312,8 +311,8 @@ public abstract class AbstractProxySessionManager {
             prevHeartbeats.clear();
 
             for (Entry<RaftGroupId, SessionState> entry : sessions.entrySet()) {
-                final RaftGroupId groupId = entry.getKey();
-                final SessionState session = entry.getValue();
+                RaftGroupId groupId = entry.getKey();
+                SessionState session = entry.getValue();
                 if (session.isInUse()) {
                     ICompletableFuture<Object> f = heartbeat(groupId, session.id);
                     f.andThen(new ExecutionCallback<Object>() {

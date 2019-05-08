@@ -51,7 +51,7 @@ public class RaftSessionlessSemaphoreProxy extends SessionAwareProxy implements 
     private final String objectName;
 
     public RaftSessionlessSemaphoreProxy(NodeEngine nodeEngine, RaftGroupId groupId, String proxyName, String objectName) {
-        super((ProxySessionManagerService) nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME), groupId);
+        super(nodeEngine.getService(ProxySessionManagerService.SERVICE_NAME), groupId);
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
         this.proxyName = proxyName;

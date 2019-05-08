@@ -55,10 +55,8 @@ public class RaftAtomicLongService implements RaftManagedService, RaftRemoteServ
      */
     public static final String SERVICE_NAME = "hz:raft:atomicLongService";
 
-    private final Map<Tuple2<CPGroupId, String>, RaftAtomicLong> atomicLongs =
-            new ConcurrentHashMap<Tuple2<CPGroupId, String>, RaftAtomicLong>();
-    private final Set<Tuple2<CPGroupId, String>> destroyedLongs =
-            newSetFromMap(new ConcurrentHashMap<Tuple2<CPGroupId, String>, Boolean>());
+    private final Map<Tuple2<CPGroupId, String>, RaftAtomicLong> atomicLongs = new ConcurrentHashMap<>();
+    private final Set<Tuple2<CPGroupId, String>> destroyedLongs = newSetFromMap(new ConcurrentHashMap<>());
     private final NodeEngine nodeEngine;
     private volatile RaftService raftService;
 
@@ -89,14 +87,14 @@ public class RaftAtomicLongService implements RaftManagedService, RaftRemoteServ
     @Override
     public RaftAtomicLongSnapshot takeSnapshot(CPGroupId groupId, long commitIndex) {
         checkNotNull(groupId);
-        Map<String, Long> longs = new HashMap<String, Long>();
+        Map<String, Long> longs = new HashMap<>();
         for (RaftAtomicLong atomicLong : atomicLongs.values()) {
             if (atomicLong.groupId().equals(groupId)) {
                 longs.put(atomicLong.name(), atomicLong.value());
             }
         }
 
-        Set<String> destroyed = new HashSet<String>();
+        Set<String> destroyed = new HashSet<>();
         for (Tuple2<CPGroupId, String> tuple : destroyedLongs) {
             if (groupId.equals(tuple.element1)) {
                 destroyed.add(tuple.element2);

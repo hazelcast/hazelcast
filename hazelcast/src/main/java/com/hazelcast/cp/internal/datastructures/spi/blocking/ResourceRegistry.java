@@ -60,12 +60,11 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         implements LiveOperationsTracker, DataSerializable {
 
     protected CPGroupId groupId;
-    protected final Map<String, R> resources = new ConcurrentHashMap<String, R>();
-    protected final Set<String> destroyedNames = new HashSet<String>();
+    protected final Map<String, R> resources = new ConcurrentHashMap<>();
+    protected final Set<String> destroyedNames = new HashSet<>();
     // key.element1: name, key.element2: invocation uid
     // value.element1: timeout duration (persisted in the snapshot), value.element2: deadline timestamp (transient)
-    protected final ConcurrentMap<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts =
-            new ConcurrentHashMap<Tuple2<String, UUID>, Tuple2<Long, Long>>();
+    protected final ConcurrentMap<Tuple2<String, UUID>, Tuple2<Long, Long>> waitTimeouts = new ConcurrentHashMap<>();
 
     // Live operations are not put into Raft snapshots because it is not needed.
     // Currently, only Raft ops that create a wait key are tracked as live operations,
@@ -73,8 +72,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     // populate live operations as well, they can miss some entries if they install a snapshot
     // instead of applying Raft log entries. If a follower becomes later, callers will
     // retry and commit their waiting Raft ops.
-    private final Set<Tuple2<Address, Long>> liveOperationsSet =
-            newSetFromMap(new ConcurrentHashMap<Tuple2<Address, Long>, Boolean>());
+    private final Set<Tuple2<Address, Long>> liveOperationsSet = newSetFromMap(new ConcurrentHashMap<>());
 
     protected ResourceRegistry() {
     }
@@ -136,7 +134,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     }
 
     final Collection<Tuple2<String, UUID>> getWaitKeysToExpire(long now) {
-        List<Tuple2<String, UUID>> expired = new ArrayList<Tuple2<String, UUID>>();
+        List<Tuple2<String, UUID>> expired = new ArrayList<>();
         for (Entry<Tuple2<String, UUID>, Tuple2<Long, Long>> e : waitTimeouts.entrySet()) {
             long deadline = e.getValue().element2;
             if (deadline <= now) {
@@ -153,7 +151,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
             waitTimeouts.put(e.getKey(), e.getValue());
         }
 
-        Map<Tuple2<String, UUID>, Long> newKeys = new HashMap<Tuple2<String, UUID>, Long>();
+        Map<Tuple2<String, UUID>, Long> newKeys = new HashMap<>();
         for (Entry<Tuple2<String, UUID>, Tuple2<Long, Long>> e : waitTimeouts.entrySet()) {
             Tuple2<String, UUID> key = e.getKey();
             if (!existingWaitTimeouts.containsKey(key)) {
@@ -172,7 +170,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
     }
 
     final Collection<Long> getAttachedSessions() {
-        Set<Long> sessions = new HashSet<Long>();
+        Set<Long> sessions = new HashSet<>();
         for (R res : resources.values()) {
             res.collectAttachedSessions(sessions);
         }
@@ -206,7 +204,7 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
 
     public final Collection<Long> destroy() {
         destroyedNames.addAll(resources.keySet());
-        Collection<Long> indices = new ArrayList<Long>();
+        Collection<Long> indices = new ArrayList<>();
         for (BlockingResource<W> raftLock : resources.values()) {
             for (W key : raftLock.getAllWaitKeys()) {
                 indices.add(key.commitIndex());

@@ -245,7 +245,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
 
     private void revertPreAppliedRaftGroupCmd(List<LogEntry> entries) {
         // I am reverting appended-but-uncommitted entries and there can be at most 1 uncommitted Raft command...
-        List<LogEntry> commandEntries = new ArrayList<LogEntry>();
+        List<LogEntry> commandEntries = new ArrayList<>();
         for (LogEntry entry : entries) {
             if (entry.operation() instanceof RaftGroupCmd) {
                 commandEntries.add(entry);

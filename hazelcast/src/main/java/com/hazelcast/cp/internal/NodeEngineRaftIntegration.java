@@ -103,12 +103,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
 
     @Override
     public void schedule(final Runnable task, long delay, TimeUnit timeUnit) {
-        taskScheduler.schedule(new Runnable() {
-            @Override
-            public void run() {
-                execute(task);
-            }
-        }, delay, timeUnit);
+        taskScheduler.schedule(() -> execute(task), delay, timeUnit);
     }
 
     @Override
@@ -191,7 +186,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     @Override
     public Object takeSnapshot(long commitIndex) {
         try {
-            List<RestoreSnapshotOp> snapshotOps = new ArrayList<RestoreSnapshotOp>();
+            List<RestoreSnapshotOp> snapshotOps = new ArrayList<>();
             for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(SnapshotAwareService.class)) {
                 SnapshotAwareService service = serviceInfo.getService();
                 Object snapshot = service.takeSnapshot(groupId, commitIndex);

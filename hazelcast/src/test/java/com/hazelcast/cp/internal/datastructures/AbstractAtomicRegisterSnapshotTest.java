@@ -26,7 +26,6 @@ import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -64,7 +63,7 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
 
     @Test
     public void test_snapshot() throws Exception {
-        final T initialValue = setAndGetInitialValue();
+        T initialValue = setAndGetInitialValue();
 
         // force snapshot
         for (int i = 0; i < SNAPSHOT_THRESHOLD; i++) {
@@ -75,31 +74,25 @@ public abstract class AbstractAtomicRegisterSnapshotTest<T> extends HazelcastRaf
         // shutdown the last instance
         instances[instances.length - 1].shutdown();
 
-        final HazelcastInstance instance = factory.newHazelcastInstance(createConfig(3, 3));
+        HazelcastInstance instance = factory.newHazelcastInstance(createConfig(3, 3));
         instance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().get();
 
         // Read from local CP member, which should install snapshot after promotion.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                InternalCompletableFuture<Object> future = queryLocally(instance);
-                try {
-                    T value = getValue(future);
-                    assertEquals(initialValue, value);
-                } catch (CPSubsystemException e) {
-                    // Raft node may not be created yet...
-                    throw new AssertionError(e);
-                }
+        assertTrueEventually(() -> {
+            InternalCompletableFuture<Object> future = queryLocally(instance);
+            try {
+                T value = getValue(future);
+                assertEquals(initialValue, value);
+            } catch (CPSubsystemException e) {
+                // Raft node may not be created yet...
+                throw new AssertionError(e);
             }
         });
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                InternalCompletableFuture<Object> future = queryLocally(instance);
-                T value = getValue(future);
-                assertEquals(initialValue, value);
-            }
+        assertTrueAllTheTime(() -> {
+            InternalCompletableFuture<Object> future = queryLocally(instance);
+            T value = getValue(future);
+            assertEquals(initialValue, value);
         }, 5);
     }
 

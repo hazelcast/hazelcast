@@ -66,8 +66,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
      * and uid of the previous owner's last unlock() invocation.
      * Used for preventing duplicate execution of lock() / unlock() invocations
      */
-    private Map<Tuple2<LockEndpoint, UUID>, RaftLockOwnershipState> ownerInvocationRefUids =
-            new HashMap<Tuple2<LockEndpoint, UUID>, RaftLockOwnershipState>();
+    private Map<Tuple2<LockEndpoint, UUID>, RaftLockOwnershipState> ownerInvocationRefUids = new HashMap<>();
 
     RaftLock() {
     }
@@ -98,7 +97,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
         RaftLockOwnershipState memorized = ownerInvocationRefUids.get(Tuple2.of(endpoint, invocationUid));
         if (memorized != null) {
             AcquireStatus status = memorized.isLocked() ? SUCCESSFUL : FAILED;
-            return new AcquireResult(status, memorized.getFence(), Collections.<LockInvocationKey>emptyList());
+            return new AcquireResult(status, memorized.getFence(), Collections.emptyList());
         }
 
         if (owner == null) {
@@ -108,7 +107,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
         if (endpoint.equals(owner.endpoint())) {
             if (lockCount == lockCountLimit) {
                 ownerInvocationRefUids.put(Tuple2.of(endpoint, invocationUid), NOT_LOCKED);
-                return AcquireResult.failed(Collections.<LockInvocationKey>emptyList());
+                return AcquireResult.failed(Collections.emptyList());
             }
 
             lockCount++;
@@ -136,7 +135,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
             removeWaitKey(endpoint);
         }
 
-        return cancelled != null ? cancelled : Collections.<LockInvocationKey>emptyList();
+        return cancelled != null ? cancelled : Collections.emptyList();
     }
 
     /**
@@ -181,12 +180,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
     }
 
     private void removeInvocationRefUids(LockEndpoint endpoint) {
-        Iterator<Tuple2<LockEndpoint, UUID>> it = ownerInvocationRefUids.keySet().iterator();
-        while (it.hasNext()) {
-            if (it.next().element1.equals(endpoint)) {
-                it.remove();
-            }
-        }
+        ownerInvocationRefUids.keySet().removeIf(lockEndpointUUIDTuple2 -> lockEndpointUUIDTuple2.element1.equals(endpoint));
     }
 
     private Collection<LockInvocationKey> setNewLockOwner() {
@@ -244,12 +238,8 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
     }
 
     private void removeInvocationRefUids(long sessionId) {
-        Iterator<Tuple2<LockEndpoint, UUID>> it = ownerInvocationRefUids.keySet().iterator();
-        while (it.hasNext()) {
-            if (it.next().element1.sessionId() == sessionId) {
-                it.remove();
-            }
-        }
+        ownerInvocationRefUids.keySet()
+                              .removeIf(lockEndpointUUIDTuple2 -> lockEndpointUUIDTuple2.element1.sessionId() == sessionId);
     }
 
     /**
@@ -258,7 +248,7 @@ public class RaftLock extends BlockingResource<LockInvocationKey> implements Ide
      */
     @Override
     protected Collection<Long> getActivelyAttachedSessions() {
-        return owner != null ? Collections.singleton(owner.sessionId()) : Collections.<Long>emptyList();
+        return owner != null ? Collections.singleton(owner.sessionId()) : Collections.emptyList();
     }
 
     @Override

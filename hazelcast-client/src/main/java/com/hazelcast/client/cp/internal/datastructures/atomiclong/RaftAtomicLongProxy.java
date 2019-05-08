@@ -176,14 +176,14 @@ public class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
         ClientMessage request = CPAtomicLongAddAndGetCodec.encodeRequest(groupId, objectName, delta);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Long>(future, getSerializationService(), ADD_AND_GET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), ADD_AND_GET_DECODER);
     }
 
     @Override
     public InternalCompletableFuture<Boolean> compareAndSetAsync(long expect, long update) {
         ClientMessage request = CPAtomicLongCompareAndSetCodec.encodeRequest(groupId, objectName, expect, update);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Boolean>(future, getSerializationService(), COMPARE_AND_SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), COMPARE_AND_SET_DECODER);
     }
 
     @Override
@@ -195,21 +195,21 @@ public class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public InternalCompletableFuture<Long> getAsync() {
         ClientMessage request = CPAtomicLongGetCodec.encodeRequest(groupId, objectName);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Long>(future, getSerializationService(), GET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), GET_DECODER);
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndAddAsync(long delta) {
         ClientMessage request = CPAtomicLongGetAndAddCodec.encodeRequest(groupId, objectName, delta);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Long>(future, getSerializationService(), GET_AND_ADD_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), GET_AND_ADD_DECODER);
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndSetAsync(long newValue) {
         ClientMessage request = CPAtomicLongGetAndSetCodec.encodeRequest(groupId, objectName, newValue);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Long>(future, getSerializationService(), GET_AND_SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), GET_AND_SET_DECODER);
     }
 
     @Override
@@ -224,14 +224,12 @@ public class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     @Override
     public InternalCompletableFuture<Void> setAsync(long newValue) {
-        InternalCompletableFuture future = getAndSetAsync(newValue);
-        return future;
+        return (InternalCompletableFuture) getAndSetAsync(newValue);
     }
 
     @Override
     public InternalCompletableFuture<Void> alterAsync(IFunction<Long, Long> function) {
-        InternalCompletableFuture future = alterAndGetAsync(function);
-        return future;
+        return (InternalCompletableFuture) alterAndGetAsync(function);
     }
 
     @Override
@@ -239,7 +237,7 @@ public class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
         Data f = getSerializationService().toData(function);
         ClientMessage request = CPAtomicLongAlterCodec.encodeRequest(groupId, objectName, f, NEW_VALUE.value());
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Long>(future, getSerializationService(), ALTER_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), ALTER_DECODER);
     }
 
     @Override
@@ -247,7 +245,7 @@ public class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
         Data f = getSerializationService().toData(function);
         ClientMessage request = CPAtomicLongAlterCodec.encodeRequest(groupId, objectName, f, OLD_VALUE.value());
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<Long>(future, getSerializationService(), ALTER_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), ALTER_DECODER);
     }
 
     @Override
@@ -255,7 +253,7 @@ public class RaftAtomicLongProxy extends ClientProxy implements IAtomicLong {
         Data f = getSerializationService().toData(function);
         ClientMessage request = CPAtomicLongApplyCodec.encodeRequest(groupId, objectName, f);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<R>(future, getSerializationService(), APPLY_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), APPLY_DECODER);
     }
 
     @Override

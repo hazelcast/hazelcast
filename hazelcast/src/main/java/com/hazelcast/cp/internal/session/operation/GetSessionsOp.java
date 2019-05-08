@@ -16,15 +16,14 @@
 
 package com.hazelcast.cp.internal.session.operation;
 
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
+import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.session.RaftSessionService;
+import com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.session.CPSession;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
-import com.hazelcast.cp.internal.session.RaftSessionService;
-import com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +36,7 @@ public class GetSessionsOp extends RaftOp implements IndeterminateOperationState
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         RaftSessionService service = getService();
-        return new ArrayList<CPSession>(service.getSessionsLocally(groupId));
+        return new ArrayList<>(service.getSessionsLocally(groupId));
     }
 
     @Override

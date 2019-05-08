@@ -16,15 +16,14 @@
 
 package com.hazelcast.cp.internal.datastructures.atomicref;
 
-import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.CompareAndSetOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ContainsOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.GetOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.SetOp;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
 
 @SuppressWarnings("checkstyle:declarationorder")
 public final class RaftAtomicReferenceDataSerializerHook implements DataSerializerHook {
@@ -49,25 +48,22 @@ public final class RaftAtomicReferenceDataSerializerHook implements DataSerializ
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case SNAPSHOT:
-                        return new RaftAtomicRefSnapshot();
-                    case APPLY_OP:
-                        return new ApplyOp();
-                    case COMPARE_AND_SET_OP:
-                        return new CompareAndSetOp();
-                    case CONTAINS_OP:
-                        return new ContainsOp();
-                    case GET_OP:
-                        return new GetOp();
-                    case SET_OP:
-                        return new SetOp();
-                    default:
-                        throw new IllegalArgumentException("Undefined type: " + typeId);
-                }
+        return typeId -> {
+            switch (typeId) {
+                case SNAPSHOT:
+                    return new RaftAtomicRefSnapshot();
+                case APPLY_OP:
+                    return new ApplyOp();
+                case COMPARE_AND_SET_OP:
+                    return new CompareAndSetOp();
+                case CONTAINS_OP:
+                    return new ContainsOp();
+                case GET_OP:
+                    return new GetOp();
+                case SET_OP:
+                    return new SetOp();
+                default:
+                    throw new IllegalArgumentException("Undefined type: " + typeId);
             }
         };
     }
