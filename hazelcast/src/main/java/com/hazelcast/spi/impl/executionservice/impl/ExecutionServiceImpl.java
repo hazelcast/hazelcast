@@ -28,7 +28,6 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.CachedExecutorServiceDelegate;
@@ -45,7 +44,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -76,14 +74,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     private final ILogger logger;
     private final CompletableFutureTask completableFutureTask;
 
-    private final ConcurrentMap<String, ManagedExecutorService> executors
-            = new ConcurrentHashMap<String, ManagedExecutorService>();
+    private final ConcurrentMap<String, ManagedExecutorService> executors = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, ManagedExecutorService> durableExecutors
-            = new ConcurrentHashMap<String, ManagedExecutorService>();
+    private final ConcurrentMap<String, ManagedExecutorService> durableExecutors = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors
-            = new ConcurrentHashMap<String, ManagedExecutorService>();
+    private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors = new ConcurrentHashMap<>();
 
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
@@ -128,21 +123,16 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         ThreadFactory threadFactory = new PoolExecutorThreadFactory(createThreadPoolName(hzName, "cached"),
                 configClassLoader);
         this.cachedExecutorService = new ThreadPoolExecutor(
-                CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
-            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Node is shutting down; discarding the task: " + r);
-                }
-            }
-        }
-        );
+                CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS, new SynchronousQueue<>(),
+                threadFactory, (r, executor) -> {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Node is shutting down; discarding the task: " + r);
+                    }
+                });
 
         ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
                 createThreadPoolName(hzName, "scheduled"));
-        this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1,
-                singleExecutorThreadFactory,
-                nodeEngine.getProperties().getBoolean(GroupProperty.TASK_SCHEDULER_REMOVE_ON_CANCEL));
+        this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
 
         int coreSize = Math.max(RuntimeAvailableProcessors.get(), 2);
         // default executors
@@ -217,10 +207,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             }
 
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
-                    KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<Runnable>(queueCapacity),
-                    threadFactory
-            );
+                    KEEP_ALIVE_TIME, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueCapacity), threadFactory);
             pool.allowCoreThreadTimeOut(true);
             executor = pool;
         } else {

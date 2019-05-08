@@ -33,14 +33,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.properties.GroupProperty.TASK_SCHEDULER_REMOVE_ON_CANCEL;
 import static java.lang.Thread.currentThread;
 
 public final class ClientExecutionServiceImpl implements ClientExecutionService, MetricsProvider {
@@ -66,24 +64,17 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
         }
         logger = loggingService.getLogger(ClientExecutionService.class);
         internalExecutor = new LoggingScheduledExecutor(logger, internalPoolSize,
-                new PoolExecutorThreadFactory(name + ".internal-", classLoader),
-                properties.getBoolean(TASK_SCHEDULER_REMOVE_ON_CANCEL),
-                new RejectedExecutionHandler() {
-                    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-                        logger.finest(message);
-                        throw new RejectedExecutionException(message);
-                    }
+                new PoolExecutorThreadFactory(name + ".internal-", classLoader), (r, executor) -> {
+                    String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
+                    logger.finest(message);
+                    throw new RejectedExecutionException(message);
                 });
         userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(),
-                new PoolExecutorThreadFactory(name + ".user-", classLoader),
-                new RejectedExecutionHandler() {
-                    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        String message = "User executor rejected task: " + r + ", because client is shutting down...";
-                        logger.finest(message);
-                        throw new RejectedExecutionException(message);
-                    }
+                new LinkedBlockingQueue<>(),
+                new PoolExecutorThreadFactory(name + ".user-", classLoader), (r, executor) -> {
+                    String message = "User executor rejected task: " + r + ", because client is shutting down...";
+                    logger.finest(message);
+                    throw new RejectedExecutionException(message);
                 });
     }
 

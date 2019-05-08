@@ -25,7 +25,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.RootCauseMatcher;
-import com.hazelcast.util.executor.LoggingScheduledExecutor.RemoveOnCancelFuture;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,7 +39,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -53,7 +51,6 @@ import static java.util.logging.Level.SEVERE;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -117,7 +114,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
     @Test
     public void no_remaining_task_after_cancel_long_delayed_tasks() throws Exception {
-        executor = new LoggingScheduledExecutor(logger, 1, factory, true);
+        executor = new LoggingScheduledExecutor(logger, 1, factory);
 
         for (int i = 0; i < 1000; i++) {
             Future<Integer> future = executor.schedule(new Callable<Integer>() {
@@ -156,16 +153,12 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     @Test
     public void logsExecutionException_withRunnable() {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
-        executor.manualRemoveOnCancel = true;
         executor.submit(new FailedRunnable());
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertInstanceOf(RuntimeException.class, logger.getThrowable());
-
-                String message = logger.getMessage();
-                assertTrue("Found message: '" + message + "'", message.contains("FailedRunnable"));
 
                 Level level = logger.getLevel();
                 assertEquals(SEVERE, level);
@@ -207,34 +200,6 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
         expectedException.expect(CancellationException.class);
         future.get();
-    }
-
-
-    @Test
-    public void testWhenManualRemoveOnCancel() {
-        executor = new LoggingScheduledExecutor(logger, 1, factory);
-        executor.manualRemoveOnCancel = true;
-        Runnable task = new FailedRunnable();
-
-        ScheduledFuture<?> scheduledFuture1 = executor.schedule(task, 0, SECONDS);
-        ScheduledFuture<?> scheduledFuture2 = executor.scheduleAtFixedRate(task, 0, 1, SECONDS);
-
-        assertInstanceOf(LoggingScheduledExecutor.RemoveOnCancelFuture.class, scheduledFuture1);
-        assertInstanceOf(RemoveOnCancelFuture.class, scheduledFuture2);
-
-        LoggingScheduledExecutor.RemoveOnCancelFuture future1 = (LoggingScheduledExecutor.RemoveOnCancelFuture) scheduledFuture1;
-        LoggingScheduledExecutor.RemoveOnCancelFuture future2 = (RemoveOnCancelFuture) scheduledFuture2;
-
-        assertFalse(future1.isPeriodic());
-        assertTrue(future2.isPeriodic());
-
-        assertEquals(future1, future1);
-        assertNotEquals(future1, future2);
-        assertNotEquals(future1, null);
-
-        assertEquals(future1.hashCode(), future1.hashCode());
-        assumeDifferentHashCodes();
-        assertNotEquals(future1.hashCode(), future2.hashCode());
     }
 
     private static class FailedRunnable implements Runnable {
