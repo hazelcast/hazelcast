@@ -30,12 +30,7 @@ public class EntryProcessorWithAnonymousAndInner implements EntryProcessor<Integ
         final Integer newValue = origValue + 1;
 
         final Test test = new Test(entry);
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                test.set(newValue);
-            }
-        };
+        Runnable runnable = () -> test.set(newValue);
         runnable.run();
 
         return newValue;
