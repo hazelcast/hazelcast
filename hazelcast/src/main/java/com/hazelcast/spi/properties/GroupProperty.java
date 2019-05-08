@@ -985,29 +985,6 @@ public final class GroupProperty {
             new HazelcastProperty("hazelcast.nio.tcp.spoofing.checks", false);
 
     /**
-     * This is a Java 6 specific property. In Java 7+ tasks are always removed
-     * on cancellation due to the explicit
-     * {@code java.util.concurrent.ScheduledThreadPoolExecutor#setRemoveOnCancelPolicy(boolean)}
-     * and constant time removal.
-     *
-     * In Java 6 there is no out-of-the-box support for removal of cancelled tasks,
-     * and the only way to implement this is using a linear scan of all pending
-     * tasks. Therefore in Java 6 there is a performance penalty.
-     *
-     * Using this property, in Java 6, one can control if cancelled tasks are removed.
-     * By default tasks are removed, because it can lead to temporary retention
-     * of memory if there a large volume of pending cancelled tasks. And this can
-     * lead to gc/performance problems as we saw with the transaction tests.
-     *
-     * However if this automatic removal of cancelled tasks start to become a
-     * performance problem, it can be disabled in Java 6.
-     *
-     * For more information see the {@link com.hazelcast.util.executor.LoggingScheduledExecutor}.
-     */
-    public static final HazelcastProperty TASK_SCHEDULER_REMOVE_ON_CANCEL =
-            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", true);
-
-    /**
      * By default, search for data structures config is performed within static configuration first:
      * <ul>
      * <li>Exact match in static config</li>
