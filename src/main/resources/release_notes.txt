@@ -1,0 +1,7 @@
+This document lists the fixed issues for Hazelcast IMDG 2.6.10-GCPD release.
+
+==== 2.6.10-GCPD ====
+
+1. Fixes
+
+* Fixed the 2019 maximum expiration year restriction for the licenses. A valid "V2-5" Hazelcast license is now required to run the members.
