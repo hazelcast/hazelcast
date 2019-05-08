@@ -29,6 +29,8 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -2548,7 +2550,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see Offloadable
      * @see ReadOnly
      */
-    <R> R executeOnKey(K key, EntryProcessor<? super K, ? super V, R> entryProcessor);
+    <R> R executeOnKey(@Nonnull K key,
+                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries mapped by the collection of keys.
@@ -2605,7 +2608,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return results of {@link EntryProcessor#process(Entry)}
      * @throws NullPointerException if there's null element in {@code keys}
      */
-    <R> Map<K, R> executeOnKeys(Set<K> keys, EntryProcessor<? super K, ? super V, R> entryProcessor);
+    <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
+                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key} with
@@ -2682,9 +2686,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see Offloadable
      * @see ReadOnly
      */
-    <R> void submitToKey(K key,
-                         EntryProcessor<? super K, ? super V, R> entryProcessor,
-                         ExecutionCallback<? super R> callback);
+    <R> void submitToKey(@Nonnull K key,
+                         @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                         @Nullable ExecutionCallback<? super R> callback);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.
@@ -2764,8 +2768,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see ReadOnly
      * @see ICompletableFuture
      */
-    <R> ICompletableFuture<R> submitToKey(K key,
-                                          EntryProcessor<? super K, ? super V, R> entryProcessor);
+    <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
+                                          @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the all entries in the map.
@@ -2799,7 +2803,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      */
-    <R> Map<K, R> executeOnEntries(EntryProcessor<? super K, ? super V, R> entryProcessor);
+    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor);
 
     /**
      * Applies the user defined {@link EntryProcessor} to the entries in the map which satisfy provided predicate.
@@ -2833,8 +2837,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the write-behind queue has reached its per-node maximum
      * capacity.
      */
-    <R> Map<K, R> executeOnEntries(EntryProcessor<? super K, ? super V, R> entryProcessor,
-                                   Predicate<K, V> predicate);
+    <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                   @Nonnull Predicate<K, V> predicate);
 
     /**
      * Applies the aggregation logic on all map entries and returns the result

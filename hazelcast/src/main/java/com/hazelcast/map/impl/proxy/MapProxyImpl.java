@@ -59,6 +59,7 @@ import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.DelegatingFuture;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -707,7 +708,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> R executeOnKey(K key, EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> R executeOnKey(@Nonnull K key,
+                              @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -716,7 +718,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> Map<K, R> executeOnKeys(Set<K> keys, EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
+                                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         try {
             return submitToKeys(keys, entryProcessor).get();
         } catch (Exception e) {
@@ -740,8 +743,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> void submitToKey(K key,
-                                EntryProcessor<? super K, ? super V, R> entryProcessor,
+    public <R> void submitToKey(@Nonnull K key,
+                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
                                 ExecutionCallback<? super R> callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor, callback);
@@ -750,7 +753,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> ICompletableFuture<R> submitToKey(K key, EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
+                                                 @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
@@ -759,13 +763,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> Map<K, R> executeOnEntries(EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         return executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
     }
 
     @Override
-    public <R> Map<K, R> executeOnEntries(EntryProcessor<? super K, ? super V, R> entryProcessor,
-                                          Predicate<K, V> predicate) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                          @Nonnull Predicate<K, V> predicate) {
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
         List<Data> result = new ArrayList<>();
 

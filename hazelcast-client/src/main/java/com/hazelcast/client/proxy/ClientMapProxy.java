@@ -142,6 +142,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1359,8 +1360,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> R executeOnKey(K key,
-                              EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> R executeOnKey(@Nonnull K key,
+                              @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return executeOnKeyInternal(key, entryProcessor);
     }
@@ -1376,8 +1377,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> void submitToKey(K key,
-                                EntryProcessor<? super K, ? super V, R> entryProcessor,
+    public <R> void submitToKey(@Nonnull K key,
+                                @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
                                 ExecutionCallback<? super R> callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         submitToKeyInternal(key, entryProcessor, callback);
@@ -1400,7 +1401,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> ICompletableFuture<R> submitToKey(K key, EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> ICompletableFuture<R> submitToKey(@Nonnull K key,
+                                                 @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return submitToKeyInternal(key, entryProcessor);
     }
@@ -1419,7 +1421,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> Map<K, R> executeOnEntries(EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
         MapExecuteOnAllKeysCodec.ResponseParameters resultParameters = MapExecuteOnAllKeysCodec.decodeResponse(response);
@@ -1440,8 +1442,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> Map<K, R> executeOnEntries(EntryProcessor<? super K, ? super V, R> entryProcessor,
-                                          Predicate<K, V> predicate) {
+    public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor,
+                                          @Nonnull Predicate<K, V> predicate) {
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
 
@@ -1545,8 +1547,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public <R> Map<K, R> executeOnKeys(Set<K> keys,
-                                       EntryProcessor<? super K, ? super V, R> entryProcessor) {
+    public <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
+                                       @Nonnull EntryProcessor<? super K, ? super V, R> entryProcessor) {
         try {
             return submitToKeys(keys, entryProcessor).get();
         } catch (Exception e) {
