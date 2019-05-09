@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 
 import java.io.IOException;
@@ -33,7 +32,7 @@ import static java.lang.String.format;
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
  */
-public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, Versioned, NamedConfig {
+public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The number of sync backups per estimator

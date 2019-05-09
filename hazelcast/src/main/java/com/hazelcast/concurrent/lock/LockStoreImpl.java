@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -43,7 +42,7 @@ import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.r
 import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.writeNamespaceCompatibly;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
-public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore, Versioned {
+public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore {
 
     private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
             new ConstructorFunction<Data, LockResourceImpl>() {

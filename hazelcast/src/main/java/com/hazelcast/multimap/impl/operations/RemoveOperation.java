@@ -33,7 +33,6 @@ import java.util.Collection;
 public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Data value;
-    private long recordId;
 
     public RemoveOperation() {
     }
@@ -75,7 +74,7 @@ public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implem
 
     @Override
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey, recordId, value);
+        return new RemoveBackupOperation(name, dataKey, value);
     }
 
     @Override

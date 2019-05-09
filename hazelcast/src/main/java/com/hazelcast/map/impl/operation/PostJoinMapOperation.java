@@ -34,7 +34,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 
@@ -48,7 +47,7 @@ import java.util.Map;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable, Versioned, TargetAware {
+public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable, TargetAware {
 
     private List<InterceptorInfo> interceptorInfoList = new LinkedList<>();
     private List<AccumulatorInfo> infoList;

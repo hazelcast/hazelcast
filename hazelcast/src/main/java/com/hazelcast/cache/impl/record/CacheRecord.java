@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.Expirable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 /**
  * <p>
@@ -28,7 +27,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
  *
  * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V, E> extends Expirable, Evictable<V>, Versioned {
+public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
 
     /**
      * Represents invalid (not set) time for creation time, expiration time, access time, etc...

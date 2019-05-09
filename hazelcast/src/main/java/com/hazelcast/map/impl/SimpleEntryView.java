@@ -21,11 +21,8 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
-
-import static com.hazelcast.internal.cluster.Versions.V3_11;
 
 /**
  * SimpleEntryView is an implementation of {@link com.hazelcast.core.EntryView} and also it is writable.
@@ -35,7 +32,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_11;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class SimpleEntryView<K, V>
-        implements EntryView<K, V>, IdentifiedDataSerializable, Versioned {
+        implements EntryView<K, V>, IdentifiedDataSerializable {
 
     private K key;
     private V value;
@@ -257,10 +254,7 @@ public class SimpleEntryView<K, V>
         // writes the deprecated evictionCriteriaNumber to the data output (client protocol compatibility)
         out.writeLong(0);
         out.writeLong(ttl);
-        // RU_COMPAT_3_10
-        if (out.getVersion().isGreaterOrEqual(V3_11)) {
-            out.writeLong(maxIdle);
-        }
+        out.writeLong(maxIdle);
     }
 
     @Override
@@ -278,13 +272,7 @@ public class SimpleEntryView<K, V>
         // reads the deprecated evictionCriteriaNumber from the data input (client protocol compatibility)
         in.readLong();
         ttl = in.readLong();
-        // RU_COMPAT_3_10
-        // DO NOT REMOVE UNTIL WAN PROTOCOL HAS BEEN IMPLEMENTED
-        // THE SOURCE CLUSTER SERIALIZES THE com.hazelcast.map.impl.wan.WanMapEntryView
-        // THE TARGET CLUSTER SHOULD DESERIALIZE THIS CLASS
-        if (in.getVersion().isGreaterOrEqual(V3_11)) {
-            maxIdle = in.readLong();
-        }
+        maxIdle = in.readLong();
     }
 
     @Override

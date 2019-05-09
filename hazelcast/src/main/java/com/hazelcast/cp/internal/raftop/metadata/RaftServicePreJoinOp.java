@@ -24,7 +24,6 @@ import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -36,7 +35,7 @@ import java.io.IOException;
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */
-public class RaftServicePreJoinOp extends Operation implements IdentifiedDataSerializable, Versioned {
+public class RaftServicePreJoinOp extends Operation implements IdentifiedDataSerializable {
 
     private boolean discoveryCompleted;
 

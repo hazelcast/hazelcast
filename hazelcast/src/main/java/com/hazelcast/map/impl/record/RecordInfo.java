@@ -20,7 +20,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -30,7 +29,7 @@ import static com.hazelcast.map.impl.record.Record.NOT_AVAILABLE;
  * Record info.
  */
 public class RecordInfo
-        implements IdentifiedDataSerializable, Versioned {
+        implements IdentifiedDataSerializable {
     protected long version;
     protected long ttl;
     protected long maxIdle;

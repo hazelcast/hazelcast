@@ -29,7 +29,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -128,7 +127,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
     }
 
-    public static class CacheBrowserEntryView implements CacheEntryView<Object, Object>, IdentifiedDataSerializable, Versioned {
+    public static class CacheBrowserEntryView implements CacheEntryView<Object, Object>, IdentifiedDataSerializable {
         private Object value;
         private long expirationTime;
         private long creationTime;

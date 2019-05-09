@@ -27,7 +27,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
@@ -59,7 +58,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * Holder for raw IMap key-value pairs and their metadata.
  */
 // keep this `protected`, extended in another context.
-public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
     // holds recordStore-references of this partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;

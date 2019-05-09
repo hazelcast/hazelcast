@@ -362,7 +362,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private void mergeRecordExpiration(Record record, long ttlMillis, Long maxIdleMillis, long creationTime, long lastAccessTime,
                                        long lastUpdateTime) {
         record.setTtl(ttlMillis);
-        //RU_COMPAT_3_10 (Long -> long), WAN sends null
+        // WAN events received from source cluster also carry null maxIdle
+        // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
         if (maxIdleMillis != null) {
             record.setMaxIdle(maxIdleMillis);
         }

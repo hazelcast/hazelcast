@@ -18,14 +18,13 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class ScheduledTaskStatisticsImpl
-        implements ScheduledTaskStatistics, TaskLifecycleListener, Versioned {
+        implements ScheduledTaskStatistics, TaskLifecycleListener {
 
     private static final TimeUnit MEASUREMENT_UNIT = TimeUnit.NANOSECONDS;
 

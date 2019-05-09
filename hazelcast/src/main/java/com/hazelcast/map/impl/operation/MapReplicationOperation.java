@@ -28,7 +28,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -43,7 +42,7 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
  */
 public class MapReplicationOperation
         extends Operation
-        implements IdentifiedDataSerializable, Versioned {
+        implements IdentifiedDataSerializable {
 
     // keep these fields `protected`, extended in another context.
     protected final MapReplicationStateHolder mapReplicationStateHolder = new MapReplicationStateHolder(this);

@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.version.MemberVersion;
 
@@ -37,13 +36,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.internal.cluster.Versions.V3_12;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @PrivateApi
-public abstract class AbstractMember implements Member, Versioned {
+public abstract class AbstractMember implements Member {
 
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
     protected Address address;
@@ -185,7 +183,7 @@ public abstract class AbstractMember implements Member, Versioned {
             Object value = IOUtil.readAttributeValue(in);
             attributes.put(key, value);
         }
-        addressMap = readAddressMap(in);
+        addressMap = readNullableMap(in);
     }
 
     @Override
@@ -200,7 +198,7 @@ public abstract class AbstractMember implements Member, Versioned {
             out.writeUTF(entry.getKey());
             IOUtil.writeAttributeValue(entry.getValue(), out);
         }
-        writeAddressMap(out);
+        writeNullableMap(addressMap, out);
     }
 
     @Override
@@ -242,21 +240,5 @@ public abstract class AbstractMember implements Member, Versioned {
 
         Member that = (Member) obj;
         return address.equals(that.getAddress()) && uuid.equals(that.getUuid());
-    }
-
-    private void writeAddressMap(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isUnknownOrLessThan(V3_12)) {
-            return;
-        }
-
-        writeNullableMap(addressMap, out);
-    }
-
-    private Map<EndpointQualifier, Address> readAddressMap(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isUnknownOrLessThan(V3_12)) {
-            return null;
-        }
-
-        return readNullableMap(in);
     }
 }

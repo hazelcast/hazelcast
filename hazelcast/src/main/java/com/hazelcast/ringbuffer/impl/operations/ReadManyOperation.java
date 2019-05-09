@@ -19,7 +19,6 @@ package com.hazelcast.ringbuffer.impl.operations;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.spi.BlockingOperation;
@@ -31,7 +30,7 @@ import java.io.IOException;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_MANY_OPERATION;
 
 public class ReadManyOperation<O> extends AbstractRingBufferOperation
-        implements BlockingOperation, ReadonlyOperation, Versioned {
+        implements BlockingOperation, ReadonlyOperation {
     transient long sequence;
 
     private int minSize;

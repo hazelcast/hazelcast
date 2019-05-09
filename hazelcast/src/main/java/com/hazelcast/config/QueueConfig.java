@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -37,7 +36,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned , NamedConfig {
+public class QueueConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
 
     /**
      * Default value for the maximum size of the Queue.

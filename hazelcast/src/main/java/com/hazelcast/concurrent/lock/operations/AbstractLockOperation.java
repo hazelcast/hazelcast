@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.LockInterceptorService;
 import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.ObjectNamespace;
@@ -40,7 +39,7 @@ import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.w
 
 public abstract class AbstractLockOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable, NamedOperation,
-        ServiceNamespaceAware, Versioned {
+        ServiceNamespaceAware {
 
     public static final int ANY_THREAD = 0;
 

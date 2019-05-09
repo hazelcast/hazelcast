@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
@@ -51,7 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @param <E> the type of items in the ringbuffer
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, Notifier, Versioned {
+public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, Notifier {
 
     private static final long TTL_DISABLED = 0;
 

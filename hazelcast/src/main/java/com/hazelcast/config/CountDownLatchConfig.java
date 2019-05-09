@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -31,7 +30,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  *
  * @since 3.10
  */
-public class CountDownLatchConfig implements IdentifiedDataSerializable, Versioned, NamedConfig {
+public class CountDownLatchConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private transient CountDownLatchConfigReadOnly readOnly;
 
