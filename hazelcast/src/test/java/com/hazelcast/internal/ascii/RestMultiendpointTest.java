@@ -43,7 +43,8 @@ public class RestMultiendpointTest
         extends RestTest {
 
     @Override
-    public Config setup() {
+    public Config getConfig() {
+        Config config = super.getConfig();
         config.getGroupConfig().setName(randomString());
         ServerSocketEndpointConfig memberEndpointConfig = new ServerSocketEndpointConfig();
         memberEndpointConfig.setName("MEMBER")
@@ -86,8 +87,7 @@ public class RestMultiendpointTest
 
     @Test
     public void assertAdvancedNetworkInUse() {
-        setup();
-        int numberOfEndpointsInConfig = config.getAdvancedNetworkConfig().getEndpointConfigs().size();
+        int numberOfEndpointsInConfig = instance.getConfig().getAdvancedNetworkConfig().getEndpointConfigs().size();
         MemberImpl local = getNode(instance).getClusterService().getLocalMember();
         assertTrue(local.getAddressMap().size() == numberOfEndpointsInConfig);
         assertFalse(local.getSocketAddress(EndpointQualifier.REST).equals(local.getSocketAddress(EndpointQualifier.MEMBER)));
