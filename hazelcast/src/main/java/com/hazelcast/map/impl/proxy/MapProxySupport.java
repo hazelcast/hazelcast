@@ -35,7 +35,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -633,9 +632,6 @@ abstract class MapProxySupport<K, V>
     }
 
     protected boolean setTtlInternal(Object key, long ttl, TimeUnit timeUnit) {
-        if (isClusterVersionLessThan(Versions.V3_11)) {
-            throw new UnsupportedOperationException("Modifying TTL is available when cluster version is 3.11 or higher");
-        }
         long ttlInMillis = timeUnit.toMillis(ttl);
         Data keyData = serializationService.toData(key);
         MapOperation operation = operationProvider.createSetTtlOperation(name, keyData, ttlInMillis);

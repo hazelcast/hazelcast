@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -236,10 +235,6 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public boolean setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
-        if (isClusterVersionLessThan(Versions.V3_11)) {
-            throw new UnsupportedOperationException("setExpiryPolicy operation is available"
-                    + "when cluster version is 3.11 or higher");
-        }
         try {
             ensureOpen();
             validateNotNull(key);
@@ -258,10 +253,6 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public void setExpiryPolicy(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
-        if (isClusterVersionLessThan(Versions.V3_11)) {
-            throw new UnsupportedOperationException("setExpiryPolicy operation is available"
-                    + "when cluster version is 3.11 or higher");
-        }
         ensureOpen();
         validateNotNull(keys);
         validateNotNull(expiryPolicy);
@@ -278,7 +269,7 @@ abstract class AbstractCacheProxy<K, V>
     private List<Data>[] groupDataToPartitions(Collection<? extends K> keys, int partitionCount) {
         List<Data>[] keysPerPartition = new ArrayList[partitionCount];
 
-        for (K key: keys) {
+        for (K key : keys) {
             validateNotNull(key);
 
             Data dataKey = serializationService.toData(key);
