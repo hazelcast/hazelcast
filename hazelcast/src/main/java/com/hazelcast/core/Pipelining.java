@@ -65,7 +65,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * A Pipelining provides its own backpressure on the system. So there will not be more
  * in flight invocations than the depth of the Pipelining. This means that the Pipelining
  * will work fine when backpressure on the client/member is disabled (default). Also
- * when it it enabled it will work fine, but keep in mind that the number of concurrent
+ * when it is enabled it will work fine, but keep in mind that the number of concurrent
  * invocations in the Pipelining could be lower than the configured number of invocation
  * of the Pipelining because the backpressure on the client/member is leading.
  *
