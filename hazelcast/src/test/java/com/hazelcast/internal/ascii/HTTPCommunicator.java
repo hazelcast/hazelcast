@@ -53,13 +53,14 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.util.StringUtil.bytesToString;
 
 @SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
@@ -124,9 +125,13 @@ public class HTTPCommunicator {
         return this;
     }
 
-    public String queuePoll(String queueName, long timeout) throws IOException {
-        String url = address + "queues/" + queueName + "/" + String.valueOf(timeout);
-        return doGet(url).response;
+    public String queuePollAndResponse(String queueName, long timeout) throws IOException {
+        return queuePoll(queueName, timeout).response;
+    }
+
+    public ConnectionResponse queuePoll(String queueName, long timeout) throws IOException {
+        String url = address + "queues/" + queueName + "/" + timeout;
+        return doGet(url);
     }
 
     public int queueSize(String queueName) throws IOException {
@@ -139,9 +144,13 @@ public class HTTPCommunicator {
         return doPost(url, data).responseCode;
     }
 
-    public String mapGet(String mapName, String key) throws IOException {
+    public String mapGetAndResponse(String mapName, String key) throws IOException {
+        return mapGet(mapName, key).response;
+    }
+
+    public ConnectionResponse mapGet(String mapName, String key) throws IOException {
         String url = address + "maps/" + mapName + "/" + key;
-        return doGet(url).response;
+        return doGet(url);
     }
 
     public int getHealthReadyResponseCode() throws IOException {
@@ -355,18 +364,23 @@ public class HTTPCommunicator {
         final int responseCode;
         final Map<String, List<String>> responseHeaders;
 
-        ConnectionResponse(String response, int responseCode) {
-            this(response, responseCode, null);
-        }
-
-        private ConnectionResponse(String response, int responseCode, Map<String, List<String>> responseHeaders) {
-            this.response = response;
-            this.responseCode = responseCode;
-            if (responseHeaders == null) {
-                this.responseHeaders = Collections.emptyMap();
-            } else {
-                this.responseHeaders = new HashMap<String, List<String>>(responseHeaders);
+        ConnectionResponse(CloseableHttpResponse httpResponse) throws IOException {
+            int responseCode = httpResponse.getStatusLine().getStatusCode();
+            HttpEntity entity = httpResponse.getEntity();
+            String responseStr = entity != null ? EntityUtils.toString(entity, "UTF-8") : "";
+            Header[] headers = httpResponse.getAllHeaders();
+            Map<String, List<String>> responseHeaders = new HashMap<>();
+            for (Header header : headers) {
+                List<String> values = responseHeaders.get(header.getName());
+                if (values == null) {
+                    values = new ArrayList<>();
+                    responseHeaders.put(header.getName(), values);
+                }
+                values.add(header.getValue());
             }
+            this.responseCode = responseCode;
+            this.response = responseStr;
+            this.responseHeaders = responseHeaders;
         }
     }
 
@@ -376,21 +390,7 @@ public class HTTPCommunicator {
         try {
             HttpHead request = new HttpHead(url);
             response = client.execute(request);
-
-            int responseCode = response.getStatusLine().getStatusCode();
-
-            Header[] headers = response.getAllHeaders();
-            Map<String, List<String>> responseHeaders = new HashMap<String, List<String>>();
-            for (Header header : headers) {
-                List<String> values = responseHeaders.get(header.getName());
-                if (values == null) {
-                    values = new ArrayList<String>();
-                    responseHeaders.put(header.getName(), values);
-                }
-                values.add(header.getValue());
-            }
-
-            return new ConnectionResponse(null, responseCode, responseHeaders);
+            return new ConnectionResponse(response);
         } finally {
             IOUtil.closeResource(response);
             IOUtil.closeResource(client);
@@ -404,10 +404,7 @@ public class HTTPCommunicator {
             HttpGet request = new HttpGet(url);
             request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
             response = client.execute(request);
-            int responseCode = response.getStatusLine().getStatusCode();
-            HttpEntity entity = response.getEntity();
-            String responseStr = entity != null ? EntityUtils.toString(entity, "UTF-8") : "";
-            return new ConnectionResponse(responseStr, responseCode);
+            return new ConnectionResponse(response);
         } finally {
             IOUtil.closeResource(response);
             IOUtil.closeResource(client);
@@ -417,14 +414,14 @@ public class HTTPCommunicator {
     private ConnectionResponse doPost(String url, String... params) throws IOException {
         CloseableHttpClient client = newClient();
 
-        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(params.length);
+        List<NameValuePair> nameValuePairs = new ArrayList<>(params.length);
         for (String param : params) {
             nameValuePairs.add(new BasicNameValuePair(param, null));
         }
         String data = URLEncodedUtils.format(nameValuePairs, Consts.UTF_8);
 
         HttpEntity entity;
-        ContentType contentType = ContentType.create("text/xml", Consts.UTF_8);
+        ContentType contentType = ContentType.create(bytesToString(CONTENT_TYPE_PLAIN_TEXT), Consts.UTF_8);
         if (enableChunkedStreaming) {
             ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes(Consts.UTF_8));
             InputStreamEntity streamEntity = new InputStreamEntity(stream, contentType);
@@ -440,9 +437,7 @@ public class HTTPCommunicator {
             request.setEntity(entity);
             response = client.execute(request);
 
-            int responseCode = response.getStatusLine().getStatusCode();
-            String responseStr = response.getEntity() != null ? EntityUtils.toString(response.getEntity(), "UTF-8") : "";
-            return new ConnectionResponse(responseStr, responseCode);
+            return new ConnectionResponse(response);
         } finally {
             IOUtil.closeResource(response);
             IOUtil.closeResource(client);
@@ -456,10 +451,7 @@ public class HTTPCommunicator {
             HttpDelete request = new HttpDelete(url);
             request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
             response = client.execute(request);
-            int responseCode = response.getStatusLine().getStatusCode();
-            HttpEntity entity = response.getEntity();
-            String responseStr = entity != null ? EntityUtils.toString(entity, "UTF-8") : "";
-            return new ConnectionResponse(responseStr, responseCode);
+            return new ConnectionResponse(response);
         } finally {
             IOUtil.closeResource(response);
             IOUtil.closeResource(client);

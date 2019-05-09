@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
@@ -44,6 +45,7 @@ import java.util.Collection;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.MIME_TEXT_PLAIN;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200_WITH_NO_CONTENT;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_503;
@@ -397,6 +399,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         } else if (value instanceof RestValue) {
             RestValue restValue = (RestValue) value;
             command.setResponse(restValue.getContentType(), restValue.getValue());
+        } else if (value instanceof HazelcastJsonValue) {
+            command.setResponse(CONTENT_TYPE_JSON, stringToBytes(value.toString()));
         } else if (value instanceof String) {
             command.setResponse(CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
         } else {
