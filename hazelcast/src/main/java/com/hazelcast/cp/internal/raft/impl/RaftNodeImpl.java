@@ -21,6 +21,7 @@ import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.exception.LeaderDemotedException;
+import com.hazelcast.cp.exception.NotLeaderException;
 import com.hazelcast.cp.exception.StaleAppendRequestException;
 import com.hazelcast.cp.internal.raft.MembershipChangeMode;
 import com.hazelcast.cp.internal.raft.QueryPolicy;
@@ -48,6 +49,7 @@ import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.state.FollowerState;
 import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
+import com.hazelcast.cp.internal.raft.impl.state.QueryState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.task.MembershipChangeTask;
@@ -56,6 +58,7 @@ import com.hazelcast.cp.internal.raft.impl.task.QueryTask;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 import com.hazelcast.cp.internal.raft.impl.task.ReplicateTask;
 import com.hazelcast.cp.internal.raft.impl.util.PostponedResponse;
+import com.hazelcast.cp.internal.util.Tuple2;
 import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
@@ -310,15 +313,9 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     /**
-     * Returns the entry to be appended if the no-op entry append on leader election feature is enabled.
-     */
-    public Object getAppendedEntryOnLeaderElection() {
-        return raftIntegration.getAppendedEntryOnLeaderElection();
-    }
-
-    /**
-     * Returns true if a new entry with the operation is allowed to be replicated.
-     * This method can be invoked only when the local Raft node is the leader.
+     * Returns true if a new entry with the operation is currently allowed to
+     * be replicated. This method can be invoked only when the local Raft node
+     * is the leader.
      * <p/>
      * Replication is not allowed, when;
      * <ul>
@@ -363,6 +360,53 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     /**
+     * Returns true if a new query is currently allowed to be executed without
+     * appending to the Raft log. This method can be invoked only when
+     * the local Raft node is the leader.
+     * <p/>
+     * A new linearizable query execution is not allowed, when;
+     * <ul>
+     * <li>Node is terminating, terminated or stepped down.
+     * See {@link RaftNodeStatus}.</li>
+     * <li>If the leader has not yet marked an entry from its current term
+     * committed. See Section 6.4 of Raft Dissertation.</li>
+     * <li>There are already
+     * {@link RaftAlgorithmConfig#getUncommittedEntryCountToRejectNewAppends()}
+     * queries waiting to be executed.</li>
+     * </ul>
+     */
+    public boolean canQueryLinearizable() {
+        if (isTerminatedOrSteppedDown()) {
+            return false;
+        }
+
+        long commitIndex = state.commitIndex();
+        RaftLog log = state.log();
+
+        // If the leader has not yet marked an entry from its current term committed, it waits until it has done so. (§6.4)
+        // last committed entry is either in the last snapshot or still in the log
+        LogEntry lastCommittedEntry = commitIndex == log.snapshotIndex() ? log.snapshot() : log.getLogEntry(commitIndex);
+        assert lastCommittedEntry != null;
+
+        if (lastCommittedEntry.term() != state.term()) {
+            return false;
+        }
+
+        // We can execute multiple queries at one-shot without appending to the Raft log,
+        // and we use the maxUncommittedEntryCount configuration parameter to upper-bound
+        // the number of queries that are collected until the heartbeat round is done.
+        QueryState queryState = state.leaderState().queryState();
+        return queryState.queryCount() < maxUncommittedEntryCount;
+    }
+
+    /**
+     * Returns true if the linearizable read optimization is enabled.
+     */
+    public boolean isLinearizableReadOptimizationEnabled() {
+        return raftIntegration.isLinearizableReadOptimizationEnabled();
+    }
+
+    /**
      * Schedules periodic leader failure detection task.
      */
     private void scheduleLeaderFailureDetection() {
@@ -372,7 +416,7 @@ public class RaftNodeImpl implements RaftNode {
     /**
      * Schedules periodic heartbeat task when a new leader is elected.
      */
-    public void scheduleHeartbeat() {
+    private void scheduleHeartbeat() {
         broadcastAppendRequest();
         schedule(new HeartbeatTask(), heartbeatPeriodInMillis);
     }
@@ -451,7 +495,8 @@ public class RaftNodeImpl implements RaftNode {
         // if we still keep that log entry and its previous entry, we don't need to send a snapshot
         if (nextIndex <= raftLog.snapshotIndex()
                 && (!raftLog.containsLogEntry(nextIndex) || (nextIndex > 1 && !raftLog.containsLogEntry(nextIndex - 1)))) {
-            InstallSnapshot installSnapshot = new InstallSnapshot(localMember, state.term(), raftLog.snapshot());
+            InstallSnapshot installSnapshot = new InstallSnapshot(localMember, state.term(), raftLog.snapshot(),
+                    leaderState.queryRound());
             if (logger.isFineEnabled()) {
                 logger.fine("Sending " + installSnapshot + " to " + follower + " since next index: " + nextIndex
                         + " <= snapshot index: " + raftLog.snapshotIndex());
@@ -502,7 +547,7 @@ public class RaftNodeImpl implements RaftNode {
         }
 
         AppendRequest request = new AppendRequest(getLocalMember(), state.term(), prevEntryTerm, prevEntryIndex,
-                state.commitIndex(), entries);
+                state.commitIndex(), entries, leaderState.queryRound());
 
         if (logger.isFineEnabled()) {
             logger.fine("Sending " + request + " to " + follower + " with next index: " + nextIndex);
@@ -628,9 +673,8 @@ public class RaftNodeImpl implements RaftNode {
     /**
      * Executes query operation sets execution result to the future.
      */
-    public void runQueryOperation(Object operation, SimpleCompletableFuture resultFuture) {
-        long commitIndex = state.commitIndex();
-        Object result = raftIntegration.runOperation(operation, commitIndex);
+    public void runQuery(Object operation, SimpleCompletableFuture resultFuture) {
+        Object result = raftIntegration.runOperation(operation, state.commitIndex());
         resultFuture.setResult(result);
     }
 
@@ -859,6 +903,64 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     /**
+     * Switches this node to follower role by clearing leader and
+     * (pre) candidate states, and updating the term. If this node was
+     * the leader before switching to the follower state, it can have some
+     * queries waiting to be executed. Those queries are also failed with
+     * {@link NotLeaderException}. After the switch, current member list is
+     * also printed.
+     *
+     * @param term current term
+     */
+    public void toFollower(int term) {
+        LeaderState leaderState = state.leaderState();
+        if (leaderState != null) {
+            for (Tuple2<Object, SimpleCompletableFuture> t : leaderState.queryState().operations()) {
+                t.element2.complete(new NotLeaderException(groupId, localMember, null));
+            }
+        }
+
+        state.toFollower(term);
+        printMemberState();
+    }
+
+    /**
+     * Updates the known leader and prints the current member list.
+     *
+     * @param endpoint discovered leader endpoint
+     */
+    public void leader(Endpoint endpoint) {
+        state.leader(endpoint);
+        printMemberState();
+    }
+
+    /**
+     * Switches this node to leader role by performing the following steps:
+     * <ul>
+     * <li>Setting local endpoint as current leader.</li>
+     * <li>Clearing (pre)candidate states.</li>
+     * <li>Initializing leader state for current members.</li>
+     * <li>Appending an operation to the log if enabled.</li>
+     * <li>Scheduling the heartbeat task.</li>
+     * <li>Printing the member state.</li>
+     * </ul>
+     */
+    public void toLeader() {
+        state.toLeader();
+        appendEntryAfterLeaderElection();
+        printMemberState();
+        scheduleHeartbeat();
+    }
+
+    private void appendEntryAfterLeaderElection() {
+        Object entry = raftIntegration.getAppendedEntryOnLeaderElection();
+        if (entry != null) {
+            RaftLog log = state.log();
+            log.appendEntries(new LogEntry(state.term(), log.lastLogOrSnapshotIndex() + 1, entry));
+        }
+    }
+
+    /**
      * Periodic heartbeat task, which is scheduled on leader only with {@link #heartbeatPeriodInMillis} delay,
      * and sends heartbeat messages (append-entries) if no append-entries request is sent
      * since {@link #lastAppendEntriesTimestamp}.
@@ -921,8 +1023,7 @@ public class RaftNodeImpl implements RaftNode {
         }
 
         final void resetLeaderAndStartElection() {
-            state.leader(null);
-            printMemberState();
+            leader(null);
             runPreVoteTask();
         }
 

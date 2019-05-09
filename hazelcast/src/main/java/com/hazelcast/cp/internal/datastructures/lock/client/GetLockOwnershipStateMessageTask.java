@@ -31,6 +31,8 @@ import com.hazelcast.security.permission.LockPermission;
 
 import java.security.Permission;
 
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+
 /**
  * Client message task for {@link GetLockOwnershipStateOp}
  */
@@ -45,7 +47,7 @@ public class GetLockOwnershipStateMessageTask extends AbstractMessageTask<CPFenc
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
-               .<RaftLockOwnershipState>invoke(parameters.groupId, new GetLockOwnershipStateOp(parameters.name))
+               .<RaftLockOwnershipState>query(parameters.groupId, new GetLockOwnershipStateOp(parameters.name), LINEARIZABLE)
                .andThen(this);
     }
 

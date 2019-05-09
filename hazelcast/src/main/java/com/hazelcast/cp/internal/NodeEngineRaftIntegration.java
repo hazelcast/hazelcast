@@ -51,6 +51,7 @@ import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,6 +71,14 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 final class NodeEngineRaftIntegration implements RaftIntegration {
 
+    /**
+     * !!! ONLY FOR INTERNAL USAGE AND TESTING !!!
+     * Enables / disables the linearizable read optimization described in the Raft Dissertation Section 6.4.
+     */
+    public static final HazelcastProperty RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED
+            = new HazelcastProperty("raft.linearizable.read.optimization.enabled", true);
+
+
     private final NodeEngineImpl nodeEngine;
     private final CPGroupId groupId;
     private final CPMember localCPMember;
@@ -77,6 +86,7 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     private final TaskScheduler taskScheduler;
     private final int partitionId;
     private final int threadId;
+    private final boolean linearizableReadOptimizationEnabled;
 
     NodeEngineRaftIntegration(NodeEngineImpl nodeEngine, CPGroupId groupId, CPMember localCPMember) {
         this.nodeEngine = nodeEngine;
@@ -88,6 +98,8 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
         OperationExecutorImpl operationExecutor = (OperationExecutorImpl) operationService.getOperationExecutor();
         this.threadId = operationExecutor.toPartitionThreadIndex(partitionId);
         this.taskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
+        this.linearizableReadOptimizationEnabled = nodeEngine.getProperties()
+                                                             .getBoolean(RAFT_LINEARIZABLE_READ_OPTIMIZATION_ENABLED);
     }
 
     @Override
@@ -115,6 +127,11 @@ final class NodeEngineRaftIntegration implements RaftIntegration {
     @Override
     public Object getAppendedEntryOnLeaderElection() {
         return new NotifyTermChangeOp();
+    }
+
+    @Override
+    public boolean isLinearizableReadOptimizationEnabled() {
+        return linearizableReadOptimizationEnabled;
     }
 
     @Override

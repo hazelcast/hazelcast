@@ -44,14 +44,14 @@ import com.hazelcast.spi.impl.operationservice.impl.RaftInvocationContext;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
-import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static java.util.Collections.shuffle;
 
 /**
  * Performs invocations to create & destroy Raft groups,
@@ -112,7 +112,7 @@ public class RaftInvocationManager {
     private void invokeGetMembersToCreateRaftGroup(String groupName, int groupSize,
                                                    SimpleCompletableFuture<RaftGroupId> resultFuture) {
         RaftOp op = new GetActiveCPMembersOp();
-        ICompletableFuture<List<CPMemberInfo>> f = query(raftService.getMetadataGroupId(), op, LEADER_LOCAL);
+        ICompletableFuture<List<CPMemberInfo>> f = query(raftService.getMetadataGroupId(), op, LINEARIZABLE);
 
         f.andThen(new ExecutionCallback<List<CPMemberInfo>>() {
             @Override
@@ -126,7 +126,7 @@ public class RaftInvocationManager {
                     return;
                 }
 
-                Collections.shuffle(members);
+                shuffle(members);
                 members.sort(new CPMemberReachabilityComparator());
                 members = members.subList(0, groupSize);
                 invokeCreateRaftGroup(groupName, groupSize, members, resultFuture);

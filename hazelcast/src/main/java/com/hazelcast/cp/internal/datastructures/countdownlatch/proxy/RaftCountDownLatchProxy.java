@@ -32,6 +32,7 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 
@@ -63,13 +64,13 @@ public class RaftCountDownLatchProxy implements ICountDownLatch {
 
     @Override
     public void countDown() {
-        int round = invocationManager.<Integer>invoke(groupId, new GetRoundOp(objectName)).join();
+        int round = invocationManager.<Integer>query(groupId, new GetRoundOp(objectName), LINEARIZABLE).join();
         invocationManager.invoke(groupId, new CountDownOp(objectName, newUnsecureUUID(), round)).join();
     }
 
     @Override
     public int getCount() {
-        return invocationManager.<Integer>invoke(groupId, new GetCountOp(objectName)).join();
+        return invocationManager.<Integer>query(groupId, new GetCountOp(objectName), LINEARIZABLE).join();
     }
 
     @Override

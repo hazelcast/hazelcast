@@ -21,6 +21,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
+import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
@@ -37,6 +38,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.NO_RETURN_VALUE;
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.RETURN_NEW_VALUE;
 import static com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType.RETURN_OLD_VALUE;
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
@@ -129,7 +131,7 @@ public class RaftAtomicRefProxy<T> implements IAtomicReference<T> {
 
     @Override
     public InternalCompletableFuture<T> getAsync() {
-        return invocationManager.invoke(groupId, new GetOp(objectName));
+        return invocationManager.query(groupId, new GetOp(objectName), LINEARIZABLE);
     }
 
     @Override
@@ -154,7 +156,7 @@ public class RaftAtomicRefProxy<T> implements IAtomicReference<T> {
 
     @Override
     public InternalCompletableFuture<Boolean> containsAsync(T expected) {
-        return invocationManager.invoke(groupId, new ContainsOp(objectName, toData(expected)));
+        return invocationManager.query(groupId, new ContainsOp(objectName, toData(expected)), LINEARIZABLE);
     }
 
     @Override
@@ -178,7 +180,8 @@ public class RaftAtomicRefProxy<T> implements IAtomicReference<T> {
     @Override
     public <R> InternalCompletableFuture<R> applyAsync(IFunction<T, R> function) {
         checkTrue(function != null, "Function cannot be null");
-        return invocationManager.invoke(groupId, new ApplyOp(objectName, toData(function), RETURN_NEW_VALUE, false));
+        RaftOp op = new ApplyOp(objectName, toData(function), RETURN_NEW_VALUE, false);
+        return invocationManager.query(groupId, op, LINEARIZABLE);
     }
 
     @Override

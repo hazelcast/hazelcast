@@ -473,10 +473,10 @@ public class SnapshotTest extends HazelcastTestSupport {
                 if (entries.length > 0) {
                     if (entries[entries.length - 1].operation() instanceof UpdateRaftGroupMembersCmd) {
                         entries = Arrays.copyOf(entries, entries.length - 1);
-                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries);
+                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries, 0);
                     } else if (entries[0].operation() instanceof UpdateRaftGroupMembersCmd) {
                         entries = new LogEntry[0];
-                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries);
+                        return new AppendRequest(request.leader(), request.term(), request.prevLogTerm(), request.prevLogIndex(), request.leaderCommitIndex(), entries, 0);
                     }
                 }
             }

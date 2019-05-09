@@ -85,14 +85,12 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             // If RPC request or response contains term T > currentTerm: set currentTerm = T, convert to follower (§5.1)
             logger.info("Demoting to FOLLOWER from current role: " + state.role() + ", term: " + state.term()
                     + " to new term: " + req.term() + " and leader: " + req.leader());
-            state.toFollower(req.term());
-            raftNode.printMemberState();
+            raftNode.toFollower(req.term());
         }
 
         if (!req.leader().equals(state.leader())) {
             logger.info("Setting leader: " + req.leader());
-            state.leader(req.leader());
-            raftNode.printMemberState();
+            raftNode.leader(req.leader());
         }
 
         // Verify the last log entry
@@ -204,12 +202,8 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
         raftNode.updateLastAppendEntriesTimestamp();
 
         try {
-            // If I just appended any new entry or the leader is trying to adjust my match index, I must send a response.
-            // Otherwise, I just learnt the last commit index and I don't need to send a response.
-            if (req.entryCount() > 0 || oldCommitIndex == state.commitIndex()) {
-                AppendSuccessResponse resp = new AppendSuccessResponse(raftNode.getLocalMember(), state.term(), lastLogIndex);
-                raftNode.send(resp, req.leader());
-            }
+            AppendSuccessResponse resp = new AppendSuccessResponse(localMember(), state.term(), lastLogIndex, req.queryRound());
+            raftNode.send(resp, req.leader());
         } finally {
             if (state.commitIndex() > oldCommitIndex) {
                 raftNode.applyLogEntries();
@@ -265,6 +259,6 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
     }
 
     private AppendFailureResponse createFailureResponse(int term) {
-        return new AppendFailureResponse(raftNode.getLocalMember(), term, req.prevLogIndex() + 1);
+        return new AppendFailureResponse(localMember(), term, req.prevLogIndex() + 1);
     }
 }

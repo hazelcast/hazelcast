@@ -20,6 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPAtomicLongAddAndGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.RaftInvocationManager;
+import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AddAndGetOp;
@@ -29,6 +33,8 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicLongPermission;
 
 import java.security.Permission;
+
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 
 /**
  * Client message task for {@link AddAndGetOp}
@@ -43,9 +49,13 @@ public class AddAndGetMessageTask extends AbstractMessageTask<CPAtomicLongAddAnd
     @Override
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-                .<Long>invoke(parameters.groupId, new AddAndGetOp(parameters.name, parameters.delta))
-                .andThen(this);
+        RaftInvocationManager invocationManager = service.getInvocationManager();
+        CPGroupId groupId = parameters.groupId;
+        long delta = parameters.delta;
+        RaftOp op = new AddAndGetOp(parameters.name, delta);
+        ICompletableFuture<Long> future = (delta == 0)
+                ? invocationManager.query(groupId, op, LINEARIZABLE) : invocationManager.invoke(groupId, op);
+        future.andThen(this);
     }
 
     @Override

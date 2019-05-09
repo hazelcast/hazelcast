@@ -30,6 +30,8 @@ import com.hazelcast.security.permission.SemaphorePermission;
 
 import java.security.Permission;
 
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+
 /**
  * Client message task for {@link AvailablePermitsOp}
  */
@@ -44,7 +46,7 @@ public class AvailablePermitsMessageTask extends AbstractMessageTask<CPSemaphore
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         service.getInvocationManager()
-               .<Integer>invoke(parameters.groupId, new AvailablePermitsOp(parameters.name))
+               .<Integer>query(parameters.groupId, new AvailablePermitsOp(parameters.name), LINEARIZABLE)
                .andThen(this);
     }
 

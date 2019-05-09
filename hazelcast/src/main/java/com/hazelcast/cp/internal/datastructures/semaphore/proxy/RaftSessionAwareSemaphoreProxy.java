@@ -39,6 +39,7 @@ import com.hazelcast.util.Clock;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -170,7 +171,7 @@ public class RaftSessionAwareSemaphoreProxy extends SessionAwareProxy implements
 
     @Override
     public int availablePermits() {
-        return invocationManager.<Integer>invoke(groupId, new AvailablePermitsOp(objectName)).join();
+        return invocationManager.<Integer>query(groupId, new AvailablePermitsOp(objectName), LINEARIZABLE).join();
     }
 
     @Override

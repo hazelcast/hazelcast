@@ -20,6 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPAtomicRefApplyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.RaftInvocationManager;
+import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
@@ -30,6 +34,8 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicReferencePermission;
 
 import java.security.Permission;
+
+import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 
 /**
  * Client message task for {@link ApplyOp}
@@ -45,9 +51,12 @@ public class ApplyMessageTask extends AbstractMessageTask<CPAtomicRefApplyCodec.
     protected void processMessage() {
         ReturnValueType returnValueType = ReturnValueType.fromValue(parameters.returnValueType);
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .invoke(parameters.groupId, new ApplyOp(parameters.name, parameters.function, returnValueType, parameters.alter))
-               .andThen(this);
+        RaftInvocationManager invocationManager = service.getInvocationManager();
+        CPGroupId groupId = parameters.groupId;
+        RaftOp op = new ApplyOp(parameters.name, parameters.function, returnValueType, parameters.alter);
+        ICompletableFuture<Object> future = parameters.alter
+                ? invocationManager.invoke(groupId, op) : invocationManager.query(groupId, op, LINEARIZABLE);
+        future.andThen(this);
     }
 
     @Override
