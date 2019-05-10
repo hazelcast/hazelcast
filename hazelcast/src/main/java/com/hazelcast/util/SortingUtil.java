@@ -19,7 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.QueryableEntry;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -137,8 +137,9 @@ public final class SortingUtil {
         };
     }
 
-    public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate,
-                                                        Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
+    public static List<? extends QueryableEntry> getSortedSubList(List<? extends QueryableEntry> list,
+                                                                  PagingPredicate pagingPredicate,
+                                                                  Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
         if (pagingPredicate == null || list.isEmpty()) {
             return list;
         }

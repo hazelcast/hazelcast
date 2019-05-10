@@ -22,8 +22,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.MigrationEndpoint;
@@ -122,7 +122,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
         Predicate predicate = new EqualPredicate("this", value) {
             @Override
-            public Set<QueryableEntry> filter(QueryContext queryContext) {
+            public Set<? extends QueryableEntry> filter(QueryContext queryContext) {
                 // start a new migration while executing an indexed query
                 mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
                 return super.filter(queryContext);

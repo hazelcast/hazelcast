@@ -21,7 +21,7 @@ package com.hazelcast.query.impl;
  */
 public class PartitionQueryContextProvider implements QueryContextProvider {
 
-    private final QueryContext queryContext;
+    private final QueryContextImpl queryContext;
 
     /**
      * Constructs a new partition query context provider for the given indexes.
@@ -29,11 +29,11 @@ public class PartitionQueryContextProvider implements QueryContextProvider {
      * @param indexes the indexes to construct the new query context for.
      */
     public PartitionQueryContextProvider(Indexes indexes) {
-        queryContext = new QueryContext(indexes);
+        queryContext = new QueryContextImpl(indexes);
     }
 
     @Override
-    public QueryContext obtainContextFor(Indexes indexes) {
+    public QueryContextImpl obtainContextFor(Indexes indexes) {
         assert indexes == queryContext.indexes;
         return queryContext;
     }

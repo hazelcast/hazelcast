@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.query.impl.AttributeIndexRegistry.FirstComponentDecorator;
-import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
+import com.hazelcast.query.impl.QueryContextImpl.IndexMatchHint;
 import com.hazelcast.query.impl.predicates.PredicateUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.collection.PartitionIdSet;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -55,7 +55,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     @Override
     @SuppressWarnings("unchecked")
     public AggregationResult execute(
-            Aggregator aggregator, Collection<QueryableEntry> entries, PartitionIdSet partitionIds) {
+            Aggregator aggregator, Collection<QueryableEntryImpl> entries, PartitionIdSet partitionIds) {
         Collection<Aggregator> chunkAggregators = accumulateParallel(aggregator, entries);
 
         Aggregator resultAggregator = clone(aggregator);
@@ -72,16 +72,16 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
         return result;
     }
 
-    protected Collection<Aggregator> accumulateParallel(Aggregator aggregator, Collection<QueryableEntry> entries) {
+    protected Collection<Aggregator> accumulateParallel(Aggregator aggregator, Collection<QueryableEntryImpl> entries) {
         Collection<Future<Aggregator>> futures = new ArrayList<>();
-        Collection<QueryableEntry>[] chunks = split(entries, THREAD_SPLIT_COUNT);
+        Collection<QueryableEntryImpl>[] chunks = split(entries, THREAD_SPLIT_COUNT);
         if (chunks == null) {
             // not enough elements for split
             AccumulatePartitionCallable task = new AccumulatePartitionCallable(clone(aggregator), entries);
             futures.add(executor.submit(task));
         } else {
             // split elements
-            for (Collection<QueryableEntry> chunk : chunks) {
+            for (Collection<QueryableEntryImpl> chunk : chunks) {
                 AccumulatePartitionCallable task = new AccumulatePartitionCallable(clone(aggregator), chunk);
                 futures.add(executor.submit(task));
             }
@@ -89,18 +89,18 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
         return returnWithDeadline(futures, callTimeoutInMillis, MILLISECONDS, RETHROW_EVERYTHING);
     }
 
-    private Collection<QueryableEntry>[] split(Collection<QueryableEntry> entries, int chunkCount) {
+    private Collection<QueryableEntryImpl>[] split(Collection<QueryableEntryImpl> entries, int chunkCount) {
         int estimatedSize = estimatedSizeOf(entries);
         if (estimatedSize < chunkCount * 2) {
             return null;
         }
         int counter = 0;
-        Collection<QueryableEntry>[] entriesSplit = new Collection[chunkCount];
+        Collection<QueryableEntryImpl>[] entriesSplit = new Collection[chunkCount];
         int entriesPerChunk = estimatedSize / chunkCount;
         for (int i = 0; i < chunkCount; i++) {
             entriesSplit[i] = new ArrayList<>(entriesPerChunk);
         }
-        for (QueryableEntry entry : entries) {
+        for (QueryableEntryImpl entry : entries) {
             entriesSplit[counter++ % THREAD_SPLIT_COUNT].add(entry);
         }
         return entriesSplit;
@@ -112,9 +112,9 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
 
     private static final class AccumulatePartitionCallable implements Callable<Aggregator> {
         private final Aggregator aggregator;
-        private final Collection<QueryableEntry> entries;
+        private final Collection<QueryableEntryImpl> entries;
 
-        private AccumulatePartitionCallable(Aggregator aggregator, Collection<QueryableEntry> entries) {
+        private AccumulatePartitionCallable(Aggregator aggregator, Collection<QueryableEntryImpl> entries) {
             this.aggregator = aggregator;
             this.entries = entries;
         }
@@ -122,7 +122,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
         @Override
         public Aggregator call() throws Exception {
             try {
-                for (QueryableEntry entry : entries) {
+                for (QueryableEntryImpl entry : entries) {
                     aggregator.accumulate(entry);
                 }
             } finally {

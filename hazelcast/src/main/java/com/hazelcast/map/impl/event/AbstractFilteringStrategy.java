@@ -21,8 +21,8 @@ import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 

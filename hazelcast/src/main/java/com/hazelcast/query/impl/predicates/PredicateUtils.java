@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.impl.AndResultSet;
 import com.hazelcast.query.impl.OrResultSet;
-import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -49,7 +49,7 @@ public final class PredicateUtils {
      * @see AndResultSet#estimatedSize()
      * @see OrResultSet#estimatedSize()
      */
-    public static int estimatedSizeOf(Collection<QueryableEntry> result) {
+    public static int estimatedSizeOf(Collection<? extends QueryableEntry> result) {
         if (result instanceof AndResultSet) {
             return ((AndResultSet) result).estimatedSize();
         } else if (result instanceof OrResultSet) {

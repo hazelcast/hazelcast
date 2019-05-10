@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.QueryableEntry;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +29,7 @@ import java.util.Set;
  * Extends the basic query context to support the per-index stats tracking on
  * behalf of global indexes.
  */
-public class GlobalQueryContextWithStats extends QueryContext {
+public class GlobalQueryContextWithStats extends QueryContextImpl {
 
     private final HashMap<String, QueryTrackingIndex> knownIndexes = new HashMap<String, QueryTrackingIndex>();
 
@@ -51,7 +52,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
+    public InternalIndex matchIndex(String pattern, IndexMatchHint matchHint) {
         InternalIndex delegate = indexes.matchIndex(pattern, matchHint);
         if (delegate == null) {
             return null;
@@ -110,7 +111,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+        public void putEntry(QueryableEntryImpl entry, Object oldValue, OperationSource operationSource) {
             delegate.putEntry(entry, oldValue, operationSource);
         }
 
@@ -120,29 +121,30 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparable value) {
-            Set<QueryableEntry> result = delegate.getRecords(value);
+        public Set<? extends QueryableEntry> getRecords(Comparable value) {
+            Set<? extends QueryableEntry> result = delegate.getRecords(value);
             hasQueries = true;
             return result;
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparable[] values) {
-            Set<QueryableEntry> result = delegate.getRecords(values);
+        public Set<? extends QueryableEntry> getRecords(Comparable[] values) {
+            Set<? extends QueryableEntry> result = delegate.getRecords(values);
             hasQueries = true;
             return result;
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
-            Set<QueryableEntry> result = delegate.getRecords(from, fromInclusive, to, toInclusive);
+        public Set<? extends QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to,
+                                                        boolean toInclusive) {
+            Set<? extends QueryableEntry> result = delegate.getRecords(from, fromInclusive, to, toInclusive);
             hasQueries = true;
             return result;
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
-            Set<QueryableEntry> result = delegate.getRecords(comparison, value);
+        public Set<? extends QueryableEntry> getRecords(Comparison comparison, Comparable value) {
+            Set<? extends QueryableEntry> result = delegate.getRecords(comparison, value);
             hasQueries = true;
             return result;
         }

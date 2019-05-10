@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -42,7 +43,7 @@ public class OrResultSetTest extends HazelcastTestSupport {
         int size = 100000;
         Set<QueryableEntry> entries1 = generateEntries(size);
         Set<QueryableEntry> entries2 = generateEntries(size);
-        List<Set<QueryableEntry>> indexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<? extends QueryableEntry>> indexedResults = new ArrayList<>();
         indexedResults.add(entries1);
         indexedResults.add(entries2);
 
@@ -63,7 +64,7 @@ public class OrResultSetTest extends HazelcastTestSupport {
         int size = 100000;
         Set<QueryableEntry> entries1 = generateEntries(size);
         Set<QueryableEntry> entries2 = generateEntries(size);
-        List<Set<QueryableEntry>> indexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<? extends QueryableEntry>> indexedResults = new ArrayList<>();
         indexedResults.add(entries1);
         indexedResults.add(entries2);
 
@@ -86,7 +87,7 @@ public class OrResultSetTest extends HazelcastTestSupport {
         return result;
     }
 
-    private class DummyEntry extends QueryableEntry {
+    private class DummyEntry extends QueryableEntryImpl {
         @Override
         public Object getValue() {
             return null;

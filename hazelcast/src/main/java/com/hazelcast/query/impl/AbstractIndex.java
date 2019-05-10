@@ -96,7 +96,7 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+    public void putEntry(QueryableEntryImpl entry, Object oldValue, OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
         IndexOperationStats operationStats = stats.createOperationStats();
 
@@ -133,7 +133,7 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Comparable value) {
+    public Set<QueryableEntryImpl> getRecords(Comparable value) {
         long timestamp = stats.makeTimestamp();
 
         if (converter == null) {
@@ -141,13 +141,13 @@ public abstract class AbstractIndex implements InternalIndex {
             return emptySet();
         }
 
-        Set<QueryableEntry> result = indexStore.getRecords(convert(value));
+        Set<QueryableEntryImpl> result = indexStore.getRecords(convert(value));
         stats.onIndexHit(timestamp, result.size());
         return result;
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Comparable[] values) {
+    public Set<QueryableEntryImpl> getRecords(Comparable[] values) {
         if (values.length == 1) {
             return getRecords(values[0]);
         }
@@ -164,13 +164,13 @@ public abstract class AbstractIndex implements InternalIndex {
             Comparable converted = convert(value);
             convertedValues.add(canonicalizeQueryArgumentScalar(converted));
         }
-        Set<QueryableEntry> result = indexStore.getRecords(convertedValues);
+        Set<QueryableEntryImpl> result = indexStore.getRecords(convertedValues);
         stats.onIndexHit(timestamp, result.size());
         return result;
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
+    public Set<QueryableEntryImpl> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
         long timestamp = stats.makeTimestamp();
 
         if (converter == null) {
@@ -178,13 +178,13 @@ public abstract class AbstractIndex implements InternalIndex {
             return emptySet();
         }
 
-        Set<QueryableEntry> result = indexStore.getRecords(convert(from), fromInclusive, convert(to), toInclusive);
+        Set<QueryableEntryImpl> result = indexStore.getRecords(convert(from), fromInclusive, convert(to), toInclusive);
         stats.onIndexHit(timestamp, result.size());
         return result;
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
+    public Set<QueryableEntryImpl> getRecords(Comparison comparison, Comparable value) {
         long timestamp = stats.makeTimestamp();
 
         if (converter == null) {
@@ -192,7 +192,7 @@ public abstract class AbstractIndex implements InternalIndex {
             return emptySet();
         }
 
-        Set<QueryableEntry> result = indexStore.getRecords(comparison, convert(value));
+        Set<QueryableEntryImpl> result = indexStore.getRecords(comparison, convert(value));
         stats.onIndexHit(timestamp, result.size());
         return result;
     }
@@ -221,11 +221,11 @@ public abstract class AbstractIndex implements InternalIndex {
 
     private Object extractAttributeValue(Data key, Object value) {
         if (components == null) {
-            return QueryableEntry.extractAttributeValue(extractors, ss, name, key, value, null);
+            return QueryableEntryImpl.extractAttributeValue(extractors, ss, name, key, value, null);
         } else {
             Comparable[] valueComponents = new Comparable[components.length];
             for (int i = 0; i < components.length; ++i) {
-                Object extractedValue = QueryableEntry.extractAttributeValue(extractors, ss, components[i], key, value, null);
+                Object extractedValue = QueryableEntryImpl.extractAttributeValue(extractors, ss, components[i], key, value, null);
                 if (extractedValue instanceof MultiResult) {
                     throw new IllegalStateException(
                             "Collection/array attributes are not supported by composite indexes: " + components[i]);
@@ -253,7 +253,7 @@ public abstract class AbstractIndex implements InternalIndex {
         return converter.convert(value);
     }
 
-    private TypeConverter obtainConverter(QueryableEntry entry) {
+    private TypeConverter obtainConverter(QueryableEntryImpl entry) {
         if (components == null) {
             return entry.getConverter(name);
         } else {

@@ -25,12 +25,12 @@ import java.util.Set;
  * TODO:
  *
  */
-public interface MultiResultSet extends Set<QueryableEntry> {
+public interface MultiResultSet extends Set<QueryableEntryImpl> {
 
     /**
      * TODO
      *
      * @param resultSet
      */
-    void addResultSet(Map<Data, QueryableEntry> resultSet);
+    void addResultSet(Map<Data, QueryableEntryImpl> resultSet);
 }

@@ -20,10 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.impl.Comparables;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryContextImpl;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -54,8 +55,8 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
+    public Set<? extends QueryableEntry> filter(QueryContext indexList) {
+        Index index = matchIndex(indexList, QueryContextImpl.IndexMatchHint.PREFER_UNORDERED);
         return index.getRecords(value);
     }
 

@@ -27,12 +27,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -116,14 +115,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             Set<IndexInfo> indexInfos = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
                 // global-index
-                for (Index index : mapContainer.getIndexes().getIndexes()) {
+                for (InternalIndex index : mapContainer.getIndexes().getIndexes()) {
                     indexInfos.add(new IndexInfo(index.getName(), index.isOrdered()));
                 }
             } else {
                 // partitioned-index
                 final Indexes indexes = mapContainer.getIndexes(container.getPartitionId());
                 if (indexes != null && indexes.haveAtLeastOneIndex()) {
-                    for (Index index : indexes.getIndexes()) {
+                    for (InternalIndex index : indexes.getIndexes()) {
                         indexInfos.add(new IndexInfo(index.getName(), index.isOrdered()));
                     }
                 }
@@ -177,8 +176,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                     if (indexesMustBePopulated) {
                         final Object valueToIndex = getValueOrCachedValue(newRecord, serializationService);
                         if (valueToIndex != null) {
-                            final QueryableEntry queryableEntry = mapContainer.newQueryEntry(newRecord.getKey(), valueToIndex);
-                            indexes.putEntry(queryableEntry, null, Index.OperationSource.SYSTEM);
+                            final QueryableEntryImpl queryableEntry =
+                                    mapContainer.newQueryEntry(newRecord.getKey(), valueToIndex);
+                            indexes.putEntry(queryableEntry, null, InternalIndex.OperationSource.SYSTEM);
                         }
                     }
 

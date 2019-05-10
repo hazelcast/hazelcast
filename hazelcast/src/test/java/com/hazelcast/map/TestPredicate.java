@@ -17,8 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.query.IndexAwarePredicate;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
 
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +42,7 @@ class TestPredicate implements IndexAwarePredicate<String, TestData> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry<String, TestData>> filter(QueryContext queryContext) {
+    public Set<? extends QueryableEntry<String, TestData>> filter(QueryContext queryContext) {
         filtered = true;
         return (Set) queryContext.getIndex("attr1").getRecords(value);
     }

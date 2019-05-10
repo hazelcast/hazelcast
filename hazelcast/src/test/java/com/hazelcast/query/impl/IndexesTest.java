@@ -74,7 +74,7 @@ public class IndexesTest {
         for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
-                    Index.OperationSource.USER);
+                    InternalIndex.OperationSource.USER);
         }
         int count = 10;
         Set<String> ages = new HashSet<String>(count);
@@ -84,7 +84,7 @@ public class IndexesTest {
         EntryObject entryObject = new PredicateBuilder().getEntryObject();
         PredicateBuilder predicate =
                 entryObject.get("name").equal("0Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
-        Set<QueryableEntry> results = indexes.query(predicate);
+        Set<QueryableEntryImpl> results = indexes.query(predicate);
         assertEquals(1, results.size());
     }
 
@@ -97,12 +97,12 @@ public class IndexesTest {
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
-                    Index.OperationSource.USER);
+                    InternalIndex.OperationSource.USER);
         }
 
         for (int i = 0; i < 10; i++) {
             SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexes.query(predicate));
+            Set<QueryableEntryImpl> results = new HashSet<QueryableEntryImpl>(indexes.query(predicate));
             assertEquals(5, results.size());
         }
     }
@@ -112,24 +112,24 @@ public class IndexesTest {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
         indexes.addOrGetIndex("name", false);
         indexes.putEntry(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
-                Index.OperationSource.USER);
+                InternalIndex.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(2), new Value("xyz"), newExtractor()), null,
-                Index.OperationSource.USER);
+                InternalIndex.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(3), new Value("aaa"), newExtractor()), null,
-                Index.OperationSource.USER);
+                InternalIndex.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(4), new Value("zzz"), newExtractor()), null,
-                Index.OperationSource.USER);
+                InternalIndex.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(5), new Value("klm"), newExtractor()), null,
-                Index.OperationSource.USER);
+                InternalIndex.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(6), new Value("prs"), newExtractor()), null,
-                Index.OperationSource.USER);
+                InternalIndex.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(7), new Value("prs"), newExtractor()), null,
-                Index.OperationSource.USER);
+                InternalIndex.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(8), new Value("def"), newExtractor()), null,
-                Index.OperationSource.USER);
+                InternalIndex.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(9), new Value("qwx"), newExtractor()), null,
-                Index.OperationSource.USER);
-        assertEquals(8, new HashSet<QueryableEntry>(indexes.query(new SqlPredicate("name > 'aac'"))).size());
+                InternalIndex.OperationSource.USER);
+        assertEquals(8, new HashSet<QueryableEntryImpl>(indexes.query(new SqlPredicate("name > 'aac'"))).size());
     }
 
     protected Extractors newExtractor() {
@@ -160,10 +160,10 @@ public class IndexesTest {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry
             indexes.putEntry(new QueryEntry(serializationService, toData(i), null, newExtractor()), null,
-                    Index.OperationSource.USER);
+                    InternalIndex.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
+        Set<QueryableEntryImpl> query = indexes.query(new SqlPredicate("__key > 10 "));
 
         assertNull("There should be no result", query);
     }
@@ -176,10 +176,10 @@ public class IndexesTest {
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry
             indexes.putEntry(new QueryEntry(serializationService, toData(i), null, newExtractor()), null,
-                    Index.OperationSource.USER);
+                    InternalIndex.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
+        Set<QueryableEntryImpl> query = indexes.query(new SqlPredicate("__key > 10 "));
 
         assertEquals(89, query.size());
     }

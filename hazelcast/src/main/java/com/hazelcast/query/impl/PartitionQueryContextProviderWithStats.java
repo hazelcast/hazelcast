@@ -34,7 +34,7 @@ public class PartitionQueryContextProviderWithStats implements QueryContextProvi
     }
 
     @Override
-    public QueryContext obtainContextFor(Indexes indexes) {
+    public QueryContextImpl obtainContextFor(Indexes indexes) {
         queryContext.attachTo(indexes);
         return queryContext;
     }

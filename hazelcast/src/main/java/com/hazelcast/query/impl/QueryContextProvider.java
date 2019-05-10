@@ -30,6 +30,6 @@ public interface QueryContextProvider {
      * @param indexes the indexes to obtain the query context for.
      * @return the obtained query context.
      */
-    QueryContext obtainContextFor(Indexes indexes);
+    QueryContextImpl obtainContextFor(Indexes indexes);
 
 }

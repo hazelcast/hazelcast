@@ -14,37 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query;
 
 /**
- * Defines comparisons supported by {@link InternalIndex#getRecords(Comparison, Comparable)}
- * and {@link IndexStore#getRecords(Comparable)}.
+ * Provides the context for queries execution.
  */
-public enum Comparison {
+public interface QueryContext {
 
     /**
-     * !=
+     * Obtains the index available for the given attribute in this query
+     * context.
+     *
+     * @param attribute the attribute to obtain the index for.
+     * @return the obtained index or {@code null} if there is no index available
+     * for the given attribute.
      */
-    NOT_EQUAL,
-
-    /**
-     * <
-     */
-    LESS,
-
-    /**
-     * >
-     */
-    GREATER,
-
-    /**
-     * <=
-     */
-    LESS_OR_EQUAL,
-
-    /**
-     * >=
-     */
-    GREATER_OR_EQUAL
-
+    Index getIndex(String attribute);
 }

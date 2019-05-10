@@ -36,10 +36,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.ContextMutexFactory;
@@ -334,9 +334,9 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<K> resultingSet = new HashSet<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntryImpl> query = indexes.query(predicate);
         if (query != null) {
-            for (QueryableEntry entry : query) {
+            for (QueryableEntryImpl entry : query) {
                 K key = toObject(entry.getKeyData());
                 resultingSet.add(key);
             }
@@ -353,9 +353,9 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<Map.Entry<K, V>> resultingSet = new HashSet<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntryImpl> query = indexes.query(predicate);
         if (query != null) {
-            for (QueryableEntry entry : query) {
+            for (QueryableEntryImpl entry : query) {
                 Map.Entry<K, V> copyEntry = new CachedQueryEntry<>(serializationService, entry.getKeyData(),
                         entry.getValueData(), null);
                 resultingSet.add(copyEntry);
@@ -376,9 +376,9 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         List<Data> resultingList = new ArrayList<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntryImpl> query = indexes.query(predicate);
         if (query != null) {
-            for (QueryableEntry entry : query) {
+            for (QueryableEntryImpl entry : query) {
                 resultingList.add(entry.getValueData());
             }
         } else {
@@ -466,7 +466,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
             QueryEntry queryable = new QueryEntry(serializationService, keyData, value, extractors);
-            indexes.putEntry(queryable, null, Index.OperationSource.USER);
+            indexes.putEntry(queryable, null, InternalIndex.OperationSource.USER);
         }
     }
 

@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 
 import java.io.IOException;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class QueryEventFilter extends EntryEventFilter {
 
     @Override
     public boolean eval(Object arg) {
-        QueryableEntry entry = (QueryableEntry) arg;
+        QueryableEntryImpl entry = (QueryableEntryImpl) arg;
         Data keyData = entry.getKeyData();
         return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry) arg);
     }

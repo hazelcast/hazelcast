@@ -68,7 +68,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
     public void getAttribute_whenValueIsPortableObject_thenConvertedToData() {
         Data key = serializationService.toData("indexedKey");
         Portable value = new SampleTestObjects.PortableEmployee(30, "peter");
-        QueryableEntry queryEntry = createEntry(key, value, newExtractor());
+        QueryableEntryImpl queryEntry = createEntry(key, value, newExtractor());
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
@@ -81,7 +81,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
     public void getAttribute_whenKeyIsPortableObject_thenConvertedToData() {
         Data key = serializationService.toData(new SampleTestObjects.PortableEmployee(30, "peter"));
         SerializableObject value = new SerializableObject();
-        QueryableEntry queryEntry = createEntry(key, value, newExtractor());
+        QueryableEntryImpl queryEntry = createEntry(key, value, newExtractor());
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
@@ -94,7 +94,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
     public void getAttribute_whenKeyPortableObjectThenConvertedToData() {
         Data key = serializationService.toData(new SampleTestObjects.PortableEmployee(30, "peter"));
         SerializableObject value = new SerializableObject();
-        QueryableEntry queryEntry = createEntry(key, value, newExtractor());
+        QueryableEntryImpl queryEntry = createEntry(key, value, newExtractor());
 
         Object result = queryEntry.getAttributeValue(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
 
@@ -106,7 +106,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         Data key = serializationService.toData(new SerializableObject());
         SerializableObject value = new SerializableObject();
         value.name = "somename";
-        QueryableEntry queryEntry = createEntry(key, value, newExtractor());
+        QueryableEntryImpl queryEntry = createEntry(key, value, newExtractor());
 
         Object result = queryEntry.getAttributeValue("name");
 
@@ -124,7 +124,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
     public void test_init() {
         Data dataKey = serializationService.toData("dataKey");
         Data dataValue = serializationService.toData("dataValue");
-        QueryableEntry queryEntry = createEntry(dataKey, dataValue, newExtractor());
+        QueryableEntryImpl queryEntry = createEntry(dataKey, dataValue, newExtractor());
         Object objectValue = queryEntry.getValue();
         Object objectKey = queryEntry.getKey();
 
@@ -142,15 +142,15 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_setValue() {
-        QueryableEntry queryEntry = createEntry(mock(Data.class), "value", newExtractor());
+        QueryableEntryImpl queryEntry = createEntry(mock(Data.class), "value", newExtractor());
         queryEntry.setValue("anyValue");
     }
 
     @Test(expected = NullPointerException.class)
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void test_equality_empty() {
-        QueryableEntry entryKeyLeft = createEntry();
-        QueryableEntry entryKeyRight = createEntry();
+        QueryableEntryImpl entryKeyLeft = createEntry();
+        QueryableEntryImpl entryKeyRight = createEntry();
 
         entryKeyLeft.equals(entryKeyRight);
     }
@@ -158,14 +158,14 @@ public class QueryEntryTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("EqualsWithItself")
     public void test_equality_same() {
-        QueryableEntry entry = createEntry();
+        QueryableEntryImpl entry = createEntry();
 
         assertTrue(entry.equals(entry));
     }
 
     @Test
     public void test_equality_differentType() {
-        QueryableEntry entry = createEntry();
+        QueryableEntryImpl entry = createEntry();
 
         assertFalse(entry.equals("string"));
     }
@@ -173,51 +173,51 @@ public class QueryEntryTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("ObjectEqualsNull")
     public void test_equality_null() {
-        QueryableEntry entry = createEntry();
+        QueryableEntryImpl entry = createEntry();
 
         assertFalse(entry.equals(null));
     }
 
     @Test
     public void test_equality_differentKey() {
-        QueryableEntry queryEntry = createEntry("dataKey", "dataValue");
-        QueryableEntry queryEntryOther = createEntry("dataKeyOther", "dataValue");
+        QueryableEntryImpl queryEntry = createEntry("dataKey", "dataValue");
+        QueryableEntryImpl queryEntryOther = createEntry("dataKeyOther", "dataValue");
 
         assertFalse(queryEntry.equals(queryEntryOther));
     }
 
     @Test
     public void test_equality_sameKey() {
-        QueryableEntry queryEntry = createEntry("dataKey", "dataValue");
-        QueryableEntry queryEntryOther = createEntry("dataKey", "dataValueOther");
+        QueryableEntryImpl queryEntry = createEntry("dataKey", "dataValue");
+        QueryableEntryImpl queryEntryOther = createEntry("dataKey", "dataValueOther");
 
         assertTrue(queryEntry.equals(queryEntryOther));
     }
 
     @Test
     public void getKey_caching() {
-        QueryableEntry entry = createEntry("key", "value");
+        QueryableEntryImpl entry = createEntry("key", "value");
 
         assertThat(entry.getKey(), not(sameInstance(entry.getKey())));
     }
 
     @Test
     public void getValue_caching() {
-        QueryableEntry entry = createEntry("key", "value");
+        QueryableEntryImpl entry = createEntry("key", "value");
 
         assertThat(entry.getValue(), not(sameInstance(entry.getValue())));
     }
 
     @Test
     public void getKeyData_caching() {
-        QueryableEntry entry = createEntry("key", "value");
+        QueryableEntryImpl entry = createEntry("key", "value");
 
         assertThat(entry.getKeyData(), sameInstance(entry.getKeyData()));
     }
 
     @Test
     public void getValueData_caching() {
-        QueryableEntry entry = createEntry("key", "value");
+        QueryableEntryImpl entry = createEntry("key", "value");
 
         assertThat(entry.getValueData(), sameInstance(entry.getValueData()));
     }
@@ -240,7 +240,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         }
     }
 
-    protected QueryableEntry createEntry(String key, String value) {
+    protected QueryableEntryImpl createEntry(String key, String value) {
         return createEntry(serializationService.toData(key),
                 serializationService.toData(value),
                 newExtractor());
@@ -250,11 +250,11 @@ public class QueryEntryTest extends HazelcastTestSupport {
         return Extractors.newBuilder(serializationService).build();
     }
 
-    protected QueryableEntry createEntry(Data key, Object value, Extractors extractors) {
+    protected QueryableEntryImpl createEntry(Data key, Object value, Extractors extractors) {
         return new QueryEntry(serializationService, key, value, extractors);
     }
 
-    protected QueryableEntry createEntry() {
+    protected QueryableEntryImpl createEntry() {
         return new QueryEntry();
     }
 

@@ -20,8 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -82,7 +80,7 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
+    public Set<? extends QueryableEntry> filter(QueryContext queryContext) {
         Predicate p = lsPredicates.get(0);
         if (p instanceof IndexAwarePredicate) {
             return ((IndexAwarePredicate) p).filter(queryContext);

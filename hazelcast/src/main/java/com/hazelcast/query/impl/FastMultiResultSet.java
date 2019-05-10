@@ -29,36 +29,36 @@ import java.util.Set;
 /**
  * Multiple result set for Predicates.
  */
-public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements MultiResultSet {
+public class FastMultiResultSet extends AbstractSet<QueryableEntryImpl> implements MultiResultSet {
 
     private Set<Object> index;
-    private final List<Map<Data, QueryableEntry>> resultSets
-            = new ArrayList<Map<Data, QueryableEntry>>();
+    private final List<Map<Data, QueryableEntryImpl>> resultSets
+            = new ArrayList<Map<Data, QueryableEntryImpl>>();
 
     public FastMultiResultSet() {
     }
 
-    public void addResultSet(Map<Data, QueryableEntry> resultSet) {
+    public void addResultSet(Map<Data, QueryableEntryImpl> resultSet) {
         resultSets.add(resultSet);
     }
 
     @Override
     public boolean contains(Object o) {
-        QueryableEntry entry = (QueryableEntry) o;
+        QueryableEntryImpl entry = (QueryableEntryImpl) o;
         if (index != null) {
             return checkFromIndex(entry);
         } else {
             //todo: what is the point of this condition? Is it some kind of optimization?
             if (resultSets.size() > 3) {
                 index = new HashSet<Object>();
-                for (Map<Data, QueryableEntry> result : resultSets) {
-                    for (QueryableEntry queryableEntry : result.values()) {
+                for (Map<Data, QueryableEntryImpl> result : resultSets) {
+                    for (QueryableEntryImpl queryableEntry : result.values()) {
                         index.add(queryableEntry.getKeyData());
                     }
                 }
                 return checkFromIndex(entry);
             } else {
-                for (Map<Data, QueryableEntry> resultSet : resultSets) {
+                for (Map<Data, QueryableEntryImpl> resultSet : resultSets) {
                     if (resultSet.containsKey(entry.getKeyData())) {
                         return true;
                     }
@@ -68,18 +68,18 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
         }
     }
 
-    private boolean checkFromIndex(QueryableEntry entry) {
+    private boolean checkFromIndex(QueryableEntryImpl entry) {
         return index.contains(entry.getKeyData());
     }
 
     @Override
-    public Iterator<QueryableEntry> iterator() {
+    public Iterator<QueryableEntryImpl> iterator() {
         return new It();
     }
 
-    class It implements Iterator<QueryableEntry> {
+    class It implements Iterator<QueryableEntryImpl> {
         int currentIndex;
-        Iterator<QueryableEntry> currentIterator;
+        Iterator<QueryableEntryImpl> currentIterator;
 
         @Override
         public boolean hasNext() {
@@ -99,7 +99,7 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
         }
 
         @Override
-        public QueryableEntry next() {
+        public QueryableEntryImpl next() {
             if (resultSets.size() == 0) {
                 return null;
             }
@@ -122,14 +122,14 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
     }
 
     @Override
-    public boolean add(QueryableEntry obj) {
+    public boolean add(QueryableEntryImpl obj) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public int size() {
         int size = 0;
-        for (Map<Data, QueryableEntry> resultSet : resultSets) {
+        for (Map<Data, QueryableEntryImpl> resultSet : resultSets) {
             size += resultSet.size();
         }
         return size;

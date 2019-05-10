@@ -27,7 +27,7 @@ import com.hazelcast.query.impl.getters.Extractors;
  * @param <K> key
  * @param <V> value
  */
-public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
+public class CachedQueryEntry<K, V> extends QueryableEntryImpl<K, V> {
 
     protected Data keyData;
     protected Data valueData;

@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.monitor.impl.PerIndexStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.QueryableEntry;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -77,12 +78,12 @@ public class AttributeIndexRegistry {
      * Matches an index for the given attribute and match hint.
      *
      * @param attribute the attribute to match an index for.
-     * @param matchHint the match hint; {@link QueryContext.IndexMatchHint#EXACT_NAME}
+     * @param matchHint the match hint; {@link QueryContextImpl.IndexMatchHint#EXACT_NAME}
      *                  is not supported by this method.
      * @return the matched index or {@code null} if nothing matched.
-     * @see QueryContext.IndexMatchHint
+     * @see QueryContextImpl.IndexMatchHint
      */
-    public InternalIndex match(String attribute, QueryContext.IndexMatchHint matchHint) {
+    public InternalIndex match(String attribute, QueryContextImpl.IndexMatchHint matchHint) {
         Record record = registry.get(attribute);
         if (record == null) {
             return null;
@@ -201,7 +202,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+        public void putEntry(QueryableEntryImpl entry, Object oldValue, OperationSource operationSource) {
             throw newUnsupportedException();
         }
 
@@ -211,7 +212,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparable value) {
+        public Set<? extends QueryableEntry> getRecords(Comparable value) {
             Comparable from = new CompositeValue(width, value, NEGATIVE_INFINITY);
             Comparable to = new CompositeValue(width, value, POSITIVE_INFINITY);
             return delegate.getRecords(from, false, to, false);
@@ -219,7 +220,7 @@ public class AttributeIndexRegistry {
 
         @SuppressWarnings("checkstyle:npathcomplexity")
         @Override
-        public Set<QueryableEntry> getRecords(Comparable[] values) {
+        public Set<? extends QueryableEntry> getRecords(Comparable[] values) {
             if (values.length == 0) {
                 return emptySet();
             }
@@ -243,7 +244,7 @@ public class AttributeIndexRegistry {
                 return getRecords(convertedValues.iterator().next());
             }
 
-            Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+            Set<QueryableEntry> result = new HashSet<>();
             for (Comparable value : convertedValues) {
                 result.addAll(getRecords(value));
             }
@@ -252,17 +253,18 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
+        public Set<? extends QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to,
+                                                        boolean toInclusive) {
             Comparable compositeFrom = new CompositeValue(width, from, fromInclusive ? NEGATIVE_INFINITY : POSITIVE_INFINITY);
             Comparable compositeTo = new CompositeValue(width, to, toInclusive ? POSITIVE_INFINITY : NEGATIVE_INFINITY);
             return delegate.getRecords(compositeFrom, false, compositeTo, false);
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
+        public Set<? extends QueryableEntry> getRecords(Comparison comparison, Comparable value) {
             switch (comparison) {
                 case NOT_EQUAL:
-                    Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+                    Set<QueryableEntry> result = new HashSet<>();
                     result.addAll(delegate.getRecords(LESS, new CompositeValue(width, value, NEGATIVE_INFINITY)));
                     result.addAll(delegate.getRecords(GREATER, new CompositeValue(width, value, POSITIVE_INFINITY)));
                     return result;

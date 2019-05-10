@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.util.collection.PartitionIdSet;
 
 import java.util.Map;
@@ -67,7 +67,7 @@ public interface Result<T extends Result> extends IdentifiedDataSerializable {
      *
      * @param entry the entry to add.
      */
-    void add(QueryableEntry entry);
+    void add(QueryableEntryImpl entry);
 
     /**
      * Creates a new empty sub result of the same type as this result.

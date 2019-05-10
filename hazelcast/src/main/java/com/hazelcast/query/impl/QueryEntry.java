@@ -23,7 +23,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 /**
  * Entry of the Query.
  */
-public class QueryEntry extends QueryableEntry {
+public class QueryEntry extends QueryableEntryImpl {
 
     private Data key;
     private Object value;

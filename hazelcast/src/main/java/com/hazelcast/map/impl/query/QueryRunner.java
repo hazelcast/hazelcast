@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -114,7 +114,7 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
-        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp);
+        Collection<QueryableEntryImpl> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp);
 
         Result result;
         if (entries == null) {
@@ -161,7 +161,7 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index
-        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp);
+        Collection<QueryableEntryImpl> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp);
 
         Result result;
         if (entries == null) {
@@ -184,7 +184,7 @@ public class QueryRunner {
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
 
-        Collection<QueryableEntry> entries = null;
+        Collection<QueryableEntryImpl> entries = null;
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes != null && !indexes.isGlobal()) {
             entries = indexes.query(predicate);
@@ -221,15 +221,15 @@ public class QueryRunner {
                                       .populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()));
     }
 
-    protected Result populateNonEmptyResult(Query query, Collection<QueryableEntry> entries,
+    protected Result populateNonEmptyResult(Query query, Collection<QueryableEntryImpl> entries,
                                             PartitionIdSet initialPartitions) {
         ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
         return processor.populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()), entries,
                 initialPartitions);
     }
 
-    protected Collection<QueryableEntry> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
-                                                                   int migrationStamp) {
+    protected Collection<QueryableEntryImpl> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
+                                                                       int migrationStamp) {
 
         // If a migration is in progress or migration ownership changes,
         // do not attempt to use an index as they may have not been created yet.
@@ -247,7 +247,7 @@ public class QueryRunner {
             // leverage index on this node in a global way.
             return null;
         }
-        Collection<QueryableEntry> entries = indexes.query(predicate);
+        Collection<QueryableEntryImpl> entries = indexes.query(predicate);
         if (entries == null) {
             return null;
         }

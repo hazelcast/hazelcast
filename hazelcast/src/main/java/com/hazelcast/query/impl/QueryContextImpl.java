@@ -16,10 +16,12 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.query.QueryContext;
+
 /**
  * Provides the context for queries execution.
  */
-public class QueryContext {
+public class QueryContextImpl implements QueryContext {
 
     protected Indexes indexes;
 
@@ -28,14 +30,14 @@ public class QueryContext {
      *
      * @param indexes the indexes available for the query context.
      */
-    public QueryContext(Indexes indexes) {
+    public QueryContextImpl(Indexes indexes) {
         this.indexes = indexes;
     }
 
     /**
      * Creates a new query context unattached to any indexes.
      */
-    QueryContext() {
+    QueryContextImpl() {
     }
 
     /**
@@ -62,7 +64,8 @@ public class QueryContext {
      * @return the obtained index or {@code null} if there is no index available
      * for the given attribute.
      */
-    public Index getIndex(String attribute) {
+    @Override
+    public InternalIndex getIndex(String attribute) {
         return matchIndex(attribute, IndexMatchHint.NONE);
     }
 
@@ -73,9 +76,9 @@ public class QueryContext {
      *                  attribute name or an exact index name.
      * @param matchHint the match hint.
      * @return the matched index or {@code null} if nothing matched.
-     * @see QueryContext.IndexMatchHint
+     * @see QueryContextImpl.IndexMatchHint
      */
-    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
+    public InternalIndex matchIndex(String pattern, IndexMatchHint matchHint) {
         return indexes.matchIndex(pattern, matchHint);
     }
 

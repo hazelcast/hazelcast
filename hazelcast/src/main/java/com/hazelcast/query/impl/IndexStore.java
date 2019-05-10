@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.monitor.impl.IndexOperationStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Index;
 
 import java.util.Set;
 
@@ -52,10 +53,10 @@ public interface IndexStore {
      * @param entry          the entry to insert.
      * @param operationStats the operation stats to update while performing the
      *                       operation.
-     * @see Index#putEntry
+     * @see InternalIndex#putEntry
      * @see IndexOperationStats#onEntryAdded
      */
-    void insert(Object value, QueryableEntry entry, IndexOperationStats operationStats);
+    void insert(Object value, QueryableEntryImpl entry, IndexOperationStats operationStats);
 
     /**
      * Updates the existing entry mapping in this index by remapping it from the
@@ -71,11 +72,11 @@ public interface IndexStore {
      *                       operation.
      * @see #remove
      * @see #insert
-     * @see Index#putEntry
+     * @see InternalIndex#putEntry
      * @see IndexOperationStats#onEntryRemoved
      * @see IndexOperationStats#onEntryAdded
      */
-    void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats);
+    void update(Object oldValue, Object newValue, QueryableEntryImpl entry, IndexOperationStats operationStats);
 
     /**
      * Removes the existing entry mapping in this index.
@@ -84,7 +85,7 @@ public interface IndexStore {
      * @param indexKey       the value to remove the mapping to.
      * @param operationStats the operation stats to update while performing the
      *                       operation.
-     * @see Index#removeEntry
+     * @see InternalIndex#removeEntry
      * @see IndexOperationStats#onEntryRemoved
      */
     void remove(Object value, Data indexKey, IndexOperationStats operationStats);
@@ -107,7 +108,7 @@ public interface IndexStore {
      * @return the obtained entries.
      * @see Index#getRecords(Comparable)
      */
-    Set<QueryableEntry> getRecords(Comparable value);
+    Set<QueryableEntryImpl> getRecords(Comparable value);
 
     /**
      * Obtains entries that have indexed attribute value equal to one of the
@@ -117,7 +118,7 @@ public interface IndexStore {
      * @return the obtained entries.
      * @see Index#getRecords(Comparable[])
      */
-    Set<QueryableEntry> getRecords(Set<Comparable> values);
+    Set<QueryableEntryImpl> getRecords(Set<Comparable> values);
 
     /**
      * Obtains entries that have indexed attribute value satisfying the given
@@ -126,9 +127,9 @@ public interface IndexStore {
      * @param comparison the comparison to perform.
      * @param value      the value to perform the comparison with.
      * @return the obtained entries.
-     * @see Index#getRecords(Comparison, Comparable)
+     * @see InternalIndex#getRecords(Comparison, Comparable)
      */
-    Set<QueryableEntry> getRecords(Comparison comparison, Comparable value);
+    Set<QueryableEntryImpl> getRecords(Comparison comparison, Comparable value);
 
     /**
      * Obtains entries that have indexed attribute value belonging to the given
@@ -143,6 +144,6 @@ public interface IndexStore {
      * @return the obtained entries.
      * @see Index#getRecords(Comparable, boolean, Comparable, boolean)
      */
-    Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+    Set<QueryableEntryImpl> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
 
 }

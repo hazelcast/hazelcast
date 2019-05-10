@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -58,7 +58,7 @@ public class NotEqualPredicateTest {
     public void apply_givenAttributeValueIsNull_whenEntryHasTheAttributeNull_thenReturnFalse() {
         NotEqualPredicate name = new NotEqualPredicate("name", null);
 
-        QueryableEntry mockEntry = newMockEntry(null);
+        QueryableEntryImpl mockEntry = newMockEntry(null);
 
         boolean result = name.apply(mockEntry);
         assertFalse(result);
@@ -68,7 +68,7 @@ public class NotEqualPredicateTest {
     public void apply_givenAttributeValueIsNull_whenEntryHasTheAttributeIsNotNull_thenReturnTrue() {
         NotEqualPredicate name = new NotEqualPredicate("name", null);
 
-        QueryableEntry mockEntry = newMockEntry("foo");
+        QueryableEntryImpl mockEntry = newMockEntry("foo");
 
         boolean result = name.apply(mockEntry);
         assertTrue(result);
@@ -78,7 +78,7 @@ public class NotEqualPredicateTest {
     public void apply_givenAttributeValueIsFoo_whenEntryHasEqualAttribute_thenReturnFalse() {
         NotEqualPredicate name = new NotEqualPredicate("name", "foo");
 
-        QueryableEntry mockEntry = newMockEntry("foo");
+        QueryableEntryImpl mockEntry = newMockEntry("foo");
 
         boolean result = name.apply(mockEntry);
         assertFalse(result);
@@ -111,8 +111,8 @@ public class NotEqualPredicateTest {
             .verify();
     }
 
-    private QueryableEntry newMockEntry(Object attributeValue) {
-        QueryableEntry mockEntry = mock(QueryableEntry.class);
+    private QueryableEntryImpl newMockEntry(Object attributeValue) {
+        QueryableEntryImpl mockEntry = mock(QueryableEntryImpl.class);
         when(mockEntry.getAttributeValue(anyString())).thenReturn(attributeValue);
         return mockEntry;
     }

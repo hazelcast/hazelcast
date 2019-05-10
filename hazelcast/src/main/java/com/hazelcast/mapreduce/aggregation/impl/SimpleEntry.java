@@ -18,7 +18,7 @@ package com.hazelcast.mapreduce.aggregation.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
@@ -28,7 +28,7 @@ import com.hazelcast.query.impl.getters.Extractors;
  * @param <K> key type
  * @param <V> value type
  */
-final class SimpleEntry<K, V> extends QueryableEntry<K, V> {
+final class SimpleEntry<K, V> extends QueryableEntryImpl<K, V> {
 
     private K key;
     private V value;

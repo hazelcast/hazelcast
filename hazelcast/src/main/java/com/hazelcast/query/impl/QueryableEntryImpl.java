@@ -24,11 +24,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.Metadata;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
-
-import java.util.Map;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
@@ -41,7 +40,7 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
  * If the object, which is used as the extraction target, is not of Data or Portable type the serializationService
  * will not be touched at all.
  */
-public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, V> {
+public abstract class QueryableEntryImpl<K, V> implements Extractable, QueryableEntry<K, V> {
 
     protected InternalSerializationService serializationService;
     protected Extractors extractors;

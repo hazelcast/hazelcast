@@ -17,7 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
-import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -164,13 +164,13 @@ public class PartitionPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onInsert(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource) {
         if (operationStats.getEntryCountDelta() == 0) {
             // no entries were inserted
             return;
         }
 
-        if (operationSource == Index.OperationSource.USER) {
+        if (operationSource == InternalIndex.OperationSource.USER) {
             TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (System.nanoTime() - timestamp));
             INSERT_COUNT.lazySet(this, insertCount + 1);
         }
@@ -178,8 +178,8 @@ public class PartitionPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
-        if (operationSource == Index.OperationSource.USER) {
+    public void onUpdate(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource) {
+        if (operationSource == InternalIndex.OperationSource.USER) {
             TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (System.nanoTime() - timestamp));
             UPDATE_COUNT.lazySet(this, updateCount + 1);
         }
@@ -187,13 +187,13 @@ public class PartitionPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onRemove(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource) {
         if (operationStats.getEntryCountDelta() == 0) {
             // no entries were removed
             return;
         }
 
-        if (operationSource == Index.OperationSource.USER) {
+        if (operationSource == InternalIndex.OperationSource.USER) {
             TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (System.nanoTime() - timestamp));
             REMOVE_COUNT.lazySet(this, removeCount + 1);
         }

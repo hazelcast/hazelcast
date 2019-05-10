@@ -25,13 +25,13 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
@@ -49,12 +49,12 @@ import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
@@ -1656,7 +1656,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
+        public Set<? extends QueryableEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getIndex(attributeName);
             return index.getRecords(key);
         }
@@ -1814,7 +1814,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
+        public Set<? extends QueryableEntry> filter(QueryContext queryContext) {
             return null;
         }
 

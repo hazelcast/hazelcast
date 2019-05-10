@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.util.collection.InternalListMultiMap;
 
 import java.util.List;
@@ -32,7 +33,7 @@ import static com.hazelcast.util.collection.ArrayUtils.createCopy;
  * InPredicate is easier to evaluate in both indexed and non-indexed scenarios.
  *
  * When index is not used then {@link Predicate} require just a single reflective call
- * the extract an attribute for {@link com.hazelcast.query.impl.QueryableEntry} while
+ * the extract an attribute for {@link QueryableEntryImpl} while
  * disjunction of equalPredicate(s) requires one reflective call for each equalPredicate.
  *
  * The performance is even more significant when tha {@link InPredicate#attributeName} is indexed.

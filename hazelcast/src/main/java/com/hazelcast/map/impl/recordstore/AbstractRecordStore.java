@@ -32,9 +32,9 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
@@ -160,9 +160,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.haveAtLeastOneIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
+            QueryableEntryImpl queryableEntry = mapContainer.newQueryEntry(dataKey, value);
             queryableEntry.setMetadata(record.getMetadata());
-            indexes.putEntry(queryableEntry, oldValue, Index.OperationSource.USER);
+            indexes.putEntry(queryableEntry, oldValue, InternalIndex.OperationSource.USER);
         }
     }
 
@@ -171,7 +171,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.haveAtLeastOneIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            indexes.removeEntry(key, value, Index.OperationSource.USER);
+            indexes.removeEntry(key, value, InternalIndex.OperationSource.USER);
         }
     }
 

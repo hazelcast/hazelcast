@@ -26,12 +26,13 @@ import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryContext;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
-import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -106,7 +107,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry<K, V>> filter(final QueryContext queryContext) {
+        public Set<? extends QueryableEntry<K, V>> filter(final QueryContext queryContext) {
             return null;
         }
 
@@ -316,7 +317,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
     }
 
-    private final class NullDummyEntry extends QueryableEntry {
+    private final class NullDummyEntry extends QueryableEntryImpl {
 
         private Integer nullField;
 

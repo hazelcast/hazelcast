@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.collection.PartitionIdSet;
 
@@ -37,10 +37,10 @@ public class CallerRunsAccumulationExecutor implements AccumulationExecutor {
     @Override
     @SuppressWarnings("unchecked")
     public AggregationResult execute(
-            Aggregator aggregator, Collection<QueryableEntry> entries, PartitionIdSet partitionIds) {
+            Aggregator aggregator, Collection<QueryableEntryImpl> entries, PartitionIdSet partitionIds) {
         Aggregator resultAggregator = serializationService.toObject(serializationService.toData(aggregator));
         try {
-            for (QueryableEntry entry : entries) {
+            for (QueryableEntryImpl entry : entries) {
                 resultAggregator.accumulate(entry);
             }
         } finally {

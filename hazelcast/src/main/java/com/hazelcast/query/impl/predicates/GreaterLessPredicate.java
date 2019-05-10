@@ -19,12 +19,14 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Comparison;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.query.impl.QueryContextImpl;
 
 import java.io.IOException;
 import java.util.Set;
@@ -68,15 +70,15 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+    public Set<? extends QueryableEntry> filter(QueryContext indexList) {
+        Index index = matchIndex(indexList, QueryContextImpl.IndexMatchHint.PREFER_ORDERED);
         final Comparison comparison;
         if (less) {
             comparison = equal ? Comparison.LESS_OR_EQUAL : Comparison.LESS;
         } else {
             comparison = equal ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
         }
-        return index.getRecords(comparison, value);
+        return ((InternalIndex) index).getRecords(comparison, value);
     }
 
     @Override

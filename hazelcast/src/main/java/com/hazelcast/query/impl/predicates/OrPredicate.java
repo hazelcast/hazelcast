@@ -21,12 +21,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.QueryContext;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.OrResultSet;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -57,13 +57,13 @@ public final class OrPredicate
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        List<Set<QueryableEntry>> indexedResults = new LinkedList<Set<QueryableEntry>>();
+    public Set<? extends QueryableEntry> filter(QueryContext indexList) {
+        List<Set<? extends QueryableEntry>> indexedResults = new LinkedList<>();
         for (Predicate predicate : predicates) {
             if (predicate instanceof IndexAwarePredicate) {
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                if (iap.isIndexed(queryContext)) {
-                    Set<QueryableEntry> s = iap.filter(queryContext);
+                if (iap.isIndexed(indexList)) {
+                    Set<? extends QueryableEntry> s = iap.filter(indexList);
                     if (s != null) {
                         indexedResults.add(s);
                     }
@@ -76,11 +76,11 @@ public final class OrPredicate
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext indexList) {
         for (Predicate predicate : predicates) {
             if (predicate instanceof IndexAwarePredicate) {
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                if (!iap.isIndexed(queryContext)) {
+                if (!iap.isIndexed(indexList)) {
                     return false;
                 }
             } else {

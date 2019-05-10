@@ -69,7 +69,7 @@ public class FastMultiResultSetTest {
 
     @Test
     public void testContains_notEmpty() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
 
         assertThat(result.contains(entry), is(true));
@@ -77,7 +77,7 @@ public class FastMultiResultSetTest {
 
     @Test
     public void testIterator_notEmpty() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
 
         assertThat(result.iterator().hasNext(), is(true));
@@ -86,10 +86,10 @@ public class FastMultiResultSetTest {
 
     @Test
     public void testIterator_notEmpty_iteratorReused() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
 
-        Iterator<QueryableEntry> it = result.iterator();
+        Iterator<QueryableEntryImpl> it = result.iterator();
         assertThat(it.hasNext(), is(true));
         assertThat(it.next(), is(entry));
     }
@@ -106,7 +106,7 @@ public class FastMultiResultSetTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testIterator_addUnsopperted() throws Exception {
-        result.add(mock(QueryableEntry.class));
+        result.add(mock(QueryableEntryImpl.class));
     }
 
     @Test
@@ -116,7 +116,7 @@ public class FastMultiResultSetTest {
         assertThat(result.isEmpty(), is(false));
     }
 
-    public QueryableEntry entry(Data data) {
+    public QueryableEntryImpl entry(Data data) {
         QueryEntry entry = mock(QueryEntry.class);
         when(entry.getKeyData()).thenReturn(data);
         return entry;
@@ -126,8 +126,8 @@ public class FastMultiResultSetTest {
         return mock(Data.class);
     }
 
-    public void addEntry(QueryableEntry entry) {
-        ConcurrentMap<Data, QueryableEntry> values = new ConcurrentHashMap<Data, QueryableEntry>();
+    public void addEntry(QueryableEntryImpl entry) {
+        ConcurrentMap<Data, QueryableEntryImpl> values = new ConcurrentHashMap<Data, QueryableEntryImpl>();
         values.put(entry.getKeyData(), entry);
         result.addResultSet(values);
     }

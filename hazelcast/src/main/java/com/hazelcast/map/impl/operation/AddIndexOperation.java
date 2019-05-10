@@ -23,10 +23,9 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -71,8 +70,8 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
             final Record record = iterator.next();
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-            index.putEntry(queryEntry, null, Index.OperationSource.USER);
+            QueryableEntryImpl queryEntry = mapContainer.newQueryEntry(key, value);
+            index.putEntry(queryEntry, null, InternalIndex.OperationSource.USER);
         }
         index.markPartitionAsIndexed(partitionId);
     }

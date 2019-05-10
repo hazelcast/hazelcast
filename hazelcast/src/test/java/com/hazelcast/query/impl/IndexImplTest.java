@@ -51,13 +51,13 @@ public class IndexImplTest {
 
     @Test
     public void saveEntryIndex_doNotDeserializeKey() {
-        QueryableEntry entry = createMockQueryableEntry();
-        index.putEntry(entry, null, Index.OperationSource.USER);
+        QueryableEntryImpl entry = createMockQueryableEntry();
+        index.putEntry(entry, null, InternalIndex.OperationSource.USER);
         verify(entry, never()).getKey();
     }
 
-    private QueryableEntry createMockQueryableEntry() {
-        QueryableEntry entry = mock(QueryableEntry.class);
+    private QueryableEntryImpl createMockQueryableEntry() {
+        QueryableEntryImpl entry = mock(QueryableEntryImpl.class);
         Data keyData = mock(Data.class);
         when(entry.getKeyData()).thenReturn(keyData);
         return entry;

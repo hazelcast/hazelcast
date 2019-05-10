@@ -26,10 +26,10 @@ import java.util.Map;
 /**
  * Multiple result set for Predicates.
  */
-public class SingleResultSet extends AbstractSet<QueryableEntry> {
-    private final Map<Data, QueryableEntry> records;
+public class SingleResultSet extends AbstractSet<QueryableEntryImpl> {
+    private final Map<Data, QueryableEntryImpl> records;
 
-    public SingleResultSet(Map<Data, QueryableEntry> records) {
+    public SingleResultSet(Map<Data, QueryableEntryImpl> records) {
         this.records = records;
     }
 
@@ -39,13 +39,13 @@ public class SingleResultSet extends AbstractSet<QueryableEntry> {
             return false;
         }
 
-        Data keyData = ((QueryableEntry) mapEntry).getKeyData();
+        Data keyData = ((QueryableEntryImpl) mapEntry).getKeyData();
         return records.containsKey(keyData);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Iterator<QueryableEntry> iterator() {
+    public Iterator<QueryableEntryImpl> iterator() {
         if (records == null) {
             return Collections.EMPTY_SET.iterator();
         } else {

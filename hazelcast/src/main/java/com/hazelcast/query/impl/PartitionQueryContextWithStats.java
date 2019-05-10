@@ -24,7 +24,7 @@ import java.util.HashSet;
  * Extends the basic query context to support the per-index stats tracking on
  * behalf of partitioned indexes.
  */
-public class PartitionQueryContextWithStats extends QueryContext {
+public class PartitionQueryContextWithStats extends QueryContextImpl {
 
     private final HashSet<PerIndexStats> trackedStats = new HashSet<PerIndexStats>(8);
 
@@ -54,7 +54,7 @@ public class PartitionQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
+    public InternalIndex matchIndex(String pattern, IndexMatchHint matchHint) {
         InternalIndex index = indexes.matchIndex(pattern, matchHint);
         if (index == null) {
             return null;

@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -102,7 +103,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
             map.put(i, new HazelcastJsonValue(jsonString));
         }
 
-        Set<QueryableEntry> records = getRecords(instance, MAP_NAME, "age", 40);
+        Set<? extends QueryableEntry> records = getRecords(instance, MAP_NAME, "age", 40);
         assertEquals(1, records.size());
 
         records = getRecords(instance, MAP_NAME, "active", true);
@@ -197,22 +198,22 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
         }
     }
 
-    private Set<QueryableEntry> getRecords(HazelcastInstance instance, String mapName, String attribute, Comparable value) {
-        List<Index> indexes = getIndexOfAttributeForMap(instance, mapName, attribute);
-        Set<QueryableEntry> records = new HashSet<QueryableEntry>();
-        for (Index index : indexes) {
+    private Set<? extends QueryableEntry> getRecords(HazelcastInstance instance, String mapName, String attribute, Comparable value) {
+        List<InternalIndex> indexes = getIndexOfAttributeForMap(instance, mapName, attribute);
+        Set<QueryableEntry> records = new HashSet<>();
+        for (InternalIndex index : indexes) {
             records.addAll(index.getRecords(value));
         }
         return records;
     }
 
-    private static List<Index> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
+    private static List<InternalIndex> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
         Node node = getNode(instance);
         MapService service = node.nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
-        List<Index> result = new ArrayList<Index>();
+        List<InternalIndex> result = new ArrayList<InternalIndex>();
         for (int partitionId : mapServiceContext.getOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
             result.add(indexes.getIndex(attribute));

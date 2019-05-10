@@ -40,7 +40,7 @@ public abstract class BaseIndexStore implements IndexStore {
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
-    private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
+    private final CopyFunctor<Data, QueryableEntryImpl> resultCopyFunctor;
 
     private boolean multiResultHasToDetectDuplicates;
 
@@ -80,7 +80,7 @@ public abstract class BaseIndexStore implements IndexStore {
      * @return the record that was associated with the given value before the
      * operation, if there was any, {@code null} otherwise.
      */
-    abstract Object insertInternal(Comparable value, QueryableEntry record);
+    abstract Object insertInternal(Comparable value, QueryableEntryImpl record);
 
     /**
      * Removes the association between the given value and a record identified
@@ -116,16 +116,16 @@ public abstract class BaseIndexStore implements IndexStore {
         return multiResultHasToDetectDuplicates ? new DuplicateDetectingMultiResult() : new FastMultiResultSet();
     }
 
-    final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
+    final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntryImpl> records) {
         resultSet.addResultSet(resultCopyFunctor.invoke(records));
     }
 
-    final Set<QueryableEntry> toSingleResultSet(Map<Data, QueryableEntry> records) {
+    final Set<QueryableEntryImpl> toSingleResultSet(Map<Data, QueryableEntryImpl> records) {
         return new SingleResultSet(resultCopyFunctor.invoke(records));
     }
 
     @Override
-    public final void insert(Object value, QueryableEntry record, IndexOperationStats operationStats) {
+    public final void insert(Object value, QueryableEntryImpl record, IndexOperationStats operationStats) {
         takeWriteLock();
         try {
             unwrapAndInsertToIndex(value, record, operationStats);
@@ -135,7 +135,7 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     @Override
-    public final void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats) {
+    public final void update(Object oldValue, Object newValue, QueryableEntryImpl entry, IndexOperationStats operationStats) {
         takeWriteLock();
         try {
             Data indexKey = entry.getKeyData();
@@ -162,7 +162,7 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     @SuppressWarnings("unchecked")
-    private void unwrapAndInsertToIndex(Object newValue, QueryableEntry record, IndexOperationStats operationStats) {
+    private void unwrapAndInsertToIndex(Object newValue, QueryableEntryImpl record, IndexOperationStats operationStats) {
         if (newValue == NonTerminalJsonValue.INSTANCE) {
             return;
         }
@@ -239,21 +239,21 @@ public abstract class BaseIndexStore implements IndexStore {
 
     }
 
-    private static class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
+    private static class PassThroughFunctor implements CopyFunctor<Data, QueryableEntryImpl> {
 
         @Override
-        public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
+        public Map<Data, QueryableEntryImpl> invoke(Map<Data, QueryableEntryImpl> map) {
             return map;
         }
 
     }
 
-    private static class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
+    private static class CopyInputFunctor implements CopyFunctor<Data, QueryableEntryImpl> {
 
         @Override
-        public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
+        public Map<Data, QueryableEntryImpl> invoke(Map<Data, QueryableEntryImpl> map) {
             if (map != null && !map.isEmpty()) {
-                return new HashMap<Data, QueryableEntry>(map);
+                return new HashMap<Data, QueryableEntryImpl>(map);
             }
             return map;
         }

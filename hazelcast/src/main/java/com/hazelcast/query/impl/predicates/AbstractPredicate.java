@@ -26,7 +26,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.Extractable;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.query.impl.getters.AbstractJsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
 
@@ -114,7 +114,7 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
                 // Returning unconverted value is an optimization since the given value will be compared with null.
                 return givenAttributeValue;
             }
-            type = QueryableEntry.extractAttributeType(entryAttributeValue);
+            type = QueryableEntryImpl.extractAttributeType(entryAttributeValue);
             attributeType = type;
         }
 

@@ -21,11 +21,12 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.impl.Comparison;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -140,10 +141,10 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
+        public Set<? extends QueryableEntry> filter(QueryContext queryContext) {
             Index ix = queryContext.getIndex("age");
             if (ix != null) {
-                return ix.getRecords(Comparison.GREATER, 50);
+                return ((InternalIndex) ix).getRecords(Comparison.GREATER, 50);
             } else {
                 return null;
             }

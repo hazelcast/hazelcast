@@ -22,10 +22,10 @@ import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -164,7 +164,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         static final AtomicBoolean INDEX_CALLED = new AtomicBoolean(false);
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
+        public Set<? extends QueryableEntry> filter(QueryContext queryContext) {
             return null;
         }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.collection.PartitionIdSet;
 
@@ -34,11 +34,11 @@ public class QueryResultProcessor implements ResultProcessor<QueryResult> {
     }
 
     @Override
-    public QueryResult populateResult(Query query, long resultLimit, Collection<QueryableEntry> entries,
+    public QueryResult populateResult(Query query, long resultLimit, Collection<QueryableEntryImpl> entries,
                                       PartitionIdSet partitionIds) {
         QueryResult result = new QueryResult(query.getIterationType(), query.getProjection(), serializationService, resultLimit,
                 false);
-        for (QueryableEntry entry : entries) {
+        for (QueryableEntryImpl entry : entries) {
             result.add(entry);
         }
         result.setPartitionIds(partitionIds);

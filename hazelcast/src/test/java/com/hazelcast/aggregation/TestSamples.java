@@ -19,7 +19,7 @@ package com.hazelcast.aggregation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.math.BigDecimal;
@@ -193,7 +193,7 @@ final class TestSamples {
         values.add(container);
     }
 
-    private static final class ExtractableEntry<K, V> extends QueryableEntry<K, V> {
+    private static final class ExtractableEntry<K, V> extends QueryableEntryImpl<K, V> {
 
         private K key;
         private V value;

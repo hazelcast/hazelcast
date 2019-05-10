@@ -21,8 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.SkipIndexPredicate;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.CompoundPredicate;
@@ -138,7 +136,7 @@ public class SqlPredicate
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
+    public Set<? extends QueryableEntry> filter(QueryContext queryContext) {
         return ((IndexAwarePredicate) predicate).filter(queryContext);
     }
 

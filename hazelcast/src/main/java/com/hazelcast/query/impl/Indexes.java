@@ -22,6 +22,7 @@ import com.hazelcast.monitor.impl.GlobalIndexesStats;
 import com.hazelcast.monitor.impl.IndexesStats;
 import com.hazelcast.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -214,7 +215,7 @@ public class Indexes {
      *                        inserting the new entry.
      * @param operationSource the operation source.
      */
-    public void putEntry(QueryableEntry queryableEntry, Object oldValue, Index.OperationSource operationSource) {
+    public void putEntry(QueryableEntryImpl queryableEntry, Object oldValue, InternalIndex.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
         for (InternalIndex index : indexes) {
             index.putEntry(queryableEntry, oldValue, operationSource);
@@ -229,7 +230,7 @@ public class Indexes {
      * @param value           the value of the entry to remove.
      * @param operationSource the operation source.
      */
-    public void removeEntry(Data key, Object value, Index.OperationSource operationSource) {
+    public void removeEntry(Data key, Object value, InternalIndex.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
         for (InternalIndex index : indexes) {
             index.removeEntry(key, value, operationSource);
@@ -268,7 +269,7 @@ public class Indexes {
      * performed using the indexes known to this indexes instance.
      */
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry> query(Predicate predicate) {
+    public Set<QueryableEntryImpl> query(Predicate predicate) {
         stats.incrementQueryCount();
 
         if (!haveAtLeastOneIndex() || !(predicate instanceof IndexAwarePredicate)) {
@@ -276,12 +277,12 @@ public class Indexes {
         }
 
         IndexAwarePredicate indexAwarePredicate = (IndexAwarePredicate) predicate;
-        QueryContext queryContext = queryContextProvider.obtainContextFor(this);
+        QueryContextImpl queryContext = queryContextProvider.obtainContextFor(this);
         if (!indexAwarePredicate.isIndexed(queryContext)) {
             return null;
         }
 
-        Set<QueryableEntry> result = indexAwarePredicate.filter(queryContext);
+        Set<QueryableEntryImpl> result = indexAwarePredicate.filter(queryContext);
         if (result != null) {
             stats.incrementIndexedQueryCount();
             queryContext.applyPerQueryStats();
@@ -297,11 +298,11 @@ public class Indexes {
      *                  attribute name or an exact index name.
      * @param matchHint the match hint.
      * @return the matched index or {@code null} if nothing matched.
-     * @see QueryContext.IndexMatchHint
+     * @see QueryContextImpl.IndexMatchHint
      * @see Indexes#matchIndex
      */
-    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint) {
-        if (matchHint == QueryContext.IndexMatchHint.EXACT_NAME) {
+    public InternalIndex matchIndex(String pattern, QueryContextImpl.IndexMatchHint matchHint) {
+        if (matchHint == QueryContextImpl.IndexMatchHint.EXACT_NAME) {
             return indexesByName.get(pattern);
         } else {
             return attributeIndexRegistry.match(pattern, matchHint);

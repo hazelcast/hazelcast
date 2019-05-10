@@ -25,18 +25,18 @@ import java.util.Map;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> implements MultiResultSet {
-    private Map<Data, QueryableEntry> records;
+public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntryImpl> implements MultiResultSet {
+    private Map<Data, QueryableEntryImpl> records;
 
     @Override
-    public void addResultSet(Map<Data, QueryableEntry> resultSet) {
+    public void addResultSet(Map<Data, QueryableEntryImpl> resultSet) {
         if (records == null) {
             records = createHashMap(resultSet.size());
         }
 
-        for (Map.Entry<Data, QueryableEntry> entry : resultSet.entrySet()) {
+        for (Map.Entry<Data, QueryableEntryImpl> entry : resultSet.entrySet()) {
             Data key = entry.getKey();
-            QueryableEntry value = entry.getValue();
+            QueryableEntryImpl value = entry.getValue();
             records.put(key, value);
         }
     }
@@ -47,14 +47,14 @@ public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> i
             return false;
         }
 
-        Data keyData = ((QueryableEntry) mapEntry).getKeyData();
+        Data keyData = ((QueryableEntryImpl) mapEntry).getKeyData();
         return records.containsKey(keyData);
     }
 
     @Override
-    public Iterator<QueryableEntry> iterator() {
+    public Iterator<QueryableEntryImpl> iterator() {
         if (records == null) {
-            return Collections.<QueryableEntry>emptyList().iterator();
+            return Collections.<QueryableEntryImpl>emptyList().iterator();
         }
         return records.values().iterator();
     }

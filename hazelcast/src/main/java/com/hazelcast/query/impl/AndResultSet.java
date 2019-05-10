@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryableEntry;
 
 import java.util.AbstractSet;
 import java.util.Iterator;
@@ -34,12 +35,12 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     private static final int SIZE_UNINITIALIZED = -1;
 
-    private final Set<QueryableEntry> setSmallest;
-    private final List<Set<QueryableEntry>> otherIndexedResults;
+    private final Set<? extends QueryableEntry> setSmallest;
+    private final List<Set<? extends QueryableEntry>> otherIndexedResults;
     private final List<Predicate> lsNoIndexPredicates;
     private int cachedSize;
 
-    public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults,
+    public AndResultSet(Set<? extends QueryableEntry> setSmallest, List<Set<? extends QueryableEntry>> otherIndexedResults,
                         List<Predicate> lsNoIndexPredicates) {
         this.setSmallest = isNotNull(setSmallest, "setSmallest");
         this.otherIndexedResults = otherIndexedResults;
@@ -54,7 +55,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
         }
 
         if (otherIndexedResults != null) {
-            for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
+            for (Set<? extends QueryableEntry> otherIndexedResult : otherIndexedResults) {
                 if (!otherIndexedResult.contains(o)) {
                     return false;
                 }
@@ -78,7 +79,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     class It implements Iterator<QueryableEntry> {
 
         QueryableEntry currentEntry;
-        final Iterator<QueryableEntry> it = setSmallest.iterator();
+        final Iterator<? extends QueryableEntry> it = setSmallest.iterator();
 
         @Override
         public boolean hasNext() {
@@ -117,7 +118,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
                 return true;
             }
 
-            for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
+            for (Set<? extends QueryableEntry> otherIndexedResult : otherIndexedResults) {
                 if (!otherIndexedResult.contains(currentEntry)) {
                     return false;
                 }

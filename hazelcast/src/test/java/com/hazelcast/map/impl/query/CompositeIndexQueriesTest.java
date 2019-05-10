@@ -22,13 +22,13 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.Visitor;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -340,7 +340,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
+        public Set<? extends QueryableEntry> filter(QueryContext queryContext) {
             throw new UnsupportedOperationException();
         }
 

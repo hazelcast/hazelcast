@@ -25,8 +25,8 @@ import com.hazelcast.map.impl.querycache.subscriber.record.ObjectQueryCacheRecor
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecordFactory;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.util.Clock;
@@ -104,7 +104,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
             Object currentValue = currentRecord.getValue();
             QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
-            indexes.putEntry(queryEntry, oldValue, Index.OperationSource.USER);
+            indexes.putEntry(queryEntry, oldValue, InternalIndex.OperationSource.USER);
         }
     }
 
@@ -125,7 +125,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
 
     private void removeIndex(Data keyData, Object value) {
         if (indexes.haveAtLeastOneIndex()) {
-            indexes.removeEntry(keyData, value, Index.OperationSource.USER);
+            indexes.removeEntry(keyData, value, InternalIndex.OperationSource.USER);
         }
     }
 

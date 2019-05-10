@@ -51,8 +51,8 @@ public class IndexFirstComponentDecoratorTest {
         actual = new AttributeIndexRegistry.FirstComponentDecorator(compositeIndex);
 
         for (int i = 0; i < 100; ++i) {
-            expected.putEntry(new Entry(i, i), null, Index.OperationSource.USER);
-            compositeIndex.putEntry(new Entry(i, i), null, Index.OperationSource.USER);
+            expected.putEntry(new Entry(i, i), null, InternalIndex.OperationSource.USER);
+            compositeIndex.putEntry(new Entry(i, i), null, InternalIndex.OperationSource.USER);
         }
     }
 
@@ -137,7 +137,7 @@ public class IndexFirstComponentDecoratorTest {
         assertEquals(expected.getRecords(-100, true, 200, true), actual.getRecords(-100, true, 200, true));
     }
 
-    private class Entry extends QueryableEntry<Integer, Long> {
+    private class Entry extends QueryableEntryImpl<Integer, Long> {
 
         private final int key;
         private final long value;

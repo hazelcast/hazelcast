@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 
 import java.util.Map;
 
@@ -35,7 +35,7 @@ public class ReplicatedQueryEventFilter extends ReplicatedEntryEventFilter {
     }
 
     public boolean eval(Object arg) {
-        QueryableEntry entry = (QueryableEntry) arg;
+        QueryableEntryImpl entry = (QueryableEntryImpl) arg;
         Data keyData = entry.getKeyData();
         return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry) arg);
     }

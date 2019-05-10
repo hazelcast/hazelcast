@@ -36,6 +36,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -103,10 +104,10 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertEquals(5L, (long) trade.amount);
         assertEquals(currency, trade.currency);
 
-        List<Index> indexes = getIndexOfAttributeForMap(instance, name, attributeName);
-        Set<QueryableEntry> dollars = new HashSet<QueryableEntry>();
-        for (Index index : indexes) {
-            Set<QueryableEntry> result = index.getRecords(currency);
+        List<InternalIndex> indexes = getIndexOfAttributeForMap(instance, name, attributeName);
+        Set<QueryableEntry> dollars = new HashSet<>();
+        for (InternalIndex index : indexes) {
+            Set<? extends QueryableEntry> result = index.getRecords(currency);
             if (result != null) {
                 dollars.addAll(result);
             }
@@ -218,13 +219,13 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertThat(values, hasSize(1));
     }
 
-    private static List<Index> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
+    private static List<InternalIndex> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
         Node node = getNode(instance);
         MapService service = node.nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
-        List<Index> result = new ArrayList<Index>();
+        List<InternalIndex> result = new ArrayList<InternalIndex>();
         for (int partitionId : mapServiceContext.getOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
             result.add(indexes.getIndex(attribute));

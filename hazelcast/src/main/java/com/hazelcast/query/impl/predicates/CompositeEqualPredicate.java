@@ -18,11 +18,12 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.impl.CompositeValue;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryContextImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -81,8 +82,8 @@ public class CompositeEqualPredicate implements Predicate, IndexAwarePredicate {
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME);
+    public Set<? extends QueryableEntry> filter(QueryContext indexList) {
+        Index index = ((QueryContextImpl) indexList).matchIndex(indexName, QueryContextImpl.IndexMatchHint.EXACT_NAME);
         return index.getRecords(value);
     }
 
@@ -92,7 +93,7 @@ public class CompositeEqualPredicate implements Predicate, IndexAwarePredicate {
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext indexList) {
         return true;
     }
 

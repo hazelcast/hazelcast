@@ -19,13 +19,14 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.query.QueryableEntry;
+import com.hazelcast.query.Index;
+import com.hazelcast.query.QueryContext;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Comparables;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryContextImpl;
 
 import java.io.IOException;
 import java.util.Set;
@@ -69,8 +70,8 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate implements Vis
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+    public Set<? extends QueryableEntry> filter(QueryContext indexList) {
+        Index index = matchIndex(indexList, QueryContextImpl.IndexMatchHint.PREFER_ORDERED);
         return index.getRecords(from, true, to, true);
     }
 

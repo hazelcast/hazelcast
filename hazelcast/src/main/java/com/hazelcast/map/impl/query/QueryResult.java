@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
@@ -50,7 +50,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
  * the call to the {@link #orderAndLimit} method is expected on behalf of the
  * {@link PagingPredicate paging predicate} involved in the query. In this case,
  * the intermediate result is represented as a collection of {@link
- * QueryableEntry queryable entries} to allow the comparison of the items using
+ * QueryableEntryImpl queryable entries} to allow the comparison of the items using
  * the comparator of the paging predicate. After the call to {@link
  * #completeConstruction}, all the queryable entries are converted to {@link
  * QueryResultRow rows} and the result is ready to be provided to the client.
@@ -149,7 +149,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
      *                                          exceeds the result size limit.
      */
     @Override
-    public void add(QueryableEntry entry) {
+    public void add(QueryableEntryImpl entry) {
         if (++resultSize > resultLimit) {
             throw new QueryResultSizeExceededException();
         }
@@ -172,12 +172,12 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
         setPartitionIds(partitionIds);
         if (orderAndLimitExpected) {
             for (ListIterator iterator = rows.listIterator(); iterator.hasNext(); ) {
-                iterator.set(convertEntryToRow((QueryableEntry) iterator.next()));
+                iterator.set(convertEntryToRow((QueryableEntryImpl) iterator.next()));
             }
         }
     }
 
-    private Data getValueData(QueryableEntry entry) {
+    private Data getValueData(QueryableEntryImpl entry) {
         if (projection != null) {
             return serializationService.toData(projection.transform(entry));
         } else {
@@ -260,7 +260,7 @@ public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow
         }
     }
 
-    private QueryResultRow convertEntryToRow(QueryableEntry entry) {
+    private QueryResultRow convertEntryToRow(QueryableEntryImpl entry) {
         Data key = null;
         Data value = null;
         switch (iterationType) {

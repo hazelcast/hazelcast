@@ -59,16 +59,16 @@ public class FalsePredicateTest extends HazelcastTestSupport {
 
     @Test
     public void isIndexed() {
-        QueryContext queryContext = mock(QueryContext.class);
+        QueryContextImpl queryContext = mock(QueryContextImpl.class);
 
         assertTrue(falsePredicate.isIndexed(queryContext));
     }
 
     @Test
     public void filter() {
-        QueryContext queryContext = mock(QueryContext.class);
+        QueryContextImpl queryContext = mock(QueryContextImpl.class);
 
-        Set<QueryableEntry> result = falsePredicate.filter(queryContext);
+        Set<QueryableEntryImpl> result = falsePredicate.filter(queryContext);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());

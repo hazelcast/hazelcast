@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.query.QueryableEntry;
+
 import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,16 +35,16 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
     private static final int ENTRY_MULTIPLE = 4;
     private static final int ENTRY_MIN_SIZE = 8;
 
-    private final List<Set<QueryableEntry>> indexedResults;
+    private final List<Set<? extends QueryableEntry>> indexedResults;
     private Set<QueryableEntry> entries;
 
-    public OrResultSet(List<Set<QueryableEntry>> indexedResults) {
+    public OrResultSet(List<Set<? extends QueryableEntry>> indexedResults) {
         this.indexedResults = indexedResults;
     }
 
     @Override
     public boolean contains(Object o) {
-        for (Set<QueryableEntry> otherIndexedResult : indexedResults) {
+        for (Set<? extends QueryableEntry> otherIndexedResult : indexedResults) {
             if (otherIndexedResult.contains(o)) {
                 return true;
             }
@@ -80,10 +82,10 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                 entries = Collections.emptySet();
             } else {
                 if (indexedResults.size() == 1) {
-                    entries = new HashSet<QueryableEntry>(indexedResults.get(0));
+                    entries = new HashSet<>(indexedResults.get(0));
                 } else {
                     entries = createHashSet(Math.max(ENTRY_MIN_SIZE, indexedResults.size() * ENTRY_MULTIPLE));
-                    for (Set<QueryableEntry> result : indexedResults) {
+                    for (Set<? extends QueryableEntry> result : indexedResults) {
                         entries.addAll(result);
                     }
                 }

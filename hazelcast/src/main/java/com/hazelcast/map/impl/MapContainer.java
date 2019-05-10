@@ -46,9 +46,9 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
@@ -386,7 +386,7 @@ public class MapContainer {
         return recordFactoryConstructor;
     }
 
-    public QueryableEntry newQueryEntry(Data key, Object value) {
+    public QueryableEntryImpl newQueryEntry(Data key, Object value) {
         return queryEntryFactory.newEntry(key, value);
     }
 
@@ -434,12 +434,12 @@ public class MapContainer {
     public Map<String, Boolean> getIndexDefinitions() {
         Map<String, Boolean> definitions = new HashMap<>();
         if (isGlobalIndexEnabled()) {
-            for (Index index : globalIndexes.getIndexes()) {
+            for (InternalIndex index : globalIndexes.getIndexes()) {
                 definitions.put(index.getName(), index.isOrdered());
             }
         } else {
             for (PartitionContainer container : mapServiceContext.getPartitionContainers()) {
-                for (Index index : container.getIndexes(name).getIndexes()) {
+                for (InternalIndex index : container.getIndexes(name).getIndexes()) {
                     definitions.put(index.getName(), index.isOrdered());
                 }
             }

@@ -34,7 +34,7 @@ import com.hazelcast.query.Metadata;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -134,7 +134,7 @@ public class PartitionScanRunner {
      */
     public QueryableEntriesSegment run(String mapName, Predicate predicate, int partitionId, int tableIndex, int fetchSize) {
         int lastIndex = tableIndex;
-        final List<QueryableEntry> resultList = new LinkedList<>();
+        final List<QueryableEntryImpl> resultList = new LinkedList<>();
         final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         final RecordStore recordStore = partitionContainer.getRecordStore(mapName);
         final Extractors extractors = mapServiceContext.getExtractors(mapName);
@@ -147,7 +147,8 @@ public class PartitionScanRunner {
                 break;
             }
             for (Entry<Data, Data> entry : entries) {
-                QueryableEntry queryEntry = new LazyMapEntry(entry.getKey(), entry.getValue(), serializationService, extractors);
+                QueryableEntryImpl queryEntry =
+                        new LazyMapEntry(entry.getKey(), entry.getValue(), serializationService, extractors);
                 if (predicate.apply(queryEntry)) {
                     resultList.add(queryEntry);
                 }

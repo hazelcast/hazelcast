@@ -20,8 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
@@ -175,16 +173,16 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
      * @return
      */
     @Override
-    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
+    public Set<? extends QueryableEntry<K, V>> filter(QueryContext queryContext) {
         if (!(predicate instanceof IndexAwarePredicate)) {
             return null;
         }
 
-        Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext);
+        Set<? extends QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext);
         if (set == null || set.isEmpty()) {
             return set;
         }
-        List<QueryableEntry<K, V>> resultList = new ArrayList<QueryableEntry<K, V>>();
+        List<QueryableEntry<K, V>> resultList = new ArrayList<>();
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry();
         for (QueryableEntry<K, V> queryableEntry : set) {
             if (SortingUtil.compareAnchor(this, queryableEntry, nearestAnchorEntry)) {
@@ -194,7 +192,7 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
 
         List<QueryableEntry<K, V>> sortedSubList =
                 (List) SortingUtil.getSortedSubList((List) resultList, this, nearestAnchorEntry);
-        return new LinkedHashSet<QueryableEntry<K, V>>(sortedSubList);
+        return new LinkedHashSet<>(sortedSubList);
     }
 
 

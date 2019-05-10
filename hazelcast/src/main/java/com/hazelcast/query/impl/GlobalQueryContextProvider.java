@@ -21,16 +21,16 @@ package com.hazelcast.query.impl;
  */
 public class GlobalQueryContextProvider implements QueryContextProvider {
 
-    private static final ThreadLocal<QueryContext> QUERY_CONTEXT = new ThreadLocal<QueryContext>() {
+    private static final ThreadLocal<QueryContextImpl> QUERY_CONTEXT = new ThreadLocal<QueryContextImpl>() {
         @Override
-        protected QueryContext initialValue() {
-            return new QueryContext();
+        protected QueryContextImpl initialValue() {
+            return new QueryContextImpl();
         }
     };
 
     @Override
-    public QueryContext obtainContextFor(Indexes indexes) {
-        QueryContext queryContext = QUERY_CONTEXT.get();
+    public QueryContextImpl obtainContextFor(Indexes indexes) {
+        QueryContextImpl queryContext = QUERY_CONTEXT.get();
         queryContext.attachTo(indexes);
         return queryContext;
     }

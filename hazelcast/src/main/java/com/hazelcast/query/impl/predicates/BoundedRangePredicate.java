@@ -16,10 +16,11 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.query.QueryContext;
+import com.hazelcast.query.QueryableEntry;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.impl.Comparables;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryContextImpl;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -65,8 +66,8 @@ public class BoundedRangePredicate extends AbstractIndexAwarePredicate implement
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+    public Set<? extends QueryableEntry> filter(QueryContext indexList) {
+        Index index = matchIndex(indexList, QueryContextImpl.IndexMatchHint.PREFER_ORDERED);
         return index.getRecords(from, fromInclusive, to, toInclusive);
     }
 

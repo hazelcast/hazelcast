@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.QueryableEntry;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -78,7 +79,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/9614
     public void size_matchingPredicate_notInResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<? extends QueryableEntry>> otherIndexedResults = new ArrayList<>();
         otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
@@ -96,7 +97,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/9614
     public void size_matchingPredicate_noOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<? extends QueryableEntry>> otherIndexedResults = new ArrayList<>();
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
         int size = resultSet.size();
@@ -115,7 +116,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         Set<QueryableEntry> entries = generateEntries(100000);
         Set<QueryableEntry> otherIndexResult = new HashSet<QueryableEntry>();
         otherIndexResult.add(entries.iterator().next());
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<? extends QueryableEntry>> otherIndexedResults = new ArrayList<>();
         otherIndexedResults.add(otherIndexResult);
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
@@ -140,7 +141,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     @Test
     public void contains_matchingPredicate_notInResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<? extends QueryableEntry>> otherIndexedResults = new ArrayList<>();
         otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
@@ -150,7 +151,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
     @Test
     public void contains_matchingPredicate_noOtherResult() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<? extends QueryableEntry>> otherIndexedResults = new ArrayList<>();
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
         for (QueryableEntry entry : entries) {
@@ -163,7 +164,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         Set<QueryableEntry> entries = generateEntries(100000);
         Set<QueryableEntry> otherIndexResult = new HashSet<QueryableEntry>();
         otherIndexResult.add(entries.iterator().next());
-        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        List<Set<? extends QueryableEntry>> otherIndexedResults = new ArrayList<>();
         otherIndexedResults.add(otherIndexResult);
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
@@ -199,7 +200,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DummyEntry extends QueryableEntry {
+    private static class DummyEntry extends QueryableEntryImpl {
 
         @Override
         public Object getValue() {

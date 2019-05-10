@@ -59,12 +59,12 @@ public class ConverterResolutionTest {
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.putEntry(new Entry(0, null), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, null), null, InternalIndex.OperationSource.USER);
         assertNull(indexes.getConverter("value"));
         // just to make sure double-invocation doesn't change anything
         assertNull(indexes.getConverter("value"));
 
-        indexes.putEntry(new Entry(0, 1L), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, 1L), null, InternalIndex.OperationSource.USER);
         assertSame(LONG_CONVERTER, indexes.getConverter("value"));
 
         indexes.destroyIndexes();
@@ -79,7 +79,7 @@ public class ConverterResolutionTest {
         indexes.addOrGetIndex("value", false);
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.putEntry(new Entry(0, 1L), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, 1L), null, InternalIndex.OperationSource.USER);
         assertSame(LONG_CONVERTER, indexes.getConverter("value"));
 
         indexes.destroyIndexes();
@@ -104,11 +104,11 @@ public class ConverterResolutionTest {
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.putEntry(new Entry(0, null), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, null), null, InternalIndex.OperationSource.USER);
         assertSame(INTEGER_CONVERTER, indexes.getConverter("__key"));
         assertNull(indexes.getConverter("value"));
 
-        indexes.putEntry(new Entry(0, 1L), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, 1L), null, InternalIndex.OperationSource.USER);
         assertSame(INTEGER_CONVERTER, indexes.getConverter("__key"));
         assertSame(LONG_CONVERTER, indexes.getConverter("value"));
 
@@ -126,11 +126,11 @@ public class ConverterResolutionTest {
         indexes.addOrGetIndex("__key, value", false);
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.putEntry(new Entry(0, null), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, null), null, InternalIndex.OperationSource.USER);
         assertSame(INTEGER_CONVERTER, indexes.getConverter("__key"));
         assertNull(indexes.getConverter("value"));
 
-        indexes.putEntry(new Entry(0, 1L), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, 1L), null, InternalIndex.OperationSource.USER);
         assertSame(INTEGER_CONVERTER, indexes.getConverter("__key"));
         assertSame(LONG_CONVERTER, indexes.getConverter("value"));
 
@@ -155,12 +155,12 @@ public class ConverterResolutionTest {
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.putEntry(new Entry(0, null), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, null), null, InternalIndex.OperationSource.USER);
         assertSame(INTEGER_CONVERTER, indexes.getConverter("__key"));
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.putEntry(new Entry(0, 1L), null, Index.OperationSource.USER);
+        indexes.putEntry(new Entry(0, 1L), null, InternalIndex.OperationSource.USER);
         assertSame(INTEGER_CONVERTER, indexes.getConverter("__key"));
         assertSame(LONG_CONVERTER, indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
@@ -181,7 +181,7 @@ public class ConverterResolutionTest {
 
     }
 
-    private class Entry extends QueryableEntry<Integer, Value> {
+    private class Entry extends QueryableEntryImpl<Integer, Value> {
 
         private final int key;
         private final Value value;

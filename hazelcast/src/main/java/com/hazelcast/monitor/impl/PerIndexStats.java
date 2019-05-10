@@ -17,12 +17,13 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.query.Index;
 import com.hazelcast.query.impl.Comparison;
-import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.InternalIndex;
 
 /**
- * Provides internal per-index statistics for {@link com.hazelcast.query.impl.Index
- * Index}.
+ * Provides internal per-index statistics for {@link com.hazelcast.query.Index
+ * index}.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:anoninnerlength"})
 public interface PerIndexStats {
@@ -103,17 +104,17 @@ public interface PerIndexStats {
         }
 
         @Override
-        public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        public void onInsert(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource) {
             // do nothing
         }
 
         @Override
-        public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        public void onUpdate(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource) {
             // do nothing
         }
 
         @Override
-        public void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+        public void onRemove(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource) {
             // do nothing
         }
 
@@ -252,9 +253,9 @@ public interface PerIndexStats {
      * @param operationStats  the operation stats to track the stats.
      * @param operationSource the operation source.
      * @see #makeTimestamp
-     * @see com.hazelcast.query.impl.Index#putEntry
+     * @see InternalIndex#putEntry
      */
-    void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
+    void onInsert(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource);
 
     /**
      * Invoked by the associated index after every update operation.
@@ -263,9 +264,9 @@ public interface PerIndexStats {
      * @param operationStats  the operation stats to track the stats.
      * @param operationSource the operation source.
      * @see #makeTimestamp
-     * @see com.hazelcast.query.impl.Index#putEntry
+     * @see InternalIndex#putEntry
      */
-    void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
+    void onUpdate(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource);
 
     /**
      * Invoked by the associated index after every remove operation.
@@ -274,14 +275,14 @@ public interface PerIndexStats {
      * @param operationStats  the operation stats to track the stats.
      * @param operationSource the operation source.
      * @see #makeTimestamp
-     * @see com.hazelcast.query.impl.Index#removeEntry
+     * @see InternalIndex#removeEntry
      */
-    void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource);
+    void onRemove(long timestamp, IndexOperationStats operationStats, InternalIndex.OperationSource operationSource);
 
     /**
      * Invoked by the associated index after the index was cleared.
      *
-     * @see com.hazelcast.query.impl.Index#clear
+     * @see InternalIndex#clear
      */
     void onClear();
 
@@ -290,10 +291,10 @@ public interface PerIndexStats {
      * <p>
      * Following operations generate a hit:
      * <ul>
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable)}
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable[])}
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparison, Comparable)}
-     * <li>{@link com.hazelcast.query.impl.Index#getRecords(Comparable, boolean, Comparable, boolean)}
+     * <li>{@link Index#getRecords(Comparable)}
+     * <li>{@link Index#getRecords(Comparable[])}
+     * <li>{@link InternalIndex#getRecords(Comparison, Comparable)}
+     * <li>{@link Index#getRecords(Comparable, boolean, Comparable, boolean)}
      * </ul>
      *
      * @param timestamp      the time at which the hit-producing operation was

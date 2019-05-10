@@ -64,14 +64,14 @@ public class IndexJsonTest {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         Indexes is = Indexes.newBuilder(ss, copyBehavior).extractors(Extractors.newBuilder(ss).build()).indexProvider(
                 new DefaultIndexProvider()).usesCachedQueryableEntries(true).statsEnabled(true).global(true).build();
-        Index numberIndex = is.addOrGetIndex("age", false);
-        Index boolIndex = is.addOrGetIndex("active", false);
-        Index stringIndex = is.addOrGetIndex("name", false);
+        InternalIndex numberIndex = is.addOrGetIndex("age", false);
+        InternalIndex boolIndex = is.addOrGetIndex("active", false);
+        InternalIndex stringIndex = is.addOrGetIndex("name", false);
 
         for (int i = 0; i < 1001; i++) {
             Data key = ss.toData(i);
             String jsonString = "{\"age\" : " + i + "  , \"name\" : \"sancar\" , \"active\" :  " + (i % 2 == 0) + " } ";
-            is.putEntry(new QueryEntry(ss, key, new HazelcastJsonValue(jsonString), Extractors.newBuilder(ss).build()), null, Index.OperationSource.USER);
+            is.putEntry(new QueryEntry(ss, key, new HazelcastJsonValue(jsonString), Extractors.newBuilder(ss).build()), null, InternalIndex.OperationSource.USER);
         }
 
         assertEquals(1, numberIndex.getRecords(10).size());

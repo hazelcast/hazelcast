@@ -41,28 +41,28 @@ public class CachedQueryEntryTest extends QueryEntryTest {
 
     @Test
     public void getKey_caching() {
-        QueryableEntry entry = createEntry("key", "value");
+        QueryableEntryImpl entry = createEntry("key", "value");
 
         assertSame(entry.getKey(), entry.getKey());
     }
 
     @Test
     public void getValue_caching() {
-        QueryableEntry entry = createEntry("key", "value");
+        QueryableEntryImpl entry = createEntry("key", "value");
 
         assertSame(entry.getValue(), entry.getValue());
     }
 
     @Test
     public void getKeyData_caching() {
-        QueryableEntry entry = createEntry("key", "value");
+        QueryableEntryImpl entry = createEntry("key", "value");
 
         assertSame(entry.getKeyData(), entry.getKeyData());
     }
 
     @Test
     public void getValueData_caching() {
-        QueryableEntry entry = createEntry("key", "value");
+        QueryableEntryImpl entry = createEntry("key", "value");
 
         assertSame(entry.getValueData(), entry.getValueData());
     }
@@ -76,7 +76,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     public void testGetKey() {
         String keyObject = "key";
         Data keyData = serializationService.toData(keyObject);
-        QueryableEntry entry = createEntry(keyData, new Object(), newExtractor());
+        QueryableEntryImpl entry = createEntry(keyData, new Object(), newExtractor());
 
         Object key = entry.getKey();
         assertEquals(keyObject, key);
@@ -85,7 +85,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     @Test
     public void testGetTargetObject_givenKeyDataIsPortable_whenKeyFlagIsTrue_thenReturnKeyData() {
         Data keyData = mockPortableData();
-        QueryableEntry entry = createEntry(keyData, new Object(), newExtractor());
+        QueryableEntryImpl entry = createEntry(keyData, new Object(), newExtractor());
 
         Object targetObject = entry.getTargetObject(true);
 
@@ -96,7 +96,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     public void testGetTargetObject_givenKeyDataIsNotPortable_whenKeyFlagIsTrue_thenReturnKeyObject() {
         Object keyObject = "key";
         Data keyData = serializationService.toData(keyObject);
-        QueryableEntry entry = createEntry(keyData, new Object(), newExtractor());
+        QueryableEntryImpl entry = createEntry(keyData, new Object(), newExtractor());
 
         Object targetObject = entry.getTargetObject(true);
 
@@ -107,7 +107,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     public void testGetTargetObject_givenValueIsDataAndPortable_whenKeyFlagIsFalse_thenReturnValueData() {
         Data key = serializationService.toData("indexedKey");
         Data value = serializationService.toData(new PortableEmployee(30, "peter"));
-        QueryableEntry entry = createEntry(key, value, newExtractor());
+        QueryableEntryImpl entry = createEntry(key, value, newExtractor());
 
         Object targetObject = entry.getTargetObject(false);
 
@@ -118,7 +118,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     public void testGetTargetObject_givenValueIsData_whenKeyFlagIsFalse_thenReturnValueObject() {
         Data key = serializationService.toData("key");
         Data value = serializationService.toData("value");
-        QueryableEntry entry = createEntry(key, value, newExtractor());
+        QueryableEntryImpl entry = createEntry(key, value, newExtractor());
 
         Object targetObject = entry.getTargetObject(false);
 
@@ -129,7 +129,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     public void testGetTargetObject_givenValueIsPortable_whenKeyFlagIsFalse_thenReturnValueData() {
         Data key = serializationService.toData("indexedKey");
         Portable value = new PortableEmployee(30, "peter");
-        QueryableEntry entry = createEntry(key, value, newExtractor());
+        QueryableEntryImpl entry = createEntry(key, value, newExtractor());
 
         Object targetObject = entry.getTargetObject(false);
 
@@ -140,7 +140,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     public void testGetTargetObject_givenValueIsNotPortable_whenKeyFlagIsFalse_thenReturnValueObject() {
         Data key = serializationService.toData("key");
         String value = "value";
-        QueryableEntry entry = createEntry(key, value, newExtractor());
+        QueryableEntryImpl entry = createEntry(key, value, newExtractor());
 
         Object targetObject = entry.getTargetObject(false);
 
@@ -149,7 +149,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
 
     @Test(expected = NullPointerException.class)
     public void testGetTargetObject_givenInstanceIsNotInitialized_whenKeyFlagIsFalse_thenThrowNPE() {
-        QueryableEntry entry = createEntry();
+        QueryableEntryImpl entry = createEntry();
 
         entry.getTargetObject(false);
     }
@@ -226,12 +226,12 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     }
 
     @Override
-    protected QueryableEntry createEntry() {
+    protected QueryableEntryImpl createEntry() {
         return new CachedQueryEntry();
     }
 
     @Override
-    protected QueryableEntry createEntry(Data key, Object value, Extractors extractors) {
+    protected QueryableEntryImpl createEntry(Data key, Object value, Extractors extractors) {
         return new CachedQueryEntry(serializationService, key, value, extractors);
     }
 

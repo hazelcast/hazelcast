@@ -29,7 +29,7 @@ public class GlobalQueryContextProviderWithStats implements QueryContextProvider
     };
 
     @Override
-    public QueryContext obtainContextFor(Indexes indexes) {
+    public QueryContextImpl obtainContextFor(Indexes indexes) {
         GlobalQueryContextWithStats queryContext = QUERY_CONTEXT.get();
         queryContext.attachTo(indexes);
         return queryContext;

@@ -67,7 +67,7 @@ public class DuplicateDetectingMultiResultTest {
 
     @Test
     public void testContains_notEmpty() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
 
         assertThat(result.contains(entry), is(true));
@@ -75,7 +75,7 @@ public class DuplicateDetectingMultiResultTest {
 
     @Test
     public void testIterator_notEmpty() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
 
         assertThat(result.iterator().hasNext(), is(true));
@@ -91,7 +91,7 @@ public class DuplicateDetectingMultiResultTest {
 
     @Test
     public void testAddResultSet_duplicate() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
         addEntry(entry);
 
@@ -100,7 +100,7 @@ public class DuplicateDetectingMultiResultTest {
 
     @Test
     public void testContains_duplicate() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
         addEntry(entry);
 
@@ -109,7 +109,7 @@ public class DuplicateDetectingMultiResultTest {
 
     @Test
     public void testIterator_duplicate() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
         addEntry(entry);
 
@@ -119,14 +119,14 @@ public class DuplicateDetectingMultiResultTest {
 
     @Test
     public void testSize_duplicate() throws Exception {
-        QueryableEntry entry = entry(data());
+        QueryableEntryImpl entry = entry(data());
         addEntry(entry);
         addEntry(entry);
 
         assertThat(result.isEmpty(), is(false));
     }
 
-    public QueryableEntry entry(Data data) {
+    public QueryableEntryImpl entry(Data data) {
         QueryEntry entry = mock(QueryEntry.class);
         when(entry.getKeyData()).thenReturn(data);
         return entry;
@@ -136,8 +136,8 @@ public class DuplicateDetectingMultiResultTest {
         return mock(Data.class);
     }
 
-    public void addEntry(QueryableEntry entry) {
-        ConcurrentMap<Data, QueryableEntry> values = new ConcurrentHashMap<Data, QueryableEntry>();
+    public void addEntry(QueryableEntryImpl entry) {
+        ConcurrentMap<Data, QueryableEntryImpl> values = new ConcurrentHashMap<Data, QueryableEntryImpl>();
         values.put(entry.getKeyData(), entry);
         result.addResultSet(values);
     }

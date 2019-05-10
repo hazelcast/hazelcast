@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -56,7 +56,7 @@ public class QueryEventFilterTest {
 
         //when
         Data key2 = serializationService.toData("key2");
-        QueryableEntry entry = mockEntryWithKeyData(key2);
+        QueryableEntryImpl entry = mockEntryWithKeyData(key2);
 
         //then
         boolean result = filter.eval(entry);
@@ -72,7 +72,7 @@ public class QueryEventFilterTest {
 
         //when
         Data key2 = serializationService.toData("key1");
-        QueryableEntry entry = mockEntryWithKeyData(key2);
+        QueryableEntryImpl entry = mockEntryWithKeyData(key2);
 
         //then
         boolean result = filter.eval(entry);
@@ -87,7 +87,7 @@ public class QueryEventFilterTest {
 
         //when
         Data key2 = serializationService.toData("key");
-        QueryableEntry entry = mockEntryWithKeyData(key2);
+        QueryableEntryImpl entry = mockEntryWithKeyData(key2);
 
         //then
         boolean result = filter.eval(entry);
@@ -102,7 +102,7 @@ public class QueryEventFilterTest {
 
         //when
         Data key2 = serializationService.toData("key");
-        QueryableEntry entry = mockEntryWithKeyData(key2);
+        QueryableEntryImpl entry = mockEntryWithKeyData(key2);
 
         //then
         boolean result = filter.eval(entry);
@@ -201,8 +201,8 @@ public class QueryEventFilterTest {
         assertFalse(filter1.equals(filter2));
     }
 
-    private QueryableEntry mockEntryWithKeyData(Data key) {
-        QueryableEntry entry = mock(QueryableEntry.class);
+    private QueryableEntryImpl mockEntryWithKeyData(Data key) {
+        QueryableEntryImpl entry = mock(QueryableEntryImpl.class);
         when(entry.getKeyData()).thenReturn(key);
         return entry;
     }

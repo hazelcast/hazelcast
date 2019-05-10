@@ -14,37 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query;
+
+import java.util.Map;
 
 /**
- * Defines comparisons supported by {@link InternalIndex#getRecords(Comparison, Comparable)}
- * and {@link IndexStore#getRecords(Comparable)}.
+ * Represents a Queryable Entry, which means searched an indexed by SQL query or predicate.
+ * @param <K></K> the key type
+ * @param <V></V> the value type
  */
-public enum Comparison {
-
-    /**
-     * !=
-     */
-    NOT_EQUAL,
-
-    /**
-     * <
-     */
-    LESS,
-
-    /**
-     * >
-     */
-    GREATER,
-
-    /**
-     * <=
-     */
-    LESS_OR_EQUAL,
-
-    /**
-     * >=
-     */
-    GREATER_OR_EQUAL
-
+public interface QueryableEntry<K, V> extends Map.Entry<K, V> {
 }

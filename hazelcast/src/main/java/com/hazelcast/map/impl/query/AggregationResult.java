@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryableEntryImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.collection.PartitionIdSet;
 
@@ -84,7 +84,7 @@ public class AggregationResult implements Result<AggregationResult> {
     }
 
     @Override
-    public void add(QueryableEntry entry) {
+    public void add(QueryableEntryImpl entry) {
         aggregator.accumulate(entry);
     }
 
