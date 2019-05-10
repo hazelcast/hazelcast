@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
@@ -70,19 +69,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private static final int MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS = 10;
     private static final int MAX_CONSECUTIVE_SUBMITS = 100;
-    private static final ClientMessageDecoder SUBMIT_TO_PARTITION_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) ExecutorServiceSubmitToPartitionCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder SUBMIT_TO_ADDRESS_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) ExecutorServiceSubmitToAddressCodec.decodeResponse(clientMessage).response;
-        }
-    };
 
     private final Random random = new Random(-System.currentTimeMillis());
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
@@ -434,7 +420,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
 
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
-                SUBMIT_TO_PARTITION_DECODER);
+                message -> ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response);
         delegatingFuture.andThen(callback);
     }
 
@@ -458,7 +444,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
-                SUBMIT_TO_PARTITION_DECODER);
+                message -> ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response);
         delegatingFuture.andThen(callback);
     }
 
@@ -479,7 +465,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task), address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
-                SUBMIT_TO_ADDRESS_DECODER);
+                message -> ExecutorServiceSubmitToAddressCodec.decodeResponse(message).response);
         delegatingFuture.andThen(callback);
     }
 
@@ -497,7 +483,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return new CompletedFuture<T>(getSerializationService(), response, userExecutor);
         } else {
             return new IExecutorDelegatingFuture<T>(f, getContext(), uuid, defaultValue,
-                    SUBMIT_TO_ADDRESS_DECODER, name, address);
+                    message -> ExecutorServiceSubmitToAddressCodec.decodeResponse(message).response, name, address);
         }
     }
 
@@ -510,7 +496,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return new CompletedFuture<T>(getSerializationService(), response, userExecutor);
         } else {
             return new IExecutorDelegatingFuture<T>(f, getContext(), uuid, defaultValue,
-                    SUBMIT_TO_PARTITION_DECODER, name, partitionId);
+                    message -> ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response, name, partitionId);
         }
     }
 

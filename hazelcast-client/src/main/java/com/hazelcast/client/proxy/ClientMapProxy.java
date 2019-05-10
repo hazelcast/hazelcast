@@ -18,7 +18,6 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -202,56 +201,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
     protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
 
-    @SuppressWarnings("unchecked")
-    protected static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) MapGetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder PUT_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) MapPutCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder SET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return null;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder REMOVE_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) MapRemoveCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder SUBMIT_TO_KEY_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) MapSubmitToKeyCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private final ClientMessageDecoder submitToKeysResponseDecoder = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) prepareResult(MapExecuteOnKeysCodec.decodeResponse(clientMessage).response);
-        }
-    };
-
-    private ClientMessageDecoder eventJournalReadResponseDecoder;
-    private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private ClientQueryCacheContext queryCacheContext;
 
@@ -265,24 +214,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
         queryCacheContext = getContext().getQueryCacheContext();
-        eventJournalReadResponseDecoder = new ClientMessageDecoder() {
-            @Override
-            public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
-                final MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
-                final PortableReadResultSet<?> resultSet = new PortableReadResultSet<Object>(
-                        params.readCount, params.items, params.itemSeqs,
-                        params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
-                resultSet.setSerializationService(getSerializationService());
-                return resultSet;
-            }
-        };
-        eventJournalSubscribeResponseDecoder = new ClientMessageDecoder() {
-            @Override
-            public EventJournalInitialSubscriberState decodeClientMessage(ClientMessage message) {
-                final ResponseParameters resp = MapEventJournalSubscribeCodec.decodeResponse(message);
-                return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
-            }
-        };
     }
 
     @Override
@@ -411,7 +342,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         return new ClientDelegatingFuture<V>(getAsyncInternal(key),
-                getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
+                getSerializationService(), clientMessage -> MapGetCodec.decodeResponse(clientMessage).response);
     }
 
     protected ClientInvocationFuture getAsyncInternal(Object key) {
@@ -465,7 +396,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
             }
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getSerializationService(), PUT_ASYNC_RESPONSE_DECODER);
+            SerializationService ss = getSerializationService();
+            return new ClientDelegatingFuture<V>(future, ss, message -> MapPutCodec.decodeResponse(message).response);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -507,7 +439,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             }
 
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<Void>(future, getSerializationService(), SET_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<Void>(future, getSerializationService(), clientMessage -> null);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -524,7 +456,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
             Data keyData = toData(key);
             ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getSerializationService(), REMOVE_ASYNC_RESPONSE_DECODER);
+            SerializationService ss = getSerializationService();
+            return new ClientDelegatingFuture<V>(future, ss, message -> MapRemoveCodec.decodeResponse(message).response);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1458,7 +1391,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            new ClientDelegatingFuture(future, getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER)
+            SerializationService ss = getSerializationService();
+            new ClientDelegatingFuture(future, ss, message -> MapSubmitToKeyCodec.decodeResponse(message).response)
                     .andThen(callback);
         } catch (Exception e) {
             throw rethrow(e);
@@ -1476,7 +1410,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
             Data keyData = toData(key);
             ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture(future, getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER);
+            SerializationService ss = getSerializationService();
+            return new ClientDelegatingFuture(future, ss, message -> MapSubmitToKeyCodec.decodeResponse(message).response);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1666,7 +1601,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataCollection);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
-        return new ClientDelegatingFuture<Map<K, Object>>(future, getSerializationService(), submitToKeysResponseDecoder);
+        return new ClientDelegatingFuture<>(future, getSerializationService(),
+                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message).response));
     }
 
     @Override
@@ -1809,8 +1745,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = MapEventJournalSubscribeCodec.encodeRequest(name);
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-        return new ClientDelegatingFuture<EventJournalInitialSubscriberState>(fut, getSerializationService(),
-                eventJournalSubscribeResponseDecoder);
+        return new ClientDelegatingFuture<>(fut, getSerializationService(), message -> {
+            ResponseParameters resp = MapEventJournalSubscribeCodec.decodeResponse(message);
+            return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
+        });
     }
 
     @Override
@@ -1830,7 +1768,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
-        return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
+        return new ClientDelegatingFuture<>(fut, ss, message -> {
+            MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
+            PortableReadResultSet<?> resultSet = new PortableReadResultSet<>(
+                    params.readCount, params.items, params.itemSeqs,
+                    params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
+            resultSet.setSerializationService(getSerializationService());
+            return resultSet;
+        });
     }
 
     // used for testing

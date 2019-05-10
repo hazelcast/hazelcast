@@ -57,14 +57,6 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
 
     private static final int TIMEOUT = 10;
 
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder LOAD_ALL_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) Boolean.TRUE;
-        }
-    };
-
     private static final CompletionListener NULL_COMPLETION_LISTENER = new CompletionListener() {
         @Override
         public void onCompletion() {
@@ -233,7 +225,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
 
             final long startNanos = nowInNanosOrDefault();
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
-            delegatingFuture = newDelegatingFuture(future, LOAD_ALL_DECODER);
+            delegatingFuture = newDelegatingFuture(future, clientMessage -> Boolean.TRUE);
             final Future delFuture = delegatingFuture;
             loadAllCalls.put(delegatingFuture, listener);
             delegatingFuture.andThen(new ExecutionCallback<V>() {

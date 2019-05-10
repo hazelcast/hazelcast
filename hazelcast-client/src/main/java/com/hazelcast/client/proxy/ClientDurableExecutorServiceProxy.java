@@ -56,13 +56,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class ClientDurableExecutorServiceProxy extends ClientProxy implements DurableExecutorService {
 
-    private static final ClientMessageDecoder RETRIEVE_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) DurableExecutorRetrieveResultCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
     private final Random random = new Random();
 
     private int partitionCount;
@@ -83,7 +76,8 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int sequence = Bits.extractInt(taskId, true);
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
-        return new ClientDelegatingFuture<T>(future, getSerializationService(), RETRIEVE_RESPONSE_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(),
+                message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response);
     }
 
     @Override
@@ -100,7 +94,8 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         int sequence = Bits.extractInt(taskId, true);
         ClientMessage clientMessage = DurableExecutorRetrieveAndDisposeResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
-        return new ClientDelegatingFuture<T>(future, getSerializationService(), RETRIEVE_RESPONSE_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(),
+                message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response);
     }
 
     @Override
@@ -217,7 +212,8 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
         long taskId = Bits.combineToLong(partitionId, sequence);
-        return new ClientDurableExecutorServiceDelegatingFuture<T>(future, getSerializationService(), RETRIEVE_RESPONSE_DECODER,
+        return new ClientDurableExecutorServiceDelegatingFuture<T>(future, getSerializationService(),
+                message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response,
                 result, taskId);
     }
 

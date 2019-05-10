@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
@@ -92,63 +91,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
     private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
 
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder GET_AND_REMOVE_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) CacheGetAndRemoveCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder REMOVE_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) Boolean.valueOf(CacheRemoveCodec.decodeResponse(clientMessage).response);
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder REPLACE_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) CacheReplaceCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder GET_AND_REPLACE_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) CacheGetAndReplaceCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder PUT_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) CachePutCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    @SuppressWarnings("unchecked")
-    private static final ClientMessageDecoder PUT_IF_ABSENT_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) Boolean.valueOf(CachePutIfAbsentCodec.decodeResponse(clientMessage).response);
-        }
-    };
-
-    private static final ClientMessageDecoder SET_EXPIRY_POLICY_DECODER = new ClientMessageDecoder() {
-        @Override
-        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) Boolean.valueOf(CacheSetExpiryPolicyCodec.decodeResponse(clientMessage).response);
-        }
-    };
-
     protected final AtomicReference<HazelcastClientCacheManager> cacheManagerRef
-            = new AtomicReference<HazelcastClientCacheManager>();
+            = new AtomicReference<>();
     protected int partitionCount;
 
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
@@ -158,10 +102,10 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
 
     AbstractClientInternalCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
-        this.asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
-        this.syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
-        this.closeableListeners = new ConcurrentHashMap<String, Closeable>();
-        this.syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
+        this.asyncListenerRegistrations = new ConcurrentHashMap<>();
+        this.syncListenerRegistrations = new ConcurrentHashMap<>();
+        this.closeableListeners = new ConcurrentHashMap<>();
+        this.syncLocks = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -281,7 +225,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheGetAndRemoveCodec.encodeRequest(nameWithPrefix, keyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
-        return newDelegatingFuture(future, GET_AND_REMOVE_RESPONSE_DECODER);
+        return newDelegatingFuture(future, clientMessage -> CacheGetAndRemoveCodec.decodeResponse(clientMessage).response);
     }
 
     protected <T> void onGetAndRemoveAsyncInternal(K key, Data keyData, ClientDelegatingFuture<T> delegatingFuture,
@@ -306,7 +250,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheRemoveCodec.encodeRequest(nameWithPrefix, keyData, oldValueData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
-        ClientDelegatingFuture delegatingFuture = newDelegatingFuture(future, REMOVE_RESPONSE_DECODER);
+        ClientDelegatingFuture delegatingFuture =
+                newDelegatingFuture(future, clientMessage -> CacheRemoveCodec.decodeResponse(clientMessage).response);
         if (async) {
             ExecutionCallback callback = !statisticsEnabled ? null : statsHandler.newOnRemoveCallback(false, startNanos);
             onRemoveAsyncInternal(key, keyData, delegatingFuture, callback);
@@ -364,8 +309,9 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         ClientMessage request = CacheReplaceCodec.encodeRequest(nameWithPrefix, keyData, oldValueData, newValueData,
                 expiryPolicyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
-        ClientDelegatingFuture<T> delegatingFuture = newDelegatingFuture(future, REPLACE_RESPONSE_DECODER);
-        ExecutionCallback<T> callback = async && statisticsEnabled ? statsHandler.<T>newOnReplaceCallback(startNanos) : null;
+        ClientDelegatingFuture<T> delegatingFuture = newDelegatingFuture(future,
+                message -> CacheReplaceCodec.decodeResponse(message).response);
+        ExecutionCallback<T> callback = async && statisticsEnabled ? statsHandler.newOnReplaceCallback(startNanos) : null;
         onReplaceInternalAsync(key, newValue, keyData, newValueData, delegatingFuture, callback);
         return delegatingFuture;
     }
@@ -396,7 +342,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         ClientMessage request = CacheGetAndReplaceCodec.encodeRequest(nameWithPrefix, keyData, newValueData, expiryPolicyData,
                 completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
-        ClientDelegatingFuture<T> delegatingFuture = newDelegatingFuture(future, GET_AND_REPLACE_RESPONSE_DECODER);
+        ClientDelegatingFuture<T> delegatingFuture =
+                newDelegatingFuture(future, message -> CacheGetAndReplaceCodec.decodeResponse(message).response);
         ExecutionCallback<T> callback = async && statisticsEnabled ? statsHandler.<T>newOnReplaceCallback(startNanos) : null;
         onReplaceAndGetAsync(key, newValue, keyData, newValueData, delegatingFuture, callback);
         return delegatingFuture;
@@ -434,7 +381,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
 
         try {
             ClientInvocationFuture invocationFuture = putInternal(keyData, valueData, expiryPolicyData, isGet, true);
-            ClientDelegatingFuture<V> delegatingFuture = newDelegatingFuture(invocationFuture, PUT_RESPONSE_DECODER);
+            ClientDelegatingFuture<V> delegatingFuture =
+                    newDelegatingFuture(invocationFuture, clientMessage -> CachePutCodec.decodeResponse(clientMessage).response);
             V response = delegatingFuture.get();
 
             if (statisticsEnabled) {
@@ -470,11 +418,11 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                                                            ClientInvocationFuture invocationFuture,
                                                            OneShotExecutionCallback<V> callback) {
         if (callback == null) {
-            return newDelegatingFuture(invocationFuture, PUT_RESPONSE_DECODER);
+            return newDelegatingFuture(invocationFuture, message -> CachePutCodec.decodeResponse(message).response);
         }
 
         CallbackAwareClientDelegatingFuture<V> future = new CallbackAwareClientDelegatingFuture<V>(invocationFuture,
-                getSerializationService(), PUT_RESPONSE_DECODER, callback);
+                getSerializationService(), message -> CachePutCodec.decodeResponse(message).response, callback);
         future.andThen(callback);
 
         return future;
@@ -498,7 +446,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         List<Data> list = Collections.singletonList(keyData);
         ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, list, expiryPolicyData);
         ClientInvocationFuture future = invoke(request, keyData, IGNORE_COMPLETION);
-        ClientDelegatingFuture<Boolean> delegatingFuture = newDelegatingFuture(future, SET_EXPIRY_POLICY_DECODER);
+        ClientDelegatingFuture<Boolean> delegatingFuture =
+                newDelegatingFuture(future, clientMessage -> CacheSetExpiryPolicyCodec.decodeResponse(clientMessage).response);
         try {
             return delegatingFuture.get();
         } catch (Throwable e) {
@@ -520,17 +469,18 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         ClientMessage request = CachePutIfAbsentCodec.encodeRequest(nameWithPrefix, keyData, valueData,
                 expiryPolicyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
-        ClientDelegatingFuture<Boolean> delegatingFuture = newDelegatingFuture(future, PUT_IF_ABSENT_RESPONSE_DECODER);
+        ClientDelegatingFuture<Boolean> delegatingFuture =
+                newDelegatingFuture(future, message -> CachePutIfAbsentCodec.decodeResponse(message).response);
         if (async) {
             ExecutionCallback<Boolean> callback = !statisticsEnabled ? null : statsHandler.newOnPutIfAbsentCallback(startNanos);
             onPutIfAbsentAsyncInternal(key, value, keyData, valueData, delegatingFuture, callback);
             return delegatingFuture;
         } else {
             try {
-                Object response = delegatingFuture.get();
+                Boolean response = delegatingFuture.get();
 
                 if (statisticsEnabled) {
-                    statsHandler.onPutIfAbsent(startNanos, (Boolean) response);
+                    statsHandler.onPutIfAbsent(startNanos, response);
                 }
                 onPutIfAbsentSyncInternal(key, value, keyData, valueData);
                 return response;
