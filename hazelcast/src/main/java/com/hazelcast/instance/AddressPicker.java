@@ -36,13 +36,6 @@ public interface AddressPicker {
     void pickAddress() throws Exception;
 
     /**
-     * @return the bind address for this node's member server socket
-     * @deprecated use {@link #getBindAddress(EndpointQualifier) getBindAddress(EndpointQualifier.MEMBER} instead
-     */
-    @Deprecated
-    Address getBindAddress();
-
-    /**
      * Returns a server socket listener address. The returned address for different {@link EndpointQualifier}s
      * may be the same or different, depending on the actual network configuration.
      *
@@ -51,13 +44,6 @@ public interface AddressPicker {
      * @since 3.12
      */
     Address getBindAddress(EndpointQualifier qualifier);
-
-    /**
-     * @return the public address for this node's member server socket
-     * @deprecated use {@link #getPublicAddress(EndpointQualifier) getPublicAddress(EndpointQualifier.MEMBER} instead
-     */
-    @Deprecated
-    Address getPublicAddress();
 
     /**
      * Returns a public address to be advertised to other cluster members and clients.
@@ -69,13 +55,6 @@ public interface AddressPicker {
     Address getPublicAddress(EndpointQualifier qualifier);
 
     Map<EndpointQualifier, Address> getPublicAddressMap();
-
-    /**
-     * @return the server socket channel for this node's member server socket
-     * @deprecated use {@link #getServerSocketChannel(EndpointQualifier) getServerSocketChannel(EndpointQualifier.MEMBER} instead
-     */
-    @Deprecated
-    ServerSocketChannel getServerSocketChannel();
 
     /**
      * Returns a server channel.

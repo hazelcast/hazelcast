@@ -37,17 +37,7 @@ class StaticAddressPicker implements AddressPicker {
     }
 
     @Override
-    public Address getBindAddress() {
-        return thisAddress;
-    }
-
-    @Override
     public Address getBindAddress(EndpointQualifier qualifier) {
-        return thisAddress;
-    }
-
-    @Override
-    public Address getPublicAddress() {
         return thisAddress;
     }
 
@@ -59,11 +49,6 @@ class StaticAddressPicker implements AddressPicker {
     @Override
     public Map<EndpointQualifier, Address> getPublicAddressMap() {
         return singletonMap(EndpointQualifier.MEMBER, thisAddress);
-    }
-
-    @Override
-    public ServerSocketChannel getServerSocketChannel() {
-        return null;
     }
 
     @Override

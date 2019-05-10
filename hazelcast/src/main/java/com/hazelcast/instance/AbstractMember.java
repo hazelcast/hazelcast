@@ -100,11 +100,6 @@ public abstract class AbstractMember implements Member {
     protected abstract ILogger getLogger();
 
     @Override
-    public InetSocketAddress getInetSocketAddress() {
-        return getSocketAddress();
-    }
-
-    @Override
     public InetSocketAddress getSocketAddress() {
         return getSocketAddress(MEMBER);
     }

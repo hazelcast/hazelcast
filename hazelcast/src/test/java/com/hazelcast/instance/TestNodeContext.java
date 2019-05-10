@@ -101,21 +101,6 @@ public class TestNodeContext implements NodeContext {
         }
 
         @Override
-        public Address getBindAddress() {
-            return address;
-        }
-
-        @Override
-        public Address getPublicAddress() {
-            return address;
-        }
-
-        @Override
-        public ServerSocketChannel getServerSocketChannel() {
-            return null;
-        }
-
-        @Override
         public Address getBindAddress(EndpointQualifier qualifier) {
             return address;
         }

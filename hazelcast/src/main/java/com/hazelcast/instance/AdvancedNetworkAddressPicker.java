@@ -38,7 +38,7 @@ class AdvancedNetworkAddressPicker
         implements AddressPicker {
 
     private final AdvancedNetworkConfig advancedNetworkConfig;
-    private final Map<EndpointQualifier, AddressPicker> pickers = new HashMap<EndpointQualifier, AddressPicker>();
+    private final Map<EndpointQualifier, AddressPicker> pickers = new HashMap<>();
 
     AdvancedNetworkAddressPicker(Config config, ILogger logger) {
         this.advancedNetworkConfig = config.getAdvancedNetworkConfig();
@@ -71,18 +71,8 @@ class AdvancedNetworkAddressPicker
     }
 
     @Override
-    public Address getBindAddress() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Address getBindAddress(EndpointQualifier qualifier) {
         return pickers.get(qualifier).getBindAddress(qualifier);
-    }
-
-    @Override
-    public Address getPublicAddress() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -92,17 +82,12 @@ class AdvancedNetworkAddressPicker
 
     @Override
     public Map<EndpointQualifier, Address> getPublicAddressMap() {
-        Map<EndpointQualifier, Address> pubAddressMap = new HashMap<EndpointQualifier, Address>(pickers.size());
+        Map<EndpointQualifier, Address> pubAddressMap = new HashMap<>(pickers.size());
         for (Map.Entry<EndpointQualifier, AddressPicker>  entry : pickers.entrySet()) {
             pubAddressMap.put(entry.getKey(), entry.getValue().getPublicAddress(entry.getKey()));
         }
 
         return pubAddressMap;
-    }
-
-    @Override
-    public ServerSocketChannel getServerSocketChannel() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -112,9 +97,7 @@ class AdvancedNetworkAddressPicker
 
     @Override
     public Map<EndpointQualifier, ServerSocketChannel> getServerSocketChannels() {
-        Map<EndpointQualifier, ServerSocketChannel> channels
-                = new HashMap<EndpointQualifier, ServerSocketChannel>(pickers.size());
-
+        Map<EndpointQualifier, ServerSocketChannel> channels = new HashMap<>(pickers.size());
         for (Map.Entry<EndpointQualifier, AddressPicker>  entry : pickers.entrySet()) {
             channels.put(entry.getKey(), entry.getValue().getServerSocketChannel(entry.getKey()));
         }

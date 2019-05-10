@@ -42,14 +42,11 @@ import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 final class DelegatingAddressPicker
         implements AddressPicker {
 
-    private final Map<EndpointQualifier, InetSocketAddress> bindAddresses =
-            new ConcurrentHashMap<EndpointQualifier, InetSocketAddress>();
+    private final Map<EndpointQualifier, InetSocketAddress> bindAddresses = new ConcurrentHashMap<>();
 
-    private final Map<EndpointQualifier, InetSocketAddress> publicAddresses =
-                new ConcurrentHashMap<EndpointQualifier, InetSocketAddress>();
+    private final Map<EndpointQualifier, InetSocketAddress> publicAddresses = new ConcurrentHashMap<>();
 
-    private final Map<EndpointQualifier, ServerSocketChannel> serverSocketChannels =
-            new ConcurrentHashMap<EndpointQualifier, ServerSocketChannel>();
+    private final Map<EndpointQualifier, ServerSocketChannel> serverSocketChannels = new ConcurrentHashMap<>();
 
     private final MemberAddressProvider memberAddressProvider;
     private final Config config;
@@ -165,11 +162,6 @@ final class DelegatingAddressPicker
     }
 
     @Override
-    public Address getBindAddress() {
-        return getBindAddress(MEMBER);
-    }
-
-    @Override
     public Address getBindAddress(EndpointQualifier qualifier) {
         return usesAdvancedNetworkConfig
                 ? new Address(bindAddresses.get(qualifier))
@@ -177,20 +169,10 @@ final class DelegatingAddressPicker
     }
 
     @Override
-    public Address getPublicAddress() {
-        return getPublicAddress(MEMBER);
-    }
-
-    @Override
     public Address getPublicAddress(EndpointQualifier qualifier) {
         return usesAdvancedNetworkConfig
                 ? new Address(publicAddresses.get(qualifier))
                 : new Address(publicAddresses.get(MEMBER));
-    }
-
-    @Override
-    public ServerSocketChannel getServerSocketChannel() {
-        return getServerSocketChannel(MEMBER);
     }
 
     @Override
@@ -207,7 +189,7 @@ final class DelegatingAddressPicker
 
     @Override
     public Map<EndpointQualifier, Address> getPublicAddressMap() {
-        Map<EndpointQualifier, Address> mappings = new HashMap<EndpointQualifier, Address>(publicAddresses.size());
+        Map<EndpointQualifier, Address> mappings = new HashMap<>(publicAddresses.size());
         for (Map.Entry<EndpointQualifier, InetSocketAddress> entry : publicAddresses.entrySet()) {
             mappings.put(entry.getKey(), new Address(entry.getValue()));
         }

@@ -64,23 +64,11 @@ public interface Member extends DataSerializable, Endpoint {
     Map<EndpointQualifier, Address> getAddressMap();
 
     /**
-     * Returns the InetSocketAddress of this member.
-     *
-     * @return InetSocketAddress of this member
-     *
-     * @deprecated use {@link #getSocketAddress()} instead
-     */
-    @Deprecated
-    InetSocketAddress getInetSocketAddress();
-
-    /**
      * Returns the socket address of this member for member to member communications or unified depending on config.
      * Equivalent to {@link #getSocketAddress(EndpointQualifier) getSocketAddress(ProtocolType.MEMBER)}.
      *
      * @return the socket address of this member for member to member communications or unified depending on config.
-     * @deprecated as of Hazelcast 3.12, use {@link #getSocketAddress(EndpointQualifier)}
      */
-    @Deprecated
     InetSocketAddress getSocketAddress();
 
     /**

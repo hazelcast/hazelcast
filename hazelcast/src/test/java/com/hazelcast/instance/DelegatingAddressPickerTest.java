@@ -82,13 +82,11 @@ public class DelegatingAddressPickerTest {
 
         picker.pickAddress();
 
-        assertEquals(memberBindAddress, picker.getBindAddress());
         assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.MEMBER));
         assertEquals(clientBindAddress, picker.getBindAddress(EndpointQualifier.CLIENT));
         assertEquals(textBindAddress, picker.getBindAddress(EndpointQualifier.REST));
         assertEquals(wan1BindAddress, picker.getBindAddress(EndpointQualifier.resolve(ProtocolType.WAN, "wan1")));
 
-        assertEquals(memberPublicAddress, picker.getPublicAddress());
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.MEMBER));
         assertEquals(clientPublicAddress, picker.getPublicAddress(EndpointQualifier.CLIENT));
         assertEquals(textPublicAddress, picker.getPublicAddress(EndpointQualifier.REST));
@@ -102,13 +100,11 @@ public class DelegatingAddressPickerTest {
 
         picker.pickAddress();
 
-        assertEquals(memberBindAddress, picker.getBindAddress());
         assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.MEMBER));
         assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.CLIENT));
         assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.REST));
         assertEquals(memberBindAddress, picker.getBindAddress(EndpointQualifier.resolve(ProtocolType.WAN, "wan1")));
 
-        assertEquals(memberPublicAddress, picker.getPublicAddress());
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.MEMBER));
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.CLIENT));
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.REST));

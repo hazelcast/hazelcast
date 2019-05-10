@@ -43,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import static com.hazelcast.instance.ServerSocketHelper.createServerSocketChannel;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -150,7 +151,7 @@ class DefaultAddressPicker
         return getPublicAddress(port);
     }
 
-    private static Address createAddress(AddressDefinition addressDef, int port) throws UnknownHostException {
+    private static Address createAddress(AddressDefinition addressDef, int port) {
         if (addressDef.host == null) {
             return new Address(addressDef.inetAddress, port);
         }
@@ -205,7 +206,7 @@ class DefaultAddressPicker
         Map<String, String> addressDomainMap = createAddressToDomainMap(tcpIpConfig);
 
         // must preserve insertion order
-        List<InterfaceDefinition> interfaceDefs = new ArrayList<InterfaceDefinition>();
+        List<InterfaceDefinition> interfaceDefs = new ArrayList<>();
         if (interfacesConfig.isEnabled()) {
             Collection<String> configInterfaces = interfacesConfig.getInterfaces();
             for (String configInterface : configInterfaces) {
@@ -405,28 +406,13 @@ class DefaultAddressPicker
     }
 
     @Override
-    public Address getBindAddress() {
-        return bindAddress;
-    }
-
-    @Override
     public Address getBindAddress(EndpointQualifier qualifier) {
         return bindAddress;
     }
 
     @Override
-    public Address getPublicAddress() {
-        return publicAddress;
-    }
-
-    @Override
     public Address getPublicAddress(EndpointQualifier qualifier) {
         return publicAddress;
-    }
-
-    @Override
-    public ServerSocketChannel getServerSocketChannel() {
-        return getServerSocketChannel(MEMBER);
     }
 
     @Override
@@ -478,13 +464,10 @@ class DefaultAddressPicker
             }
 
             InterfaceDefinition that = (InterfaceDefinition) o;
-            if (address != null ? !address.equals(that.address) : that.address != null) {
+            if (!Objects.equals(address, that.address)) {
                 return false;
             }
-            if (host != null ? !host.equals(that.host) : that.host != null) {
-                return false;
-            }
-            return true;
+            return Objects.equals(host, that.host);
         }
 
         @Override
@@ -532,10 +515,7 @@ class DefaultAddressPicker
             if (port != that.port) {
                 return false;
             }
-            if (inetAddress != null ? !inetAddress.equals(that.inetAddress) : that.inetAddress != null) {
-                return false;
-            }
-            return true;
+            return Objects.equals(inetAddress, that.inetAddress);
         }
 
         @Override
@@ -555,7 +535,7 @@ class DefaultAddressPicker
         @Override
         public Collection<String> resolve(String hostname) throws UnknownHostException {
             InetAddress[] inetAddresses = InetAddress.getAllByName(hostname);
-            Collection<String> addresses = new LinkedList<String>();
+            Collection<String> addresses = new LinkedList<>();
             for (InetAddress inetAddress : inetAddresses) {
                 addresses.add(inetAddress.getHostAddress());
             }

@@ -65,11 +65,6 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
-    public InetSocketAddress getInetSocketAddress() {
-        return getSocketAddress();
-    }
-
-    @Override
     public InetSocketAddress getSocketAddress() {
         return address;
     }
