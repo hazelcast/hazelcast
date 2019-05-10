@@ -105,16 +105,16 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         reset();
     }
 
-    public <T> void execute(String name, String uuid, T callable, Operation op) {
+    public <T> void execute(String name, String uuid, T task, Operation op) {
         ExecutorConfig cfg = getOrFindExecutorConfig(name);
         if (cfg.isStatisticsEnabled()) {
             startPending(name);
         }
         Processor processor;
-        if (callable instanceof Runnable) {
-            processor = new Processor(name, uuid, (Runnable) callable, op, cfg.isStatisticsEnabled());
+        if (task instanceof Runnable) {
+            processor = new Processor(name, uuid, (Runnable) task, op, cfg.isStatisticsEnabled());
         } else {
-            processor = new Processor(name, uuid, (Callable) callable, op, cfg.isStatisticsEnabled());
+            processor = new Processor(name, uuid, (Callable) task, op, cfg.isStatisticsEnabled());
         }
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
@@ -126,7 +126,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             if (cfg.isStatisticsEnabled()) {
                 rejectExecution(name);
             }
-            logger.warning("While executing " + callable + " on Executor[" + name + "]", e);
+            logger.warning("While executing " + task + " on Executor[" + name + "]", e);
             if (uuid != null) {
                 submittedTasks.remove(uuid);
             }
