@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Predicate;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
@@ -53,6 +54,16 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
+    public boolean add(E t) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean remove(Object o) {
         throw new UnsupportedOperationException();
     }
@@ -63,12 +74,17 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
+    public boolean removeIf(Predicate<? super E> filter) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void clear() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> coll) {
         throw new UnsupportedOperationException();
     }
 

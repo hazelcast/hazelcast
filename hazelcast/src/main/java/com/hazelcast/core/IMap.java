@@ -59,9 +59,9 @@ import java.util.concurrent.TimeUnit;
  * <li>The {@code get} method returns a clone of original values, so modifying the returned value does not change
  * the actual value in the map. You should put the modified value back to make changes visible to all nodes.
  * For additional info, see {@link IMap#get(Object)}.</li>
- * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return a collection
- * clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b> reflected
- * in the collection, and vice-versa.</li>
+ * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return an <b>immutable</b>
+ * collection clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b>
+ * reflected in the collection.</li>
  * <li>Since Hazelcast is compiled with Java 1.6, we can't override default methods introduced in later Java versions,
  * nor can we add documentation to them. Methods, including but not limited to {@code computeIfPresent}, may behave
  * incorrectly if the value passed to the update function is modified in-place and returned as a result of the invocation.
@@ -470,13 +470,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void flush();
 
     /**
-     * Returns the entries for the given keys.
+     * Returns an immutable map of entries for the given keys.
      * <p>
      * <b>Warning 1:</b>
      * <p>
      * The returned map is <b>NOT</b> backed by the original map, so
      * changes to the original map are <b>NOT</b> reflected in the
-     * returned map, and vice-versa.
+     * returned map.
      * <p>
      * <b>Warning 2:</b>
      * <p>
@@ -493,7 +493,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * and are propagated to the caller.
      *
      * @param keys keys to get (keys inside the collection cannot be null)
-     * @return map of entries
+     * @return an immutable map of entries
      * @throws NullPointerException if any of the specified keys are null
      */
     Map<K, V> getAll(Set<K> keys);
@@ -2252,54 +2252,54 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void evictAll();
 
     /**
-     * Returns a set clone of the keys contained in this map.
+     * Returns an immutable set clone of the keys contained in this map.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
-     * @return a set clone of the keys contained in this map
+     * @return an immutable set clone of the keys contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet();
 
     /**
-     * Returns a collection clone of the values contained in this map.
+     * Returns an immutable collection clone of the values contained in this map.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The collection is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the collection.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
-     * @return a collection clone of the values contained in this map
+     * @return an immutable collection clone of the values contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values();
 
     /**
-     * Returns a {@link Set} clone of the mappings contained in this map.
+     * Returns an immutable {@link Set} clone of the mappings contained in this map.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
-     * @return a set clone of the keys mappings in this map
+     * @return an immutable set clone of the keys mappings in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
@@ -2307,14 +2307,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * Queries the map based on the specified predicate and
-     * returns the keys of matching entries.
+     * returns an immutable {@link Set} clone of the keys of matching entries.
      * <p>
      * Specified predicate runs on all members in parallel.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
@@ -2329,14 +2329,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     Set<K> keySet(Predicate predicate);
 
     /**
-     * Queries the map based on the specified predicate and returns the matching entries.
+     * Queries the map based on the specified predicate and returns an immutable set of the matching entries.
      * <p>
      * Specified predicate runs on all members in parallel.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
@@ -2351,14 +2351,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
     /**
-     * Queries the map based on the specified predicate and returns the values of matching entries.
+     * Queries the map based on the specified predicate and returns an immutable collection of the values
+     * of matching entries.
      * <p>
      * Specified predicate runs on all members in parallel.
      * <p>
      * <b>Warning:</b>
      * <p>
      * The collection is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the collection.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
@@ -2373,7 +2374,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     Collection<V> values(Predicate predicate);
 
     /**
-     * Returns the locally owned set of keys.
+     * Returns the locally owned immutable set of keys.
      * <p>
      * Each key in this map is owned and managed by a specific
      * member in the cluster.
@@ -2385,20 +2386,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
-     * @return locally owned keys
+     * @return locally owned immutable set of keys
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
 
     /**
-     * Returns the keys of matching locally owned entries.
+     * Returns an immutable set of the keys of matching locally owned entries.
      * <p>
      * Each key in this map is owned and managed by a specific
      * member in the cluster.
@@ -2410,14 +2411,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <b>Warning:</b>
      * <p>
      * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * so changes to the map are <b>NOT</b> reflected in the set.
      * <p>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria
-     * @return keys of matching locally owned entries
+     * @return an immutable set of the keys of matching locally owned entries
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */

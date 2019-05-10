@@ -114,6 +114,7 @@ import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
+import com.hazelcast.internal.util.collection.ImmutableInflatableSet;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -154,7 +155,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.collection.InflatableSet;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -1171,7 +1171,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invoke(request);
         MapKeySetCodec.ResponseParameters resultParameters = MapKeySetCodec.decodeResponse(response);
 
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
+        ImmutableInflatableSet.ImmutableBuilder<K> setBuilder =
+                ImmutableInflatableSet.newImmutableBuilder(resultParameters.response.size());
         for (Data data : resultParameters.response) {
             K key = toObject(data);
             setBuilder.add(key);
@@ -1182,7 +1183,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public Map<K, V> getAll(Set<K> keys) {
         if (CollectionUtil.isEmpty(keys)) {
-            return emptyMap();
+            // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
+            return Collections.unmodifiableMap(emptyMap());
         }
 
         int keysSize = keys.size();
@@ -1196,7 +1198,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             V value = toObject(resultingKeyValuePairs.get(i++));
             result.put(key, value);
         }
-        return result;
+        return Collections.unmodifiableMap(result);
     }
 
     protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, List<Object> resultingKeyValuePairs) {
@@ -1262,7 +1264,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invoke(request);
         MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
 
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
+        ImmutableInflatableSet.ImmutableBuilder<Entry<K, V>> setBuilder =
+                ImmutableInflatableSet.newImmutableBuilder(resultParameters.response.size());
         InternalSerializationService serializationService = getContext().getSerializationService();
         for (Entry<Data, Data> row : resultParameters.response) {
             LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
@@ -1282,7 +1285,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
 
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
+        ImmutableInflatableSet.ImmutableBuilder<K> setBuilder =
+                ImmutableInflatableSet.newImmutableBuilder(resultParameters.response.size());
         for (Data data : resultParameters.response) {
             K key = toObject(data);
             setBuilder.add(key);
@@ -1319,7 +1323,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientMessage response = invokeWithPredicate(request, predicate);
         MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
 
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
+        ImmutableInflatableSet.ImmutableBuilder<Entry<K, V>> setBuilder =
+                ImmutableInflatableSet.newImmutableBuilder(resultParameters.response.size());
         InternalSerializationService serializationService = getContext().getSerializationService();
         for (Entry<Data, Data> row : resultParameters.response) {
             LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
