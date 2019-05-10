@@ -161,10 +161,15 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
         for (int i = 0; i < keyCount; i++) {
             map.put(i, 0);
         }
-        map.executeOnEntries(entryProcessor);
+
+        int incrementCount = 5;
+        //doing the call a few times so that the invocation can be done on different members
+        for (int i = 0; i < incrementCount; i++) {
+            map.executeOnEntries(entryProcessor);
+        }
 
         for (int i = 0; i < keyCount; i++) {
-            assertEquals(1, (int) map.get(i));
+            assertEquals(incrementCount, (int) map.get(i));
         }
     }
 
