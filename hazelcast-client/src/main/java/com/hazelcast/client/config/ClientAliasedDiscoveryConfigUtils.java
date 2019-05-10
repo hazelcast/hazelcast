@@ -68,14 +68,4 @@ public final class ClientAliasedDiscoveryConfigUtils {
                 networkConfig.getAzureConfig(), networkConfig.getKubernetesConfig(), networkConfig.getEurekaConfig());
     }
 
-    /**
-     * Creates new {@link AliasedDiscoveryConfig} by the given {@code tag}.
-     */
-    public static AliasedDiscoveryConfig newAliasedDiscoveryConfig(String name) {
-        if ("aws".equals(name)) {
-            return new ClientAwsConfig();
-        } else {
-            return AliasedDiscoveryConfigUtils.newConfigFor(name);
-        }
-    }
 }

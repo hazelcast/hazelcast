@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -497,13 +498,13 @@ public final class ClientConfigXmlGenerator {
            .close();
     }
 
-    private static void aws(XmlGenerator gen, ClientAwsConfig aws) {
+    private static void aws(XmlGenerator gen, AwsConfig aws) {
         if (aws == null) {
             return;
         }
         gen.open("aws", "enabled", aws.isEnabled(),
                 "connection-timeout-seconds", aws.getConnectionTimeoutSeconds())
-           .node("inside-aws", aws.isInsideAws())
+           .node("use-public-ip", aws.isUsePublicIp())
            .node("access-key", aws.getAccessKey())
            .node("secret-key", aws.getSecretKey())
            .node("iam-role", aws.getIamRole())

@@ -49,7 +49,6 @@ import static com.hazelcast.client.config.ClientConfigSections.FLAKE_ID_GENERATO
 import static com.hazelcast.client.config.ClientConfigSections.GROUP;
 import static com.hazelcast.client.config.ClientConfigSections.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientConfigSections.LABELS;
-import static com.hazelcast.client.config.ClientConfigSections.LICENSE_KEY;
 import static com.hazelcast.client.config.ClientConfigSections.LISTENERS;
 import static com.hazelcast.client.config.ClientConfigSections.LOAD_BALANCER;
 import static com.hazelcast.client.config.ClientConfigSections.NATIVE_MEMORY;
@@ -128,8 +127,6 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             queryCacheConfigBuilderHelper.handleQueryCache(clientConfig, node);
         } else if (EXECUTOR_POOL_SIZE.isEqual(nodeName)) {
             handleExecutorPoolSize(node);
-        } else if (LICENSE_KEY.isEqual(nodeName)) {
-            clientConfig.setLicenseKey(getTextContent(node));
         } else if (INSTANCE_NAME.isEqual(nodeName)) {
             clientConfig.setInstanceName(getTextContent(node));
         } else if (CONNECTION_STRATEGY.isEqual(nodeName)) {
@@ -544,7 +541,7 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleSocketOptions(Node node, ClientNetworkConfig clientNetworkConfig) {
-        SocketOptions socketOptions = clientConfig.getSocketOptions();
+        SocketOptions socketOptions = clientConfig.getNetworkConfig().getSocketOptions();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("tcp-no-delay".equals(nodeName)) {

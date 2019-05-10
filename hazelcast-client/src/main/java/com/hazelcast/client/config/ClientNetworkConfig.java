@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.EurekaConfig;
@@ -50,7 +51,7 @@ public class ClientNetworkConfig {
     private SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
     private SocketOptions socketOptions = new SocketOptions();
     private SSLConfig sslConfig;
-    private ClientAwsConfig awsConfig = new ClientAwsConfig();
+    private AwsConfig awsConfig = new AwsConfig();
     private GcpConfig gcpConfig = new GcpConfig();
     private AzureConfig azureConfig = new AzureConfig();
     private KubernetesConfig kubernetesConfig = new KubernetesConfig();
@@ -75,7 +76,7 @@ public class ClientNetworkConfig {
         socketInterceptorConfig = new SocketInterceptorConfig(networkConfig.socketInterceptorConfig);
         socketOptions = new SocketOptions(networkConfig.socketOptions);
         sslConfig = networkConfig.sslConfig == null ? null : new SSLConfig(networkConfig.sslConfig);
-        awsConfig = new ClientAwsConfig(networkConfig.awsConfig);
+        awsConfig = new AwsConfig(networkConfig.awsConfig);
         gcpConfig = new GcpConfig(networkConfig.gcpConfig);
         azureConfig = new AzureConfig(networkConfig.azureConfig);
         kubernetesConfig = new KubernetesConfig(networkConfig.kubernetesConfig);
@@ -337,19 +338,19 @@ public class ClientNetworkConfig {
      * @param clientAwsConfig the ClientAwsConfig
      * @see #getAwsConfig()
      */
-    public ClientNetworkConfig setAwsConfig(ClientAwsConfig clientAwsConfig) {
+    public ClientNetworkConfig setAwsConfig(AwsConfig clientAwsConfig) {
         isNotNull(clientAwsConfig, "clientAwsConfig");
         this.awsConfig = clientAwsConfig;
         return this;
     }
 
     /**
-     * Returns the current {@link ClientAwsConfig}.
+     * Returns the current {@link AwsConfig}.
      *
      * @return ClientAwsConfig
-     * @see #setAwsConfig(ClientAwsConfig)
+     * @see #setAwsConfig(AwsConfig)
      */
-    public ClientAwsConfig getAwsConfig() {
+    public AwsConfig getAwsConfig() {
         return awsConfig;
     }
 

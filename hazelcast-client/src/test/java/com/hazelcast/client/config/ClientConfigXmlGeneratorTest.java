@@ -18,6 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
+import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -194,8 +195,8 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void networkAws() {
-        ClientAwsConfig expected = new ClientAwsConfig();
-        expected.setInsideAws(true)
+        AwsConfig expected = new AwsConfig();
+        expected.setUsePublicIp(true)
                 .setEnabled(true)
                 .setTagValue(randomString())
                 .setTagKey(randomString())
@@ -208,8 +209,8 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setConnectionTimeoutSeconds(randomInt());
         clientConfig.getNetworkConfig().setAwsConfig(expected);
 
-        ClientAwsConfig actual = newConfigViaGenerator().getNetworkConfig().getAwsConfig();
-        assertEquals(expected.isInsideAws(), actual.isInsideAws());
+        AwsConfig actual = newConfigViaGenerator().getNetworkConfig().getAwsConfig();
+        assertEquals(expected.isUsePublicIp(), actual.isUsePublicIp());
         assertEquals(expected.isEnabled(), actual.isEnabled());
         assertEquals(expected.getTagValue(), actual.getTagValue());
         assertEquals(expected.getTagKey(), actual.getTagKey());

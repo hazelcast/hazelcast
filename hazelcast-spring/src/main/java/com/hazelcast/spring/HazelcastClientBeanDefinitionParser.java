@@ -17,7 +17,6 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientAliasedDiscoveryConfigUtils;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
@@ -306,7 +305,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleAliasedDiscoveryStrategy(Node node, BeanDefinitionBuilder builder, String name) {
-            AliasedDiscoveryConfig config = ClientAliasedDiscoveryConfigUtils.newAliasedDiscoveryConfig(name);
+            AliasedDiscoveryConfig config = AliasedDiscoveryConfigUtils.newConfigFor(name);
             fillAttributesForAliasedDiscoveryStrategy(config, node, builder, name);
         }
 
