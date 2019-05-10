@@ -57,26 +57,20 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     // Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
     // object. Using this approach, you don't create that object.
-    private static final AtomicReferenceFieldUpdater<CallableProcessor, Boolean> RESPONSE_FLAG =
-            AtomicReferenceFieldUpdater.newUpdater(CallableProcessor.class, Boolean.class, "responseFlag");
+    private static final AtomicReferenceFieldUpdater<Processor, Boolean> RESPONSE_FLAG =
+            AtomicReferenceFieldUpdater.newUpdater(Processor.class, Boolean.class, "responseFlag");
 
     // package-local access to allow test to inspect the map's values
     final ConcurrentMap<String, ExecutorConfig> executorConfigCache = new ConcurrentHashMap<String, ExecutorConfig>();
 
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
-    private final ConcurrentMap<String, CallableProcessor> submittedTasks
-            = new ConcurrentHashMap<String, CallableProcessor>(100);
+    private final ConcurrentMap<String, Processor> submittedTasks = new ConcurrentHashMap<>(100);
     private final Set<String> shutdownExecutors
-            = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap
-            = new ConcurrentHashMap<String, LocalExecutorStatsImpl>();
+            = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction
-            = new ConstructorFunction<String, LocalExecutorStatsImpl>() {
-        public LocalExecutorStatsImpl createNew(String key) {
-            return new LocalExecutorStatsImpl();
-        }
-    };
+            = key -> new LocalExecutorStatsImpl();
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
@@ -111,12 +105,17 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         reset();
     }
 
-    public void execute(String name, String uuid, Callable callable, Operation op) {
+    public <T> void execute(String name, String uuid, T callable, Operation op) {
         ExecutorConfig cfg = getOrFindExecutorConfig(name);
         if (cfg.isStatisticsEnabled()) {
             startPending(name);
         }
-        CallableProcessor processor = new CallableProcessor(name, uuid, callable, op, cfg.isStatisticsEnabled());
+        Processor processor;
+        if (callable instanceof Runnable) {
+            processor = new Processor(name, uuid, (Runnable) callable, op, cfg.isStatisticsEnabled());
+        } else {
+            processor = new Processor(name, uuid, (Callable) callable, op, cfg.isStatisticsEnabled());
+        }
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
         }
@@ -136,7 +135,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public boolean cancel(String uuid, boolean interrupt) {
-        CallableProcessor processor = submittedTasks.remove(uuid);
+        Processor processor = submittedTasks.remove(uuid);
         if (processor != null && processor.cancel(interrupt)) {
             if (processor.sendResponse(new CancellationException())) {
                 if (processor.isStatisticsEnabled()) {
@@ -149,7 +148,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public String getName(String uuid) {
-        CallableProcessor proc = submittedTasks.get(uuid);
+        Processor proc = submittedTasks.get(uuid);
         if (proc != null) {
             return proc.name;
         }
@@ -238,23 +237,33 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
-    private final class CallableProcessor extends FutureTask implements Runnable {
+    private final class Processor extends FutureTask implements Runnable {
         //is being used through the RESPONSE_FLAG. Can't be private due to reflection constraint.
         volatile Boolean responseFlag = Boolean.FALSE;
 
         private final String name;
         private final String uuid;
         private final Operation op;
-        private final String callableToString;
+        private final String taskToString;
         private final long creationTime = Clock.currentTimeMillis();
         private final boolean statisticsEnabled;
 
-        private CallableProcessor(String name, String uuid, Callable callable, Operation op, boolean statisticsEnabled) {
+        private Processor(String name, String uuid, Callable callable, Operation op, boolean statisticsEnabled) {
             //noinspection unchecked
             super(callable);
             this.name = name;
             this.uuid = uuid;
-            this.callableToString = String.valueOf(callable);
+            this.taskToString = String.valueOf(callable);
+            this.op = op;
+            this.statisticsEnabled = statisticsEnabled;
+        }
+
+        private Processor(String name, String uuid, Runnable runnable, Operation op, boolean statisticsEnabled) {
+            //noinspection unchecked
+            super(runnable, null);
+            this.name = name;
+            this.uuid = uuid;
+            this.taskToString = String.valueOf(runnable);
             this.op = op;
             this.statisticsEnabled = statisticsEnabled;
         }
@@ -289,7 +298,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
         private void logException(Exception e) {
             if (logger.isFinestEnabled()) {
-                logger.finest("While executing callable: " + callableToString, e);
+                logger.finest("While executing callable: " + taskToString, e);
             }
         }
 

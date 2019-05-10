@@ -28,7 +28,6 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -119,11 +118,7 @@ public class ClientExecutorServiceExecuteTest {
 
         final IMap map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(map.containsKey(targetUuid));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(map.containsKey(targetUuid)));
     }
 
     @Test(expected = NullPointerException.class)
@@ -144,11 +139,7 @@ public class ClientExecutorServiceExecuteTest {
 
         final IMap map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(map.containsKey(targetUuid));
-            }
-        });
+        assertTrueEventually(() -> assertTrue(map.containsKey(targetUuid)));
     }
 
     @Test(expected = NullPointerException.class)
@@ -171,11 +162,9 @@ public class ClientExecutorServiceExecuteTest {
         service.executeOnMembers(new MapPutRunnable(mapName), collection);
 
         final IMap map = client.getMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(map.containsKey(member1.getUuid()));
-                assertTrue(map.containsKey(member2.getUuid()));
-            }
+        assertTrueEventually(() -> {
+            assertTrue(map.containsKey(member1.getUuid()));
+            assertTrue(map.containsKey(member2.getUuid()));
         });
     }
 
