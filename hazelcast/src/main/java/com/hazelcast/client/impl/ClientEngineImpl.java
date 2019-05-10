@@ -180,14 +180,27 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     private Executor newClientExecutor() {
+        //if user code deployment is enabled, we need more thread per core since operations can do blocking tasks
+        // to load classes from other members
+        boolean userCodeDeploymentEnabled = nodeEngine.getConfig().getUserCodeDeploymentConfig().isEnabled();
+        int threadsPerCore = userCodeDeploymentEnabled ? BLOCKING_THREADS_PER_CORE : THREADS_PER_CORE;
+
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = RuntimeAvailableProcessors.get();
 
         int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
         if (threadCount <= 0) {
-            threadCount = coreSize * THREADS_PER_CORE;
+            threadCount = coreSize * threadsPerCore;
         }
         logger.finest("Creating new client executor with threadCount=" + threadCount);
+
+        //if user code deployment enabled, don't use the unblockable thread factory since operations can do blocking tasks
+        // to load classes from other members
+        if (userCodeDeploymentEnabled) {
+            return executionService.register(ExecutionService.CLIENT_EXECUTOR,
+                    threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
+                    ExecutorType.CONCRETE);
+        }
 
         String name = ExecutionService.CLIENT_EXECUTOR;
         ClassLoader classLoader = nodeEngine.getConfigClassLoader();
