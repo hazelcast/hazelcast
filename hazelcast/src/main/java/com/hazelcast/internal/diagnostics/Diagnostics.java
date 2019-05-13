@@ -55,8 +55,7 @@ public class Diagnostics {
      * By default only mandatory probes are being tracked
      */
     public static final HazelcastProperty METRICS_LEVEL
-            = new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name())
-            .setDeprecatedName("hazelcast.performance.metric.level");
+            = new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name());
 
     /**
      * If metrics should be tracked on distributed data structures like IMap,
@@ -79,8 +78,7 @@ public class Diagnostics {
      * <p>
      * The default is {@code false}.
      */
-    public static final HazelcastProperty ENABLED = new HazelcastProperty(PREFIX + ".enabled", false)
-            .setDeprecatedName("hazelcast.performance.monitoring.enabled");
+    public static final HazelcastProperty ENABLED = new HazelcastProperty(PREFIX + ".enabled", false);
 
     /**
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
@@ -93,8 +91,8 @@ public class Diagnostics {
      * The default is 50.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB = new HazelcastProperty(PREFIX + ".max.rolled.file.size.mb", 50)
-            .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.size.mb");
+    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB
+            = new HazelcastProperty(PREFIX + ".max.rolled.file.size.mb", 50);
 
     /**
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent
@@ -105,8 +103,8 @@ public class Diagnostics {
      * The default is 10.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT = new HazelcastProperty(PREFIX + ".max.rolled.file.count", 10)
-            .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.count");
+    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT
+            = new HazelcastProperty(PREFIX + ".max.rolled.file.count", 10);
 
     /**
      * Configures if the epoch time should be included in the 'top' section.
