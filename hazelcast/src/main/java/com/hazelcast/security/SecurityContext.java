@@ -103,6 +103,16 @@ public interface SecurityContext {
     <V> SecureCallable<V> createSecureCallable(Subject subject, Callable<V> callable);
 
     /**
+     * Creates secure callable that runs in a sandbox.
+     *
+     * @param <V>      return type of callable
+     * @param subject
+     * @param runnable
+     * @return Will always return null after {@link Runnable} finishes running.
+     */
+    <V> SecureCallable<?> createSecureCallable(Subject subject, Runnable runnable);
+
+    /**
      * Destroys {@link SecurityContext} and all security elements.
      */
     void destroy();
