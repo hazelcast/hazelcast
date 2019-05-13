@@ -67,6 +67,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -86,6 +87,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
 import static com.hazelcast.internal.cluster.Versions.PREVIOUS_CLUSTER_VERSION;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static java.lang.reflect.Proxy.isProxyClass;
@@ -103,6 +105,8 @@ public class AnswerTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
+        Assume.assumeTrue("This test ensures access to internals works with a previous minor version. "
+                + "Test execution is skipped for new major versions.", CURRENT_CLUSTER_VERSION.getMinor() > 0);
         Config config = smallInstanceConfig()
                 .setInstanceName("test-name");
 

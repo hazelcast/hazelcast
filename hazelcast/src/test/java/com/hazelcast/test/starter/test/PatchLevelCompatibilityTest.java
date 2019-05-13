@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -72,6 +73,7 @@ public class PatchLevelCompatibilityTest {
         testAllGivenVersions(versions);
     }
 
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/15021")
     @Test
     public void testMap_whenMixed_V37_Cluster() {
         String[] versions = new String[]{"3.7.4", "3.7.5"};

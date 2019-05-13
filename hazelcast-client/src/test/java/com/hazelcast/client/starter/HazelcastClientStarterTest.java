@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -57,6 +58,7 @@ public class HazelcastClientStarterTest {
         }
     }
 
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/15021")
     @Test
     public void testClientMap() {
         HazelcastInstance clientInstance = null;
@@ -87,6 +89,7 @@ public class HazelcastClientStarterTest {
         System.out.println("Client terminated");
     }
 
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/15021")
     @Test
     public void testClientMap_async() throws InterruptedException, ExecutionException {
         HazelcastInstance clientInstance = null;
