@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -87,7 +86,7 @@ public interface Data {
      * If partition hash is not set then standard <tt>hashCode()</tt> is used.
      *
      * @return partition hash
-     * @see PartitionAware
+     * @see com.hazelcast.partition.PartitionAware
      * @see PartitioningStrategy
      * @see SerializationService#toData(Object, PartitioningStrategy)
      */

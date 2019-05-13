@@ -27,8 +27,8 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.logging.ILogger;
@@ -68,7 +68,7 @@ public class PartitionStateManager {
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
-    public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService, PartitionListener listener) {
+    public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
         this.logger = node.getLogger(getClass());
 
@@ -76,9 +76,10 @@ public class PartitionStateManager {
         this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
 
+        PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(node, partitionService);
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int i = 0; i < partitionCount; i++) {
-            this.partitions[i] = new InternalPartitionImpl(i, listener, localReplica);
+            this.partitions[i] = new InternalPartitionImpl(i, interceptor, localReplica);
         }
 
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig(),
@@ -116,7 +117,7 @@ public class PartitionStateManager {
      * <li>the cluster state allows migrations. See {@link ClusterState#isMigrationAllowed()}</li>
      * </ul>
      * This will also set the manager state to initialized (if not already) and invoke the
-     * {@link PartitionListener#replicaChanged(PartitionReplicaChangeEvent)} for all changed replicas which
+     * {@link DefaultPartitionReplicaInterceptor} for all changed replicas which
      * will cancel replica synchronizations and increase the partition state version.
      *
      * @param excludedMembers members which are to be excluded from the new layout
@@ -280,10 +281,10 @@ public class PartitionStateManager {
 
     /** Returns a copy of the current partition table. */
     public InternalPartition[] getPartitionsCopy() {
-        NopPartitionListener listener = new NopPartitionListener();
+        NopPartitionReplicaInterceptor interceptor = new NopPartitionReplicaInterceptor();
         InternalPartition[] result = new InternalPartition[partitions.length];
         for (int i = 0; i < partitionCount; i++) {
-            result[i] = partitions[i].copy(listener);
+            result[i] = partitions[i].copy(interceptor);
         }
         return result;
     }

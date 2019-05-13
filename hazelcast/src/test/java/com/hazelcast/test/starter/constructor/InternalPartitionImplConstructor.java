@@ -34,16 +34,16 @@ public class InternalPartitionImplConstructor extends AbstractStarterObjectConst
     @Override
     Object createNew0(Object delegate) throws Exception {
         ClassLoader classloader = targetClass.getClassLoader();
-        Class<?> partitionListenerClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionListener");
+        Class<?> partitionInterceptorClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionReplicaInterceptor");
         Class<?> replicaClass = classloader.loadClass("com.hazelcast.internal.partition.PartitionReplica");
         Class<?> replicaArrayClass = Array.newInstance(replicaClass, 0).getClass();
-        // obtain reference to constructor InternalPartitionImpl(int partitionId, PartitionListener listener,
+        // obtain reference to constructor InternalPartitionImpl(int partitionId, PartitionReplicaInterceptor interceptor,
         //                                                       PartitionReplica localReplica, PartitionReplica[] replicas)
-        Constructor<?> constructor = targetClass.getDeclaredConstructor(Integer.TYPE, partitionListenerClass, replicaClass,
+        Constructor<?> constructor = targetClass.getDeclaredConstructor(Integer.TYPE, partitionInterceptorClass, replicaClass,
                 replicaArrayClass);
 
         Integer partitionId = (Integer) getFieldValueReflectively(delegate, "partitionId");
-        Object partitionListener = getFieldValueReflectively(delegate, "partitionListener");
+        Object partitionListener = getFieldValueReflectively(delegate, "interceptor");
         Object localReplica = getFieldValueReflectively(delegate, "localReplica");
         Object replicas = getFieldValueReflectively(delegate, "replicas");
 

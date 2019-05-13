@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -507,7 +507,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[1]);
         final AtomicReference<MigrationInfo> startedMigration = new AtomicReference<MigrationInfo>();
-        partitionService.setInternalMigrationListener(new InternalMigrationListener() {
+        partitionService.setMigrationInterceptor(new MigrationInterceptor() {
             @Override
             public void onMigrationStart(MigrationParticipant participant, MigrationInfo migrationInfo) {
                 startedMigration.set(migrationInfo);

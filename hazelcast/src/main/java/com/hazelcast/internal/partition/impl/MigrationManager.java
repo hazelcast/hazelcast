@@ -33,7 +33,7 @@ import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
@@ -111,8 +111,7 @@ public class MigrationManager {
     private final LinkedHashSet<MigrationInfo> completedMigrations = new LinkedHashSet<>();
     private final AtomicBoolean promotionPermit = new AtomicBoolean(false);
     private final MigrationStats stats = new MigrationStats();
-    private volatile InternalMigrationListener internalMigrationListener
-            = new InternalMigrationListener.NopInternalMigrationListener();
+    private volatile MigrationInterceptor migrationInterceptor = new MigrationInterceptor.NopMigrationInterceptor();
     private final Lock partitionServiceLock;
     private final MigrationPlanner migrationPlanner;
     private final boolean fragmentedMigrationEnabled;
@@ -203,9 +202,9 @@ public class MigrationManager {
 
                 MigrationParticipant participant = source ? MigrationParticipant.SOURCE : MigrationParticipant.DESTINATION;
                 if (success) {
-                    internalMigrationListener.onMigrationCommit(participant, migrationInfo);
+                    migrationInterceptor.onMigrationCommit(participant, migrationInfo);
                 } else {
-                    internalMigrationListener.onMigrationRollback(participant, migrationInfo);
+                    migrationInterceptor.onMigrationRollback(participant, migrationInfo);
                 }
 
                 MigrationEndpoint endpoint = source ? MigrationEndpoint.SOURCE : MigrationEndpoint.DESTINATION;
@@ -492,17 +491,17 @@ public class MigrationManager {
         }
     }
 
-    InternalMigrationListener getInternalMigrationListener() {
-        return internalMigrationListener;
+    MigrationInterceptor getMigrationInterceptor() {
+        return migrationInterceptor;
     }
 
-    void setInternalMigrationListener(InternalMigrationListener listener) {
-        Preconditions.checkNotNull(listener);
-        internalMigrationListener = listener;
+    void setMigrationInterceptor(MigrationInterceptor interceptor) {
+        Preconditions.checkNotNull(interceptor);
+        migrationInterceptor = interceptor;
     }
 
-    void resetInternalMigrationListener() {
-        internalMigrationListener = new InternalMigrationListener.NopInternalMigrationListener();
+    void resetMigrationInterceptor() {
+        migrationInterceptor = new MigrationInterceptor.NopMigrationInterceptor();
     }
 
     void onShutdownRequest(Member member) {
@@ -951,7 +950,7 @@ public class MigrationManager {
         /** Sends a migration event to the event listeners. */
         private void beforeMigration() {
             migrationInfo.setInitialPartitionVersion(partitionStateManager.getVersion());
-            internalMigrationListener.onMigrationStart(MigrationParticipant.MASTER, migrationInfo);
+            migrationInterceptor.onMigrationStart(MigrationParticipant.MASTER, migrationInfo);
             partitionService.getPartitionEventManager()
                     .sendMigrationEvent(migrationInfo, MigrationEvent.MigrationStatus.STARTED);
             if (logger.isFineEnabled()) {
@@ -1068,10 +1067,10 @@ public class MigrationManager {
          */
         private void migrationOperationFailed(Member partitionOwner) {
             migrationInfo.setStatus(MigrationStatus.FAILED);
-            internalMigrationListener.onMigrationComplete(MigrationParticipant.MASTER, migrationInfo, false);
+            migrationInterceptor.onMigrationComplete(MigrationParticipant.MASTER, migrationInfo, false);
             partitionServiceLock.lock();
             try {
-                internalMigrationListener.onMigrationRollback(MigrationParticipant.MASTER, migrationInfo);
+                migrationInterceptor.onMigrationRollback(MigrationParticipant.MASTER, migrationInfo);
                 scheduleActiveMigrationFinalization(migrationInfo);
                 int delta = migrationInfo.getPartitionVersionIncrement() + 1;
                 partitionStateManager.incrementVersion(delta);
@@ -1128,7 +1127,7 @@ public class MigrationManager {
          * of the migration commit.
          */
         private void migrationOperationSucceeded() {
-            internalMigrationListener.onMigrationComplete(MigrationParticipant.MASTER, migrationInfo, true);
+            migrationInterceptor.onMigrationComplete(MigrationParticipant.MASTER, migrationInfo, true);
             long start = System.nanoTime();
             boolean commitSuccessful = commitMigrationToDestination(migrationInfo);
             stats.recordDestinationCommitTime(System.nanoTime() - start);
@@ -1136,7 +1135,7 @@ public class MigrationManager {
             try {
                 if (commitSuccessful) {
                     migrationInfo.setStatus(MigrationStatus.SUCCESS);
-                    internalMigrationListener.onMigrationCommit(MigrationParticipant.MASTER, migrationInfo);
+                    migrationInterceptor.onMigrationCommit(MigrationParticipant.MASTER, migrationInfo);
                     assert migrationInfo.getInitialPartitionVersion() == partitionStateManager.getVersion()
                             : "Migration initial version: " + migrationInfo.getInitialPartitionVersion()
                             + ", Partition state version: " + partitionStateManager.getVersion();
@@ -1148,7 +1147,7 @@ public class MigrationManager {
                                 + ", Partition state version: " + partitionStateManager.getVersion();
                 } else {
                     migrationInfo.setStatus(MigrationStatus.FAILED);
-                    internalMigrationListener.onMigrationRollback(MigrationParticipant.MASTER, migrationInfo);
+                    migrationInterceptor.onMigrationRollback(MigrationParticipant.MASTER, migrationInfo);
                     int delta = migrationInfo.getPartitionVersionIncrement() + 1;
                     partitionStateManager.incrementVersion(delta);
                     migrationInfo.setPartitionVersionIncrement(delta);
@@ -1275,13 +1274,13 @@ public class MigrationManager {
          * @return if the promotions were successful
          */
         private boolean commitPromotionMigrations(PartitionReplica destination, Collection<MigrationInfo> migrations) {
-            internalMigrationListener.onPromotionStart(MigrationParticipant.MASTER, migrations);
+            migrationInterceptor.onPromotionStart(MigrationParticipant.MASTER, migrations);
             boolean success = commitPromotionsToDestination(destination, migrations);
             boolean local = destination.isIdentical(node.getLocalMember());
             if (!local) {
                 processPromotionCommitResult(destination, migrations, success);
             }
-            internalMigrationListener.onPromotionComplete(MigrationParticipant.MASTER, migrations, success);
+            migrationInterceptor.onPromotionComplete(MigrationParticipant.MASTER, migrations, success);
             partitionService.publishPartitionRuntimeState();
             return success;
         }

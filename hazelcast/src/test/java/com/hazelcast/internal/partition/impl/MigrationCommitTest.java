@@ -24,8 +24,8 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.internal.partition.impl.InternalMigrationListenerTest.InternalMigrationListenerImpl;
-import com.hazelcast.internal.partition.impl.InternalMigrationListenerTest.MigrationProgressNotification;
+import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationInterceptorImpl;
+import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
 import com.hazelcast.logging.LogEvent;
 import com.hazelcast.logging.LogListener;
 import com.hazelcast.nio.Address;
@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.partition.MigrationInfo.MigrationStatus.SUCCESS;
-import static com.hazelcast.internal.partition.impl.InternalMigrationListenerTest.MigrationProgressEvent.COMMIT;
+import static com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressEvent.COMMIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -291,7 +291,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         waitAllForSafeState(hz1, hz2);
 
         Config config3 = createConfig();
-        InternalMigrationListenerImpl targetListener = new InternalMigrationListenerImpl();
+        MigrationInterceptorImpl targetListener = new MigrationInterceptorImpl();
         config3.addListenerConfig(new ListenerConfig(targetListener));
         HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
 
@@ -378,7 +378,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         waitAllForSafeState(hz1, hz2);
 
         Config config3 = createConfig();
-        InternalMigrationListenerImpl targetListener = new InternalMigrationListenerImpl();
+        MigrationInterceptorImpl targetListener = new MigrationInterceptorImpl();
         config3.addListenerConfig(new ListenerConfig(targetListener));
         HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
 
@@ -534,11 +534,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
     static void resetInternalMigrationListener(HazelcastInstance instance) {
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
-        partitionService.resetInternalMigrationListener();
+        partitionService.resetMigrationInterceptor();
     }
 
     private static class IncrementPartitionTableOnMigrationStart
-            extends InternalMigrationListener implements HazelcastInstanceAware {
+            implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final AtomicReference<MigrationInfo> migrationInfoRef = new AtomicReference<MigrationInfo>();
 
@@ -597,7 +597,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DelayMigrationCommit extends InternalMigrationListener implements HazelcastInstanceAware {
+    private static class DelayMigrationCommit implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch migrationCommitLatch;
 
@@ -619,7 +619,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         }
     }
 
-    public static class DelayMigrationStart extends InternalMigrationListener implements HazelcastInstanceAware {
+    public static class DelayMigrationStart implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch migrationStartLatch;
 
@@ -641,7 +641,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DelayMigrationStartOnMaster extends InternalMigrationListener implements HazelcastInstanceAware {
+    private static class DelayMigrationStartOnMaster implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final AtomicBoolean rollback = new AtomicBoolean();
 
@@ -670,8 +670,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         }
     }
 
-    private static class TerminateOtherMemberOnMigrationComplete
-            extends InternalMigrationListener implements HazelcastInstanceAware {
+    private static class TerminateOtherMemberOnMigrationComplete implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch migrationStartLatch;
 
@@ -723,8 +722,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
     }
 
-    private static class TerminateOtherMemberOnMigrationCommit
-            extends InternalMigrationListener implements HazelcastInstanceAware {
+    private static class TerminateOtherMemberOnMigrationCommit implements MigrationInterceptor, HazelcastInstanceAware {
 
         private volatile HazelcastInstance instance;
         private volatile HazelcastInstance other;
@@ -749,7 +747,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
     }
 
-    private static class TerminateOnMigrationCommit extends InternalMigrationListener implements HazelcastInstanceAware {
+    private static class TerminateOnMigrationCommit implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch latch;
 
@@ -778,7 +776,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
     }
 
-    private static class CollectMigrationTaskOnCommit extends InternalMigrationListener implements HazelcastInstanceAware {
+    private static class CollectMigrationTaskOnCommit implements MigrationInterceptor, HazelcastInstanceAware {
 
         private final CountDownLatch migrationStartLatch;
         private final AtomicReference<MigrationInfo> migrationInfoRef = new AtomicReference<MigrationInfo>();
