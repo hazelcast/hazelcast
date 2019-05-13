@@ -51,7 +51,7 @@ public final class DeclarativeConfigUtil {
     /**
      * Array of accepted suffixes for XML configuration files.
      */
-    public static final Collection<String> XML_ACCEPTED_SUFFIXES = unmodifiableList(singletonList("xml"));
+    public static final Collection<String> XML_ACCEPTED_SUFFIXES = singletonList("xml");
 
     /**
      * List of accepted suffixes for XML configuration files.
