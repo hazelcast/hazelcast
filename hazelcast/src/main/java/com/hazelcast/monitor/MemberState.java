@@ -46,6 +46,12 @@ public interface MemberState extends JsonSerializable {
      */
     String getCpMemberUuid();
 
+    /**
+     * Returns the name of a Hazelcast member.
+     * @return the name of a Hazelcast member.
+     */
+    String getName();
+
     Map<String, Long> getRuntimeProps();
 
     LocalMapStats getLocalMapStats(String mapName);
