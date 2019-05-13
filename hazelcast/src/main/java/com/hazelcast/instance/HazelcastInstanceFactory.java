@@ -166,7 +166,28 @@ public final class HazelcastInstanceFactory {
     }
 
     public static String createInstanceName(Config config) {
-        return "_hzInstance_" + FACTORY_ID_GEN.incrementAndGet() + "_" + config.getGroupConfig().getName();
+        Boolean useMobyNaming = Boolean.valueOf(config.getProperty(GroupProperty.MOBY_NAMING_ENABLED.getName()));
+        int instanceNum = FACTORY_ID_GEN.incrementAndGet();
+        String name;
+        if (useMobyNaming) {
+            name = createUniqueMobyName(instanceNum);
+        } else {
+            name = "_hzInstance_" + instanceNum + "_" + config.getGroupConfig().getName();
+        }
+        return name;
+    }
+
+    /**
+     * Generate random Moby Name. If a name already exists so {@param instanceNum} is appended to the end to provide uniqueness.
+     * @param instanceNum instance number. Must be unique within the current classloader.
+     * @return new instance's generated name.
+     */
+    private static String createUniqueMobyName(int instanceNum) {
+        String nameCandidate = MobyNames.getRandomName();
+        if (!INSTANCE_MAP.containsKey(nameCandidate)) {
+            return nameCandidate;
+        }
+        return nameCandidate + instanceNum;
     }
 
     /**
