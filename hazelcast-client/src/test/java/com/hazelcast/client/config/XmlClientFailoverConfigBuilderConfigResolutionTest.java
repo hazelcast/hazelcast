@@ -29,6 +29,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.IOException;
 
 import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
 import static com.hazelcast.config.DeclarativeConfigUtil.XML_ACCEPTED_SUFFIXES_STRING;
@@ -45,7 +46,7 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Before
     @After
-    public void beforeAndAfter() {
+    public void beforeAndAfter() throws IOException {
         System.clearProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
         helper.ensureTestConfigDeleted();
     }

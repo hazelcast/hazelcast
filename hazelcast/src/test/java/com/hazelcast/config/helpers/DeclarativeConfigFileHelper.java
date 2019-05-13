@@ -19,8 +19,12 @@ package com.hazelcast.config.helpers;
 import com.hazelcast.config.Config;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class DeclarativeConfigFileHelper {
     private static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
@@ -221,10 +225,10 @@ public class DeclarativeConfigFileHelper {
                 + "    - hazelcast-client-c1.yaml";
     }
 
-    public void ensureTestConfigDeleted() {
+    public void ensureTestConfigDeleted() throws IOException {
         if (testConfigPath != null) {
-            File file = new File(testConfigPath);
-            file.delete();
+            Path pathToDelete = Paths.get(testConfigPath);
+            Files.delete(pathToDelete);
         }
     }
 }
