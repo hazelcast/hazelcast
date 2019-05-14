@@ -40,7 +40,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
 
     private void setup(String logRetentionSeconds) {
         Config config = new Config();
-        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(), "800");
         config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS.getName(), logRetentionSeconds);
         config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS.getName(), "1");
         config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED.getName(), "true");
@@ -61,10 +61,10 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
 
         // all of these entry processors are executed after each other, not in parallel
         for (int i = 0; i < 2; i++) {
-            map.executeOnEntries(getSlowEntryProcessor(3));
+            map.executeOnEntries(getSlowEntryProcessor(4));
         }
         map.executeOnEntries(getSlowEntryProcessor(4));
-        map.executeOnEntries(getSlowEntryProcessor(3));
+        map.executeOnEntries(getSlowEntryProcessor(4));
         awaitSlowEntryProcessors();
 
         // shutdown to stop purging, so the last one or two entry processor invocations will survive

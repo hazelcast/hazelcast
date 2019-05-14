@@ -51,7 +51,6 @@ public final class SlowOperationDetector {
 
     private final ConcurrentHashMap<Integer, SlowOperationLog> slowOperationLogs
             = new ConcurrentHashMap<>();
-    private final StringBuilder stackTraceStringBuilder = new StringBuilder();
 
     private final ILogger logger;
 
@@ -130,6 +129,7 @@ public final class SlowOperationDetector {
 
     private final class DetectorThread extends Thread {
 
+        private final StringBuilder stackTraceStringBuilder = new StringBuilder();
         private volatile boolean running = true;
 
         private DetectorThread(String hzName) {
@@ -203,16 +203,15 @@ public final class SlowOperationDetector {
         }
 
         private String getStackTraceOrNull(OperationRunner operationRunner, Object operation) {
+            StackTraceElement[] stackTraceElements = operationRunner.currentThread().getStackTrace();
+            // check if the operation is still the same, if not, we can't use this stacktrace
+            if (operationRunner.currentTask() != operation) {
+                return null;
+            }
             String prefix = "";
-            for (StackTraceElement stackTraceElement : operationRunner.currentThread().getStackTrace()) {
+            for (StackTraceElement stackTraceElement : stackTraceElements) {
                 stackTraceStringBuilder.append(prefix).append(stackTraceElement.toString());
                 prefix = "\n\t";
-            }
-
-            // check if the operation is still the same
-            if (operationRunner.currentTask() != operation) {
-                stackTraceStringBuilder.setLength(0);
-                return null;
             }
 
             String stackTrace = stackTraceStringBuilder.toString();
