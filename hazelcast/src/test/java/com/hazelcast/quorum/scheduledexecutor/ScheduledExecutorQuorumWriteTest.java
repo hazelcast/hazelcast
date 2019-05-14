@@ -281,7 +281,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     protected IScheduledExecutorService exec(int index) {
-        return scheduledExec(index, quorumType);
+        return exec(index, "");
     }
 
     protected IScheduledExecutorService exec(int index, String postfix) {
