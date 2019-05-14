@@ -73,16 +73,16 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
     }
 
     /**
-     * The fields are package-visible to use in {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet#iterator}.
+     * The field is package-visible to use in {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet#iterator}.
      */
-    Set<T> inflatedSet;
     State state;
+    private Set<T> inflatedSet;
     private final List<T> compactList;
 
 
     /**
      * This constructor is intended to be used by {@link com.hazelcast.internal.util.collection.InflatableSet.Builder} and
-     * {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet.ImmutableBuilder} only.
+     * {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet.ImmutableSetBuilder} only.
      *
      * The constructor is package-visible to support {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet}
      *
@@ -262,7 +262,7 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
         List<T> list;
 
         AbstractBuilder(int initialCapacity) {
-            this.list = new ArrayList<T>(initialCapacity);
+            this.list = new ArrayList<>(initialCapacity);
         }
 
         AbstractBuilder(List<T> list) {
@@ -301,7 +301,7 @@ public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializ
         }
 
         public InflatableSet<T> build() {
-            InflatableSet<T> set = new InflatableSet<T>(list);
+            InflatableSet<T> set = new InflatableSet<>(list);
 
             // make sure no further insertions are possible
             list = Collections.emptyList();

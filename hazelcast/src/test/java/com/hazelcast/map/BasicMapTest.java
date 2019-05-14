@@ -676,6 +676,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertThrows(UnsupportedOperationException.class, () -> map.replace(key, value));
         assertThrows(UnsupportedOperationException.class, () -> map.replace(key, value, value));
         assertThrows(UnsupportedOperationException.class, () -> map.replaceAll((k, v) -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.compute(key, (k, v) -> v));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfAbsent(key, k -> value));
+        assertThrows(UnsupportedOperationException.class, () -> map.computeIfPresent(key, (k, v) -> v));
         checkCollectionImmutable(map.entrySet());
         checkCollectionImmutable(map.keySet());
         checkCollectionImmutable(map.values());

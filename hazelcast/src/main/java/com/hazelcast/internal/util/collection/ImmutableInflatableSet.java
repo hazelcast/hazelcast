@@ -38,14 +38,14 @@ public final class ImmutableInflatableSet<T> extends InflatableSet<T> {
         super(compactList);
     }
 
-    public static <T> ImmutableBuilder<T> newImmutableBuilder(int initialCapacity) {
-        return new ImmutableBuilder<T>(initialCapacity);
+    public static <T> ImmutableSetBuilder<T> newImmutableSetBuilder(int initialCapacity) {
+        return new ImmutableSetBuilder<T>(initialCapacity);
     }
 
     @Override
     public Iterator<T> iterator() {
         if (state == State.INFLATED) {
-            return Collections.unmodifiableSet(inflatedSet).iterator();
+            throw new IllegalStateException("Set is immutable and can not be inflated.");
         }
         return new ImmutableHybridIterator();
     }
@@ -64,23 +64,19 @@ public final class ImmutableInflatableSet<T> extends InflatableSet<T> {
      *
      * @param <T> the type of elements maintained by this set
      */
-    public static final class ImmutableBuilder<T> extends AbstractBuilder<T> {
+    public static final class ImmutableSetBuilder<T> extends AbstractBuilder<T> {
 
-        private ImmutableBuilder(int initialCapacity) {
+        private ImmutableSetBuilder(int initialCapacity) {
             super(initialCapacity);
         }
 
-        private ImmutableBuilder(List<T> list) {
-            super(list);
-        }
-
-        public ImmutableBuilder<T> add(T item) {
+        public ImmutableSetBuilder<T> add(T item) {
             super.add(item);
             return this;
         }
 
         public ImmutableInflatableSet<T> build() {
-            ImmutableInflatableSet<T> set = new ImmutableInflatableSet<T>(list);
+            ImmutableInflatableSet<T> set = new ImmutableInflatableSet<>(list);
 
             // make sure no further insertions are possible
             list = Collections.emptyList();
