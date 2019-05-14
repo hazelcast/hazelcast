@@ -162,6 +162,10 @@ public class SamplingNodeExtension implements NodeExtension {
         nodeExtension.beforeClusterStateChange(currState, requestedState, isTransient);
     }
 
+    public void onInitialClusterState(ClusterState initialState) {
+        nodeExtension.onInitialClusterState(initialState);
+    }
+
     @Override
     public void onClusterStateChange(ClusterState newState, boolean isTransient) {
         nodeExtension.onClusterStateChange(newState, isTransient);

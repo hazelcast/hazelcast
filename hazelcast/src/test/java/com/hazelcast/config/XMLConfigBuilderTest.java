@@ -2679,6 +2679,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
                 + "    <data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
                 + "    <cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
+                + "    <auto-remove-stale-data>false</auto-remove-stale-data>"
                 + "</hot-restart-persistence>\n"
                 + HAZELCAST_END_TAG;
 
@@ -2692,6 +2693,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(validationTimeout, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
+        assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
     }
 
     @Test(expected = InvalidConfigurationException.class)

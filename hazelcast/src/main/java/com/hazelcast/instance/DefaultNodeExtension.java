@@ -352,6 +352,10 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void onInitialClusterState(ClusterState initialState) {
+    }
+
+    @Override
     public void onClusterVersionChange(Version newVersion) {
         if (!node.getVersion().asVersion().isEqualTo(newVersion)) {
             systemLogger.info("Cluster version set to " + newVersion);
