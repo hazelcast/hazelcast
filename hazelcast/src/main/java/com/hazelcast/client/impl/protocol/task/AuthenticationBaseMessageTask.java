@@ -112,7 +112,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
 
     @SuppressWarnings("checkstyle:returncount")
     private AuthenticationStatus authenticate() {
-        if (clientSerializationVersion != serializationService.getVersion()) {
+        if (endpoint.isAuthenticated()) {
+            return AUTHENTICATED;
+        } else if (clientSerializationVersion != serializationService.getVersion()) {
             return SERIALIZATION_VERSION_MISMATCH;
         } else if (!isOwnerConnection() && !isMember(principal)) {
             logger.warning("Member having UUID " + principal.getOwnerUuid()
