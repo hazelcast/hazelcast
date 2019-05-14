@@ -23,6 +23,8 @@ import com.hazelcast.client.impl.operations.OnJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMessageTask;
+import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetPartitionsMessageTask;
 import com.hazelcast.client.impl.protocol.task.ListenerMessageTask;
@@ -262,7 +264,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         Class clazz = messageTask.getClass();
         return clazz == PingMessageTask.class
                 || clazz == GetPartitionsMessageTask.class
-                ;
+                || ((clazz == AuthenticationMessageTask.class || clazz == AuthenticationCustomCredentialsMessageTask.class)
+                        && node.securityContext == null);
     }
 
     private boolean isQuery(MessageTask messageTask) {
