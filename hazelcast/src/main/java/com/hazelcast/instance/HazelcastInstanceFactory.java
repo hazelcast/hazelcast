@@ -41,6 +41,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -128,15 +130,17 @@ public final class HazelcastInstanceFactory {
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         if (config == null) {
+            validateSuffixInSystemProperty(SYSPROP_MEMBER_CONFIG);
+
             XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
             YamlConfigLocator yamlConfigLocator = new YamlConfigLocator();
 
             if (xmlConfigLocator.locateFromSystemProperty()) {
-                // 1. Try loading XML config if provided in system property
+                // 1. Try loading XML config if provided in system property with any extension
                 config = new XmlConfigBuilder(xmlConfigLocator).build();
 
-            } else if (yamlConfigLocator.locateFromSystemProperty()) {
-                // 2. Try loading YAML config if provided in system property
+            } else if (yamlConfigLocator.locateFromSystemPropertyOrFailOnUnacceptedSuffix()) {
+                // 2. Try loading YAML config if provided in system property with .yaml or .yml extension
                 config = new YamlConfigBuilder(yamlConfigLocator).build();
 
             } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {

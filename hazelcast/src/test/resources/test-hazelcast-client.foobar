@@ -21,18 +21,19 @@
                   http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
 
     <group>
-        <name>cluster1</name>
-        <password>cluster1pass</password>
+        <name>foobar-foobar</name>
+        <password>dev-pass</password>
     </group>
-
     <network>
-        <cluster-members>
-            <address>127.0.0.1:5701</address>
-        </cluster-members>
+        <ssl enabled="true">
+            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
+        </ssl>
+        <socket-options>
+            <buffer-size>128</buffer-size>
+            <keep-alive>false</keep-alive>
+            <tcp-no-delay>false</tcp-no-delay>
+            <reuse-address>false</reuse-address>
+            <linger-seconds>3</linger-seconds>
+        </socket-options>
     </network>
-
-    <connection-strategy async-start="true" reconnect-mode="OFF">
-        <connection-retry enabled="false"/>
-    </connection-strategy>
-
 </hazelcast-client>

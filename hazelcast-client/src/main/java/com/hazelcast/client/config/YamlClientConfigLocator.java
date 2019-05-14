@@ -18,6 +18,9 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.AbstractConfigLocator;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
+
 /**
  * A support class for the {@link YamlClientConfigBuilder} to locate the client
  * YAML configuration.
@@ -26,7 +29,12 @@ public class YamlClientConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.client.config", "yaml", "yml");
+        return loadFromSystemProperty(SYSPROP_CLIENT_CONFIG, YAML_ACCEPTED_SUFFIXES);
+    }
+
+    @Override
+    public boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_CLIENT_CONFIG, YAML_ACCEPTED_SUFFIXES);
     }
 
     @Override

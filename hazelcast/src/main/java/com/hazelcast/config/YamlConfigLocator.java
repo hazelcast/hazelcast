@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.config.DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES;
+
 /**
  * Support class for the {@link com.hazelcast.config.YamlConfigBuilder} that locates the YAML configuration:
  * <ol>
@@ -29,7 +32,12 @@ public class YamlConfigLocator extends AbstractConfigLocator {
 
     @Override
     public boolean locateFromSystemProperty() {
-        return loadFromSystemProperty("hazelcast.config", "yaml", "yml");
+        return loadFromSystemProperty(SYSPROP_MEMBER_CONFIG, YAML_ACCEPTED_SUFFIXES);
+    }
+
+    @Override
+    public boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix() {
+        return loadFromSystemPropertyOrFailOnUnacceptedSuffix(SYSPROP_MEMBER_CONFIG, YAML_ACCEPTED_SUFFIXES);
     }
 
     @Override

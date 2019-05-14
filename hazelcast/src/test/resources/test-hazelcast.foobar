@@ -15,24 +15,14 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd">
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
 
     <group>
-        <name>cluster1</name>
-        <password>cluster1pass</password>
+        <name>foobar-foobar</name>
+        <password>dev-pass</password>
     </group>
 
-    <network>
-        <cluster-members>
-            <address>127.0.0.1:5701</address>
-        </cluster-members>
-    </network>
-
-    <connection-strategy async-start="true" reconnect-mode="OFF">
-        <connection-retry enabled="false"/>
-    </connection-strategy>
-
-</hazelcast-client>
+</hazelcast>

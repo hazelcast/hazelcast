@@ -144,7 +144,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
 
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
+        assertEquals("foobar-xml", config.getGroupConfig().getName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", config.getNetworkConfig().getSSLConfig().getFactoryClassName());
         assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());
         assertFalse(config.getNetworkConfig().getSocketOptions().isKeepAlive());

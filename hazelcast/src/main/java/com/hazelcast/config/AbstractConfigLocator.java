@@ -26,6 +26,12 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
+
+import static com.hazelcast.config.DeclarativeConfigUtil.isAcceptedSuffixConfigured;
+import static com.hazelcast.config.DeclarativeConfigUtil.throwUnacceptedSuffixInSystemProperty;
+import static com.hazelcast.util.Preconditions.checkFalse;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract base class for config locators.
@@ -35,6 +41,7 @@ import java.net.URL;
  */
 public abstract class AbstractConfigLocator {
     private static final ILogger LOGGER = Logger.getLogger(AbstractConfigLocator.class);
+
     private InputStream in;
     private File configurationFile;
     private URL configurationUrl;
@@ -65,6 +72,19 @@ public abstract class AbstractConfigLocator {
     public abstract boolean locateFromSystemProperty();
 
     /**
+     * Locates the configuration file in a system property or throws
+     * {@link HazelcastException} if the suffix of the referenced file is
+     * not in the accepted list of the locator.
+     *
+     * @return true if the configuration file is found in the system property
+     * @throws HazelcastException if there was a problem locating the
+     *                            configuration file or the suffix of the
+     *                            file referenced in the system property
+     *                            is not an accepted suffix
+     */
+    public abstract boolean locateFromSystemPropertyOrFailOnUnacceptedSuffix();
+
+    /**
      * Locates the configuration file in the working directory.
      *
      * @return true if the configuration file is found in the working directory
@@ -93,7 +113,7 @@ public abstract class AbstractConfigLocator {
     public abstract boolean locateDefault();
 
     public boolean locateEverywhere() {
-        return locateFromSystemProperty()
+        return locateFromSystemPropertyOrFailOnUnacceptedSuffix()
                 || locateInWorkDir()
                 || locateOnClasspath()
                 || locateDefault();
@@ -166,7 +186,19 @@ public abstract class AbstractConfigLocator {
         }
     }
 
-    protected boolean loadFromSystemProperty(String propertyKey, String... expectedExtensions) {
+    protected boolean loadFromSystemProperty(String propertyKey, Collection<String> acceptedSuffixes) {
+        return loadFromSystemProperty(propertyKey, false, acceptedSuffixes);
+    }
+
+    protected boolean loadFromSystemPropertyOrFailOnUnacceptedSuffix(String propertyKey, Collection<String> acceptedSuffixes) {
+        return loadFromSystemProperty(propertyKey, true, acceptedSuffixes);
+    }
+
+    private boolean loadFromSystemProperty(String propertyKey, boolean failOnUnacceptedSuffix,
+                                           Collection<String> acceptedSuffixes) {
+        requireNonNull(acceptedSuffixes, "Parameter acceptedSuffixes must not be null");
+        checkFalse(acceptedSuffixes.isEmpty(), "Parameter acceptedSuffixes must not be empty");
+
         try {
             String configSystemProperty = System.getProperty(propertyKey);
 
@@ -175,9 +207,12 @@ public abstract class AbstractConfigLocator {
                 return false;
             }
 
-            if (expectedExtensions != null && expectedExtensions.length > 0
-                    && !isExpectedExtensionConfigured(configSystemProperty, expectedExtensions)) {
-                return false;
+            if (!isAcceptedSuffixConfigured(configSystemProperty, acceptedSuffixes)) {
+                if (failOnUnacceptedSuffix) {
+                    throwUnacceptedSuffixInSystemProperty(propertyKey, configSystemProperty, acceptedSuffixes);
+                } else {
+                    return false;
+                }
             }
 
             LOGGER.info(String.format("Loading configuration '%s' from System property '%s'", configSystemProperty, propertyKey));
@@ -188,21 +223,11 @@ public abstract class AbstractConfigLocator {
                 loadSystemPropertyFileResource(configSystemProperty);
             }
             return true;
+        } catch (HazelcastException e) {
+            throw e;
         } catch (RuntimeException e) {
             throw new HazelcastException(e);
         }
-    }
-
-    private boolean isExpectedExtensionConfigured(String configSystemProperty, String[] expectedExtensions) {
-        boolean expectedExtension = false;
-        String configSystemPropertyLower = configSystemProperty.toLowerCase();
-        for (String extension : expectedExtensions) {
-            if (configSystemPropertyLower.endsWith("." + extension.toLowerCase())) {
-                expectedExtension = true;
-                break;
-            }
-        }
-        return expectedExtension;
     }
 
     private void loadSystemPropertyFileResource(String configSystemProperty) {
@@ -243,6 +268,6 @@ public abstract class AbstractConfigLocator {
         if (in == null) {
             throw new HazelcastException(String.format("Could not load classpath resource: %s", resource));
         }
-        configurationUrl = Config.class.getResource(resource);
+        configurationUrl = Config.class.getClassLoader().getResource(resource);
     }
 }
