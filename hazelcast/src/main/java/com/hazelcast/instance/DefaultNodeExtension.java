@@ -501,7 +501,7 @@ public class DefaultNodeExtension implements NodeExtension {
         this.phoneHome = new PhoneHome(node);
     }
 
-    public void setLicense(String licenseKey) {
+    public void setLicenseKey(String licenseKey) {
         // NOP
     }
 }

@@ -39,7 +39,7 @@ public class SetLicenseOperation extends AbstractManagementOperation {
     public void run() throws Exception {
         DefaultNodeExtension nodeExtension
                 = (DefaultNodeExtension) ((NodeEngineImpl) getNodeEngine()).getNode().getNodeExtension();
-        nodeExtension.setLicense(licenseKey);
+        nodeExtension.setLicenseKey(licenseKey);
     }
 
     @Override
