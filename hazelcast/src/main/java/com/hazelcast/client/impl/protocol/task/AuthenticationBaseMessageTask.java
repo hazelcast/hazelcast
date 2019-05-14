@@ -128,7 +128,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
     private AuthenticationStatus authenticate() {
         ILogger logger = clientEngine.getLogger(getClass());
         AuthenticationStatus status;
-        if (credentials == null) {
+        if (endpoint.isAuthenticated()) {
+            status = AuthenticationStatus.AUTHENTICATED;
+        } else if (credentials == null) {
             status = AuthenticationStatus.CREDENTIALS_FAILED;
             logger.severe("Could not retrieve Credentials object!");
         } else if (clientEngine.getSecurityContext() != null) {
