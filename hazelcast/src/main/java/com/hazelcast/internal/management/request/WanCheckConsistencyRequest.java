@@ -19,8 +19,11 @@ package com.hazelcast.internal.management.request;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.WanCheckConsistencyOperation;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.util.ExceptionUtil;
 
-import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
+import java.util.concurrent.ExecutionException;
+
 import static com.hazelcast.util.JsonUtil.getString;
 
 public class WanCheckConsistencyRequest implements ConsoleRequest {
@@ -51,12 +54,19 @@ public class WanCheckConsistencyRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
         WanCheckConsistencyOperation operation = new WanCheckConsistencyOperation(schemeName, publisherName, mapName);
-        Object operationResult = resolveFuture(mcs.callOnThis(operation));
+        InternalCompletableFuture<Object> future = mcs.callOnThis(operation);
         JsonObject result = new JsonObject();
-        if (operationResult == null) {
-            result.add("result", SUCCESS);
-        } else {
-            result.add("result", operationResult.toString());
+        Object operationResult;
+        try {
+            operationResult = future.get();
+            if (operationResult == null) {
+                result.add("result", SUCCESS);
+            } else {
+                result.add("result", operationResult.toString());
+            }
+        } catch (ExecutionException e) {
+            result.add("result", e.getMessage());
+            result.add("stackTrace", ExceptionUtil.toString(e));
         }
         out.add("result", result);
     }
