@@ -49,7 +49,8 @@ import static com.hazelcast.client.impl.protocol.AuthenticationStatus.SERIALIZAT
 /**
  * Base authentication task
  */
-public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P> {
+public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P>
+        implements BlockingMessageTask {
 
     protected transient ClientPrincipal principal;
     protected transient String clientName;
