@@ -259,28 +259,4 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         assertNotNull(name);
         assertNotContains(name, "_hzInstance_");
     }
-
-    @Test
-    public void mobyNameUniquenessProvided() {
-        Config config = new Config();
-        config.getProperties().put(GroupProperty.MOBY_NAMING_ENABLED.getName(), "true");
-
-        try {
-            HazelcastInstanceFactory.newHazelcastInstance(config);
-            HazelcastInstanceFactory.newHazelcastInstance(config);
-            HazelcastInstanceFactory.newHazelcastInstance(config);
-            HazelcastInstanceFactory.newHazelcastInstance(config);
-
-            while (true) {
-                String instanceName = HazelcastInstanceFactory.createInstanceName(config);
-                if (instanceName.matches("\\w+\\d$")) {
-                    System.out.println(instanceName);
-                    break;
-                }
-            }
-
-        } finally {
-            HazelcastInstanceFactory.terminateAll();
-        }
-    }
 }

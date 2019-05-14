@@ -34,6 +34,7 @@
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]util[\\/]collection[\\/]"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]concurrent[\\/]"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]cluster[\\/]fd[\\/]PhiAccrualFailureDetector"/>
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]instance[\\/]MobyNames"/>
 
     <!-- Exclude internal, implementation and template packages from JavaDoc checks -->
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="com[\\/]hazelcast[\\/]internal[\\/]"/>

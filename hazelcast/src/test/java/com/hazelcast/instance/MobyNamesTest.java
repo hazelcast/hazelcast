@@ -16,7 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,7 +25,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -41,11 +40,12 @@ public class MobyNamesTest extends HazelcastTestSupport {
     @Test
     public void getNextRandomNameShouldBeDifferentWithHighProbability() {
         String randomName = MobyNames.getRandomName();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNotEquals(randomName, MobyNames.getRandomName());
+        int attempts = 100;
+        for (int i = 0; i < attempts; i++) {
+            if (!randomName.equals(MobyNames.getRandomName())) {
+                return;
             }
-        }, 10);
+        }
+        fail("Could not generate the name that is not equal to " + randomName + " in " + attempts + " attempts");
     }
 }

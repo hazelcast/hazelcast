@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Original work Copyright 2019 The Moby Project.
+ * Modified work Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +22,7 @@ import java.util.Random;
 /**
  * Java port of the Moby Project random name generator (https://github.com/moby/moby).
  */
-public final class MobyNames {
+final class MobyNames {
 
     private static final String NAME_FORMAT = "%s_%s";
 
@@ -1000,7 +1001,7 @@ public final class MobyNames {
      * GetRandomName generates a random name from the list of adjectives and surnames in this package formatted as
      * "adjective_surname". For example 'focused_turing'.
      */
-    public static String getRandomName() {
+    static String getRandomName() {
         Random random = new Random();
         return String.format(NAME_FORMAT, LEFT[random.nextInt(LEFT.length)], RIGHT[random.nextInt(RIGHT.length)]);
     }
