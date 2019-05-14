@@ -32,10 +32,12 @@ import com.hazelcast.internal.management.operation.SetLicenseOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.JsonUtil;
 import com.hazelcast.util.StringUtil;
+import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.AddWanConfigResult;
 import com.hazelcast.wan.WanReplicationService;
@@ -904,8 +906,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             if (authenticate(command, strList[0], strList.length > 1 ? strList[1] : null)) {
                 // assumes that both groupName and password are present
                 String licenseKey = strList.length > 2 ? URLDecoder.decode(strList[2], "UTF-8") : null;
-                invokeOnStableClusterSerial(textCommandService.getNode().nodeEngine,
-                        () -> new SetLicenseOperation(licenseKey), retryCount).get();
+                invokeOnStableClusterSerial(textCommandService.getNode().nodeEngine, new Supplier<Operation>() {
+                    @Override
+                    public Operation get() {
+                        return new SetLicenseOperation(licenseKey);
+                    }
+                }, retryCount).get();
                 res = responseOnSetLicenseSuccess();
             } else {
                 res = response(ResponseType.FORBIDDEN);
