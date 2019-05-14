@@ -76,6 +76,6 @@ public class ScheduledExecutorQuorumReadTest extends AbstractQuorumTest {
     }
 
     protected IScheduledExecutorService exec(int index) {
-        return scheduledExec(index, quorumType);
+        return scheduledExec(index, quorumType, "");
     }
 }

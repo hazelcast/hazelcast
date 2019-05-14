@@ -19,6 +19,7 @@ package com.hazelcast.client.quorum.scheduledexecutor;
 import com.hazelcast.client.quorum.PartitionedClusterClients;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.quorum.scheduledexecutor.ScheduledExecutorQuorumWriteTest;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -54,12 +55,7 @@ public class ClientScheduledExecutorQuorumWriteTest extends ScheduledExecutorQuo
     }
 
     @Override
-    protected IScheduledExecutorService exec(int index) {
-        return scheduledExec(index, quorumType);
-    }
-
-    @Override
-    protected IScheduledExecutorService exec(int index, String postfix) {
+    protected IScheduledExecutorService scheduledExec(int index, QuorumType quorumType, String postfix) {
         return clients.client(index).getScheduledExecutorService(SCHEDULED_EXEC_NAME + quorumType.name() + postfix);
     }
 }
