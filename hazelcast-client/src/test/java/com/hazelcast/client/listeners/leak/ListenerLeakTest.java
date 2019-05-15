@@ -17,7 +17,12 @@
 package com.hazelcast.client.listeners.leak;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.client.impl.clientside.ClientTestUtil;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -33,25 +38,83 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ListenerLeakTestNonSmartRouting extends ListenerLeakTestSupport {
+public class ListenerLeakTest extends HazelcastTestSupport {
+
+
+    @Parameterized.Parameters(name = "smartRouting:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{{false}, {true}});
+    }
+
+    @Parameterized.Parameter
+    public boolean smartRouting;
+
+    protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    @After
+    public void cleanup() {
+        hazelcastFactory.terminateAll();
+    }
+
+    private void assertNoLeftOver(Collection<Node> nodes, HazelcastInstance client, String id
+            , Collection<ClientEventRegistration> registrations) {
+        for (Node node : nodes) {
+            assertNoLeftOverOnNode(node, registrations);
+        }
+        assertEquals(0, getClientEventRegistrations(client, id).size());
+    }
+
+    private Collection<Node> createNodes() {
+        int NODE_COUNT = 3;
+        Collection<Node> nodes = new ArrayList<Node>(3);
+        for (int i = 0; i < NODE_COUNT; i++) {
+            HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
+            nodes.add(getNode(hazelcast));
+        }
+        return nodes;
+    }
+
+    private void assertNoLeftOverOnNode(Node node, Collection<ClientEventRegistration> registrations) {
+        Collection<ClientEndpoint> endpoints = node.clientEngine.getEndpointManager().getEndpoints();
+        for (ClientEndpoint endpoint : endpoints) {
+            for (ClientEventRegistration registration : registrations) {
+                assertFalse(endpoint.removeDestroyAction(registration.getServerRegistrationId()));
+            }
+        }
+    }
+
+    private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, String id) {
+        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
+        return listenerService.getActiveRegistrations(id);
+    }
 
     private HazelcastInstance newHazelcastClient() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().setSmartRouting(smartRouting);
         return hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
@@ -169,5 +232,26 @@ public class ListenerLeakTestNonSmartRouting extends ListenerLeakTestSupport {
 
         assertTrue(topic.removeMessageListener(id));
         assertNoLeftOver(nodes, client, id, registrations);
+    }
+
+    @Test
+    public void testEventHandlersRemovedOnDisconnectedState() {
+        //This test does not add any user listener because
+        //we are testing if any event handler of internal listeners are leaking
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(smartRouting);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        hazelcast.shutdown();
+
+        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, listenerService.getEventHandlers().size());
+            }
+        });
     }
 }
