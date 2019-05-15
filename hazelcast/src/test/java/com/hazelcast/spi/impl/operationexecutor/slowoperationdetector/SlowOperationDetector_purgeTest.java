@@ -73,7 +73,12 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
-        assertTotalInvocations(firstLog, 4);
+        int totalInvocations = firstLog.totalInvocations.get();
+
+        //If due to race condition unable to collect a stacktrace of the operation before the next operation so the invocation
+        //will be dropped.
+        assertTrue(String.format("Expected 3 or 4 total invocations, but was %s, logs: %s", totalInvocations,
+                firstLog.createDTO().toJson()), totalInvocations >= 3 && totalInvocations <= 4);
         assertEntryProcessorOperation(firstLog);
         assertStackTraceContainsClassName(firstLog, "SlowEntryProcessor");
 
