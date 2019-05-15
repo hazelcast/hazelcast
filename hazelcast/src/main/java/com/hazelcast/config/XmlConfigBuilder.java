@@ -108,7 +108,6 @@ import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
-import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -250,12 +249,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             throw new InvalidConfigurationException("Invalid root element in xml configuration!"
                     + " Expected: <" + XmlElements.HAZELCAST.name + ">, Actual: <" + rootNodeName + ">.");
         }
-    }
-
-    private boolean shouldValidateTheSchema() {
-        // in case of overridden Hazelcast version there may be no schema with that version
-        // (this feature is used only in Simulator testing)
-        return System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) == null;
     }
 
     @Override

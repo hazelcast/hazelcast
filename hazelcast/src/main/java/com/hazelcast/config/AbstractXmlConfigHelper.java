@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
@@ -73,7 +74,7 @@ public abstract class AbstractXmlConfigHelper {
 
     final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
 
-    private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
+    private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + "-visa.xsd";
 
     public static Iterable<Node> childElements(Node node) {
         return new IterableNodeList(node, Node.ELEMENT_NODE);
@@ -138,6 +139,12 @@ public abstract class AbstractXmlConfigHelper {
 
     protected ConfigType getXmlType() {
         return ConfigType.SERVER;
+    }
+
+    protected boolean shouldValidateTheSchema() {
+        // in case of overridden Hazelcast version there may be no schema with that version
+        // (this feature is used only in Simulator testing)
+        return System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) == null;
     }
 
     protected void schemaValidation(Document doc) throws Exception {

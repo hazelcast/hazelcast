@@ -70,7 +70,10 @@ import static org.junit.Assert.fail;
 @SuppressWarnings({"WeakerAccess", "deprecation"})
 public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
-    static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
+    static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\" "
+            + "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+            + "xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n"
+            + "http://www.hazelcast.com/schema/config/hazelcast-config-3.11-visa.xsd\">\n";
     static final String HAZELCAST_END_TAG = "</hazelcast>\n";
 
     static final String SECURITY_START_TAG = "<security enabled=\"true\">\n";
