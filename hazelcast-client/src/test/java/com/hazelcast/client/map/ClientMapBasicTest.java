@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.BasicMapTest;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
@@ -928,6 +929,11 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
             Integer expectedValue = expected.get(key);
             assertEquals(expectedValue, value);
         }
+    }
+
+    @Test
+    public void testMapClonedCollectionsImmutable() {
+        BasicMapTest.testMapClonedCollectionsImmutable(client, false);
     }
 
     @Test

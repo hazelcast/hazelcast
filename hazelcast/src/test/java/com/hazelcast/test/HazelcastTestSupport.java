@@ -17,6 +17,8 @@
 package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
+import junit.framework.AssertionFailedError;
+
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
@@ -1496,6 +1498,23 @@ public abstract class HazelcastTestSupport {
                 assertEquals(expectedOpsCount, waitNotifyService.getTotalParkedOperationCount());
             }
         });
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Throwable> T assertThrows(Class<T> expectedType, Runnable r) {
+        try {
+            r.run();
+        } catch (Throwable actualException) {
+            if (expectedType.isInstance(actualException)) {
+                return (T) actualException;
+            } else {
+                String excMsg = String.format("Unexpected %s exception type thrown", actualException.getClass().getName());
+                throw new AssertionFailedError(excMsg);
+            }
+        }
+
+        String excMsg = String.format("Expected %s to be thrown, but nothing was thrown.", expectedType.getName());
+        throw new AssertionFailedError(excMsg);
     }
 
     private static OperationParkerImpl getOperationParkingService(HazelcastInstance instance) {

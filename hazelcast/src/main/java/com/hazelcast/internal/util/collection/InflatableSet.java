@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.nio.serialization.SerializableByConvention;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Serializable;
@@ -34,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Provides fast {@link Set} implementation for cases where items are known to not
  * contain duplicates.
  * <p>
- * It requires creation via {@link com.hazelcast.util.collection.InflatableSet.Builder}
+ * It requires creation via {@link com.hazelcast.internal.util.collection.InflatableSet.Builder}
  * <p>
  * The builder doesn't call equals/hash methods on initial data insertion, hence it avoids
  * performance penalty in the case these methods are expensive. It also means it does
@@ -54,11 +55,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <T> the type of elements maintained by this set
  */
 @SerializableByConvention
-public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializable, Cloneable {
+public class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializable, Cloneable {
 
     private static final long serialVersionUID = 0L;
 
-    private enum State {
+    enum State {
         // only array-backed representation exists
         COMPACT,
 
@@ -71,16 +72,23 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
         INFLATED
     }
 
-    private final List<T> compactList;
+    /**
+     * The field is package-visible to use in {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet#iterator}.
+     */
+    State state;
     private Set<T> inflatedSet;
-    private State state;
+    private final List<T> compactList;
+
 
     /**
-     * This constructor is intended to be used by {@link com.hazelcast.util.collection.InflatableSet.Builder} only.
+     * This constructor is intended to be used by {@link com.hazelcast.internal.util.collection.InflatableSet.Builder} and
+     * {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet.ImmutableSetBuilder} only.
+     *
+     * The constructor is package-visible to support {@link com.hazelcast.internal.util.collection.ImmutableInflatableSet}
      *
      * @param compactList list of elements for the InflatableSet
      */
-    private InflatableSet(List<T> compactList) {
+    InflatableSet(List<T> compactList) {
         this.state = State.COMPACT;
         this.compactList = compactList;
     }
@@ -221,7 +229,7 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
         }
     }
 
-    private class HybridIterator implements Iterator<T> {
+    class HybridIterator implements Iterator<T> {
 
         private Iterator<T> innerIterator;
         private T currentValue;
@@ -250,21 +258,14 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
         }
     }
 
-    /**
-     * Builder for {@link InflatableSet}.
-     * This is the only way to create a new instance of InflatableSet.
-     *
-     * @param <T> the type of elements maintained by this set
-     */
-    public static final class Builder<T> {
+    abstract static class AbstractBuilder<T> {
+        List<T> list;
 
-        private List<T> list;
-
-        private Builder(int initialCapacity) {
-            this.list = new ArrayList<T>(initialCapacity);
+        AbstractBuilder(int initialCapacity) {
+            this.list = new ArrayList<>(initialCapacity);
         }
 
-        private Builder(List<T> list) {
+        AbstractBuilder(List<T> list) {
             this.list = checkNotNull(list, "list cannot be null");
         }
 
@@ -272,13 +273,35 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
             return list.size();
         }
 
-        public Builder add(T item) {
+        AbstractBuilder<T> add(T item) {
             list.add(item);
+            return this;
+        }
+    }
+
+    /**
+     * Builder for {@link InflatableSet}.
+     * This is the only way to create a new instance of InflatableSet.
+     *
+     * @param <T> the type of elements maintained by this set
+     */
+    public static final class Builder<T> extends AbstractBuilder<T> {
+
+        private Builder(int initialCapacity) {
+            super(initialCapacity);
+        }
+
+        private Builder(List<T> list) {
+            super(list);
+        }
+
+        public Builder<T> add(T item) {
+            super.add(item);
             return this;
         }
 
         public InflatableSet<T> build() {
-            InflatableSet<T> set = new InflatableSet<T>(list);
+            InflatableSet<T> set = new InflatableSet<>(list);
 
             // make sure no further insertions are possible
             list = Collections.emptyList();

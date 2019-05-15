@@ -428,7 +428,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public Map<K, V> getAll(Set<K> keys) {
         if (CollectionUtil.isEmpty(keys)) {
-            return emptyMap();
+            // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
+            return Collections.unmodifiableMap(emptyMap());
         }
 
         int keysSize = keys.size();
@@ -442,7 +443,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             V value = toObject(resultingKeyValuePairs.get(i++));
             result.put(key, value);
         }
-        return result;
+        return Collections.unmodifiableMap(result);
     }
 
     @Override
