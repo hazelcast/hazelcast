@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
@@ -64,6 +65,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private final AtomicReference<PartitionTable> partitionTable =
             new AtomicReference<PartitionTable>(new PartitionTable(null, -1, new Int2ObjectHashMap<Address>()));
     private volatile int partitionCount;
+    private volatile long lastCorrelationId = -1;
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -100,6 +102,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
         invocation.setEventHandler(new PartitionEventHandler(ownerConnection));
         invocation.invokeUrgent().get();
+        lastCorrelationId = clientMessage.getCorrelationId();
+    }
+
+    public void cleanupOnDisconnect() {
+        ((AbstractClientListenerService) client.getListenerService()).removeEventHandler(lastCorrelationId);
     }
 
     void refreshPartitions() {
