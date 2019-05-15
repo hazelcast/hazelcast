@@ -100,7 +100,7 @@ public class PhoneHome {
             phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
                     .scheduleWithRepetition("PhoneHome", new Runnable() {
                         public void run() {
-                            phoneHome(hazelcastNode);
+                            phoneHome(hazelcastNode, false);
                         }
                     }, 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
@@ -140,11 +140,21 @@ public class PhoneHome {
         return letter;
     }
 
-    public Map<String, String> phoneHome(Node hazelcastNode) {
-        PhoneHomeParameterCreator parameterCreator = createParameters(hazelcastNode);
+    /**
+     * Performs a phone request for {@code node} and returns the generated request
+     * parameters. If {@code pretend} is {@code true}, only returns the parameters
+     * without actually performing the request.
+     * @param node the node for which to make the phone home request
+     * @param pretend if {@code true}, do not perform the request
+     * @return the generated request parameters
+     */
+    public Map<String, String> phoneHome(Node node, boolean pretend) {
+        PhoneHomeParameterCreator parameterCreator = createParameters(node);
 
-        String urlStr = BASE_PHONE_HOME_URL + parameterCreator.build();
-        fetchWebService(urlStr);
+        if (!pretend) {
+            String urlStr = BASE_PHONE_HOME_URL + parameterCreator.build();
+            fetchWebService(urlStr);
+        }
 
         return parameterCreator.getParameters();
     }
