@@ -24,6 +24,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
+/**
+ * Operation to update license at runtime.
+ */
 public class SetLicenseOperation extends AbstractManagementOperation {
 
     private String licenseKey;
