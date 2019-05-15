@@ -17,7 +17,7 @@
 package com.hazelcast.test.compatibility;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.nio.BufferObjectDataInput;

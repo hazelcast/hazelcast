@@ -17,8 +17,8 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationEvent.MigrationStatus;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationEvent.MigrationStatus;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.nio.ObjectDataInput;

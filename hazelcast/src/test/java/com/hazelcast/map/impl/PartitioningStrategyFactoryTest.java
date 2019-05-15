@@ -21,7 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.test.AssertTask;

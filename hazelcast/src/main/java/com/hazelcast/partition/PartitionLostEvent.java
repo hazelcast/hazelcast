@@ -16,8 +16,6 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

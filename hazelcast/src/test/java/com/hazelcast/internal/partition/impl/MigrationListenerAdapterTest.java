@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,9 +30,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
 
-import static com.hazelcast.core.MigrationEvent.MigrationStatus.COMPLETED;
-import static com.hazelcast.core.MigrationEvent.MigrationStatus.FAILED;
-import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
+import static com.hazelcast.partition.MigrationEvent.MigrationStatus.COMPLETED;
+import static com.hazelcast.partition.MigrationEvent.MigrationStatus.FAILED;
+import static com.hazelcast.partition.MigrationEvent.MigrationStatus.STARTED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;

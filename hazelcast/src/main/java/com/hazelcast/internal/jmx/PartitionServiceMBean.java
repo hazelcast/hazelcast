@@ -19,6 +19,7 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.PartitionService;
 
 import java.util.Map;
 
@@ -26,7 +27,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Management bean for {@link com.hazelcast.core.PartitionService}
+ * Management bean for {@link PartitionService}
  */
 @ManagedDescription("HazelcastInstance.PartitionServiceMBean")
 public class PartitionServiceMBean extends HazelcastMBean<InternalPartitionService> {

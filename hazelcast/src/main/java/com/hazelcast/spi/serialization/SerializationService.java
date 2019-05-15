@@ -17,7 +17,7 @@
 package com.hazelcast.spi.serialization;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
 
 /**

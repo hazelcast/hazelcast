@@ -36,7 +36,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;

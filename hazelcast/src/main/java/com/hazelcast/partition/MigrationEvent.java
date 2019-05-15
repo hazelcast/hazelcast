@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.partition;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.partition.PartitionEvent;
 
 import java.io.DataInput;
 import java.io.DataOutput;

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.partition;
 
-import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.core.Member;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -48,20 +48,6 @@ public interface PartitionService {
      */
     // TODO: what about null.
     Partition getPartition(Object key);
-
-    /**
-     * Generates a random partition key. This is useful if you want to partition data in the same partition,
-     * but you do not care which partition it is going to be.
-     * <p>
-     * The returned value will never be {@code null}.
-     *
-     * This method is deprecated since Hazelcast 3.5. If you need a random partition-key, you can use e.g.
-     * a random number, random string or UUID for that.
-     *
-     * @return the random partition key
-     */
-    @Deprecated
-    String randomPartitionKey();
 
     /**
      * Adds a MigrationListener.

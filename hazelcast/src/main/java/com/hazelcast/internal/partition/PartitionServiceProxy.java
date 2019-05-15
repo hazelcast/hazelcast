@@ -17,15 +17,15 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Future;
@@ -50,7 +49,6 @@ public class PartitionServiceProxy implements PartitionService {
     private final InternalPartitionServiceImpl partitionService;
     private final Map<Integer, Partition> partitionMap;
     private final Set<Partition> partitionSet;
-    private final Random random = new Random();
     private final ILogger logger;
 
     private final FutureUtil.ExceptionHandler exceptionHandler = new FutureUtil.ExceptionHandler() {
@@ -76,11 +74,6 @@ public class PartitionServiceProxy implements PartitionService {
         partitionMap = Collections.unmodifiableMap(map);
         partitionSet = Collections.unmodifiableSet(set);
         logger = nodeEngine.getLogger(PartitionServiceProxy.class);
-    }
-
-    @Override
-    public String randomPartitionKey() {
-        return Integer.toString(random.nextInt(partitionService.getPartitionCount()));
     }
 
     @Override

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -30,8 +30,8 @@ import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 import java.util.Arrays;
 
-import static com.hazelcast.core.MigrationEvent.MigrationStatus.COMPLETED;
-import static com.hazelcast.core.MigrationEvent.MigrationStatus.FAILED;
+import static com.hazelcast.partition.MigrationEvent.MigrationStatus.COMPLETED;
+import static com.hazelcast.partition.MigrationEvent.MigrationStatus.FAILED;
 
 /**
  * Runs locally when the node becomes owner of a partition.
