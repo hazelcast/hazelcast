@@ -51,8 +51,6 @@ public final class YamlLoader {
     public static YamlNode load(InputStream inputStream, String rootName) {
         try {
             Object document = getLoad().loadFromInputStream(inputStream);
-            inputStream.close();
-
             return buildDom(rootName, document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
@@ -69,8 +67,6 @@ public final class YamlLoader {
     public static YamlNode load(InputStream inputStream) {
         try {
             Object document = getLoad().loadFromInputStream(inputStream);
-            inputStream.close();
-
             return buildDom(document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
@@ -90,8 +86,6 @@ public final class YamlLoader {
     public static YamlNode load(Reader reader, String rootName) {
         try {
             Object document = getLoad().loadFromReader(reader);
-            reader.close();
-
             return buildDom(rootName, document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
@@ -108,8 +102,6 @@ public final class YamlLoader {
     public static YamlNode load(Reader reader) {
         try {
             Object document = getLoad().loadFromReader(reader);
-            reader.close();
-
             return buildDom(document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
