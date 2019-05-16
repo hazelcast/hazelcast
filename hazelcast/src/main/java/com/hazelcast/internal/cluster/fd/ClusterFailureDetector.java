@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.fd;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 
 /**
  * Cluster failure detector tracks heartbeats of the members and decides liveness/availability of them.

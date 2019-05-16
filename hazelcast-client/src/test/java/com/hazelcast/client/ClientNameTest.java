@@ -16,10 +16,10 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.api.Client;
+import com.hazelcast.client.api.ClientListener;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

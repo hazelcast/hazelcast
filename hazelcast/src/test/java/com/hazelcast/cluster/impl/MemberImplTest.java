@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.cluster.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.AfterClass;
@@ -51,7 +54,8 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        hazelcastInstance = new HazelcastInstanceImpl("test", new Config(), new DefaultNodeContext());
+        HazelcastInstance instance = new TestHazelcastInstanceFactory().newHazelcastInstance();
+        hazelcastInstance = getHazelcastInstanceImpl(instance);
         address = new Address("127.0.0.1", 5701);
     }
 

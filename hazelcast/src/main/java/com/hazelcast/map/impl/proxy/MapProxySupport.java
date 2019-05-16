@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.EntryListenerConfig;
@@ -32,7 +33,6 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.util.SimpleCompletableFuture;

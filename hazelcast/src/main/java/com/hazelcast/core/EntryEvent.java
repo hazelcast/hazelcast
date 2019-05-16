@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cluster.Member;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**

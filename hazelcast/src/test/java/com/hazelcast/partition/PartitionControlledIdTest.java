@@ -39,7 +39,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.serialization.Data;

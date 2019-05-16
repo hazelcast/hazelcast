@@ -27,7 +27,7 @@ import com.hazelcast.client.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.transaction.TransactionContext;

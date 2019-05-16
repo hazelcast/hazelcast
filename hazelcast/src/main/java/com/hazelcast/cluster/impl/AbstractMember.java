@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
@@ -39,7 +40,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-@PrivateApi
 public abstract class AbstractMember implements Member {
 
     protected final Map<String, String> attributes = new ConcurrentHashMap<>();

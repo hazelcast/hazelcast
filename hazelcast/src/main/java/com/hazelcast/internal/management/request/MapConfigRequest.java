@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.request;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cluster.Member;
+
 /**
  * Used for map-wide events like {@link com.hazelcast.core.EntryEventType#EVICT_ALL}
  * and {@link  com.hazelcast.core.EntryEventType#CLEAR_ALL}.

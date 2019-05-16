@@ -14,24 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.client.api;
+
+import java.util.EventListener;
 
 /**
- * Adapter for MembershipListener. All the methods are implemented and only override the relevant methods
+ * The ClientListener provides the ability to listen to clients connecting and disconnecting from the member.
  *
- * @see com.hazelcast.core.MembershipListener
+ * @see Client
+ * @see ClientService#addClientListener(ClientListener)
  */
-public class MembershipAdapter implements MembershipListener {
+public interface ClientListener extends EventListener {
 
-    @Override
-    public void memberAdded(MembershipEvent membershipEvent) {
-    }
+    /**
+     * Invoked when a client is connected.
+     *
+     * @param client the client instance
+     */
+    void clientConnected(Client client);
 
-    @Override
-    public void memberRemoved(MembershipEvent membershipEvent) {
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-    }
+    /**
+     * Invoked when a client is disconnected.
+     *
+     * @param client the client instance
+     */
+    void clientDisconnected(Client client);
 }

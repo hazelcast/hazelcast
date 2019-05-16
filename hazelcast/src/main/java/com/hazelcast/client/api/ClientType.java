@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.client.api;
 
 /**
  * Type of a Hazelcast client.

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.cluster;
 
 /**
  * <p>Implementations of this interface select members

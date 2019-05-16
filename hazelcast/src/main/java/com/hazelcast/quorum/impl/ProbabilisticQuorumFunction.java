@@ -16,9 +16,9 @@
 
 package com.hazelcast.quorum.impl;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector;
 import com.hazelcast.quorum.HeartbeatAware;
 import com.hazelcast.quorum.QuorumFunction;

@@ -18,9 +18,9 @@ package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.LifecycleServiceImpl;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.ListenerAdapter;

@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.nio.IOUtil;
 import org.apache.http.Consts;

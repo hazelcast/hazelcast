@@ -18,7 +18,7 @@ package com.hazelcast.internal.util.futures;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.ClusterService;

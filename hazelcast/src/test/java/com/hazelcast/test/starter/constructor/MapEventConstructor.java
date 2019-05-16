@@ -33,7 +33,7 @@ public class MapEventConstructor extends AbstractStarterObjectConstructor {
     @Override
     Object createNew0(Object delegate) throws Exception {
         ClassLoader starterClassLoader = targetClass.getClassLoader();
-        Class<?> memberClass = starterClassLoader.loadClass("com.hazelcast.core.Member");
+        Class<?> memberClass = starterClassLoader.loadClass("com.hazelcast.cluster.Member");
         Constructor<?> constructor = targetClass.getConstructor(Object.class, memberClass, Integer.TYPE, Integer.TYPE);
 
         Object source = getFieldValueReflectively(delegate, "source");

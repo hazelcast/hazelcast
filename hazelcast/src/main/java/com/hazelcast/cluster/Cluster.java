@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.cluster;
 
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionException;

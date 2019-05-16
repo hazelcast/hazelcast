@@ -16,8 +16,8 @@
 
 package com.hazelcast.cluster.memberselector;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberSelector;
 
 /**
  * Selects a member only if all of the sub-selectors succeed

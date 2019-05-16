@@ -22,12 +22,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.cluster.InitialMembershipEvent;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.InitialMembershipEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.AbstractMember;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.impl.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -68,7 +68,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handleMemberEventV10(Member member, int eventType) {
+    public void handleMemberEventV10(com.hazelcast.core.Member member, int eventType) {
         switch (eventType) {
             case MembershipEvent.MEMBER_ADDED:
                 memberAdded(member);
@@ -83,7 +83,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handleMemberListEventV10(Collection<Member> initialMembers) {
+    public void handleMemberListEventV10(Collection<com.hazelcast.core.Member> initialMembers) {
         Set<Member> prevMembers = Collections.emptySet();
         if (!members.isEmpty()) {
             prevMembers = new LinkedHashSet<Member>(members.size());

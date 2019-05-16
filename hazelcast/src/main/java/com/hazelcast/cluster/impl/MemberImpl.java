@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Member;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOp;
@@ -28,7 +30,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.Preconditions;
@@ -43,7 +44,6 @@ import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.singletonMap;
 
-@PrivateApi
 public final class MemberImpl
         extends AbstractMember
         implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {

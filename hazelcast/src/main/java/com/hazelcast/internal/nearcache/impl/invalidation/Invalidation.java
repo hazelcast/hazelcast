@@ -18,7 +18,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

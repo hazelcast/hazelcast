@@ -16,7 +16,7 @@
 
 package com.hazelcast.topic.impl.reliable;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.StaleSequenceException;
