@@ -1556,6 +1556,30 @@ public class ConfigXmlGeneratorTest {
         checkEndpointConfigCompatible(expected, actual);
     }
 
+    @Test
+    public void testUserCodeDeployment() {
+        Config config = new Config();
+
+        UserCodeDeploymentConfig expected = new UserCodeDeploymentConfig();
+        expected.setEnabled(true)
+                .setBlacklistedPrefixes("some-prefixes")
+                .setClassCacheMode(UserCodeDeploymentConfig.ClassCacheMode.ETERNAL)
+                .setProviderFilter("HAS_ATTRIBUTE:class-provider")
+                .setWhitelistedPrefixes("other-prefixes")
+                .setProviderMode(UserCodeDeploymentConfig.ProviderMode.LOCAL_AND_CACHED_CLASSES);
+        config.setUserCodeDeploymentConfig(expected);
+
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(config);
+        UserCodeDeploymentConfig actual = newConfigViaXMLGenerator.getUserCodeDeploymentConfig();
+
+        assertEquals(expected.isEnabled(), actual.isEnabled());
+        assertEquals(expected.getBlacklistedPrefixes(), actual.getBlacklistedPrefixes());
+        assertEquals(expected.getClassCacheMode(), actual.getClassCacheMode());
+        assertEquals(expected.getProviderFilter(), actual.getProviderFilter());
+        assertEquals(expected.getWhitelistedPrefixes(), actual.getWhitelistedPrefixes());
+        assertEquals(expected.getProviderMode(), actual.getProviderMode());
+    }
+
     private DiscoveryConfig getDummyDiscoveryConfig() {
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig("dummyClass");
         strategyConfig.addProperty("prop1", "val1");
