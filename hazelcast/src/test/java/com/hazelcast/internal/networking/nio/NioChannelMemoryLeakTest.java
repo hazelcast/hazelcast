@@ -21,7 +21,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.tcp.TcpIpNetworkingService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -60,12 +59,7 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
         TcpIpNetworkingService networkingService = (TcpIpNetworkingService) getNode(instance).getNetworkingService();
         final NioNetworking networking = (NioNetworking) networkingService.getNetworking();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertThat(networking.getChannels(), Matchers.<NioChannel>empty());
-            }
-        });
+        assertTrueEventually(() -> assertThat(networking.getChannels(), Matchers.empty()));
     }
 
     @Test
@@ -90,13 +84,10 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
             assertClusterSizeEventually(3, instance1, instance2, instance3);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNoChannelLeak(instance1);
-                assertNoChannelLeak(instance2);
-                assertNoChannelLeak(instance3);
-            }
+        assertTrueEventually(() -> {
+            assertNoChannelLeak(instance1);
+            assertNoChannelLeak(instance2);
+            assertNoChannelLeak(instance3);
         });
     }
 
@@ -113,7 +104,8 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
 
         assertThat(channels.size(), lessThanOrEqualTo(maxChannelCount));
         for (NioChannel channel : channels) {
-            assertTrue(channel.socketChannel().isOpen());
+            assertTrue("Channel " + channel + " was found closed in instance " + instance,
+                    channel.socketChannel().isOpen());
         }
     }
 
