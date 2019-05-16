@@ -77,6 +77,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -257,6 +258,28 @@ public class ManagementCenterService {
         return callOnAddress(instance.node.getThisAddress(), operation);
     }
 
+    public JsonObject syncCallOnThis(Operation operation) {
+        InternalCompletableFuture<Object> future = callOnThis(operation);
+        JsonObject result = new JsonObject();
+        Object operationResult;
+        try {
+            operationResult = future.get();
+            if (operationResult == null) {
+                result.add("result", "success");
+            } else {
+                result.add("result", operationResult.toString());
+            }
+        } catch (ExecutionException e) {
+            result.add("result", e.getMessage());
+            result.add("stackTrace", ExceptionUtil.toString(e));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            result.add("result", e.getMessage());
+            result.add("stackTrace", ExceptionUtil.toString(e));
+        }
+        return result;
+    }
+
     public InternalCompletableFuture<Object> callOnMember(Member member, Operation operation) {
         return callOnAddress(member.getAddress(), operation);
     }
@@ -284,7 +307,7 @@ public class ManagementCenterService {
 
     /**
      * Logs an event to Management Center.
-     *
+     * <p>
      * Events are used by Management Center to show the user what happens when on a cluster member.
      */
     public void log(Event event) {
