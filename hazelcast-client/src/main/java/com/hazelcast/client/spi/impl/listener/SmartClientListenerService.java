@@ -22,6 +22,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class SmartClientListenerService extends AbstractClientListenerService  {
                     try {
                         clientConnectionManager.getOrTriggerConnect(member.getAddress(), false);
                     } catch (IOException e) {
+                        EmptyStatement.ignore(e);
                         return;
                     }
                 }

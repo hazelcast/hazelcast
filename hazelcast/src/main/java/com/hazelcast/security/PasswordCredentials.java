@@ -16,15 +16,10 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
-
-import java.io.Serializable;
-
 /**
- * Credentials represents an identity to be authenticated.
+ * {@link Credentials} type for name/password representation.
  */
-@BinaryInterface
-public interface Credentials extends Serializable {
+public interface PasswordCredentials extends Credentials {
 
-    String getName();
+    String getPassword();
 }

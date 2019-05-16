@@ -40,6 +40,7 @@ public final class SpiPortableHook implements PortableHook {
     public static final int MAP_PARTITION_LOST_EVENT = 6;
     public static final int PARTITION_LOST_EVENT = 7;
     public static final int CACHE_PARTITION_LOST_EVENT = 8;
+    public static final int SIMPLE_TOKEN_CRED = 9;
 
     @Override
     public int getFactoryId() {

@@ -68,7 +68,7 @@ public class CandidateClusterContext {
     }
 
     public String getName() {
-        return credentialsFactory.newCredentials().getPrincipal();
+        return credentialsFactory.newCredentials().getName();
     }
 
     public ChannelInitializerProvider getChannelInitializerProvider() {

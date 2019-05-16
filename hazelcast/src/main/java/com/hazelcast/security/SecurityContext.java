@@ -17,6 +17,7 @@
 package com.hazelcast.security;
 
 import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.nio.Connection;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -37,19 +38,21 @@ public interface SecurityContext {
      * Creates member {@link LoginContext}.
      *
      * @param credentials member credentials
+     * @param connection member connection
      * @return {@link LoginContext}
      * @throws LoginException
      */
-    LoginContext createMemberLoginContext(Credentials credentials) throws LoginException;
+    LoginContext createMemberLoginContext(Credentials credentials, Connection connection) throws LoginException;
 
     /**
      * Creates client {@link LoginContext}.
      *
      * @param credentials client credentials
+     * @param connection client connection
      * @return {@link LoginContext}
      * @throws LoginException
      */
-    LoginContext createClientLoginContext(Credentials credentials) throws LoginException;
+    LoginContext createClientLoginContext(Credentials credentials, Connection connection) throws LoginException;
 
     /**
      * Returns current {@link ICredentialsFactory}.

@@ -338,7 +338,7 @@ public class Statistics {
             ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
             Credentials credentials = connectionManager.getLastCredentials();
             if (credentials != null) {
-                addStat(stats, "credentials.principal", credentials.getPrincipal());
+                addStat(stats, "credentials.principal", credentials.getName());
             }
 
             for (Gauge gauge : allGauges) {
