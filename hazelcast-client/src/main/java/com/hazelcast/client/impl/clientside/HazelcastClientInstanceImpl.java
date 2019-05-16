@@ -445,6 +445,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.createDistributedObjectsOnCluster(ownerConnection);
     }
 
+    public void onClusterDisconnect() {
+        partitionService.cleanupOnDisconnect();
+        clusterService.cleanupOnDisconnect();
+    }
+
     public MetricsRegistryImpl getMetricsRegistry() {
         return metricsRegistry;
     }

@@ -374,6 +374,7 @@ public class ClusterConnectorServiceImpl implements ClusterConnectorService, Con
 
                     setOwnerConnectionAddress(null);
                     connectionStrategy.onDisconnectFromCluster();
+                    client.onClusterDisconnect();
 
                     if (client.getLifecycleService().isRunning()) {
                         fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
