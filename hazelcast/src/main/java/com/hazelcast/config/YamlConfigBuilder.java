@@ -20,6 +20,7 @@ import com.hazelcast.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Node;
 
@@ -130,6 +131,8 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
             parseAndBuildConfig(config);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
+        } finally {
+            IOUtil.closeResource(in);
         }
         return config;
     }

@@ -50,7 +50,6 @@ public final class YamlLoader {
         try {
             YamlDocumentLoader load = getLoad();
             Object document = load.loadFromInputStream(inputStream);
-            inputStream.close();
 
             return buildDom(rootName, document);
         } catch (Exception ex) {
@@ -69,7 +68,6 @@ public final class YamlLoader {
         try {
             YamlDocumentLoader load = getLoad();
             Object document = load.loadFromInputStream(inputStream);
-            inputStream.close();
 
             return buildDom(document);
         } catch (Exception ex) {
@@ -91,7 +89,6 @@ public final class YamlLoader {
         try {
             YamlDocumentLoader load = getLoad();
             Object document = load.loadFromReader(reader);
-            reader.close();
 
             return buildDom(rootName, document);
         } catch (Exception ex) {
@@ -110,7 +107,6 @@ public final class YamlLoader {
         try {
             YamlDocumentLoader load = getLoad();
             Object document = load.loadFromReader(reader);
-            reader.close();
 
             return buildDom(document);
         } catch (Exception ex) {
