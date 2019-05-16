@@ -60,33 +60,28 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         setup("3");
 
         // all of these entry processors are executed after each other, not in parallel
-        for (int i = 0; i < 2; i++) {
-            map.executeOnEntries(getSlowEntryProcessor(4));
+        for (int i = 0; i < 3; i++) {
+            map.executeOnEntries(getSlowEntryProcessor(3));
         }
-        map.executeOnEntries(getSlowEntryProcessor(4));
-        map.executeOnEntries(getSlowEntryProcessor(4));
+        map.executeOnEntries(getSlowEntryProcessor(5));
         awaitSlowEntryProcessors();
 
         // shutdown to stop purging, so the last one or two entry processor invocations will survive
         shutdownOperationService(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
-
         SlowOperationLog firstLog = logs.iterator().next();
-        int totalInvocations = firstLog.totalInvocations.get();
 
-        //If due to race condition unable to collect a stacktrace of the operation before the next operation so the invocation
-        //will be dropped.
-        assertTrue(String.format("Expected 3 or 4 total invocations, but was %s, logs: %s", totalInvocations,
-                firstLog.createDTO().toJson()), totalInvocations >= 3 && totalInvocations <= 4);
         assertEntryProcessorOperation(firstLog);
         assertStackTraceContainsClassName(firstLog, "SlowEntryProcessor");
 
         Collection<SlowOperationLog.Invocation> invocations = getInvocations(firstLog);
         int invocationCount = invocations.size();
-        assertTrue("Expected 1 or 2 invocations, but was " + invocationCount, invocationCount >= 1 && invocationCount <= 2);
+        int totalInvocations = firstLog.totalInvocations.get();
+        assertTrue(String.format("Expected invocations must be less than total invocations, but was %s, total invocations: %s",
+                invocationCount, totalInvocations), invocationCount < totalInvocations);
         for (SlowOperationLog.Invocation invocation : invocations) {
-            assertInvocationDurationBetween(invocation, 1000, 3500);
+            assertInvocationDurationBetween(invocation, 1000, 4500);
         }
     }
 
