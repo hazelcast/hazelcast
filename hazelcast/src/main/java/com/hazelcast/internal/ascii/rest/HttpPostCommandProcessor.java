@@ -873,7 +873,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String decodedPass = URLDecoder.decode(pass, "UTF-8");
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(groupName, decodedPass);
         try {
-            LoginContext lc = securityContext.createMemberLoginContext(credentials);
+            LoginContext lc = securityContext.createMemberLoginContext(credentials, null);
             lc.login();
         } catch (LoginException e) {
             return false;

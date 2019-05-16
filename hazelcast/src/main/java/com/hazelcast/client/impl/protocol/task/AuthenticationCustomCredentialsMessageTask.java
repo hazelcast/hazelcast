@@ -23,6 +23,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.SimpleTokenCredentials;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,7 +59,7 @@ public class AuthenticationCustomCredentialsMessageTask
         if (uuid != null && uuid.length() > 0) {
             principal = new ClientPrincipal(uuid, ownerUuid);
         }
-        credentials = serializationService.toObject(parameters.credentials);
+        credentials = new SimpleTokenCredentials(parameters.credentials.toByteArray());
         clientSerializationVersion = parameters.serializationVersion;
         if (parameters.clientHazelcastVersionExist) {
             clientVersion = parameters.clientHazelcastVersion;

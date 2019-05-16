@@ -46,6 +46,7 @@ import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -53,7 +54,8 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.security.PasswordCredentials;
+import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.AddressUtil;
@@ -610,15 +612,20 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 resolvedClusterId = clusterId;
             }
 
-            if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
-                UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
+            if (credentials instanceof PasswordCredentials) {
+                PasswordCredentials cr = (PasswordCredentials) credentials;
                 return ClientAuthenticationCodec
-                        .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid,
+                        .encodeRequest(cr.getName(), cr.getPassword(), uuid, ownerUuid,
                                 asOwner, ClientTypes.JAVA,
                                 serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),
                                 labels, clusterPartitionCount, resolvedClusterId);
             } else {
-                Data data = ss.toData(credentials);
+                Data data;
+                if (credentials instanceof TokenCredentials) {
+                    data = new HeapData(((TokenCredentials) credentials).getToken());
+                } else {
+                    data = ss.toData(credentials);
+                }
                 return ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
                         asOwner, ClientTypes.JAVA, serializationVersion,
                         BuildInfoProvider.getBuildInfo().getVersion(), client.getName(),

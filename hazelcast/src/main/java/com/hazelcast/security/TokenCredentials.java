@@ -13,18 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.security;
 
-import com.hazelcast.nio.serialization.BinaryInterface;
-
-import java.io.Serializable;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.nio.serialization.Data;
 
 /**
- * Credentials represents an identity to be authenticated.
+ * {@link Credentials} type for custom authentication (token based).
  */
-@BinaryInterface
-public interface Credentials extends Serializable {
+public interface TokenCredentials extends Credentials {
 
-    String getName();
+    /**
+     * Returns the token as a byte array.
+     */
+    byte[] getToken();
+
+    /**
+     * Returns the token represented as {@link Data}. The default implementation wraps the token bytes into a on-heap Data
+     * instance.
+     */
+    default Data asData() {
+        return new HeapData(getToken());
+    }
 }
