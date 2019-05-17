@@ -36,7 +36,7 @@ public abstract class AbstractTransform implements Transform {
 
     protected AbstractTransform(@Nonnull String name, @Nonnull List<Transform> upstream) {
         this.name = name;
-        this.upstream = upstream;
+        this.upstream = new ArrayList<>(upstream);
     }
 
     protected AbstractTransform(String name, @Nonnull Transform upstream) {
