@@ -182,6 +182,7 @@ public class ProcessorTaskletTest_Snapshots {
         outstreams.add(outstream1);
 
         Tasklet tasklet = createTasklet(EXACTLY_ONCE);
+        snapshotContext.startNewSnapshot(0, null, false);
 
         // When
         callUntil(tasklet, DONE);

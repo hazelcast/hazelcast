@@ -139,7 +139,8 @@ public final class Util {
      * @param <T> type of the response
      * @return {@link ExecutionCallback}
      */
-    public static <T> ExecutionCallback<T> callbackOf(Consumer<T> onResponse, Consumer<Throwable> onError) {
+    public static <T> ExecutionCallback<T> callbackOf(@Nonnull Consumer<T> onResponse,
+                                                      @Nonnull Consumer<Throwable> onError) {
         return new ExecutionCallback<T>() {
             @Override
             public void onResponse(T o) {

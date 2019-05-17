@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -52,7 +51,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -90,7 +89,6 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.partitioningBy;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Part of {@link MasterContext} that deals with execution starting and
@@ -105,7 +103,7 @@ public class MasterJobContext {
     private final ILogger logger;
 
     private volatile long executionStartTime;
-    private volatile ExecutionInvocationCallback executionInvocationCallback;
+    private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
 
     /**
@@ -273,7 +271,7 @@ public class MasterJobContext {
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), participants,
                         mc.nodeEngine().getSerializationService().toData(plan));
-        mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null);
+        mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
     }
 
     /**
@@ -407,7 +405,7 @@ public class MasterJobContext {
     }
 
     // Called as callback when all InitOperation invocations are done
-    private void onInitStepCompleted(Map<MemberInfo, Object> responses) {
+    private void onInitStepCompleted(Collection<Object> responses) {
         Throwable error = getResult("Init", responses);
 
         if (error == null) {
@@ -432,17 +430,17 @@ public class MasterJobContext {
 
         long executionId = mc.executionId();
 
-        executionInvocationCallback = new ExecutionInvocationCallback(executionId);
+        executionFailureCallback = new ExecutionFailureCallback(executionId);
         if (requestedTerminationMode != null) {
             handleTermination(requestedTerminationMode);
         }
 
         Function<ExecutionPlan, Operation> operationCtor = plan -> new StartExecutionOperation(mc.jobId(), executionId);
-        Consumer<Map<MemberInfo, Object>> completionCallback = this::onExecuteStepCompleted;
+        Consumer<Collection<Object>> completionCallback = this::onExecuteStepCompleted;
 
         mc.setJobStatus(RUNNING);
 
-        mc.invokeOnParticipants(operationCtor, completionCallback, executionInvocationCallback);
+        mc.invokeOnParticipants(operationCtor, completionCallback, executionFailureCallback, false);
 
         if (mc.jobConfig().getProcessingGuarantee() != NONE) {
             mc.coordinationService().scheduleSnapshot(mc, executionId);
@@ -454,13 +452,13 @@ public class MasterJobContext {
         // be safe against it (idempotent).
         if (mode.isWithTerminalSnapshot()) {
             mc.snapshotContext().tryBeginSnapshot();
-        } else if (executionInvocationCallback != null) {
-            executionInvocationCallback.cancelInvocations(mode);
+        } else if (executionFailureCallback != null) {
+            executionFailureCallback.cancelInvocations(mode);
         }
     }
 
     // Called as callback when all ExecuteOperation invocations are done
-    private void onExecuteStepCompleted(Map<MemberInfo, Object> responses) {
+    private void onExecuteStepCompleted(Collection<Object> responses) {
         invokeCompleteExecution(getResult("Execution", responses));
     }
 
@@ -487,21 +485,21 @@ public class MasterJobContext {
      *     that the job will be restarted
      * </ul>
      */
-    private Throwable getResult(String opName, Map<MemberInfo, Object> responses) {
+    private Throwable getResult(String opName, Collection<Object> responses) {
         if (isCancelled()) {
             logger.fine(mc.jobIdString() + " to be cancelled after " + opName);
             return new CancellationException();
         }
 
-        Map<Boolean, List<Entry<MemberInfo, Object>>> grouped = groupResponses(responses);
-        Collection<MemberInfo> successfulMembers = grouped.get(false).stream().map(Entry::getKey).collect(toList());
+        Map<Boolean, List<Object>> grouped = groupResponses(responses);
+        int successfulMembersCount = grouped.get(false).size();
 
-        List<Entry<MemberInfo, Object>> failures = grouped.get(true);
+        List<Object> failures = grouped.get(true);
         if (!failures.isEmpty()) {
             logger.fine(opName + " of " + mc.jobIdString() + " has failures: " + failures);
         }
 
-        if (successfulMembers.size() == mc.executionPlanMap().size()) {
+        if (successfulMembersCount == mc.executionPlanMap().size()) {
             logger.fine(opName + " of " + mc.jobIdString() + " was successful");
             return null;
         }
@@ -510,7 +508,7 @@ public class MasterJobContext {
         // threw it and others completed normally, the terminal snapshot will fail,
         // but we still handle it as if terminal snapshot was done. If there are
         // other exceptions, ignore this and handle the other exception.
-        if (failures.stream().allMatch(entry -> entry.getValue() instanceof TerminatedWithSnapshotException)) {
+        if (failures.stream().allMatch(entry -> entry instanceof TerminatedWithSnapshotException)) {
             assert opName.equals("Execution") : "opName is '" + opName + "', expected 'Execution'";
             logger.fine(opName + " of " + mc.jobIdString() + " terminated after a terminal snapshot");
             TerminationMode mode = requestedTerminationMode;
@@ -523,7 +521,7 @@ public class MasterJobContext {
         // participants return a TopologyChangedException.
         return failures
                 .stream()
-                .map(entry -> (Throwable) entry.getValue())
+                .map(entry -> (Throwable) entry)
                 .filter(e -> !(e instanceof CancellationException
                         || e instanceof TerminatedWithSnapshotException
                         || isTopologyException(e)))
@@ -546,7 +544,14 @@ public class MasterJobContext {
 
         Function<ExecutionPlan, Operation> operationCtor = plan ->
                 new CompleteExecutionOperation(mc.executionId(), finalError);
-        mc.invokeOnParticipants(operationCtor, responses -> onCompleteExecutionCompleted(error), null);
+        mc.invokeOnParticipants(operationCtor, responses -> {
+            if (responses.stream().anyMatch(Objects::nonNull)) {
+                // log errors
+                logger.severe(mc.jobIdString() + ": some CompleteExecutionOperation invocations failed, execution " +
+                        "resources might leak: " + responses);
+            }
+            onCompleteExecutionCompleted(error);
+        }, null, true);
     }
 
     private void logCannotComplete(Throwable error) {
@@ -570,9 +575,16 @@ public class MasterJobContext {
         }
     }
 
-    private void cancelExecutionInvocations(long jobId, long executionId, TerminationMode mode) {
+    void cancelExecutionInvocations(long jobId, long executionId, TerminationMode mode) {
         mc.nodeEngine().getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR, () ->
-                mc.invokeOnParticipants(plan -> new TerminateExecutionOperation(jobId, executionId, mode), null, null));
+                mc.invokeOnParticipants(plan -> new TerminateExecutionOperation(jobId, executionId, mode),
+                        responses -> {
+                            if (responses.stream().anyMatch(Objects::nonNull)) {
+                                // log errors
+                                logger.severe(mc.jobIdString() + ": some TerminateExecutionOperation invocations " +
+                                        "failed, execution might remain stuck: " + responses);
+                            }
+                        }, null, true));
     }
 
     // Called as callback when all CompleteOperation invocations are done
@@ -591,7 +603,7 @@ public class MasterJobContext {
 
             // reset state for the next execution
             requestedTerminationMode = null;
-            executionInvocationCallback = null;
+            executionFailureCallback = null;
             ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                     ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
             mc.snapshotContext().onExecutionTerminated();
@@ -757,11 +769,10 @@ public class MasterJobContext {
     }
 
     // true -> failures, false -> success responses
-    private Map<Boolean, List<Entry<MemberInfo, Object>>> groupResponses(Map<MemberInfo, Object> responses) {
-        Map<Boolean, List<Entry<MemberInfo, Object>>> grouped = responses
-                .entrySet()
+    private Map<Boolean, List<Object>> groupResponses(Collection<Object> responses) {
+        Map<Boolean, List<Object>> grouped = responses
                 .stream()
-                .collect(partitioningBy(e -> e.getValue() instanceof Throwable));
+                .collect(partitioningBy(e -> e instanceof Throwable));
 
         grouped.putIfAbsent(true, emptyList());
         grouped.putIfAbsent(false, emptyList());
@@ -787,24 +798,20 @@ public class MasterJobContext {
     }
 
     /**
-     * Registered to {@link StartExecutionOperation} invocations to cancel invocations in case of a failure or restart
+     * Attached to {@link StartExecutionOperation} invocations to cancel
+     * invocations in case of a failure.
      */
-    private class ExecutionInvocationCallback implements ExecutionCallback<Object> {
+    private class ExecutionFailureCallback implements Consumer<Throwable> {
 
         private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
         private final long executionId;
 
-        ExecutionInvocationCallback(long executionId) {
+        ExecutionFailureCallback(long executionId) {
             this.executionId = executionId;
         }
 
         @Override
-        public void onResponse(Object response) {
-
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
+        public void accept(Throwable t) {
             if (!(peel(t) instanceof TerminatedWithSnapshotException)) {
                 cancelInvocations(null);
             }

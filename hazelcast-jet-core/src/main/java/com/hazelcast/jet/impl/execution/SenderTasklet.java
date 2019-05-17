@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -67,6 +68,7 @@ public class SenderTasklet implements Tasklet {
                          long executionId, int destinationVertexId, int packetSizeLimit) {
         this.inboundEdgeStream = inboundEdgeStream;
         this.packetSizeLimit = packetSizeLimit;
+        // we use Connection directly because we rely on packets not being transparently skipped or reordered
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
         this.outputBuffer = createObjectDataOutput(nodeEngine);
         uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(
@@ -83,7 +85,9 @@ public class SenderTasklet implements Tasklet {
         }
         if (tryFillOutputBuffer()) {
             progTracker.madeProgress();
-            connection.write(new Packet(outputBuffer.toByteArray()).setPacketType(Packet.Type.JET));
+            if (!connection.write(new Packet(outputBuffer.toByteArray()).setPacketType(Packet.Type.JET))) {
+                throw new RestartableException("Connection write failed in " + toString());
+            }
         }
         return progTracker.toProgressState();
     }

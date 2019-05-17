@@ -350,9 +350,10 @@ public class ProcessorTasklet implements Tasklet {
                 progTracker.notDone();
                 // check ssContext to see if a barrier should be emitted
                 long currSnapshotId = ssContext.activeSnapshotId();
-                assert currSnapshotId <= pendingSnapshotId : "Unexpected new snapshot id " + currSnapshotId
-                        + ", current was" + pendingSnapshotId;
-                if (currSnapshotId == pendingSnapshotId) {
+                assert currSnapshotId >= pendingSnapshotId - 1 : "Unexpected new snapshot id: " + currSnapshotId
+                        + ", expected was " + (pendingSnapshotId - 1) + " or more";
+                if (currSnapshotId >= pendingSnapshotId) {
+                    pendingSnapshotId = currSnapshotId;
                     if (outbox.hasUnfinishedItem()) {
                         outbox.block();
                     } else {
@@ -462,7 +463,7 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private void observeBarrier(int ordinal, SnapshotBarrier barrier) {
-        if (barrier.snapshotId() != pendingSnapshotId) {
+        if (barrier.snapshotId() < pendingSnapshotId) {
             throw new JetException("Unexpected snapshot barrier ID " + barrier.snapshotId() + " from ordinal " + ordinal +
                     " expected " + pendingSnapshotId);
         }

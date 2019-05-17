@@ -21,14 +21,17 @@ import com.hazelcast.client.impl.clientside.ClientExceptionFactory.ExceptionFact
 import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
+import com.hazelcast.jet.impl.operation.InitExecutionOperation;
+import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -76,7 +79,10 @@ public final class ExceptionUtil {
                 || t instanceof TargetNotMemberException
                 || t instanceof CallerNotMemberException
                 || t instanceof HazelcastInstanceNotActiveException
-                || t instanceof EnteringPassiveClusterStateException;
+                || t instanceof EnteringPassiveClusterStateException
+                || t instanceof OperationTimeoutException
+                    && (t.getMessage().contains(InitExecutionOperation.class.getSimpleName())
+                        || t.getMessage().contains(StartExecutionOperation.class.getSimpleName()));
     }
 
     /**
