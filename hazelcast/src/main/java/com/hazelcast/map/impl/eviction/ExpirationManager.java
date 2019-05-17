@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -268,5 +269,11 @@ public class ExpirationManager {
     // used for testing purposes
     public int getCleanupOperationCount() {
         return cleanupOperationCount;
+    }
+
+    // used for testing
+    void startNonProductionTestOnly(long initialDelay, long period, TimeUnit unit) {
+        ClearExpiredRecordsTask task = new ClearExpiredRecordsTask();
+        executionService.scheduleWithRepetition(task, initialDelay, period, unit);
     }
 }
