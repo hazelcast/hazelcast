@@ -24,6 +24,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -34,6 +35,7 @@ import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.reliable.MessageRunner;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,10 +82,18 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
 
     private Executor getExecutor(ClientReliableTopicConfig config, HazelcastClientInstanceImpl client) {
         Executor executor = config.getExecutor();
-        if (executor == null) {
-            executor = client.getClientExecutionService().getUserExecutor();
+        if (executor != null) {
+            return executor;
         }
-        return executor;
+        String className = config.getExecutorClassName();
+        if (className != null) {
+            try {
+                return ClassLoaderUtil.newInstance(client.getClientConfig().getClassLoader(), className);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+        return client.getClientExecutionService().getUserExecutor();
     }
 
     @Override

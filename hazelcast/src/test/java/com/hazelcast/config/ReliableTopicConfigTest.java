@@ -49,6 +49,7 @@ public class ReliableTopicConfigTest {
         ReliableTopicConfig config = new ReliableTopicConfig("foo");
 
         assertNull(config.getExecutor());
+        assertNull(config.getExecutorClassName());
         assertEquals(DEFAULT_READ_BATCH_SIZE, config.getReadBatchSize());
         assertEquals("foo", config.getName());
         assertEquals(DEFAULT_TOPIC_OVERLOAD_POLICY, config.getTopicOverloadPolicy());
@@ -60,6 +61,7 @@ public class ReliableTopicConfigTest {
         ReliableTopicConfig original = new ReliableTopicConfig("original")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.ERROR)
                 .setExecutor(mock(Executor.class))
+                .setExecutorClassName("com.hazelcast.example.Executor")
                 .setReadBatchSize(1)
                 .setStatisticsEnabled(!DEFAULT_STATISTICS_ENABLED);
 
@@ -67,6 +69,7 @@ public class ReliableTopicConfigTest {
 
         assertEquals("copy", copy.getName());
         assertSame(original.getExecutor(), copy.getExecutor());
+        assertEquals(original.getExecutorClassName(), copy.getExecutorClassName());
         assertEquals(original.getReadBatchSize(), copy.getReadBatchSize());
         assertEquals(original.isStatisticsEnabled(), copy.isStatisticsEnabled());
         assertEquals(original.getTopicOverloadPolicy(), copy.getTopicOverloadPolicy());
@@ -77,6 +80,7 @@ public class ReliableTopicConfigTest {
         ReliableTopicConfig original = new ReliableTopicConfig("original")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.ERROR)
                 .setExecutor(mock(Executor.class))
+                .setExecutorClassName("com.hazelcast.example.Executor")
                 .setReadBatchSize(1)
                 .setStatisticsEnabled(!DEFAULT_STATISTICS_ENABLED);
 
@@ -84,6 +88,7 @@ public class ReliableTopicConfigTest {
 
         assertEquals(original.getName(), copy.getName());
         assertSame(original.getExecutor(), copy.getExecutor());
+        assertEquals(original.getExecutorClassName(), copy.getExecutorClassName());
         assertEquals(original.getReadBatchSize(), copy.getReadBatchSize());
         assertEquals(original.isStatisticsEnabled(), copy.isStatisticsEnabled());
         assertEquals(original.getTopicOverloadPolicy(), copy.getTopicOverloadPolicy());
@@ -169,11 +174,25 @@ public class ReliableTopicConfigTest {
     }
 
     @Test
+    public void setExecutorClassName() {
+        ReliableTopicConfig config = new ReliableTopicConfig("foo");
+
+        config.setExecutorClassName("com.hazelcast.example.Executor");
+
+        assertEquals("com.hazelcast.example.Executor", config.getExecutorClassName());
+
+        config.setExecutorClassName(null);
+
+        assertNull(config.getExecutorClassName());
+    }
+
+    @Test
     public void testReadonly() {
         Executor executor = mock(Executor.class);
         ReliableTopicConfig config = new ReliableTopicConfig("foo")
                 .setReadBatchSize(201)
                 .setExecutor(executor)
+                .setExecutorClassName("com.hazelcast.example.Executor")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.ERROR)
                 .addMessageListenerConfig(new ListenerConfig("Foobar"));
 
@@ -188,6 +207,12 @@ public class ReliableTopicConfigTest {
 
         try {
             readOnly.setExecutor(null);
+            fail();
+        } catch (UnsupportedOperationException e) {
+        }
+
+        try {
+            readOnly.setExecutorClassName(null);
             fail();
         } catch (UnsupportedOperationException e) {
         }
@@ -224,7 +249,7 @@ public class ReliableTopicConfigTest {
         String s = config.toString();
 
         assertEquals("ReliableTopicConfig{name='foo', topicOverloadPolicy=BLOCK, executor=null,"
-                + " readBatchSize=10, statisticsEnabled=true, listenerConfigs=[]}", s);
+                + " executorClassName=null, readBatchSize=10, statisticsEnabled=true, listenerConfigs=[]}", s);
     }
 
     @Test

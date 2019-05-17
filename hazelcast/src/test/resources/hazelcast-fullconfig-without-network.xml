@@ -464,6 +464,7 @@
         <message-listeners>
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
+        <executor class-name="com.hazelcast.examples.Executor"/>
     </reliable-topic>
 
     <semaphore name="default">

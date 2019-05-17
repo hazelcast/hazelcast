@@ -373,6 +373,7 @@
                 <hz:message-listeners>
                     <hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener"/>
                 </hz:message-listeners>
+                <hz:executor implementation="dummyExecutor" class-name="com.hazelcast.spring.DummyExecutor"/>
             </hz:reliable-topic>
 
             <hz:map name="testMap"
@@ -908,5 +909,6 @@
     <bean id="dummyDiscoveryServiceProvider" class="com.hazelcast.spring.DummyDiscoveryServiceProvider"/>
     <bean id="dummyService" class="com.hazelcast.spring.MyService"/>
     <bean id="wanConsumer" class="com.hazelcast.spring.DummyWanConsumer"/>
+    <bean id="dummyExecutor" class="com.hazelcast.spring.DummyExecutor"/>
 
 </beans>

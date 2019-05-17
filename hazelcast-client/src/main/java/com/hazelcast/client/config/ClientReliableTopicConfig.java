@@ -41,6 +41,7 @@ public class ClientReliableTopicConfig {
     public static final TopicOverloadPolicy DEFAULT_TOPIC_OVERLOAD_POLICY = BLOCK;
 
     private Executor executor;
+    private String executorClassName;
     private int readBatchSize = DEFAULT_READ_BATCH_SIZE;
     private String name;
     private TopicOverloadPolicy topicOverloadPolicy = DEFAULT_TOPIC_OVERLOAD_POLICY;
@@ -64,6 +65,7 @@ public class ClientReliableTopicConfig {
      */
     public ClientReliableTopicConfig(ClientReliableTopicConfig reliableTopicConfig) {
         this.executor = reliableTopicConfig.executor;
+        this.executorClassName = reliableTopicConfig.executorClassName;
         this.readBatchSize = reliableTopicConfig.readBatchSize;
         this.name = reliableTopicConfig.name;
         this.topicOverloadPolicy = reliableTopicConfig.topicOverloadPolicy;
@@ -111,10 +113,17 @@ public class ClientReliableTopicConfig {
     /**
      * Gets the Executor that is going to process the events.
      *
-     * If no Executor is selected, then the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} is used.
+     * The reliable topic selects the Executor as follows:
+     * <ul>
+     *     <li>the Executor returned by {@link #getExecutor()}, if not null;</li>
+     *     <li>a new instance of the Executor class as returned by {@link #getExecutorClassName()}, if not null; otherwise</li>
+     *     <li>{@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR}</li>
+     * </ul>
      *
      * @return the Executor used to process events.
      * @see #setExecutor(Executor)
+     * @see #setExecutorClassName(String)
+     * @see #getExecutorClassName()
      */
     public Executor getExecutor() {
         return executor;
@@ -129,12 +138,55 @@ public class ClientReliableTopicConfig {
      * A single Executor can be shared between multiple Reliable topics, although it could take more time to process a message.
      * If a single Executor is not shared with other reliable topics, then the Executor only needs to have a single thread.
      *
-     * @param executor the Executor. if the executor is null, the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} will
+     * @param executor the Executor. If the executor is null, the Executor class as returned by {@link #getExecutorClassName()}
+     *                 will be used. If the class is null, the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} will
      *                 be used to process the event.
      * @return the updated config.
+     * @see #setExecutorClassName(String)
+     * @see #getExecutorClassName()
      */
     public ClientReliableTopicConfig setExecutor(Executor executor) {
         this.executor = executor;
+        return this;
+    }
+
+    /**
+     * Gets the class name of the Executor that is going to process the events.
+     *
+     * The reliable topic selects the Executor as follows:
+     * <ul>
+     *     <li>the Executor returned by {@link #getExecutor()}, if not null;</li>
+     *     <li>a new instance of the Executor class as returned by {@link #getExecutorClassName()}, if not null; otherwise</li>
+     *     <li>{@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR}</li>
+     * </ul>
+     *
+     * @return the Executor class name used to process events.
+     * @see #setExecutorClassName(String)
+     * @see #setExecutor(Executor)
+     * @see #getExecutor()
+     */
+    public String getExecutorClassName() {
+        return executorClassName;
+    }
+
+    /**
+     * Sets the class name of the Executor that is going to process the event.
+     *
+     * In some cases it is desirable to set a specific Executor. For example, you may want to isolate a certain topic from other
+     * topics because it contains long running messages or very high priority messages.
+     *
+     * An Executor specified using a class name cannot be shared between multiple Reliable topics (each Reliable topic will create
+     * a new instance of the Executor class).
+     *
+     * @param executorClassName the Executor class name. If {@link #getExecutor()} returns null, then the Executor class name will
+     *                          be used. If the class is null, the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} will
+     *                          be used to process the event.
+     * @return the updated config.
+     * @see #setExecutor(Executor)
+     * @see #getExecutor()
+     */
+    public ClientReliableTopicConfig setExecutorClassName(String executorClassName) {
+        this.executorClassName = executorClassName;
         return this;
     }
 
@@ -184,6 +236,7 @@ public class ClientReliableTopicConfig {
                 + "name='" + name + '\''
                 + ", topicOverloadPolicy=" + topicOverloadPolicy
                 + ", executor=" + executor
+                + ", executorClassName=" + executorClassName
                 + ", readBatchSize=" + readBatchSize
                 + '}';
     }
@@ -206,6 +259,9 @@ public class ClientReliableTopicConfig {
         if (executor != null ? !executor.equals(that.executor) : that.executor != null) {
             return false;
         }
+        if (executorClassName != null ? !executorClassName.equals(that.executorClassName) : that.executorClassName != null) {
+            return false;
+        }
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
@@ -215,6 +271,7 @@ public class ClientReliableTopicConfig {
     @Override
     public int hashCode() {
         int result = executor != null ? executor.hashCode() : 0;
+        result = 31 * result + (executorClassName != null ? executorClassName.hashCode() : 0);
         result = 31 * result + readBatchSize;
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (topicOverloadPolicy != null ? topicOverloadPolicy.hashCode() : 0);

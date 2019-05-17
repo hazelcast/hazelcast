@@ -183,6 +183,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -647,6 +648,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
         assertEquals(10, testReliableTopic.getReadBatchSize());
         assertEquals(TopicOverloadPolicy.BLOCK, testReliableTopic.getTopicOverloadPolicy());
+        assertNotNull(testReliableTopic.getExecutor());
+        assertSame(DummyExecutor.class, testReliableTopic.getExecutor().getClass());
+        assertEquals("com.hazelcast.spring.DummyExecutor", testReliableTopic.getExecutorClassName());
     }
 
     @Test

@@ -26,6 +26,7 @@ import com.hazelcast.config.ConfigCompatibilityChecker.QuorumConfigChecker;
 import com.hazelcast.config.cp.CPSemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
+import com.hazelcast.config.helpers.DummyExecutor;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.quorum.QuorumType;
@@ -61,6 +62,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -1256,13 +1258,19 @@ public class ConfigXmlGeneratorTest {
                 .setReadBatchSize(10)
                 .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK)
                 .setStatisticsEnabled(true)
-                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")));
+                .setMessageListenerConfigs(singletonList(new ListenerConfig("foo.bar.Listener")))
+                .setExecutorClassName("foo.bar.Executor");
 
         cfg.addReliableTopicConfig(expectedConfig);
 
         ReliableTopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getReliableTopicConfig(testTopic);
 
         assertEquals(expectedConfig, actualConfig);
+
+        expectedConfig.setExecutor(new DummyExecutor());
+        actualConfig = getNewConfigViaXMLGenerator(cfg).getReliableTopicConfig(testTopic);
+        assertNull(actualConfig.getExecutor());
+        assertEquals(DummyExecutor.class.getName(), actualConfig.getExecutorClassName());
     }
 
     @Test

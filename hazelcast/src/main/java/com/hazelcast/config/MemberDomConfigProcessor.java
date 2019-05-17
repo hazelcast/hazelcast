@@ -2325,6 +2325,9 @@ class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                         return null;
                     }
                 });
+            } else if ("executor".equals(nodeName)) {
+                String className = checkHasText(getAttribute(n, "class-name"), "class-name cannot be empty");
+                topicConfig.setExecutorClassName(className);
             }
         }
         config.addReliableTopicConfig(topicConfig);

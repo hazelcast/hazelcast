@@ -290,7 +290,7 @@ public class ClientDynamicClusterConfig extends Config {
         Data executorData = serializationService.toData(config.getExecutor());
         ClientMessage request = DynamicConfigAddReliableTopicConfigCodec.encodeRequest(config.getName(),
                 listenerConfigHolders, config.getReadBatchSize(), config.isStatisticsEnabled(),
-                config.getTopicOverloadPolicy().name(), executorData);
+                config.getTopicOverloadPolicy().name(), executorData, config.getExecutorClassName());
         invoke(request);
         return this;
     }
