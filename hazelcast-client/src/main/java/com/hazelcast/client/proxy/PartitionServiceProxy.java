@@ -24,15 +24,14 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.partition.PartitionService;
 
 import java.util.LinkedHashSet;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -43,16 +42,10 @@ public final class PartitionServiceProxy implements PartitionService {
 
     private final ClientPartitionService partitionService;
     private final ClientListenerService listenerService;
-    private final Random random = new Random();
 
     public PartitionServiceProxy(ClientPartitionService partitionService, ClientListenerService listenerService) {
         this.partitionService = partitionService;
         this.listenerService = listenerService;
-    }
-
-    @Override
-    public String randomPartitionKey() {
-        return Integer.toString(random.nextInt(partitionService.getPartitionCount()));
     }
 
     @Override

@@ -18,10 +18,10 @@ package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -66,13 +65,6 @@ public class PartitionServiceProxyTest {
     public void testRemoveMigrationListener() throws Exception {
         PartitionService p = client.getPartitionService();
         p.removeMigrationListener("");
-    }
-
-    @Test
-    public void testRandomPartitionKeyNotNull() {
-        PartitionService p = client.getPartitionService();
-        String key = p.randomPartitionKey();
-        assertNotNull(key);
     }
 
     @Test

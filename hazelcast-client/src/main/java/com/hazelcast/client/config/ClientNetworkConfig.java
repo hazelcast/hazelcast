@@ -23,6 +23,7 @@ import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.partition.PartitionService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -117,7 +118,7 @@ public class ClientNetworkConfig {
 
     /**
      * If {@code true}, client will route the key based operations to owner of the key on best-effort basis.
-     * Note that it uses a cached version of {@link com.hazelcast.core.PartitionService#getPartitions()} and doesn't
+     * Note that it uses a cached version of {@link PartitionService#getPartitions()} and doesn't
      * guarantee that the operation will always be executed on the owner. The cached table is updated every 10 seconds.
      * <p>
      * If {@code smartRouting == false}, all operations will be routed to single member. Operations will need two

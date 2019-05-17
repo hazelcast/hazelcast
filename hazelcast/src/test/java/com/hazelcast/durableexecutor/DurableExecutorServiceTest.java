@@ -26,7 +26,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.executor.ExecutorServiceTestSupport;

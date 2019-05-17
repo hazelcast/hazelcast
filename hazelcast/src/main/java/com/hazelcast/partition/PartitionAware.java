@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.partition;
 
 /**
  * PartitionAware means that data will be based in the same member based on the partition key

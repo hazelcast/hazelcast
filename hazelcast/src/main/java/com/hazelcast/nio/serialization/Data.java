@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
@@ -80,14 +82,14 @@ public interface Data {
     /**
      * Returns partition hash calculated for serialized object.
      * Partition hash is used to determine partition of a Data and is calculated using
-     * {@link com.hazelcast.core.PartitioningStrategy} during serialization.
+     * {@link PartitioningStrategy} during serialization.
      * <p/>
      * If partition hash is not set then standard <tt>hashCode()</tt> is used.
      *
      * @return partition hash
-     * @see com.hazelcast.core.PartitionAware
-     * @see com.hazelcast.core.PartitioningStrategy
-     * @see SerializationService#toData(Object, com.hazelcast.core.PartitioningStrategy)
+     * @see PartitionAware
+     * @see PartitioningStrategy
+     * @see SerializationService#toData(Object, PartitioningStrategy)
      */
     int getPartitionHash();
 

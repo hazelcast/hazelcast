@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationEvent.MigrationStatus;
-import com.hazelcast.core.MigrationListener;
-import com.hazelcast.partition.PartitionEventListener;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationEvent.MigrationStatus;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.internal.partition.PartitionEventListener;
 
 /**
  * Wraps a migration listener and dispatches a migration event to matching method

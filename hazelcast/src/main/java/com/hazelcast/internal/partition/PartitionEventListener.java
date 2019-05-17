@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.internal.partition;
 
-import java.io.Serializable;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.PartitionEvent;
+import com.hazelcast.partition.PartitionLostListener;
+
+import java.util.EventListener;
 
 /**
- * PartitioningStrategy allows keys to be located on the same member.
- * This causes related data to be stored in the same location. (See data-affinity.)
+ * PartitionEventListener is a base interface for partition-related event listeners.
  *
- * @param <K> key type
+ * @param <T> A partition-related event class
+ * @see MigrationListener
+ * @see PartitionLostListener
  */
-public interface PartitioningStrategy<K> extends Serializable {
+public interface PartitionEventListener<T extends PartitionEvent> extends EventListener {
 
-    /**
-     * Returns the key object that will be used by Hazelcast to specify the partition.
-     *
-     * @param key actual key object used by Hazelcast to specify the partition
-     * @return the partition key object, or null to fallback to the default partition calculation
-     */
-    Object getPartitionKey(K key);
+    void onEvent(T event);
 }
