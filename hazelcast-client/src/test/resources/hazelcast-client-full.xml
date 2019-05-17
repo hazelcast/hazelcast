@@ -150,7 +150,7 @@
             <discovery-token>EXAMPLE_TOKEN</discovery-token>
         </hazelcast-cloud>
         <discovery-strategies>
-            <node-filter class="DummyFilterClass" />
+            <node-filter class="DummyFilterClass"/>
             <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
                 <properties>
                     <property name="key-string">foo</property>

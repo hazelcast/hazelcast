@@ -1099,6 +1099,7 @@ hazelcast:
   #              * FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size to trigger cleanup.
   #              * FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory percentage to trigger cleanup.
   #         - eviction-policy: See the "eviction-policy" element above.
+  #         - comparator-class-name: The comparator to be used while comparing entries to be evicted.
   # * "wan-replication-ref":
   #     Configuration of the WAN replication for your map.
   #     It has the following attributes:
