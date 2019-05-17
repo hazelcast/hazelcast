@@ -16,9 +16,15 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.IList;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.function.FunctionEx;
+import com.hazelcast.jet.function.ToLongFunctionEx;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -30,18 +36,24 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class SourceBuilderTest extends PipelineStreamTestSupport {
 
@@ -122,8 +134,8 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            StreamSource<String> socketSource = SourceBuilder
-                    .stream("socket-source", ctx -> socketReader(localPort))
+            BatchSource<String> socketSource = SourceBuilder
+                    .batch("socket-source", ctx -> socketReader(localPort))
                     .<String>fillBufferFn((in, buf) -> {
                         String line = in.readLine();
                         if (line != null) {
@@ -138,7 +150,6 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
-             .withoutTimestamps()
              .drainTo(sinkList());
             jet().newJob(p).join();
             List<String> expected = IntStream.range(0, itemCount).mapToObj(i -> "line" + i).collect(toList());
@@ -154,8 +165,8 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            StreamSource<String> socketSource = SourceBuilder
-                    .stream("distributed-socket-source", ctx -> socketReader(localPort))
+            BatchSource<String> socketSource = SourceBuilder
+                    .batch("distributed-socket-source", ctx -> socketReader(localPort))
                     .<String>fillBufferFn((in, buf) -> {
                         String line = in.readLine();
                         if (line != null) {
@@ -171,7 +182,6 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
-             .withoutTimestamps()
              .drainTo(sinkList());
             jet().newJob(p).join();
 
@@ -191,14 +201,14 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            FunctionEx<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
+            ToLongFunctionEx<String> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
 
-            StreamSource<String> socketSource = SourceBuilder
-                    .timestampedStream("socket-source-with-timestamps", ctx -> socketReader(localPort))
+            BatchSource<String> socketSource = SourceBuilder
+                    .batch("socket-source-with-timestamps", ctx -> socketReader(localPort))
                     .<String>fillBufferFn((in, buf) -> {
                         String line = in.readLine();
                         if (line != null) {
-                            buf.add(line, timestampFn.apply(line));
+                            buf.add(line);
                         } else {
                             buf.close();
                         }
@@ -209,7 +219,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
-                    .withNativeTimestamps(0)
+                    .addTimestamps(timestampFn, 0)
                     .window(tumbling(1))
                     .aggregate(AggregateOperations.counting())
                     .drainTo(sinkList());
@@ -273,14 +283,14 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
             // When
             int localPort = serverSocket.getLocalPort();
-            FunctionEx<String, Long> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
+            ToLongFunctionEx<String> timestampFn = line -> Long.valueOf(line.substring(LINE_PREFIX.length()));
 
-            StreamSource<String> socketSource = SourceBuilder
-                    .timestampedStream("socket-source-with-timestamps", ctx -> socketReader(localPort))
+            BatchSource<String> socketSource = SourceBuilder
+                    .batch("socket-source-with-timestamps", ctx -> socketReader(localPort))
                     .<String>fillBufferFn((in, buf) -> {
                         String line = in.readLine();
                         if (line != null) {
-                            buf.add(line, timestampFn.apply(line));
+                            buf.add(line);
                         } else {
                             buf.close();
                         }
@@ -292,7 +302,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
             // Then
             Pipeline p = Pipeline.create();
             p.drawFrom(socketSource)
-                    .withNativeTimestamps(0)
+                    .addTimestamps(timestampFn, 1000)
                     .window(tumbling(1))
                     .aggregate(AggregateOperations.counting())
                     .drainTo(sinkList());
@@ -307,6 +317,69 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         }
     }
 
+    @Test
+    public void test_faultTolerance() {
+        StreamSource<Integer> source = SourceBuilder
+                .timestampedStream("src", ctx -> new NumberGeneratorContext())
+                .<Integer>fillBufferFn((src, buffer) -> {
+                    long expectedCount = NANOSECONDS.toMillis(System.nanoTime() - src.startTime);
+                    expectedCount = Math.min(expectedCount, src.current + 100);
+                    while (src.current < expectedCount) {
+                        buffer.add(src.current, src.current);
+                        src.current++;
+                    }
+                })
+                .createSnapshotFn(src -> {
+                    System.out.println("Will save " + src.current + " to snapshot");
+                    return src;
+                })
+                .restoreSnapshotFn((src, states) -> {
+                    assert states.size() == 1;
+                    src.restore(states.get(0));
+                    System.out.println("Restored " + src.current + " from snapshot");
+                })
+                .build();
+
+        long windowSize = 100;
+        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+
+        Pipeline p = Pipeline.create();
+        p.drawFrom(source)
+         .withNativeTimestamps(0)
+         .window(tumbling(windowSize))
+         .aggregate(AggregateOperations.counting())
+         .peek()
+         .drainTo(Sinks.list(result));
+
+        Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
+        assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
+        // restart the job
+        job.restart();
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        // wait until more results are added
+        int oldSize = result.size();
+        assertTrueEventually(() -> assertTrue("no more results added to the list", result.size() > oldSize));
+        job.cancel();
+
+        // results should contain a monotonic sequence of results, each with count=1000
+        Iterator<WindowResult<Long>> iterator = result.iterator();
+        for (int i = 0; i < result.size(); i++) {
+            WindowResult<Long> next = iterator.next();
+            assertEquals(windowSize, (long) next.result());
+            assertEquals(i * windowSize, next.start());
+        }
+    }
+
+    private static final class NumberGeneratorContext implements Serializable {
+        long startTime = System.nanoTime();
+        int current;
+
+        void restore(NumberGeneratorContext other) {
+            this.startTime = other.startTime;
+            this.current = other.current;
+        }
+    }
 
     private void startServer(ServerSocket serverSocket) {
         spawnSafe(() -> {

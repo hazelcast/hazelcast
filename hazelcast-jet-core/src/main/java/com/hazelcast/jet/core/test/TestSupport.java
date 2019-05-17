@@ -361,7 +361,7 @@ public final class TestSupport {
      * Normally, the {@code complete()} method is run repeatedly until it
      * returns {@code true}. This is suitable for processors processing the
      * input or for batch sources. However, if you test a streaming source, the
-     * {@code complete()} method never returns {@code true}. To be able test
+     * {@code complete()} method never returns {@code true}. To be able to test
      * such processors, this method allows you to change the behavior to run
      * {@code complete()} until the output matches.
      * <p>
@@ -571,7 +571,7 @@ public final class TestSupport {
                 long now = System.nanoTime();
                 if (runUntilOutputMatchesTimeoutMillis >= 0) {
                     try {
-                        asssertOutput(doSnapshots, doRestoreEvery, inboxLimit, actualOutputs);
+                        assertOutput(doSnapshots, doRestoreEvery, inboxLimit, actualOutputs);
                         outputMatchedAt = Math.min(outputMatchedAt, now);
                     } catch (AssertionError e) {
                         if (outputMatchedAt < Long.MAX_VALUE) {
@@ -594,10 +594,10 @@ public final class TestSupport {
         processor[0].close();
 
         // assert the outbox
-        asssertOutput(doSnapshots, doRestoreEvery, inboxLimit, actualOutputs);
+        assertOutput(doSnapshots, doRestoreEvery, inboxLimit, actualOutputs);
     }
 
-    private void asssertOutput(boolean doSnapshots, int doRestoreEvery, int inboxLimit, List<List<Object>> actualOutputs) {
+    private void assertOutput(boolean doSnapshots, int doRestoreEvery, int inboxLimit, List<List<Object>> actualOutputs) {
         for (int i = 0; i < expectedOutputs.size(); i++) {
             List<?> expectedOutput = expectedOutputs.get(i);
             List<?> actualOutput = actualOutputs.get(i);

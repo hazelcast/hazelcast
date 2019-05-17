@@ -92,7 +92,8 @@ public final class KafkaSinks {
             @Nonnull FunctionEx<? super E, K> extractKeyFn,
             @Nonnull FunctionEx<? super E, V> extractValueFn
     ) {
-        return Sinks.fromProcessor("writeKafka", writeKafkaP(properties, topic, extractKeyFn, extractValueFn));
+        return Sinks.fromProcessor("writeKafka(" + topic + ")",
+                writeKafkaP(properties, topic, extractKeyFn, extractValueFn));
     }
 
     /**

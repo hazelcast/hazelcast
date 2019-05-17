@@ -18,16 +18,23 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.function.BiConsumerEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.impl.JetEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 
 /**
  * Implements a data source the user created using the Source Builder API.
@@ -35,7 +42,7 @@ import java.util.function.Function;
  * @see SourceProcessors#convenientSourceP
  * @see SourceProcessors#convenientTimestampedSourceP
  */
-public class ConvenientSourceP<S, T> extends AbstractProcessor {
+public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
 
     /**
      * This processor's view of the buffer accessible to the user. Abstracts
@@ -51,25 +58,34 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
         boolean isClosed();
     }
 
-    private final Function<? super Context, ? extends S> createFn;
-    private final BiConsumer<? super S, ? super SourceBufferConsumerSide<?>> fillBufferFn;
-    private final Consumer<? super S> destroyFn;
+    private final Function<? super Context, ? extends C> createFn;
+    private final BiConsumer<? super C, ? super SourceBufferConsumerSide<?>> fillBufferFn;
+    private final FunctionEx<? super C, ? extends S> createSnapshotFn;
+    private final BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn;
+    private final Consumer<? super C> destroyFn;
     private final SourceBufferConsumerSide<?> buffer;
     private final EventTimeMapper<T> eventTimeMapper;
+    private BroadcastKey<Integer> snapshotKey;
 
     private boolean initialized;
-    private S src;
+    private C ctx;
     private Traverser<?> traverser;
+    private S pendingState;
+    private List<S> restoredStates;
 
     public ConvenientSourceP(
-            @Nonnull Function<? super Context, ? extends S> createFn,
-            @Nonnull BiConsumer<? super S, ? super SourceBufferConsumerSide<?>> fillBufferFn,
-            @Nonnull Consumer<? super S> destroyFn,
+            @Nonnull Function<? super Context, ? extends C> createFn,
+            @Nonnull BiConsumer<? super C, ? super SourceBufferConsumerSide<?>> fillBufferFn,
+            @Nonnull FunctionEx<? super C, ? extends S> createSnapshotFn,
+            @Nonnull BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn,
+            @Nonnull Consumer<? super C> destroyFn,
             @Nonnull SourceBufferConsumerSide<?> buffer,
             @Nullable EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.createFn = createFn;
         this.fillBufferFn = fillBufferFn;
+        this.createSnapshotFn = createSnapshotFn;
+        this.restoreSnapshotFn = restoreSnapshotFn;
         this.destroyFn = destroyFn;
         this.buffer = buffer;
         if (eventTimePolicy != null) {
@@ -87,15 +103,16 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
-        src = createFn.apply(context);
-        // createFn is allowed to return null, we'll call `destroyFn` even for null `src`
+        ctx = createFn.apply(context);
+        snapshotKey = broadcastKey(context.globalProcessorIndex());
+        // createFn is allowed to return null, we'll call `destroyFn` even for null `ctx`
         initialized = true;
     }
 
     @Override
     public boolean complete() {
         if (traverser == null) {
-            fillBufferFn.accept(src, buffer);
+            fillBufferFn.accept(ctx, buffer);
             traverser =
                     eventTimeMapper == null ? buffer.traverse()
                     : buffer.isEmpty() ? eventTimeMapper.flatMapIdle()
@@ -106,17 +123,56 @@ public class ConvenientSourceP<S, T> extends AbstractProcessor {
                         return eventTimeMapper.flatMapEvent(je.payload(), 0, je.timestamp());
                     });
         }
-        boolean bufferEmpty = emitFromTraverser(traverser);
-        if (bufferEmpty) {
+        boolean bufferEmitted = emitFromTraverser(traverser);
+        if (bufferEmitted) {
             traverser = null;
         }
-        return bufferEmpty && buffer.isClosed();
+        return bufferEmitted && buffer.isClosed();
+    }
+
+    @Override
+    public boolean saveToSnapshot() {
+        // finish current traverser
+        if (traverser != null && !emitFromTraverser(traverser)) {
+            return false;
+        }
+        if (buffer.isClosed()) {
+            // don't call createSnapshotFn after the buffer is closed
+            return true;
+        }
+        traverser = null;
+        if (pendingState == null) {
+            pendingState = createSnapshotFn.apply(ctx);
+        }
+        if (pendingState == null || tryEmitToSnapshot(snapshotKey, pendingState)) {
+            pendingState = null;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        if (restoredStates == null) {
+            restoredStates = new ArrayList<>();
+        }
+        restoredStates.add((S) value);
+    }
+
+    @Override
+    public boolean finishSnapshotRestore() {
+        if (restoredStates != null) {
+            restoreSnapshotFn.accept(ctx, restoredStates);
+        }
+        restoredStates = null;
+        return true;
     }
 
     @Override
     public void close() {
         if (initialized) {
-            destroyFn.accept(src);
+            destroyFn.accept(ctx);
         }
     }
 }

@@ -257,7 +257,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // Then
         mappedStage.drainTo(sink);
-        assertVertexCount(p.toDag(), 3);
+        assertVertexCount(p.toDag(), 4);
         assertContainsFused(true);
         execute();
         assertEquals(
@@ -285,7 +285,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // Then
         assertContainsFused(false);
-        assertVertexCount(p.toDag(), 5);
+        assertVertexCount(p.toDag(), 6);
         execute();
         assertEquals(
                 streamToString(input.stream().flatMap(t -> Stream.of(t + "-x-branch1", t + "-x-branch2")), identity()),
@@ -307,7 +307,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // Then
         assertContainsFused(false);
-        assertVertexCount(p.toDag(), 4);
+        assertVertexCount(p.toDag(), 5);
         execute();
         assertEquals(
                 streamToString(input.stream().map(t -> t  + "-ab"), identity()),

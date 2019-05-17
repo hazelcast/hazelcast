@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
@@ -31,9 +32,11 @@ import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
     private final Queue<T> buffer = new ArrayDeque<>();
     private final Traverser<T> traverser = buffer::poll;
+    private final boolean isBatch;
     private boolean isClosed;
 
-    private SourceBufferImpl() {
+    private SourceBufferImpl(boolean isBatch) {
+        this.isBatch = isBatch;
     }
 
     final void addInternal(T item) {
@@ -57,6 +60,9 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
     }
 
     public final void close() {
+        if (!isBatch) {
+            throw new JetException("a streaming source must not close the buffer, only batch source can");
+        }
         this.isClosed = true;
     }
 
@@ -66,6 +72,10 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
     }
 
     public static class Plain<T> extends SourceBufferImpl<T> implements SourceBuffer<T> {
+        public Plain(boolean isBatch) {
+            super(isBatch);
+        }
+
         @Override
         public void add(@Nonnull T item) {
             addInternal(item);
@@ -75,6 +85,10 @@ public class SourceBufferImpl<T> implements SourceBufferConsumerSide<T> {
     public static class Timestamped<T>
             extends SourceBufferImpl<JetEvent<T>>
             implements TimestampedSourceBuffer<T> {
+
+        public Timestamped() {
+            super(false);
+        }
 
         @Override
         public void add(@Nonnull T item, long timestamp) {

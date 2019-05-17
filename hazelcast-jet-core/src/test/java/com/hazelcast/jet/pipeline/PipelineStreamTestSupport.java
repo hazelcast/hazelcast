@@ -45,14 +45,14 @@ public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
      *
      */
     StreamStage<Integer> streamStageFromList(List<Integer> input) {
-        StreamSource<Integer> source = SourceBuilder
-                .timestampedStream("sequence", x -> null)
+        BatchSource<Integer> source = SourceBuilder
+                .batch("sequence", x -> null)
                 .<Integer>fillBufferFn((x, buf) -> {
-                    input.forEach(i -> buf.add(i, i));
+                    input.forEach(buf::add);
                     buf.close();
                 })
                 .build();
-        return p.drawFrom(source).withNativeTimestamps(0);
+        return p.drawFrom(source).addTimestamps(ts -> ts, 0);
     }
 
     /**

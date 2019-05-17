@@ -346,9 +346,9 @@ public interface GeneralStage<T> extends Stage {
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingContext(ContextFactories.<K, V>replicatedMapContext(mapName),
-                (map, t) -> mapFn.apply(t, map.get(lookupKeyFn.apply(t)))
-        );
+        GeneralStage<R> res = mapUsingContext(ContextFactories.<K, V>replicatedMapContext(mapName),
+                (map, t) -> mapFn.apply(t, map.get(lookupKeyFn.apply(t))));
+        return res.setName("mapUsingReplicatedMap");
     }
 
     /**
@@ -436,9 +436,9 @@ public interface GeneralStage<T> extends Stage {
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingContextAsync(ContextFactories.<K, V>iMapContext(mapName), (map, t) ->
-            toCompletableFuture(map.getAsync(lookupKeyFn.apply(t))).thenApply(e -> mapFn.apply(t, e))
-        );
+        GeneralStage<R> res = mapUsingContextAsync(ContextFactories.<K, V>iMapContext(mapName), (map, t) ->
+                toCompletableFuture(map.getAsync(lookupKeyFn.apply(t))).thenApply(e -> mapFn.apply(t, e)));
+        return res.setName("mapUsingIMap");
     }
 
     /**
@@ -836,4 +836,7 @@ public interface GeneralStage<T> extends Stage {
     @Nonnull
     <R> GeneralStage<R> customTransform(
             @Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier);
+
+    @Nonnull @Override
+    GeneralStage<T> setName(@Nonnull String name);
 }
