@@ -209,8 +209,11 @@ public class ExecutionContext {
     public CompletableFuture<SnapshotOperationResult> beginSnapshot(long snapshotId, String mapName,
                                                                   boolean isTerminal) {
         synchronized (executionLock) {
-            if (cancellationFuture.isDone() || executionFuture != null && executionFuture.isDone()) {
+            if (cancellationFuture.isDone()) {
                 throw new CancellationException();
+            } else if (executionFuture != null && executionFuture.isDone()) {
+                // if execution is done, there are 0 processors to take snapshots. Therefore we're done now.
+                return CompletableFuture.completedFuture(new SnapshotOperationResult(0, 0, 0, null));
             }
             return snapshotContext.startNewSnapshot(snapshotId, mapName, isTerminal);
         }
