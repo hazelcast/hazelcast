@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.Member;
@@ -58,6 +59,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private final ClientConnectionManagerImpl connectionManager;
 
     private volatile CountDownLatch initialListFetchedLatch;
+    private volatile long lastCorrelationId = -1;
 
     public ClientMembershipListener(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -141,7 +143,14 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, null, ownerConnection);
         invocation.setEventHandler(this);
         invocation.invokeUrgent().get();
+        lastCorrelationId = clientMessage.getCorrelationId();
         waitInitialMemberListFetched();
+    }
+
+    void cleanupOnDisconnect() {
+        if (lastCorrelationId != -1) {
+            ((AbstractClientListenerService) client.getListenerService()).removeEventHandler(lastCorrelationId);
+        }
     }
 
     private void waitInitialMemberListFetched() throws InterruptedException {

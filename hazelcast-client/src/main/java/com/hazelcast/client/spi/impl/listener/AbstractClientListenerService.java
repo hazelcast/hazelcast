@@ -293,7 +293,12 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
     // used in tests
     public Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> getRegistrations() {
-        return registrations;
+        return Collections.unmodifiableMap(registrations);
+    }
+
+    // used in tests
+    public Map<Long, EventHandler> getEventHandlers() {
+        return Collections.unmodifiableMap(eventHandlerMap);
     }
 
     private void invokeFromInternalThread(ClientRegistrationKey registrationKey, Connection connection) {
@@ -310,7 +315,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
     abstract boolean registersLocalOnly();
 
-    private void removeEventHandler(long callId) {
+    public void removeEventHandler(long callId) {
         eventHandlerMap.remove(callId);
     }
 

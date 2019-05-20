@@ -162,6 +162,7 @@ class ClusterConnector {
 
                 setOwnerConnectionAddress(null);
                 connectionStrategy.onDisconnectFromCluster();
+                client.onClusterDisconnect();
 
                 if (client.getLifecycleService().isRunning()) {
                     fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
