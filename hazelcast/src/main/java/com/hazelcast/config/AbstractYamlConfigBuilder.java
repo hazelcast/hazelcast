@@ -100,13 +100,16 @@ public abstract class AbstractYamlConfigBuilder {
             }
 
             YamlNode rootLoaded;
-            InputStream inputStream = url.openStream();
+            InputStream inputStream = null;
             try {
+                inputStream = url.openStream();
                 rootLoaded = YamlLoader.load(inputStream);
             } catch (Exception ex) {
                 throw new InvalidConfigurationException("Loading YAML document from resource " + url.getPath() + " failed", ex);
             } finally {
-                inputStream.close();
+                if (inputStream != null) {
+                    inputStream.close();
+                }
             }
 
             YamlNode imdgRootLoaded = asMapping(rootLoaded).child(getConfigRoot());
