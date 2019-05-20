@@ -119,7 +119,7 @@ config.getNetworkConfig().getJoin().getKubernetesConfig().setEnabled(true)
       .setProperty("service-name", "MY-SERVICE-NAME");
 ```
 
-There are 4 properties to configure the plugin, all of them are optional.
+Here are the properties to configure the plugin, all of them are optional.
  * `namespace`: Kubernetes Namespace where Hazelcast is running; if not specified, the value is taken from the environment variables `KUBERNETES_NAMESPACE` or `OPENSHIFT_BUILD_NAMESPACE`
  * `service-name`: service name used to scan only PODs connected to the given service; if not specified, then all PODs in the namespace are checked
  * `service-label-name`, `service-label-value`: service label and value used to tag services that should form the Hazelcast cluster together
@@ -128,6 +128,7 @@ There are 4 properties to configure the plugin, all of them are optional.
  * `kubernetes-master`: URL of Kubernetes Master; `https://kubernetes.default.svc` by default
  * `api-token`: API Token to Kubernetes API; if not specified, the value is taken from the file `/var/run/secrets/kubernetes.io/serviceaccount/token`
  * `ca-certificate`: CA Certificate for Kubernetes API; if not specified, the value is taken from the file `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`
+ * `service-port`: endpoint port of the service; if specified with a value greater than `0`, it overrides the default; `0` by default
  
 You should use either `service-name` or (`service-label-name` and `service-label-value`), specifying all 3 parameters does not make sense.
 
