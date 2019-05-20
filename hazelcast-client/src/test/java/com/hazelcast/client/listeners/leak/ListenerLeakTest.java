@@ -246,7 +246,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         hazelcast.shutdown();
 
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
+        final AbstractClientListenerService listenerService = (AbstractClientListenerService) clientImpl.getListenerService();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
