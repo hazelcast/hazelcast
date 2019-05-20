@@ -26,6 +26,10 @@ including Helm Charts.
 
 #### Batch Example
 
+Here's a self-contained example that puts some lines of text into a
+Hazelcast map and then runs a word-frequency analysis on it (the
+so-called Word Count task):
+
 ```java
 // create a Jet node
 JetInstance jet = Jet.newJetInstance();
@@ -40,11 +44,9 @@ lines.put(4, "it was the epoch of belief");
 
 Pipeline p = Pipeline.create();
 
-Pattern delimiter = Pattern.compile("\\W+");
-
-// minimal word count
+// Word Count job
 p.drawFrom(Sources.map(lines))
-        .flatMap(e -> traverseArray(delimiter.split(e.getValue().toLowerCase())))
+        .flatMap(e -> traverseArray(e.getValue().toLowerCase().split("\\W+")))
         .filter(word -> !word.isEmpty())
         .groupingKey(wholeItem())
         .aggregate(counting())
@@ -56,6 +58,12 @@ System.out.println(jet.getMap("counts").entrySet());
 ```
 
 #### Streaming Example
+
+Extending the previous example, here we let Jet receive events whenever
+a Hazelcast map gets new data. We perform the same kind of analysis
+(Word Count) on each 1-second's worth of data. Note that we start adding
+the data while the job is already running. It picks up the events in
+real time and processes them.
 
 ```java
 // enable event journal
@@ -70,13 +78,11 @@ IMap<Integer, String> lines = jet.getMap("bookLines");
 
 Pipeline p = Pipeline.create();
 
-Pattern delimiter = Pattern.compile("\\W+");
-
 // minimal streaming word count
 p.drawFrom(Sources.mapJournal(lines, JournalInitialPosition.START_FROM_OLDEST))
         .withIngestionTimestamps()
         .setLocalParallelism(1)
-        .flatMap(e -> traverseArray(delimiter.split(e.getValue().toLowerCase())))
+        .flatMap(e -> traverseArray(e.getValue().toLowerCase().split("\\W+")))
         .filter(word -> !word.isEmpty())
         .groupingKey(wholeItem())
         .window(WindowDefinition.tumbling(TimeUnit.SECONDS.toMillis(1)))
