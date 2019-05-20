@@ -68,6 +68,6 @@ public class ChangeWanStateRequestTest extends HazelcastTestSupport {
         changeWanStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertNotEquals(ChangeWanStateRequest.SUCCESS, getString(result, "result"));
+        assertNotEquals("success", getString(result, "result"));
     }
 }
