@@ -102,7 +102,7 @@ public interface MapOperationProvider {
 
     MapOperation createPutAllOperation(String name, MapEntries mapEntries);
 
-    MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence);
+    MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence, boolean expirationTime);
 
     MapOperation createTxnDeleteOperation(String name, Data dataKey, long version);
 

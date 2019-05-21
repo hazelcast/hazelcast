@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.StoreAdapter;
+import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -204,8 +205,14 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     protected RecordStoreLoader createRecordStoreLoader(MapStoreContext mapStoreContext) {
-        return mapStoreContext.getMapStoreWrapper() == null
-                ? RecordStoreLoader.EMPTY_LOADER : new BasicRecordStoreLoader(this);
+        MapStoreWrapper wrapper = mapStoreContext.getMapStoreWrapper();
+        if (wrapper == null) {
+            return RecordStoreLoader.EMPTY_LOADER;
+        } else if (wrapper.isEntryStore()) {
+            return new EntryRecordStoreLoader(this);
+        } else {
+            return new BasicRecordStoreLoader(this);
+        }
     }
 
     protected Data toData(Object value) {

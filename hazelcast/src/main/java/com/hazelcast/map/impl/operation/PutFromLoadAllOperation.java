@@ -42,34 +42,42 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class PutFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
         BackupAwareOperation {
 
-    private List<Data> keyValueSequence;
+    private List<Data> loadingSequence;
     private List<Data> invalidationKeys;
+    private boolean includesExpirationTime;
 
     public PutFromLoadAllOperation() {
-        keyValueSequence = Collections.emptyList();
+        loadingSequence = Collections.emptyList();
+        includesExpirationTime = false;
     }
 
-    public PutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
+    public PutFromLoadAllOperation(String name, List<Data> loadingSequence, boolean includesExpirationTime) {
         super(name);
-        checkFalse(isEmpty(keyValueSequence), "key-value sequence cannot be empty or null");
-        this.keyValueSequence = keyValueSequence;
+        checkFalse(isEmpty(loadingSequence), "key-value sequence cannot be empty or null");
+        this.loadingSequence = loadingSequence;
+        this.includesExpirationTime = includesExpirationTime;
     }
 
     @Override
     protected void runInternal() {
         boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
 
-        List<Data> keyValueSequence = this.keyValueSequence;
-        for (int i = 0; i < keyValueSequence.size(); i += 2) {
-            Data key = keyValueSequence.get(i);
-            Data dataValue = keyValueSequence.get(i + 1);
+        List<Data> loadingSequence = this.loadingSequence;
+        for (int i = 0; i < loadingSequence.size();) {
+            Data key = loadingSequence.get(i++);
+            Data dataValue = loadingSequence.get(i++);
 
             checkNotNull(key, "Key loaded by a MapLoader cannot be null.");
 
             // here object conversion is for interceptors.
             Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
 
-            recordStore.putFromLoad(key, value, getCallerAddress());
+            if (includesExpirationTime) {
+                long expirationTime = (long) mapServiceContext.toObject(loadingSequence.get(i++));
+                recordStore.putFromLoad(key, value, expirationTime, getCallerAddress());
+            } else {
+                recordStore.putFromLoad(key, value, getCallerAddress());
+            }
             // the following check is for the case when the putFromLoad does not put
             // the data due to various reasons one of the reasons may be size
             // eviction threshold has been reached
@@ -97,7 +105,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         }
 
         if (invalidationKeys == null) {
-            invalidationKeys = new ArrayList<>(keyValueSequence.size() / 2);
+            invalidationKeys = new ArrayList<>(loadingSequence.size() / 2);
         }
 
         invalidationKeys.add(key);
@@ -123,7 +131,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     @Override
     public boolean shouldBackup() {
-        return !keyValueSequence.isEmpty();
+        return !loadingSequence.isEmpty();
     }
 
     @Override
@@ -138,13 +146,14 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     @Override
     public Operation getBackupOperation() {
-        return new PutFromLoadAllBackupOperation(name, keyValueSequence);
+        return new PutFromLoadAllBackupOperation(name, loadingSequence, includesExpirationTime);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        final List<Data> keyValueSequence = this.keyValueSequence;
+        out.writeBoolean(includesExpirationTime);
+        final List<Data> keyValueSequence = this.loadingSequence;
         final int size = keyValueSequence.size();
         out.writeInt(size);
         for (Data data : keyValueSequence) {
@@ -155,16 +164,17 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        this.includesExpirationTime = in.readBoolean();
         final int size = in.readInt();
         if (size < 1) {
-            keyValueSequence = Collections.emptyList();
+            loadingSequence = Collections.emptyList();
         } else {
             final List<Data> tmpKeyValueSequence = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 final Data data = in.readData();
                 tmpKeyValueSequence.add(data);
             }
-            keyValueSequence = tmpKeyValueSequence;
+            loadingSequence = tmpKeyValueSequence;
         }
     }
 
