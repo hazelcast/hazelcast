@@ -55,7 +55,6 @@ import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.spi.impl.listener.LazyDistributedObjectEvent;
@@ -194,13 +193,13 @@ public final class ProxyManager {
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
         register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
-        register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactoryWithContext() {
+        register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactory() {
             @Override
             public ClientProxy create(String id, ClientContext context) {
                 return new ClientReliableTopicProxy(id, context, client);
             }
         });
-        register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactoryWithContext() {
+        register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             @Override
             public ClientProxy create(String id, ClientContext context) {
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + id);
@@ -285,12 +284,7 @@ public final class ProxyManager {
 
     public void register(final String serviceName, final Class<? extends ClientProxy> proxyType) {
         try {
-            register(serviceName, new ClientProxyFactoryWithContext() {
-                @Override
-                public ClientProxy create(String id, ClientContext context) {
-                    return instantiateClientProxy(proxyType, serviceName, context, id);
-                }
-            });
+            register(serviceName, (id, context) -> instantiateClientProxy(proxyType, serviceName, context, id));
         } catch (Exception e) {
             throw new HazelcastException("Factory for service " + serviceName + " could not be created for " + proxyType, e);
         }
@@ -382,11 +376,7 @@ public final class ProxyManager {
     }
 
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
-        if (factory instanceof ClientProxyFactoryWithContext) {
-            return ((ClientProxyFactoryWithContext) factory).create(id, context);
-        }
-        return factory.create(id)
-                .setContext(context);
+        return factory.create(id, context);
     }
 
     private void initializeWithRetry(ClientProxy clientProxy) throws Exception {
