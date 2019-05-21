@@ -49,7 +49,6 @@ import static java.util.stream.Collectors.toList;
 
 public class PipelineImpl implements Pipeline {
 
-    private static final GeneralStage[] NO_STAGES = {};
     private final Map<Transform, List<Transform>> adjacencyMap = new LinkedHashMap<>();
 
     @Nonnull @Override

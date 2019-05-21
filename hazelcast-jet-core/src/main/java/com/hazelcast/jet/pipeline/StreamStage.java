@@ -200,6 +200,51 @@ public interface StreamStage<T> extends GeneralStage<T> {
     @Nonnull @Override
     <R> StreamStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier);
 
+    /**
+     * Transforms {@code this} stage using the provided {@code transformFn} and
+     * returns the transformed stage. It allows you to extract common pipeline
+     * transformations into a method and then call that method without
+     * interrupting the chained pipeline expression.
+     * <p>
+     * For example, say you have this code:
+     *
+     * <pre>{@code
+     * StreamStage<String> input = pipeline.drawFrom(textSource);
+     * StreamStage<String> cleanedUp = input
+     *         .map(String::toLowerCase)
+     *         .filter(s -> s.startsWith("success"));
+     * }</pre>
+     *
+     * You can capture the {@code map} and {@code filter} steps into a common
+     * "cleanup" transformation:
+     *
+     * <pre>{@code
+     * StreamStage<String> cleanUp(StreamStage<String> input) {
+     *      return input.map(String::toLowerCase)
+     *                  .filter(s -> s.startsWith("success"));
+     * }
+     * }</pre>
+     *
+     * Now you can insert this transformation as just another step in your
+     * pipeline:
+     *
+     * <pre>{@code
+     * StreamStage<String> tokens = pipeline
+     *     .drawFrom(textSource)
+     *     .apply(this::cleanUp)
+     *     .flatMap(line -> traverseArray(line.split("\\W+")));
+     * }</pre>
+     *
+     * @param transformFn function to transform this stage into another stage
+     * @param <R> type of the returned stage
+     */
+    @Nonnull
+    default <R> StreamStage<R> apply(
+            @Nonnull FunctionEx<? super StreamStage<T>, ? extends StreamStage<R>> transformFn
+    ) {
+        return transformFn.apply(this);
+    }
+
     @Nonnull @Override
     StreamStage<T> setLocalParallelism(int localParallelism);
 

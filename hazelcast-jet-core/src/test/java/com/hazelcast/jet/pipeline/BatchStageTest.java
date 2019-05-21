@@ -25,8 +25,8 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.BiFunctionEx;
+import com.hazelcast.jet.function.FunctionEx;
 import com.hazelcast.jet.function.PredicateEx;
 import com.hazelcast.jet.function.TriFunction;
 import org.junit.Test;
@@ -114,6 +114,27 @@ public class BatchStageTest extends PipelineTestSupport {
         mapped.drainTo(sink);
         execute();
         assertEquals(streamToString(input.stream(), formatFn),
+                streamToString(sinkStreamOf(String.class), identity()));
+    }
+
+    @Test
+    public void apply() {
+        FunctionEx<Number, String> formatFn = i -> String.format("%04d-string", i);
+
+        // Given
+        List<Integer> input = sequence(itemCount);
+        FunctionEx<BatchStage<? extends Number>, BatchStage<String>> transformFn = stage ->
+                stage.map(formatFn)
+                     .map(String::toUpperCase);
+
+        // When
+        BatchStage<String> mapped = batchStageFromList(input)
+                .apply(transformFn);
+
+        // Then
+        mapped.drainTo(sink);
+        execute();
+        assertEquals(streamToString(input.stream(), formatFn.andThen(String::toUpperCase)),
                 streamToString(sinkStreamOf(String.class), identity()));
     }
 

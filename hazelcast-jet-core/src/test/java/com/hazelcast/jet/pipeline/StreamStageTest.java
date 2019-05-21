@@ -734,6 +734,23 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
+    public void apply() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+
+        // When
+        StreamStage<String> mapped = streamStageFromList(input)
+                .apply(s -> s.map(i -> i + 1)
+                             .map(String::valueOf));
+
+        // Then
+        mapped.drainTo(sink);
+        execute();
+        assertEquals(streamToString(input.stream(), i -> String.valueOf(i + 1)),
+                streamToString(sinkStreamOf(String.class), identity()));
+    }
+
+    @Test
     public void customTransform() {
         // Given
         List<Integer> input = sequence(itemCount);

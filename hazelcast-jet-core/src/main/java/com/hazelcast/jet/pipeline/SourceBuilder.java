@@ -392,7 +392,7 @@ public final class SourceBuilder<C> {
          *                 buffer.add(numToEmit.getAndIncrement());
          *             }
          *         })
-         *         .createSnapshotFn(AtomicInteger::get)
+         *         .createSnapshotFn(numToEmit -> numToEmit.get())
          *         .restoreSnapshotFn((numToEmit, states) -> numToEmit.set(states.get(0)))
          *         .build();
          * }</pre>

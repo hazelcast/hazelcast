@@ -379,5 +379,4 @@ public interface StageWithWindow<T> {
     default WindowAggregateBuilder1<T> aggregateBuilder() {
         return new WindowAggregateBuilder1<>(streamStage(), windowDefinition());
     }
-
 }
