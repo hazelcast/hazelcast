@@ -26,6 +26,7 @@ import com.hazelcast.client.test.executor.tasks.GetMemberUuidTask;
 import com.hazelcast.client.test.executor.tasks.MapPutPartitionAwareCallable;
 import com.hazelcast.client.test.executor.tasks.NullCallable;
 import com.hazelcast.client.test.executor.tasks.SelectAllMembers;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.ExecutionCallback;
@@ -35,6 +36,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -58,7 +60,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.util.FutureUtil.waitForever;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -721,5 +725,92 @@ public class ClientExecutorServiceSubmitTest {
         assertOpenEventually("responseLatch", responseLatch);
         assertEquals(member.getUuid(), result.get());
         assertTrue(map.containsKey(member.getUuid()));
+    }
+
+    @Test
+    public void testSubmitToAllMembersSerializesTheTaskOnlyOnce() {
+        IExecutorService executorService = client.getExecutorService(randomName());
+        ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
+        Map<Member, Future<Void>> futures = executorService.submitToAllMembers(countingCallable);
+        waitForever(futures.values());
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToAllMembersSerializesTheTaskOnlyOnce_withCallback() throws InterruptedException {
+        IExecutorService executorService = client.getExecutorService(randomName());
+        ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
+        CountDownLatch complete = new CountDownLatch(1);
+        executorService.submitToAllMembers(countingCallable, new MultiExecutionCallback() {
+            @Override
+            public void onResponse(Member member, Object value) {
+
+            }
+
+            @Override
+            public void onComplete(Map<Member, Object> values) {
+                complete.countDown();
+            }
+        });
+        complete.await();
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToMembersSerializesTheTaskOnlyOnce_withSelector() {
+        IExecutorService executorService = client.getExecutorService(randomName());
+        ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
+        Map<Member, Future<Void>> futures = executorService.submitToMembers(countingCallable, MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
+        waitForever(futures.values());
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToMembersSerializesTheTaskOnlyOnce_withCollection() {
+        IExecutorService executorService = client.getExecutorService(randomName());
+        ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
+        Map<Member, Future<Void>> futures = executorService.submitToMembers(countingCallable, client.getCluster().getMembers());
+        waitForever(futures.values());
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToMembersSerializesTheTaskOnlyOnce_withSelectorAndCallback() throws InterruptedException {
+        IExecutorService executorService = client.getExecutorService(randomName());
+        ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
+        CountDownLatch complete = new CountDownLatch(1);
+        executorService.submitToMembers(countingCallable, MemberSelectors.DATA_MEMBER_SELECTOR, new MultiExecutionCallback() {
+            @Override
+            public void onResponse(Member member, Object value) {
+
+            }
+
+            @Override
+            public void onComplete(Map<Member, Object> values) {
+                complete.countDown();
+            }
+        });
+        complete.await();
+        assertEquals(1, countingCallable.getSerializationCount());
+    }
+
+    @Test
+    public void testSubmitToMembersSerializesTheTaskOnlyOnce_withCollectionAndCallback() throws InterruptedException {
+        IExecutorService executorService = client.getExecutorService(randomName());
+        ExecutorServiceTestSupport.SerializationCountingCallable countingCallable = new ExecutorServiceTestSupport.SerializationCountingCallable();
+        CountDownLatch complete = new CountDownLatch(1);
+        executorService.submitToMembers(countingCallable, client.getCluster().getMembers(), new MultiExecutionCallback() {
+            @Override
+            public void onResponse(Member member, Object value) {
+
+            }
+
+            @Override
+            public void onComplete(Map<Member, Object> values) {
+                complete.countDown();
+            }
+        });
+        complete.await();
+        assertEquals(1, countingCallable.getSerializationCount());
     }
 }
