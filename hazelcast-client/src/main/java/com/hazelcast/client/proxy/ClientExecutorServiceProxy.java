@@ -147,15 +147,16 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     @Override
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
         final Address memberAddress = getMemberAddress(member);
-        return submitToTargetInternal(task, memberAddress, null, false);
+        return submitToTargetInternal(toData(task), memberAddress, null, false);
     }
 
     @Override
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
         Map<Member, Future<T>> futureMap = new HashMap<Member, Future<T>>(members.size());
+        Data taskData = toData(task);
         for (Member member : members) {
             final Address memberAddress = getMemberAddress(member);
-            Future<T> f = submitToTargetInternal(task, memberAddress, null, true);
+            Future<T> f = submitToTargetInternal(taskData, memberAddress, null, true);
             futureMap.put(member, f);
         }
         return futureMap;
@@ -178,8 +179,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     public <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task) {
         final Collection<Member> memberList = getContext().getClusterService().getMemberList();
         Map<Member, Future<T>> futureMap = new HashMap<Member, Future<T>>(memberList.size());
+        Data taskData = toData(task);
         for (Member m : memberList) {
-            Future<T> f = submitToTargetInternal(task, m.getAddress(), null, true);
+            Future<T> f = submitToTargetInternal(taskData, m.getAddress(), null, true);
             futureMap.put(m, f);
         }
         return futureMap;
@@ -207,17 +209,18 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     @Override
     public <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback) {
         final Address memberAddress = getMemberAddress(member);
-        submitToTargetInternal(task, memberAddress, callback);
+        submitToTargetInternal(toData(task), memberAddress, callback);
     }
 
     @Override
     public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
         MultiExecutionCallbackWrapper multiExecutionCallbackWrapper =
                 new MultiExecutionCallbackWrapper(members.size(), callback);
+        Data taskData = toData(task);
         for (Member member : members) {
             final ExecutionCallbackWrapper<T> executionCallback =
                     new ExecutionCallbackWrapper<T>(multiExecutionCallbackWrapper, member);
-            submitToMember(task, member, executionCallback);
+            submitToTargetInternal(taskData, getMemberAddress(member), executionCallback);
         }
     }
 
@@ -462,21 +465,20 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         delegatingFuture.andThen(callback);
     }
 
-    private <T> Future<T> submitToTargetInternal(Callable<T> task, Address address
+    private <T> Future<T> submitToTargetInternal(Data taskData, Address address
             , T defaultValue, boolean preventSync) {
-        checkNotNull(task, "task should not be null");
+        checkNotNull(taskData, "task should not be null");
 
         String uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task), address);
+        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, taskData, address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
         return checkSync(f, uuid, address, preventSync, defaultValue);
     }
 
-    private <T> void submitToTargetInternal(Callable<T> task, Address address, ExecutionCallback<T> callback) {
-        checkNotNull(task, "task should not be null");
-
+    private <T> void submitToTargetInternal(Data taskData, Address address, ExecutionCallback<T> callback) {
+        checkNotNull(taskData, "task should not be null");
         String uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task), address);
+        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, taskData, address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
                 SUBMIT_TO_ADDRESS_DECODER);
